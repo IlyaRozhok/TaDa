@@ -1,0 +1,123 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  is_operator: boolean;
+  phone?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  age_range?: string;
+  occupation?: string;
+  industry?: string;
+  work_style?: string;
+  lifestyle?: string;
+  pets?: string;
+  smoker?: boolean;
+  hobbies?: string;
+  ideal_living_environment?: string;
+  additional_info?: string;
+  bio?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  accessToken: string | null;
+  sessionExpiry: number | null;
+}
+
+const initialState: AuthState = {
+  user: null,
+  isAuthenticated: false,
+  accessToken: null,
+  sessionExpiry: null,
+};
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    setCredentials: (
+      state,
+      action: PayloadAction<{
+        user: User;
+        accessToken: string;
+      }>
+    ) => {
+      const { user, accessToken } = action.payload;
+      state.user = user;
+      state.accessToken = accessToken;
+      state.isAuthenticated = true;
+
+      // Set session expiry to 7 days from now
+      state.sessionExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+
+      // Store token and expiry in localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("sessionExpiry", state.sessionExpiry.toString());
+      }
+    },
+    logout: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.accessToken = null;
+      state.sessionExpiry = null;
+
+      // Clear localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionExpiry");
+      }
+    },
+    restoreSession: (
+      state,
+      action: PayloadAction<{
+        user: User;
+        accessToken: string;
+      }>
+    ) => {
+      const { user, accessToken } = action.payload;
+
+      // Check if stored session is still valid (within 7 days)
+      const storedExpiry =
+        typeof window !== "undefined"
+          ? localStorage.getItem("sessionExpiry")
+          : null;
+
+      if (storedExpiry && Date.now() > parseInt(storedExpiry)) {
+        // Session expired, don't restore
+        console.log("🔐 Stored session has expired");
+        return;
+      }
+
+      state.user = user;
+      state.accessToken = accessToken;
+      state.isAuthenticated = true;
+      state.sessionExpiry = storedExpiry ? parseInt(storedExpiry) : null;
+    },
+    updateUser: (state, action: PayloadAction<Partial<User>>) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+      }
+    },
+  },
+});
+
+export const { setCredentials, logout, restoreSession, updateUser } =
+  authSlice.actions;
+export default authSlice.reducer;
+
+// Selectors
+export const selectAuth = (state: { auth: AuthState }) => state.auth;
+export const selectUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectIsAuthenticated = (state: { auth: AuthState }) =>
+  state.auth.isAuthenticated;
+export const selectAccessToken = (state: { auth: AuthState }) =>
+  state.auth.accessToken;
+export const selectSessionExpiry = (state: { auth: AuthState }) =>
+  state.auth.sessionExpiry;
