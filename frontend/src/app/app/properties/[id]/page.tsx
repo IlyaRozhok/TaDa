@@ -281,7 +281,8 @@ export default function PropertyDetailPage() {
               <div className="w-full h-96 bg-gray-200 rounded-lg animate-pulse"></div>
             ) : (
               <ImageGallery
-                images={property?.images || []}
+                media={property?.media}
+                images={property?.images}
                 alt={property?.title || ""}
               />
             )}

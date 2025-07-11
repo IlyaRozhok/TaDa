@@ -287,17 +287,44 @@ export default function ManagePropertiesPage() {
               >
                 {/* Property Image */}
                 <div className="h-48 bg-slate-100 relative">
-                  {property.images && property.images.length > 0 ? (
-                    <img
-                      src={property.images[0]}
+                  {(() => {
+                    // Get first image from media or fallback to images array
+                    let imageUrl = "";
+
+                    if (property.media && property.media.length > 0) {
+                      const featuredImage = property.media.find(
+                        (item) => item.is_featured && item.type === "image"
+                      );
+                      if (featuredImage) {
+                        imageUrl = featuredImage.url;
+                      } else {
+                        const firstImage = property.media
+                          .filter((item) => item.type === "image")
+                          .sort((a, b) => a.order_index - b.order_index)[0];
+                        if (firstImage) {
+                          imageUrl = firstImage.url;
+                        }
+                      }
+                    } else if (property.images && property.images.length > 0) {
+                      imageUrl = property.images[0];
+                    }
+
+                    if (imageUrl) {
+                      return (
+                        <img
+                          src={imageUrl}
                       alt={property.title}
                       className="w-full h-full object-cover"
                     />
-                  ) : (
+                      );
+                    } else {
+                      return (
                     <div className="w-full h-full flex items-center justify-center">
                       <Building2 className="w-12 h-12 text-slate-400" />
                     </div>
-                  )}
+                      );
+                    }
+                  })()}
                   {property.is_btr && (
                     <div className="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">
                       BTR
@@ -356,7 +383,7 @@ export default function ManagePropertiesPage() {
                     </button>
                     <button
                       onClick={() =>
-                        router.push(`/app/properties/edit/${property.id}`)
+                        router.push(`/app/properties/${property.id}/edit`)
                       }
                       className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
                     >

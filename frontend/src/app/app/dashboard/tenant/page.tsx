@@ -12,6 +12,7 @@ import { useTranslations } from "../../../lib/language-context";
 import { selectUser } from "../../../store/slices/authSlice";
 import PropertyCard from "../../../components/PropertyCard";
 import DashboardHeader from "../../../components/DashboardHeader";
+import FeaturedPropertiesSlider from "../../../components/FeaturedPropertiesSlider";
 import { useRouter } from "next/navigation";
 import {
   Home,
@@ -66,7 +67,11 @@ export default function TenantDashboard() {
   const fetchProperties = async () => {
     try {
       const response = await propertiesAPI.getAll();
-      const propertiesData = response.data || response;
+      const responseData = response.data || response;
+      // Handle both array and object responses
+      const propertiesData = Array.isArray(responseData)
+        ? responseData
+        : responseData.properties || [];
       setProperties(propertiesData.slice(0, 6));
     } catch (err) {
       console.error("Error fetching properties:", err);
@@ -282,43 +287,7 @@ export default function TenantDashboard() {
         </div>
 
         {/* Featured Properties Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Featured Properties
-            </h2>
-            <button
-              onClick={() => router.push("/app/properties")}
-              className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
-            >
-              View All
-            </button>
-          </div>
-
-          {properties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onClick={() => handlePropertyClick(property)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Home className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                No properties available
-              </h3>
-              <p className="text-slate-600">
-                Check back later for new listings.
-              </p>
-            </div>
-          )}
-        </div>
+        <FeaturedPropertiesSlider />
       </div>
     </div>
   );

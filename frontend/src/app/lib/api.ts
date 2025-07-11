@@ -1,8 +1,21 @@
 import axios from "axios";
 import { store } from "../store/store";
 import { logout } from "../store/slices/authSlice";
+import {
+  PropertyType,
+  WorkStyle,
+  PropertyStatus,
+  Property,
+  PropertyMedia,
+  UploadResponse,
+} from "../types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+interface ApiError {
+  message: string;
+  statusCode?: number;
+}
 
 // Extend window interface for SessionManager status
 declare global {
@@ -175,14 +188,9 @@ export const propertiesAPI = {
     const response = await api.get(`/properties/${id}`);
     return response.data;
   },
-  create: (data: FormData) =>
-    api.post("/properties", data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
-  update: (id: string, data: FormData) =>
-    api.patch(`/properties/${id}`, data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+  create: (data: CreatePropertyRequest) => api.post("/properties", data),
+  update: (id: string, data: Partial<CreatePropertyRequest>) =>
+    api.patch(`/properties/${id}`, data),
   delete: (id: string) => api.delete(`/properties/${id}`),
   getMyProperties: () => api.get("/properties/my-properties"),
   getFeatured: async (limit?: number) => {
@@ -204,6 +212,7 @@ export interface MatchingResult {
   property: Property;
   matchScore: number;
   matchReasons: string[];
+  perfectMatch: boolean;
 }
 
 export const matchingAPI = {
@@ -434,26 +443,6 @@ export interface User {
   updated_at: string;
 }
 
-export interface Property {
-  id: string;
-  title: string;
-  description: string;
-  address: string;
-  price: number;
-  bedrooms: number;
-  bathrooms: number;
-  property_type: string;
-  furnishing: string;
-  lifestyle_features: string[];
-  available_from: string;
-  images: string[];
-  is_btr: boolean;
-  operator_id: string;
-  operator?: User;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface RegisterData {
   email: string;
   full_name: string;
@@ -565,4 +554,205 @@ export interface Preferences {
   additional_requirements?: string;
 }
 
-export default api;
+export interface CreatePropertyRequest {
+  title: string;
+  description: string;
+  address: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  property_type: string;
+  furnishing: string;
+  lifestyle_features?: string[];
+  available_from: string;
+  is_btr?: boolean;
+}
+
+// Общая функция для обработки ответов
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    if (response.status === 401) {
+      store.dispatch(logout());
+    }
+    const error = (await response.json()) as ApiError;
+    throw new Error(error.message || "Something went wrong");
+  }
+  return response.json() as Promise<T>;
+};
+
+const apiClient = {
+  // Properties
+  getProperties: async (accessToken: string): Promise<Property[]> => {
+    const response = await fetch(`${API_BASE_URL}/properties`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return handleResponse<Property[]>(response);
+  },
+
+  getProperty: async (id: string, accessToken: string): Promise<Property> => {
+    const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return handleResponse<Property>(response);
+  },
+
+  createProperty: async (
+    data: Partial<Property>,
+    accessToken: string
+  ): Promise<Property> => {
+    const response = await fetch(`${API_BASE_URL}/properties`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<Property>(response);
+  },
+
+  updateProperty: async (
+    id: string,
+    data: Partial<Property>,
+    accessToken: string
+  ): Promise<Property> => {
+    const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<Property>(response);
+  },
+
+  deleteProperty: async (id: string, accessToken: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return handleResponse<void>(response);
+  },
+
+  // Media Upload
+  testUpload: async (
+    file: File,
+    accessToken: string
+  ): Promise<UploadResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/properties/test-upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    return handleResponse<UploadResponse>(response);
+  },
+
+  uploadPropertyMedia: async (
+    propertyId: string,
+    file: File,
+    accessToken: string
+  ): Promise<PropertyMedia> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(
+      `${API_BASE_URL}/properties/${propertyId}/media`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      }
+    );
+
+    return handleResponse<PropertyMedia>(response);
+  },
+
+  getPropertyMedia: async (
+    propertyId: string,
+    accessToken: string
+  ): Promise<PropertyMedia[]> => {
+    const response = await fetch(
+      `${API_BASE_URL}/properties/${propertyId}/media`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return handleResponse<PropertyMedia[]>(response);
+  },
+
+  deletePropertyMedia: async (
+    propertyId: string,
+    mediaId: string,
+    accessToken: string
+  ): Promise<void> => {
+    const response = await fetch(
+      `${API_BASE_URL}/properties/${propertyId}/media/${mediaId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return handleResponse<void>(response);
+  },
+
+  updateMediaOrder: async (
+    propertyId: string,
+    mediaOrders: { id: string; order_index: number }[],
+    accessToken: string
+  ): Promise<PropertyMedia[]> => {
+    const response = await fetch(
+      `${API_BASE_URL}/properties/${propertyId}/media/order`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ mediaOrders }),
+      }
+    );
+
+    return handleResponse<PropertyMedia[]>(response);
+  },
+
+  setFeaturedMedia: async (
+    propertyId: string,
+    mediaId: string,
+    accessToken: string
+  ): Promise<PropertyMedia> => {
+    const response = await fetch(
+      `${API_BASE_URL}/properties/${propertyId}/media/${mediaId}/featured`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return handleResponse<PropertyMedia>(response);
+  },
+};
+
+export default apiClient;

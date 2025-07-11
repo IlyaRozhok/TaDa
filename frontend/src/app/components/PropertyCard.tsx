@@ -80,10 +80,30 @@ export default function PropertyCard({
   };
 
   const getFirstImage = () => {
+    // Use media if available
+    if (property.media && property.media.length > 0) {
+      const featuredImage = property.media.find(
+        (item) => item.is_featured && item.type === "image"
+      );
+      if (featuredImage) {
+        return featuredImage.url;
+      }
+
+      // If no featured image, use first image
+      const firstImage = property.media
+        .filter((item) => item.type === "image")
+        .sort((a, b) => a.order_index - b.order_index)[0];
+      if (firstImage) {
+        return firstImage.url;
+      }
+    }
+
+    // Fallback to deprecated images array
     if (property.images && property.images.length > 0) {
       return property.images[0];
     }
-    return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCAwIDQwMCAyNDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjQwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTAwTDIwMCAxMjVMMjI1IDEwMEwyNTAgMTI1VjE2MEgxNTBWMTI1TDE3NSAxMDBaIiBmaWxsPSIjOUIxMDRGIi8+CjxjaXJjbGUgY3g9IjE4MCIgY3k9IjExMCIgcj0iOCIgZmlsbD0iIzlCMTA0RiIvPgo8L3N2Zz4K";
+
+    return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCAwIDQwMCAyNDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjQwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTAwTDIwMCAxMjVMMjI1IDEwMEwyNTAgMTI1VjE2MEgxNTBWMTI1TDE3NSAxMDBaIiBmaWxsPSIjOUIxMDRGIi8+PGNpcmNsZSBjeD0iMTgwIiBjeT0iMTEwIiByPSI4IiBmaWxsPSIjOUIxMDRGIi8+PC9zdmc+";
   };
 
   const getTopFeatures = () => {

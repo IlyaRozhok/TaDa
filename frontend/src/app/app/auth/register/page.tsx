@@ -89,8 +89,6 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Prevent multiple submissions
     if (isLoading) return;
 
     // Validate password confirmation
@@ -110,60 +108,78 @@ export default function RegisterPage() {
         is_operator: formData.userType === "operator",
       };
 
-      const { user, access_token } = await authAPI.register(registerData);
+      const response = await authAPI.register(registerData);
+
+      // Проверяем, что у нас есть все необходимые данные
+      if (!response || !response.user || !response.access_token) {
+        throw new Error("Invalid response from server");
+      }
 
       dispatch(
         setCredentials({
-          user,
-          accessToken: access_token,
+          user: response.user,
+          accessToken: response.access_token,
         })
       );
 
       // Redirect to dashboard based on role
-      if (formData.userType === "operator") {
+      if (response.user.is_operator) {
         router.push("/app/dashboard/operator");
       } else {
         router.push("/app/dashboard/tenant");
       }
     } catch (error: unknown) {
       console.error("Registration error:", error);
-      let errorMessage = "An error occurred during registration";
 
       if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as {
           response?: {
             status?: number;
-            data?: { message?: string };
+            data?: { message?: string; error?: string };
           };
         };
 
-        if (axiosError.response?.status === 409) {
-          errorMessage = "An account with this email already exists";
-        } else if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
+        // Показываем сообщение об ошибке от сервера или дружественное сообщение
+        if (axiosError.response?.data?.message) {
+          setError(axiosError.response.data.message);
+        } else if (axiosError.response?.data?.error) {
+          setError(axiosError.response.data.error);
+        } else if (axiosError.response?.status === 409) {
+          setError("An account with this email already exists");
+        } else if (axiosError.response?.status === 400) {
+          setError("Please check your input and try again");
+        } else {
+          setError(
+            "An error occurred during registration. Please try again later."
+          );
         }
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError(
+          "An error occurred during registration. Please try again later."
+        );
       }
-
-      setError(errorMessage);
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200">
+      <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link
               href="/"
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
             >
-              <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg flex items-center justify-center group-hover:shadow-lg group-hover:shadow-slate-900/20 transition-all duration-300">
                 <Home className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-900">TaDa</h1>
+                <h1 className="text-lg font-semibold text-slate-900">TaDa</h1>
                 <p className="text-xs text-slate-500 -mt-1">
                   Property Platform
                 </p>
@@ -174,257 +190,202 @@ export default function RegisterPage() {
               href="/app/auth/login"
               className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
             >
-              Already have an account? Sign In
+              Already have an account?{" "}
+              <span className="text-slate-900">Sign In</span>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4 py-12">
+      <div className="flex items-start justify-center min-h-[calc(100vh-64px)] px-4 py-6 sm:py-8">
         <div className="w-full max-w-lg">
           {/* Back to Home */}
           <Link
             href="/"
-            className="flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-8 font-medium group"
+            className="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-6 font-medium group px-4 py-2 rounded-lg hover:bg-white/50"
           >
             <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Home
           </Link>
 
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 mb-1">
-                  Create Account
-                </h1>
-                <p className="text-slate-600">
-                  Join the TaDa property platform
-                </p>
-              </div>
-            </div>
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-pink-500/5 rounded-3xl" />
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-xl rounded-3xl" />
 
-            {/* Account Type Selection */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Choose Account Type
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label
-                  className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:bg-slate-50 ${
-                    formData.userType === "tenant"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-300 bg-white"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="tenant"
-                    checked={formData.userType === "tenant"}
-                    onChange={(e) =>
-                      handleUserTypeChange(e.target.value as UserType)
-                    }
-                    className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
-                  />
-                  <div className="ml-3 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <Home className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900">Tenant</div>
-                      <div className="text-sm text-slate-600">
-                        Looking for property
-                      </div>
-                    </div>
-                  </div>
-                </label>
-
-                <label
-                  className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:bg-slate-50 ${
-                    formData.userType === "operator"
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-slate-300 bg-white"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="operator"
-                    checked={formData.userType === "operator"}
-                    onChange={(e) =>
-                      handleUserTypeChange(e.target.value as UserType)
-                    }
-                    className="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500"
-                  />
-                  <div className="ml-3 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
-                      <Building className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900">
-                        Operator
-                      </div>
-                      <div className="text-sm text-slate-600">
-                        Managing properties
-                      </div>
-                    </div>
-                  </div>
-                </label>
+            <div className="relative bg-white/70 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-900/5 border border-white/20">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-900/20">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold text-slate-900">
+                    Create Account
+                  </h2>
+                  <p className="text-slate-500">
+                    Join our property platform today
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                  <p className="text-sm font-medium">{error}</p>
+                <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm">
+                  {error}
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border text-slate-900 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Enter your full name"
-                />
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* User Type Selection */}
+                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => handleUserTypeChange("tenant")}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
+                      formData.userType === "tenant"
+                        ? "bg-white shadow-sm text-slate-900 shadow-slate-900/5"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="font-medium">Tenant</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUserTypeChange("operator")}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
+                      formData.userType === "operator"
+                        ? "bg-white shadow-sm text-slate-900 shadow-slate-900/5"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Building className="w-4 h-4" />
+                    <span className="font-medium">Operator</span>
+                  </button>
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-slate-300 text-slate-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Enter your email address"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      minLength={6}
-                      className="w-full px-4 py-3 pr-12 border text-slate-900 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="Create a password (min 6 chars)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                {/* Form Fields */}
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="full_name"
+                      className="block text-sm font-medium text-slate-700 mb-1"
                     >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      id="full_name"
+                      name="full_name"
+                      value={formData.full_name}
+                      onChange={handleInputChange}
+                      className="w-full text-slate-900 px-4 py-2 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring focus:ring-slate-200 focus:ring-opacity-50 transition-colors duration-200"
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-slate-700 mb-1"
+                    >
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full text-slate-900 px-4 py-2 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring focus:ring-slate-200 focus:ring-opacity-50 transition-colors duration-200"
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-slate-700 mb-1"
+                    >
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="w-full text-slate-900 px-4 py-2 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring focus:ring-slate-200 focus:ring-opacity-50 transition-colors duration-200"
+                        placeholder="Create a password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-slate-700 mb-1"
+                    >
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className="w-full text-slate-900 px-4 py-2 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring focus:ring-slate-200 focus:ring-opacity-50 transition-colors duration-200"
+                        placeholder="Confirm your password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      required
-                      minLength={6}
-                      className="w-full px-4 py-3 pr-12 border text-slate-900 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="Confirm your password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-sm text-slate-600 bg-slate-50 p-4 rounded-lg">
-                <p className="mb-2">
-                  <strong>Next steps after registration:</strong>
-                </p>
-                <ul className="space-y-1 text-sm">
-                  {formData.userType === "tenant" ? (
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full px-6 py-2.5 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-slate-900/10 focus:outline-none focus:ring-2 focus:ring-slate-400/20 disabled:opacity-70"
+                >
+                  {isLoading ? (
                     <>
-                      <li>• Complete your profile with personal details</li>
-                      <li>• Set your property preferences</li>
-                      <li>• Start browsing and saving properties</li>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Creating Account...</span>
                     </>
                   ) : (
-                    <>
-                      <li>• Set up your property operator profile</li>
-                      <li>• Add your first property listing</li>
-                      <li>• Manage tenant applications</li>
-                    </>
+                    <span>Create Account</span>
                   )}
-                </ul>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </button>
-
-              <div className="text-center pt-4">
-                <p className="text-slate-600">
-                  Already have an account?{" "}
-                  <Link
-                    href="/app/auth/login"
-                    className="text-blue-600 hover:text-blue-700 font-semibold"
-                  >
-                    Sign in here
-                  </Link>
-                </p>
-              </div>
-            </form>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

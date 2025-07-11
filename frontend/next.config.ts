@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Remove standalone output for Vercel deployment
+  // output: "standalone", // This is for containerized deployments, not needed for Vercel
   poweredByHeader: false,
   generateEtags: false,
-  compress: false,
+  compress: true, // Enable compression for Vercel
   experimental: {
     turbo: undefined,
     serverActions: {
@@ -12,7 +13,15 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    unoptimized: true,
+    unoptimized: true, // Keep this for S3 images
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.amazonaws.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
   },
   eslint: {
     ignoreDuringBuilds: true,

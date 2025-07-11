@@ -45,7 +45,10 @@ export default function AllPropertiesPage() {
 
         console.log("📡 Fetching all properties...");
         const response = await propertiesAPI.getAll();
-        const propertiesData = response.data || response;
+        const responseData = response.data || response;
+        
+        // Backend returns an object with properties array
+        const propertiesData = responseData.properties || responseData;
 
         setProperties(propertiesData);
         setFilteredProperties(propertiesData);
@@ -63,6 +66,11 @@ export default function AllPropertiesPage() {
 
   // Apply search and filters
   useEffect(() => {
+    // Early return if properties is not yet loaded or not an array
+    if (!properties || !Array.isArray(properties)) {
+      return;
+    }
+    
     let filtered = [...properties];
 
     // Apply search filter
@@ -126,6 +134,9 @@ export default function AllPropertiesPage() {
   };
 
   const getPropertyTypes = () => {
+    if (!properties || !Array.isArray(properties)) {
+      return [];
+    }
     const types = new Set(properties.map((p) => p.property_type));
     return Array.from(types);
   };

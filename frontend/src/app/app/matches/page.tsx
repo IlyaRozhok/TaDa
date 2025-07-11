@@ -417,23 +417,59 @@ export default function MatchesPage() {
                       {/* Property Image */}
                       <div className="lg:col-span-1">
                         <div className="relative h-64 lg:h-full min-h-[200px] bg-gray-200 rounded-lg overflow-hidden">
-                          {matchResult.property.images &&
-                          matchResult.property.images.length > 0 ? (
-                            <img
-                              src={matchResult.property.images[0]}
-                              alt={matchResult.property.title}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src =
-                                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik03NSA3NUgxMjVWMTI1SDc1Vjc1WiIgZmlsbD0iI0Q1RDdEQSIvPgo8L3N2Zz4K";
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Home className="w-12 h-12 text-gray-400" />
-                            </div>
-                          )}
+                          {(() => {
+                            // Get first image from media or fallback to images array
+                            let imageUrl = "";
+
+                            if (
+                              matchResult.property.media &&
+                              matchResult.property.media.length > 0
+                            ) {
+                              const featuredImage =
+                                matchResult.property.media.find(
+                                  (item) =>
+                                    item.is_featured && item.type === "image"
+                                );
+                              if (featuredImage) {
+                                imageUrl = featuredImage.url;
+                              } else {
+                                const firstImage = matchResult.property.media
+                                  .filter((item) => item.type === "image")
+                                  .sort(
+                                    (a, b) => a.order_index - b.order_index
+                                  )[0];
+                                if (firstImage) {
+                                  imageUrl = firstImage.url;
+                                }
+                              }
+                            } else if (
+                              matchResult.property.images &&
+                              matchResult.property.images.length > 0
+                            ) {
+                              imageUrl = matchResult.property.images[0];
+                            }
+
+                            if (imageUrl) {
+                              return (
+                                <img
+                                  src={imageUrl}
+                                  alt={matchResult.property.title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src =
+                                      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik03NSA3NUgxMjVWMTI1SDc1Vjc1WiIgZmlsbD0iI0Q1RDdEQSIvPgo8L3N2Zz4K";
+                                  }}
+                                />
+                              );
+                            } else {
+                              return (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Home className="w-12 h-12 text-gray-400" />
+                                </div>
+                              );
+                            }
+                          })()}
 
                           {/* Match Rank Badge */}
                           <div className="absolute top-3 left-3">

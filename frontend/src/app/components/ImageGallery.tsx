@@ -3,18 +3,40 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
+import { PropertyMedia } from "../types";
+
 interface ImageGalleryProps {
-  images: string[];
+  images?: string[]; // Deprecated: for backward compatibility
+  media?: PropertyMedia[]; // New: S3 media files
   alt: string;
 }
 
-export default function ImageGallery({ images, alt }: ImageGalleryProps) {
+export default function ImageGallery({
+  images,
+  media,
+  alt,
+}: ImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fallback to placeholder if no images
-  const displayImages =
-    images.length > 0 ? images : ["/placeholder-property.jpg"];
+  // Use media URLs if available, otherwise fallback to images, then placeholder
+  const getDisplayImages = (): string[] => {
+    if (media && media.length > 0) {
+      // Sort by order_index and filter only images, then extract URLs
+      return media
+        .filter((item) => item.type === "image")
+        .sort((a, b) => a.order_index - b.order_index)
+        .map((item) => item.url);
+    }
+
+    if (images && images.length > 0) {
+      return images;
+    }
+
+    return ["/placeholder-property.jpg"];
+  };
+
+  const displayImages = getDisplayImages();
 
   const nextImage = () => {
     setSelectedImage((prev) => (prev + 1) % displayImages.length);

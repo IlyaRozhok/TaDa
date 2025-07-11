@@ -4,6 +4,7 @@ import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import { LanguageProvider } from "./lib/language-context";
+import CookieNotification from "./components/CookieModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default function RootLayout({
           <ReduxProvider>
             <SessionManager />
             {children}
+            <CookieNotification />
           </ReduxProvider>
         </LanguageProvider>
       </body>

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useAppSelector } from "@/app/store/hooks";
-import { Input } from "@/app/components/ui/Input";
 import { preferencesAPI } from "@/app/lib/api";
 import {
   Home,
@@ -24,42 +23,41 @@ import {
   ChevronRight,
   ChevronLeft,
   Heart,
-  User,
 } from "lucide-react";
 import Link from "next/link";
 
 interface PreferencesFormData {
-  primary_postcode: string;
-  secondary_location: string;
-  commute_location: string;
-  commute_time_walk: number;
-  commute_time_cycle: number;
-  commute_time_tube: number;
-  move_in_date: string;
-  min_price: number;
-  max_price: number;
-  min_bedrooms: number;
-  max_bedrooms: number;
-  min_bathrooms: number;
-  max_bathrooms: number;
-  furnishing: string;
-  let_duration: string;
-  property_type: string;
-  building_style: string[];
-  designer_furniture: boolean;
-  house_shares: string;
-  date_property_added: string;
-  lifestyle_features: string[];
-  social_features: string[];
-  work_features: string[];
-  convenience_features: string[];
-  pet_friendly_features: string[];
-  luxury_features: string[];
-  hobbies: string[];
-  ideal_living_environment: string;
-  pets: string;
-  smoker: boolean;
-  additional_info: string;
+  primary_postcode?: string;
+  secondary_location?: string;
+  commute_location?: string;
+  commute_time_walk?: number;
+  commute_time_cycle?: number;
+  commute_time_tube?: number;
+  move_in_date?: string;
+  min_price?: number;
+  max_price?: number;
+  min_bedrooms?: number;
+  max_bedrooms?: number;
+  min_bathrooms?: number;
+  max_bathrooms?: number;
+  furnishing?: string;
+  let_duration?: string;
+  property_type?: string;
+  building_style?: string[];
+  designer_furniture?: boolean;
+  house_shares?: string;
+  date_property_added?: string;
+  lifestyle_features?: string[];
+  social_features?: string[];
+  work_features?: string[];
+  convenience_features?: string[];
+  pet_friendly_features?: string[];
+  luxury_features?: string[];
+  hobbies?: string[];
+  ideal_living_environment?: string;
+  pets?: string;
+  smoker?: boolean;
+  additional_info?: string;
 }
 
 interface FormFieldErrors {
@@ -361,15 +359,53 @@ export default function PreferencesPage() {
 
     try {
       console.log("✅ Submitting preferences on step 11");
-      await preferencesAPI.create(data);
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/app/dashboard/tenant");
-      }, 2000);
+
+      // Convert "no-preference" values to null
+      const processedData = Object.keys(data).reduce((acc, key) => {
+        const value = data[key as keyof PreferencesFormData];
+        if (value === "no-preference" || value === "") {
+          acc[key as keyof PreferencesFormData] = null as any;
+        } else {
+          acc[key as keyof PreferencesFormData] = value;
+        }
+        return acc;
+      }, {} as PreferencesFormData);
+
+      const response = await preferencesAPI.create(processedData);
+
+      // Check if the response status indicates success
+      if (response.status >= 200 && response.status < 300) {
+        console.log("✅ Preferences saved successfully");
+        setSuccess(true);
+        setTimeout(() => {
+          router.push("/app/dashboard/tenant");
+        }, 2000);
+      } else {
+        console.error("❌ Backend returned error status:", response.status);
+        // Handle non-success status codes
+        if (response.data?.errors) {
+          const errors = response.data.errors;
+          const fieldErrors: FormFieldErrors = {};
+
+          // Map backend errors to form fields
+          Object.keys(errors).forEach((field) => {
+            fieldErrors[field] = Array.isArray(errors[field])
+              ? errors[field][0]
+              : errors[field];
+          });
+
+          setBackendErrors(fieldErrors);
+        } else {
+          setGeneralError(
+            response.data?.message ||
+              "Failed to save preferences. Please check your information and try again."
+          );
+        }
+      }
     } catch (error: any) {
       console.error("Error saving preferences:", error);
 
-      // Handle backend validation errors
+      // Handle network or other errors
       if (error?.response?.data?.errors) {
         const errors = error.response.data.errors;
         const fieldErrors: FormFieldErrors = {};
@@ -803,10 +839,7 @@ export default function PreferencesPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
-                    <RequiredLabel
-                      required
-                      tooltip="Minimum monthly rent you're willing to pay"
-                    >
+                    <RequiredLabel tooltip="Minimum monthly rent you're willing to pay">
                       Minimum Price (£/month)
                     </RequiredLabel>
                     <input
@@ -821,10 +854,7 @@ export default function PreferencesPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <RequiredLabel
-                      required
-                      tooltip="Maximum monthly rent you can afford"
-                    >
+                    <RequiredLabel tooltip="Maximum monthly rent you can afford">
                       Maximum Price (£/month)
                     </RequiredLabel>
                     <input
@@ -842,13 +872,16 @@ export default function PreferencesPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <RequiredLabel required tooltip="Minimum number of bedrooms">
+                  <RequiredLabel tooltip="Minimum number of bedrooms">
                     Bedrooms (min)
                   </RequiredLabel>
                   <select
                     {...register("min_bedrooms", { valueAsNumber: true })}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-400 transition-colors text-slate-900 bg-white"
                   >
+                    <option value="" className="text-slate-900">
+                      No Preference
+                    </option>
                     {[1, 2, 3, 4, 5].map((num) => (
                       <option key={num} value={num} className="text-slate-900">
                         {num} bedroom{num > 1 ? "s" : ""}
@@ -859,13 +892,16 @@ export default function PreferencesPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <RequiredLabel required tooltip="Maximum number of bedrooms">
+                  <RequiredLabel tooltip="Maximum number of bedrooms">
                     Bedrooms (max)
                   </RequiredLabel>
                   <select
                     {...register("max_bedrooms", { valueAsNumber: true })}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-400 transition-colors text-slate-900 bg-white"
                   >
+                    <option value="" className="text-slate-900">
+                      No Preference
+                    </option>
                     {[1, 2, 3, 4, 5].map((num) => (
                       <option key={num} value={num} className="text-slate-900">
                         {num} bedroom{num > 1 ? "s" : ""}
@@ -877,14 +913,10 @@ export default function PreferencesPage() {
 
                 <SelectField
                   label="Furnishing"
-                  required
                   tooltip="Whether you prefer furnished or unfurnished properties"
                   error={backendErrors.furnishing}
                   {...register("furnishing")}
                 >
-                  <option value="" className="text-slate-900">
-                    Select option
-                  </option>
                   <option value="furnished" className="text-slate-900">
                     Furnished
                   </option>
@@ -901,28 +933,24 @@ export default function PreferencesPage() {
 
                 <SelectField
                   label="Property Type"
-                  required
                   tooltip="What type of property you're looking for"
                   error={backendErrors.property_type}
                   {...register("property_type")}
                 >
-                  <option value="" className="text-slate-900">
-                    Select type
+                  <option value="any" className="text-slate-900">
+                    Any
+                  </option>
+                  <option value="flats" className="text-slate-900">
+                    Flats
+                  </option>
+                  <option value="houses" className="text-slate-900">
+                    Houses
                   </option>
                   <option value="studio" className="text-slate-900">
                     Studio
                   </option>
-                  <option value="apartment" className="text-slate-900">
-                    Apartment
-                  </option>
-                  <option value="house" className="text-slate-900">
-                    House
-                  </option>
-                  <option value="flat-share" className="text-slate-900">
-                    Flat Share
-                  </option>
-                  <option value="no-preference" className="text-slate-900">
-                    No Preference
+                  <option value="others" className="text-slate-900">
+                    Others (specify)
                   </option>
                 </SelectField>
               </div>
@@ -1375,14 +1403,10 @@ export default function PreferencesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <SelectField
                     label="Ideal Living Environment"
-                    required
                     tooltip="The type of household atmosphere you prefer"
                     error={backendErrors.ideal_living_environment}
                     {...register("ideal_living_environment")}
                   >
-                    <option value="" className="text-black">
-                      Select environment
-                    </option>
                     <option value="quiet-professional" className="text-black">
                       Quiet Professional
                     </option>
@@ -1405,14 +1429,10 @@ export default function PreferencesPage() {
 
                   <SelectField
                     label="Pets"
-                    required
                     tooltip="Important for matching with pet-friendly accommodations"
                     error={backendErrors.pets}
                     {...register("pets")}
                   >
-                    <option value="" className="text-black">
-                      Select option
-                    </option>
                     <option value="none" className="text-black">
                       No Pets
                     </option>
