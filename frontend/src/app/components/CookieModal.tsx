@@ -7,16 +7,18 @@ const CookieNotification = () => {
   const [isHiding, setIsHiding] = useState(false);
 
   useEffect(() => {
-    // Проверяем, согласился ли пользователь с cookies ранее
-    const cookieConsent = localStorage.getItem("cookieConsent");
+    // Check if cookie consent has been given - only on client side
+    if (typeof window !== "undefined") {
+      const cookieConsent = localStorage.getItem("cookieConsent");
 
-    if (!cookieConsent) {
-      // Небольшая задержка перед показом для плавности
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 1000);
+      if (!cookieConsent) {
+        // Small delay before showing for smooth UX
+        const timer = setTimeout(() => {
+          setIsVisible(true);
+        }, 1000);
 
-      return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      }
     }
   }, []);
 

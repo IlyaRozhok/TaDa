@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Remove standalone output for Vercel deployment
-  // output: "standalone", // This is for containerized deployments, not needed for Vercel
+  // Enable standalone output for Docker deployment
+  output: "standalone", // This is for containerized deployments
   poweredByHeader: false,
   generateEtags: false,
-  compress: true, // Enable compression for Vercel
+  compress: true, // Enable compression for production
   experimental: {
     turbo: undefined,
     serverActions: {

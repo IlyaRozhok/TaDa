@@ -28,11 +28,13 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
 
   // Load saved language from localStorage on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedLanguage = localStorage.getItem("language") as Language;
-      if (savedLanguage && (savedLanguage === "en" || savedLanguage === "ru")) {
-        setLanguageState(savedLanguage);
-      }
+    // Move localStorage access to useEffect for SSR compatibility
+    const savedLanguage =
+      typeof window !== "undefined"
+        ? (localStorage.getItem("language") as Language)
+        : null;
+    if (savedLanguage && (savedLanguage === "en" || savedLanguage === "ru")) {
+      setLanguage(savedLanguage);
     }
   }, []);
 

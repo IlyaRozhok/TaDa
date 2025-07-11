@@ -5,6 +5,9 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 // Entities
 import { User, Preferences } from "./entities";
 
+// Controllers
+import { AppController } from "./app.controller";
+
 // Modules
 import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
@@ -35,7 +38,7 @@ import { S3Service } from "./common/services/s3.service";
     ShortlistModule,
     FavouritesModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [S3Service],
 })
 export class AppModule {}
