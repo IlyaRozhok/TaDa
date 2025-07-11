@@ -3,12 +3,14 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
+import { PropertyMedia } from "./property-media.entity";
 
 @Entity("properties")
 export class Property {
@@ -101,4 +103,7 @@ export class Property {
   @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: "operator_id" })
   operator: User;
+
+  @OneToMany(() => PropertyMedia, (media) => media.property)
+  media: PropertyMedia[];
 }

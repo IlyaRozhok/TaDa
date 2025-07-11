@@ -11,8 +11,9 @@ import {
   UseInterceptors,
   UploadedFiles,
   Patch,
+  UploadedFile,
 } from "@nestjs/common";
-import { FilesInterceptor } from "@nestjs/platform-express";
+import { FilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiTags,
   ApiOperation,
@@ -30,85 +31,49 @@ import {
   imageUploadOptions,
   convertFilePathsToUrls,
 } from "../../common/utils/file-upload.util";
-
 @ApiTags("Properties")
 @Controller("properties")
 export class PropertiesController {
   constructor(private readonly propertiesService: PropertiesService) {}
 
   @ApiOperation({
-    summary: "Create a new property with images (Operators only)",
+    summary: "Create property with pre-uploaded media URLs (Operators only)",
   })
   @ApiResponse({
     status: 201,
     description: "Property created successfully",
     type: Property,
   })
-  @ApiConsumes("multipart/form-data")
+  @ApiConsumes("application/json")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("operator")
-  @UseInterceptors(FilesInterceptor("images", 10, imageUploadOptions))
   @Post()
-  async create(
-    @Body() createPropertyDto: CreatePropertyDto,
-    @UploadedFiles() files: Express.Multer.File[],
-    @Request() req
-  ) {
-    // Handle FormData arrays correctly - lifestyle_features[] comes as a single field
-    if (
-      createPropertyDto.lifestyle_features &&
-      typeof createPropertyDto.lifestyle_features === "string"
-    ) {
-      // If it's a single string, convert to array
-      createPropertyDto.lifestyle_features = [
-        createPropertyDto.lifestyle_features,
-      ];
-    }
-
-    // Convert uploaded files to URLs
-    const imageUrls = files
-      ? convertFilePathsToUrls(files, req.protocol + "://" + req.get("host"))
-      : [];
-
-    const propertyData = {
-      ...createPropertyDto,
-      images: imageUrls,
-    };
-
-    return await this.propertiesService.create(propertyData, req.user.id);
+  async create(@Body() createPropertyDto: CreatePropertyDto, @Request() req) {
+    return await this.propertiesService.create(createPropertyDto, req.user.id);
   }
 
-  @ApiOperation({ summary: "Update property with images (Operators only)" })
+  @ApiOperation({ summary: "Update property data (Operators only)" })
   @ApiResponse({
     status: 200,
     description: "Property updated successfully",
     type: Property,
   })
-  @ApiConsumes("multipart/form-data")
+  @ApiConsumes("application/json")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("operator")
-  @UseInterceptors(FilesInterceptor("images", 10, imageUploadOptions))
   @Patch(":id")
   async update(
     @Param("id") id: string,
     @Body() updatePropertyDto: Partial<CreatePropertyDto>,
-    @UploadedFiles() files: Express.Multer.File[],
     @Request() req
   ) {
-    // Convert uploaded files to URLs if any
-    const imageUrls =
-      files && files.length > 0
-        ? convertFilePathsToUrls(files, req.protocol + "://" + req.get("host"))
-        : undefined;
-
-    const propertyData = {
-      ...updatePropertyDto,
-      ...(imageUrls && { images: imageUrls }),
-    };
-
-    return await this.propertiesService.update(id, propertyData, req.user.id);
+    return await this.propertiesService.update(
+      id,
+      updatePropertyDto,
+      req.user.id
+    );
   }
 
   @ApiOperation({ summary: "Get operator's properties (Operators only)" })
@@ -216,5 +181,48 @@ export class PropertiesController {
   @Delete(":id")
   async remove(@Param("id") id: string, @Request() req) {
     return await this.propertiesService.remove(id, req.user.id);
+  }
+
+  @ApiOperation({
+    summary: "Create property with local file upload (Operators only)",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Property created successfully",
+    type: Property,
+  })
+  @ApiConsumes("multipart/form-data")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("operator")
+  @UseInterceptors(FilesInterceptor("images", 10, imageUploadOptions))
+  @Post("with-upload")
+  async createWithUpload(
+    @Body() createPropertyDto: CreatePropertyDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Request() req
+  ) {
+    // Handle FormData arrays correctly - lifestyle_features[] comes as a single field
+    if (
+      createPropertyDto.lifestyle_features &&
+      typeof createPropertyDto.lifestyle_features === "string"
+    ) {
+      // If it's a single string, convert to array
+      createPropertyDto.lifestyle_features = [
+        createPropertyDto.lifestyle_features,
+      ];
+    }
+
+    // Convert uploaded files to URLs
+    const imageUrls = files
+      ? convertFilePathsToUrls(files, req.protocol + "://" + req.get("host"))
+      : [];
+
+    const propertyData = {
+      ...createPropertyDto,
+      images: imageUrls,
+    };
+
+    return await this.propertiesService.create(propertyData, req.user.id);
   }
 }

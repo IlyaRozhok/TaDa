@@ -11,31 +11,31 @@ import { UsersModule } from "./modules/users/users.module";
 import { PreferencesModule } from "./modules/preferences/preferences.module";
 import { MatchingModule } from "./modules/matching/matching.module";
 import { PropertiesModule } from "./modules/properties/properties.module";
+import { PropertyMediaModule } from "./modules/property-media/property-media.module";
 import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { FavouritesModule } from "./modules/favourites/favourites.module";
 import { dataSourceOptions } from "./database/data-source";
+import { S3Service } from "./common/services/s3.service";
 
 @Module({
   imports: [
-    // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ".env",
     }),
 
-    // Database
     TypeOrmModule.forRoot(dataSourceOptions),
 
-    // Feature modules
     AuthModule,
     UsersModule,
     PreferencesModule,
     MatchingModule,
     PropertiesModule,
+    PropertyMediaModule,
     ShortlistModule,
     FavouritesModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [S3Service],
 })
 export class AppModule {}

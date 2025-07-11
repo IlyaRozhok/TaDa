@@ -2,6 +2,7 @@ import { DataSource, DataSourceOptions } from "typeorm";
 import { User } from "../entities/user.entity";
 import { Preferences } from "../entities/preferences.entity";
 import { Property } from "../entities/property.entity";
+import { PropertyMedia } from "../entities/property-media.entity";
 import { Shortlist } from "../entities/shortlist.entity";
 import { Favourite } from "../entities/favourite.entity";
 
@@ -12,7 +13,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DB_USERNAME || "postgres",
   password: process.env.DB_PASSWORD || "password",
   database: process.env.DB_NAME || "rental_platform",
-  entities: [User, Preferences, Property, Shortlist, Favourite],
+  entities: [User, Preferences, Property, PropertyMedia, Shortlist, Favourite],
   migrations: [__dirname + "/migrations/*{.ts,.js}"],
   synchronize: true,
   logging: process.env.NODE_ENV === "development",

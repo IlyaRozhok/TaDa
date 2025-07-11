@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { ConfigService } from "@nestjs/config";
 import * as cors from "cors";
+import * as path from "path";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -14,15 +15,38 @@ async function bootstrap() {
   app.use(require("express").json({ limit: "10mb" }));
   app.use(require("express").urlencoded({ limit: "10mb", extended: true }));
 
-  // More permissive CORS for development
+  // Статическая раздача файлов для uploads
+  const uploadsPath =
+    process.env.NODE_ENV === "production"
+      ? path.join(__dirname, "..", "uploads")
+      : path.join(process.cwd(), "uploads");
+
+  console.log(`📁 Serving static files from: ${uploadsPath}`);
+  app.useStaticAssets(uploadsPath, {
+    prefix: "/uploads/",
+  });
+
+  // CORS configuration for both development and production
+  const corsOrigins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+  ];
+
+  // Add Vercel domains for production
+  if (process.env.NODE_ENV === "production") {
+    corsOrigins.push(
+      /^https:\/\/.*\.vercel\.app$/,
+      /^https:\/\/.*\.vercel\.com$/,
+      // Add your custom domain here if you have one
+      // "https://your-custom-domain.com"
+    );
+  }
+
   app.use(
     cors({
-      origin: [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-      ], // Specific origins
+      origin: corsOrigins,
       credentials: false,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
       allowedHeaders: [

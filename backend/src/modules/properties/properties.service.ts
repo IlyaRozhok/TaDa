@@ -11,6 +11,7 @@ import { MatchingService } from "../matching/matching.service";
 import { Favourite } from "../../entities/favourite.entity";
 import { Shortlist } from "../../entities/shortlist.entity";
 import { User } from "../../entities/user.entity";
+import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
 export class PropertiesService {
@@ -23,7 +24,8 @@ export class PropertiesService {
     private readonly shortlistRepository: Repository<Shortlist>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly matchingService: MatchingService
+    private readonly matchingService: MatchingService,
+    private readonly s3Service: S3Service
   ) {}
 
   async create(
@@ -35,7 +37,102 @@ export class PropertiesService {
       operator_id: operatorId,
     });
 
-    return await this.propertyRepository.save(property);
+    const savedProperty = await this.propertyRepository.save(property);
+
+    // Trigger matching for all tenants
+    await this.matchingService.generateMatches(savedProperty.id);
+
+    return savedProperty;
+  }
+
+  /**
+   * Update presigned URLs for property media
+   */
+  private async updateMediaPresignedUrls(
+    property: Property
+  ): Promise<Property> {
+    if (property.media && property.media.length > 0) {
+      for (const media of property.media) {
+        try {
+          media.url = await this.s3Service.getPresignedUrl(media.s3_key);
+        } catch (error) {
+          console.error(
+            "Error generating presigned URL for media:",
+            media.id,
+            error
+          );
+          // Fallback to S3 direct URL
+          media.url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${media.s3_key}`;
+        }
+      }
+    }
+    return property;
+  }
+
+  /**
+   * Update presigned URLs for multiple properties
+   */
+  private async updateMultiplePropertiesMediaUrls(
+    properties: Property[]
+  ): Promise<Property[]> {
+    for (const property of properties) {
+      await this.updateMediaPresignedUrls(property);
+    }
+    return properties;
+  }
+
+  async findAll(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    properties: Property[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const [properties, total] = await this.propertyRepository.findAndCount({
+      relations: ["operator", "media"],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { created_at: "DESC" },
+    });
+
+    // Update presigned URLs for all properties
+    const propertiesWithUrls =
+      await this.updateMultiplePropertiesMediaUrls(properties);
+
+    return {
+      properties: propertiesWithUrls,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findOne(id: string): Promise<Property> {
+    const property = await this.propertyRepository.findOne({
+      where: { id },
+      relations: ["operator", "media"],
+    });
+
+    if (!property) {
+      throw new NotFoundException("Property not found");
+    }
+
+    // Update presigned URLs for media
+    return await this.updateMediaPresignedUrls(property);
+  }
+
+  async findByOperator(operatorId: string): Promise<Property[]> {
+    const properties = await this.propertyRepository.find({
+      where: { operator_id: operatorId },
+      relations: ["media"],
+      order: { created_at: "DESC" },
+    });
+
+    return await this.updateMultiplePropertiesMediaUrls(properties);
   }
 
   async update(
@@ -43,248 +140,134 @@ export class PropertiesService {
     updatePropertyDto: Partial<CreatePropertyDto>,
     operatorId: string
   ): Promise<Property> {
-    const property = await this.propertyRepository.findOne({
-      where: { id },
-    });
+    const property = await this.findOne(id);
 
-    if (!property) {
-      throw new NotFoundException("Property not found");
-    }
-
-    // Check if the operator owns this property
     if (property.operator_id !== operatorId) {
       throw new ForbiddenException("You can only update your own properties");
     }
 
-    // Update the property
-    await this.propertyRepository.update(id, updatePropertyDto);
+    Object.assign(property, updatePropertyDto);
+    const updatedProperty = await this.propertyRepository.save(property);
 
-    // Return the updated property
-    return await this.propertyRepository.findOne({
-      where: { id },
-      relations: ["operator"],
+    // Re-trigger matching after update
+    await this.matchingService.generateMatches(updatedProperty.id);
+
+    return updatedProperty;
+  }
+
+  async remove(id: string, operatorId: string): Promise<void> {
+    const property = await this.findOne(id);
+
+    if (property.operator_id !== operatorId) {
+      throw new ForbiddenException("You can only delete your own properties");
+    }
+
+    await this.propertyRepository.remove(property);
+  }
+
+  async getPropertyFavourites(propertyId: string): Promise<Favourite[]> {
+    return await this.favouriteRepository.find({
+      where: { propertyId: propertyId },
+      relations: ["user"],
     });
   }
 
-  async findByOperator(operatorId: string): Promise<Property[]> {
+  async getPropertyShortlists(propertyId: string): Promise<Shortlist[]> {
+    return await this.shortlistRepository.find({
+      where: { propertyId: propertyId },
+      relations: ["user"],
+    });
+  }
+
+  async getPropertiesForMatching(): Promise<Property[]> {
     return await this.propertyRepository.find({
-      where: { operator_id: operatorId },
-      relations: ["operator"],
+      relations: ["media"],
+      order: { created_at: "DESC" },
+    });
+  }
+
+  async getMatchingProperties(userIds: string[]): Promise<Property[]> {
+    return await this.propertyRepository.find({
+      where: {
+        operator_id: In(userIds),
+      },
+      relations: ["media"],
       order: { created_at: "DESC" },
     });
   }
 
   async findFeaturedProperties(limit: number = 6): Promise<Property[]> {
-    return await this.propertyRepository.find({
-      relations: ["operator"],
+    const properties = await this.propertyRepository.find({
+      relations: ["operator", "media"],
       order: { created_at: "DESC" },
       take: limit,
     });
+
+    return await this.updateMultiplePropertiesMediaUrls(properties);
   }
 
   async findMatchedProperties(
-    tenantId: string,
+    userId: string,
     limit: number = 6
   ): Promise<Property[]> {
-    // Use the advanced matching service
-    return await this.matchingService.findMatchedProperties(tenantId, limit);
+    return await this.matchingService.findMatchedProperties(userId, limit);
   }
 
-  async findAll(): Promise<Property[]> {
-    return await this.propertyRepository.find({
-      relations: ["operator"],
-      order: { created_at: "DESC" },
-    });
-  }
-
-  async findOne(id: string): Promise<Property> {
-    const property = await this.propertyRepository.findOne({
-      where: { id },
-      relations: ["operator"],
+  async getOperatorStatistics(operatorId: string): Promise<any> {
+    const totalProperties = await this.propertyRepository.count({
+      where: { operator_id: operatorId },
     });
 
-    if (!property) {
-      throw new NotFoundException("Property not found");
-    }
+    const totalFavourites = await this.favouriteRepository
+      .createQueryBuilder("favourite")
+      .innerJoin("favourite.property", "property")
+      .where("property.operator_id = :operatorId", { operatorId })
+      .getCount();
 
-    return property;
-  }
-
-  async remove(id: string, operatorId: string): Promise<void> {
-    const property = await this.propertyRepository.findOne({
-      where: { id },
-    });
-
-    if (!property) {
-      throw new NotFoundException("Property not found");
-    }
-
-    // Check if the operator owns this property
-    if (property.operator_id !== operatorId) {
-      throw new ForbiddenException("You can only delete your own properties");
-    }
-
-    await this.propertyRepository.delete(id);
-  }
-
-  async getInterestedTenants(propertyId: string, operatorId: string) {
-    // First verify the property belongs to this operator
-    const property = await this.propertyRepository.findOne({
-      where: { id: propertyId },
-    });
-
-    if (!property) {
-      throw new NotFoundException("Property not found");
-    }
-
-    if (property.operator_id !== operatorId) {
-      throw new ForbiddenException(
-        "You can only view tenants for your own properties"
-      );
-    }
-
-    // Get tenants who favourited this property
-    const favourites = await this.favouriteRepository.find({
-      where: { propertyId },
-      relations: ["user"],
-    });
-
-    // Get tenants who shortlisted this property
-    const shortlists = await this.shortlistRepository.find({
-      where: { propertyId },
-      relations: ["user"],
-    });
-
-    // Combine and deduplicate tenants
-    const tenantMap = new Map();
-
-    favourites.forEach((fav) => {
-      if (fav.user && !fav.user.is_operator) {
-        tenantMap.set(fav.user.id, {
-          user: {
-            id: fav.user.id,
-            email: fav.user.email,
-            full_name: fav.user.full_name,
-            phone: fav.user.phone,
-            created_at: fav.user.created_at,
-          },
-          interactions: {
-            favourited: true,
-            favourited_at: fav.created_at,
-            shortlisted: false,
-            shortlisted_at: null,
-          },
-        });
-      }
-    });
-
-    shortlists.forEach((short) => {
-      if (short.user && !short.user.is_operator) {
-        const existing = tenantMap.get(short.user.id);
-        if (existing) {
-          existing.interactions.shortlisted = true;
-          existing.interactions.shortlisted_at = short.created_at;
-        } else {
-          tenantMap.set(short.user.id, {
-            user: {
-              id: short.user.id,
-              email: short.user.email,
-              full_name: short.user.full_name,
-              phone: short.user.phone,
-              created_at: short.user.created_at,
-            },
-            interactions: {
-              favourited: false,
-              favourited_at: null,
-              shortlisted: true,
-              shortlisted_at: short.created_at,
-            },
-          });
-        }
-      }
-    });
+    const totalShortlists = await this.shortlistRepository
+      .createQueryBuilder("shortlist")
+      .innerJoin("shortlist.property", "property")
+      .where("property.operator_id = :operatorId", { operatorId })
+      .getCount();
 
     return {
-      property: {
-        id: property.id,
-        title: property.title,
-        address: property.address,
-        price: property.price,
-      },
-      interested_tenants: Array.from(tenantMap.values()),
-      total_count: tenantMap.size,
+      totalProperties,
+      totalFavourites,
+      totalShortlists,
     };
   }
 
-  async getOperatorStatistics(operatorId: string) {
-    // Get total properties for this operator
-    const propertiesCount = await this.propertyRepository.count({
-      where: { operator_id: operatorId },
-    });
+  async getInterestedTenants(
+    propertyId: string,
+    operatorId: string
+  ): Promise<any> {
+    const property = await this.findOne(propertyId);
 
-    // Get properties owned by this operator
-    const properties = await this.propertyRepository.find({
-      where: { operator_id: operatorId },
-      select: ["id"],
-    });
-
-    const propertyIds = properties.map((p) => p.id);
-
-    if (propertyIds.length === 0) {
-      return {
-        properties: 0,
-        tenants: 0,
-        total_interactions: 0,
-        estimated_revenue: 0,
-      };
+    if (property.operator_id !== operatorId) {
+      throw new ForbiddenException(
+        "You can only view interested tenants for your own properties"
+      );
     }
 
-    // Get unique tenants who interacted with operator's properties
-    const uniqueTenantIds = new Set<string>();
-
-    // Get favourites for operator's properties
     const favourites = await this.favouriteRepository.find({
-      where: { propertyId: In(propertyIds) },
+      where: { propertyId },
       relations: ["user"],
     });
 
-    favourites.forEach((fav) => {
-      if (fav.user && !fav.user.is_operator) {
-        uniqueTenantIds.add(fav.user.id);
-      }
-    });
-
-    // Get shortlists for operator's properties
     const shortlists = await this.shortlistRepository.find({
-      where: { propertyId: In(propertyIds) },
+      where: { propertyId },
       relations: ["user"],
     });
-
-    shortlists.forEach((short) => {
-      if (short.user && !short.user.is_operator) {
-        uniqueTenantIds.add(short.user.id);
-      }
-    });
-
-    // Calculate total interactions
-    const totalInteractions = favourites.length + shortlists.length;
-
-    // Calculate estimated revenue from all properties
-    const propertiesWithPrice = await this.propertyRepository.find({
-      where: { operator_id: operatorId },
-      select: ["price"],
-    });
-
-    const estimatedRevenue = propertiesWithPrice.reduce(
-      (total, prop) => total + prop.price,
-      0
-    );
 
     return {
-      properties: propertiesCount,
-      tenants: uniqueTenantIds.size,
-      total_interactions: totalInteractions,
-      estimated_revenue: estimatedRevenue,
+      favourites: favourites.map((f) => ({
+        user: f.user,
+        date: f.created_at,
+      })),
+      shortlists: shortlists.map((s) => ({
+        user: s.user,
+        date: s.created_at,
+      })),
     };
   }
 }

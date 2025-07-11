@@ -9,6 +9,7 @@ export interface MatchingResult {
   property: Property;
   matchScore: number;
   matchReasons: string[];
+  perfectMatch: boolean;
 }
 
 @Injectable()
@@ -23,11 +24,10 @@ export class MatchingService {
   ) {}
 
   /**
-   * Find properties that match user preferences based on the specified rules:
-   * - Property price within min_price and max_price
-   * - Property bedrooms ≥ user preferred bedrooms
-   * - Property type matches user's selection
-   * - lifestyle_features must intersect with user preferences
+   * Find properties that match user preferences with flexible scoring:
+   * - No hard filters (except critical ones like price if specified)
+   * - All properties are considered, scored based on preference matches
+   * - Null/any values are ignored in scoring
    */
   async findMatchedProperties(
     userId: string,
@@ -38,241 +38,183 @@ export class MatchingService {
       where: { user_id: userId },
     });
 
+    // Get all properties
+    const allProperties = await this.propertyRepository.find({
+      relations: ["operator", "media"],
+      order: { created_at: "DESC" },
+    });
+
     if (!preferences) {
-      // If no preferences set, return featured properties
-      return await this.propertyRepository.find({
-        relations: ["operator"],
-        order: { created_at: "DESC" },
-        take: limit,
-      });
+      // If no preferences set, return properties by date
+      return allProperties.slice(0, limit);
     }
 
-    // Build query with filters
-    const queryBuilder = this.propertyRepository
-      .createQueryBuilder("property")
-      .leftJoinAndSelect("property.operator", "operator");
+    // Apply only critical hard filters (price range if both min and max specified)
+    let candidateProperties = allProperties;
 
-    // Rule 1: Property price within min_price and max_price
-    if (preferences.min_price !== null && preferences.min_price > 0) {
-      queryBuilder.andWhere("property.price >= :minPrice", {
-        minPrice: preferences.min_price,
-      });
-    }
-
-    if (preferences.max_price !== null && preferences.max_price > 0) {
-      queryBuilder.andWhere("property.price <= :maxPrice", {
-        maxPrice: preferences.max_price,
-      });
-    }
-
-    // Rule 2: Property bedrooms ≥ user preferred minimum bedrooms
-    if (preferences.min_bedrooms !== null && preferences.min_bedrooms > 0) {
-      queryBuilder.andWhere("property.bedrooms >= :minBedrooms", {
-        minBedrooms: preferences.min_bedrooms,
-      });
-    }
-
-    // Optional: Property bedrooms ≤ user preferred maximum bedrooms
-    if (preferences.max_bedrooms !== null && preferences.max_bedrooms > 0) {
-      queryBuilder.andWhere("property.bedrooms <= :maxBedrooms", {
-        maxBedrooms: preferences.max_bedrooms,
-      });
-    }
-
-    // Rule 3: Property type matches user's selection
-    if (preferences.property_type && preferences.property_type !== "any") {
-      queryBuilder.andWhere(
-        "LOWER(property.property_type) = LOWER(:propertyType)",
-        {
-          propertyType: preferences.property_type,
-        }
+    // Only apply price filter if both min and max are specified and reasonable
+    if (
+      preferences.min_price !== null &&
+      preferences.min_price > 0 &&
+      preferences.max_price !== null &&
+      preferences.max_price > 0 &&
+      preferences.min_price <= preferences.max_price
+    ) {
+      candidateProperties = candidateProperties.filter(
+        (property) =>
+          property.price >= preferences.min_price! &&
+          property.price <= preferences.max_price!
       );
     }
 
-    // Furnishing preference
-    if (preferences.furnishing && preferences.furnishing !== "any") {
-      queryBuilder.andWhere("LOWER(property.furnishing) = LOWER(:furnishing)", {
-        furnishing: preferences.furnishing,
-      });
-    }
-
-    // Get all properties that match basic criteria
-    let matchingProperties = await queryBuilder
-      .orderBy("property.created_at", "DESC")
-      .getMany();
-
-    // Rule 4: lifestyle_features must intersect with user preferences
-    // Apply lifestyle features filtering
-    matchingProperties = this.filterByLifestyleFeatures(
-      matchingProperties,
-      preferences
-    );
-
-    // Sort by match score (properties with more matching features first)
-    const scoredProperties = matchingProperties.map((property) => ({
+    // Score and sort all candidate properties
+    const scoredProperties = candidateProperties.map((property) => ({
       property,
       score: this.calculateMatchScore(property, preferences),
     }));
 
-    scoredProperties.sort((a, b) => b.score - a.score);
+    // Sort by score (highest first), then by date (newest first)
+    scoredProperties.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return (
+        new Date(b.property.created_at).getTime() -
+        new Date(a.property.created_at).getTime()
+      );
+    });
 
     return scoredProperties.slice(0, limit).map((scored) => scored.property);
   }
 
   /**
-   * Filter properties by lifestyle features intersection
-   */
-  private filterByLifestyleFeatures(
-    properties: Property[],
-    preferences: Preferences
-  ): Property[] {
-    // Collect all user lifestyle preferences
-    const userFeatures = new Set<string>();
-
-    if (preferences.lifestyle_features) {
-      preferences.lifestyle_features.forEach((feature) =>
-        userFeatures.add(feature.toLowerCase())
-      );
-    }
-    if (preferences.social_features) {
-      preferences.social_features.forEach((feature) =>
-        userFeatures.add(feature.toLowerCase())
-      );
-    }
-    if (preferences.work_features) {
-      preferences.work_features.forEach((feature) =>
-        userFeatures.add(feature.toLowerCase())
-      );
-    }
-    if (preferences.convenience_features) {
-      preferences.convenience_features.forEach((feature) =>
-        userFeatures.add(feature.toLowerCase())
-      );
-    }
-    if (preferences.pet_friendly_features) {
-      preferences.pet_friendly_features.forEach((feature) =>
-        userFeatures.add(feature.toLowerCase())
-      );
-    }
-    if (preferences.luxury_features) {
-      preferences.luxury_features.forEach((feature) =>
-        userFeatures.add(feature.toLowerCase())
-      );
-    }
-
-    // If user has no lifestyle preferences, return all properties
-    if (userFeatures.size === 0) {
-      return properties;
-    }
-
-    // Filter properties that have at least one matching lifestyle feature
-    return properties.filter((property) => {
-      if (
-        !property.lifestyle_features ||
-        property.lifestyle_features.length === 0
-      ) {
-        return false; // Property has no features, can't match
-      }
-
-      // Check if there's any intersection between property and user features
-      const propertyFeatures = property.lifestyle_features.map((f) =>
-        f.toLowerCase()
-      );
-      return propertyFeatures.some((feature) => userFeatures.has(feature));
-    });
-  }
-
-  /**
-   * Calculate match score for sorting (normalized to 0-100)
+   * Calculate match score with dynamic weights based on user preferences
+   * Only considers criteria where user has actual preferences (not null/any)
    */
   private calculateMatchScore(
     property: Property,
     preferences: Preferences
   ): number {
-    let totalScore = 0;
-    let maxPossibleScore = 0;
+    const scores: { [key: string]: number } = {};
+    const baseWeights = {
+      price: 25,
+      bedrooms: 20,
+      property_type: 20,
+      furnishing: 15,
+      lifestyle_features: 20,
+    };
 
-    // Price match (weight: 25%)
-    if (preferences.min_price && preferences.max_price) {
+    // Price match
+    if (
+      preferences.min_price !== null &&
+      preferences.min_price > 0 &&
+      preferences.max_price !== null &&
+      preferences.max_price > 0
+    ) {
       const priceRange = preferences.max_price - preferences.min_price;
-      const idealPrice = preferences.min_price + priceRange * 0.3; // Prefer lower end
-      const priceDiff = Math.abs(property.price - idealPrice);
-      const priceScore = Math.max(0, 100 - (priceDiff / priceRange) * 100);
-      totalScore += priceScore * 0.25;
-      maxPossibleScore += 100 * 0.25;
+      if (priceRange > 0) {
+        const idealPrice = preferences.min_price + priceRange * 0.3; // Prefer lower end
+        const priceDiff = Math.abs(property.price - idealPrice);
+        scores.price = Math.max(0, 100 - (priceDiff / priceRange) * 100);
+      } else {
+        // Single price point
+        scores.price = property.price === preferences.min_price ? 100 : 0;
+      }
     }
 
-    // Bedroom match (weight: 20%)
-    if (preferences.min_bedrooms) {
+    // Bedroom match
+    if (
+      (preferences.min_bedrooms !== null && preferences.min_bedrooms > 0) ||
+      (preferences.max_bedrooms !== null && preferences.max_bedrooms > 0)
+    ) {
       let bedroomScore = 0;
-      if (property.bedrooms >= preferences.min_bedrooms) {
-        bedroomScore = 60; // Base match score
-        if (
-          preferences.max_bedrooms &&
-          property.bedrooms <= preferences.max_bedrooms
-        ) {
-          bedroomScore = 100; // Perfect range match
-        } else if (property.bedrooms === preferences.min_bedrooms) {
-          bedroomScore = 100; // Exact minimum match
+
+      // Check if property meets minimum requirement
+      if (preferences.min_bedrooms !== null && preferences.min_bedrooms > 0) {
+        if (property.bedrooms >= preferences.min_bedrooms) {
+          bedroomScore = 60; // Base match score
+
+          // Bonus for exact minimum match
+          if (property.bedrooms === preferences.min_bedrooms) {
+            bedroomScore = 100;
+          }
+        }
+      } else {
+        bedroomScore = 50; // Neutral score if no minimum specified
+      }
+
+      // Check if property meets maximum requirement
+      if (preferences.max_bedrooms !== null && preferences.max_bedrooms > 0) {
+        if (property.bedrooms <= preferences.max_bedrooms) {
+          if (bedroomScore > 0) {
+            bedroomScore = 100; // Perfect range match
+          } else {
+            bedroomScore = 60; // Meets max but not min
+          }
+        } else {
+          bedroomScore = Math.max(0, bedroomScore - 30); // Penalty for exceeding max
         }
       }
-      totalScore += bedroomScore * 0.2;
-      maxPossibleScore += 100 * 0.2;
+
+      scores.bedrooms = bedroomScore;
     }
 
-    // Property type match (weight: 20%)
+    // Property type match
     if (preferences.property_type && preferences.property_type !== "any") {
-      const typeScore =
+      scores.property_type =
         property.property_type.toLowerCase() ===
         preferences.property_type.toLowerCase()
           ? 100
           : 0;
-      totalScore += typeScore * 0.2;
-      maxPossibleScore += 100 * 0.2;
     }
 
-    // Furnishing match (weight: 15%)
+    // Furnishing match
     if (preferences.furnishing && preferences.furnishing !== "any") {
-      const furnishingScore =
+      scores.furnishing =
         property.furnishing.toLowerCase() ===
         preferences.furnishing.toLowerCase()
           ? 100
           : 0;
-      totalScore += furnishingScore * 0.15;
-      maxPossibleScore += 100 * 0.15;
     }
 
-    // Lifestyle features match (weight: 20%)
+    // Lifestyle features match
     const lifestyleScore = this.calculateLifestyleFeaturesScore(
       property,
       preferences
     );
-    totalScore += lifestyleScore * 0.2;
-    maxPossibleScore += 100 * 0.2;
-
-    // Normalize to 0-100 scale
-    if (maxPossibleScore === 0) {
-      return 0;
+    if (lifestyleScore !== null) {
+      scores.lifestyle_features = lifestyleScore;
     }
 
-    const normalizedScore = (totalScore / maxPossibleScore) * 100;
-    return Math.min(100, Math.max(0, normalizedScore));
+    // Calculate final score with dynamic weights
+    const activeScores = Object.keys(scores);
+    if (activeScores.length === 0) {
+      return 0; // No preferences to match
+    }
+
+    // Calculate total weight of active criteria
+    const totalWeight = activeScores.reduce(
+      (sum, key) => sum + baseWeights[key],
+      0
+    );
+
+    // Calculate weighted score
+    const weightedScore = activeScores.reduce((sum, key) => {
+      const weight = baseWeights[key] / totalWeight; // Normalize weight
+      return sum + scores[key] * weight;
+    }, 0);
+
+    return Math.min(100, Math.max(0, weightedScore));
   }
 
   /**
    * Calculate lifestyle features matching score
+   * Returns null if user has no lifestyle preferences
    */
   private calculateLifestyleFeaturesScore(
     property: Property,
     preferences: Preferences
-  ): number {
-    if (
-      !property.lifestyle_features ||
-      property.lifestyle_features.length === 0
-    ) {
-      return 0;
-    }
-
+  ): number | null {
     // Collect all user lifestyle preferences
     const userFeatures = new Set<string>();
 
@@ -307,7 +249,16 @@ export class MatchingService {
       );
     }
 
+    // If user has no lifestyle preferences, return null (don't consider this criteria)
     if (userFeatures.size === 0) {
+      return null;
+    }
+
+    // If property has no lifestyle features, return 0 (preference not met)
+    if (
+      !property.lifestyle_features ||
+      property.lifestyle_features.length === 0
+    ) {
       return 0;
     }
 
@@ -337,7 +288,7 @@ export class MatchingService {
 
     if (!preferences) {
       const properties = await this.propertyRepository.find({
-        relations: ["operator"],
+        relations: ["operator", "media"],
         order: { created_at: "DESC" },
         take: limit,
       });
@@ -346,6 +297,7 @@ export class MatchingService {
         property,
         matchScore: 0,
         matchReasons: ["No preferences set"],
+        perfectMatch: false,
       }));
     }
 
@@ -354,11 +306,13 @@ export class MatchingService {
     return properties.slice(0, limit).map((property) => {
       const score = this.calculateMatchScore(property, preferences);
       const reasons = this.getMatchReasons(property, preferences);
+      const perfectMatch = this.isPerfectMatch(property, preferences);
 
       return {
         property,
         matchScore: Math.round(score),
         matchReasons: reasons,
+        perfectMatch,
       };
     });
   }
@@ -482,5 +436,133 @@ export class MatchingService {
       f.toLowerCase()
     );
     return propertyFeatures.filter((feature) => userFeatures.has(feature));
+  }
+
+  /**
+   * Determine if property is a perfect match for user preferences
+   * Perfect match means all specified preferences are met
+   */
+  private isPerfectMatch(
+    property: Property,
+    preferences: Preferences
+  ): boolean {
+    // Check price range
+    if (
+      preferences.min_price !== null &&
+      preferences.min_price > 0 &&
+      preferences.max_price !== null &&
+      preferences.max_price > 0
+    ) {
+      if (
+        property.price < preferences.min_price ||
+        property.price > preferences.max_price
+      ) {
+        return false;
+      }
+    }
+
+    // Check bedroom requirements
+    if (preferences.min_bedrooms !== null && preferences.min_bedrooms > 0) {
+      if (property.bedrooms < preferences.min_bedrooms) {
+        return false;
+      }
+    }
+    if (preferences.max_bedrooms !== null && preferences.max_bedrooms > 0) {
+      if (property.bedrooms > preferences.max_bedrooms) {
+        return false;
+      }
+    }
+
+    // Check property type
+    if (preferences.property_type && preferences.property_type !== "any") {
+      if (
+        property.property_type.toLowerCase() !==
+        preferences.property_type.toLowerCase()
+      ) {
+        return false;
+      }
+    }
+
+    // Check furnishing
+    if (preferences.furnishing && preferences.furnishing !== "any") {
+      if (
+        property.furnishing.toLowerCase() !==
+        preferences.furnishing.toLowerCase()
+      ) {
+        return false;
+      }
+    }
+
+    // Check lifestyle features - must have at least one match if user has preferences
+    const userFeatures = new Set<string>();
+
+    if (preferences.lifestyle_features) {
+      preferences.lifestyle_features.forEach((feature) =>
+        userFeatures.add(feature.toLowerCase())
+      );
+    }
+    if (preferences.social_features) {
+      preferences.social_features.forEach((feature) =>
+        userFeatures.add(feature.toLowerCase())
+      );
+    }
+    if (preferences.work_features) {
+      preferences.work_features.forEach((feature) =>
+        userFeatures.add(feature.toLowerCase())
+      );
+    }
+    if (preferences.convenience_features) {
+      preferences.convenience_features.forEach((feature) =>
+        userFeatures.add(feature.toLowerCase())
+      );
+    }
+    if (preferences.pet_friendly_features) {
+      preferences.pet_friendly_features.forEach((feature) =>
+        userFeatures.add(feature.toLowerCase())
+      );
+    }
+    if (preferences.luxury_features) {
+      preferences.luxury_features.forEach((feature) =>
+        userFeatures.add(feature.toLowerCase())
+      );
+    }
+
+    // If user has lifestyle preferences, property must have at least one match
+    if (userFeatures.size > 0) {
+      if (
+        !property.lifestyle_features ||
+        property.lifestyle_features.length === 0
+      ) {
+        return false;
+      }
+
+      const propertyFeatures = property.lifestyle_features.map((f) =>
+        f.toLowerCase()
+      );
+      const hasMatch = propertyFeatures.some((feature) =>
+        userFeatures.has(feature)
+      );
+
+      if (!hasMatch) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Generate matches for a specific property against all tenants
+   * This is called when a property is created or updated to ensure fresh matches
+   */
+  async generateMatches(propertyId: string): Promise<void> {
+    // This method can be used to trigger matching calculations
+    // For now, it's a placeholder since matching is calculated on-demand
+    // In the future, this could:
+    // 1. Pre-calculate and store matches in a cache/database
+    // 2. Send notifications to matching tenants
+    // 3. Update search indexes
+
+    console.log(`Generated matches for property ${propertyId}`);
   }
 }
