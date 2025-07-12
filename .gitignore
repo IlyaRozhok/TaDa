@@ -194,9 +194,9 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
-
+e
 # Docker
-docker-compose.override.yml
+# docker-compose.override.yml
 # .docker/
 
 # Database
@@ -557,7 +557,6 @@ secrets/
 # Data
 *.csv
 *.xml
-*.yml
 *.yaml
 
 # Specific to this project

@@ -1,0 +1,36 @@
+
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: rental_platform_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rental_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/init:/docker-entrypoint-initdb.d
+    networks:
+      - rental_network
+
+
+  backend:
+    build:
+      context: ./backend
+    container_name: tada-backend
+    depends_on:
+      - db
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env.production
+    command: npm run start:prod
+
+volumes:
+  pgdata:
