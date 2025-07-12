@@ -556,7 +556,6 @@ secrets/
 
 # Data
 *.csv
-*.json
 *.xml
 *.yml
 *.yaml
