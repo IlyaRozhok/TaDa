@@ -31,17 +31,22 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or Postman)
       if (!origin) return callback(null, true);
-      
+
       const allowedOrigins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
+        "https://tada.illiacodes.dev",
+        "https://www.tada.illiacodes.dev",
+        "https://api.tada.illiacodes.dev",
+        "https://www.tada.illiacodes.dev",
       ];
 
       // Add custom domain from environment variable
       if (process.env.CORS_ORIGIN) {
-        allowedOrigins.push(process.env.CORS_ORIGIN);
+        const origins = process.env.CORS_ORIGIN.split(",").map((o) => o.trim());
+        allowedOrigins.push(...origins);
       }
 
       // Check if origin is in allowed list
@@ -51,15 +56,17 @@ async function bootstrap() {
 
       // Check Vercel domains for production
       if (process.env.NODE_ENV === "production") {
-        if (origin.match(/^https:\/\/.*\.vercel\.app$/) || 
-            origin.match(/^https:\/\/.*\.vercel\.com$/)) {
+        if (
+          origin.match(/^https:\/\/.*\.vercel\.app$/) ||
+          origin.match(/^https:\/\/.*\.vercel\.com$/)
+        ) {
           return callback(null, true);
         }
       }
 
-             // Reject origin
-       callback(new Error('Not allowed by CORS'));
-     },
+      // Reject origin
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: false,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
     allowedHeaders: [
