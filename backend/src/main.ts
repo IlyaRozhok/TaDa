@@ -27,44 +27,58 @@ async function bootstrap() {
   });
 
   // CORS configuration for both development and production
-  const corsOrigins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3001",
-  ];
+  const corsConfig = {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+      ];
 
-  // Add Vercel domains for production
-  if (process.env.NODE_ENV === "production") {
-    corsOrigins.push(
-      /^https:\/\/.*\.vercel\.app$/,
-      /^https:\/\/.*\.vercel\.com$/,
-      // Add your custom domain here if you have one
-      // "https://your-custom-domain.com"
-    );
-  }
+      // Add custom domain from environment variable
+      if (process.env.CORS_ORIGIN) {
+        allowedOrigins.push(process.env.CORS_ORIGIN);
+      }
 
-  app.use(
-    cors({
-      origin: corsOrigins,
-      credentials: false,
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
-      allowedHeaders: [
-        "Origin",
-        "X-Requested-With",
-        "Content-Type",
-        "Accept",
-        "Authorization",
-        "Access-Control-Allow-Headers",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers",
-      ],
-      exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"],
-      optionsSuccessStatus: 200,
-      preflightContinue: false,
-      maxAge: 86400, // 24 hours
-    })
-  );
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Check Vercel domains for production
+      if (process.env.NODE_ENV === "production") {
+        if (origin.match(/^https:\/\/.*\.vercel\.app$/) || 
+            origin.match(/^https:\/\/.*\.vercel\.com$/)) {
+          return callback(null, true);
+        }
+      }
+
+             // Reject origin
+       callback(new Error('Not allowed by CORS'));
+     },
+    credentials: false,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+    allowedHeaders: [
+      "Origin",
+      "X-Requested-With",
+      "Content-Type",
+      "Accept",
+      "Authorization",
+      "Access-Control-Allow-Headers",
+      "Access-Control-Request-Method",
+      "Access-Control-Request-Headers",
+    ],
+    exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"],
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
+    maxAge: 86400, // 24 hours
+  };
+
+  app.use(cors(corsConfig));
 
   // Global validation pipe
   app.useGlobalPipes(
