@@ -197,7 +197,7 @@ temp/
 
 # Docker
 docker-compose.override.yml
-.docker/
+# .docker/
 
 # Database
 *.sqlite
