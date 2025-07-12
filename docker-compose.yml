@@ -17,17 +17,19 @@ services:
     networks:
       - rental_network
 
-  backend:
-    build:
-      context: ./backend
-    container_name: tada-backend
-    depends_on:
-      - db
-    ports:
-      - "3001:3001"
-    env_file:
-      - ./backend/.env.production
-    command: npm run start:prod
+backend:
+  build:
+    context: ./backend
+  container_name: tada-backend
+  depends_on:
+    - db
+  ports:
+    - "3001:3001"
+  env_file:
+    - ./backend/.env.production
+  command: npm run start:prod
+  networks:
+    - rental_network
 
 volumes:
   pgdata:
