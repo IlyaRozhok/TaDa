@@ -30,5 +30,7 @@ services:
     command: npm run start:prod
 
 volumes:
-  - pgdata:/var/lib/postgresql/data
-  - ./backend/database/init:/docker-entrypoint-initdb.d
+  pgdata:
+
+networks:
+  rental_network:
