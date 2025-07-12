@@ -17,7 +17,6 @@ services:
     networks:
       - rental_network
 
-
   backend:
     build:
       context: ./backend
@@ -29,6 +28,8 @@ services:
     env_file:
       - ./backend/.env.production
     command: npm run start:prod
+    environment:
+      - PORT=3001
     networks:
       - rental_network
 
