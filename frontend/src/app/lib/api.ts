@@ -29,9 +29,6 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-    Accept: "application/json",
-    "Access-Control-Request-Method": "GET,POST,PUT,DELETE,PATCH,OPTIONS",
-    "Access-Control-Request-Headers": "Content-Type,Authorization",
   },
   withCredentials: false, // Explicitly set credentials to false
   timeout: 10000, // 10 second timeout
