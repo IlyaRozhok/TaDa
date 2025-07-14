@@ -17,14 +17,12 @@ interface ApiError {
   statusCode?: number;
 }
 
-// Extend window interface for SessionManager status
 declare global {
   interface Window {
     __sessionManagerInitialized?: boolean;
   }
 }
 
-// Создаем axios instance с базовой конфигурацией
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
