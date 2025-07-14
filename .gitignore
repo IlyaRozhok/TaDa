@@ -315,7 +315,6 @@ ecosystem.config.js
 # pnpm-lock.yaml
 
 # Разрешить backend/database/init/init.sql
-!backend/database/init/init.sql
 
 # Editor directories and files
 .vscode/*
@@ -567,3 +566,7 @@ backend/cookies.txt
 property-*.jpg
 apart.avif
 property3-1.jpg
+
+# Игнорировать всё в папке init, кроме init.sql
+backend/database/init/*
+!backend/database/init/init.sql
