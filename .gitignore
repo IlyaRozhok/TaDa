@@ -203,9 +203,7 @@ e
 *.sqlite
 *.sqlite3
 *.db
-
 # Database dumps
-*.sql
 *.dump
 
 # File uploads
@@ -315,6 +313,9 @@ ecosystem.config.js
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+
+# Разрешить backend/database/init/init.sql
+!backend/database/init/init.sql
 
 # Editor directories and files
 .vscode/*
