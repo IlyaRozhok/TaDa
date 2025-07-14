@@ -26,43 +26,9 @@ async function bootstrap() {
     prefix: "/uploads/",
   });
 
-
-
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      const allowedOrigins = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://tada.illiacodes.dev",
-        "https://www.tada.illiacodes.dev",
-      ];
-
-      if (process.env.CORS_ORIGIN) {
-        const origins = process.env.CORS_ORIGIN.split(",").map((o) => o.trim());
-        allowedOrigins.push(...origins);
-      }
-
-      if (
-        allowedOrigins.includes(origin) ||
-        origin?.match(/^https:\/\/.*\.vercel\.app$/) ||
-        origin?.match(/^https:\/\/.*\.vercel\.com$/)
-      ) {
-        return callback(null, true);
-      }
-
-      callback(new Error("Not allowed by CORS"));
-    },
+    origin: ["https://tada.illiacodes.dev"],
     credentials: false,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
-    allowedHeaders: [
-      "Origin",
-      "X-Requested-With",
-      "Content-Type",
-      "Accept",
-      "Authorization",
-    ],
   });
 
   // Global validation pipe
