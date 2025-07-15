@@ -30,8 +30,16 @@ export class PropertiesService {
 
   async create(
     createPropertyDto: CreatePropertyDto,
-    operatorId: string
+    userId: string,
+    userRoles?: string[]
   ): Promise<Property> {
+    // For admins, use the operator_id from the DTO if provided, otherwise use their own ID
+    const isAdmin = userRoles?.includes("admin");
+    const operatorId =
+      isAdmin && createPropertyDto.operator_id
+        ? createPropertyDto.operator_id
+        : userId;
+
     const property = this.propertyRepository.create({
       ...createPropertyDto,
       operator_id: operatorId,
@@ -83,7 +91,8 @@ export class PropertiesService {
 
   async findAll(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    search?: string
   ): Promise<{
     properties: Property[];
     total: number;
@@ -91,12 +100,23 @@ export class PropertiesService {
     limit: number;
     totalPages: number;
   }> {
-    const [properties, total] = await this.propertyRepository.findAndCount({
-      relations: ["operator", "media"],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { created_at: "DESC" },
-    });
+    const queryBuilder = this.propertyRepository
+      .createQueryBuilder("property")
+      .leftJoinAndSelect("property.operator", "operator")
+      .leftJoinAndSelect("property.media", "media")
+      .orderBy("property.created_at", "DESC");
+
+    if (search) {
+      queryBuilder.where(
+        "property.title ILIKE :search OR property.description ILIKE :search OR property.address ILIKE :search",
+        { search: `%${search}%` }
+      );
+    }
+
+    const [properties, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     // Update presigned URLs for all properties
     const propertiesWithUrls =
@@ -138,11 +158,14 @@ export class PropertiesService {
   async update(
     id: string,
     updatePropertyDto: Partial<CreatePropertyDto>,
-    operatorId: string
+    userId: string,
+    userRoles?: string[]
   ): Promise<Property> {
     const property = await this.findOne(id);
 
-    if (property.operator_id !== operatorId) {
+    // Check if user is admin or if they own the property
+    const isAdmin = userRoles?.includes("admin");
+    if (!isAdmin && property.operator_id !== userId) {
       throw new ForbiddenException("You can only update your own properties");
     }
 
@@ -155,10 +178,16 @@ export class PropertiesService {
     return updatedProperty;
   }
 
-  async remove(id: string, operatorId: string): Promise<void> {
+  async remove(
+    id: string,
+    userId: string,
+    userRoles?: string[]
+  ): Promise<void> {
     const property = await this.findOne(id);
 
-    if (property.operator_id !== operatorId) {
+    // Check if user is admin or if they own the property
+    const isAdmin = userRoles?.includes("admin");
+    if (!isAdmin && property.operator_id !== userId) {
       throw new ForbiddenException("You can only delete your own properties");
     }
 

@@ -201,7 +201,7 @@ export default function DashboardHeader() {
                     {user?.roles?.includes("admin") && (
                       <DropdownItem
                         icon={<Settings className="w-4 h-4" />}
-                        label="Admin Panel"
+                        label="Administrator Panel"
                         onClick={() => handleNavigation("/app/dashboard/admin")}
                         color="text-amber-700 hover:text-amber-900"
                       />

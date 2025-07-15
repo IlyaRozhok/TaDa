@@ -148,7 +148,7 @@ export class CreatePreferencesDto {
     enum: ["furnished", "unfurnished", "part-furnished"],
   })
   @IsOptional()
-  @IsIn(["furnished", "unfurnished", "part-furnished"])
+  @IsIn(["furnished", "unfurnished", "part-furnished", "", null])
   furnishing?: string;
 
   @ApiPropertyOptional({
@@ -157,7 +157,15 @@ export class CreatePreferencesDto {
     enum: ["6-months", "12-months", "18-months", "24-months", "flexible"],
   })
   @IsOptional()
-  @IsIn(["6-months", "12-months", "18-months", "24-months", "flexible"])
+  @IsIn([
+    "6-months",
+    "12-months",
+    "18-months",
+    "24-months",
+    "flexible",
+    "",
+    null,
+  ])
   let_duration?: string;
 
   @ApiPropertyOptional({
@@ -166,7 +174,7 @@ export class CreatePreferencesDto {
     enum: ["any", "flats", "houses", "studio", "others"],
   })
   @IsOptional()
-  @IsIn(["any", "flats", "houses", "studio", "others"])
+  @IsIn(["any", "flats", "houses", "studio", "others", "", null])
   property_type?: string;
 
   @ApiPropertyOptional({
@@ -193,7 +201,7 @@ export class CreatePreferencesDto {
     enum: ["show-all", "only-house-shares", "no-house-shares"],
   })
   @IsOptional()
-  @IsIn(["show-all", "only-house-shares", "no-house-shares"])
+  @IsIn(["show-all", "only-house-shares", "no-house-shares", "", null])
   house_shares?: string;
 
   @ApiPropertyOptional({
@@ -208,7 +216,15 @@ export class CreatePreferencesDto {
     ],
   })
   @IsOptional()
-  @IsIn(["any", "last-24-hours", "last-3-days", "last-14-days", "last-21-days"])
+  @IsIn([
+    "any",
+    "last-24-hours",
+    "last-3-days",
+    "last-14-days",
+    "last-21-days",
+    "",
+    null,
+  ])
   date_property_added?: string;
 
   @ApiPropertyOptional({
@@ -301,6 +317,8 @@ export class CreatePreferencesDto {
     "student-lifestyle",
     "creative-artistic",
     "no-preference",
+    "",
+    null,
   ])
   ideal_living_environment?: string;
 
@@ -310,7 +328,7 @@ export class CreatePreferencesDto {
     enum: ["none", "dog", "cat", "small-pets", "planning-to-get"],
   })
   @IsOptional()
-  @IsIn(["none", "dog", "cat", "small-pets", "planning-to-get"])
+  @IsIn(["none", "dog", "cat", "small-pets", "planning-to-get", "", null])
   pets?: string;
 
   @ApiPropertyOptional({

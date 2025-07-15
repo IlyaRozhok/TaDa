@@ -82,6 +82,15 @@ export class CreatePropertyDto {
   furnishing: string;
 
   @ApiProperty({
+    description: "Operator ID (for admins only)",
+    example: "uuid-string",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  operator_id?: string;
+
+  @ApiProperty({
     description: "Lifestyle features",
     example: ["gym", "pool", "concierge"],
     type: [String],

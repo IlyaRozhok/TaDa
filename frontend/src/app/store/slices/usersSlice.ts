@@ -15,6 +15,12 @@ export interface CreateUserData {
   roles: string[];
 }
 
+export interface UpdateUserData {
+  full_name?: string;
+  email?: string;
+  roles?: string[];
+}
+
 interface UsersState {
   users: UserRow[];
   total: number;
@@ -24,6 +30,10 @@ interface UsersState {
   error: string | null;
   creating: boolean;
   createError: string | null;
+  updating: boolean;
+  updateError: string | null;
+  deleting: boolean;
+  deleteError: string | null;
 }
 
 const initialState: UsersState = {
@@ -35,6 +45,10 @@ const initialState: UsersState = {
   error: null,
   creating: false,
   createError: null,
+  updating: false,
+  updateError: null,
+  deleting: false,
+  deleteError: null,
 };
 
 // Async thunk for fetching users
@@ -132,29 +146,107 @@ export const fetchUsers = createAsyncThunk(
 // Async thunk for creating user
 export const createUser = createAsyncThunk(
   "users/createUser",
-  async (userData: CreateUserData, { getState }) => {
-    const API_BASE_URL =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  async (userData: CreateUserData, { getState, rejectWithValue }) => {
+    try {
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
-    // Get token from Redux store
-    const state = getState() as any;
-    const token = state.auth.accessToken;
+      // Get token from Redux store
+      const state = getState() as any;
+      const token = state.auth.accessToken;
 
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to create user");
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || "Failed to create user");
+      }
+
+      return response.json();
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Network error"
+      );
     }
+  }
+);
 
-    return response.json();
+// Async thunk for updating user
+export const updateUser = createAsyncThunk(
+  "users/updateUser",
+  async (
+    { id, userData }: { id: string; userData: UpdateUserData },
+    { getState, rejectWithValue }
+  ) => {
+    try {
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+      // Get token from Redux store
+      const state = getState() as any;
+      const token = state.auth.accessToken;
+
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || "Failed to update user");
+      }
+
+      return response.json();
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Network error"
+      );
+    }
+  }
+);
+
+// Async thunk for deleting user
+export const deleteUser = createAsyncThunk(
+  "users/deleteUser",
+  async (id: string, { getState, rejectWithValue }) => {
+    try {
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+      // Get token from Redux store
+      const state = getState() as any;
+      const token = state.auth.accessToken;
+
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || "Failed to delete user");
+      }
+
+      return { id };
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Network error"
+      );
+    }
   }
 );
 
@@ -179,7 +271,7 @@ const usersSlice = createSlice({
     setLoading(state, action: PayloadAction<boolean>) {
       state.loading = action.payload;
     },
-    updateUser(state, action: PayloadAction<UserRow>) {
+    updateUserInState(state, action: PayloadAction<UserRow>) {
       const idx = state.users.findIndex((u) => u.id === action.payload.id);
       if (idx !== -1) {
         state.users[idx] = action.payload;
@@ -202,6 +294,12 @@ const usersSlice = createSlice({
     clearCreateError(state) {
       state.createError = null;
     },
+    clearUpdateError(state) {
+      state.updateError = null;
+    },
+    clearDeleteError(state) {
+      state.deleteError = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -218,7 +316,7 @@ const usersSlice = createSlice({
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch users";
+        state.error = action.payload as string || "Failed to fetch users";
       })
       .addCase(createUser.pending, (state) => {
         state.creating = true;
@@ -232,7 +330,40 @@ const usersSlice = createSlice({
       })
       .addCase(createUser.rejected, (state, action) => {
         state.creating = false;
-        state.createError = action.error.message || "Failed to create user";
+        state.createError =
+          (action.payload as string) || "Failed to create user";
+      })
+      .addCase(updateUser.pending, (state) => {
+        state.updating = true;
+        state.updateError = null;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.updating = false;
+        // Update the user in the list
+        const idx = state.users.findIndex((u) => u.id === action.payload.id);
+        if (idx !== -1) {
+          state.users[idx] = action.payload;
+        }
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.updating = false;
+        state.updateError =
+          (action.payload as string) || "Failed to update user";
+      })
+      .addCase(deleteUser.pending, (state) => {
+        state.deleting = true;
+        state.deleteError = null;
+      })
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.deleting = false;
+        // Remove the user from the list
+        state.users = state.users.filter((u) => u.id !== action.payload.id);
+        state.total -= 1;
+      })
+      .addCase(deleteUser.rejected, (state, action) => {
+        state.deleting = false;
+        state.deleteError =
+          (action.payload as string) || "Failed to delete user";
       });
   },
 });
@@ -240,11 +371,13 @@ const usersSlice = createSlice({
 export const {
   setUsers,
   setLoading,
-  updateUser,
+  updateUserInState,
   setPage,
   addUser,
   removeUser,
   clearError,
   clearCreateError,
+  clearUpdateError,
+  clearDeleteError,
 } = usersSlice.actions;
 export default usersSlice.reducer;

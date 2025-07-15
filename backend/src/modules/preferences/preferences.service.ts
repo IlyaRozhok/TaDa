@@ -82,6 +82,43 @@ export class PreferencesService {
     });
   }
 
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    search?: string
+  ): Promise<{
+    preferences: Preferences[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const queryBuilder = this.preferencesRepository
+      .createQueryBuilder("preferences")
+      .leftJoinAndSelect("preferences.user", "user")
+      .orderBy("preferences.created_at", "DESC");
+
+    if (search) {
+      queryBuilder.where(
+        "user.full_name ILIKE :search OR user.email ILIKE :search OR preferences.primary_postcode ILIKE :search OR preferences.secondary_location ILIKE :search OR preferences.commute_location ILIKE :search",
+        { search: `%${search}%` }
+      );
+    }
+
+    const [preferences, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      preferences,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async update(
     userId: string,
     updatePreferencesDto: UpdatePreferencesDto
@@ -113,5 +150,51 @@ export class PreferencesService {
     }
 
     await this.preferencesRepository.remove(preferences);
+  }
+
+  async clear(userId: string): Promise<void> {
+    const preferences = await this.findByUserId(userId);
+
+    if (!preferences) {
+      throw new NotFoundException("Preferences not found");
+    }
+
+    // Clear all preference fields by setting them to null
+    const clearedPreferences = {
+      ...preferences,
+      primary_postcode: null,
+      secondary_location: null,
+      commute_location: null,
+      commute_time_walk: null,
+      commute_time_cycle: null,
+      commute_time_tube: null,
+      move_in_date: null,
+      min_price: null,
+      max_price: null,
+      min_bedrooms: null,
+      max_bedrooms: null,
+      min_bathrooms: null,
+      max_bathrooms: null,
+      furnishing: null,
+      let_duration: null,
+      property_type: null,
+      building_style: null,
+      designer_furniture: null,
+      house_shares: null,
+      date_property_added: null,
+      lifestyle_features: null,
+      social_features: null,
+      work_features: null,
+      convenience_features: null,
+      pet_friendly_features: null,
+      luxury_features: null,
+      hobbies: null,
+      ideal_living_environment: null,
+      pets: null,
+      smoker: null,
+      additional_info: null,
+    };
+
+    await this.preferencesRepository.save(clearedPreferences);
   }
 }

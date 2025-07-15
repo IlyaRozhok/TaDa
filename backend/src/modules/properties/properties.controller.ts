@@ -37,7 +37,8 @@ export class PropertiesController {
   constructor(private readonly propertiesService: PropertiesService) {}
 
   @ApiOperation({
-    summary: "Create property with pre-uploaded media URLs (Operators only)",
+    summary:
+      "Create property with pre-uploaded media URLs (Operators and Admins)",
   })
   @ApiResponse({
     status: 201,
@@ -47,13 +48,17 @@ export class PropertiesController {
   @ApiConsumes("application/json")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("operator")
+  @Roles("operator", "admin")
   @Post()
   async create(@Body() createPropertyDto: CreatePropertyDto, @Request() req) {
-    return await this.propertiesService.create(createPropertyDto, req.user.id);
+    return await this.propertiesService.create(
+      createPropertyDto,
+      req.user.id,
+      req.user.roles
+    );
   }
 
-  @ApiOperation({ summary: "Update property data (Operators only)" })
+  @ApiOperation({ summary: "Update property data (Operators and Admins)" })
   @ApiResponse({
     status: 200,
     description: "Property updated successfully",
@@ -62,7 +67,7 @@ export class PropertiesController {
   @ApiConsumes("application/json")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("operator")
+  @Roles("operator", "admin")
   @Patch(":id")
   async update(
     @Param("id") id: string,
@@ -72,7 +77,8 @@ export class PropertiesController {
     return await this.propertiesService.update(
       id,
       updatePropertyDto,
-      req.user.id
+      req.user.id,
+      req.user.roles
     );
   }
 
@@ -157,9 +163,24 @@ export class PropertiesController {
     description: "All properties retrieved",
     type: [Property],
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin", "operator")
   @Get()
-  async findAll() {
-    return await this.propertiesService.findAll();
+  async findAll(
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 10,
+    @Query("search") search?: string
+  ) {
+    const result = await this.propertiesService.findAll(page, limit, search);
+
+    // Format response to match frontend expectations
+    return {
+      data: result.properties,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+    };
   }
 
   @ApiOperation({ summary: "Get property by ID" })
@@ -173,18 +194,18 @@ export class PropertiesController {
     return await this.propertiesService.findOne(id);
   }
 
-  @ApiOperation({ summary: "Delete property (Operators only)" })
+  @ApiOperation({ summary: "Delete property (Operators and Admins)" })
   @ApiResponse({ status: 200, description: "Property deleted successfully" })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("operator")
+  @Roles("operator", "admin")
   @Delete(":id")
   async remove(@Param("id") id: string, @Request() req) {
-    return await this.propertiesService.remove(id, req.user.id);
+    return await this.propertiesService.remove(id, req.user.id, req.user.roles);
   }
 
   @ApiOperation({
-    summary: "Create property with local file upload (Operators only)",
+    summary: "Create property with local file upload (Operators and Admins)",
   })
   @ApiResponse({
     status: 201,
@@ -194,7 +215,7 @@ export class PropertiesController {
   @ApiConsumes("multipart/form-data")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("operator")
+  @Roles("operator", "admin")
   @UseInterceptors(FilesInterceptor("images", 10, imageUploadOptions))
   @Post("with-upload")
   async createWithUpload(
@@ -223,6 +244,10 @@ export class PropertiesController {
       images: imageUrls,
     };
 
-    return await this.propertiesService.create(propertyData, req.user.id);
+    return await this.propertiesService.create(
+      propertyData,
+      req.user.id,
+      req.user.roles
+    );
   }
 }

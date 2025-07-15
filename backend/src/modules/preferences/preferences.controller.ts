@@ -7,6 +7,8 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  Query,
+  Param,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
@@ -22,6 +24,30 @@ import { User } from "../../entities/user.entity";
 @Controller("preferences")
 export class PreferencesController {
   constructor(private readonly preferencesService: PreferencesService) {}
+
+  @Get("all")
+  @Auth("admin")
+  @ApiOperation({ summary: "Get all preferences (Admin only)" })
+  @ApiResponse({
+    status: 200,
+    description: "All preferences retrieved successfully",
+    type: [Preferences],
+  })
+  async findAll(
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 10,
+    @Query("search") search?: string
+  ) {
+    const result = await this.preferencesService.findAll(page, limit, search);
+
+    // Format response to match frontend expectations
+    return {
+      data: result.preferences,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+    };
+  }
 
   @Post()
   @Auth("tenant")
@@ -91,5 +117,40 @@ export class PreferencesController {
   })
   async delete(@CurrentUser() user: User): Promise<void> {
     return this.preferencesService.delete(user.id);
+  }
+
+  @Put("admin/:userId")
+  @Auth("admin")
+  @ApiOperation({ summary: "Update user preferences (Admin only)" })
+  @ApiResponse({
+    status: 200,
+    description: "Preferences updated successfully",
+    type: Preferences,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Preferences not found",
+  })
+  async updateByAdmin(
+    @Param("userId") userId: string,
+    @Body() updatePreferencesDto: UpdatePreferencesDto
+  ): Promise<Preferences> {
+    return this.preferencesService.update(userId, updatePreferencesDto);
+  }
+
+  @Delete("admin/:userId")
+  @Auth("admin")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Clear user preferences (Admin only)" })
+  @ApiResponse({
+    status: 204,
+    description: "Preferences cleared successfully",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Preferences not found",
+  })
+  async clearByAdmin(@Param("userId") userId: string): Promise<void> {
+    return this.preferencesService.clear(userId);
   }
 }

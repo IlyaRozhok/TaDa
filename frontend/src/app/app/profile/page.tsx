@@ -147,12 +147,14 @@ export default function ProfilePage() {
       dispatch(updateUser(updateData));
 
       setSuccess("Profile updated successfully!");
+      console.log("✅ Profile updated successfully!");
 
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
     } catch (err: unknown) {
+      setSuccess(null); // Ensure success message is cleared on error
       console.error("❌ Profile update error:", err);
 
       // Type guard for axios error
@@ -174,12 +176,20 @@ export default function ProfilePage() {
 
       // Handle different error types
       if (isAxiosError(err) && err.response?.status === 400) {
-        const errorMessage = err.response?.data?.message;
-        if (errorMessage && typeof errorMessage === "string") {
+        const errorData = err.response?.data;
+        const errorMessage = errorData?.message;
+
+        // Handle NestJS validation errors where message is an array of strings
+        if (Array.isArray(errorMessage)) {
+          // Display the first validation error message
+          setError(errorMessage[0]);
+          console.error("❌ Validation error:", errorMessage);
+        } else if (errorMessage && typeof errorMessage === "string") {
           setError(errorMessage);
-        } else if (err.response?.data?.errors) {
-          // Handle validation errors from backend
-          const backendErrors = err.response.data.errors;
+          console.error("❌ Error message:", errorMessage);
+        } else if (errorData?.errors) {
+          // Handle validation errors from backend with field-specific format
+          const backendErrors = errorData.errors;
           const newErrors: FormErrors = {};
 
           backendErrors.forEach(
@@ -194,6 +204,7 @@ export default function ProfilePage() {
           setError("Please fix the validation errors below");
         } else {
           setError("Invalid data provided. Please check your inputs.");
+          console.error("❌ Unknown 400 error format:", errorData);
         }
       } else if (isAxiosError(err) && err.response?.status === 401) {
         setError("Authentication failed. Please log in again.");
