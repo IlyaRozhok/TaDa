@@ -1,22 +1,6 @@
 version: "3.8"
 
 services:
-  db:
-    image: postgres:15-alpine
-    restart: always
-    container_name: rental_platform_db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: rental_platform
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./backend/database/init:/docker-entrypoint-initdb.d
-    networks:
-      - rental_network
-
   backend:
     build:
       context: ./backend

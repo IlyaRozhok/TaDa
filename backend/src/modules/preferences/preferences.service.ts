@@ -30,7 +30,7 @@ export class PreferencesService {
       throw new NotFoundException("User not found");
     }
 
-    if (user.is_operator) {
+    if (user.roles && user.roles.includes("operator")) {
       throw new ForbiddenException("Only tenants can set preferences");
     }
 

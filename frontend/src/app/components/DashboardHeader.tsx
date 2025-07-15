@@ -81,6 +81,7 @@ export default function DashboardHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  console.log("user", user);
   const handleLogout = () => {
     dispatch(logout());
     localStorage.removeItem("accessToken");
@@ -95,7 +96,7 @@ export default function DashboardHeader() {
   };
 
   const handleLogoClick = () => {
-    if (user?.is_operator) {
+    if (user?.roles?.includes("operator")) {
       router.push("/app/dashboard/operator");
     } else {
       router.push("/app/dashboard/tenant");
@@ -145,7 +146,9 @@ export default function DashboardHeader() {
                     {getDisplayName()}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {user?.is_operator ? "Property Operator" : "Tenant"}
+                    {user?.roles?.includes("operator")
+                      ? "Property Operator"
+                      : "Tenant"}
                   </p>
                 </div>
 
@@ -171,7 +174,9 @@ export default function DashboardHeader() {
                           {user?.email || "Loading..."}
                         </p>
                         <p className="text-xs text-emerald-600 font-medium">
-                          {user?.is_operator ? "Property Operator" : "Tenant"}
+                          {user?.roles?.includes("operator")
+                            ? "Property Operator"
+                            : "Tenant"}
                         </p>
                       </div>
                     </div>
@@ -193,7 +198,16 @@ export default function DashboardHeader() {
                       color="text-slate-700 hover:text-slate-900"
                     />
 
-                    {!user?.is_operator && (
+                    {user?.roles?.includes("admin") && (
+                      <DropdownItem
+                        icon={<Settings className="w-4 h-4" />}
+                        label="Admin Panel"
+                        onClick={() => handleNavigation("/app/dashboard/admin")}
+                        color="text-amber-700 hover:text-amber-900"
+                      />
+                    )}
+
+                    {!user?.roles?.includes("operator") && (
                       <>
                         <div className="border-t border-slate-100 my-2 mx-2"></div>
                         <DropdownItem

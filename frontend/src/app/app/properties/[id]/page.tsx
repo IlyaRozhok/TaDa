@@ -544,7 +544,9 @@ export default function PropertyDetailPage() {
                       {property.operator.name}
                     </div>
                     <div className="text-gray-600 text-sm">
-                      Property Operator
+                      {property.operator?.roles?.includes("operator")
+                        ? "Property Operator"
+                        : "Tenant"}
                     </div>
                   </div>
                 </div>

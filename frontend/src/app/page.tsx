@@ -16,7 +16,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.is_operator) {
+      if (user.roles?.includes("operator")) {
         router.push("/app/dashboard/operator");
       } else {
         router.push("/app/dashboard/tenant");
@@ -95,8 +95,9 @@ export default function Home() {
         <div className="max-w-4xl mx-auto mb-20">
           <div className="bg-slate-50 rounded-2xl p-8 md:p-12 border border-slate-200">
             <p className="text-xl md:text-2xl text-slate-700 text-center leading-relaxed">
-              Gone are the days of endless scrolling through property listings, 
-              countless calls, missed opportunities, and frustrating rental processes.
+              Gone are the days of endless scrolling through property listings,
+              countless calls, missed opportunities, and frustrating rental
+              processes.
             </p>
           </div>
         </div>
@@ -128,43 +129,76 @@ export default function Home() {
         <div className="grid md:grid-cols-3 gap-8 mb-24 max-w-6xl mx-auto">
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300">
             <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center mb-6 mx-auto">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="w-8 h-8 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-4">
               Smart Matching
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              AI-powered system finds your perfect home based on your lifestyle and preferences.
+              AI-powered system finds your perfect home based on your lifestyle
+              and preferences.
             </p>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300">
             <div className="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-6 mx-auto">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-4">
               Verified Properties
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              Every listing is verified and quality-checked. No fake photos, no surprises.
+              Every listing is verified and quality-checked. No fake photos, no
+              surprises.
             </p>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300">
             <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center mb-6 mx-auto">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              <svg
+                className="w-8 h-8 text-purple-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-4">
               Perfect Matches
             </h3>
             <p className="text-slate-600 leading-relaxed">
-              Connect with compatible housemates and landlords for the ideal living situation.
+              Connect with compatible housemates and landlords for the ideal
+              living situation.
             </p>
           </div>
         </div>
@@ -175,7 +209,8 @@ export default function Home() {
             Ready to find your perfect home?
           </h2>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Join the revolution. Let technology do the work while you focus on what matters.
+            Join the revolution. Let technology do the work while you focus on
+            what matters.
           </p>
           <Link href="/app/auth/register">
             <Button

@@ -316,7 +316,7 @@ export default function PreferencesPage() {
       return;
     }
 
-    if (user.is_operator) {
+    if (user.roles?.includes('operator')) {
       router.push("/app/dashboard/operator");
       return;
     }

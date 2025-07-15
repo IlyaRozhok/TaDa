@@ -4,7 +4,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  is_operator: boolean;
+  roles: string[];
   phone?: string;
   date_of_birth?: string;
   nationality?: string;

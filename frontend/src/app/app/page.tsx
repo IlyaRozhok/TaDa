@@ -16,7 +16,7 @@ export default function LandingPage() {
   useEffect(() => {
     // Если пользователь аутентифицирован, перенаправляем на соответствующий дашборд
     if (isAuthenticated && user) {
-      if (user.is_operator) {
+      if (user.roles?.includes("operator")) {
         router.push("/app/dashboard/operator");
       } else {
         router.push("/app/dashboard/tenant");

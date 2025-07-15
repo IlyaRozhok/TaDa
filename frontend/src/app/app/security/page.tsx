@@ -46,7 +46,7 @@ export default function SecurityPage() {
             <div className="flex items-center">
               <Link
                 href={
-                  user.is_operator
+                  user.roles?.includes("operator")
                     ? "/app/dashboard/operator"
                     : "/app/dashboard/tenant"
                 }

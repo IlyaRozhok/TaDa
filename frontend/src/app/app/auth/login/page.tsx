@@ -11,6 +11,7 @@ import {
 import { authAPI } from "../../../lib/api";
 import Link from "next/link";
 import { Home, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import WelcomeModal from "../../../components/WelcomeModal";
 
 export default function LoginPage() {
   const user = useSelector(selectUser);
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -31,7 +33,7 @@ export default function LoginPage() {
   useEffect(() => {
     // If user is already authenticated, redirect to dashboard
     if (isAuthenticated && user) {
-      if (user.is_operator) {
+      if (user.roles?.includes("operator")) {
         router.push("/app/dashboard/operator");
       } else {
         router.push("/app/dashboard/tenant");
@@ -85,7 +87,17 @@ export default function LoginPage() {
         })
       );
 
-      if (response.user.is_operator) {
+      // Show welcome modal for new users
+      const welcomeShownKey = `welcome_shown_${response.user.id}`;
+      const hasShownWelcome = localStorage.getItem(welcomeShownKey);
+      
+      if (!hasShownWelcome) {
+        setShowWelcome(true);
+        // Don't redirect immediately, let the modal handle it
+        return;
+      }
+
+      if (response.user.roles?.includes("operator")) {
         router.push("/app/dashboard/operator");
       } else {
         router.push("/app/dashboard/tenant");
@@ -117,6 +129,21 @@ export default function LoginPage() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCloseWelcome = () => {
+    setShowWelcome(false);
+    // Mark welcome as shown
+    if (user) {
+      const welcomeShownKey = `welcome_shown_${user.id}`;
+      localStorage.setItem(welcomeShownKey, 'true');
+    }
+    // Redirect to appropriate dashboard
+    if (user?.roles?.includes("operator")) {
+      router.push("/app/dashboard/operator");
+    } else {
+      router.push("/app/dashboard/tenant");
     }
   };
 
@@ -169,17 +196,17 @@ export default function LoginPage() {
             <div className="absolute inset-0 bg-white/80 backdrop-blur-xl rounded-3xl" />
 
             <div className="relative bg-white/70 rounded-3xl p-8 shadow-xl shadow-slate-900/5 border border-white/20">
-            <div className="flex items-center gap-4 mb-8">
+              <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-900/20">
-                <Home className="w-6 h-6 text-white" />
-              </div>
-              <div>
+                  <Home className="w-6 h-6 text-white" />
+                </div>
+                <div>
                   <h2 className="text-2xl font-semibold text-slate-900">
-                  Welcome Back
+                    Welcome Back
                   </h2>
                   <p className="text-slate-500">Sign in to your account</p>
+                </div>
               </div>
-            </div>
 
               {error && (
                 <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-100 text-red-600">
@@ -189,43 +216,43 @@ export default function LoginPage() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
-              <div>
+                  <div>
                     <label
                       htmlFor="email"
                       className="block text-sm font-medium text-slate-700 mb-1.5"
                     >
-                  Email Address
-                </label>
-                <input
-                  type="email"
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
                       id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
                       className="w-full text-slate-900 px-4 py-2.5 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring focus:ring-slate-200 focus:ring-opacity-50 transition-colors duration-200"
                       placeholder="Enter your email"
-                />
-              </div>
+                    />
+                  </div>
 
-              <div>
+                  <div>
                     <label
                       htmlFor="password"
                       className="block text-sm font-medium text-slate-700 mb-1.5"
                     >
-                  Password
-                </label>
+                      Password
+                    </label>
                     <div className="relative">
-                <input
+                      <input
                         type={showPassword ? "text" : "password"}
                         id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
                         className="w-full text-slate-900 px-4 py-2.5 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring focus:ring-slate-200 focus:ring-opacity-50 transition-colors duration-200"
-                  placeholder="Enter your password"
-                />
+                        placeholder="Enter your password"
+                      />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
@@ -238,49 +265,56 @@ export default function LoginPage() {
                         )}
                       </button>
                     </div>
-              </div>
+                  </div>
 
-              <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                     <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleInputChange}
+                      <input
+                        type="checkbox"
+                        name="rememberMe"
+                        checked={formData.rememberMe}
+                        onChange={handleInputChange}
                         className="w-4 h-4 text-slate-900 border-slate-300 rounded focus:ring-slate-900"
-                  />
+                      />
                       <span className="ml-2 text-sm text-slate-600">
                         Remember me
                       </span>
-                </label>
-                <Link
-                  href="/app/auth/forgot-password"
+                    </label>
+                    <Link
+                      href="/app/auth/forgot-password"
                       className="text-sm font-medium text-slate-700 hover:text-slate-900"
-                >
-                  Forgot password?
-                </Link>
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
-              </div>
+                </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
+                <button
+                  type="submit"
+                  disabled={isLoading}
                   className="w-full px-6 py-3 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-slate-900/10 focus:outline-none focus:ring-2 focus:ring-slate-400/20 disabled:opacity-70"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
                       <span>Signing in...</span>
-                  </>
-                ) : (
+                    </>
+                  ) : (
                     <span>Sign In</span>
-                )}
-              </button>
+                  )}
+                </button>
               </form>
-              </div>
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Welcome Modal */}
+      <WelcomeModal
+        isOpen={showWelcome}
+        onClose={handleCloseWelcome}
+        userName={user?.full_name}
+      />
     </div>
   );
 }

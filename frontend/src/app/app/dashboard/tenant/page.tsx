@@ -47,7 +47,7 @@ export default function TenantDashboard() {
           return;
         }
 
-        if (user.is_operator) {
+        if (user.roles?.includes("operator")) {
           router.push("/app/dashboard/operator");
           return;
         }

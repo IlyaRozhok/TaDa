@@ -23,7 +23,6 @@ import {
   Settings,
   Tag,
   Star,
-  Heart,
   Wifi,
   Car,
   Dumbbell,
@@ -136,7 +135,7 @@ export default function EditPropertyPage() {
 
   // Check user permissions
   useEffect(() => {
-    if (!isAuthenticated || !user || !user.is_operator) {
+    if (!isAuthenticated || !user || !user.roles?.includes("operator")) {
       router.push("/app/dashboard/tenant");
       return;
     }

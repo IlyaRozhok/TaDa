@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --admin-bg: #111111;
+  --admin-sidebar-bg: #181818;
+  --admin-sidebar-active: #222222;
+  --admin-text: #fff;
+  --admin-accent: #2563eb;
+  --admin-border: #222;
 }
 
 @theme inline {

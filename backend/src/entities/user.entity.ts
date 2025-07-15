@@ -125,11 +125,12 @@ export class User {
   additional_info: string;
 
   @ApiProperty({
-    description: "Whether the user is a property operator/landlord",
-    example: false,
+    description: "User roles (admin, operator, tenant)",
+    example: ["tenant"],
+    type: [String],
   })
-  @Column({ default: false })
-  is_operator: boolean;
+  @Column("simple-array", { default: "tenant" })
+  roles: string[];
 
   @ApiProperty({ description: "User creation date" })
   @CreateDateColumn()

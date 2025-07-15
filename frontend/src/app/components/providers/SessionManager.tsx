@@ -10,6 +10,7 @@ import {
   selectIsAuthenticated,
 } from "../../store/slices/authSlice";
 import GlobalLoader from "../GlobalLoader";
+import WelcomeManager from "../WelcomeManager";
 
 // Global flag to track SessionManager initialization
 let sessionManagerInitialized = false;
@@ -197,7 +198,7 @@ export default function SessionManager() {
       // User is logged in
       if (isPublicPath) {
         // Redirect away from public pages to appropriate dashboard
-        const dashboardPath = userData?.is_operator
+        const dashboardPath = userData?.roles?.includes("operator")
           ? "/app/dashboard/operator"
           : "/app/dashboard/tenant";
         console.log(
@@ -230,6 +231,7 @@ export default function SessionManager() {
   return (
     <>
       <GlobalLoader isLoading={showGlobalLoader} message={loadingMessage} />
+      <WelcomeManager />
     </>
   );
 }

@@ -48,6 +48,7 @@ export interface Property {
   media?: PropertyMedia[];
   // Deprecated: will be removed in favor of media
   images?: string[];
+  operator?: { id: string; full_name: string; roles: string[]; email: string };
 }
 
 export interface PropertyMedia {
@@ -69,4 +70,3 @@ export interface UploadResponse {
   key: string;
   message?: string;
 }
- 

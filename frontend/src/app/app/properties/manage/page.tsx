@@ -82,7 +82,7 @@ export default function ManagePropertiesPage() {
       return;
     }
 
-    if (!user.is_operator) {
+    if (!user.roles?.includes("operator")) {
       router.push("/app/dashboard/tenant");
       return;
     }
@@ -313,15 +313,15 @@ export default function ManagePropertiesPage() {
                       return (
                         <img
                           src={imageUrl}
-                      alt={property.title}
-                      className="w-full h-full object-cover"
-                    />
+                          alt={property.title}
+                          className="w-full h-full object-cover"
+                        />
                       );
                     } else {
                       return (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Building2 className="w-12 h-12 text-slate-400" />
-                    </div>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Building2 className="w-12 h-12 text-slate-400" />
+                        </div>
                       );
                     }
                   })()}

@@ -31,13 +31,15 @@ export class RegisterDto {
   full_name: string;
 
   @ApiProperty({
-    description: "Whether the user is a property operator/landlord",
-    example: false,
-    default: false,
+    description: "User roles (admin, operator, tenant)",
+    example: ["tenant"],
+    required: false,
+    type: [String],
   })
-  @IsBoolean()
   @IsOptional()
-  is_operator?: boolean = false;
+  @IsArray()
+  @IsString({ each: true })
+  roles?: string[] = ["tenant"];
 
   @ApiProperty({
     description: "Age range of the user",

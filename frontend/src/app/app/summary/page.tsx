@@ -46,7 +46,7 @@ interface ExtendedUser {
   id: string;
   email: string;
   full_name: string;
-  is_operator: boolean;
+  roles: string[];
   age_range?: string;
   occupation?: string;
   industry?: string;
@@ -372,7 +372,9 @@ export default function ProfileSummaryPage() {
                 <InfoRow
                   label="Account Type"
                   value={
-                    fullUserData?.is_operator ? "Property Operator" : "Tenant"
+                    fullUserData?.roles?.includes("operator")
+                      ? "Property Operator"
+                      : "Tenant"
                   }
                   icon={Settings}
                 />

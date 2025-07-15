@@ -3,6 +3,7 @@ import { Property } from "../src/entities/property.entity";
 import { User } from "../src/entities/user.entity";
 import { Shortlist } from "../src/entities/shortlist.entity";
 import { Favourite } from "../src/entities/favourite.entity";
+import { Like } from "typeorm";
 
 async function seedProperties() {
   try {
@@ -32,7 +33,7 @@ async function seedProperties() {
 
     // Find or create an operator user
     let operator = await userRepository.findOne({
-      where: { is_operator: true },
+      where: { roles: Like("%operator%") },
     });
 
     if (!operator) {
@@ -40,11 +41,26 @@ async function seedProperties() {
       operator = userRepository.create({
         email: "operator@test.com",
         full_name: "Test Operator",
-        is_operator: true,
+        roles: ["operator"],
         password: "$2b$10$test.hash.here", // This is just for testing
       });
       await userRepository.save(operator);
       console.log("Created test operator user");
+    }
+
+    // Создаем пользователя-админа, если его нет
+    let admin = await userRepository.findOne({
+      where: { roles: Like("%admin%") },
+    });
+    if (!admin) {
+      admin = userRepository.create({
+        email: "admin@test.com",
+        full_name: "Test Admin",
+        roles: ["admin"],
+        password: "$2b$10$admin.hash.here", // This is just for testing
+      });
+      await userRepository.save(admin);
+      console.log("Created test admin user");
     }
 
     // Create 7 diverse test properties for comprehensive matching testing (to reach 10 total)

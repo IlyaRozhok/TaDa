@@ -50,8 +50,18 @@ export class S3Service {
     console.log("- Using ConfigService Bucket:", bucketName);
 
     if (!accessKeyId || !secretAccessKey) {
-      console.error("❌ Missing AWS credentials from ConfigService");
-      throw new Error("AWS credentials not configured in ConfigService");
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          "⚠️ Missing AWS credentials, S3Service will be disabled (dev mode)"
+        );
+        this.s3Client = null as any;
+        this.bucketName = bucketName;
+        this.keyPrefix = "tada-media/";
+        return;
+      } else {
+        console.error("❌ Missing AWS credentials from ConfigService");
+        throw new Error("AWS credentials not configured in ConfigService");
+      }
     }
 
     // Принудительно создаем S3Client с кредами из ConfigService

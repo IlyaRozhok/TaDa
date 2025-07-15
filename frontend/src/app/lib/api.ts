@@ -1,14 +1,7 @@
 import axios from "axios";
 import { store } from "../store/store";
 import { logout } from "../store/slices/authSlice";
-import {
-  PropertyType,
-  WorkStyle,
-  PropertyStatus,
-  Property,
-  PropertyMedia,
-  UploadResponse,
-} from "../types";
+import { Property, PropertyMedia, UploadResponse } from "../types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
@@ -252,18 +245,19 @@ export const shortlistAPI = {
       const response = await api.post(`/shortlist/${propertyId}`);
       console.log("✅ Successfully added to shortlist:", response.data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as any;
       console.error(
         "❌ Failed to add to shortlist:",
-        error.response?.data || error.message
+        err.response?.data || err.message
       );
-      if (error.response?.status === 404) {
+      if (err.response?.status === 404) {
         throw new Error(
           "Property not found. Please refresh the page and try again."
         );
-      } else if (error.response?.status === 409) {
+      } else if (err.response?.status === 409) {
         throw new Error("Property is already in your shortlist.");
-      } else if (error.response?.status === 401) {
+      } else if (err.response?.status === 401) {
         throw new Error("Please log in to add properties to your shortlist.");
       }
       throw new Error("Failed to add property to shortlist. Please try again.");
@@ -280,14 +274,15 @@ export const shortlistAPI = {
       const response = await api.delete(`/shortlist/${propertyId}`);
       console.log("✅ Successfully removed from shortlist:", response.data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as any;
       console.error(
         "❌ Failed to remove from shortlist:",
-        error.response?.data || error.message
+        err.response?.data || err.message
       );
-      if (error.response?.status === 404) {
+      if (err.response?.status === 404) {
         throw new Error("Property not found in shortlist.");
-      } else if (error.response?.status === 401) {
+      } else if (err.response?.status === 401) {
         throw new Error("Please log in to manage your shortlist.");
       }
       throw new Error(
@@ -306,12 +301,13 @@ export const shortlistAPI = {
         "properties"
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as any;
       console.error(
         "❌ Failed to fetch shortlist:",
-        error.response?.data || error.message
+        err.response?.data || err.message
       );
-      if (error.response?.status === 401) {
+      if (err.response?.status === 401) {
         throw new Error("Please log in to view your shortlist.");
       }
       throw new Error("Failed to load shortlist. Please try again.");
@@ -333,13 +329,14 @@ export const shortlistAPI = {
       const isShortlisted = response.data.isShortlisted;
       console.log("✅ Shortlist status check result:", isShortlisted);
       return isShortlisted;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as any;
       console.error(
         "❌ Failed to check shortlist status:",
-        error.response?.data || error.message
+        err.response?.data || err.message
       );
       // For status checks, we'll return false instead of throwing to avoid breaking the UI
-      if (error.response?.status === 401) {
+      if (err.response?.status === 401) {
         console.warn("⚠️ User not authenticated for shortlist status check");
         return false;
       }
@@ -354,12 +351,13 @@ export const shortlistAPI = {
       const response = await api.get("/shortlist/count");
       // console.log("✅ Shortlist count:", response.data.count);
       return response.data.count;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as any;
       console.error(
         "❌ Failed to get shortlist count:",
-        error.response?.data || error.message
+        err.response?.data || err.message
       );
-      if (error.response?.status === 401) {
+      if (err.response?.status === 401) {
         return 0; // Return 0 if not authenticated
       }
       throw new Error("Failed to get shortlist count. Please try again.");
@@ -427,7 +425,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
-  is_operator: boolean;
+  roles: string[];
   phone?: string;
   date_of_birth?: string;
   nationality?: string;

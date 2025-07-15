@@ -84,7 +84,7 @@ export default function UserDropdown() {
             </p>
             <p className="text-xs text-gray-500">{user.email}</p>
             <p className="text-xs text-blue-600 mt-1">
-              {user.is_operator ? "Оператор" : "Арендатор"}
+              {user.roles?.includes("operator") ? "Оператор" : "Арендатор"}
             </p>
           </div>
 

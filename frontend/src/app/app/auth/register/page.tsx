@@ -52,7 +52,7 @@ export default function RegisterPage() {
   useEffect(() => {
     // If user is already authenticated, redirect to dashboard
     if (isAuthenticated && user) {
-      if (user.is_operator) {
+      if (user.roles?.includes("operator")) {
         router.push("/app/dashboard/operator");
       } else {
         router.push("/app/dashboard/tenant");
@@ -105,7 +105,7 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
         full_name: formData.full_name,
-        is_operator: formData.userType === "operator",
+        roles: [formData.userType],
       };
 
       const response = await authAPI.register(registerData);
@@ -123,7 +123,7 @@ export default function RegisterPage() {
       );
 
       // Redirect to dashboard based on role
-      if (response.user.is_operator) {
+      if (response.user.roles?.includes("operator")) {
         router.push("/app/dashboard/operator");
       } else {
         router.push("/app/dashboard/tenant");

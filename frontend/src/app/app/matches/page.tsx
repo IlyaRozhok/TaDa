@@ -166,7 +166,9 @@ export default function MatchesPage() {
               ? {
                   name: user.full_name || "User",
                   email: user.email,
-                  role: user.is_operator ? "operator" : "tenant",
+                  role: user.roles?.includes("operator")
+                    ? "operator"
+                    : "tenant",
                 }
               : undefined
           }
@@ -196,7 +198,9 @@ export default function MatchesPage() {
               ? {
                   name: user.full_name || "User",
                   email: user.email,
-                  role: user.is_operator ? "operator" : "tenant",
+                  role: user.roles?.includes("operator")
+                    ? "operator"
+                    : "tenant",
                 }
               : undefined
           }
@@ -231,7 +235,7 @@ export default function MatchesPage() {
             ? {
                 name: user.full_name || "User",
                 email: user.email,
-                role: user.is_operator ? "operator" : "tenant",
+                role: user.roles?.includes("operator") ? "operator" : "tenant",
               }
             : undefined
         }

@@ -8,6 +8,7 @@ import * as https from "https";
 import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
+import { Like } from "typeorm";
 
 // Load environment variables
 dotenv.config();
@@ -334,7 +335,7 @@ async function seedPropertiesWithMedia() {
 
     // Find or create an operator user
     let operator = await userRepository.findOne({
-      where: { is_operator: true },
+      where: { roles: Like("%operator%") },
     });
 
     if (!operator) {
@@ -342,7 +343,7 @@ async function seedPropertiesWithMedia() {
       operator = userRepository.create({
         email: "operator@tada.com",
         full_name: "TaDa Property Operator",
-        is_operator: true,
+        roles: ["operator"],
         password: "$2b$10$test.hash.here", // This is just for testing
       });
       await userRepository.save(operator);

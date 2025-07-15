@@ -29,7 +29,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
-    const { email, password, ...userData } = registerDto;
+    const { email, password, roles = ["tenant"], ...userData } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
@@ -48,13 +48,14 @@ export class AuthService {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
+      roles,
       ...userData,
     });
 
     const savedUser = await this.userRepository.save(user);
 
     // Auto-create empty preferences for tenants
-    if (!savedUser.is_operator) {
+    if (!roles.includes("operator")) {
       const preferences = this.preferencesRepository.create({
         user: savedUser,
       });
@@ -80,7 +81,7 @@ export class AuthService {
         "email",
         "password",
         "full_name",
-        "is_operator",
+        "roles",
         "phone",
         "date_of_birth",
         "nationality",
@@ -116,7 +117,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
-      is_operator: user.is_operator,
+      roles: user.roles,
     };
 
     const access_token = this.jwtService.sign(payload);
@@ -138,7 +139,7 @@ export class AuthService {
         "id",
         "email",
         "full_name",
-        "is_operator",
+        "roles",
         "phone",
         "date_of_birth",
         "nationality",

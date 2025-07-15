@@ -45,5 +45,8 @@
     "postgresql"
   ],
   "author": "TaDa Platform Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "react-hot-toast": "^2.5.2"
+  }
 }
