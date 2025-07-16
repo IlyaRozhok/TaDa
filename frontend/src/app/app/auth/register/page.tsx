@@ -217,7 +217,6 @@ export default function RegisterPage() {
         </div>
 
         <div className="w-full max-w-sm sm:max-w-md md:max-w-lg relative z-10">
-          {/* Back to Home */}
           <Link
             href="/"
             className="inline-flex items-center text-white/90 hover:text-white transition-colors mb-8 font-medium group px-4 py-2 rounded-lg hover:bg-white/20 backdrop-blur-sm"
