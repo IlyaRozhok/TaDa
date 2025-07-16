@@ -47,8 +47,8 @@ export default function AllPropertiesPage() {
         const response = await propertiesAPI.getAll();
         const responseData = response.data || response;
         
-        // Backend returns an object with properties array
-        const propertiesData = responseData.properties || responseData;
+        // Backend returns { data: properties[], total, page, totalPages }
+        const propertiesData = responseData.data || responseData.properties || responseData || [];
 
         setProperties(propertiesData);
         setFilteredProperties(propertiesData);

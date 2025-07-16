@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsIn,
   IsArray,
+  IsInt,
 } from "class-validator";
 
 export class RegisterDto {
@@ -26,20 +27,24 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ description: "Full name of the user", example: "John Doe" })
-  @IsString()
-  full_name: string;
-
   @ApiProperty({
-    description: "User roles (admin, operator, tenant)",
-    example: ["tenant"],
+    description: "Full name of the user",
+    example: "John Doe",
     required: false,
-    type: [String],
   })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  roles?: string[] = ["tenant"];
+  @IsString()
+  full_name?: string;
+
+  @ApiProperty({
+    description: "User role (admin, operator, tenant)",
+    example: "tenant",
+    enum: ["admin", "operator", "tenant"],
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(["admin", "operator", "tenant"])
+  role?: string = "tenant";
 
   @ApiProperty({
     description: "Age range of the user",
@@ -108,4 +113,61 @@ export class RegisterDto {
   @IsOptional()
   @IsBoolean()
   smoker?: boolean;
+
+  // Operator-specific fields
+  @ApiProperty({
+    description: "Company name (for operators)",
+    example: "Smith Properties Ltd",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  company_name?: string;
+
+  @ApiProperty({
+    description: "Phone number",
+    example: "+44 7700 900123",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({
+    description: "Business address (for operators)",
+    example: "123 Business St, London",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  business_address?: string;
+
+  @ApiProperty({
+    description: "Years of experience (for operators)",
+    example: 5,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  years_experience?: number;
+
+  @ApiProperty({
+    description: "Operating areas (for operators)",
+    example: ["Central London", "East London"],
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  operating_areas?: string[];
+
+  @ApiProperty({
+    description: "Business description (for operators)",
+    example: "We specialize in luxury residential properties",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  business_description?: string;
 }

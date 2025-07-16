@@ -9,7 +9,7 @@ export interface UserRow {
 }
 
 export interface CreateUserData {
-  full_name: string;
+  full_name?: string;
   email: string;
   password: string;
   roles: string[];

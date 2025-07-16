@@ -32,12 +32,14 @@ const api = axios.create({
 // Request interceptor для добавления JWT токена
 api.interceptors.request.use(
   (config) => {
-    // console.log("🚀 Making request:", config.method?.toUpperCase(), config.url);
-    // console.log("📋 Request headers:", config.headers);
-
-    // Получаем токен из Redux store
+    // Получаем токен из Redux store или localStorage
     const state = store.getState();
-    const token = state.auth.accessToken;
+    let token = state.auth.accessToken;
+
+    // Если токена нет в Redux store, проверяем localStorage
+    if (!token && typeof window !== "undefined") {
+      token = localStorage.getItem("accessToken");
+    }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -363,6 +365,25 @@ export const shortlistAPI = {
       throw new Error("Failed to get shortlist count. Please try again.");
     }
   },
+
+  clear: async (): Promise<{ message: string }> => {
+    console.log("🧹 Clearing shortlist");
+    try {
+      const response = await api.delete("/shortlist");
+      console.log("✅ Successfully cleared shortlist:", response.data);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as any;
+      console.error(
+        "❌ Failed to clear shortlist:",
+        err.response?.data || err.message
+      );
+      if (err.response?.status === 401) {
+        throw new Error("Please log in to clear your shortlist.");
+      }
+      throw new Error("Failed to clear shortlist. Please try again.");
+    }
+  },
 };
 
 // Debug function to test API connectivity
@@ -438,9 +459,9 @@ export interface User {
 
 export interface RegisterData {
   email: string;
-  full_name: string;
   password: string;
-  is_operator: boolean;
+  role?: "tenant" | "operator" | "admin";
+  full_name?: string;
   phone?: string;
   bio?: string;
   occupation?: string;
@@ -453,12 +474,15 @@ export interface RegisterData {
   company_name?: string;
   position?: string;
   business_type?: string;
+  business_address?: string;
+  years_experience?: number;
+  operating_areas?: string[];
+  business_description?: string;
 }
 
 export interface LoginData {
   email: string;
   password: string;
-  role: "tenant" | "operator";
 }
 
 export interface UpdateProfileData {

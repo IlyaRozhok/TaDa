@@ -11,10 +11,13 @@ import {
 } from "../../store/slices/authSlice";
 import GlobalLoader from "../GlobalLoader";
 import WelcomeManager from "../WelcomeManager";
+import { getUserRole } from "../DashboardRouter";
 
 // Global flag to track SessionManager initialization
 let sessionManagerInitialized = false;
 let sessionManagerPromise: Promise<void> | null = null;
+let lastRedirectTime = 0;
+const REDIRECT_COOLDOWN = 1000; // 1 second cooldown between redirects
 
 export default function SessionManager() {
   const dispatch = useDispatch();
@@ -39,18 +42,6 @@ export default function SessionManager() {
         // console.log("🔐 SessionManager: Starting session restoration...");
         setIsRestoring(true);
         setLoadingMessage("Restoring your session...");
-
-        // Check if we're in a browser environment
-        if (typeof window === "undefined") {
-          console.log(
-            "🔐 SessionManager: Not in browser environment, skipping"
-          );
-          sessionManagerInitialized = true;
-          setIsInitialized(true);
-          setShowGlobalLoader(false);
-          handlePostInitialization(false);
-          return;
-        }
 
         // Check if we have a token in localStorage
         const token = localStorage.getItem("accessToken");
@@ -187,27 +178,34 @@ export default function SessionManager() {
     ];
     const isPublicPath = publicPaths.includes(pathname);
 
-    // console.log("🔄 SessionManager: Handling post-init redirect", {
-    //   isUserAuthenticated,
-    //   pathname,
-    //   isPublicPath,
-    //   userRole: userData?.is_operator ? "operator" : "tenant",
-    // });
+    const userRole = userData ? getUserRole(userData) : "unknown";
+
+    console.log("🔄 SessionManager: Handling post-init redirect", {
+      isUserAuthenticated,
+      pathname,
+      isPublicPath,
+      userRole,
+    });
+
+    // Check cooldown to prevent rapid redirects
+    const now = Date.now();
+    if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+      console.log("🔄 SessionManager: Redirect cooldown active, skipping");
+      return;
+    }
 
     if (isUserAuthenticated) {
       // User is logged in
       if (isPublicPath) {
-        // Redirect away from public pages to appropriate dashboard
-        const dashboardPath = userData?.roles?.includes("operator")
-          ? "/app/dashboard/operator"
-          : "/app/dashboard/tenant";
+        // Redirect away from public pages to a general dashboard path
+        // Let DashboardRouter handle the specific dashboard routing
         console.log(
-          "🔄 SessionManager: Redirecting authenticated user to dashboard:",
-          dashboardPath
+          "🔄 SessionManager: Redirecting authenticated user to dashboard"
         );
-        router.replace(dashboardPath);
+        lastRedirectTime = now;
+        router.replace("/app/dashboard");
       }
-      // If on a protected page, stay there
+      // If on a protected page, stay there - DashboardRouter will handle role-specific routing
     } else {
       // User is not logged in
       if (!isPublicPath && !pathname.startsWith("/app/auth/")) {
@@ -215,6 +213,7 @@ export default function SessionManager() {
         console.log(
           "🔄 SessionManager: Redirecting unauthenticated user to login"
         );
+        lastRedirectTime = now;
         router.replace("/app/auth/login");
       }
       // If on public page, stay there

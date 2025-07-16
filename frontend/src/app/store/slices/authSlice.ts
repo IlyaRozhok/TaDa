@@ -3,24 +3,39 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 interface User {
   id: string;
   email: string;
-  full_name: string;
-  roles: string[];
-  phone?: string;
-  date_of_birth?: string;
-  nationality?: string;
-  age_range?: string;
-  occupation?: string;
-  industry?: string;
-  work_style?: string;
-  lifestyle?: string;
-  pets?: string;
-  smoker?: boolean;
-  hobbies?: string;
-  ideal_living_environment?: string;
-  additional_info?: string;
-  bio?: string;
+  role: string;
+  status: string;
   created_at: string;
   updated_at: string;
+  // Computed properties from getter methods
+  full_name?: string;
+  roles?: string[];
+  // Profile data that might be included
+  tenantProfile?: {
+    id: string;
+    full_name: string;
+    age_range?: string;
+    phone?: string;
+    occupation?: string;
+    industry?: string;
+    work_style?: string;
+    lifestyle?: string;
+    pets?: string;
+    smoker?: boolean;
+    hobbies?: string;
+    ideal_living_environment?: string;
+    additional_info?: string;
+  };
+  operatorProfile?: {
+    id: string;
+    full_name: string;
+    company_name?: string;
+    phone?: string;
+    business_address?: string;
+    years_experience?: number;
+    operating_areas?: string[];
+    business_description?: string;
+  };
 }
 
 interface AuthState {
@@ -49,6 +64,17 @@ const authSlice = createSlice({
       }>
     ) => {
       const { user, accessToken } = action.payload;
+
+      console.log("🔍 authSlice.setCredentials called with:", {
+        user_id: user.id,
+        user_email: user.email,
+        user_role: user.role,
+        user_roles: user.roles,
+        user_full_name: user.full_name,
+        has_tenant_profile: !!user.tenantProfile,
+        has_operator_profile: !!user.operatorProfile,
+      });
+
       state.user = user;
       state.accessToken = accessToken;
       state.isAuthenticated = true;

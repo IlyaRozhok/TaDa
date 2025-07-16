@@ -165,14 +165,18 @@ export class PropertiesController {
   })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin", "operator")
+  @Roles("admin", "operator", "tenant")
   @Get()
   async findAll(
     @Query("page") page: number = 1,
     @Query("limit") limit: number = 10,
     @Query("search") search?: string
   ) {
-    const result = await this.propertiesService.findAll(page, limit, search);
+    // Ensure page and limit are numbers
+    const pageNum = parseInt(page as any) || 1;
+    const limitNum = parseInt(limit as any) || 10;
+    
+    const result = await this.propertiesService.findAll(pageNum, limitNum, search);
 
     // Format response to match frontend expectations
     return {

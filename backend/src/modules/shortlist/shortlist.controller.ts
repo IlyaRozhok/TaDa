@@ -39,19 +39,20 @@ export class ShortlistController {
     status: HttpStatus.CONFLICT,
     description: "Property already in shortlist",
   })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "Only tenants can have shortlists",
+  })
   async addToShortlist(
     @Request() req,
     @Param("propertyId") propertyId: string
   ) {
-    const shortlistEntry = await this.shortlistService.addToShortlist(
+    const result = await this.shortlistService.addToShortlist(
       req.user.id,
       propertyId
     );
 
-    return {
-      message: "Property added to shortlist successfully",
-      data: shortlistEntry,
-    };
+    return result;
   }
 
   @Delete(":propertyId")
@@ -64,15 +65,20 @@ export class ShortlistController {
     status: HttpStatus.NOT_FOUND,
     description: "Property not found in shortlist",
   })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "Only tenants can have shortlists",
+  })
   async removeFromShortlist(
     @Request() req,
     @Param("propertyId") propertyId: string
   ) {
-    await this.shortlistService.removeFromShortlist(req.user.id, propertyId);
+    const result = await this.shortlistService.removeFromShortlist(
+      req.user.id,
+      propertyId
+    );
 
-    return {
-      message: "Property removed from shortlist successfully",
-    };
+    return result;
   }
 
   @Get()
@@ -82,8 +88,25 @@ export class ShortlistController {
     description: "Shortlisted properties retrieved successfully",
     type: [Property],
   })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "Only tenants can have shortlists",
+  })
   async getUserShortlist(@Request() req): Promise<Property[]> {
     return await this.shortlistService.getUserShortlist(req.user.id);
+  }
+
+  @Get("count")
+  @ApiOperation({ summary: "Get shortlist count" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: "Shortlist count retrieved successfully",
+  })
+  async getShortlistCount(@Request() req) {
+    const count = await this.shortlistService.getShortlistCount(req.user.id);
+    return {
+      count,
+    };
   }
 
   @Get("check/:propertyId")
@@ -106,17 +129,18 @@ export class ShortlistController {
     };
   }
 
-  @Get("count")
-  @ApiOperation({ summary: "Get shortlist count" })
+  @Delete()
+  @ApiOperation({ summary: "Clear entire shortlist" })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: "Shortlist count retrieved successfully",
+    description: "Shortlist cleared successfully",
   })
-  async getShortlistCount(@Request() req) {
-    const count = await this.shortlistService.getShortlistCount(req.user.id);
-
-    return {
-      count,
-    };
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "Only tenants can have shortlists",
+  })
+  async clearShortlist(@Request() req) {
+    const result = await this.shortlistService.clearShortlist(req.user.id);
+    return result;
   }
 }

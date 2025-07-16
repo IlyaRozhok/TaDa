@@ -12,6 +12,9 @@ import {
 import { ApiProperty } from "@nestjs/swagger";
 import { Exclude } from "class-transformer";
 import { Preferences } from "./preferences.entity";
+import { TenantProfile } from "./tenant-profile.entity";
+import { OperatorProfile } from "./operator-profile.entity";
+import { Shortlist } from "./shortlist.entity";
 
 @Entity("users")
 export class User {
@@ -28,109 +31,60 @@ export class User {
   email: string;
 
   @Exclude()
-  @Column({ select: false })
+  @Column({ select: false, nullable: true })
   password: string;
 
-  @ApiProperty({ description: "Full name of the user", example: "John Doe" })
-  @Column()
+  @ApiProperty({
+    description: "Primary user role",
+    example: "tenant",
+    enum: ["admin", "operator", "tenant"],
+  })
+  @Column({ default: "tenant" })
+  role: string;
+
+  @ApiProperty({
+    description: "User account status",
+    example: "active",
+    enum: ["active", "inactive", "suspended"],
+  })
+  @Column({ default: "active" })
+  status: string;
+
+  @ApiProperty({
+    description: "User full name",
+    example: "John Doe",
+  })
+  @Column({ nullable: true })
   full_name: string;
 
   @ApiProperty({
-    description: "Age range of the user",
-    example: "25-34",
-    enum: ["under-25", "25-34", "35-44", "45-54", "55+"],
+    description: "Authentication provider",
+    example: "local",
+    enum: ["local", "google"],
   })
-  @Column({ nullable: true })
-  age_range: string;
-
-  @ApiProperty({ description: "User phone number", example: "+44 7700 900123" })
-  @Column({ nullable: true })
-  phone: string;
-
-  @ApiProperty({ description: "User date of birth", example: "1990-01-15" })
-  @Column({ type: "date", nullable: true })
-  date_of_birth: Date;
-
-  @ApiProperty({ description: "User nationality", example: "British" })
-  @Column({ nullable: true })
-  nationality: string;
-
-  @ApiProperty({ description: "User occupation", example: "Software Engineer" })
-  @Column({ nullable: true })
-  occupation: string;
+  @Column({ default: "local" })
+  provider: string;
 
   @ApiProperty({
-    description: "Industry the user works in",
-    example: "Technology",
+    description: "Google ID for OAuth users",
+    example: "123456789012345678901",
   })
   @Column({ nullable: true })
-  industry: string;
+  google_id: string;
 
   @ApiProperty({
-    description: "Work style preference",
-    example: "Hybrid",
-    enum: ["Office", "Remote", "Hybrid", "Freelance"],
+    description: "User avatar URL",
+    example: "https://example.com/avatar.jpg",
   })
   @Column({ nullable: true })
-  work_style: string;
+  avatar_url: string;
 
   @ApiProperty({
-    description: "Lifestyle preferences as array of strings",
-    example: ["Active", "Social", "Quiet"],
-    type: [String],
+    description: "Whether email is verified",
+    example: true,
   })
-  @Column("simple-array", { nullable: true })
-  lifestyle: string[];
-
-  @ApiProperty({
-    description: "Pet ownership information",
-    example: "Cat",
-    enum: ["None", "Cat", "Dog", "Other"],
-  })
-  @Column({ nullable: true })
-  pets: string;
-
-  @ApiProperty({ description: "Whether the user smokes", example: false })
   @Column({ default: false })
-  smoker: boolean;
-
-  @ApiProperty({
-    description: "User's hobbies and lifestyle preferences",
-    example: ["gym", "cooking", "socialising"],
-    type: [String],
-  })
-  @Column("simple-array", { nullable: true })
-  hobbies: string[];
-
-  @ApiProperty({
-    description: "Ideal living environment preference",
-    example: "social",
-    enum: [
-      "social",
-      "quiet",
-      "family-friendly",
-      "pet-friendly",
-      "trendy",
-      "green",
-    ],
-  })
-  @Column({ nullable: true })
-  ideal_living_environment: string;
-
-  @ApiProperty({
-    description: "Additional information for landlords",
-    example: "I'm a quiet professional who loves cooking",
-  })
-  @Column({ type: "text", nullable: true })
-  additional_info: string;
-
-  @ApiProperty({
-    description: "User roles (admin, operator, tenant)",
-    example: ["tenant"],
-    type: [String],
-  })
-  @Column("simple-array", { default: "tenant" })
-  roles: string[];
+  email_verified: boolean;
 
   @ApiProperty({ description: "User creation date" })
   @CreateDateColumn()
@@ -144,6 +98,23 @@ export class User {
   @OneToOne(() => Preferences, (preferences) => preferences.user, {
     cascade: true,
   })
-  @JoinColumn()
   preferences: Preferences;
+
+  @OneToOne(() => TenantProfile, (tenantProfile) => tenantProfile.user, {
+    cascade: true,
+  })
+  tenantProfile: TenantProfile;
+
+  @OneToOne(() => OperatorProfile, (operatorProfile) => operatorProfile.user, {
+    cascade: true,
+  })
+  operatorProfile: OperatorProfile;
+
+  @OneToMany(() => Shortlist, (shortlist) => shortlist.user)
+  shortlists: Shortlist[];
+
+  // Computed property for backward compatibility
+  get roles(): string[] {
+    return [this.role];
+  }
 }

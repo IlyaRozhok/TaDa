@@ -151,4 +151,38 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   additional_info?: string;
+
+  @ApiPropertyOptional({
+    description: "Account status",
+    example: "active",
+    enum: ["active", "inactive", "suspended"],
+  })
+  @IsOptional()
+  @IsIn(["active", "inactive", "suspended"])
+  status?: string;
+
+  // Operator-specific fields
+  @ApiPropertyOptional({
+    description: "Company name (for operators)",
+    example: "Smith Properties Ltd",
+  })
+  @IsOptional()
+  @IsString()
+  company_name?: string;
+
+  @ApiPropertyOptional({
+    description: "Business address (for operators)",
+    example: "123 Business St, London",
+  })
+  @IsOptional()
+  @IsString()
+  business_address?: string;
+
+  @ApiPropertyOptional({
+    description: "Business description (for operators)",
+    example: "We specialize in luxury residential properties",
+  })
+  @IsOptional()
+  @IsString()
+  business_description?: string;
 }

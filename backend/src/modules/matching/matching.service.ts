@@ -4,6 +4,7 @@ import { Repository } from "typeorm";
 import { Property } from "../../entities/property.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { User } from "../../entities/user.entity";
+import { S3Service } from "../../common/services/s3.service";
 
 export interface MatchingResult {
   property: Property;
@@ -20,8 +21,45 @@ export class MatchingService {
     @InjectRepository(Preferences)
     private readonly preferencesRepository: Repository<Preferences>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    private readonly s3Service: S3Service
   ) {}
+
+  /**
+   * Update presigned URLs for property media
+   */
+  private async updateMediaPresignedUrls(
+    property: Property
+  ): Promise<Property> {
+    if (property.media && property.media.length > 0) {
+      for (const media of property.media) {
+        try {
+          media.url = await this.s3Service.getPresignedUrl(media.s3_key);
+        } catch (error) {
+          console.error(
+            "Error generating presigned URL for media:",
+            media.id,
+            error
+          );
+          // Fallback to S3 direct URL
+          media.url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${media.s3_key}`;
+        }
+      }
+    }
+    return property;
+  }
+
+  /**
+   * Update presigned URLs for multiple properties
+   */
+  private async updateMultiplePropertiesMediaUrls(
+    properties: Property[]
+  ): Promise<Property[]> {
+    for (const property of properties) {
+      await this.updateMediaPresignedUrls(property);
+    }
+    return properties;
+  }
 
   /**
    * Find properties that match user preferences with flexible scoring:
@@ -84,7 +122,12 @@ export class MatchingService {
       );
     });
 
-    return scoredProperties.slice(0, limit).map((scored) => scored.property);
+    const matchedProperties = scoredProperties
+      .slice(0, limit)
+      .map((scored) => scored.property);
+
+    // Update presigned URLs for media files
+    return await this.updateMultiplePropertiesMediaUrls(matchedProperties);
   }
 
   /**
@@ -293,7 +336,11 @@ export class MatchingService {
         take: limit,
       });
 
-      return properties.map((property) => ({
+      // Update presigned URLs for media files
+      const propertiesWithUrls =
+        await this.updateMultiplePropertiesMediaUrls(properties);
+
+      return propertiesWithUrls.map((property) => ({
         property,
         matchScore: 0,
         matchReasons: ["No preferences set"],

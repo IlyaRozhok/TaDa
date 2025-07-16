@@ -1,41 +1,82 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { shortlistAPI, Property } from "../../lib/api";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslations } from "../../lib/language-context";
+import {
+  selectIsAuthenticated,
+  selectUser,
+} from "../../store/slices/authSlice";
+import {
+  fetchShortlist,
+  clearShortlist,
+  selectShortlistProperties,
+  selectShortlistLoading,
+  selectShortlistError,
+  selectShortlistCount,
+  clearError,
+} from "../../store/slices/shortlistSlice";
+import { AppDispatch } from "../../store/store";
 import PropertyCard from "../../components/PropertyCard";
 import DashboardHeader from "../../components/DashboardHeader";
-import { Heart, ArrowLeft } from "lucide-react";
+import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
 
 export default function ShortlistPage() {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const t = useTranslations();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
+  const properties = useSelector(selectShortlistProperties);
+  const loading = useSelector(selectShortlistLoading);
+  const error = useSelector(selectShortlistError);
+  const count = useSelector(selectShortlistCount);
+
+  // Fetch shortlist on component mount
   useEffect(() => {
-    const fetchShortlist = async () => {
-      try {
-        setLoading(true);
-        const shortlistedProperties = await shortlistAPI.getAll();
-        setProperties(shortlistedProperties);
-      } catch (err) {
-        console.error("Error fetching shortlist:", err);
-        setError("Failed to load your shortlist");
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (isAuthenticated && user && user.role === "tenant") {
+      dispatch(fetchShortlist());
+    }
+  }, [dispatch, isAuthenticated, user]);
 
-    fetchShortlist();
-  }, []);
+  // Redirect if not authenticated or not a tenant
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      router.push("/app/auth/login");
+      return;
+    }
 
-  const handlePropertyClick = (property: Property) => {
-    router.push(`/app/properties/${property.id}`);
+    if (user.role !== "tenant") {
+      router.push("/app/dashboard");
+      return;
+    }
+  }, [isAuthenticated, user, router]);
+
+  const handlePropertyClick = (propertyId: string) => {
+    router.push(`/app/properties/${propertyId}`);
   };
 
+  const handleRefresh = () => {
+    dispatch(clearError());
+    dispatch(fetchShortlist());
+  };
+
+  const handleClearShortlist = async () => {
+    if (
+      window.confirm("Are you sure you want to clear your entire shortlist?")
+    ) {
+      dispatch(clearShortlist());
+    }
+  };
+
+  const handleRetry = () => {
+    dispatch(clearError());
+    dispatch(fetchShortlist());
+  };
+
+  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -52,23 +93,39 @@ export default function ShortlistPage() {
     );
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
         <DashboardHeader />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Heart className="w-6 h-6 text-red-600" />
+            </div>
             <h2 className="text-lg font-semibold text-red-800 mb-2">
               Error Loading Shortlist
             </h2>
             <p className="text-red-600 mb-4">{error}</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
               className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors"
             >
               Try Again
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show not authenticated state
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Checking authentication...</p>
         </div>
       </div>
     );
@@ -90,18 +147,40 @@ export default function ShortlistPage() {
           </button>
 
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center">
-                <Heart className="w-6 h-6 text-rose-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-rose-600" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900">
+                    Your Shortlist
+                  </h1>
+                  <p className="text-slate-600">
+                    Properties you've saved for later viewing ({count}{" "}
+                    {count === 1 ? "property" : "properties"})
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">
-                  Your Shortlist
-                </h1>
-                <p className="text-slate-600">
-                  Properties you've saved for later viewing ({properties.length}{" "}
-                  {properties.length === 1 ? "property" : "properties"})
-                </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefresh}
+                  className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+
+                {properties.length > 0 && (
+                  <button
+                    onClick={handleClearShortlist}
+                    className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Clear All
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -114,7 +193,7 @@ export default function ShortlistPage() {
               <PropertyCard
                 key={property.id}
                 property={property}
-                onClick={() => handlePropertyClick(property)}
+                onClick={() => handlePropertyClick(property.id)}
               />
             ))}
           </div>

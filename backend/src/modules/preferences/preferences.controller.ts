@@ -38,7 +38,15 @@ export class PreferencesController {
     @Query("limit") limit: number = 10,
     @Query("search") search?: string
   ) {
-    const result = await this.preferencesService.findAll(page, limit, search);
+    // Ensure page and limit are numbers
+    const pageNum = parseInt(page as any) || 1;
+    const limitNum = parseInt(limit as any) || 10;
+
+    const result = await this.preferencesService.findAll(
+      pageNum,
+      limitNum,
+      search
+    );
 
     // Format response to match frontend expectations
     return {

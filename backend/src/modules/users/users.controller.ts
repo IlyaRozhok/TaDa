@@ -26,11 +26,9 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import {
-  IsArray,
   IsEmail,
   IsOptional,
   IsString,
-  ArrayNotEmpty,
 } from "class-validator";
 import { CreateUserDto } from "./dto/create-user.dto";
 
@@ -44,10 +42,16 @@ class AdminUpdateUserDto {
   email?: string;
 
   @IsOptional()
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  roles?: string[];
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
 }
 
 @ApiTags("Users")

@@ -17,6 +17,7 @@ import { PropertiesModule } from "./modules/properties/properties.module";
 import { PropertyMediaModule } from "./modules/property-media/property-media.module";
 import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { FavouritesModule } from "./modules/favourites/favourites.module";
+import { OperatorModule } from "./modules/operator/operator.module";
 import { dataSourceOptions } from "./database/data-source";
 import { S3Service } from "./common/services/s3.service";
 
@@ -37,6 +38,7 @@ import { S3Service } from "./common/services/s3.service";
     PropertyMediaModule,
     ShortlistModule,
     FavouritesModule,
+    OperatorModule,
   ],
   controllers: [AppController],
   providers: [S3Service],

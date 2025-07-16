@@ -7,6 +7,8 @@ import { selectUser, selectIsAuthenticated } from "./store/slices/authSlice";
 import Link from "next/link";
 import { Button } from "./components/ui/Button";
 import { useTranslations } from "./lib/language-context";
+import { getUserRole, getDashboardPath } from "./components/DashboardRouter";
+import Logo from "./components/Logo";
 
 export default function Home() {
   const user = useSelector(selectUser);
@@ -16,54 +18,117 @@ export default function Home() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.roles?.includes("operator")) {
-        router.push("/app/dashboard/operator");
-      } else {
-        router.push("/app/dashboard/tenant");
-      }
+      const userRole = getUserRole(user);
+      const dashboardPath = getDashboardPath(userRole);
+      router.push(dashboardPath);
     }
   }, [isAuthenticated, user, router]);
 
   if (isAuthenticated && user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
+      <div 
+        className="min-h-screen flex items-center justify-center relative"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed'
+        }}
+      >
+        <div className="text-center bg-white/90 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t.auth.redirectingToDashboard}</p>
+          <p className="mt-4 text-gray-800 font-medium">{t.auth.redirectingToDashboard}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div 
+      className="min-h-screen text-slate-900 relative"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <nav className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-xl">T</span>
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-white/30 shadow-lg">
+        <div className="container mx-auto px-4 py-4 lg:px-6">
+          <nav className="flex justify-between items-center">
+            {/* Logo Section */}
+            <div className="flex items-center space-x-3 group">
+              <div className="relative">
+                <Logo
+                  size="sm"
+                  className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+                />
+              </div>
+              <span className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors cursor-pointer group-hover:scale-105">
+                TaDa
+              </span>
             </div>
-            <span className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors cursor-pointer">
-              TaDa
-            </span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/app/auth/login">
-              <Button
-                variant="ghost"
-                className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200"
+
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link
+                href="#features"
+                className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
               >
-                {t.nav.login}
-              </Button>
-            </Link>
-            <Link href="/app/auth/register">
-              <Button className="bg-slate-900 hover:bg-slate-700 text-white border-0 shadow-sm transition-all duration-200">
-                {t.nav.register}
-              </Button>
-            </Link>
-          </div>
-        </nav>
+                Features
+              </Link>
+              <Link
+                href="#how-it-works"
+                className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
+              >
+                How it works
+              </Link>
+              <Link
+                href="#contact"
+                className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
+              >
+                Contact
+              </Link>
+            </div>
+
+            {/* Auth Buttons */}
+            <div className="flex items-center space-x-3">
+              <Link href="/app/auth/login">
+                <Button
+                  variant="ghost"
+                  className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200 font-medium"
+                >
+                  {t.nav.login}
+                </Button>
+              </Link>
+              <Link href="/app/auth/register">
+                <Button className="bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 font-medium px-6">
+                  {t.nav.register}
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button className="md:hidden p-2 rounded-md hover:bg-slate-100 transition-colors">
+              <svg
+                className="w-6 h-6 text-slate-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </nav>
+        </div>
       </header>
 
       {/* Hero Section */}
@@ -71,6 +136,7 @@ export default function Home() {
         {/* Main TaDa Logo with Bouncing Animation */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-8">
+            <Logo size="xl" className="mr-6" />
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold text-slate-900 select-none">
               TaDa
             </h1>
@@ -81,52 +147,115 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Main Message - Keeping exact text as requested */}
-        <div className="text-center mb-20">
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight max-w-4xl mx-auto">
-            INTRODUCING THE FUTURE OF PROPERTY
-          </h2>
-          <p className="text-2xl md:text-3xl lg:text-4xl font-light text-slate-600 max-w-3xl mx-auto">
-            WHERE HOME FINDS YOU!
-          </p>
-        </div>
+        {/* Main Message - Liquid Simple Style */}
+        <div className="text-center mb-20 max-w-5xl mx-auto">
+          <div className="relative overflow-hidden bg-gradient-to-br from-slate-100/80 via-slate-200/70 to-slate-300/60 backdrop-blur-lg border border-slate-300/50 rounded-3xl shadow-2xl transition-all duration-500 ease-out hover:shadow-3xl hover:scale-[1.02] p-12 md:p-16">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 opacity-30">
+              <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-slate-400/20 to-slate-500/20 rounded-full blur-2xl animate-pulse" />
+              <div className="absolute top-1/2 right-0 w-32 h-32 bg-gradient-to-br from-slate-500/20 to-slate-600/20 rounded-full blur-2xl animate-pulse delay-300" />
+              <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-gradient-to-br from-slate-400/20 to-slate-500/20 rounded-full blur-3xl animate-pulse delay-700" />
+            </div>
 
-        {/* Problem Statement */}
-        <div className="max-w-4xl mx-auto mb-20">
-          <div className="bg-slate-50 rounded-2xl p-8 md:p-12 border border-slate-200">
-            <p className="text-xl md:text-2xl text-slate-700 text-center leading-relaxed">
-              Gone are the days of endless scrolling through property listings,
-              countless calls, missed opportunities, and frustrating rental
-              processes.
-            </p>
+            {/* Floating particles */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-slate-600/30 rounded-full animate-bounce" />
+              <div className="absolute top-3/4 right-1/4 w-2 h-2 bg-slate-700/40 rounded-full animate-bounce delay-200" />
+              <div className="absolute top-1/2 left-3/4 w-4 h-4 bg-slate-600/25 rounded-full animate-bounce delay-500" />
+              <div className="absolute top-1/6 right-1/3 w-2 h-2 bg-slate-500/35 rounded-full animate-bounce delay-700" />
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-slate-800 mb-6 leading-tight drop-shadow-lg">
+                INTRODUCING THE FUTURE OF PROPERTY
+              </h2>
+              <p className="text-2xl md:text-3xl lg:text-4xl font-light text-slate-600 drop-shadow-md">
+                WHERE HOME FINDS YOU!
+              </p>
+            </div>
+
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-300/15 to-transparent rounded-[inherit] animate-pulse" />
           </div>
         </div>
 
-        {/* CTA Buttons */}
-        <div className="text-center mb-24">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/app/auth/register">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-700 text-white text-lg px-8 py-4 shadow-sm transition-all duration-200"
-              >
-                Get Started
-              </Button>
-            </Link>
-            <Link href="/app/dashboard/operator">
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto border-slate-300 text-slate-700 hover:bg-slate-50 text-lg px-8 py-4 transition-all duration-200"
-              >
-                For Operators
-              </Button>
-            </Link>
+        {/* Problem Statement - Liquid Simple Style */}
+        <div className="max-w-4xl mx-auto mb-20">
+          <div className="relative overflow-hidden bg-gradient-to-br from-slate-200/90 via-slate-300/80 to-slate-400/70 backdrop-blur-lg border border-slate-300/60 rounded-3xl shadow-xl transition-all duration-500 ease-out hover:shadow-2xl hover:scale-[1.01] p-8 md:p-12">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 opacity-25">
+              <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-br from-slate-400/25 to-slate-500/25 rounded-full blur-xl animate-pulse" />
+              <div className="absolute bottom-0 left-0 w-28 h-28 bg-gradient-to-br from-slate-500/25 to-slate-600/25 rounded-full blur-xl animate-pulse delay-500" />
+              <div className="absolute top-1/2 left-1/2 w-44 h-44 bg-gradient-to-br from-slate-400/20 to-slate-500/20 rounded-full blur-2xl animate-pulse delay-1000" />
+            </div>
+
+            {/* Background Image with overlay */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-10"
+              style={{
+                backgroundImage: "url(/key-crown.jpg)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+
+            {/* Content */}
+            <div className="relative z-10">
+              <p className="text-xl md:text-2xl text-slate-700 text-center leading-relaxed drop-shadow-sm">
+                Gone are the days of endless scrolling through property
+                listings, countless calls, missed opportunities, and frustrating
+                rental processes.
+              </p>
+            </div>
+
+            {/* Subtle glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-300/10 to-transparent rounded-[inherit] animate-pulse" />
+          </div>
+        </div>
+
+        {/* CTA Buttons - Liquid Simple Style */}
+        <div className="text-center mb-24 max-w-2xl mx-auto">
+          <div className="relative overflow-hidden bg-gradient-to-br from-slate-100/70 via-slate-200/60 to-slate-300/50 backdrop-blur-md border border-slate-300/40 rounded-2xl shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-[1.02] p-8">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-slate-400/20 to-slate-500/20 rounded-full blur-xl animate-pulse" />
+              <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br from-slate-500/20 to-slate-600/20 rounded-full blur-xl animate-pulse delay-700" />
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <Link href="/app/auth/register">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white text-lg px-8 py-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 rounded-xl"
+                  >
+                    Get Started
+                  </Button>
+                </Link>
+                <Link href="/app/dashboard/operator">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto border-slate-400/60 text-slate-700 hover:bg-white/60 hover:text-slate-800 text-lg px-8 py-4 transition-all duration-300 hover:shadow-lg hover:scale-105 rounded-xl backdrop-blur-sm"
+                  >
+                    For Operators
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-300/10 to-transparent rounded-[inherit] animate-pulse" />
           </div>
         </div>
 
         {/* Features Section */}
-        <div className="grid md:grid-cols-3 gap-8 mb-24 max-w-6xl mx-auto">
+        <div
+          id="features"
+          className="grid md:grid-cols-3 gap-8 mb-24 max-w-6xl mx-auto"
+        >
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300">
             <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center mb-6 mx-auto">
               <svg
@@ -203,6 +332,51 @@ export default function Home() {
           </div>
         </div>
 
+        {/* How it works Section */}
+        <div id="how-it-works" className="mb-24 max-w-6xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center text-slate-900 mb-16">
+            How TaDa Works
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <span className="text-2xl font-bold text-blue-600">1</span>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                Tell Us Your Preferences
+              </h3>
+              <p className="text-slate-600 leading-relaxed">
+                Share your lifestyle, budget, and ideal location. Our AI learns
+                what makes you happy.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <span className="text-2xl font-bold text-green-600">2</span>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                Get Matched
+              </h3>
+              <p className="text-slate-600 leading-relaxed">
+                Our smart algorithm finds properties and housemates that
+                perfectly match your needs.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <span className="text-2xl font-bold text-purple-600">3</span>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                Move In
+              </h3>
+              <p className="text-slate-600 leading-relaxed">
+                Connect with verified landlords and move into your dream home
+                hassle-free.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Final CTA Section */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 md:p-12 text-center max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
@@ -224,9 +398,77 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-16 border-t border-slate-200">
-        <div className="text-center text-slate-500">
-          <p>© 2024 TaDa - Where Home Finds You!</p>
+      <footer
+        id="contact"
+        className="container mx-auto px-4 py-12 mt-16 border-t border-slate-200"
+      >
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                TaDa
+              </h3>
+              <p className="text-slate-600 mb-4">
+                The future of property matching. Where home finds you.
+              </p>
+              <div className="flex items-center space-x-3">
+                <Logo size="sm" />
+                <span className="text-xl font-bold text-slate-900">TaDa</span>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                Quick Links
+              </h3>
+              <ul className="space-y-2 text-slate-600">
+                <li>
+                  <a
+                    href="#features"
+                    className="hover:text-slate-900 transition-colors"
+                  >
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#how-it-works"
+                    className="hover:text-slate-900 transition-colors"
+                  >
+                    How it works
+                  </a>
+                </li>
+                <li>
+                  <Link
+                    href="/app/auth/register"
+                    className="hover:text-slate-900 transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/app/dashboard/operator"
+                    className="hover:text-slate-900 transition-colors"
+                  >
+                    For Operators
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                Contact
+              </h3>
+              <div className="space-y-2 text-slate-600">
+                <p>Email: hello@tada.com</p>
+                <p>Phone: +1 (555) 123-4567</p>
+                <p>Address: 123 Tech Street, Silicon Valley, CA</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center text-slate-500 pt-8 border-t border-slate-200">
+            <p>© 2024 TaDa - Where Home Finds You!</p>
+          </div>
         </div>
       </footer>
     </div>

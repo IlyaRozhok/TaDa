@@ -24,8 +24,9 @@ import {
   User,
 } from "lucide-react";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
+import DashboardRouter from "../../../components/DashboardRouter";
 
-export default function TenantDashboard() {
+function TenantDashboardContent() {
   const user = useSelector(selectUser);
   const t = useTranslations();
   const router = useRouter();
@@ -40,18 +41,6 @@ export default function TenantDashboard() {
     const initializeDashboard = async () => {
       try {
         await waitForSessionManager();
-
-        if (!user) {
-          console.log("No user found, redirecting to login");
-          router.push("/app/auth/login");
-          return;
-        }
-
-        if (user.roles?.includes("operator")) {
-          router.push("/app/dashboard/operator");
-          return;
-        }
-
         await Promise.all([fetchProperties(), fetchMatchedProperties()]);
       } catch (err) {
         console.error("Dashboard initialization error:", err);
@@ -62,16 +51,14 @@ export default function TenantDashboard() {
     };
 
     initializeDashboard();
-  }, [user, router]);
+  }, []);
 
   const fetchProperties = async () => {
     try {
       const response = await propertiesAPI.getAll();
       const responseData = response.data || response;
-      // Handle both array and object responses
-      const propertiesData = Array.isArray(responseData)
-        ? responseData
-        : responseData.properties || [];
+      // Backend returns { data: properties[], total, page, totalPages }
+      const propertiesData = responseData.data || responseData.properties || responseData || [];
       setProperties(propertiesData.slice(0, 6));
     } catch (err) {
       console.error("Error fetching properties:", err);
@@ -155,19 +142,30 @@ export default function TenantDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-8 sm:mb-12">
-          <div className="bg-gradient-to-r from-slate-600 to-violet-600 rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center">
-                <Home className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-1">
-                  Welcome back,{" "}
-                  {user?.full_name ? user.full_name.split(" ")[0] : "User"}!
-                </h1>
-                <p className="text-sm sm:text-base">
-                  Your personalized property dashboard awaits
-                </p>
+          <div className="relative overflow-hidden bg-gradient-to-r from-slate-600 to-violet-600 rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
+            {/* Background Image */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-20"
+              style={{
+                backgroundImage: 'url(/key-crown.jpg)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
+                  <Home className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-white">
+                    Welcome back,{" "}
+                    {user?.full_name ? user.full_name.split(" ")[0] : "User"}!
+                  </h1>
+                  <p className="text-sm sm:text-base text-white/90">
+                    Your personalized property dashboard awaits
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -290,5 +288,13 @@ export default function TenantDashboard() {
         <FeaturedPropertiesSlider />
       </div>
     </div>
+  );
+}
+
+export default function TenantDashboard() {
+  return (
+    <DashboardRouter requiredRole="tenant">
+      <TenantDashboardContent />
+    </DashboardRouter>
   );
 }

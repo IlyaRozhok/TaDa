@@ -354,5 +354,4 @@ const preferencesSlice = createSlice({
 });
 
 export const { clearError } = preferencesSlice.actions;
-export { updateUserPreferences, clearUserPreferences };
 export default preferencesSlice.reducer;

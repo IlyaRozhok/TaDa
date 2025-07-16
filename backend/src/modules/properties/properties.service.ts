@@ -100,6 +100,9 @@ export class PropertiesService {
     limit: number;
     totalPages: number;
   }> {
+    // Ensure page and limit are valid numbers
+    const validPage = Math.max(1, Math.floor(Number(page)) || 1);
+    const validLimit = Math.max(1, Math.min(100, Math.floor(Number(limit)) || 10));
     const queryBuilder = this.propertyRepository
       .createQueryBuilder("property")
       .leftJoinAndSelect("property.operator", "operator")
@@ -114,8 +117,8 @@ export class PropertiesService {
     }
 
     const [properties, total] = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
+      .skip((validPage - 1) * validLimit)
+      .take(validLimit)
       .getManyAndCount();
 
     // Update presigned URLs for all properties
@@ -125,9 +128,9 @@ export class PropertiesService {
     return {
       properties: propertiesWithUrls,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: validPage,
+      limit: validLimit,
+      totalPages: Math.ceil(total / validLimit),
     };
   }
 

@@ -67,7 +67,7 @@ export default function UserDropdown() {
       >
         <User className="h-5 w-5 text-gray-600" />
         <span className="text-sm text-gray-700 hidden sm:block">
-          {user.full_name}
+          {user.full_name || user.email?.split('@')[0] || 'User'}
         </span>
       </button>
 

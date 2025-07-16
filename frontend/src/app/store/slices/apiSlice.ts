@@ -74,20 +74,20 @@ export const apiSlice = createApi({
     }),
     addToShortlist: builder.mutation({
       query: (propertyId) => ({
-        url: `/matching/shortlist/${propertyId}`,
+        url: `/shortlist/${propertyId}`,
         method: "POST",
       }),
       invalidatesTags: ["Shortlist"],
     }),
     removeFromShortlist: builder.mutation({
       query: (propertyId) => ({
-        url: `/matching/shortlist/${propertyId}`,
+        url: `/shortlist/${propertyId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Shortlist"],
     }),
     getShortlist: builder.query({
-      query: () => "/matching/shortlist",
+      query: () => "/shortlist",
       providesTags: ["Shortlist"],
     }),
 

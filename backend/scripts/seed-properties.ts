@@ -1,6 +1,7 @@
 import AppDataSource from "../src/database/data-source";
 import { Property } from "../src/entities/property.entity";
 import { User } from "../src/entities/user.entity";
+import { OperatorProfile } from "../src/entities/operator-profile.entity";
 import { Shortlist } from "../src/entities/shortlist.entity";
 import { Favourite } from "../src/entities/favourite.entity";
 import { Like } from "typeorm";
@@ -13,6 +14,8 @@ async function seedProperties() {
 
     const propertyRepository = AppDataSource.getRepository(Property);
     const userRepository = AppDataSource.getRepository(User);
+    const operatorProfileRepository =
+      AppDataSource.getRepository(OperatorProfile);
     const shortlistRepository = AppDataSource.getRepository(Shortlist);
     const favouriteRepository = AppDataSource.getRepository(Favourite);
 
@@ -33,30 +36,39 @@ async function seedProperties() {
 
     // Find or create an operator user
     let operator = await userRepository.findOne({
-      where: { roles: Like("%operator%") },
+      where: { role: "operator" },
+      relations: ["operatorProfile"],
     });
 
     if (!operator) {
       // Create a test operator if none exists
       operator = userRepository.create({
         email: "operator@test.com",
-        full_name: "Test Operator",
-        roles: ["operator"],
+        role: "operator",
+        status: "active",
         password: "$2b$10$test.hash.here", // This is just for testing
       });
       await userRepository.save(operator);
+
+      // Create operator profile
+      const operatorProfile = operatorProfileRepository.create({
+        full_name: "Test Operator",
+        userId: operator.id,
+      });
+      await operatorProfileRepository.save(operatorProfile);
+
       console.log("Created test operator user");
     }
 
     // Создаем пользователя-админа, если его нет
     let admin = await userRepository.findOne({
-      where: { roles: Like("%admin%") },
+      where: { role: "admin" },
     });
     if (!admin) {
       admin = userRepository.create({
         email: "admin@test.com",
-        full_name: "Test Admin",
-        roles: ["admin"],
+        role: "admin",
+        status: "active",
         password: "$2b$10$admin.hash.here", // This is just for testing
       });
       await userRepository.save(admin);

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   User,
   Settings,
@@ -10,12 +10,14 @@ import {
   LogOut,
   ChevronDown,
   Bell,
-  Home,
   Search,
+  Shield,
+  Users,
+  Building2,
 } from "lucide-react";
-import { useTranslations } from "../lib/language-context";
 import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
+import Logo from "./Logo";
 
 interface DropdownItemProps {
   icon: React.ReactNode;
@@ -40,9 +42,9 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
 );
 
 export default function DashboardHeader() {
-  const t = useTranslations();
   const dispatch = useDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const user = useSelector(selectUser);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -103,23 +105,81 @@ export default function DashboardHeader() {
     }
   };
 
+  // Check if user is admin
+  const isAdmin = user?.roles?.includes("admin");
+
+  console.log("user", user);
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className=" px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <button
             onClick={handleLogoClick}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer group"
           >
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center group-hover:bg-slate-800 transition-colors">
-              <Home className="w-4 h-4 text-white" />
-            </div>
+            <Logo size="md" />
             <div>
               <h1 className="text-lg font-bold text-slate-900">TA DA</h1>
               <p className="text-xs text-slate-500 -mt-1">Rental Platform</p>
             </div>
           </button>
+
+          {/* Admin Navigation */}
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <div className="bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => handleNavigation("/app/dashboard/admin")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                    pathname === "/app/dashboard/admin"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Shield className="w-4 h-4 inline mr-2" />
+                  Admin Dashboard
+                </button>
+                <button
+                  onClick={() =>
+                    handleNavigation("/app/dashboard/admin/tenant")
+                  }
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                    pathname === "/app/dashboard/admin/tenant"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Users className="w-4 h-4 inline mr-2" />
+                  Tenant Dashboard
+                </button>
+                <button
+                  onClick={() =>
+                    handleNavigation("/app/dashboard/admin/operator")
+                  }
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                    pathname === "/app/dashboard/admin/operator"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 inline mr-2" />
+                  Operator Dashboard
+                </button>
+                <button
+                  onClick={() => handleNavigation("/app/admin/panel")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                    pathname === "/app/admin/panel"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Settings className="w-4 h-4 inline mr-2" />
+                  Admin Panel
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
@@ -146,7 +206,9 @@ export default function DashboardHeader() {
                     {getDisplayName()}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {user?.roles?.includes("operator")
+                    {user?.roles?.includes("admin")
+                      ? "Administrator"
+                      : user?.roles?.includes("operator")
                       ? "Property Operator"
                       : "Tenant"}
                   </p>
@@ -174,7 +236,9 @@ export default function DashboardHeader() {
                           {user?.email || "Loading..."}
                         </p>
                         <p className="text-xs text-emerald-600 font-medium">
-                          {user?.roles?.includes("operator")
+                          {user?.roles?.includes("admin")
+                            ? "Administrator"
+                            : user?.roles?.includes("operator")
                             ? "Property Operator"
                             : "Tenant"}
                         </p>

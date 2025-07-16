@@ -1,23 +1,33 @@
 import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./slices/authSlice";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import { apiSlice } from "./slices/apiSlice";
-import usersReducer from "./slices/usersSlice";
-import propertiesReducer from "./slices/propertiesSlice";
-import preferencesReducer from "./slices/preferencesSlice";
+import authSlice from "./slices/authSlice";
+import usersSlice from "./slices/usersSlice";
+import preferencesSlice from "./slices/preferencesSlice";
+import propertiesSlice from "./slices/propertiesSlice";
+import operatorSlice from "./slices/operatorSlice";
+import shortlistSlice from "./slices/shortlistSlice";
 
 export const store = configureStore({
   reducer: {
-    auth: authReducer,
-    api: apiSlice.reducer,
-    users: usersReducer,
-    properties: propertiesReducer,
-    preferences: preferencesReducer,
+    [apiSlice.reducerPath]: apiSlice.reducer,
+    auth: authSlice,
+    users: usersSlice,
+    preferences: preferencesSlice,
+    properties: propertiesSlice,
+    operator: operatorSlice,
+    shortlist: shortlistSlice,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(apiSlice.middleware),
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
+      },
+    }).concat(apiSlice.middleware),
+  devTools: process.env.NODE_ENV !== "production",
 });
 
-// setupListeners(store.dispatch); // Отключено для предотвращения автоматического refetching
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

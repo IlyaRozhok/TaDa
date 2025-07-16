@@ -30,7 +30,10 @@ export class PreferencesService {
       throw new NotFoundException("User not found");
     }
 
-    if (user.roles && user.roles.includes("operator")) {
+    if (
+      user.role === "operator" ||
+      (user.roles && user.roles.includes("operator"))
+    ) {
       throw new ForbiddenException("Only tenants can set preferences");
     }
 
@@ -93,29 +96,37 @@ export class PreferencesService {
     limit: number;
     totalPages: number;
   }> {
+    // Ensure page and limit are valid numbers
+    const validPage = Math.max(1, Math.floor(Number(page)) || 1);
+    const validLimit = Math.max(
+      1,
+      Math.min(100, Math.floor(Number(limit)) || 10)
+    );
     const queryBuilder = this.preferencesRepository
       .createQueryBuilder("preferences")
       .leftJoinAndSelect("preferences.user", "user")
+      .leftJoinAndSelect("user.tenantProfile", "tenantProfile")
+      .leftJoinAndSelect("user.operatorProfile", "operatorProfile")
       .orderBy("preferences.created_at", "DESC");
 
     if (search) {
       queryBuilder.where(
-        "user.full_name ILIKE :search OR user.email ILIKE :search OR preferences.primary_postcode ILIKE :search OR preferences.secondary_location ILIKE :search OR preferences.commute_location ILIKE :search",
+        "tenantProfile.full_name ILIKE :search OR operatorProfile.full_name ILIKE :search OR user.email ILIKE :search OR preferences.primary_postcode ILIKE :search OR preferences.secondary_location ILIKE :search OR preferences.commute_location ILIKE :search",
         { search: `%${search}%` }
       );
     }
 
     const [preferences, total] = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
+      .skip((validPage - 1) * validLimit)
+      .take(validLimit)
       .getManyAndCount();
 
     return {
       preferences,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: validPage,
+      limit: validLimit,
+      totalPages: Math.ceil(total / validLimit),
     };
   }
 

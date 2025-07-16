@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 import { PropertyMedia } from "../types";
+import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
 
 interface ImageGalleryProps {
   images?: string[]; // Deprecated: for backward compatibility
@@ -33,7 +34,7 @@ export default function ImageGallery({
       return images;
     }
 
-    return ["/placeholder-property.jpg"];
+    return [PROPERTY_PLACEHOLDER];
   };
 
   const displayImages = getDisplayImages();
