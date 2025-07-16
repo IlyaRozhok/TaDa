@@ -49,16 +49,7 @@ export default function LoginPage() {
   // If user is already authenticated, show loading
   if (isAuthenticated && user) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center relative"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
-        }}
-      >
+      <div className="min-h-screen flex items-center justify-center relative bg-black">
         <div className="text-center bg-white/90 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
           <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-800 font-medium">
@@ -191,16 +182,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="min-h-screen relative"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-      }}
-    >
+    <div className="min-h-screen relative bg-gradient-to-r from-[#141E30] via-[#2C3E50] to-[#243B55]">
       {/* Header */}
       <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

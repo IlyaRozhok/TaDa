@@ -20,19 +20,13 @@ export default function Logo({ size = "md", className, onClick }: LogoProps) {
   return (
     <div
       className={cn(
-        "relative rounded-full overflow-hidden border-2 border-white shadow-lg bg-white cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-xl",
+        "relative rounded-full overflow-hidden border-2 border-white shadow-lg bg-black cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-xl flex items-center justify-center",
         sizeClasses[size],
         className
       )}
       onClick={onClick}
     >
-      <Image
-        src="/key-crown.jpg"
-        alt="TaDa Logo"
-        fill
-        className="object-cover"
-        priority
-      />
+      <span className="text-white font-bold text-xs">TD</span>
     </div>
   );
 }
@@ -46,19 +40,13 @@ export function LogoWithBackground({
   return (
     <div
       className={cn(
-        "relative rounded-full overflow-hidden border-2 border-slate-200 shadow-lg bg-gradient-to-br from-slate-100 to-slate-200 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-xl",
+        "relative rounded-full overflow-hidden border-2 border-slate-200 shadow-lg bg-black cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-xl flex items-center justify-center",
         sizeClasses[size],
         className
       )}
       onClick={onClick}
     >
-      <Image
-        src="/key-crown.jpg"
-        alt="TaDa Logo"
-        fill
-        className="object-cover opacity-90"
-        priority
-      />
+      <span className="text-white font-bold text-xs">TD</span>
     </div>
   );
 }
@@ -71,18 +59,12 @@ export function SimpleRoundLogo({
   return (
     <div
       className={cn(
-        "relative rounded-full overflow-hidden border border-slate-300 shadow-sm",
+        "relative rounded-full overflow-hidden border border-slate-300 shadow-sm bg-black flex items-center justify-center",
         sizeClasses[size],
         className
       )}
     >
-      <Image
-        src="/key-crown.jpg"
-        alt="TaDa Logo"
-        fill
-        className="object-cover"
-        priority
-      />
+      <span className="text-white font-bold text-xs">TD</span>
     </div>
   );
 }

@@ -147,7 +147,7 @@ function TenantDashboardContent() {
             <div 
               className="absolute inset-0 bg-cover bg-center opacity-20"
               style={{
-                backgroundImage: 'url(/key-crown.jpg)',
+                backgroundColor: 'black',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
               }}

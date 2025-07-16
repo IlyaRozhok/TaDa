@@ -26,16 +26,7 @@ export default function Home() {
 
   if (isAuthenticated && user) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center relative"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
-        }}
-      >
+      <div className="min-h-screen flex items-center justify-center relative">
         <div className="text-center bg-white/90 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-800 font-medium">
@@ -47,16 +38,7 @@ export default function Home() {
   }
 
   return (
-    <div
-      className="min-h-screen text-slate-900 relative"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-      }}
-    >
+    <div className="min-h-screen text-slate-900 relative bg-gradient-to-r from-[#141E30] via-[#2C3E50] to-[#243B55]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-lg">
         <div className="container mx-auto px-4 py-4 lg:px-6">
@@ -196,7 +178,7 @@ export default function Home() {
             <div
               className="absolute inset-0 bg-cover bg-center opacity-10"
               style={{
-                backgroundImage: "url(/key-crown.jpg)",
+                backgroundColor: "black",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
