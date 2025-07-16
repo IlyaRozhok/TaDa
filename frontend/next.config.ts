@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker deployment
-  output: "standalone", // This is for containerized deployments
+  // Remove standalone output for Vercel deployment
+  // output: "standalone", // This is for containerized deployments only
   poweredByHeader: false,
   generateEtags: false,
   compress: true, // Enable compression for production
@@ -13,7 +13,11 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    unoptimized: true, // Keep this for S3 images
+    // Enable image optimization for Vercel
+    unoptimized: false,
+    formats: ["image/webp", "image/avif"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
