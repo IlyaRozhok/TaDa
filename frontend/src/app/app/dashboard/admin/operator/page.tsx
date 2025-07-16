@@ -220,39 +220,33 @@ function AdminOperatorDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Link href="/app/properties/create">
-            <div className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 text-left">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                  <Plus className="w-6 h-6 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                    Add Property
-                  </h3>
-                  <p className="text-slate-600 text-sm">List a new property</p>
-                </div>
+          <div className="bg-slate-100 border border-slate-200 rounded-xl p-6 text-left cursor-not-allowed opacity-50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center">
+                <Plus className="w-6 h-6 text-slate-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-500 mb-1">
+                  Add Property
+                </h3>
+                <p className="text-slate-400 text-sm">Admin view only</p>
               </div>
             </div>
-          </Link>
+          </div>
 
-          <Link href="/app/properties/manage">
-            <div className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 text-left">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                  <Eye className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                    Manage Properties
-                  </h3>
-                  <p className="text-slate-600 text-sm">
-                    Edit & view your listings
-                  </p>
-                </div>
+          <div className="bg-slate-100 border border-slate-200 rounded-xl p-6 text-left cursor-not-allowed opacity-50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center">
+                <Eye className="w-6 h-6 text-slate-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-500 mb-1">
+                  Manage Properties
+                </h3>
+                <p className="text-slate-400 text-sm">Admin view only</p>
               </div>
             </div>
-          </Link>
+          </div>
 
           <Link href="/app/properties">
             <div className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 text-left">

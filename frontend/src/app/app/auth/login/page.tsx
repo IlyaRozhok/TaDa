@@ -230,19 +230,19 @@ export default function LoginPage() {
       </header>
 
       {/* Main Content */}
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-start justify-center px-4 py-16 relative overflow-hidden">
+      <div className="min-h-screen flex items-start justify-center px-4 py-16 relative overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-slate-200/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-slate-300/20 rounded-full blur-3xl animate-pulse delay-300" />
-          <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-slate-400/20 rounded-full blur-3xl animate-pulse delay-700" />
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse delay-300" />
+          <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-700" />
         </div>
 
         <div className="w-full max-w-sm sm:max-w-md md:max-w-lg relative z-10">
           {/* Back to Home */}
           <Link
             href="/"
-            className="inline-flex items-center text-slate-600 hover:text-slate-800 transition-colors mb-8 font-medium group px-4 py-2 rounded-lg hover:bg-slate-200/50 backdrop-blur-sm"
+            className="inline-flex items-center text-white/90 hover:text-white transition-colors mb-8 font-medium group px-4 py-2 rounded-lg hover:bg-white/20 backdrop-blur-sm"
           >
             <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Home

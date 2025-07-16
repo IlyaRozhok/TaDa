@@ -233,6 +233,84 @@ export const preferencesAPI = {
   create: (data: PreferencesData) => api.post("/preferences", data),
   update: (data: Partial<PreferencesData>) => api.put("/preferences", data),
   delete: () => api.delete("/preferences"),
+  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
+    api.get("/preferences/all", { params }),
+};
+
+// Users API (Admin functions)
+export const usersAPI = {
+  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
+    api.get("/users", { params }),
+  create: (data: any) => api.post("/users", data),
+  update: (id: string, data: any) => api.put(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
+  getCount: async (): Promise<number> => {
+    const response = await api.get("/users", { params: { limit: 1 } });
+    return response.data.total || 0;
+  },
+};
+
+// Admin Statistics API
+export const adminAPI = {
+  getStatistics: async (): Promise<{
+    totalUsers: number;
+    totalProperties: number;
+    totalMatches: number;
+    totalShortlists: number;
+    totalFavourites: number;
+    totalPreferences: number;
+    recentUsers: number;
+    recentProperties: number;
+  }> => {
+    const [usersResponse, propertiesResponse, shortlistCount, preferencesResponse] = await Promise.all([
+      api.get("/users", { params: { limit: 1 } }),
+      api.get("/properties", { params: { limit: 1 } }),
+      api.get("/shortlist/count").catch(() => ({ data: { count: 0 } })),
+      api.get("/preferences/all", { params: { limit: 1 } }).catch(() => ({ data: { total: 0 } })),
+    ]);
+
+    // Calculate recent activity (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const [recentUsersResponse, recentPropertiesResponse] = await Promise.all([
+      api.get("/users", { 
+        params: { 
+          limit: 1000, // Get more to filter by date
+          sortBy: "created_at",
+          order: "DESC"
+        } 
+      }).catch(() => ({ data: { data: [] } })),
+      api.get("/properties", { 
+        params: { 
+          limit: 1000, // Get more to filter by date
+        } 
+      }).catch(() => ({ data: { data: [] } })),
+    ]);
+
+    // Filter recent users (last 30 days)
+    const recentUsers = recentUsersResponse.data.data?.filter((user: any) => {
+      const createdAt = new Date(user.created_at);
+      return createdAt >= thirtyDaysAgo;
+    }).length || 0;
+
+    // Filter recent properties (last 30 days)
+    const recentProperties = recentPropertiesResponse.data.data?.filter((property: any) => {
+      const createdAt = new Date(property.created_at);
+      return createdAt >= thirtyDaysAgo;
+    }).length || 0;
+
+    return {
+      totalUsers: usersResponse.data.total || 0,
+      totalProperties: propertiesResponse.data.total || 0,
+      totalMatches: 0, // We'll implement this later
+      totalShortlists: shortlistCount.data.count || 0,
+      totalFavourites: 0, // We'll implement this later
+      totalPreferences: preferencesResponse.data.total || 0,
+      recentUsers,
+      recentProperties,
+    };
+  },
 };
 
 // Shortlist API

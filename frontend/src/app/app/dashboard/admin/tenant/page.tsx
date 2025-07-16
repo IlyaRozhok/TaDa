@@ -182,22 +182,19 @@ function AdminTenantDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
-          <button
-            onClick={() => router.push("/app/preferences")}
-            className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 text-left"
-          >
+          <div className="bg-slate-100 border border-slate-200 rounded-xl p-6 text-left cursor-not-allowed opacity-50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                <Target className="w-6 h-6 text-emerald-600" />
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center">
+                <Target className="w-6 h-6 text-slate-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                <h3 className="text-lg font-semibold text-slate-500 mb-1">
                   Set Preferences
                 </h3>
-                <p className="text-slate-600 text-sm">Define your ideal home</p>
+                <p className="text-slate-400 text-sm">Admin view only</p>
               </div>
             </div>
-          </button>
+          </div>
 
           <button
             onClick={() => router.push("/app/properties")}
@@ -218,80 +215,22 @@ function AdminTenantDashboard() {
             </div>
           </button>
 
-          <button
-            onClick={() => router.push("/app/shortlist")}
-            className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 text-left"
-          >
+          <div className="bg-slate-100 border border-slate-200 rounded-xl p-6 text-left cursor-not-allowed opacity-50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center group-hover:bg-rose-100 transition-colors">
-                <Heart className="w-6 h-6 text-rose-600" />
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center">
+                <Heart className="w-6 h-6 text-slate-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                <h3 className="text-lg font-semibold text-slate-500 mb-1">
                   My Shortlist
                 </h3>
-                <p className="text-slate-600 text-sm">Saved properties</p>
+                <p className="text-slate-400 text-sm">Admin view only</p>
               </div>
             </div>
-          </button>
+          </div>
         </div>
 
         {/* Recommended Properties Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-violet-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-900">
-                Recommended For You
-              </h2>
-            </div>
-            <button
-              onClick={() => router.push("/app/matches")}
-              className="text-slate-600 hover:text-slate-900 font-medium flex items-center gap-2 transition-colors"
-            >
-              View All Matches
-              <TrendingUp className="w-4 h-4" />
-            </button>
-          </div>
-
-          {matchedProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {matchedProperties.map((match) => (
-                <div key={match.property.id} className="relative">
-                  <PropertyCard
-                    property={match.property}
-                    onClick={() => handlePropertyClick(match.property)}
-                  />
-                  {/* Match Score Badge */}
-                  <div className="absolute top-4 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-bold text-green-700 border border-green-200">
-                    {Math.round(match.matchScore)}% Match
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                No matches yet
-              </h3>
-              <p className="text-slate-600 mb-6">
-                Set your preferences to get personalized property
-                recommendations.
-              </p>
-              <button
-                onClick={() => router.push("/app/preferences")}
-                className="bg-slate-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-800 transition-colors"
-              >
-                Set Preferences
-              </button>
-            </div>
-          )}
-        </div>
 
         {/* Featured Properties Section */}
         <FeaturedPropertiesSlider />

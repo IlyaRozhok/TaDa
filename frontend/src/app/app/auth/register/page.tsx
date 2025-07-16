@@ -58,19 +58,21 @@ export default function RegisterPage() {
   // If user is already authenticated, show loading
   if (isAuthenticated && user) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center relative"
         style={{
           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed'
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
         }}
       >
         <div className="text-center bg-white/90 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
           <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-800 font-medium">Redirecting to dashboard...</p>
+          <p className="text-slate-800 font-medium">
+            Redirecting to dashboard...
+          </p>
         </div>
       </div>
     );
@@ -167,14 +169,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen relative"
       style={{
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
       }}
     >
       {/* Header */}
@@ -218,7 +220,7 @@ export default function RegisterPage() {
           {/* Back to Home */}
           <Link
             href="/"
-            className="inline-flex items-center text-slate-600 hover:text-slate-800 transition-colors mb-8 font-medium group px-4 py-2 rounded-lg hover:bg-slate-200/50 backdrop-blur-sm"
+            className="inline-flex items-center text-white/90 hover:text-white transition-colors mb-8 font-medium group px-4 py-2 rounded-lg hover:bg-white/20 backdrop-blur-sm"
           >
             <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Home

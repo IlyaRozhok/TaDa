@@ -26,37 +26,39 @@ export default function Home() {
 
   if (isAuthenticated && user) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center relative"
         style={{
           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed'
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
         }}
       >
         <div className="text-center bg-white/90 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-800 font-medium">{t.auth.redirectingToDashboard}</p>
+          <p className="mt-4 text-gray-800 font-medium">
+            {t.auth.redirectingToDashboard}
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen text-slate-900 relative"
       style={{
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/background.jpg')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
       }}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-white/30 shadow-lg">
+      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-lg">
         <div className="container mx-auto px-4 py-4 lg:px-6">
           <nav className="flex justify-between items-center">
             {/* Logo Section */}
@@ -149,7 +151,7 @@ export default function Home() {
 
         {/* Main Message - Liquid Simple Style */}
         <div className="text-center mb-20 max-w-5xl mx-auto">
-          <div className="relative overflow-hidden bg-gradient-to-br from-slate-100/80 via-slate-200/70 to-slate-300/60 backdrop-blur-lg border border-slate-300/50 rounded-3xl shadow-2xl transition-all duration-500 ease-out hover:shadow-3xl hover:scale-[1.02] p-12 md:p-16">
+          <div className="relative overflow-hidden bg-white/40 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl transition-all duration-500 ease-out hover:shadow-3xl hover:scale-[1.02] hover:bg-white/50 p-12 md:p-16">
             {/* Animated background elements */}
             <div className="absolute inset-0 opacity-30">
               <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-slate-400/20 to-slate-500/20 rounded-full blur-2xl animate-pulse" />
@@ -182,7 +184,7 @@ export default function Home() {
 
         {/* Problem Statement - Liquid Simple Style */}
         <div className="max-w-4xl mx-auto mb-20">
-          <div className="relative overflow-hidden bg-gradient-to-br from-slate-200/90 via-slate-300/80 to-slate-400/70 backdrop-blur-lg border border-slate-300/60 rounded-3xl shadow-xl transition-all duration-500 ease-out hover:shadow-2xl hover:scale-[1.01] p-8 md:p-12">
+          <div className="relative overflow-hidden bg-white/50 backdrop-blur-xl border border-white/30 rounded-3xl shadow-xl transition-all duration-500 ease-out hover:shadow-2xl hover:scale-[1.01] hover:bg-white/60 p-8 md:p-12">
             {/* Animated background elements */}
             <div className="absolute inset-0 opacity-25">
               <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-br from-slate-400/25 to-slate-500/25 rounded-full blur-xl animate-pulse" />
@@ -256,7 +258,7 @@ export default function Home() {
           id="features"
           className="grid md:grid-cols-3 gap-8 mb-24 max-w-6xl mx-auto"
         >
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/30 rounded-2xl p-8 text-center hover:shadow-lg hover:bg-white/70 transition-all duration-300">
             <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center mb-6 mx-auto">
               <svg
                 className="w-8 h-8 text-blue-600"
@@ -281,7 +283,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/30 rounded-2xl p-8 text-center hover:shadow-lg hover:bg-white/70 transition-all duration-300">
             <div className="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-6 mx-auto">
               <svg
                 className="w-8 h-8 text-green-600"
@@ -306,7 +308,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/30 rounded-2xl p-8 text-center hover:shadow-lg hover:bg-white/70 transition-all duration-300">
             <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center mb-6 mx-auto">
               <svg
                 className="w-8 h-8 text-purple-600"
@@ -332,53 +334,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* How it works Section */}
-        <div id="how-it-works" className="mb-24 max-w-6xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-slate-900 mb-16">
-            How TaDa Works
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <span className="text-2xl font-bold text-blue-600">1</span>
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-4">
-                Tell Us Your Preferences
-              </h3>
-              <p className="text-slate-600 leading-relaxed">
-                Share your lifestyle, budget, and ideal location. Our AI learns
-                what makes you happy.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <span className="text-2xl font-bold text-green-600">2</span>
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-4">
-                Get Matched
-              </h3>
-              <p className="text-slate-600 leading-relaxed">
-                Our smart algorithm finds properties and housemates that
-                perfectly match your needs.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <span className="text-2xl font-bold text-purple-600">3</span>
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-4">
-                Move In
-              </h3>
-              <p className="text-slate-600 leading-relaxed">
-                Connect with verified landlords and move into your dream home
-                hassle-free.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Final CTA Section */}
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 md:p-12 text-center max-w-4xl mx-auto">
+        <div className="bg-white/60 backdrop-blur-xl border border-white/30 rounded-2xl p-8 md:p-12 text-center max-w-4xl mx-auto hover:bg-white/70 transition-all duration-300 shadow-xl hover:shadow-2xl">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
             Ready to find your perfect home?
           </h2>
@@ -398,11 +355,8 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer
-        id="contact"
-        className="container mx-auto px-4 py-12 mt-16 border-t border-slate-200"
-      >
-        <div className="max-w-4xl mx-auto">
+      <footer id="contact" className="container mx-auto px-4 py-12 mt-16">
+        <div className="max-w-4xl mx-auto bg-white/60 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl p-8 md:p-12 transition-all duration-500 hover:bg-white/70 hover:shadow-3xl">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4">
