@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../../../store/slices/authSlice";
 import { authAPI } from "../../../lib/api";
 import GlobalLoader from "../../../components/GlobalLoader";
 
-export default function AuthCallbackPage() {
+// Separate component that uses useSearchParams
+function AuthCallbackContent() {
   const router = useRouter();
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
@@ -140,4 +141,13 @@ export default function AuthCallbackPage() {
   }
 
   return null;
+}
+
+// Main page component with Suspense boundary
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<GlobalLoader isLoading={true} message="Loading authentication..." />}>
+      <AuthCallbackContent />
+    </Suspense>
+  );
 }
