@@ -18,6 +18,7 @@ import {
 import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
 import Logo from "./Logo";
+import { getUserRole } from "./DashboardRouter";
 
 interface DropdownItemProps {
   icon: React.ReactNode;
@@ -98,10 +99,22 @@ export default function DashboardHeader() {
   };
 
   const handleLogoClick = () => {
-    if (user?.roles?.includes("operator")) {
-      router.push("/app/dashboard/operator");
-    } else {
-      router.push("/app/dashboard/tenant");
+    if (!user) return;
+
+    // Use the existing getUserRole function to determine the correct dashboard
+    const userRole = getUserRole(user);
+
+    switch (userRole) {
+      case "admin":
+        router.push("/app/dashboard/admin");
+        break;
+      case "operator":
+        router.push("/app/dashboard/operator");
+        break;
+      case "tenant":
+      default:
+        router.push("/app/dashboard/tenant");
+        break;
     }
   };
 

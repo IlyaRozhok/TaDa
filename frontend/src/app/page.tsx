@@ -48,7 +48,7 @@ export default function Home() {
             {/* Navigation */}
             <nav className="flex items-center space-x-6">
               <Link
-                href="/app/properties"
+                href="/properties"
                 className="text-gray-600 hover:text-gray-900 font-medium"
               >
                 Browse Properties
@@ -85,7 +85,7 @@ export default function Home() {
 
           {/* Main CTA - Browse without registration */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/app/properties">
+            <Link href="/properties">
               <Button
                 size="lg"
                 className="bg-gray-900 hover:bg-gray-800 text-white px-8"
@@ -112,164 +112,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works - Simplified */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            How TaDa Works
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-900 text-white rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                1. Browse or Take Quiz
-              </h3>
-              <p className="text-gray-600">
-                Start exploring properties right away or take our quick
-                lifestyle quiz for personalized matches
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-900 text-white rounded-lg flex items-center justify-center mx-auto mb-4">
-                <HomeIcon className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                2. Get Matched
-              </h3>
-              <p className="text-gray-600">
-                Our AI analyzes your preferences to show you properties that
-                match your lifestyle
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-900 text-white rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                3. Connect
-              </h3>
-              <p className="text-gray-600">
-                Save favorites and connect with property operators when
-                you&apos;re ready
-              </p>
-            </div>
-          </div>
-
-          {/* Secondary CTA */}
-          <div className="text-center mt-12">
-            <Link href="/app/properties">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-gray-900 text-gray-900 hover:bg-gray-100"
-              >
-                Start Browsing Properties
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Benefits Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                For Tenants
-              </h2>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex-shrink-0 mt-0.5"></div>
-                  <p className="ml-3 text-gray-600">
-                    Browse properties without creating an account
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex-shrink-0 mt-0.5"></div>
-                  <p className="ml-3 text-gray-600">
-                    Get AI-powered matches based on your lifestyle
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex-shrink-0 mt-0.5"></div>
-                  <p className="ml-3 text-gray-600">
-                    Save favorites and compare properties easily
-                  </p>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                For Property Operators
-              </h2>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex-shrink-0 mt-0.5"></div>
-                  <p className="ml-3 text-gray-600">
-                    Reach qualified tenants automatically
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex-shrink-0 mt-0.5"></div>
-                  <p className="ml-3 text-gray-600">
-                    Reduce time spent on unsuitable inquiries
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex-shrink-0 mt-0.5"></div>
-                  <p className="ml-3 text-gray-600">
-                    Manage all your properties in one place
-                  </p>
-                </li>
-              </ul>
-              <Link href="/app/dashboard/operator">
-                <Button className="mt-6 bg-gray-900 hover:bg-gray-800 text-white">
-                  List Your Properties
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gray-900 text-white">
-        <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-3xl font-bold mb-6">
-            Ready to Find Your Next Home?
-          </h2>
-          <p className="text-lg text-gray-300 mb-8">
-            Join thousands of happy tenants who found their perfect match with
-            TaDa
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/app/properties">
-              <Button
-                size="lg"
-                className="bg-white text-gray-900 hover:bg-gray-100"
-              >
-                Browse Properties
-              </Button>
-            </Link>
-            <Link href="/app/auth/register">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white/10"
-              >
-                Create Free Account
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Simple Footer */}
       <footer className="py-12 bg-white border-t border-gray-200">
@@ -282,7 +127,7 @@ export default function Home() {
               </span>
             </div>
             <div className="flex space-x-6 text-sm text-gray-600">
-              <Link href="/app/properties" className="hover:text-gray-900">
+              <Link href="/properties" className="hover:text-gray-900">
                 Properties
               </Link>
               <Link href="/about" className="hover:text-gray-900">

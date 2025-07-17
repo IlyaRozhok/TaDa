@@ -107,6 +107,39 @@ export class PropertiesController {
     return await this.propertiesService.findFeaturedProperties(limit || 6);
   }
 
+  @ApiOperation({ summary: "Get public properties (no auth required)" })
+  @ApiResponse({
+    status: 200,
+    description: "Public properties retrieved",
+    type: [Property],
+  })
+  @Get("public")
+  async getPublicProperties(
+    @Query("page") page: number = 1,
+    @Query("limit") limit: number = 6,
+    @Query("search") search?: string
+  ) {
+    // Ensure page and limit are numbers, max 6 for public access
+    const pageNum = parseInt(page as any) || 1;
+    const limitNum = Math.min(parseInt(limit as any) || 6, 6);
+
+    const result = await this.propertiesService.findAll(
+      pageNum,
+      limitNum,
+      search
+    );
+
+    // Format response to match frontend expectations
+    return {
+      data: result.properties,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+      isPublic: true,
+      maxPublicProperties: 6,
+    };
+  }
+
   @ApiOperation({ summary: "Get matched properties for logged-in tenant" })
   @ApiResponse({
     status: 200,
@@ -175,8 +208,12 @@ export class PropertiesController {
     // Ensure page and limit are numbers
     const pageNum = parseInt(page as any) || 1;
     const limitNum = parseInt(limit as any) || 10;
-    
-    const result = await this.propertiesService.findAll(pageNum, limitNum, search);
+
+    const result = await this.propertiesService.findAll(
+      pageNum,
+      limitNum,
+      search
+    );
 
     // Format response to match frontend expectations
     return {

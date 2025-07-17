@@ -74,7 +74,7 @@ export const LiquidForm = ({
       </div>
 
       {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-[inherit] animate-pulse" />
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-gray-700" />
     </div>
   );
 };

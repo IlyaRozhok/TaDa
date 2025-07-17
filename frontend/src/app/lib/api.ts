@@ -29,6 +29,19 @@ const api = axios.create({
   },
 });
 
+// Public API client (no auth interceptors)
+const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: false,
+  timeout: 10000,
+  validateStatus: function (status) {
+    return status < 500;
+  },
+});
+
 // Request interceptor для добавления JWT токена
 api.interceptors.request.use(
   (config) => {
@@ -195,6 +208,17 @@ export const propertiesAPI = {
     });
     return response.data;
   },
+  // Public methods (no auth required)
+  getPublic: async (page: number = 1, limit: number = 6, search?: string) => {
+    const response = await publicApi.get("/properties/public", {
+      params: { page, limit, search },
+    });
+    return response.data;
+  },
+  getByIdPublic: async (id: string) => {
+    const response = await publicApi.get(`/properties/${id}`);
+    return response.data;
+  },
 };
 
 // Add matching result interface
@@ -262,43 +286,56 @@ export const adminAPI = {
     recentUsers: number;
     recentProperties: number;
   }> => {
-    const [usersResponse, propertiesResponse, shortlistCount, preferencesResponse] = await Promise.all([
+    const [
+      usersResponse,
+      propertiesResponse,
+      shortlistCount,
+      preferencesResponse,
+    ] = await Promise.all([
       api.get("/users", { params: { limit: 1 } }),
       api.get("/properties", { params: { limit: 1 } }),
       api.get("/shortlist/count").catch(() => ({ data: { count: 0 } })),
-      api.get("/preferences/all", { params: { limit: 1 } }).catch(() => ({ data: { total: 0 } })),
+      api
+        .get("/preferences/all", { params: { limit: 1 } })
+        .catch(() => ({ data: { total: 0 } })),
     ]);
 
     // Calculate recent activity (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const [recentUsersResponse, recentPropertiesResponse] = await Promise.all([
-      api.get("/users", { 
-        params: { 
-          limit: 1000, // Get more to filter by date
-          sortBy: "created_at",
-          order: "DESC"
-        } 
-      }).catch(() => ({ data: { data: [] } })),
-      api.get("/properties", { 
-        params: { 
-          limit: 1000, // Get more to filter by date
-        } 
-      }).catch(() => ({ data: { data: [] } })),
+      api
+        .get("/users", {
+          params: {
+            limit: 1000, // Get more to filter by date
+            sortBy: "created_at",
+            order: "DESC",
+          },
+        })
+        .catch(() => ({ data: { data: [] } })),
+      api
+        .get("/properties", {
+          params: {
+            limit: 1000, // Get more to filter by date
+          },
+        })
+        .catch(() => ({ data: { data: [] } })),
     ]);
 
     // Filter recent users (last 30 days)
-    const recentUsers = recentUsersResponse.data.data?.filter((user: any) => {
-      const createdAt = new Date(user.created_at);
-      return createdAt >= thirtyDaysAgo;
-    }).length || 0;
+    const recentUsers =
+      recentUsersResponse.data.data?.filter((user: any) => {
+        const createdAt = new Date(user.created_at);
+        return createdAt >= thirtyDaysAgo;
+      }).length || 0;
 
     // Filter recent properties (last 30 days)
-    const recentProperties = recentPropertiesResponse.data.data?.filter((property: any) => {
-      const createdAt = new Date(property.created_at);
-      return createdAt >= thirtyDaysAgo;
-    }).length || 0;
+    const recentProperties =
+      recentPropertiesResponse.data.data?.filter((property: any) => {
+        const createdAt = new Date(property.created_at);
+        return createdAt >= thirtyDaysAgo;
+      }).length || 0;
 
     return {
       totalUsers: usersResponse.data.total || 0,
