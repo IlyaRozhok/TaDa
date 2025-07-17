@@ -6,110 +6,120 @@ import { join } from "path";
 // Load environment variables
 config({ path: join(__dirname, "..", ".env") });
 
-function diagnoseRedirectUriMismatch() {
-  console.log("🔍 Диагностика ошибки redirect_uri_mismatch\n");
+function diagnoseOAuthRedirect() {
+  console.log("🔍 OAuth Redirect Configuration Diagnosis");
+  console.log("=".repeat(50));
 
-  // Получаем переменные окружения
-  const googleClientId = process.env.GOOGLE_CLIENT_ID;
-  const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL;
+  // Current environment variables
+  const nodeEnv = process.env.NODE_ENV || "development";
   const frontendUrl = process.env.FRONTEND_URL;
-  const port = process.env.PORT || "5001";
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:5001";
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL;
 
-  console.log("📋 Текущие настройки:");
-  console.log(`   GOOGLE_CLIENT_ID: ${googleClientId || "❌ НЕ ЗАДАН"}`);
-  console.log(`   GOOGLE_CALLBACK_URL: ${googleCallbackUrl || "❌ НЕ ЗАДАН"}`);
+  console.log("\n📋 Current Environment:");
+  console.log(`   NODE_ENV: ${nodeEnv}`);
   console.log(`   FRONTEND_URL: ${frontendUrl || "❌ НЕ ЗАДАН"}`);
-  console.log(`   PORT: ${port}`);
+  console.log(`   BACKEND_URL: ${backendUrl}`);
+  console.log(
+    `   GOOGLE_CLIENT_ID: ${googleClientId ? "✅ ЗАДАН" : "❌ НЕ ЗАДАН"}`
+  );
+  console.log(
+    `   GOOGLE_CLIENT_SECRET: ${googleClientSecret ? "✅ ЗАДАН" : "❌ НЕ ЗАДАН"}`
+  );
+  console.log(`   GOOGLE_CALLBACK_URL: ${googleCallbackUrl || "❌ НЕ ЗАДАН"}`);
 
-  // Определяем ожидаемый callback URL
-  const expectedCallbackUrl = `http://localhost:${port}/auth/google/callback`;
+  console.log("\n🔧 Required Configuration:");
 
-  console.log("\n🎯 Ожидаемый callback URL:");
-  console.log(`   ${expectedCallbackUrl}`);
+  if (nodeEnv === "production") {
+    console.log("   Production Environment Detected");
+    console.log("   Ensure these environment variables are set:");
+    console.log(`   FRONTEND_URL=https://tada.illiacodes.dev`);
+    console.log(`   BACKEND_URL=https://tada.illiacodes.dev`);
+    console.log(
+      `   GOOGLE_CALLBACK_URL=https://tada.illiacodes.dev/api/auth/google/callback`
+    );
 
-  // Проверяем совпадение
-  if (googleCallbackUrl !== expectedCallbackUrl) {
-    console.log("\n❌ ПРОБЛЕМА НАЙДЕНА:");
-    console.log(`   Настроенный URL: ${googleCallbackUrl}`);
-    console.log(`   Ожидаемый URL:   ${expectedCallbackUrl}`);
+    console.log("\n🌐 Google Cloud Console Configuration:");
+    console.log(
+      "   Go to Google Cloud Console > APIs & Services > Credentials"
+    );
+    console.log(
+      "   Update your OAuth 2.0 Client ID with these Authorized redirect URIs:"
+    );
+    console.log(`   ✅ https://tada.illiacodes.dev/api/auth/google/callback`);
 
-    if (!googleCallbackUrl) {
-      console.log("\n🔧 РЕШЕНИЕ: Добавьте переменную окружения");
-      console.log(`   GOOGLE_CALLBACK_URL=${expectedCallbackUrl}`);
-    } else {
-      console.log("\n🔧 РЕШЕНИЕ: Обновите переменную окружения");
-      console.log(`   GOOGLE_CALLBACK_URL=${expectedCallbackUrl}`);
-    }
+    console.log("\n🔍 Testing URLs:");
+    console.log(
+      "   OAuth initiation: https://tada.illiacodes.dev/api/auth/google"
+    );
+    console.log(
+      "   OAuth callback: https://tada.illiacodes.dev/api/auth/google/callback"
+    );
   } else {
-    console.log("\n✅ Переменная окружения настроена правильно");
-  }
-
-  console.log("\n📋 Что нужно проверить в Google Cloud Console:");
-  console.log("1. Перейдите в Google Cloud Console");
-  console.log("2. Откройте ваш проект");
-  console.log('3. Перейдите в "APIs & Services" > "Credentials"');
-  console.log("4. Найдите ваш OAuth 2.0 Client ID");
-  console.log("5. Нажмите на него для редактирования");
-  console.log('6. В разделе "Authorized redirect URIs" должен быть:');
-  console.log(`   ${expectedCallbackUrl}`);
-
-  console.log("\n🔧 Пошаговое исправление:");
-  console.log("1. В Google Cloud Console:");
-  console.log("   - Удалите все неправильные redirect URIs");
-  console.log(`   - Добавьте: ${expectedCallbackUrl}`);
-  console.log('   - Нажмите "Save"');
-  console.log("");
-  console.log("2. В файле backend/.env:");
-  console.log(`   GOOGLE_CALLBACK_URL=${expectedCallbackUrl}`);
-  console.log("");
-  console.log("3. Перезапустите backend сервер");
-  console.log("4. Попробуйте снова: http://localhost:5001/auth/google");
-
-  // Проверяем общие ошибки
-  console.log("\n⚠️  Частые ошибки:");
-
-  if (
-    googleCallbackUrl?.includes("https://") &&
-    googleCallbackUrl?.includes("localhost")
-  ) {
-    console.log("   ❌ Используется HTTPS с localhost (должно быть HTTP)");
-  }
-
-  if (googleCallbackUrl?.includes("3000")) {
-    console.log("   ❌ Используется порт 3000 (должен быть 5001 для backend)");
-  }
-
-  if (googleCallbackUrl?.includes("frontend")) {
+    console.log("   Development Environment");
+    console.log("   Ensure these environment variables are set:");
+    console.log(`   FRONTEND_URL=http://localhost:3000`);
+    console.log(`   BACKEND_URL=http://localhost:5001`);
     console.log(
-      "   ❌ Callback URL указывает на frontend (должен быть backend)"
+      `   GOOGLE_CALLBACK_URL=http://localhost:5001/api/auth/google/callback`
+    );
+
+    console.log("\n🌐 Google Cloud Console Configuration:");
+    console.log(
+      "   Go to Google Cloud Console > APIs & Services > Credentials"
+    );
+    console.log(
+      "   Update your OAuth 2.0 Client ID with these Authorized redirect URIs:"
+    );
+    console.log(`   ✅ http://localhost:5001/api/auth/google/callback`);
+
+    console.log("\n🔍 Testing URLs:");
+    console.log("   OAuth initiation: http://localhost:5001/api/auth/google");
+    console.log(
+      "   OAuth callback: http://localhost:5001/api/auth/google/callback"
     );
   }
 
-  if (!googleCallbackUrl?.includes("/auth/google/callback")) {
-    console.log(
-      "   ❌ Неправильный путь callback (должен быть /auth/google/callback)"
-    );
+  console.log("\n⚠️  Important Notes:");
+  console.log(
+    "   1. All routes now have '/api' prefix due to global prefix configuration"
+  );
+  console.log("   2. Google Cloud Console redirect URIs must match exactly");
+  console.log(
+    "   3. After updating environment variables, restart the backend server"
+  );
+  console.log("   4. Test the OAuth flow after making changes");
+
+  console.log("\n🚨 Current Issues:");
+  const issues = [];
+
+  if (!googleClientId) {
+    issues.push("❌ GOOGLE_CLIENT_ID is not set");
+  }
+  if (!googleClientSecret) {
+    issues.push("❌ GOOGLE_CLIENT_SECRET is not set");
+  }
+  if (!googleCallbackUrl) {
+    issues.push("❌ GOOGLE_CALLBACK_URL is not set");
+  } else if (!googleCallbackUrl.includes("/api/auth/google/callback")) {
+    issues.push("❌ GOOGLE_CALLBACK_URL should include '/api' prefix");
+  }
+  if (!frontendUrl && nodeEnv === "production") {
+    issues.push("❌ FRONTEND_URL is not set for production");
   }
 
-  console.log("\n📱 Дополнительные проверки:");
-  console.log("1. Проверьте, что backend запущен на порту 5001");
-  console.log(
-    "2. Проверьте, что в Google Cloud Console включен правильный проект"
-  );
-  console.log("3. Убедитесь, что OAuth consent screen настроен");
-  console.log("4. Проверьте, что Client ID и Secret скопированы правильно");
+  if (issues.length > 0) {
+    issues.forEach((issue) => console.log(`   ${issue}`));
+  } else {
+    console.log("   ✅ All configuration looks correct!");
+  }
 
-  console.log("\n🧪 Тест URL:");
-  console.log(
-    `curl -I "${expectedCallbackUrl.replace("/auth/google/callback", "/auth/google")}"`
-  );
-
-  return {
-    currentCallbackUrl: googleCallbackUrl,
-    expectedCallbackUrl,
-    isCorrect: googleCallbackUrl === expectedCallbackUrl,
-  };
+  console.log("\n" + "=".repeat(50));
 }
+
+diagnoseOAuthRedirect();
 
 async function testCurrentEndpoint() {
   console.log("\n🔍 Тестирование текущего эндпоинта...");
@@ -153,26 +163,7 @@ async function testCurrentEndpoint() {
 }
 
 async function main() {
-  const diagnosis = diagnoseRedirectUriMismatch();
-
-  if (diagnosis.isCorrect) {
-    const actualRedirectUri = await testCurrentEndpoint();
-
-    if (actualRedirectUri) {
-      console.log("\n📊 Сравнение:");
-      console.log(`   Настроенный: ${diagnosis.currentCallbackUrl}`);
-      console.log(`   Фактический: ${actualRedirectUri}`);
-
-      if (diagnosis.currentCallbackUrl === actualRedirectUri) {
-        console.log(
-          "✅ URLs совпадают - проблема может быть в Google Cloud Console"
-        );
-      } else {
-        console.log("❌ URLs НЕ совпадают - проблема в конфигурации");
-      }
-    }
-  }
-
+  // OAuth diagnosis has already been run
   console.log("\n🔗 Полезные ссылки:");
   console.log("   Google Cloud Console: https://console.cloud.google.com/");
   console.log(
