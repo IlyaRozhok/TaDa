@@ -19,6 +19,10 @@ import {
 import Logo from "../../../components/Logo";
 import LiquidForm from "../../../components/ui/LiquidForm";
 import GlassButton from "../../../components/ui/GlassButton";
+import { authLogger } from "../../../services/authLogger";
+import { authErrorHandler } from "../../../services/authErrorHandler";
+import { AuthErrorMessage } from "../../../components/ui/AuthMessage";
+import { RecentAuthErrors } from "../../../components/AuthLogRenderer";
 
 export default function LoginPage() {
   const user = useSelector(selectUser);
@@ -77,6 +81,10 @@ export default function LoginPage() {
     setError("");
 
     try {
+      authLogger.info("Login attempt started", "login", {
+        email: formData.email,
+      });
+
       const response = await authAPI.login({
         email: formData.email,
         password: formData.password,
@@ -87,12 +95,10 @@ export default function LoginPage() {
         throw new Error("Invalid response from server");
       }
 
-      console.log("🔍 Login successful, user data:", {
+      authLogger.success("Login successful", "login", {
         user_id: response.user.id,
         user_email: response.user.email,
         user_role: response.user.role,
-        user_roles: response.user.roles,
-        user_full_name: response.user.full_name,
         has_tenant_profile: !!response.user.tenantProfile,
         has_operator_profile: !!response.user.operatorProfile,
       });
@@ -117,38 +123,17 @@ export default function LoginPage() {
       const userRole = getUserRole(response.user);
       const dashboardPath = getDashboardPath(userRole);
 
-      console.log("🔄 Login redirect:", {
-        userRole,
+      authLogger.info(`Redirecting to ${userRole} dashboard`, "login", {
         dashboardPath,
-        user_data: response.user,
       });
-
       router.push(dashboardPath);
     } catch (error: unknown) {
-      console.error("Login error:", error);
-
-      if (error && typeof error === "object" && "response" in error) {
-        const axiosError = error as {
-          response?: {
-            status?: number;
-            data?: { message?: string; error?: string };
-          };
-        };
-
-        if (axiosError.response?.status === 401) {
-          setError("Invalid email or password");
-        } else if (axiosError.response?.data?.message) {
-          setError(axiosError.response.data.message);
-        } else if (axiosError.response?.data?.error) {
-          setError(axiosError.response.data.error);
-        } else {
-          setError("An error occurred. Please try again later.");
-        }
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An error occurred. Please try again later.");
-      }
+      const authError = authErrorHandler.handleLoginError(error);
+      const friendlyMessage = authErrorHandler.getFriendlyErrorMessage(
+        authError,
+        "login"
+      );
+      setError(friendlyMessage);
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +144,7 @@ export default function LoginPage() {
 
     setIsGoogleLoading(true);
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
     window.location.href = `${backendUrl}/auth/google`;
   };
 
@@ -242,10 +227,18 @@ export default function LoginPage() {
             {/* Logo section removed since title is now in LiquidForm */}
 
             {error && (
-              <div className="mb-6 p-4 rounded-lg bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200">
-                {error}
+              <div className="mb-6">
+                <AuthErrorMessage
+                  message={error}
+                  dismissible
+                  onDismiss={() => setError("")}
+                  className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200"
+                />
               </div>
             )}
+
+            {/* Recent Auth Errors */}
+            <RecentAuthErrors className="mb-4" />
 
             {/* Google OAuth Button */}
             <div className="mb-6">

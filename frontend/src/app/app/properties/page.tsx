@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { propertiesAPI, Property, PropertyFilters } from "../../lib/api";
+import { PropertyFilters } from "../../lib/api";
+import { Property } from "../../types";
 import { useTranslations } from "../../lib/language-context";
 import PropertyCard from "../../components/PropertyCard";
 import DashboardHeader from "../../components/DashboardHeader";
+import { useFilteredProperties } from "../../hooks/useProperties";
+import { useDebounce } from "../../hooks/useDebounce";
 import {
   Search,
   Filter,

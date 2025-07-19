@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
+import { Property } from "../../../types";
 import {
-  propertiesAPI,
-  matchingAPI,
-  Property,
-  MatchingResult,
-} from "../../../lib/api";
-import { useTranslations } from "../../../lib/language-context";
+  useProperties,
+  useMatchedProperties,
+} from "../../../hooks/useProperties";
 import { selectUser } from "../../../store/slices/authSlice";
 import PropertyCard from "../../../components/PropertyCard";
 import DashboardHeader from "../../../components/DashboardHeader";
@@ -21,61 +19,48 @@ import {
   Heart,
   Target,
   Sparkles,
-  User,
 } from "lucide-react";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 import DashboardRouter from "../../../components/DashboardRouter";
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
-  const t = useTranslations();
   const router = useRouter();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [matchedProperties, setMatchedProperties] = useState<MatchingResult[]>(
-    []
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use consolidated hooks for data fetching
+  const {
+    properties,
+    loading: propertiesLoading,
+    error: propertiesError,
+    fetchProperties,
+  } = useProperties();
+
+  const {
+    matchedProperties,
+    loading: matchedLoading,
+    error: matchedError,
+    fetchMatchedProperties,
+  } = useMatchedProperties();
+
+  // Combined loading and error states
+  const loading = propertiesLoading || matchedLoading;
+  const error = propertiesError || matchedError;
 
   useEffect(() => {
     const initializeDashboard = async () => {
       try {
         await waitForSessionManager();
-        await Promise.all([fetchProperties(), fetchMatchedProperties()]);
+        await Promise.all([
+          fetchProperties(),
+          fetchMatchedProperties(3), // Limit to 3 matches for dashboard
+        ]);
       } catch (err) {
         console.error("Dashboard initialization error:", err);
-        setError("Failed to load dashboard");
-      } finally {
-        setLoading(false);
       }
     };
 
     initializeDashboard();
-  }, []);
-
-  const fetchProperties = async () => {
-    try {
-      const response = await propertiesAPI.getAll();
-      const responseData = response.data || response;
-      // Backend returns { data: properties[], total, page, totalPages }
-      const propertiesData =
-        responseData.data || responseData.properties || responseData || [];
-      setProperties(propertiesData.slice(0, 6));
-    } catch (err) {
-      console.error("Error fetching properties:", err);
-    }
-  };
-
-  const fetchMatchedProperties = async () => {
-    try {
-      const response = await matchingAPI.getDetailedMatches(3);
-      setMatchedProperties(response);
-    } catch (err) {
-      console.error("Error fetching matched properties:", err);
-      // If there's an error with detailed matches, set empty array to show "No matches yet"
-      setMatchedProperties([]);
-    }
-  };
+  }, [fetchProperties, fetchMatchedProperties]);
 
   const handlePropertyClick = (property: Property) => {
     router.push(`/app/properties/${property.id}`);

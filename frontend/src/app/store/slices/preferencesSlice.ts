@@ -71,7 +71,7 @@ export const fetchAllPreferences = createAsyncThunk(
   ) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -139,7 +139,7 @@ export const updateUserPreferences = createAsyncThunk(
   ) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -194,7 +194,7 @@ export const clearUserPreferences = createAsyncThunk(
   async (params: { userId: string }, { getState, rejectWithValue }) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;

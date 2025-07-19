@@ -12,6 +12,8 @@ import {
 import GlobalLoader from "../GlobalLoader";
 import WelcomeManager from "../WelcomeManager";
 import { getUserRole } from "../DashboardRouter";
+import { authLogger } from "../../services/authLogger";
+import { authErrorHandler } from "../../services/authErrorHandler";
 
 // Global flag to track SessionManager initialization
 let sessionManagerInitialized = false;
@@ -39,7 +41,7 @@ export default function SessionManager() {
           return;
         }
 
-        // console.log("🔐 SessionManager: Starting session restoration...");
+        authLogger.info("Starting session restoration", "session_restore");
         setIsRestoring(true);
         setLoadingMessage("Restoring your session...");
 
@@ -48,9 +50,7 @@ export default function SessionManager() {
         const storedExpiry = localStorage.getItem("sessionExpiry");
 
         if (!token) {
-          // console.log(
-          // "🔐 SessionManager: No access token found in localStorage"
-          // );
+          authLogger.info("No access token found in localStorage", "session_restore");
           sessionManagerInitialized = true;
           setIsInitialized(true);
           setShowGlobalLoader(false);
@@ -66,9 +66,9 @@ export default function SessionManager() {
 
         // Check if session has expired locally
         if (storedExpiry && Date.now() > parseInt(storedExpiry)) {
-          // console.log(
-          //   "🔐 SessionManager: Session expired locally, clearing..."
-          // );
+          authLogger.warning("Session expired locally, clearing", "session_restore", {
+            expiredAt: new Date(parseInt(storedExpiry)).toISOString()
+          });
           localStorage.removeItem("accessToken");
           localStorage.removeItem("sessionExpiry");
           dispatch(logout());
@@ -85,7 +85,7 @@ export default function SessionManager() {
         // Validate token with backend - use fetch directly to avoid interceptor loops
         const response = await fetch(
           `${
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001"
+            process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
           }/auth/me`,
           {
             method: "GET",
@@ -102,7 +102,11 @@ export default function SessionManager() {
 
         const apiResponse = await response.json();
         const userData = apiResponse.user; // Extract user from API response
-        // console.log("✅ SessionManager: Token validation successful", userData);
+        authLogger.success("Token validation successful", "session_restore", {
+          user_id: userData.id,
+          user_email: userData.email,
+          user_role: userData.role
+        });
         setLoadingMessage("Welcome back!");
 
         // If valid, restore the session
@@ -113,7 +117,7 @@ export default function SessionManager() {
           })
         );
 
-        // console.log("✅ SessionManager: Session restored successfully");
+        authLogger.success("Session restored successfully", "session_restore");
 
         // Small delay to ensure Redux state is updated
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -122,10 +126,11 @@ export default function SessionManager() {
         handlePostInitialization(true, userData);
       } catch (error: any) {
         // If token is invalid or expired, clear it
-        console.error("❌ SessionManager: Session restoration failed:", {
-          status: error?.status,
-          message: error?.message,
-          error: error,
+        const authError = authErrorHandler.handleSessionError(error);
+        authLogger.error("Session restoration failed", "session_restore", {
+          error: authError.message,
+          statusCode: authError.statusCode,
+          details: authError.details
         });
 
         // Clear invalid token

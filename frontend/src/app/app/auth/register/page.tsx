@@ -18,6 +18,9 @@ import {
 import Logo from "../../../components/Logo";
 import LiquidForm from "../../../components/ui/LiquidForm";
 import GlassButton from "../../../components/ui/GlassButton";
+import { authLogger } from "../../../services/authLogger";
+import { authErrorHandler } from "../../../services/authErrorHandler";
+import { AuthErrorMessage } from "../../../components/ui/AuthMessage";
 
 type UserType = "tenant" | "operator";
 
@@ -99,6 +102,11 @@ export default function RegisterPage() {
     setError("");
 
     try {
+      authLogger.info("Registration attempt started", "register", {
+        email: formData.email,
+        userType: formData.userType,
+      });
+
       const registerData = {
         email: formData.email,
         password: formData.password,
@@ -112,6 +120,12 @@ export default function RegisterPage() {
         throw new Error("Invalid response from server");
       }
 
+      authLogger.success("Registration successful", "register", {
+        user_id: response.user.id,
+        user_email: response.user.email,
+        user_role: response.user.role,
+      });
+
       dispatch(
         setCredentials({
           user: response.user,
@@ -122,39 +136,17 @@ export default function RegisterPage() {
       // Redirect to dashboard based on role
       const userRole = getUserRole(response.user);
       const dashboardPath = getDashboardPath(userRole);
+      authLogger.info(`Redirecting to ${userRole} dashboard`, "register", {
+        dashboardPath,
+      });
       router.push(dashboardPath);
     } catch (error: unknown) {
-      console.error("Registration error:", error);
-
-      if (error && typeof error === "object" && "response" in error) {
-        const axiosError = error as {
-          response?: {
-            status?: number;
-            data?: { message?: string; error?: string };
-          };
-        };
-
-        // Показываем сообщение об ошибке от сервера или дружественное сообщение
-        if (axiosError.response?.data?.message) {
-          setError(axiosError.response.data.message);
-        } else if (axiosError.response?.data?.error) {
-          setError(axiosError.response.data.error);
-        } else if (axiosError.response?.status === 409) {
-          setError("An account with this email already exists");
-        } else if (axiosError.response?.status === 400) {
-          setError("Please check your input and try again");
-        } else {
-          setError(
-            "An error occurred during registration. Please try again later."
-          );
-        }
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError(
-          "An error occurred during registration. Please try again later."
-        );
-      }
+      const authError = authErrorHandler.handleRegistrationError(error);
+      const friendlyMessage = authErrorHandler.getFriendlyErrorMessage(
+        authError,
+        "register"
+      );
+      setError(friendlyMessage);
     } finally {
       setIsLoading(false);
     }
@@ -214,8 +206,13 @@ export default function RegisterPage() {
             variant="floating"
           >
             {error && (
-              <div className="mb-6 p-4 rounded-lg bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200">
-                {error}
+              <div className="mb-6">
+                <AuthErrorMessage
+                  message={error}
+                  dismissible
+                  onDismiss={() => setError("")}
+                  className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200"
+                />
               </div>
             )}
 
@@ -227,7 +224,8 @@ export default function RegisterPage() {
 
                   setIsGoogleLoading(true);
                   const backendUrl =
-                    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+                    process.env.NEXT_PUBLIC_API_URL ||
+                    "http://localhost:5001/api";
                   window.location.href = `${backendUrl}/auth/google`;
                 }}
                 variant="secondary"

@@ -17,6 +17,7 @@ import {
   Clock,
   AlertTriangle,
 } from "lucide-react";
+import { AuthActivityLog, CompactAuthLog } from "../../components/AuthLogRenderer";
 
 export default function SecurityPage() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -242,6 +243,17 @@ export default function SecurityPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Authentication Activity Log */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Authentication Activity
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Monitor your recent authentication events and security activity.
+            </p>
+            <AuthActivityLog className="max-h-96 overflow-y-auto" />
           </div>
 
           {/* Security Tips */}

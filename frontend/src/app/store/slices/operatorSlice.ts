@@ -87,7 +87,7 @@ export const fetchDashboardCounts = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -132,7 +132,7 @@ export const fetchTenants = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -168,7 +168,7 @@ export const fetchOperatorProperties = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -209,7 +209,7 @@ export const suggestProperty = createAsyncThunk(
   ) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;

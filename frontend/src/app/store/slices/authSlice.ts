@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { authLogger } from "../../services/authLogger";
 
 interface User {
   id: string;
@@ -89,6 +90,9 @@ const authSlice = createSlice({
       }
     },
     logout: (state) => {
+      const userId = state.user?.id;
+      const userEmail = state.user?.email;
+      
       state.user = null;
       state.isAuthenticated = false;
       state.accessToken = null;
@@ -99,6 +103,12 @@ const authSlice = createSlice({
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionExpiry");
       }
+
+      // Log the logout event
+      authLogger.info("User logged out", "logout", {
+        user_id: userId,
+        user_email: userEmail
+      });
     },
     restoreSession: (
       state,

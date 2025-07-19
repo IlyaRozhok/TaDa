@@ -74,7 +74,7 @@ export const fetchUsers = createAsyncThunk(
       } = params;
 
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -149,7 +149,7 @@ export const createUser = createAsyncThunk(
   async (userData: CreateUserData, { getState, rejectWithValue }) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -187,7 +187,7 @@ export const updateUser = createAsyncThunk(
   ) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;
@@ -222,7 +222,7 @@ export const deleteUser = createAsyncThunk(
   async (id: string, { getState, rejectWithValue }) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
       // Get token from Redux store
       const state = getState() as any;

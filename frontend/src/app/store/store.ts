@@ -4,7 +4,6 @@ import { apiSlice } from "./slices/apiSlice";
 import authSlice from "./slices/authSlice";
 import usersSlice from "./slices/usersSlice";
 import preferencesSlice from "./slices/preferencesSlice";
-import propertiesSlice from "./slices/propertiesSlice";
 import operatorSlice from "./slices/operatorSlice";
 import shortlistSlice from "./slices/shortlistSlice";
 
@@ -14,7 +13,6 @@ export const store = configureStore({
     auth: authSlice,
     users: usersSlice,
     preferences: preferencesSlice,
-    properties: propertiesSlice,
     operator: operatorSlice,
     shortlist: shortlistSlice,
   },

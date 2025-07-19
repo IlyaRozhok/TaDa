@@ -2,51 +2,67 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { propertiesAPI } from "../lib/api";
 import PropertyCard from "../components/PropertyCard";
 import { Button } from "../components/ui/Button";
 import Logo from "../components/Logo";
 import { Search, Home, Lock, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Property } from "../types";
+import { useProperties } from "../hooks/useProperties";
+import { useDebounce } from "../hooks/useDebounce";
 
 export default function PublicPropertiesPage() {
   const router = useRouter();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use the properties hook with debounced search
+  const {
+    properties,
+    loading,
+    error,
+    debouncedSearchProperties,
+    searchLoading,
+    fetchPublicProperties,
+  } = useProperties();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [, setTotalPages] = useState(1);
   const [totalProperties, setTotalProperties] = useState(0);
   const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
 
+  // Debounce the search term to reduce API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Initial load of properties
   useEffect(() => {
-    const fetchProperties = async () => {
+    const loadInitialProperties = async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        const response = await propertiesAPI.getPublic(page, 6, searchTerm);
-
-        setProperties(response.data || []);
-        setTotalPages(response.totalPages || 1);
-        setTotalProperties(response.total || 0);
+        const result = await fetchPublicProperties(
+          page,
+          6,
+          debouncedSearchTerm
+        );
+        setTotalPages(1); // Simple pagination for public view
+        setTotalProperties(result.length);
 
         // Show registration prompt if user tries to go beyond first page
-        if (page > 1 || (response.data && response.data.length >= 6)) {
+        if (page > 1 || result.length >= 6) {
           setShowRegistrationPrompt(true);
         }
       } catch (err: unknown) {
         console.error("Error fetching properties:", err);
-        setError("Failed to load properties");
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchProperties();
-  }, [page, searchTerm]);
+    loadInitialProperties();
+  }, [page, fetchPublicProperties, debouncedSearchTerm]);
+
+  // Use debounced search when user types
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm || debouncedSearchTerm) {
+      debouncedSearchProperties(debouncedSearchTerm, page, 6);
+    }
+  }, [debouncedSearchTerm, page, debouncedSearchProperties, searchTerm]);
 
   const handlePropertyClick = (property: Property) => {
     router.push(`/properties/${property.id}`);
@@ -57,13 +73,19 @@ export default function PublicPropertiesPage() {
     setPage(1);
   };
 
-  if (loading && properties.length === 0) {
+  // Show loading when initially loading or when no properties and loading
+  const isInitialLoading =
+    (loading || searchLoading) && properties.length === 0;
+
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading properties...</p>
+            <p className="text-gray-600">
+              {searchTerm ? "Searching properties..." : "Loading properties..."}
+            </p>
           </div>
         </div>
       </div>
