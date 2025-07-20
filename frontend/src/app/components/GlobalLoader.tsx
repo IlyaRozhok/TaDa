@@ -22,9 +22,6 @@ export default function GlobalLoader({
           <Home className="w-8 h-8 text-white" />
         </div>
 
-        {/* Brand */}
-        <h1 className="text-2xl font-bold text-slate-900 mb-8">TaDa</h1>
-
         {/* Loading Animation */}
         <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
 

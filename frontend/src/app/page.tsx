@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Button } from "./components/ui/Button";
 import Logo from "./components/Logo";
 import SimpleFeaturedSection from "./components/SimpleFeaturedSection";
+import AuthModal from "./components/AuthModal";
 import { Search, ArrowRight, Menu, X } from "lucide-react";
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -46,11 +48,12 @@ export default function Home() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center">
-              <Link href="/app/auth/register">
-                <Button className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                  Sign Up
-                </Button>
-              </Link>
+              <Button
+                onClick={() => setAuthModalOpen(true)}
+                className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 font-medium transition-colors"
+              >
+                Sign Up
+              </Button>
             </nav>
 
             {/* Mobile Menu Button */}
@@ -70,14 +73,15 @@ export default function Home() {
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-gray-200 bg-white">
               <div className="py-4 px-4">
-                <Link
-                  href="/app/auth/register"
-                  onClick={() => setMobileMenuOpen(false)}
+                <Button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAuthModalOpen(true);
+                  }}
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-lg font-medium"
                 >
-                  <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-lg font-medium">
-                    Sign Up
-                  </Button>
-                </Link>
+                  Sign Up
+                </Button>
               </div>
             </div>
           )}
@@ -109,15 +113,14 @@ export default function Home() {
                 Browse Properties Now
               </Button>
             </Link>
-            <Link href="/app/auth/login" className="block sm:inline-block">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium"
-              >
-                Join
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              onClick={() => setAuthModalOpen(true)}
+              className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium"
+            >
+              Join
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
           </div>
 
           {/* Mobile-Friendly Subtext */}
@@ -128,7 +131,7 @@ export default function Home() {
       </section>
 
       {/* Featured Properties & Developments Section */}
-      <SimpleFeaturedSection />
+      <SimpleFeaturedSection onAuthModalOpen={() => setAuthModalOpen(true)} />
 
       {/* Mobile-Optimized Footer */}
       <footer className="py-8 sm:py-12 bg-white border-t border-gray-200">
@@ -175,6 +178,12 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </div>
   );
 }

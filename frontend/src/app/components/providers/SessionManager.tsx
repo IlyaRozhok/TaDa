@@ -50,7 +50,10 @@ export default function SessionManager() {
         const storedExpiry = localStorage.getItem("sessionExpiry");
 
         if (!token) {
-          authLogger.info("No access token found in localStorage", "session_restore");
+          authLogger.info(
+            "No access token found in localStorage",
+            "session_restore"
+          );
           sessionManagerInitialized = true;
           setIsInitialized(true);
           setShowGlobalLoader(false);
@@ -66,9 +69,13 @@ export default function SessionManager() {
 
         // Check if session has expired locally
         if (storedExpiry && Date.now() > parseInt(storedExpiry)) {
-          authLogger.warning("Session expired locally, clearing", "session_restore", {
-            expiredAt: new Date(parseInt(storedExpiry)).toISOString()
-          });
+          authLogger.warning(
+            "Session expired locally, clearing",
+            "session_restore",
+            {
+              expiredAt: new Date(parseInt(storedExpiry)).toISOString(),
+            }
+          );
           localStorage.removeItem("accessToken");
           localStorage.removeItem("sessionExpiry");
           dispatch(logout());
@@ -105,7 +112,7 @@ export default function SessionManager() {
         authLogger.success("Token validation successful", "session_restore", {
           user_id: userData.id,
           user_email: userData.email,
-          user_role: userData.role
+          user_role: userData.role,
         });
         setLoadingMessage("Welcome back!");
 
@@ -130,7 +137,7 @@ export default function SessionManager() {
         authLogger.error("Session restoration failed", "session_restore", {
           error: authError.message,
           statusCode: authError.statusCode,
-          details: authError.details
+          details: authError.details,
         });
 
         // Clear invalid token
@@ -178,10 +185,22 @@ export default function SessionManager() {
       "/",
       "/auth/login",
       "/auth/register",
+      "/app/auth",
       "/app/auth/login",
       "/app/auth/register",
     ];
     const isPublicPath = publicPaths.includes(pathname);
+
+    // Define protected paths that should not redirect authenticated users
+    const protectedPaths = [
+      "/app/shortlist",
+      "/app/preferences",
+      "/app/matches",
+      "/app/properties",
+    ];
+    const isProtectedPath = protectedPaths.some((path) =>
+      pathname.startsWith(path)
+    );
 
     const userRole = userData ? getUserRole(userData) : "unknown";
 
@@ -209,8 +228,13 @@ export default function SessionManager() {
         );
         lastRedirectTime = now;
         router.replace("/app/dashboard");
+      } else if (isProtectedPath) {
+        // User is on a protected page, stay there
+        console.log("🔄 SessionManager: User on protected path, staying put", {
+          pathname,
+        });
       }
-      // If on a protected page, stay there - DashboardRouter will handle role-specific routing
+      // If on other pages, stay there - let individual pages handle their own logic
     } else {
       // User is not logged in
       if (!isPublicPath && !pathname.startsWith("/app/auth/")) {
@@ -219,7 +243,7 @@ export default function SessionManager() {
           "🔄 SessionManager: Redirecting unauthenticated user to login"
         );
         lastRedirectTime = now;
-        router.replace("/app/auth/login");
+                  router.replace("/app/auth");
       }
       // If on public page, stay there
     }

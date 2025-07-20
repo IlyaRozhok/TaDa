@@ -95,9 +95,6 @@ export default function PublicPropertyDetailPage() {
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <Logo size="sm" />
-                {/* <span className="ml-2 text-xl font-semibold text-gray-900">
-                  TaDa
-                </span> */}
               </Link>
             </div>
             <nav className="flex items-center space-x-6">

@@ -153,30 +153,52 @@ api.interceptors.response.use(
 
 // API endpoints
 export const authAPI = {
+  authenticate: async (data: {
+    email: string;
+    password: string;
+    role?: "tenant" | "operator";
+    rememberMe?: boolean;
+  }) => {
+    const response = await api.post("/auth/authenticate", data);
+
+    // Check if the response indicates an error
+    if (response.status >= 400) {
+      const error = new Error(
+        response.data?.message || "Authentication failed"
+      );
+      (error as any).response = { data: response.data };
+      throw error;
+    }
+
+    return response.data;
+  },
+
   updateUserRole: async (data: { userId: string; role: string }) => {
     const response = await api.patch(`/users/${data.userId}/role`, {
       role: data.role,
     });
-    
+
     // Check if the response indicates an error
     if (response.status >= 400) {
-      const error = new Error(response.data?.message || "Failed to update user role");
+      const error = new Error(
+        response.data?.message || "Failed to update user role"
+      );
       (error as any).response = { data: response.data };
       throw error;
     }
-    
+
     return response.data;
   },
   register: async (data: RegisterData) => {
     const response = await api.post("/auth/register", data);
-    
+
     // Check if the response indicates an error
     if (response.status >= 400) {
       const error = new Error(response.data?.message || "Registration failed");
       (error as any).response = { data: response.data };
       throw error;
     }
-    
+
     return response.data;
   },
 

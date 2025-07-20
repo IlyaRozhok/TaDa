@@ -2,35 +2,35 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
+  NotFoundException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
-
 import { User } from "../../entities/user.entity";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
-import { RegisterDto } from "./dto/register.dto";
-import { LoginDto } from "./dto/login.dto";
+import { v4 as uuidv4 } from "uuid";
+import * as crypto from "crypto";
 
-export interface AuthResponse {
-  access_token: string;
-  user: Partial<User>;
-}
-
-export interface GoogleUserDto {
-  google_id: string;
-  email: string;
-  full_name: string;
-  avatar_url?: string;
-  provider: string;
-  email_verified: boolean;
+export interface SessionData {
+  id: string;
+  token: string;
+  deviceInfo?: string;
+  lastActivity: Date;
+  createdAt: Date;
 }
 
 @Injectable()
 export class AuthService {
+  private sessions = new Map<string, SessionData[]>(); // userId -> sessions
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -43,12 +43,19 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<AuthResponse> {
-    const { email, password, role = "tenant", ...profileData } = registerDto;
+  async checkUserExists(email: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { email: email.toLowerCase() },
+    });
+    return !!user;
+  }
+
+  async register(registerDto: RegisterDto) {
+    const { email, password, role = "tenant" } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
-      where: { email },
+      where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
@@ -56,71 +63,88 @@ export class AuthService {
     }
 
     // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
     const user = this.userRepository.create({
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
       role,
       status: "active",
-      provider: "local",
-      email_verified: false,
     });
 
-    const savedUser = await this.userRepository.save(user);
+    try {
+      const savedUser = await this.userRepository.save(user);
 
-    // Create profile based on role
-    if (role === "tenant") {
-      const tenantProfile = this.tenantProfileRepository.create({
-        userId: savedUser.id,
-        full_name: profileData.full_name || "",
-        ...profileData,
-      });
-      await this.tenantProfileRepository.save(tenantProfile);
-      savedUser.tenantProfile = tenantProfile;
+      // Create profile based on role
+      if (role === "tenant") {
+        const tenantProfile = this.tenantProfileRepository.create({
+          user: savedUser,
+        });
+        await this.tenantProfileRepository.save(tenantProfile);
 
-      // Auto-create empty preferences for tenants
-      const preferences = this.preferencesRepository.create({
-        user: savedUser,
-      });
-      const savedPreferences =
+        // Create preferences for tenant
+        const preferences = this.preferencesRepository.create({
+          user: savedUser,
+        });
         await this.preferencesRepository.save(preferences);
-      savedUser.preferences = savedPreferences;
-    } else if (role === "operator") {
-      const operatorProfile = this.operatorProfileRepository.create({
-        userId: savedUser.id,
-        full_name: profileData.full_name || "",
-        company_name: profileData.company_name,
-        phone: profileData.phone,
-        business_address: profileData.business_address,
-        ...profileData,
-      });
-      await this.operatorProfileRepository.save(operatorProfile);
-      savedUser.operatorProfile = operatorProfile;
+      } else if (role === "operator") {
+        const operatorProfile = this.operatorProfileRepository.create({
+          user: savedUser,
+        });
+        await this.operatorProfileRepository.save(operatorProfile);
+      }
+
+      // Generate JWT token
+      const payload = {
+        sub: savedUser.id,
+        email: savedUser.email,
+        role: savedUser.role,
+      };
+      const access_token = this.jwtService.sign(payload);
+
+      // Store session
+      const sessionId = uuidv4();
+      const sessionData: SessionData = {
+        id: sessionId,
+        token: access_token,
+        lastActivity: new Date(),
+        createdAt: new Date(),
+      };
+
+      if (!this.sessions.has(savedUser.id)) {
+        this.sessions.set(savedUser.id, []);
+      }
+      this.sessions.get(savedUser.id)!.push(sessionData);
+
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = savedUser;
+      return {
+        access_token,
+        user: userWithoutPassword,
+      };
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw new InternalServerErrorException("Failed to register user");
     }
-
-    await this.userRepository.save(savedUser);
-
-    return this.generateAuthResponse(savedUser);
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
+  async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Find user with password for comparison
+    // Find user by email with password
     const user = await this.userRepository.findOne({
-      where: { email },
-      relations: ["tenantProfile", "operatorProfile", "preferences"],
+      where: { email: email.toLowerCase() },
+      relations: ["tenantProfile", "operatorProfile"],
       select: [
         "id",
         "email",
         "password",
         "role",
         "status",
-        "provider",
         "full_name",
+        "provider",
+        "google_id",
         "avatar_url",
         "email_verified",
         "created_at",
@@ -129,253 +153,242 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException(
-        "Invalid login. Create an account or try again"
-      );
-    }
-
-    // Check if user is OAuth user trying to login with password
-    if (user.provider !== "local") {
-      throw new UnauthorizedException(
-        `This account was created with ${user.provider}. Please use ${user.provider} to sign in.`
-      );
-    }
-
-    // Check if user has a password (local users should always have a password)
-    if (!user.password) {
       throw new UnauthorizedException("Invalid credentials");
     }
 
     // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    if (!user.password) {
       throw new UnauthorizedException(
-        "Password is incorrect. Please try again."
+        "This account was created with Google. Please use Google sign-in or contact support to set a password."
       );
     }
 
-    return this.generateAuthResponse(user);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    // Check if user is active
+    if (user.status !== "active") {
+      throw new UnauthorizedException("Account is not active");
+    }
+
+    // Generate JWT token
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    const access_token = this.jwtService.sign(payload);
+
+    // Store session
+    const sessionId = uuidv4();
+    const sessionData: SessionData = {
+      id: sessionId,
+      token: access_token,
+      lastActivity: new Date(),
+      createdAt: new Date(),
+    };
+
+    if (!this.sessions.has(user.id)) {
+      this.sessions.set(user.id, []);
+    }
+    this.sessions.get(user.id)!.push(sessionData);
+
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
+    return {
+      access_token,
+      user: userWithoutPassword,
+    };
   }
 
-  async googleAuth(googleUser: GoogleUserDto): Promise<AuthResponse> {
-    console.log("🔍 GoogleAuth service called with user:", {
-      google_id: googleUser.google_id,
-      email: googleUser.email,
-      full_name: googleUser.full_name,
-      provider: googleUser.provider,
-      email_verified: googleUser.email_verified,
-    });
+  async logout(userId: string, token: string): Promise<void> {
+    const sessions = this.sessions.get(userId);
+    if (sessions) {
+      const filteredSessions = sessions.filter((s) => s.token !== token);
+      this.sessions.set(userId, filteredSessions);
+    }
+  }
 
-    const {
-      google_id,
-      email,
-      full_name,
-      avatar_url,
-      provider,
-      email_verified,
-    } = googleUser;
+  async logoutAllDevices(userId: string): Promise<void> {
+    this.sessions.delete(userId);
+  }
 
-    // Try to find existing user by Google ID first
-    console.log("🔍 Looking for existing user by Google ID:", google_id);
-    let user = await this.userRepository.findOne({
-      where: { google_id },
+  async logoutOtherDevices(
+    userId: string,
+    currentToken: string
+  ): Promise<void> {
+    const sessions = this.sessions.get(userId);
+    if (sessions) {
+      const currentSession = sessions.find((s) => s.token === currentToken);
+      this.sessions.set(userId, currentSession ? [currentSession] : []);
+    }
+  }
+
+  async getUserSessions(userId: string): Promise<SessionData[]> {
+    return this.sessions.get(userId) || [];
+  }
+
+  async invalidateSession(userId: string, sessionId: string): Promise<void> {
+    const sessions = this.sessions.get(userId);
+    if (sessions) {
+      const filteredSessions = sessions.filter((s) => s.id !== sessionId);
+      this.sessions.set(userId, filteredSessions);
+    }
+  }
+
+  async updateSessionActivity(userId: string, token: string): Promise<void> {
+    const sessions = this.sessions.get(userId);
+    if (sessions) {
+      const session = sessions.find((s) => s.token === token);
+      if (session) {
+        session.lastActivity = new Date();
+      }
+    }
+  }
+
+  async findUserWithProfile(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
       relations: ["tenantProfile", "operatorProfile", "preferences"],
     });
 
     if (!user) {
-      console.log(
-        "🔍 User not found by Google ID, looking for user by email:",
-        email
-      );
-      // Try to find existing user by email
-      user = await this.userRepository.findOne({
-        where: { email },
-        relations: ["tenantProfile", "operatorProfile", "preferences"],
-      });
-
-      if (user) {
-        console.log("🔍 Found existing user by email:", {
-          id: user.id,
-          email: user.email,
-          provider: user.provider,
-          google_id: user.google_id,
-        });
-
-        // User exists with same email but different provider
-        if (user.provider !== "google") {
-          console.log("❌ User exists with different provider:", user.provider);
-          throw new ConflictException(
-            `An account with this email already exists using ${user.provider} authentication. Please sign in with ${user.provider}.`
-          );
-        }
-        // Update Google ID if user exists but doesn't have it
-        console.log("🔄 Updating existing Google user with new data");
-        user.google_id = google_id;
-        user.avatar_url = avatar_url;
-        user.email_verified = email_verified;
-        await this.userRepository.save(user);
-      } else {
-        console.log("🆕 Creating new Google OAuth user");
-        // Create new user
-        user = this.userRepository.create({
-          google_id,
-          email,
-          full_name,
-          avatar_url,
-          provider,
-          email_verified,
-          role: "tenant", // Default role for Google OAuth users
-          status: "active",
-        });
-
-        const savedUser = await this.userRepository.save(user);
-        console.log("✅ New user created:", {
-          id: savedUser.id,
-          email: savedUser.email,
-          provider: savedUser.provider,
-          role: savedUser.role,
-          status: savedUser.status,
-        });
-
-        // Create default tenant profile and preferences
-        console.log("🔄 Creating tenant profile for new user");
-        const tenantProfile = this.tenantProfileRepository.create({
-          userId: savedUser.id,
-          full_name: full_name || "",
-        });
-        await this.tenantProfileRepository.save(tenantProfile);
-        savedUser.tenantProfile = tenantProfile;
-
-        // Auto-create empty preferences for tenants
-        console.log("🔄 Creating preferences for new user");
-        const preferences = this.preferencesRepository.create({
-          user: savedUser,
-        });
-        const savedPreferences =
-          await this.preferencesRepository.save(preferences);
-        savedUser.preferences = savedPreferences;
-
-        await this.userRepository.save(savedUser);
-
-        // Re-fetch user with all relations to ensure everything is properly loaded
-        console.log("🔄 Re-fetching user with all relations");
-        const completeUser = await this.userRepository.findOne({
-          where: { id: savedUser.id },
-          relations: ["tenantProfile", "operatorProfile", "preferences"],
-        });
-
-        if (!completeUser) {
-          console.error("❌ Failed to re-fetch created user");
-          throw new Error("Failed to create user properly");
-        }
-
-        user = completeUser;
-        console.log("✅ New user setup complete:", {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          hasTenantProfile: !!user.tenantProfile,
-          hasPreferences: !!user.preferences,
-        });
-      }
-    } else {
-      console.log("🔄 Updating existing user found by Google ID:", {
-        id: user.id,
-        email: user.email,
-        provider: user.provider,
-      });
-
-      // Update user info from Google
-      user.full_name = full_name;
-      user.avatar_url = avatar_url;
-      user.email_verified = email_verified;
-      await this.userRepository.save(user);
-      console.log("✅ User updated with fresh Google data");
+      throw new NotFoundException("User not found");
     }
 
-    console.log("🔄 Generating auth response for user:", {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      provider: user.provider,
-    });
-
-    const authResponse = this.generateAuthResponse(user);
-
-    console.log("✅ Google OAuth authentication complete", {
-      user_id: user.id,
-      user_email: user.email,
-      user_role: user.role,
-      has_token: !!authResponse.access_token,
-      token_length: authResponse.access_token.length,
-    });
-
-    return authResponse;
+    return user;
   }
 
-  private generateAuthResponse(user: User): AuthResponse {
-    console.log("🔍 Generating auth response for user:", {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      provider: user.provider,
-      status: user.status,
-    });
-
+  async refresh(user: User) {
     const payload = {
       sub: user.id,
       email: user.email,
-      roles: user.roles, // This uses the getter that returns [user.role]
+      role: user.role,
     };
-
-    console.log("🔍 JWT payload:", payload);
-
     const access_token = this.jwtService.sign(payload);
-
-    console.log("🔍 JWT token generated:", {
-      tokenLength: access_token.length,
-      tokenStart: access_token.substring(0, 50) + "...",
-    });
-
-    // Remove password from user object and add computed fields
-    const { password, ...userWithoutPassword } = user;
-
-    // Add computed fields explicitly for frontend
-    const userWithComputedFields = {
-      ...userWithoutPassword,
-      full_name: user.full_name, // Explicitly call getter
-      roles: user.roles, // Explicitly call getter
-    };
-
-    console.log("✅ Auth response created for user:", {
-      user_id: userWithComputedFields.id,
-      user_email: userWithComputedFields.email,
-      user_role: userWithComputedFields.role,
-      has_token: !!access_token,
-    });
 
     return {
       access_token,
-      user: userWithComputedFields,
+      user,
+    };
+  }
+
+  async googleAuth(googleUser: any) {
+    try {
+      console.log("🔍 Google Auth service called with user:", googleUser);
+
+      if (!googleUser || !googleUser.email || !googleUser.google_id) {
+        throw new BadRequestException("Invalid Google user data");
+      }
+
+      const { email, google_id, full_name, avatar_url } = googleUser;
+
+      let user = await this.userRepository.findOne({
+        where: { email: email.toLowerCase() },
+        relations: ["tenantProfile", "operatorProfile"],
+      });
+
+      let isNewUser = false;
+
+      if (!user) {
+        // Create new user with Google OAuth
+        user = this.userRepository.create({
+          email: email.toLowerCase(),
+          google_id,
+          full_name: full_name || null,
+          avatar_url: avatar_url || null,
+          role: "tenant", // Default role
+          status: "active",
+          // Generate random password for OAuth users
+          password: await bcrypt.hash(
+            crypto.randomBytes(32).toString("hex"),
+            10
+          ),
+        });
+
+        const savedUser = await this.userRepository.save(user);
+
+        // Create tenant profile by default
+        const tenantProfile = this.tenantProfileRepository.create({
+          user: savedUser,
+          full_name: full_name || null,
+        });
+        await this.tenantProfileRepository.save(tenantProfile);
+
+        // Create preferences
+        const preferences = this.preferencesRepository.create({
+          user: savedUser,
+        });
+        await this.preferencesRepository.save(preferences);
+
+        user = savedUser;
+        isNewUser = true;
+        console.log("✅ Created new user from Google OAuth:", user.email);
+      } else {
+        // Update Google ID and other fields if not set
+        let shouldUpdate = false;
+
+        if (!user.google_id) {
+          user.google_id = google_id;
+          shouldUpdate = true;
+        }
+
+        if (!user.full_name && full_name) {
+          user.full_name = full_name;
+          shouldUpdate = true;
+        }
+
+        if (!user.avatar_url && avatar_url) {
+          user.avatar_url = avatar_url;
+          shouldUpdate = true;
+        }
+
+        if (shouldUpdate) {
+          await this.userRepository.save(user);
+        }
+
+        console.log("✅ Found existing user for Google OAuth:", user.email);
+      }
+
+      // Reload user with all relations
+      const fullUser = await this.userRepository.findOne({
+        where: { id: user.id },
+        relations: ["tenantProfile", "operatorProfile", "preferences"],
+      });
+
+      if (!fullUser) {
+        throw new NotFoundException("User not found after creation/update");
+      }
+
+      return { user: fullUser, isNewUser };
+    } catch (error) {
+      console.error("❌ Error in Google Auth service:", error);
+      throw new InternalServerErrorException(
+        "Failed to process Google authentication"
+      );
+    }
+  }
+
+  async generateTokens(user: User) {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    const access_token = this.jwtService.sign(payload);
+
+    return {
+      access_token,
+      user,
     };
   }
 
   async validateUser(userId: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id: userId },
-      relations: ["tenantProfile", "operatorProfile", "preferences"],
-      select: [
-        "id",
-        "email",
-        "role",
-        "status",
-        "provider",
-        "full_name",
-        "avatar_url",
-        "email_verified",
-        "created_at",
-        "updated_at",
-      ],
+      relations: ["tenantProfile", "operatorProfile"],
     });
   }
 }

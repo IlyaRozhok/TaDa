@@ -21,6 +21,7 @@ function AuthCallbackContent() {
         const token = searchParams.get("token");
         const success = searchParams.get("success");
         const errorParam = searchParams.get("error");
+        const isNewUser = searchParams.get("isNewUser") === "true";
 
         // console.log("🔍 OAuth callback parameters:", { hasToken: !!token, tokenLength: token?.length, success, errorParam });
 
@@ -66,8 +67,13 @@ function AuthCallbackContent() {
           })
         );
 
-        // Redirect to dashboard
-        router.replace("/app/dashboard");
+        // Redirect based on user status
+        if (isNewUser) {
+          // New user from Google OAuth might need to select role or complete profile
+          router.replace("/app/preferences");
+        } else {
+          router.replace("/app/dashboard");
+        }
       } catch (error: any) {
         console.error("OAuth callback error:", error.message || error);
 
@@ -122,7 +128,7 @@ function AuthCallbackContent() {
             <p className="text-slate-600 mb-6">{error}</p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => router.push("/app/auth/login")}
+                onClick={() => router.push("/app/auth")}
                 className="flex-1 bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
               >
                 Try Again
@@ -146,7 +152,11 @@ function AuthCallbackContent() {
 // Main page component with Suspense boundary
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<GlobalLoader isLoading={true} message="Loading authentication..." />}>
+    <Suspense
+      fallback={
+        <GlobalLoader isLoading={true} message="Loading authentication..." />
+      }
+    >
       <AuthCallbackContent />
     </Suspense>
   );

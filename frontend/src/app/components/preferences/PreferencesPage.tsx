@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, CheckCircle, AlertCircle, Lock } from "lucide-react";
 import { usePreferences } from "@/app/hooks/usePreferences";
 import { StepNavigation } from "./ui";
 import { LocationStep, BudgetStep, FeatureStep, PersonalStep } from "./steps";
@@ -16,8 +17,14 @@ import {
   LUXURY_OPTIONS,
   TOTAL_STEPS,
 } from "@/app/constants/preferences";
+import { waitForSessionManager } from "@/app/components/providers/SessionManager";
+import { getUserRole } from "@/app/components/DashboardRouter";
 
 export default function PreferencesPage() {
+  const router = useRouter();
+  const [sessionReady, setSessionReady] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
+
   const {
     loading,
     step,
@@ -38,7 +45,107 @@ export default function PreferencesPage() {
     isAuthenticated,
   } = usePreferences();
 
-  if (!user || !isAuthenticated) return null;
+  // Wait for session manager to initialize and check access
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        await waitForSessionManager();
+        setSessionReady(true);
+      } catch (error) {
+        console.error("Failed to initialize session:", error);
+        setSessionReady(true); // Continue anyway
+      }
+    };
+    initializeSession();
+  }, []);
+
+  // Check access permissions after user data is loaded
+  useEffect(() => {
+    if (sessionReady && isAuthenticated && user) {
+      const userRole = getUserRole(user);
+
+      console.log("PreferencesPage access check:", {
+        userRole,
+        hasTenantProfile: !!user.tenantProfile,
+        user: user,
+      });
+
+      // Only allow access for tenants with tenantProfile
+      if (userRole !== "tenant" || !user.tenantProfile) {
+        console.log(
+          "Access denied to preferences - not a tenant or no tenant profile"
+        );
+        setAccessDenied(true);
+
+        // Redirect based on user role
+        setTimeout(() => {
+          if (userRole === "admin") {
+            router.push("/app/dashboard/admin");
+          } else if (userRole === "operator") {
+            router.push("/app/dashboard/operator");
+          } else {
+            router.push("/app/dashboard");
+          }
+        }, 2000); // Show message for 2 seconds before redirect
+      }
+    }
+  }, [sessionReady, isAuthenticated, user, router]);
+
+  // Debug logging
+  console.log("🔍 PreferencesPage render:", {
+    sessionReady,
+    isAuthenticated,
+    user: !!user,
+    loading,
+    step,
+    success,
+    accessDenied,
+  });
+
+  // Show loading while session is initializing
+  if (!sessionReady) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Initializing session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check authentication after session is ready
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check access permissions
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-md mx-auto text-center bg-white rounded-2xl p-8 shadow-lg border border-slate-200">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-10 h-10 text-amber-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">
+            Access Restricted
+          </h1>
+          <p className="text-slate-600 mb-6">
+            Preferences are only available for tenant accounts. You will be
+            redirected to your dashboard.
+          </p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-900 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -208,6 +315,15 @@ export default function PreferencesPage() {
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Dashboard
           </Link>
+
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              Set Preferences
+            </h1>
+            <p className="text-slate-600">
+              Help us find your perfect home by sharing your preferences
+            </p>
+          </div>
         </div>
 
         {/* Error Alert */}
@@ -226,7 +342,7 @@ export default function PreferencesPage() {
         )}
 
         {/* Form */}
-        <form 
+        <form
           onSubmit={(e) => {
             console.log("🔍 Form onSubmit triggered!", {
               step,

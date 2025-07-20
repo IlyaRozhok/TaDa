@@ -45,35 +45,55 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
     profile: any,
     done: VerifyCallback
   ): Promise<any> {
-    console.log("🔍 Google OAuth validate called with profile:", {
-      id: profile.id,
-      displayName: profile.displayName,
-      emails: profile.emails,
-      photos: profile.photos,
-    });
+    try {
+      console.log("🔍 Google OAuth validate called with profile:", {
+        id: profile?.id,
+        displayName: profile?.displayName,
+        emails: profile?.emails,
+        photos: profile?.photos,
+      });
 
-    const { id, name, emails, photos } = profile;
+      if (!profile || !profile.id) {
+        console.error("❌ Invalid profile data from Google");
+        return done(new Error("Invalid profile data from Google"), null);
+      }
 
-    const user = {
-      google_id: id,
-      email: emails[0].value,
-      full_name: `${name.givenName} ${name.familyName}`,
-      avatar_url: photos[0]?.value,
-      provider: "google",
-      email_verified: true,
-      accessToken,
-      refreshToken,
-    };
+      const { id, name, emails, photos } = profile;
 
-    console.log("✅ Google OAuth user data prepared:", {
-      google_id: user.google_id,
-      email: user.email,
-      full_name: user.full_name,
-      avatar_url: user.avatar_url,
-      provider: user.provider,
-      email_verified: user.email_verified,
-    });
+      if (!emails || !emails.length || !emails[0].value) {
+        console.error("❌ No email found in Google profile");
+        return done(new Error("No email found in Google profile"), null);
+      }
 
-    done(null, user);
+      if (!name || (!name.givenName && !name.familyName)) {
+        console.error("❌ No name found in Google profile");
+        return done(new Error("No name found in Google profile"), null);
+      }
+
+      const user = {
+        google_id: id,
+        email: emails[0].value,
+        full_name: `${name.givenName || ""} ${name.familyName || ""}`.trim(),
+        avatar_url: photos && photos[0] ? photos[0].value : null,
+        provider: "google",
+        email_verified: true,
+        accessToken,
+        refreshToken,
+      };
+
+      console.log("✅ Google OAuth user data prepared:", {
+        google_id: user.google_id,
+        email: user.email,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        provider: user.provider,
+        email_verified: user.email_verified,
+      });
+
+      done(null, user);
+    } catch (error) {
+      console.error("❌ Error in Google OAuth validate:", error);
+      done(error, null);
+    }
   }
 }

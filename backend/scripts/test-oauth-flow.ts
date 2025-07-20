@@ -33,27 +33,36 @@ async function testOAuthFlow() {
     const authResponse = await authService.googleAuth(mockGoogleUser);
 
     console.log("✅ GoogleAuth успешно:", {
-      hasToken: !!authResponse.access_token,
-      tokenLength: authResponse.access_token.length,
       userId: authResponse.user.id,
       userEmail: authResponse.user.email,
       userRole: authResponse.user.role,
+      isNewUser: authResponse.isNewUser,
     });
 
-    console.log("🔍 Шаг 2: Проверка токена...");
+    console.log("🔍 Шаг 2: Генерация токенов...");
+
+    // Генерируем токены для пользователя
+    const tokenResponse = await authService.generateTokens(authResponse.user);
+
+    console.log("✅ Токены сгенерированы:", {
+      hasToken: !!tokenResponse.access_token,
+      tokenLength: tokenResponse.access_token.length,
+    });
+
+    console.log("🔍 Шаг 3: Проверка токена...");
 
     // Декодируем токен
-    const decodedToken = jwtService.decode(authResponse.access_token) as any;
+    const decodedToken = jwtService.decode(tokenResponse.access_token) as any;
     console.log("📋 Декодированный токен:", {
       sub: decodedToken.sub,
       email: decodedToken.email,
-      roles: decodedToken.roles,
+      role: decodedToken.role,
       exp: decodedToken.exp
         ? new Date(decodedToken.exp * 1000).toISOString()
         : undefined,
     });
 
-    console.log("🔍 Шаг 3: Проверка пользователя в базе...");
+    console.log("🔍 Шаг 4: Проверка пользователя в базе...");
 
     // Проверяем, что пользователь есть в базе
     const userInDb = await userRepository.findOne({
@@ -71,28 +80,28 @@ async function testOAuthFlow() {
       email: userInDb.email,
       role: userInDb.role,
       status: userInDb.status,
-      provider: userInDb.provider,
+      // provider: userInDb.provider, // Removed in new structure
       google_id: userInDb.google_id,
       hasTenantProfile: !!userInDb.tenantProfile,
       hasPreferences: !!userInDb.preferences,
     });
 
-    console.log("🔍 Шаг 4: Тестирование JWT валидации...");
+    console.log("🔍 Шаг 5: Тестирование JWT валидации...");
 
     // Проверяем JWT валидацию
     try {
-      const payload = jwtService.verify(authResponse.access_token);
+      const payload = jwtService.verify(tokenResponse.access_token);
       console.log("✅ JWT токен валиден:", {
         sub: payload.sub,
         email: payload.email,
-        roles: payload.roles,
+        role: payload.role,
       });
     } catch (error) {
       console.error("❌ JWT токен невалиден:", error.message);
       return;
     }
 
-    console.log("🔍 Шаг 5: Тестирование поиска пользователя по JWT payload...");
+    console.log("🔍 Шаг 6: Тестирование поиска пользователя по JWT payload...");
 
     // Симулируем поиск пользователя как в JWT Strategy
     const jwtUser = await userRepository.findOne({

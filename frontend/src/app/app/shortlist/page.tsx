@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslations } from "../../lib/language-context";
@@ -21,11 +21,13 @@ import { AppDispatch } from "../../store/store";
 import PropertyCard from "../../components/PropertyCard";
 import DashboardHeader from "../../components/DashboardHeader";
 import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
+import { waitForSessionManager } from "../../components/providers/SessionManager";
 
 export default function ShortlistPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const t = useTranslations();
+  const [sessionReady, setSessionReady] = useState(false);
 
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
@@ -34,15 +36,31 @@ export default function ShortlistPage() {
   const error = useSelector(selectShortlistError);
   const count = useSelector(selectShortlistCount);
 
-  // Fetch shortlist on component mount
+  // Wait for session manager to initialize
   useEffect(() => {
-    if (isAuthenticated && user && user.role === "tenant") {
+    const initializeSession = async () => {
+      try {
+        await waitForSessionManager();
+        setSessionReady(true);
+      } catch (error) {
+        console.error("Failed to initialize session:", error);
+        setSessionReady(true); // Continue anyway
+      }
+    };
+    initializeSession();
+  }, []);
+
+  // Fetch shortlist on component mount (only after session is ready)
+  useEffect(() => {
+    if (sessionReady && isAuthenticated && user && user.role === "tenant") {
       dispatch(fetchShortlist());
     }
-  }, [dispatch, isAuthenticated, user]);
+  }, [dispatch, sessionReady, isAuthenticated, user]);
 
-  // Redirect if not authenticated or not a tenant
+  // Redirect if not authenticated or not a tenant (only after session is ready)
   useEffect(() => {
+    if (!sessionReady) return; // Don't redirect until session is ready
+
     if (!isAuthenticated || !user) {
       router.push("/app/auth/login");
       return;
@@ -52,7 +70,7 @@ export default function ShortlistPage() {
       router.push("/app/dashboard");
       return;
     }
-  }, [isAuthenticated, user, router]);
+  }, [sessionReady, isAuthenticated, user, router]);
 
   const handlePropertyClick = (propertyId: string) => {
     router.push(`/app/properties/${propertyId}`);
@@ -119,13 +137,25 @@ export default function ShortlistPage() {
     );
   }
 
-  // Show not authenticated state
+  // Show loading while session is initializing
+  if (!sessionReady) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Initializing session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show not authenticated state (only after session is ready)
   if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Checking authentication...</p>
+          <p className="text-slate-600">Redirecting to login...</p>
         </div>
       </div>
     );

@@ -63,10 +63,10 @@ export default function LandingPage() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <Link href="/app/auth/login">
+              <Link href="/app/auth">
                 <Button variant="ghost">Sign In</Button>
               </Link>
-              <Link href="/app/auth/register">
+              <Link href="/app/auth">
                 <Button>Get Started</Button>
               </Link>
             </div>
@@ -88,13 +88,13 @@ export default function LandingPage() {
               and preferences.
             </p>
             <div className="mt-10 flex justify-center gap-x-6">
-              <Link href="/app/auth/register?type=tenant">
+              <Link href="/app/auth">
                 <Button size="lg" className="px-8">
                   Find a Property
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/app/auth/register?type=operator">
+              <Link href="/app/auth">
                 <Button variant="outline" size="lg" className="px-8">
                   List Your Property
                 </Button>
@@ -296,12 +296,12 @@ export default function LandingPage() {
             Join thousands of tenants and operators using TaDa
           </p>
           <div className="mt-8 flex justify-center gap-x-6">
-            <Link href="/app/auth/register?type=tenant">
+            <Link href="/app/auth">
               <Button size="lg" variant="secondary" className="px-8">
                 Find Properties
               </Button>
             </Link>
-            <Link href="/app/auth/register?type=operator">
+            <Link href="/app/auth">
               <Button
                 size="lg"
                 variant="outline"

@@ -589,7 +589,7 @@ function AdminPanelContent() {
           <h3 className="text-2xl font-semibold text-slate-900">
             Users Management
           </h3>
-          <p className="text-slate-600">Manage user accounts and permissions</p>
+          <p className="text-slate-900">Manage user accounts and permissions</p>
         </div>
         <button
           onClick={handleAdd}

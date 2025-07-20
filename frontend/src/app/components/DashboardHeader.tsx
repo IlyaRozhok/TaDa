@@ -52,8 +52,10 @@ export default function DashboardHeader() {
 
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!user?.full_name) return "U";
-    return user.full_name
+    const displayName = getDisplayName();
+    if (displayName === "User") return "U";
+
+    return displayName
       .trim()
       .split(" ")
       .filter((name) => name.length > 0)
@@ -63,10 +65,23 @@ export default function DashboardHeader() {
       .slice(0, 2);
   };
 
-  // Get display name
+  // Get display name with better fallback logic
   const getDisplayName = () => {
-    if (!user?.full_name) return "Loading...";
-    return user.full_name;
+    // Try user.full_name first
+    if (user?.full_name) return user.full_name;
+
+    // Try profile-based name
+    const profileName =
+      user?.tenantProfile?.full_name || user?.operatorProfile?.full_name;
+    if (profileName) return profileName;
+
+    // Fallback to email username
+    if (user?.email) {
+      const emailUsername = user.email.split("@")[0];
+      return emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
+    }
+
+    return "User";
   };
 
   // Handle clicks outside dropdown
@@ -89,7 +104,7 @@ export default function DashboardHeader() {
     dispatch(logout());
     localStorage.removeItem("accessToken");
     localStorage.removeItem("sessionExpiry");
-    router.push("/app/auth/login");
+    router.push("/app/auth");
     setIsDropdownOpen(false);
   };
 
@@ -118,10 +133,11 @@ export default function DashboardHeader() {
     }
   };
 
-  // Check if user is admin
-  const isAdmin = user?.roles?.includes("admin");
+  // Get user role using the proper function
+  const userRole = getUserRole(user);
+  const isAdmin = userRole === "admin";
 
-  console.log("user", user);
+  console.log("user", user, "userRole", userRole);
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className=" px-4 sm:px-6 lg:px-8">
@@ -133,7 +149,6 @@ export default function DashboardHeader() {
           >
             <Logo size="md" />
             <div>
-              <h1 className="text-lg font-bold text-slate-900">TA DA</h1>
               <p className="text-xs text-slate-500 -mt-1">Rental Platform</p>
             </div>
           </button>
@@ -219,9 +234,9 @@ export default function DashboardHeader() {
                     {getDisplayName()}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {user?.roles?.includes("admin")
+                    {userRole === "admin"
                       ? "Administrator"
-                      : user?.roles?.includes("operator")
+                      : userRole === "operator"
                       ? "Property Operator"
                       : "Tenant"}
                   </p>
@@ -249,9 +264,9 @@ export default function DashboardHeader() {
                           {user?.email || "Loading..."}
                         </p>
                         <p className="text-xs text-emerald-600 font-medium">
-                          {user?.roles?.includes("admin")
+                          {userRole === "admin"
                             ? "Administrator"
-                            : user?.roles?.includes("operator")
+                            : userRole === "operator"
                             ? "Property Operator"
                             : "Tenant"}
                         </p>
@@ -275,7 +290,7 @@ export default function DashboardHeader() {
                       color="text-slate-700 hover:text-slate-900"
                     />
 
-                    {user?.roles?.includes("admin") && (
+                    {userRole === "admin" && (
                       <DropdownItem
                         icon={<Settings className="w-4 h-4" />}
                         label="Administrator Panel"
@@ -284,7 +299,7 @@ export default function DashboardHeader() {
                       />
                     )}
 
-                    {!user?.roles?.includes("operator") && (
+                    {userRole === "tenant" && user?.tenantProfile && (
                       <>
                         <div className="border-t border-slate-100 my-2 mx-2"></div>
                         <DropdownItem

@@ -601,7 +601,7 @@ function AdminPanelContent() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+      <div className="bg-white text-black rounded-xl shadow-sm border border-slate-200">
         <div className="p-6 border-b border-slate-200">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">

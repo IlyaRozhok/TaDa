@@ -5,7 +5,13 @@ import Link from "next/link";
 import { Button } from "./ui/Button";
 import { Sparkles, Building, MapPin, Star } from "lucide-react";
 
-export default function SimpleFeaturedSection() {
+interface SimpleFeaturedSectionProps {
+  onAuthModalOpen?: () => void;
+}
+
+export default function SimpleFeaturedSection({
+  onAuthModalOpen,
+}: SimpleFeaturedSectionProps = {}) {
   return (
     <section className="py-12 px-4 bg-gray-50 sm:py-16 lg:py-20">
       <div className="max-w-6xl mx-auto">
@@ -186,15 +192,14 @@ export default function SimpleFeaturedSection() {
                     View Details
                   </Button>
                 </Link>
-                <Link href="/app/auth/register">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto border-gray-300 hover:bg-gray-50 text-sm sm:text-base"
-                  >
-                    Save Property
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onAuthModalOpen}
+                  className="w-full sm:w-auto border-gray-300 hover:bg-gray-50 text-sm sm:text-base"
+                >
+                  Save Property
+                </Button>
               </div>
             </div>
           </div>
