@@ -23,12 +23,11 @@ import {
 export default function AllPropertiesPage() {
   const router = useRouter();
   const t = useTranslations();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Debounce search term with 400ms to prevent cyclic requests
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   // Filter states
   const [filters, setFilters] = useState<PropertyFilters>({
@@ -40,80 +39,17 @@ export default function AllPropertiesPage() {
 
   const [tempFilters, setTempFilters] = useState<PropertyFilters>({});
 
+  // Use filtered properties hook with debounced search and filters
+  const { properties, filteredProperties, loading, error, fetchProperties } =
+    useFilteredProperties(filters, debouncedSearchTerm);
+
+  // Load properties when filters or search term change
   useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        console.log("📡 Fetching all properties...");
-        const response = await propertiesAPI.getAll();
-        const responseData = response.data || response;
-        
-        // Backend returns { data: properties[], total, page, totalPages }
-        const propertiesData = responseData.data || responseData.properties || responseData || [];
-
-        setProperties(propertiesData);
-        setFilteredProperties(propertiesData);
-        console.log("✅ Properties loaded:", propertiesData.length);
-      } catch (err: any) {
-        console.error("❌ Error fetching properties:", err);
-        setError("Failed to load properties");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    console.log("📡 Loading properties with filters and search...");
     fetchProperties();
-  }, []);
+  }, [filters, debouncedSearchTerm]); // Remove fetchProperties from dependencies
 
-  // Apply search and filters
-  useEffect(() => {
-    // Early return if properties is not yet loaded or not an array
-    if (!properties || !Array.isArray(properties)) {
-      return;
-    }
-    
-    let filtered = [...properties];
-
-    // Apply search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (property) =>
-          property.title.toLowerCase().includes(searchLower) ||
-          property.address.toLowerCase().includes(searchLower) ||
-          property.property_type.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply filters
-    if (filters.min_price !== undefined && filters.min_price > 0) {
-      filtered = filtered.filter(
-        (property) => property.price >= filters.min_price!
-      );
-    }
-
-    if (filters.max_price !== undefined && filters.max_price > 0) {
-      filtered = filtered.filter(
-        (property) => property.price <= filters.max_price!
-      );
-    }
-
-    if (filters.bedrooms !== undefined && filters.bedrooms > 0) {
-      filtered = filtered.filter(
-        (property) => property.bedrooms === filters.bedrooms
-      );
-    }
-
-    if (filters.property_type && filters.property_type !== "all") {
-      filtered = filtered.filter(
-        (property) => property.property_type === filters.property_type
-      );
-    }
-
-    setFilteredProperties(filtered);
-  }, [properties, searchTerm, filters]);
+  // Filtering is now handled automatically by the useFilteredProperties hook
 
   const handlePropertyClick = (property: Property) => {
     router.push(`/app/properties/${property.id}`);
@@ -352,7 +288,7 @@ export default function AllPropertiesPage() {
               <p className="font-semibold text-slate-900 mb-2">Use Search</p>
               <p>
                 Search by property title, address, or type to quickly find what
-                you're looking for.
+                you&apos;re looking for.
               </p>
             </div>
             <div className="bg-white rounded-lg p-4">

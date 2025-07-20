@@ -153,6 +153,12 @@ api.interceptors.response.use(
 
 // API endpoints
 export const authAPI = {
+  updateUserRole: async (data: { userId: string; role: string }) => {
+    const response = await api.patch(`/users/${data.userId}/role`, {
+      role: data.role,
+    });
+    return response.data;
+  },
   register: async (data: RegisterData) => {
     const response = await api.post("/auth/register", data);
     return response.data;
@@ -273,6 +279,12 @@ export const usersAPI = {
     const response = await api.get("/users", { params: { limit: 1 } });
     return response.data.total || 0;
   },
+  updateUserRole: async (data: { userId: string; role: string }) => {
+    const response = await api.patch(`/users/${data.userId}/role`, {
+      role: data.role,
+    });
+    return response.data;
+  },
 };
 
 // Admin Statistics API
@@ -348,6 +360,28 @@ export const adminAPI = {
       recentUsers,
       recentProperties,
     };
+  },
+};
+
+// Featured content API
+export const featuredAPI = {
+  async getHomeCards() {
+    const response = await axios.get(`${API_BASE_URL}/featured/home-cards`);
+    return response.data;
+  },
+
+  async getResidentialComplexes(limit = 3) {
+    const response = await axios.get(
+      `${API_BASE_URL}/featured/residential-complexes?limit=${limit}`
+    );
+    return response.data;
+  },
+
+  async getFeaturedProperties(limit = 6) {
+    const response = await axios.get(
+      `${API_BASE_URL}/featured/properties?limit=${limit}`
+    );
+    return response.data;
   },
 };
 

@@ -25,11 +25,7 @@ import { User } from "../../entities/user.entity";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
-import {
-  IsEmail,
-  IsOptional,
-  IsString,
-} from "class-validator";
+import { IsEmail, IsOptional, IsString } from "class-validator";
 import { CreateUserDto } from "./dto/create-user.dto";
 
 class AdminUpdateUserDto {
@@ -156,5 +152,24 @@ export class UsersController {
   async adminDeleteUser(@Param("id") id: string): Promise<{ message: string }> {
     await this.usersService.adminDeleteUser(id);
     return { message: "User deleted" };
+  }
+
+  @Put(":id/role")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("access-token")
+  @ApiOperation({ summary: "Update user role" })
+  @ApiResponse({ status: 200, description: "User role updated", type: User })
+  async updateUserRole(
+    @Param("id") id: string,
+    @Body() updateData: { role: string },
+    @Req() req: any
+  ): Promise<{ user: User; access_token?: string }> {
+    // Only allow users to update their own role or admins to update any role
+    if (req.user.id !== id && req.user.role !== "admin") {
+      throw new Error("Unauthorized");
+    }
+
+    const user = await this.usersService.updateUserRole(id, updateData.role);
+    return { user };
   }
 }

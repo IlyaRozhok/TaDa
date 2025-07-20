@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { propertiesAPI, Property } from "../lib/api";
+import { Property } from "../types";
+import { useProperties } from "../hooks/useProperties";
 
 // Helper function to generate random match percentage and status
 const generateRandomData = () => ({
@@ -125,40 +126,39 @@ const FeaturedPropertyCard: React.FC<PropertyCardProps> = ({
 export default function FeaturedPropertiesSlider() {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [randomDataMap, setRandomDataMap] = useState<{[key: string]: {matchPercent: number, isPopular: boolean, isNew: boolean}}>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [randomDataMap, setRandomDataMap] = useState<{
+    [key: string]: { matchPercent: number; isPopular: boolean; isNew: boolean };
+  }>({});
+
+  // Use the properties hook for featured properties
+  const { properties, loading, error, fetchFeaturedProperties } =
+    useProperties();
 
   useEffect(() => {
-    const fetchFeaturedProperties = async () => {
+    const loadFeaturedProperties = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await propertiesAPI.getFeatured(6);
-        const propertiesData = response.data || response;
-        
-        setProperties(propertiesData);
-        
-        // Generate random data for each property
-        const randomData: {[key: string]: any} = {};
-        propertiesData.forEach((property: Property) => {
-          randomData[property.id] = generateRandomData();
-        });
-        setRandomDataMap(randomData);
-        
+        await fetchFeaturedProperties(6);
       } catch (err: any) {
         console.error("Error fetching featured properties:", err);
-        setError("Failed to load featured properties");
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchFeaturedProperties();
-  }, []);
-  
+    loadFeaturedProperties();
+  }, [fetchFeaturedProperties]);
+
+  // Update random data when properties change
+  useEffect(() => {
+    if (properties.length > 0) {
+      const randomData: { [key: string]: any } = {};
+      properties.forEach((property: Property) => {
+        // Keep existing random data or generate new
+        randomData[property.id] =
+          randomDataMap[property.id] || generateRandomData();
+      });
+      setRandomDataMap(randomData);
+    }
+  }, [properties]);
+
   const handlePropertyClick = (property: Property) => {
     router.push(`/app/properties/${property.id}`);
   };
@@ -173,18 +173,18 @@ export default function FeaturedPropertiesSlider() {
     );
   };
 
-    // Calculate visible properties based on screen size
+  // Calculate visible properties based on screen size
   const getVisibleProperties = () => {
     if (properties.length === 0) return [];
-    
+
     const visibleCount = Math.min(3, properties.length); // Show up to 3 properties at once
     const result = [];
-    
+
     for (let i = 0; i < visibleCount; i++) {
       const index = (currentIndex + i) % properties.length;
       result.push(properties[index]);
     }
-    
+
     return result;
   };
 
@@ -207,7 +207,10 @@ export default function FeaturedPropertiesSlider() {
         {/* Loading State */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div
+              key={i}
+              className="bg-white rounded-2xl shadow-lg overflow-hidden"
+            >
               <div className="h-48 bg-gray-200 animate-pulse"></div>
               <div className="p-5">
                 <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
@@ -243,11 +246,23 @@ export default function FeaturedPropertiesSlider() {
         {/* Error State */}
         <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Failed to Load Featured Properties</h3>
+          <h3 className="text-lg font-semibold text-red-800 mb-2">
+            Failed to Load Featured Properties
+          </h3>
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
@@ -279,9 +294,24 @@ export default function FeaturedPropertiesSlider() {
         {/* Empty State */}
         <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v3H8V5z" />
+            <svg
+              className="w-8 h-8 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 5a2 2 0 012-2h4a2 2 0 012 2v3H8V5z"
+              />
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-2">

@@ -14,15 +14,9 @@ import { useDebounce } from "../hooks/useDebounce";
 export default function PublicPropertiesPage() {
   const router = useRouter();
 
-  // Use the properties hook with debounced search
-  const {
-    properties,
-    loading,
-    error,
-    debouncedSearchProperties,
-    searchLoading,
-    fetchPublicProperties,
-  } = useProperties();
+  // Use the properties hook for public properties
+  const { properties, loading, error, searchLoading, fetchPublicProperties } =
+    useProperties();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -30,13 +24,14 @@ export default function PublicPropertiesPage() {
   const [totalProperties, setTotalProperties] = useState(0);
   const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
 
-  // Debounce the search term to reduce API calls
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  // Debounce the search term with 400ms delay to prevent cyclic requests
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  // Initial load of properties
+  // Single useEffect to handle all property loading with debounced search
   useEffect(() => {
-    const loadInitialProperties = async () => {
+    const loadProperties = async () => {
       try {
+        console.log("🔍 Loading properties with search:", debouncedSearchTerm);
         const result = await fetchPublicProperties(
           page,
           6,
@@ -54,15 +49,8 @@ export default function PublicPropertiesPage() {
       }
     };
 
-    loadInitialProperties();
-  }, [page, fetchPublicProperties, debouncedSearchTerm]);
-
-  // Use debounced search when user types
-  useEffect(() => {
-    if (debouncedSearchTerm !== searchTerm || debouncedSearchTerm) {
-      debouncedSearchProperties(debouncedSearchTerm, page, 6);
-    }
-  }, [debouncedSearchTerm, page, debouncedSearchProperties, searchTerm]);
+    loadProperties();
+  }, [debouncedSearchTerm, page]); // Remove fetchPublicProperties from dependencies
 
   const handlePropertyClick = (property: Property) => {
     router.push(`/properties/${property.id}`);
@@ -101,24 +89,9 @@ export default function PublicPropertiesPage() {
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <Logo size="sm" />
-                <span className="ml-2 text-xl font-semibold text-gray-900">
-                  TaDa
-                </span>
               </Link>
             </div>
-            <nav className="flex items-center space-x-6">
-              <Link
-                href="/"
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Home
-              </Link>
-              <Link
-                href="/app/auth/login"
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Login
-              </Link>
+            <nav className="flex items-center">
               <Link href="/app/auth/register">
                 <Button
                   size="sm"
@@ -143,16 +116,16 @@ export default function PublicPropertiesPage() {
             Back to Home
           </Link>
 
-          <div className="bg-[#E5E4E2] rounded-2xl p-8 shadow-sm border border-gray-200">
+          <div className="rounded-2xl p-8 shadow-sm border border-gray-200 bg-gradient-to-r from-gray-900 to-gray-700">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                 <Home className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                <h1 className="text-3xl font-bold text-white mb-1">
                   Browse Properties
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-white">
                   Explore our selection of properties - no account required
                 </p>
               </div>
@@ -174,24 +147,28 @@ export default function PublicPropertiesPage() {
 
         {/* Registration Prompt */}
         {showRegistrationPrompt && (
-          <div className="mb-8 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl p-6 flex items-center justify-between">
-            <div className="flex items-center">
-              <Lock className="w-8 h-8 mr-4" />
-              <div>
-                <h3 className="text-lg font-semibold mb-1">
-                  Want to see more properties?
-                </h3>
-                <p className="text-gray-200">
-                  Create a free account to access all {totalProperties}+
-                  properties and save your favorites
-                </p>
+          <div className="mb-8 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start sm:items-center">
+                <Lock className="w-6 h-6 sm:w-8 sm:h-8 mr-3 sm:mr-4 flex-shrink-0 mt-1 sm:mt-0" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold mb-1">
+                    Want to see more properties?
+                  </h3>
+                  <p className="text-gray-200 text-sm sm:text-base">
+                    Create a free account to access all {totalProperties}+
+                    properties and save your favorites
+                  </p>
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <Link href="/app/auth/register">
+                  <Button className="w-full sm:w-auto bg-white text-gray-900 hover:bg-gray-100 px-4 sm:px-6 py-2 text-sm sm:text-base font-medium whitespace-nowrap">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             </div>
-            <Link href="/app/auth/register">
-              <Button className="bg-white text-gray-900 hover:bg-gray-100">
-                Sign Up Free
-              </Button>
-            </Link>
           </div>
         )}
 

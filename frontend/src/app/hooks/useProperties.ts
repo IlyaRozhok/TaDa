@@ -51,7 +51,7 @@ export const useProperties = (): UsePropertiesReturn => {
         const response = await propertiesAPI.getPublic(page, limit, search);
         return response.data || [];
       },
-      300 // 300ms delay
+      400 // 400ms delay to prevent cyclic requests
     );
 
   const fetchProperties = useCallback(async () => {
@@ -278,3 +278,4 @@ export const useFilteredProperties = (
     applyFilters,
   };
 };
+ 
