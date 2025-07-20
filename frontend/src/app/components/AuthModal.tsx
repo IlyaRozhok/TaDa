@@ -27,9 +27,16 @@ type UserType = "tenant" | "operator";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  forceRoleSelection?: boolean;
+  isOAuthRoleSelection?: boolean;
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export default function AuthModal({
+  isOpen,
+  onClose,
+  forceRoleSelection = false,
+  isOAuthRoleSelection = false,
+}: AuthModalProps) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,6 +90,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
+
+  // Handle forced role selection for OAuth users
+  useEffect(() => {
+    if (forceRoleSelection && isOpen) {
+      setStep("role");
+      setRequiresRegistration(true);
+    }
+  }, [forceRoleSelection, isOpen]);
 
   const resetForm = () => {
     setEmail("");
@@ -147,12 +162,41 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setSelectedRole(role);
   };
 
-  const handleRoleSubmit = () => {
+  const handleRoleSubmit = async () => {
     if (!selectedRole) {
       setError("Please select your account type");
       return;
     }
-    handleSubmit();
+
+    if (isOAuthRoleSelection) {
+      // OAuth role selection - call setRole API
+      setIsLoading(true);
+      try {
+        const response = await authAPI.setRole(selectedRole);
+
+        // Update user in Redux store
+        dispatch(
+          setCredentials({
+            user: response.user,
+            accessToken: localStorage.getItem("accessToken") || "",
+          })
+        );
+
+        handleClose();
+        router.push("/app/dashboard");
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        setError(
+          error.response?.data?.message ||
+            "Failed to set role. Please try again."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Regular registration - call authenticate
+      handleSubmit();
+    }
   };
 
   const handleGoogleAuth = () => {

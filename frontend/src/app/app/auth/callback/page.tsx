@@ -67,9 +67,14 @@ function AuthCallbackContent() {
           })
         );
 
-        // Redirect based on user status
-        if (isNewUser) {
-          // New user from Google OAuth might need to select role or complete profile
+        // Redirect based on user status and role
+        const user = profileResponse.user;
+
+        if (!user.role) {
+          // User needs to select role first
+          router.replace("/?needsRole=true");
+        } else if (isNewUser) {
+          // New user with role can go to preferences
           router.replace("/app/preferences");
         } else {
           router.replace("/app/dashboard");
@@ -128,7 +133,7 @@ function AuthCallbackContent() {
             <p className="text-slate-600 mb-6">{error}</p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => router.push("/app/auth")}
+                onClick={() => router.push("/")}
                 className="flex-1 bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
               >
                 Try Again

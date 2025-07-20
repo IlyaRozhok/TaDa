@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "./store/slices/authSlice";
 import Link from "next/link";
@@ -11,18 +11,30 @@ import SimpleFeaturedSection from "./components/SimpleFeaturedSection";
 import AuthModal from "./components/AuthModal";
 import { Search, ArrowRight, Menu, X } from "lucide-react";
 
-export default function Home() {
+function HomeContent() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [needsRoleSelection, setNeedsRoleSelection] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user) {
       router.push("/app/dashboard");
     }
   }, [isAuthenticated, user, router]);
+
+  useEffect(() => {
+    const needsRole = searchParams.get("needsRole");
+    if (needsRole === "true") {
+      setNeedsRoleSelection(true);
+      setAuthModalOpen(true);
+      // Clear the URL parameter
+      router.replace("/", undefined);
+    }
+  }, [searchParams, router]);
 
   if (isAuthenticated && user) {
     return (
@@ -182,8 +194,21 @@ export default function Home() {
       {/* Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setNeedsRoleSelection(false);
+        }}
+        forceRoleSelection={needsRoleSelection}
+        isOAuthRoleSelection={needsRoleSelection}
       />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

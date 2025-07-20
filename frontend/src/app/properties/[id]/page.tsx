@@ -7,6 +7,7 @@ import ImageGallery from "../../components/ImageGallery";
 import LifestyleFeatures from "../../components/LifestyleFeatures";
 import { Button } from "../../components/ui/Button";
 import Logo from "../../components/Logo";
+import AuthModal from "../../components/AuthModal";
 import {
   ArrowLeft,
   MapPin,
@@ -26,6 +27,7 @@ export default function PublicPropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -104,20 +106,19 @@ export default function PublicPropertyDetailPage() {
               >
                 Browse Properties
               </Link>
-              <Link
-                href="/app/auth/login"
+              <button
+                onClick={() => setAuthModalOpen(true)}
                 className="text-gray-600 hover:text-gray-900 font-medium"
               >
                 Login
-              </Link>
-              <Link href="/app/auth/register">
-                <Button
-                  size="sm"
-                  className="bg-gray-900 hover:bg-gray-800 text-white"
-                >
-                  Sign Up
-                </Button>
-              </Link>
+              </button>
+              <Button
+                size="sm"
+                onClick={() => setAuthModalOpen(true)}
+                className="bg-gray-900 hover:bg-gray-800 text-white"
+              >
+                Sign Up
+              </Button>
             </nav>
           </div>
         </div>
@@ -265,6 +266,12 @@ export default function PublicPropertyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </div>
   );
 }

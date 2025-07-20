@@ -134,15 +134,16 @@ api.interceptors.response.use(
       // );
       store.dispatch(logout());
 
-      // Only redirect to login if we're not already on a public page
+      // Only redirect to home if we're not already on a public page
       if (
         typeof window !== "undefined" &&
         !window.location.pathname.includes("/auth/") &&
-        window.location.pathname !== "/"
+        window.location.pathname !== "/" &&
+        !window.location.pathname.startsWith("/properties")
       ) {
         // Add a small delay to prevent race conditions
         setTimeout(() => {
-          window.location.href = "/app/auth/login";
+          window.location.href = "/";
         }, 100);
       }
     }
@@ -235,6 +236,18 @@ export const authAPI = {
     return response.data;
   },
   refresh: () => api.post("/auth/refresh"),
+  setRole: async (role: "tenant" | "operator") => {
+    const response = await api.post("/auth/set-role", { role });
+
+    // Check if the response indicates an error
+    if (response.status >= 400) {
+      const error = new Error(response.data?.message || "Failed to set role");
+      (error as any).response = { data: response.data };
+      throw error;
+    }
+
+    return response.data;
+  },
 };
 
 export const propertiesAPI = {

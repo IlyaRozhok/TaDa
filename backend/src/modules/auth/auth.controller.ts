@@ -203,4 +203,31 @@ export class AuthController {
       );
     }
   }
+
+  @Post("set-role")
+  @UseGuards(JwtAuthGuard)
+  async setRole(
+    @CurrentUser() user: any,
+    @Body() body: { role: "tenant" | "operator" }
+  ) {
+    try {
+      const { role } = body;
+
+      if (!role || !["tenant", "operator"].includes(role)) {
+        throw new BadRequestException(
+          "Invalid role. Must be 'tenant' or 'operator'"
+        );
+      }
+
+      const updatedUser = await this.authService.setUserRole(user.userId, role);
+
+      return {
+        message: "Role set successfully",
+        user: updatedUser,
+      };
+    } catch (error) {
+      console.error("Set role error:", error);
+      throw error;
+    }
+  }
 }

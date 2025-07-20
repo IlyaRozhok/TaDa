@@ -209,7 +209,7 @@ export default function ProfilePage() {
       } else if (isAxiosError(err) && err.response?.status === 401) {
         setError("Authentication failed. Please log in again.");
         setTimeout(() => {
-          router.push("/app/auth/login");
+          router.push("/");
         }, 2000);
       } else if (isAxiosError(err) && err.response?.status === 409) {
         setError("Email already exists. Please use a different email.");

@@ -17,7 +17,10 @@ import {
   Clock,
   AlertTriangle,
 } from "lucide-react";
-import { AuthActivityLog, CompactAuthLog } from "../../components/AuthLogRenderer";
+import {
+  AuthActivityLog,
+  CompactAuthLog,
+} from "../../components/AuthLogRenderer";
 
 export default function SecurityPage() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -26,7 +29,7 @@ export default function SecurityPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/app/auth/login");
+      router.push("/");
     }
   }, [isAuthenticated, router]);
 

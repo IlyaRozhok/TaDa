@@ -78,7 +78,7 @@ export default function ManagePropertiesPage() {
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
-      router.push("/app/auth/login");
+      router.push("/");
       return;
     }
 

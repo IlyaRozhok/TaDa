@@ -21,7 +21,7 @@ export default function DashboardRouter({
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace("/app/auth/login");
+      router.replace("/");
       return;
     }
 

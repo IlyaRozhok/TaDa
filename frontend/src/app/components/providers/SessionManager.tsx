@@ -188,8 +188,10 @@ export default function SessionManager() {
       "/app/auth",
       "/app/auth/login",
       "/app/auth/register",
+      "/properties", // Public properties browsing
     ];
-    const isPublicPath = publicPaths.includes(pathname);
+    const isPublicPath =
+      publicPaths.includes(pathname) || pathname.startsWith("/properties/");
 
     // Define protected paths that should not redirect authenticated users
     const protectedPaths = [
@@ -238,12 +240,12 @@ export default function SessionManager() {
     } else {
       // User is not logged in
       if (!isPublicPath && !pathname.startsWith("/app/auth/")) {
-        // Redirect to login if on protected page
+        // Redirect to home page if on protected page
         console.log(
-          "🔄 SessionManager: Redirecting unauthenticated user to login"
+          "🔄 SessionManager: Redirecting unauthenticated user to home"
         );
         lastRedirectTime = now;
-                  router.replace("/app/auth");
+        router.replace("/");
       }
       // If on public page, stay there
     }

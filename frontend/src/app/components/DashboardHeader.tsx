@@ -104,7 +104,7 @@ export default function DashboardHeader() {
     dispatch(logout());
     localStorage.removeItem("accessToken");
     localStorage.removeItem("sessionExpiry");
-    router.push("/app/auth");
+    router.push("/");
     setIsDropdownOpen(false);
   };
 

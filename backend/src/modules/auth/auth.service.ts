@@ -293,13 +293,13 @@ export class AuthService {
       let isNewUser = false;
 
       if (!user) {
-        // Create new user with Google OAuth
+        // Create new user with Google OAuth - without role yet
         user = this.userRepository.create({
           email: email.toLowerCase(),
           google_id,
           full_name: full_name || null,
           avatar_url: avatar_url || null,
-          role: "tenant", // Default role
+          role: null, // No role yet - user needs to select
           status: "active",
           // Generate random password for OAuth users
           password: await bcrypt.hash(
@@ -309,23 +309,12 @@ export class AuthService {
         });
 
         const savedUser = await this.userRepository.save(user);
-
-        // Create tenant profile by default
-        const tenantProfile = this.tenantProfileRepository.create({
-          user: savedUser,
-          full_name: full_name || null,
-        });
-        await this.tenantProfileRepository.save(tenantProfile);
-
-        // Create preferences
-        const preferences = this.preferencesRepository.create({
-          user: savedUser,
-        });
-        await this.preferencesRepository.save(preferences);
-
         user = savedUser;
         isNewUser = true;
-        console.log("✅ Created new user from Google OAuth:", user.email);
+        console.log(
+          "✅ Created new user from Google OAuth (no role yet):",
+          user.email
+        );
       } else {
         // Update Google ID and other fields if not set
         let shouldUpdate = false;
@@ -368,6 +357,61 @@ export class AuthService {
       throw new InternalServerErrorException(
         "Failed to process Google authentication"
       );
+    }
+  }
+
+  async setUserRole(userId: string, role: "tenant" | "operator") {
+    try {
+      console.log(`🔄 Setting role ${role} for user ${userId}`);
+
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ["tenantProfile", "operatorProfile"],
+      });
+
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+
+      if (user.role) {
+        throw new BadRequestException("User already has a role assigned");
+      }
+
+      // Set the role
+      user.role = role;
+      await this.userRepository.save(user);
+
+      // Create appropriate profile
+      if (role === "tenant") {
+        const tenantProfile = this.tenantProfileRepository.create({
+          user: user,
+          full_name: user.full_name || null,
+        });
+        await this.tenantProfileRepository.save(tenantProfile);
+
+        // Create preferences for tenant
+        const preferences = this.preferencesRepository.create({
+          user: user,
+        });
+        await this.preferencesRepository.save(preferences);
+      } else if (role === "operator") {
+        const operatorProfile = this.operatorProfileRepository.create({
+          user: user,
+          full_name: user.full_name || null,
+        });
+        await this.operatorProfileRepository.save(operatorProfile);
+      }
+
+      console.log(`✅ Successfully set role ${role} for user ${user.email}`);
+
+      // Return updated user with relations
+      return await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ["tenantProfile", "operatorProfile", "preferences"],
+      });
+    } catch (error) {
+      console.error("Error setting user role:", error);
+      throw error;
     }
   }
 

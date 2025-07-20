@@ -62,7 +62,7 @@ export default function ShortlistPage() {
     if (!sessionReady) return; // Don't redirect until session is ready
 
     if (!isAuthenticated || !user) {
-      router.push("/app/auth/login");
+      router.push("/");
       return;
     }
 

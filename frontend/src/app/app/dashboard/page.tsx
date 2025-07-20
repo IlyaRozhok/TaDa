@@ -19,8 +19,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log("🔄 Dashboard: Not authenticated, redirecting to login");
-      router.replace("/app/auth");
+      console.log("🔄 Dashboard: Not authenticated, redirecting to home");
+      router.replace("/");
       return;
     }
 

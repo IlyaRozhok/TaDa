@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Property } from "../types";
 import { useProperties } from "../hooks/useProperties";
 import { useDebounce } from "../hooks/useDebounce";
+import AuthModal from "../components/AuthModal";
 
 export default function PublicPropertiesPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function PublicPropertiesPage() {
   const [, setTotalPages] = useState(1);
   const [totalProperties, setTotalProperties] = useState(0);
   const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Debounce the search term with 400ms delay to prevent cyclic requests
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
@@ -92,14 +94,13 @@ export default function PublicPropertiesPage() {
               </Link>
             </div>
             <nav className="flex items-center">
-              <Link href="/app/auth/register">
-                <Button
-                  size="sm"
-                  className="bg-gray-900 hover:bg-gray-800 text-white"
-                >
-                  Sign Up
-                </Button>
-              </Link>
+              <Button
+                size="sm"
+                onClick={() => setAuthModalOpen(true)}
+                className="bg-gray-900 hover:bg-gray-800 text-white"
+              >
+                Sign Up
+              </Button>
             </nav>
           </div>
         </div>
@@ -162,11 +163,12 @@ export default function PublicPropertiesPage() {
                 </div>
               </div>
               <div className="flex-shrink-0">
-                <Link href="/app/auth/register">
-                  <Button className="w-full sm:w-auto bg-white text-gray-900 hover:bg-gray-100 px-4 sm:px-6 py-2 text-sm sm:text-base font-medium whitespace-nowrap">
-                    Get Started
-                  </Button>
-                </Link>
+                <Button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="w-full sm:w-auto bg-white text-gray-900 hover:bg-gray-100 px-4 sm:px-6 py-2 text-sm sm:text-base font-medium whitespace-nowrap"
+                >
+                  Get Started
+                </Button>
               </div>
             </div>
           </div>
@@ -204,14 +206,18 @@ export default function PublicPropertiesPage() {
                   get personalized matches
                 </p>
                 <div className="flex gap-4 justify-center">
-                  <Link href="/app/auth/register">
-                    <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                      Create Account
-                    </Button>
-                  </Link>
-                  <Link href="/app/preferences">
-                    <Button variant="outline">Take Lifestyle Quiz</Button>
-                  </Link>
+                  <Button
+                    onClick={() => setAuthModalOpen(true)}
+                    className="bg-gray-900 hover:bg-gray-800 text-white"
+                  >
+                    Create Account
+                  </Button>
+                  <Button
+                    onClick={() => setAuthModalOpen(true)}
+                    variant="outline"
+                  >
+                    Take Lifestyle Quiz
+                  </Button>
                 </div>
               </div>
             )}
@@ -230,6 +236,12 @@ export default function PublicPropertiesPage() {
           </div>
         )}
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </div>
   );
 }
