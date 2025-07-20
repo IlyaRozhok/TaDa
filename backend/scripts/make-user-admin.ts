@@ -3,7 +3,6 @@
 import { DataSource } from "typeorm";
 import { User } from "../src/entities/user.entity";
 import dataSource from "../src/database/data-source";
-
 async function makeUserAdmin() {
   const targetEmail = process.argv[2];
 
