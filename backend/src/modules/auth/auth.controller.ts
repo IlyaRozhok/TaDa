@@ -171,29 +171,55 @@ export class AuthController {
   @UseGuards(AuthGuard("google"))
   async googleAuthCallback(@Req() req: any, @Res() res: Response) {
     try {
-      console.log("Google callback - user from strategy:", req.user);
+      console.log("🔍 Google callback started");
+      console.log("User from strategy:", req.user);
 
       if (!req.user) {
-        console.error("No user data from Google strategy");
+        console.error("❌ No user data from Google strategy");
         return res.redirect(
           `${process.env.FRONTEND_URL}/app/auth/callback?success=false&error=${encodeURIComponent(
-            "Authentication failed"
+            "Authentication failed - no user data"
           )}`
         );
       }
 
-      // Process Google user data through auth service
-      const { user, isNewUser } = await this.authService.googleAuth(req.user);
-      const tokens = await this.authService.generateTokens(user);
+      console.log("🔍 Processing Google user data through auth service...");
 
-      console.log("Generated tokens for user:", user.email);
-      console.log("Redirecting to frontend with token");
+      // Check if user exists first
+      const result = await this.authService.checkGoogleUser(req.user);
 
-      // Redirect with token in query params for frontend to handle
-      const callbackUrl = `${process.env.FRONTEND_URL}/app/auth/callback?token=${tokens.access_token}&success=true&isNewUser=${isNewUser}`;
-      return res.redirect(callbackUrl);
-    } catch (error) {
-      console.error("Google callback error:", error);
+      if (result.user) {
+        // Existing user - generate tokens and redirect
+        console.log("✅ Existing user found:", {
+          userId: result.user.id,
+          userEmail: result.user.email,
+          userRole: result.user.role,
+        });
+
+        console.log("🔍 Generating tokens for existing user...");
+        const tokens = await this.authService.generateTokens(result.user);
+
+        const callbackUrl = `${process.env.FRONTEND_URL}/app/auth/callback?token=${tokens.access_token}&success=true&isNewUser=false`;
+        return res.redirect(callbackUrl);
+      } else {
+        // New user - store Google data temporarily and redirect to role selection
+        console.log("🔄 New user detected - storing Google data temporarily");
+
+        const googleData = result.googleData;
+        const registrationId =
+          await this.authService.storeGoogleDataTemporarily(googleData);
+
+        console.log(`✅ Stored Google data with ID: ${registrationId}`);
+        console.log("🔍 Redirecting to role selection...");
+
+        // Redirect to frontend with registration ID for role selection
+        const callbackUrl = `${process.env.FRONTEND_URL}/app/auth/callback?needsRoleSelection=true&registrationId=${registrationId}`;
+        return res.redirect(callbackUrl);
+      }
+    } catch (error: any) {
+      console.error("❌ Google callback error:", error);
+      console.error("Error stack:", error.stack);
+
       const errorMessage =
         error instanceof Error ? error.message : "Authentication failed";
       return res.redirect(
@@ -228,6 +254,61 @@ export class AuthController {
     } catch (error) {
       console.error("Set role error:", error);
       throw error;
+    }
+  }
+
+  @Post("create-google-user")
+  async createGoogleUser(
+    @Body() body: { registrationId: string; role: "tenant" | "operator" }
+  ) {
+    try {
+      console.log(
+        `🔍 Creating Google user with role: ${body.role} for registration: ${body.registrationId}`
+      );
+
+      if (!body.registrationId || !body.role) {
+        throw new BadRequestException("Registration ID and role are required");
+      }
+
+      if (!["tenant", "operator"].includes(body.role)) {
+        throw new BadRequestException("Role must be 'tenant' or 'operator'");
+      }
+
+      // Create user from Google registration
+      const user = await this.authService.createGoogleUserFromRegistration(
+        body.registrationId,
+        body.role
+      );
+
+      // Generate tokens
+      const tokens = await this.authService.generateTokens(user);
+
+      console.log(
+        `✅ Google user created successfully: ${user.email} with role: ${user.role}`
+      );
+
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name,
+          role: user.role,
+          avatar_url: user.avatar_url,
+          tenantProfile: user.tenantProfile || null,
+          operatorProfile: user.operatorProfile || null,
+          preferences: user.preferences || null,
+        },
+        access_token: tokens.access_token,
+      };
+    } catch (error: any) {
+      console.error("❌ Error creating Google user:", error);
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException(error.message || "Failed to create user");
     }
   }
 }

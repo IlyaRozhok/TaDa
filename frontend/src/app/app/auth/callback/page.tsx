@@ -22,23 +22,55 @@ function AuthCallbackContent() {
         const success = searchParams.get("success");
         const errorParam = searchParams.get("error");
         const isNewUser = searchParams.get("isNewUser") === "true";
+        const needsRoleSelection =
+          searchParams.get("needsRoleSelection") === "true";
+        const registrationId = searchParams.get("registrationId");
 
-        // console.log("🔍 OAuth callback parameters:", { hasToken: !!token, tokenLength: token?.length, success, errorParam });
+        console.log("🔍 OAuth callback parameters:", {
+          hasToken: !!token,
+          tokenLength: token?.length,
+          success,
+          errorParam,
+          isNewUser,
+          needsRoleSelection,
+          hasRegistrationId: !!registrationId,
+        });
 
         if (errorParam) {
           const decodedError = decodeURIComponent(errorParam);
+          console.error("❌ OAuth callback error parameter:", decodedError);
           setError(decodedError);
           setLoading(false);
           return;
         }
 
+        // Handle new user that needs role selection
+        if (needsRoleSelection && registrationId) {
+          console.log("🔄 New user needs role selection");
+
+          // Store registration ID in sessionStorage for role selection
+          sessionStorage.setItem("googleRegistrationId", registrationId);
+
+          // Redirect to home page for role selection
+          console.log("✅ Redirecting to role selection");
+          router.replace("/?needsRole=true&isGoogleAuth=true");
+          return;
+        }
+
         if (!token || success !== "true") {
+          console.error("❌ Invalid callback parameters:", {
+            token: !!token,
+            success,
+          });
           setError("Invalid callback parameters");
           setLoading(false);
           return;
         }
 
-        // console.log("🔍 Token received, storing and validating...", { tokenStart: token.substring(0, 20) + "...", tokenLength: token.length });
+        console.log("🔍 Token received, storing and validating...", {
+          tokenStart: token.substring(0, 20) + "...",
+          tokenLength: token.length,
+        });
 
         // Store the token
         localStorage.setItem("accessToken", token);
@@ -49,12 +81,22 @@ function AuthCallbackContent() {
 
         // Verify token was stored
         const storedToken = localStorage.getItem("accessToken");
+        console.log("🔍 Token stored in localStorage:", !!storedToken);
 
+        console.log("🔍 Getting user profile...");
         // Get user profile with explicit token in request
         const profileResponse = await authAPI.getProfile();
 
+        console.log("🔍 Profile response:", {
+          hasResponse: !!profileResponse,
+          hasUser: !!profileResponse?.user,
+          userEmail: profileResponse?.user?.email,
+          userRole: profileResponse?.user?.role,
+        });
+
         // Validate profile response
         if (!profileResponse || !profileResponse.user) {
+          console.error("❌ Failed to get user profile");
           setError("Failed to get user profile");
           return;
         }
@@ -70,13 +112,24 @@ function AuthCallbackContent() {
         // Redirect based on user status and role
         const user = profileResponse.user;
 
+        console.log("🔍 Deciding redirect based on user:", {
+          userId: user.id,
+          userEmail: user.email,
+          userRole: user.role,
+          isNewUser: isNewUser,
+          hasRole: !!user.role,
+        });
+
         if (!user.role) {
           // User needs to select role first
+          console.log("✅ User has no role - redirecting to role selection");
           router.replace("/?needsRole=true");
         } else if (isNewUser) {
           // New user with role can go to preferences
+          console.log("✅ New user with role - redirecting to preferences");
           router.replace("/app/preferences");
         } else {
+          console.log("✅ Existing user - redirecting to dashboard");
           router.replace("/app/dashboard");
         }
       } catch (error: any) {

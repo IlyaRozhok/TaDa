@@ -39,7 +39,7 @@ export class User {
     example: "tenant",
     enum: ["admin", "operator", "tenant"],
   })
-  @Column({ default: "tenant" })
+  @Column({ nullable: true })
   role: string;
 
   @ApiProperty({

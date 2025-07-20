@@ -189,7 +189,7 @@ function AdminOperatorDashboard() {
 
         {/* Welcome Section */}
         <div className="mb-8 sm:mb-12 ">
-          <div className="relative overflow-hidden bg-gradient-to-r from-[#FF8008] to-[#FFC837] rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
+          <div className="relative overflow-hidden bg-gradient-to-r from-[#203A43] to-[#004e92] rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
             {/* Background Image */}
             <div
               className="absolute inset-0 bg-cover bg-center opacity-20"

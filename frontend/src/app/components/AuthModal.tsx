@@ -52,13 +52,13 @@ export default function AuthModal({
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // Close modal on authentication success
+  // Close modal on authentication success (except for OAuth role selection)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isOAuthRoleSelection) {
       onClose();
       router.push("/app/dashboard");
     }
-  }, [isAuthenticated, onClose, router]);
+  }, [isAuthenticated, isOAuthRoleSelection, onClose, router]);
 
   // Close modal on escape key
   useEffect(() => {
@@ -93,7 +93,14 @@ export default function AuthModal({
 
   // Handle forced role selection for OAuth users
   useEffect(() => {
+    console.log("🔍 AuthModal - checking forceRoleSelection:", {
+      forceRoleSelection,
+      isOpen,
+      isOAuthRoleSelection,
+    });
+
     if (forceRoleSelection && isOpen) {
+      console.log("✅ AuthModal - forcing role selection step");
       setStep("role");
       setRequiresRegistration(true);
     }
@@ -168,38 +175,90 @@ export default function AuthModal({
       return;
     }
 
+    console.log("🔍 AuthModal - handling role submit:", {
+      selectedRole,
+      isOAuthRoleSelection,
+    });
+
     if (isOAuthRoleSelection) {
-      // OAuth role selection - call setRole API
+      // Google OAuth role selection - create user with role
+      console.log(
+        "✅ AuthModal - creating Google user with role:",
+        selectedRole
+      );
       setIsLoading(true);
+
       try {
-        const response = await authAPI.setRole(selectedRole);
+        // Get registration ID from sessionStorage
+        const registrationId = sessionStorage.getItem("googleRegistrationId");
+
+        if (!registrationId) {
+          throw new Error(
+            "Registration ID not found. Please try signing in again."
+          );
+        }
+
+        console.log(
+          "🔍 Creating Google user with registration ID:",
+          registrationId
+        );
+
+        const response = await authAPI.createGoogleUser(
+          registrationId,
+          selectedRole
+        );
+
+        console.log("✅ AuthModal - Google user created successfully:", {
+          userId: response.user?.id,
+          userRole: response.user?.role,
+          userEmail: response.user?.email,
+        });
+
+        // Store the access token
+        localStorage.setItem("accessToken", response.access_token);
+        localStorage.setItem(
+          "sessionExpiry",
+          String(Date.now() + 24 * 60 * 60 * 1000)
+        );
 
         // Update user in Redux store
         dispatch(
           setCredentials({
             user: response.user,
-            accessToken: localStorage.getItem("accessToken") || "",
+            accessToken: response.access_token,
           })
         );
+
+        // Clear registration ID from sessionStorage
+        sessionStorage.removeItem("googleRegistrationId");
 
         handleClose();
         router.push("/app/dashboard");
       } catch (err: unknown) {
         const error = err as { response?: { data?: { message?: string } } };
+        console.error("❌ AuthModal - Google user creation failed:", error);
         setError(
           error.response?.data?.message ||
-            "Failed to set role. Please try again."
+            "Failed to create account. Please try again."
         );
       } finally {
         setIsLoading(false);
       }
     } else {
       // Regular registration - call authenticate
+      console.log(
+        "✅ AuthModal - calling authenticate for regular registration"
+      );
       handleSubmit();
     }
   };
 
   const handleGoogleAuth = () => {
+    console.log("🔍 AuthModal - Google Auth button clicked");
+    console.log(
+      "🔍 Redirecting to:",
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/google`
+    );
     window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
   };
 
@@ -485,15 +544,15 @@ export default function AuthModal({
         {/* Divider */}
         <div className="my-6 flex items-center">
           <div className="flex-1 border-t border-gray-300"></div>
-          <span className="px-4 text-sm text-gray-500">Or</span>
+          <span className="px-4 text-sm text-gray-500">Or continue with</span>
           <div className="flex-1 border-t border-gray-300"></div>
         </div>
 
         {/* Social Login */}
-        <div className="flex justify-center gap-4">
+        <div className="space-y-3">
           <button
             onClick={handleGoogleAuth}
-            className="p-3 border border-gray-300 rounded-full hover:bg-gray-50"
+            className="w-full flex items-center justify-center gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all group"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -513,25 +572,35 @@ export default function AuthModal({
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
+            <span className="text-gray-700 font-medium group-hover:text-gray-900">
+              Continue with Google
+            </span>
           </button>
 
-          <button
-            className="p-3 border border-gray-300 rounded-full hover:bg-gray-50 opacity-50 cursor-not-allowed"
-            disabled
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-          </button>
+          {/* Disabled social buttons */}
+          <div className="flex gap-3 opacity-50">
+            <button
+              className="flex-1 p-3 border border-gray-300 rounded-lg cursor-not-allowed"
+              disabled
+            >
+              <svg
+                className="w-5 h-5 mx-auto"
+                viewBox="0 0 24 24"
+                fill="#1877F2"
+              >
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+              </svg>
+            </button>
 
-          <button
-            className="p-3 border border-gray-300 rounded-full hover:bg-gray-50 opacity-50 cursor-not-allowed"
-            disabled
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="black">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-            </svg>
-          </button>
+            <button
+              className="flex-1 p-3 border border-gray-300 rounded-lg cursor-not-allowed"
+              disabled
+            >
+              <svg className="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="black">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Terms & Privacy */}

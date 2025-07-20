@@ -248,6 +248,27 @@ export const authAPI = {
 
     return response.data;
   },
+
+  createGoogleUser: async (
+    registrationId: string,
+    role: "tenant" | "operator"
+  ) => {
+    const response = await api.post("/auth/create-google-user", {
+      registrationId,
+      role,
+    });
+
+    // Check if the response indicates an error
+    if (response.status >= 400) {
+      const error = new Error(
+        response.data?.message || "Failed to create Google user"
+      );
+      (error as any).response = { data: response.data };
+      throw error;
+    }
+
+    return response.data;
+  },
 };
 
 export const propertiesAPI = {

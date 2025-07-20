@@ -28,7 +28,10 @@ function HomeContent() {
 
   useEffect(() => {
     const needsRole = searchParams.get("needsRole");
+    console.log("🔍 Home page - checking needsRole parameter:", { needsRole });
+
     if (needsRole === "true") {
+      console.log("✅ Home page - needs role selection, opening AuthModal");
       setNeedsRoleSelection(true);
       setAuthModalOpen(true);
       // Clear the URL parameter

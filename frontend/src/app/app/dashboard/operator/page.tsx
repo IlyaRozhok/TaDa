@@ -171,14 +171,14 @@ function OperatorDashboardContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-8 sm:mb-12 ">
-          <div className="relative overflow-hidden bg-gradient-to-r from-slate-600 to-violet-600 rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
+          <div className="relative overflow-hidden bg-gradient-to-r from-[#203A43] to-[#004e92] rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
             {/* Background Image */}
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center opacity-20"
               style={{
-                backgroundColor: 'black',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
+                backgroundColor: "black",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
               }}
             />
             <div className="relative z-10">
@@ -189,7 +189,10 @@ function OperatorDashboardContent() {
                 <div>
                   <h1 className="text-3xl font-bold text-white mb-1">
                     Welcome back,{" "}
-                    {user?.full_name ? user.full_name.split(" ")[0] : "User"}!
+                    {user?.full_name
+                      ? user.full_name.split(" ")[0]
+                      : user.email}
+                    !
                   </h1>
                   <p className="text-white/90">
                     Manage your property portfolio and connect with quality

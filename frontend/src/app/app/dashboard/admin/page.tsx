@@ -80,34 +80,20 @@ function AdminDashboardContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-8 sm:mb-12">
-          <div className="relative overflow-hidden bg-white border-2 border-black rounded-2xl p-6 sm:p-8 shadow-lg">
-            {/* Geometric Pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 0h20v20H0zM20 20h20v20H20z'/%3E%3C/g%3E%3C/svg%3E")`,
-                  backgroundSize: "40px 40px",
-                }}
-              />
-            </div>
-            <div className="relative z-10">
+          <div className="relative bg-gradient-to-r from-[#12c2e9] via-[#c471ed] to-[#2C5364] rounded-2xl p-6 sm:p-8 shadow-lg">
+            <div className="relative">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center border-2 border-black">
+                <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-black mb-1">
+                  <h1 className="text-3xl font-bold text-white mb-1">
                     Admin Dashboard
                   </h1>
-                  <p className="text-gray-700">
+                  <p className="text-slate-200">
                     Welcome back, {user?.full_name || user?.email}! Manage the
                     platform and view different dashboards.
                   </p>
-                  <div className="mt-2 text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full inline-block">
-                    Role: {user?.role || "Not set"} | Status:{" "}
-                    {user?.status || "Not set"}
-                  </div>
                 </div>
               </div>
             </div>

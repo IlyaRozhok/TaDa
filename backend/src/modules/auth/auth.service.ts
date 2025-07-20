@@ -18,6 +18,10 @@ import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { v4 as uuidv4 } from "uuid";
 import * as crypto from "crypto";
+import {
+  PendingGoogleRegistrationService,
+  GoogleUserData,
+} from "./services/pending-google-registration.service";
 
 export interface SessionData {
   id: string;
@@ -40,7 +44,8 @@ export class AuthService {
     private operatorProfileRepository: Repository<OperatorProfile>,
     @InjectRepository(Preferences)
     private preferencesRepository: Repository<Preferences>,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private pendingGoogleService: PendingGoogleRegistrationService
   ) {}
 
   async checkUserExists(email: string): Promise<boolean> {
@@ -275,9 +280,9 @@ export class AuthService {
     };
   }
 
-  async googleAuth(googleUser: any) {
+  async checkGoogleUser(googleUser: any) {
     try {
-      console.log("🔍 Google Auth service called with user:", googleUser);
+      console.log("🔍 Checking Google user existence:", googleUser.email);
 
       if (!googleUser || !googleUser.email || !googleUser.google_id) {
         throw new BadRequestException("Invalid Google user data");
@@ -285,78 +290,127 @@ export class AuthService {
 
       const { email, google_id, full_name, avatar_url } = googleUser;
 
-      let user = await this.userRepository.findOne({
+      // Check if user already exists
+      const existingUser = await this.userRepository.findOne({
         where: { email: email.toLowerCase() },
-        relations: ["tenantProfile", "operatorProfile"],
-      });
-
-      let isNewUser = false;
-
-      if (!user) {
-        // Create new user with Google OAuth - without role yet
-        user = this.userRepository.create({
-          email: email.toLowerCase(),
-          google_id,
-          full_name: full_name || null,
-          avatar_url: avatar_url || null,
-          role: null, // No role yet - user needs to select
-          status: "active",
-          // Generate random password for OAuth users
-          password: await bcrypt.hash(
-            crypto.randomBytes(32).toString("hex"),
-            10
-          ),
-        });
-
-        const savedUser = await this.userRepository.save(user);
-        user = savedUser;
-        isNewUser = true;
-        console.log(
-          "✅ Created new user from Google OAuth (no role yet):",
-          user.email
-        );
-      } else {
-        // Update Google ID and other fields if not set
-        let shouldUpdate = false;
-
-        if (!user.google_id) {
-          user.google_id = google_id;
-          shouldUpdate = true;
-        }
-
-        if (!user.full_name && full_name) {
-          user.full_name = full_name;
-          shouldUpdate = true;
-        }
-
-        if (!user.avatar_url && avatar_url) {
-          user.avatar_url = avatar_url;
-          shouldUpdate = true;
-        }
-
-        if (shouldUpdate) {
-          await this.userRepository.save(user);
-        }
-
-        console.log("✅ Found existing user for Google OAuth:", user.email);
-      }
-
-      // Reload user with all relations
-      const fullUser = await this.userRepository.findOne({
-        where: { id: user.id },
         relations: ["tenantProfile", "operatorProfile", "preferences"],
       });
 
-      if (!fullUser) {
-        throw new NotFoundException("User not found after creation/update");
+      if (existingUser) {
+        console.log("✅ Found existing user:", existingUser.email);
+
+        // Update Google ID if not set
+        if (!existingUser.google_id) {
+          existingUser.google_id = google_id;
+          await this.userRepository.save(existingUser);
+        }
+
+        return { user: existingUser, isNewUser: false };
       }
 
-      return { user: fullUser, isNewUser };
+      // User doesn't exist - return null to indicate new user
+      console.log("🔄 New user detected - user doesn't exist yet:", email);
+      return { user: null, isNewUser: true, googleData: googleUser };
     } catch (error) {
-      console.error("❌ Error in Google Auth service:", error);
-      throw new InternalServerErrorException(
-        "Failed to process Google authentication"
+      console.error("❌ Error checking Google user:", error);
+      throw new InternalServerErrorException("Failed to check user");
+    }
+  }
+
+  async createGoogleUserWithRole(googleData: any, role: "tenant" | "operator") {
+    try {
+      console.log(
+        `🔍 Creating Google user with role: ${role} for ${googleData.email}`
       );
+
+      const { email, google_id, full_name, avatar_url } = googleData;
+
+      // Double-check user doesn't exist
+      const existingUser = await this.userRepository.findOne({
+        where: { email: email.toLowerCase() },
+      });
+
+      if (existingUser) {
+        console.log("⚠️ User already exists, returning existing user");
+        return existingUser;
+      }
+
+      // Create user with role
+      const user = this.userRepository.create({
+        email: email.toLowerCase(),
+        google_id,
+        full_name: full_name || null,
+        avatar_url: avatar_url || null,
+        role,
+        status: "active",
+        // Generate random password for OAuth users
+        password: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10),
+      });
+
+      const savedUser = await this.userRepository.save(user);
+      console.log(`✅ Created user: ${savedUser.email} with role: ${role}`);
+
+      // Create role-specific profiles
+      if (role === "tenant") {
+        const tenantProfile = this.tenantProfileRepository.create({
+          user: savedUser,
+        });
+        await this.tenantProfileRepository.save(tenantProfile);
+
+        const preferences = this.preferencesRepository.create({
+          user: savedUser,
+        });
+        await this.preferencesRepository.save(preferences);
+
+        console.log(
+          `✅ Created tenant profile and preferences for: ${savedUser.email}`
+        );
+      } else if (role === "operator") {
+        const operatorProfile = this.operatorProfileRepository.create({
+          user: savedUser,
+        });
+        await this.operatorProfileRepository.save(operatorProfile);
+
+        console.log(`✅ Created operator profile for: ${savedUser.email}`);
+      }
+
+      // Return user with relations
+      return await this.userRepository.findOne({
+        where: { id: savedUser.id },
+        relations: ["tenantProfile", "operatorProfile", "preferences"],
+      });
+    } catch (error) {
+      console.error("❌ Error creating Google user:", error);
+      throw new InternalServerErrorException("Failed to create user");
+    }
+  }
+
+  // Keep the old googleAuth method for backward compatibility but update it
+  async googleAuth(googleUser: any) {
+    try {
+      console.log("🔍 Google Auth service called with user:", googleUser);
+
+      // Use the new method to check user
+      const result = await this.checkGoogleUser(googleUser);
+
+      if (result.user) {
+        // Existing user - return as before
+        return { user: result.user, isNewUser: false };
+      } else {
+        // New user - we should NOT create them here anymore
+        // This is a temporary fallback - we'll change the controller to handle this
+        console.log(
+          "⚠️ New user detected in googleAuth - this should be handled by the controller now"
+        );
+
+        // For now, throw an error to catch this case
+        throw new BadRequestException(
+          "New user needs role selection - should not reach this point"
+        );
+      }
+    } catch (error) {
+      console.error("❌ Google Auth error:", error);
+      throw error;
     }
   }
 
@@ -434,5 +488,48 @@ export class AuthService {
       where: { id: userId },
       relations: ["tenantProfile", "operatorProfile"],
     });
+  }
+
+  async storeGoogleDataTemporarily(googleData: any): Promise<string> {
+    console.log(`🔍 Storing Google data temporarily for: ${googleData.email}`);
+
+    const googleUserData: GoogleUserData = {
+      google_id: googleData.google_id,
+      email: googleData.email,
+      full_name: googleData.full_name,
+      avatar_url: googleData.avatar_url,
+      email_verified: googleData.email_verified || true,
+    };
+
+    return this.pendingGoogleService.storeGoogleData(googleUserData);
+  }
+
+  async createGoogleUserFromRegistration(
+    registrationId: string,
+    role: "tenant" | "operator"
+  ) {
+    console.log(
+      `🔍 Creating Google user from registration: ${registrationId} with role: ${role}`
+    );
+
+    // Get Google data from temporary storage
+    const googleData =
+      this.pendingGoogleService.consumeGoogleData(registrationId);
+
+    if (!googleData) {
+      throw new BadRequestException("Invalid or expired registration ID");
+    }
+
+    // Create user with role
+    const user = await this.createGoogleUserWithRole(googleData, role);
+
+    if (!user) {
+      throw new InternalServerErrorException("Failed to create user");
+    }
+
+    console.log(
+      `✅ Successfully created Google user: ${user.email} with role: ${role}`
+    );
+    return user;
   }
 }
