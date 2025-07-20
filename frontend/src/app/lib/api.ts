@@ -157,15 +157,39 @@ export const authAPI = {
     const response = await api.patch(`/users/${data.userId}/role`, {
       role: data.role,
     });
+    
+    // Check if the response indicates an error
+    if (response.status >= 400) {
+      const error = new Error(response.data?.message || "Failed to update user role");
+      (error as any).response = { data: response.data };
+      throw error;
+    }
+    
     return response.data;
   },
   register: async (data: RegisterData) => {
     const response = await api.post("/auth/register", data);
+    
+    // Check if the response indicates an error
+    if (response.status >= 400) {
+      const error = new Error(response.data?.message || "Registration failed");
+      (error as any).response = { data: response.data };
+      throw error;
+    }
+    
     return response.data;
   },
 
   login: async (data: LoginData) => {
     const response = await api.post("/auth/login", data);
+
+    // Check if the response indicates an error
+    if (response.status >= 400) {
+      const error = new Error(response.data?.message || "Login failed");
+      (error as any).response = { data: response.data };
+      throw error;
+    }
+
     return response.data;
   },
 
@@ -278,12 +302,6 @@ export const usersAPI = {
   getCount: async (): Promise<number> => {
     const response = await api.get("/users", { params: { limit: 1 } });
     return response.data.total || 0;
-  },
-  updateUserRole: async (data: { userId: string; role: string }) => {
-    const response = await api.patch(`/users/${data.userId}/role`, {
-      role: data.role,
-    });
-    return response.data;
   },
 };
 

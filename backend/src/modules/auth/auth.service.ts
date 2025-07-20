@@ -129,7 +129,9 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException(
+        "Invalid login. Create an account or try again"
+      );
     }
 
     // Check if user is OAuth user trying to login with password
@@ -147,7 +149,9 @@ export class AuthService {
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException(
+        "Password is incorrect. Please try again."
+      );
     }
 
     return this.generateAuthResponse(user);

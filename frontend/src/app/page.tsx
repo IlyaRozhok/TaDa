@@ -112,8 +112,7 @@ export default function Home() {
             <Link href="/app/auth/login" className="block sm:inline-block">
               <Button
                 size="lg"
-                variant="outline"
-                className="w-full sm:w-auto  border-gray-300 hover:bg-slate-900 hover:text-amber-600 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium"
+                className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium"
               >
                 Join
                 <ArrowRight className="w-5 h-5 ml-2" />

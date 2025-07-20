@@ -378,15 +378,15 @@ export class UsersService {
   }
 
   async updateUserRole(userId: string, role: string): Promise<User> {
-    const user = await this.findById(userId);
+    const user = await this.findOne(userId);
     if (!user) {
       throw new Error('User not found');
     }
 
     // Update the user's role
-    await this.usersRepository.update(userId, { role });
+    await this.userRepository.update(userId, { role });
 
     // Return the updated user
-    return this.findById(userId);
+    return this.findOne(userId);
   }
 }
