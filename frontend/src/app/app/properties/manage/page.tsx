@@ -8,6 +8,7 @@ import {
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
 import DashboardHeader from "../../../components/DashboardHeader";
+import { getUserRole } from "../../../components/DashboardRouter";
 import {
   ArrowLeft,
   Plus,
@@ -41,6 +42,13 @@ interface Property {
   operator_id: string;
   created_at: string;
   updated_at: string;
+  media?: Array<{
+    id: string;
+    type: string;
+    url: string;
+    is_featured: boolean;
+    order_index: number;
+  }>;
 }
 
 interface InterestedTenant {
@@ -82,7 +90,9 @@ export default function ManagePropertiesPage() {
       return;
     }
 
-    if (!user.roles?.includes("operator")) {
+    // Check if user is operator using the proper role system
+    const userRole = getUserRole(user);
+    if (userRole !== "operator" && userRole !== "admin") {
       router.push("/app/dashboard/tenant");
       return;
     }

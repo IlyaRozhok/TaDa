@@ -36,21 +36,23 @@
 /* Mobile-first optimizations */
 @media (max-width: 640px) {
   /* Better touch targets for mobile */
-  button, a[role="button"], .btn {
+  button,
+  a[role="button"],
+  .btn {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Smooth scrolling for mobile navigation */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Prevent horizontal scrolling */
   body {
     overflow-x: hidden;
   }
-  
+
   /* Better tap highlights */
   * {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
@@ -181,4 +183,96 @@ html {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   text-overflow: ellipsis;
+}
+
+/* Toast Notifications Styles */
+.Toaster__toast {
+  animation: toast-enter 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+  position: relative;
+}
+
+.Toaster__toast[data-visible="false"] {
+  animation: toast-exit 0.4s cubic-bezier(0.06, 0.71, 0.55, 1) forwards;
+}
+
+@keyframes toast-enter {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* React Hot Toast Close Button Styles */
+[data-hot-toast-id] {
+  cursor: pointer;
+}
+
+/* Make toasts clickable to dismiss */
+[data-hot-toast-id]:hover {
+  transform: scale(1.02);
+  transition: transform 0.2s ease;
+}
+
+/* Add close button using CSS */
+[data-hot-toast-id]::after {
+  content: "✕";
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+[data-hot-toast-id]:hover::after {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Adjust toast content to make room for close button */
+[data-hot-toast-id] > div {
+  padding-right: 45px !important;
+}
+
+/* Make entire toast clickable for dismissal */
+[data-hot-toast-id] {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Admin panel specific styles */
+.admin-panel [data-hot-toast-id]::after {
+  background: rgba(148, 163, 184, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.admin-panel [data-hot-toast-id]:hover::after {
+  background: rgba(148, 163, 184, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.4);
 }

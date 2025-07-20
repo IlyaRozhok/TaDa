@@ -9,10 +9,11 @@ import {
 import DashboardHeader from "../../../components/DashboardHeader";
 import DashboardRouter from "../../../components/DashboardRouter";
 import { useDebounce } from "../../../lib/utils";
+import toast from "react-hot-toast";
+import { initToastCloseHandlers } from "../../../utils/toast-close";
 import {
   Users,
   Building2,
-  Settings,
   UserPlus,
   Edit3,
   Trash2,
@@ -154,6 +155,8 @@ const SearchBar = React.memo(
     </div>
   )
 );
+
+SearchBar.displayName = "SearchBar";
 
 function AdminPanelContent() {
   const user = useSelector(selectUser);
@@ -319,6 +322,11 @@ function AdminPanelContent() {
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to fetch data";
+
+        // Only show toast error for initial load, not for search operations
+        if (isInitialLoad) {
+          toast.error(`Failed to load ${activeSection}: ${errorMessage}`);
+        }
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -339,6 +347,9 @@ function AdminPanelContent() {
     if (isAuthenticated && user) {
       fetchData(true); // Initial load
     }
+
+    // Initialize toast close handlers once
+    initToastCloseHandlers();
   }, [isAuthenticated, user]);
 
   // Separate effect for search/sort/filter changes
@@ -429,8 +440,27 @@ function AdminPanelContent() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete item");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete item");
       }
+
+      // Show success toast based on section
+      const itemType =
+        activeSection === "users"
+          ? "User"
+          : activeSection === "properties"
+          ? "Property"
+          : "Preferences";
+      const itemName =
+        activeSection === "users"
+          ? (selectedItem as unknown as User).full_name ||
+            (selectedItem as unknown as User).email
+          : activeSection === "properties"
+          ? (selectedItem as unknown as Property).title
+          : (selectedItem as unknown as PreferencesRow).user?.email ||
+            "User preferences";
+
+      toast.success(`${itemType} "${itemName}" deleted successfully`);
 
       setShowModal(null);
       setSelectedItem(null);
@@ -438,6 +468,7 @@ function AdminPanelContent() {
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to delete item";
+      toast.error(`Delete failed: ${errorMessage}`);
       setError(errorMessage);
     } finally {
       setIsActionLoading(false);
@@ -1114,6 +1145,15 @@ function AdminPanelContent() {
           );
         }
 
+        // Show success toast
+        const action = isEditing ? "updated" : "created";
+        const userName = formData.full_name || formData.email;
+
+        toast.success(`User "${userName}" ${action} successfully!`, {
+          duration: 4000,
+          icon: isEditing ? "✏️" : "👤",
+        });
+
         setShowModal(null);
         setSelectedItem(null);
         fetchData(false);
@@ -1122,6 +1162,13 @@ function AdminPanelContent() {
           err instanceof Error
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} user`;
+
+        toast.error(
+          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`,
+          {
+            duration: 5000,
+          }
+        );
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -1355,6 +1402,15 @@ function AdminPanelContent() {
           );
         }
 
+        // Show success toast for property
+        const action = isEditing ? "updated" : "created";
+        const propertyName = formData.title;
+
+        toast.success(`Property "${propertyName}" ${action} successfully!`, {
+          duration: 4000,
+          icon: isEditing ? "✏️" : "🏠",
+        });
+
         setShowModal(null);
         setSelectedItem(null);
         fetchData(false);
@@ -1363,6 +1419,13 @@ function AdminPanelContent() {
           err instanceof Error
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} property`;
+
+        toast.error(
+          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`,
+          {
+            duration: 5000,
+          }
+        );
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -1667,6 +1730,19 @@ function AdminPanelContent() {
           );
         }
 
+        // Show success toast for preferences
+        const action = isEditing ? "updated" : "created";
+        const userName = isEditing
+          ? (selectedItem as unknown as PreferencesRow).user?.full_name ||
+            (selectedItem as unknown as PreferencesRow).user?.email ||
+            "User"
+          : "User";
+
+        toast.success(`Preferences for "${userName}" ${action} successfully!`, {
+          duration: 4000,
+          icon: isEditing ? "✏️" : "⚙️",
+        });
+
         setShowModal(null);
         setSelectedItem(null);
         fetchData(false);
@@ -1675,6 +1751,13 @@ function AdminPanelContent() {
           err instanceof Error
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} preferences`;
+
+        toast.error(
+          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`,
+          {
+            duration: 5000,
+          }
+        );
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -2005,7 +2088,7 @@ function AdminPanelContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 admin-panel">
       <DashboardHeader />
 
       <div className="flex">

@@ -63,19 +63,41 @@ export default function RootLayout({
                 style: {
                   background: "#363636",
                   color: "#fff",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  maxWidth: "400px",
                 },
                 success: {
-                  duration: 3000,
+                  duration: 4000,
                   style: {
-                    background: "#10b981",
+                    background:
+                      "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                     color: "#fff",
+                    border: "1px solid #059669",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    maxWidth: "400px",
                   },
                 },
                 error: {
-                  duration: 5000,
+                  duration: 6000,
                   style: {
-                    background: "#ef4444",
+                    background:
+                      "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
                     color: "#fff",
+                    border: "1px solid #dc2626",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    boxShadow: "0 10px 25px rgba(239, 68, 68, 0.3)",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    maxWidth: "400px",
                   },
                 },
               }}

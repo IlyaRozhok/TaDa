@@ -7,6 +7,7 @@ import { propertiesAPI, CreatePropertyRequest } from "@/app/lib/api";
 import { Property, PropertyMedia } from "@/app/types";
 import DashboardHeader from "../../../../components/DashboardHeader";
 import MediaManager from "../../../../components/MediaManager";
+import { getUserRole } from "../../../../components/DashboardRouter";
 import {
   ArrowLeft,
   Save,
@@ -135,12 +136,19 @@ export default function EditPropertyPage() {
 
   // Check user permissions
   useEffect(() => {
-    if (!isAuthenticated || !user || !user.roles?.includes("operator")) {
+    if (!isAuthenticated || !user) {
       router.push("/app/dashboard/tenant");
       return;
     }
 
-    if (property && property.operator_id !== user.id) {
+    // Check if user is operator using the proper role system
+    const userRole = getUserRole(user);
+    if (userRole !== "operator" && userRole !== "admin") {
+      router.push("/app/dashboard/tenant");
+      return;
+    }
+
+    if (property && property.operator_id !== user.id && userRole !== "admin") {
       router.push("/app/dashboard/operator");
       return;
     }
