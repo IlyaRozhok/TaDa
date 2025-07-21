@@ -39,9 +39,6 @@ export default function LandingPage() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <Home className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">
-                TaDa
-              </span>
             </div>
 
             <nav className="hidden md:flex space-x-8">
