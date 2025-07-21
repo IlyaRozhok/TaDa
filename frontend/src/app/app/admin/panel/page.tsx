@@ -9,8 +9,7 @@ import {
 import DashboardHeader from "../../../components/DashboardHeader";
 import DashboardRouter from "../../../components/DashboardRouter";
 import { useDebounce } from "../../../lib/utils";
-import toast from "react-hot-toast";
-import { initToastCloseHandlers } from "../../../utils/toast-close";
+import AdminNotifications from "../../../components/AdminNotifications";
 import {
   Users,
   Building2,
@@ -188,9 +187,34 @@ function AdminPanelContent() {
     "view" | "edit" | "add" | "delete" | null
   >(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [notifications, setNotifications] = useState<
+    Array<{
+      id: string;
+      type: "success" | "error" | "info";
+      message: string;
+    }>
+  >([]);
 
   // Debounced search term with reduced delay
   const debouncedSearchTerm = useDebounce(searchTerm, 150);
+
+  // Notification management
+  const addNotification = (
+    type: "success" | "error" | "info",
+    message: string
+  ) => {
+    const id = Date.now().toString();
+    setNotifications((prev) => [...prev, { id, type, message }]);
+
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 4000);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
 
   const fetchData = useCallback(
     async (isInitialLoad = false) => {
@@ -323,9 +347,12 @@ function AdminPanelContent() {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to fetch data";
 
-        // Only show toast error for initial load, not for search operations
+        // Only show notification error for initial load, not for search operations
         if (isInitialLoad) {
-          toast.error(`Failed to load ${activeSection}: ${errorMessage}`);
+          addNotification(
+            "error",
+            `Failed to load ${activeSection}: ${errorMessage}`
+          );
         }
         setError(errorMessage);
       } finally {
@@ -347,9 +374,6 @@ function AdminPanelContent() {
     if (isAuthenticated && user) {
       fetchData(true); // Initial load
     }
-
-    // Initialize toast close handlers once
-    initToastCloseHandlers();
   }, [isAuthenticated, user]);
 
   // Separate effect for search/sort/filter changes
@@ -460,7 +484,7 @@ function AdminPanelContent() {
           : (selectedItem as unknown as PreferencesRow).user?.email ||
             "User preferences";
 
-      toast.success(`${itemType} "${itemName}" deleted successfully`);
+      addNotification("success", `${itemType} "${itemName}" deleted successfully`);
 
       setShowModal(null);
       setSelectedItem(null);
@@ -468,7 +492,7 @@ function AdminPanelContent() {
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to delete item";
-      toast.error(`Delete failed: ${errorMessage}`);
+      addNotification("error", `Delete failed: ${errorMessage}`);
       setError(errorMessage);
     } finally {
       setIsActionLoading(false);
@@ -1149,10 +1173,7 @@ function AdminPanelContent() {
         const action = isEditing ? "updated" : "created";
         const userName = formData.full_name || formData.email;
 
-        toast.success(`User "${userName}" ${action} successfully!`, {
-          duration: 4000,
-          icon: isEditing ? "✏️" : "👤",
-        });
+        addNotification("success", `User "${userName}" ${action} successfully!`);
 
         setShowModal(null);
         setSelectedItem(null);
@@ -1163,12 +1184,7 @@ function AdminPanelContent() {
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} user`;
 
-        toast.error(
-          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`,
-          {
-            duration: 5000,
-          }
-        );
+        addNotification("error", `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`);
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -1406,10 +1422,7 @@ function AdminPanelContent() {
         const action = isEditing ? "updated" : "created";
         const propertyName = formData.title;
 
-        toast.success(`Property "${propertyName}" ${action} successfully!`, {
-          duration: 4000,
-          icon: isEditing ? "✏️" : "🏠",
-        });
+        addNotification("success", `Property "${propertyName}" ${action} successfully!`);
 
         setShowModal(null);
         setSelectedItem(null);
@@ -1420,12 +1433,7 @@ function AdminPanelContent() {
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} property`;
 
-        toast.error(
-          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`,
-          {
-            duration: 5000,
-          }
-        );
+        addNotification("error", `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`);
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -1738,10 +1746,7 @@ function AdminPanelContent() {
             "User"
           : "User";
 
-        toast.success(`Preferences for "${userName}" ${action} successfully!`, {
-          duration: 4000,
-          icon: isEditing ? "✏️" : "⚙️",
-        });
+        addNotification("success", `Preferences for "${userName}" ${action} successfully!`);
 
         setShowModal(null);
         setSelectedItem(null);
@@ -1752,12 +1757,7 @@ function AdminPanelContent() {
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} preferences`;
 
-        toast.error(
-          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`,
-          {
-            duration: 5000,
-          }
-        );
+        addNotification("error", `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`);
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -2101,6 +2101,11 @@ function AdminPanelContent() {
       {activeSection === "properties" && <AddEditPropertyModal />}
       {activeSection === "preferences" && <AddEditPreferencesModal />}
       <DeleteModal />
+
+      <AdminNotifications 
+        notifications={notifications}
+        onCloseNotification={removeNotification}
+      />
     </div>
   );
 }
