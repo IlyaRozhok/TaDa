@@ -23,6 +23,7 @@ import {
   GoogleUserData,
 } from "./services/pending-google-registration.service";
 
+// Simplified session structure - only for admin sessions management
 export interface SessionData {
   id: string;
   token: string;
@@ -31,9 +32,20 @@ export interface SessionData {
   createdAt: Date;
 }
 
+// Temporary token for OAuth role selection
+export interface TempGoogleToken {
+  id: string;
+  googleUserData: GoogleUserData;
+  expiresAt: Date;
+}
+
 @Injectable()
 export class AuthService {
-  private sessions = new Map<string, SessionData[]>(); // userId -> sessions
+  // In-memory storage for admin sessions only
+  private sessions = new Map<string, SessionData[]>();
+
+  // Temporary storage for Google OAuth role selection
+  private tempGoogleTokens = new Map<string, TempGoogleToken>();
 
   constructor(
     @InjectRepository(User)
@@ -282,7 +294,13 @@ export class AuthService {
     };
   }
 
-  async checkGoogleUser(googleUser: any) {
+  /**
+   * Simplified Google user check - either return existing user or create temp token
+   */
+  async checkGoogleUser(googleUser: any): Promise<{
+    user?: User;
+    tempToken?: string;
+  }> {
     try {
       console.log("🔍 Checking Google user existence:", googleUser.email);
 
@@ -290,7 +308,7 @@ export class AuthService {
         throw new BadRequestException("Invalid Google user data");
       }
 
-      const { email, google_id, full_name, avatar_url } = googleUser;
+      const { email, google_id } = googleUser;
 
       // Check if user already exists
       const existingUser = await this.userRepository.findOne({
@@ -307,25 +325,87 @@ export class AuthService {
           await this.userRepository.save(existingUser);
         }
 
-        return { user: existingUser, isNewUser: false };
+        return { user: existingUser };
       }
 
-      // User doesn't exist - return null to indicate new user
-      console.log("🔄 New user detected - user doesn't exist yet:", email);
-      return { user: null, isNewUser: true, googleData: googleUser };
+      // New user - create temporary token for role selection
+      console.log(
+        "🔄 New Google user - creating temp token for role selection"
+      );
+      const tempTokenId = uuidv4();
+      const tempToken: TempGoogleToken = {
+        id: tempTokenId,
+        googleUserData: googleUser,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      };
+
+      this.tempGoogleTokens.set(tempTokenId, tempToken);
+
+      // Clean up expired tokens
+      this.cleanupExpiredTokens();
+
+      return { tempToken: tempTokenId };
     } catch (error) {
       console.error("❌ Error checking Google user:", error);
       throw new InternalServerErrorException("Failed to check user");
     }
   }
 
-  async createGoogleUserWithRole(googleData: any, role: "tenant" | "operator") {
+  /**
+   * Clean up expired temporary tokens
+   */
+  private cleanupExpiredTokens() {
+    const now = new Date();
+    for (const [tokenId, token] of this.tempGoogleTokens.entries()) {
+      if (token.expiresAt < now) {
+        this.tempGoogleTokens.delete(tokenId);
+      }
+    }
+  }
+
+  /**
+   * Get temporary token information for role selection page
+   */
+  getTempTokenInfo(tempToken: string): TempGoogleToken | null {
+    const tokenData = this.tempGoogleTokens.get(tempToken);
+
+    if (!tokenData) {
+      return null;
+    }
+
+    if (tokenData.expiresAt < new Date()) {
+      this.tempGoogleTokens.delete(tempToken);
+      return null;
+    }
+
+    return tokenData;
+  }
+
+  /**
+   * Create Google user with role using temporary token
+   */
+  async createGoogleUserFromTempToken(
+    tempToken: string,
+    role: "tenant" | "operator"
+  ) {
     try {
       console.log(
-        `🔍 Creating Google user with role: ${role} for ${googleData.email}`
+        `🔍 Creating Google user with role: ${role} using temp token`
       );
 
-      const { email, google_id, full_name, avatar_url } = googleData;
+      // Get and validate temp token
+      const tokenData = this.tempGoogleTokens.get(tempToken);
+      if (!tokenData) {
+        throw new BadRequestException("Invalid or expired token");
+      }
+
+      if (tokenData.expiresAt < new Date()) {
+        this.tempGoogleTokens.delete(tempToken);
+        throw new BadRequestException("Token has expired");
+      }
+
+      const { email, google_id, full_name, avatar_url } =
+        tokenData.googleUserData;
 
       // Double-check user doesn't exist
       const existingUser = await this.userRepository.findOne({
@@ -334,6 +414,8 @@ export class AuthService {
 
       if (existingUser) {
         console.log("⚠️ User already exists, returning existing user");
+        // Clean up temp token
+        this.tempGoogleTokens.delete(tempToken);
         return existingUser;
       }
 
@@ -387,7 +469,9 @@ export class AuthService {
     }
   }
 
-  // Keep the old googleAuth method for backward compatibility but update it
+  /**
+   * Updated Google Auth method for simplified OAuth flow
+   */
   async googleAuth(googleUser: any) {
     try {
       console.log("🔍 Google Auth service called with user:", googleUser);
@@ -396,20 +480,22 @@ export class AuthService {
       const result = await this.checkGoogleUser(googleUser);
 
       if (result.user) {
-        // Existing user - return as before
-        return { user: result.user, isNewUser: false };
-      } else {
-        // New user - we should NOT create them here anymore
-        // This is a temporary fallback - we'll change the controller to handle this
-        console.log(
-          "⚠️ New user detected in googleAuth - this should be handled by the controller now"
-        );
-
-        // For now, throw an error to catch this case
-        throw new BadRequestException(
-          "New user needs role selection - should not reach this point"
-        );
+        // Existing user - generate tokens and return
+        console.log("✅ Existing user authenticated via Google");
+        return {
+          user: result.user,
+          isNewUser: false,
+        };
+      } else if (result.tempToken) {
+        // New user - return temp token for role selection
+        console.log("🔄 New user - temp token created for role selection");
+        return {
+          tempToken: result.tempToken,
+          isNewUser: true,
+        };
       }
+
+      throw new InternalServerErrorException("Unexpected auth result");
     } catch (error) {
       console.error("❌ Google Auth error:", error);
       throw error;
@@ -506,32 +592,26 @@ export class AuthService {
     return this.pendingGoogleService.storeGoogleData(googleUserData);
   }
 
-  async createGoogleUserFromRegistration(
-    registrationId: string,
+  /**
+   * Create Google user from temporary token with role selection
+   * This replaces the old registration-based approach
+   */
+  async createGoogleUserWithRole(
+    tempToken: string,
     role: "tenant" | "operator"
   ) {
-    console.log(
-      `🔍 Creating Google user from registration: ${registrationId} with role: ${role}`
-    );
+    console.log(`🔍 Creating Google user from temp token with role: ${role}`);
 
-    // Get Google data from temporary storage
-    const googleData =
-      this.pendingGoogleService.consumeGoogleData(registrationId);
+    // Use the new method that handles temp tokens
+    const user = await this.createGoogleUserFromTempToken(tempToken, role);
 
-    if (!googleData) {
-      throw new BadRequestException("Invalid or expired registration ID");
-    }
-
-    // Create user with role
-    const user = await this.createGoogleUserWithRole(googleData, role);
-
-    if (!user) {
-      throw new InternalServerErrorException("Failed to create user");
-    }
+    // Clean up temp token after successful creation
+    this.tempGoogleTokens.delete(tempToken);
 
     console.log(
       `✅ Successfully created Google user: ${user.email} with role: ${role}`
     );
+
     return user;
   }
 }

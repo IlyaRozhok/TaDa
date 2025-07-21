@@ -19,12 +19,16 @@ interface PropertyCardProps {
   property: Property;
   onClick?: () => void;
   showShortlist?: boolean;
+  imageLoaded?: boolean;
+  onImageLoad?: () => void;
 }
 
 export default function PropertyCard({
   property,
   onClick,
   showShortlist = true,
+  imageLoaded = true,
+  onImageLoad,
 }: PropertyCardProps) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -158,11 +162,28 @@ export default function PropertyCard({
         <img
           src={getMainImage()}
           alt={property.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => {
+            if (onImageLoad) {
+              onImageLoad();
+            }
+          }}
           onError={(e) => {
             e.currentTarget.src = PROPERTY_PLACEHOLDER;
+            if (onImageLoad) {
+              onImageLoad();
+            }
           }}
         />
+
+        {/* Loading overlay when image is not loaded */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_200%] animate-[shimmer_2s_infinite]">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[slideIn_1.5s_infinite]"></div>
+          </div>
+        )}
 
         {/* Shortlist Button */}
         {showShortlist && user && user.role === "tenant" && (

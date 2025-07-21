@@ -31,7 +31,7 @@ import {
   Plus,
 } from "lucide-react";
 
-type AdminSection = "users" | "properties" | "preferences";
+type AdminSection = "users" | "properties";
 
 interface FilterState {
   role?: string;
@@ -163,7 +163,9 @@ function AdminPanelContent() {
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [users, setUsers] = useState<User[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [preferences, setPreferences] = useState<PreferencesRow[]>([]);
+  const [userPreferences, setUserPreferences] = useState<PreferencesRow | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +189,8 @@ function AdminPanelContent() {
     "view" | "edit" | "add" | "delete" | null
   >(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"info" | "preferences">("info"); // For user detail tabs
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
   const [notifications, setNotifications] = useState<
     Array<{
       id: string;
@@ -214,6 +218,379 @@ function AdminPanelContent() {
 
   const removeNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  // User Preferences Tab Component
+  const UserPreferencesTab = ({
+    userId,
+    preferences,
+    loading,
+    onPreferencesUpdate,
+  }: {
+    userId: string;
+    preferences: PreferencesRow | null;
+    loading: boolean;
+    onPreferencesUpdate: () => void;
+  }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+      primary_postcode: preferences?.primary_postcode || "",
+      secondary_location: preferences?.secondary_location || "",
+      min_price: preferences?.min_price || 0,
+      max_price: preferences?.max_price || 0,
+      min_bedrooms: preferences?.min_bedrooms || 0,
+      max_bedrooms: preferences?.max_bedrooms || 0,
+      property_type: preferences?.property_type || "any",
+      furnishing: preferences?.furnishing || "any",
+    });
+
+    const handleSavePreferences = async () => {
+      try {
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const token = localStorage.getItem("accessToken");
+
+        const endpoint = preferences
+          ? `${apiUrl}/preferences/admin/${userId}`
+          : `${apiUrl}/preferences`;
+
+        const response = await fetch(endpoint, {
+          method: preferences ? "PUT" : "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save preferences");
+        }
+
+        addNotification("success", "Preferences saved successfully!");
+        setIsEditing(false);
+        onPreferencesUpdate();
+      } catch (error: any) {
+        addNotification(
+          "error",
+          `Failed to save preferences: ${error.message}`
+        );
+      }
+    };
+
+    const handleDeletePreferences = async () => {
+      if (!preferences) return;
+
+      if (!confirm("Are you sure you want to delete these preferences?"))
+        return;
+
+      try {
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const token = localStorage.getItem("accessToken");
+
+        const response = await fetch(`${apiUrl}/preferences/admin/${userId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete preferences");
+        }
+
+        addNotification("success", "Preferences deleted successfully!");
+        onPreferencesUpdate();
+      } catch (error: any) {
+        addNotification(
+          "error",
+          `Failed to delete preferences: ${error.message}`
+        );
+      }
+    };
+
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading preferences...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!preferences && !isEditing) {
+      return (
+        <div className="text-center py-12">
+          <Target className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            No preferences found
+          </h3>
+          <p className="text-slate-600 mb-6">
+            This user hasn't set up their preferences yet.
+          </p>
+          <button
+            onClick={() => setIsEditing(true)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Create Preferences
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {!isEditing ? (
+          <>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-slate-900">
+                User Preferences
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit
+                </button>
+                {preferences && (
+                  <button
+                    onClick={handleDeletePreferences}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {preferences && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-slate-600">
+                    Primary Postcode
+                  </label>
+                  <p className="text-slate-900">
+                    {preferences.primary_postcode || "Not specified"}
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-slate-600">
+                    Secondary Location
+                  </label>
+                  <p className="text-slate-900">
+                    {preferences.secondary_location || "Not specified"}
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-slate-600">
+                    Price Range
+                  </label>
+                  <p className="text-slate-900">
+                    £{preferences.min_price?.toLocaleString() || 0} - £
+                    {preferences.max_price?.toLocaleString() || 0}
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-slate-600">
+                    Bedrooms
+                  </label>
+                  <p className="text-slate-900">
+                    {preferences.min_bedrooms || 0} -{" "}
+                    {preferences.max_bedrooms || 0}
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-slate-600">
+                    Property Type
+                  </label>
+                  <p className="text-slate-900">
+                    {preferences.property_type || "Any"}
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <label className="text-sm font-medium text-slate-600">
+                    Furnishing
+                  </label>
+                  <p className="text-slate-900">
+                    {preferences.furnishing || "Any"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {preferences ? "Edit" : "Create"} Preferences
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Primary Postcode
+                </label>
+                <input
+                  type="text"
+                  value={formData.primary_postcode}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      primary_postcode: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., SW1A 1AA"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Secondary Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.secondary_location}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      secondary_location: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Central London"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Min Price
+                </label>
+                <input
+                  type="number"
+                  value={formData.min_price}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      min_price: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Max Price
+                </label>
+                <input
+                  type="number"
+                  value={formData.max_price}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      max_price: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Min Bedrooms
+                </label>
+                <input
+                  type="number"
+                  value={formData.min_bedrooms}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      min_bedrooms: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Max Bedrooms
+                </label>
+                <input
+                  type="number"
+                  value={formData.max_bedrooms}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      max_bedrooms: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Property Type
+                </label>
+                <select
+                  value={formData.property_type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, property_type: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="any">Any</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="house">House</option>
+                  <option value="studio">Studio</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Furnishing
+                </label>
+                <select
+                  value={formData.furnishing}
+                  onChange={(e) =>
+                    setFormData({ ...formData, furnishing: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="any">Any</option>
+                  <option value="furnished">Furnished</option>
+                  <option value="unfurnished">Unfurnished</option>
+                  <option value="part_furnished">Part Furnished</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-6 py-3 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePreferences}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                Save Preferences
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
   };
 
   const fetchData = useCallback(
@@ -312,36 +689,6 @@ function AdminPanelContent() {
               }));
             }
             break;
-
-          case "preferences":
-            const preferencesResponse = await fetch(
-              `${apiUrl}/preferences/all?${params}`,
-              { headers }
-            );
-            if (!preferencesResponse.ok)
-              throw new Error("Failed to fetch preferences");
-            const preferencesData = await preferencesResponse.json();
-            if (preferencesData.data) {
-              setPreferences(preferencesData.data);
-              setPagination((prev) => ({
-                ...prev,
-                total: preferencesData.total || 0,
-                totalPages:
-                  preferencesData.totalPages ||
-                  Math.ceil((preferencesData.total || 0) / prev.limit),
-              }));
-            } else {
-              const preferencesArray = Array.isArray(preferencesData)
-                ? preferencesData
-                : [];
-              setPreferences(preferencesArray);
-              setPagination((prev) => ({
-                ...prev,
-                total: preferencesArray.length,
-                totalPages: Math.ceil(preferencesArray.length / prev.limit),
-              }));
-            }
-            break;
         }
       } catch (err: unknown) {
         const errorMessage =
@@ -390,6 +737,34 @@ function AdminPanelContent() {
     activeSection,
   ]);
 
+  // Fetch user preferences
+  const fetchUserPreferences = async (userId: string) => {
+    setPreferencesLoading(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const token = localStorage.getItem("accessToken");
+
+      const response = await fetch(`${apiUrl}/preferences/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const preferences = await response.json();
+        setUserPreferences(preferences);
+      } else {
+        setUserPreferences(null); // User has no preferences yet
+      }
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      setUserPreferences(null);
+    } finally {
+      setPreferencesLoading(false);
+    }
+  };
+
   // CRUD Operations
   const handleAdd = () => {
     setSelectedItem(null);
@@ -409,6 +784,13 @@ function AdminPanelContent() {
   const handleView = (item: unknown) => {
     setSelectedItem(item as Record<string, unknown>);
     setShowModal("view");
+    setActiveTab("info"); // Reset to info tab when opening modal
+
+    // If viewing a user, fetch their preferences
+    if (activeSection === "users" && item) {
+      const user = item as User;
+      fetchUserPreferences(user.id);
+    }
   };
 
   const handleSort = (field: string) => {
@@ -452,9 +834,6 @@ function AdminPanelContent() {
           break;
         case "properties":
           endpoint = `${apiUrl}/properties/${selectedItem.id}`;
-          break;
-        case "preferences":
-          endpoint = `${apiUrl}/preferences/admin/${selectedItem.user_id}`;
           break;
       }
 
@@ -503,23 +882,64 @@ function AdminPanelContent() {
   };
 
   // UI Components
-  const SortButton = ({ field, label }: { field: string; label: string }) => (
-    <button
-      onClick={() => handleSort(field)}
-      className="flex items-center gap-2 hover:text-slate-900 font-medium"
-    >
-      {label}
-      {sort.field === field ? (
-        sort.direction === "asc" ? (
-          <ArrowUp className="w-4 h-4" />
+  const SortButton = ({
+    field,
+    label,
+    compact = false,
+  }: {
+    field: string;
+    label: string;
+    compact?: boolean;
+  }) => {
+    const isActive = sort.field === field;
+    const isAsc = isActive && sort.direction === "asc";
+    const isDesc = isActive && sort.direction === "desc";
+
+    return (
+      <button
+        onClick={() => handleSort(field)}
+        className={`flex items-center gap-1 font-medium transition-colors duration-200 ${
+          compact
+            ? `text-xs ${
+                isActive
+                  ? "text-blue-600 hover:text-blue-700"
+                  : "text-slate-500 hover:text-slate-700"
+              }`
+            : `${
+                isActive
+                  ? "text-blue-600 hover:text-blue-700"
+                  : "text-slate-600 hover:text-slate-900"
+              }`
+        }`}
+        title={
+          isActive
+            ? `Sorted by ${label} (${
+                sort.direction === "asc" ? "ascending" : "descending"
+              }). Click to reverse.`
+            : `Sort by ${label}`
+        }
+      >
+        {label}
+        {isActive ? (
+          isAsc ? (
+            <ArrowUp
+              className={`text-blue-600 ${compact ? "w-3 h-3" : "w-4 h-4"}`}
+            />
+          ) : (
+            <ArrowDown
+              className={`text-blue-600 ${compact ? "w-3 h-3" : "w-4 h-4"}`}
+            />
+          )
         ) : (
-          <ArrowDown className="w-4 h-4" />
-        )
-      ) : (
-        <ArrowUpDown className="w-4 h-4 opacity-50" />
-      )}
-    </button>
-  );
+          <ArrowUpDown
+            className={`opacity-50 hover:opacity-75 ${
+              compact ? "w-3 h-3" : "w-4 h-4"
+            }`}
+          />
+        )}
+      </button>
+    );
+  };
 
   const FilterDropdown = () => (
     <div className="relative">
@@ -625,17 +1045,6 @@ function AdminPanelContent() {
             <Building2 className="w-5 h-5" />
             <span className="font-medium">Properties</span>
           </button>
-          <button
-            onClick={() => setActiveSection("preferences")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-              activeSection === "preferences"
-                ? "bg-violet-50 text-violet-700 border border-violet-200"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <Target className="w-5 h-5" />
-            <span className="font-medium">Preferences</span>
-          </button>
         </nav>
       </div>
     </div>
@@ -670,12 +1079,48 @@ function AdminPanelContent() {
                 searchLoading={searchLoading}
               />
             </div>
-            <FilterDropdown />
+            <div className="flex flex-col sm:flex-row gap-4">
+              {sort.field && (
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <span>Sorted by:</span>
+                  <span className="font-medium text-blue-600">
+                    {sort.field === "full_name"
+                      ? "Name"
+                      : sort.field === "role"
+                      ? "Role"
+                      : sort.field === "status"
+                      ? "Status"
+                      : sort.field === "created_at"
+                      ? "Created Date"
+                      : sort.field}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    ({sort.direction === "asc" ? "↑ ascending" : "↓ descending"}
+                    )
+                  </span>
+                  <button
+                    onClick={() => setSort({ field: "", direction: "desc" })}
+                    className="text-xs text-slate-400 hover:text-slate-600 underline ml-2"
+                    title="Clear sorting"
+                  >
+                    clear
+                  </button>
+                </div>
+              )}
+              <FilterDropdown />
+            </div>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-1/3" />
+              <col className="w-24" />
+              <col className="w-24" />
+              <col className="w-32" />
+              <col className="w-32" />
+            </colgroup>
             <thead className="bg-slate-100 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -702,15 +1147,21 @@ function AdminPanelContent() {
                   className="hover:bg-slate-50 transition-colors duration-150"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center shadow-sm">
+                    <div className="flex items-center min-w-0">
+                      <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                         <Users className="w-5 h-5 text-slate-600" />
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-slate-900">
+                      <div className="ml-4 min-w-0 flex-1">
+                        <div
+                          className="text-sm font-semibold text-slate-900 truncate"
+                          title={user.full_name || "No name"}
+                        >
                           {user.full_name || "No name"}
                         </div>
-                        <div className="text-sm text-slate-600">
+                        <div
+                          className="text-sm text-slate-600 truncate"
+                          title={user.email}
+                        >
                           {user.email}
                         </div>
                       </div>
@@ -746,24 +1197,24 @@ function AdminPanelContent() {
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => handleView(user)}
-                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-150"
+                        className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-150"
                         title="View user"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEdit(user)}
-                        className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-150"
+                        className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors duration-150"
                         title="Edit user"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(user)}
-                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-150"
+                        className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
                         title="Delete user"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -812,21 +1263,76 @@ function AdminPanelContent() {
                 searchLoading={searchLoading}
               />
             </div>
+            {sort.field && (
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <span>Sorted by:</span>
+                <span className="font-medium text-blue-600">
+                  {sort.field === "title"
+                    ? "Title"
+                    : sort.field === "location"
+                    ? "Location"
+                    : sort.field === "price"
+                    ? "Price"
+                    : sort.field === "bedrooms"
+                    ? "Bedrooms"
+                    : sort.field === "bathrooms"
+                    ? "Bathrooms"
+                    : sort.field === "property_type"
+                    ? "Type"
+                    : sort.field === "created_at"
+                    ? "Created Date"
+                    : sort.field}
+                </span>
+                <span className="text-xs text-slate-500">
+                  ({sort.direction === "asc" ? "↑ ascending" : "↓ descending"})
+                </span>
+                <button
+                  onClick={() => setSort({ field: "", direction: "desc" })}
+                  className="text-xs text-slate-400 hover:text-slate-600 underline ml-2"
+                  title="Clear sorting"
+                >
+                  clear
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-1/4" />
+              <col className="w-24" />
+              <col className="w-16" />
+              <col className="w-16" />
+              <col className="w-20" />
+              <col className="w-24" />
+              <col className="w-28" />
+            </colgroup>
             <thead className="bg-slate-100 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="title" label="Property" />
+                  <div className="flex flex-col gap-1">
+                    <div className="text-xs">Property</div>
+                    <div className="flex gap-2 text-xs">
+                      <SortButton field="title" label="Title" compact={true} />
+                      <span className="text-slate-400">|</span>
+                      <SortButton
+                        field="location"
+                        label="Location"
+                        compact={true}
+                      />
+                    </div>
+                  </div>
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   <SortButton field="price" label="Price" />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   <SortButton field="bedrooms" label="Bedrooms" />
+                </th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  <SortButton field="bathrooms" label="Baths" />
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   <SortButton field="property_type" label="Type" />
@@ -846,15 +1352,21 @@ function AdminPanelContent() {
                   className="hover:bg-slate-50 transition-colors duration-150"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm">
+                    <div className="flex items-center min-w-0">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                         <Building2 className="w-5 h-5 text-blue-600" />
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-slate-900">
+                      <div className="ml-4 min-w-0 flex-1">
+                        <div
+                          className="text-sm font-semibold text-slate-900 truncate"
+                          title={property.title}
+                        >
                           {property.title}
                         </div>
-                        <div className="text-sm text-slate-600">
+                        <div
+                          className="text-sm text-slate-600 truncate"
+                          title={property.location}
+                        >
                           {property.location}
                         </div>
                       </div>
@@ -863,34 +1375,42 @@ function AdminPanelContent() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     £{property.price.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
                     {property.bedrooms}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
+                    {property.bathrooms}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {property.property_type}
+                    <span
+                      className="truncate block"
+                      title={property.property_type}
+                    >
+                      {property.property_type}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     {new Date(property.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => handleView(property)}
-                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-150"
+                        className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-150"
                         title="View property"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEdit(property)}
-                        className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-150"
+                        className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors duration-150"
                         title="Edit property"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(property)}
-                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-150"
+                        className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
                         title="Delete property"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -958,9 +1478,9 @@ function AdminPanelContent() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-100">
-              {preferences.map((pref) => (
+              {userPreferences && (
                 <tr
-                  key={pref.id}
+                  key={userPreferences.id}
                   className="hover:bg-slate-50 transition-colors duration-150"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -970,47 +1490,48 @@ function AdminPanelContent() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-semibold text-slate-900">
-                          {pref.user?.full_name || "No name"}
+                          {userPreferences.user?.full_name || "No name"}
                         </div>
                         <div className="text-sm text-slate-600">
-                          {pref.user?.email}
+                          {userPreferences.user?.email}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    £{pref.min_price?.toLocaleString() || 0} - £
-                    {pref.max_price?.toLocaleString() || 0}
+                    £{userPreferences.min_price?.toLocaleString() || 0} - £
+                    {userPreferences.max_price?.toLocaleString() || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {pref.min_bedrooms || 0} - {pref.max_bedrooms || 0}
+                    {userPreferences.min_bedrooms || 0} -{" "}
+                    {userPreferences.max_bedrooms || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {pref.property_type || "Any"}
+                    {userPreferences.property_type || "Any"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {pref.primary_postcode ||
-                      pref.secondary_location ||
+                    {userPreferences.primary_postcode ||
+                      userPreferences.secondary_location ||
                       "Not specified"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleView(pref)}
+                        onClick={() => handleView(userPreferences)}
                         className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-150"
                         title="View preferences"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleEdit(pref)}
+                        onClick={() => handleEdit(userPreferences)}
                         className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-150"
                         title="Edit preferences"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(pref)}
+                        onClick={() => handleDelete(userPreferences)}
                         className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-150"
                         title="Delete preferences"
                       >
@@ -1019,7 +1540,7 @@ function AdminPanelContent() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -1035,9 +1556,11 @@ function AdminPanelContent() {
   const ViewModal = () => {
     if (!selectedItem || showModal !== "view") return null;
 
+    const isUserView = activeSection === "users";
+
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -1045,7 +1568,12 @@ function AdminPanelContent() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">
-                  View {activeSection.slice(0, -1)}
+                  {isUserView
+                    ? `User: ${
+                        (selectedItem as any).full_name ||
+                        (selectedItem as any).email
+                      }`
+                    : `View ${activeSection.slice(0, -1)}`}
                 </h2>
                 <p className="text-slate-600 text-sm">
                   Detailed information overview
@@ -1060,45 +1588,108 @@ function AdminPanelContent() {
             </button>
           </div>
 
-          <div className="space-y-6">
-            {Object.entries(selectedItem).map(([key, value]) => (
-              <div
-                key={key}
-                className="bg-gradient-to-r from-slate-50 to-white p-4 rounded-xl border border-slate-200"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <div className="font-semibold text-slate-700 capitalize min-w-[150px]">
-                    {key.replace(/_/g, " ")}:
-                  </div>
-                  <div className="text-slate-900 font-medium">
-                    {key === "status" || key === "role" ? (
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          key === "status"
-                            ? value === "active"
-                              ? "bg-green-100 text-green-800"
-                              : value === "inactive"
-                              ? "bg-slate-100 text-slate-800"
-                              : "bg-red-100 text-red-800"
-                            : value === "admin"
-                            ? "bg-amber-100 text-amber-800"
-                            : value === "operator"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {String(value)}
-                      </span>
-                    ) : typeof value === "object" ? (
-                      JSON.stringify(value, null, 2)
-                    ) : (
-                      String(value)
-                    )}
+          {isUserView ? (
+            // User view with tabs
+            <div>
+              {/* Tabs */}
+              <div className="flex border-b border-slate-200 mb-6">
+                <button
+                  onClick={() => setActiveTab("info")}
+                  className={`px-6 py-3 font-medium text-sm transition-colors ${
+                    activeTab === "info"
+                      ? "text-blue-600 border-b-2 border-blue-600"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  User Information
+                </button>
+                <button
+                  onClick={() => setActiveTab("preferences")}
+                  className={`px-6 py-3 font-medium text-sm transition-colors ${
+                    activeTab === "preferences"
+                      ? "text-blue-600 border-b-2 border-blue-600"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Preferences
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === "info" ? (
+                <div className="space-y-6">
+                  {Object.entries(selectedItem).map(([key, value]) => (
+                    <div
+                      key={key}
+                      className="bg-gradient-to-r from-slate-50 to-white p-4 rounded-xl border border-slate-200"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="font-semibold text-slate-700 capitalize min-w-[150px]">
+                          {key.replace(/_/g, " ")}:
+                        </div>
+                        <div className="text-slate-900 font-medium">
+                          {key === "status" || key === "role" ? (
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                key === "status"
+                                  ? value === "active"
+                                    ? "bg-green-100 text-green-800"
+                                    : value === "inactive"
+                                    ? "bg-slate-100 text-slate-800"
+                                    : "bg-red-100 text-red-800"
+                                  : value === "admin"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : value === "operator"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}
+                            >
+                              {String(value)}
+                            </span>
+                          ) : typeof value === "object" ? (
+                            JSON.stringify(value, null, 2)
+                          ) : (
+                            String(value)
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Preferences tab
+                <UserPreferencesTab
+                  userId={(selectedItem as any).id}
+                  preferences={userPreferences}
+                  loading={preferencesLoading}
+                  onPreferencesUpdate={() =>
+                    fetchUserPreferences((selectedItem as any).id)
+                  }
+                />
+              )}
+            </div>
+          ) : (
+            // Simple view for non-user items
+            <div className="space-y-6">
+              {Object.entries(selectedItem).map(([key, value]) => (
+                <div
+                  key={key}
+                  className="bg-gradient-to-r from-slate-50 to-white p-4 rounded-xl border border-slate-200"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="font-semibold text-slate-700 capitalize min-w-[150px]">
+                      {key.replace(/_/g, " ")}:
+                    </div>
+                    <div className="text-slate-900 font-medium">
+                      {typeof value === "object"
+                        ? JSON.stringify(value, null, 2)
+                        : String(value)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1699,12 +2290,8 @@ function AdminPanelContent() {
         : "any",
     });
 
-    if (
-      !showModal ||
-      (showModal !== "add" && showModal !== "edit") ||
-      activeSection !== "preferences"
-    )
-      return null;
+    // Preferences modal is now handled within user detail modal
+    return null;
     if (showModal === "edit" && !selectedItem) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -2101,8 +2688,6 @@ function AdminPanelContent() {
         return renderUsersSection();
       case "properties":
         return renderPropertiesSection();
-      case "preferences":
-        return renderPreferencesSection();
       default:
         return null;
     }
@@ -2120,7 +2705,6 @@ function AdminPanelContent() {
       <ViewModal />
       {activeSection === "users" && <AddEditUserModal />}
       {activeSection === "properties" && <AddEditPropertyModal />}
-      {activeSection === "preferences" && <AddEditPreferencesModal />}
       <DeleteModal />
 
       <AdminNotifications

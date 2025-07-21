@@ -18,7 +18,7 @@ import {
   clearError,
 } from "../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../store/store";
-import PropertyCard from "../../components/PropertyCard";
+import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
 import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
@@ -217,17 +217,13 @@ export default function ShortlistPage() {
         </div>
 
         {/* Properties Grid */}
-        {properties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                onClick={() => handlePropertyClick(property.id)}
-              />
-            ))}
-          </div>
-        ) : (
+        <PropertyGridWithLoader
+          properties={properties}
+          loading={loading}
+          onPropertyClick={(property) => handlePropertyClick(property.id)}
+        />
+        
+        {!loading && properties.length === 0 && (
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Heart className="w-10 h-10 text-slate-400" />

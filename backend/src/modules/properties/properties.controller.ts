@@ -117,7 +117,9 @@ export class PropertiesController {
   async getPublicProperties(
     @Query("page") page: number = 1,
     @Query("limit") limit: number = 6,
-    @Query("search") search?: string
+    @Query("search") search?: string,
+    @Query("sortBy") sortBy?: string,
+    @Query("order") order?: "ASC" | "DESC"
   ) {
     // Ensure page and limit are numbers, max 6 for public access
     const pageNum = parseInt(page as any) || 1;
@@ -126,7 +128,9 @@ export class PropertiesController {
     const result = await this.propertiesService.findAll(
       pageNum,
       limitNum,
-      search
+      search,
+      sortBy,
+      order
     );
 
     // Format response to match frontend expectations
@@ -203,7 +207,9 @@ export class PropertiesController {
   async findAll(
     @Query("page") page: number = 1,
     @Query("limit") limit: number = 10,
-    @Query("search") search?: string
+    @Query("search") search?: string,
+    @Query("sortBy") sortBy?: string,
+    @Query("order") order?: "ASC" | "DESC"
   ) {
     // Ensure page and limit are numbers
     const pageNum = parseInt(page as any) || 1;
@@ -212,7 +218,9 @@ export class PropertiesController {
     const result = await this.propertiesService.findAll(
       pageNum,
       limitNum,
-      search
+      search,
+      sortBy,
+      order
     );
 
     // Format response to match frontend expectations

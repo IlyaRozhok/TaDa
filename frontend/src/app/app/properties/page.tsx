@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PropertyFilters } from "../../lib/api";
 import { Property } from "../../types";
 import { useTranslations } from "../../lib/language-context";
-import PropertyCard from "../../components/PropertyCard";
+import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
 import { useFilteredProperties } from "../../hooks/useProperties";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -222,17 +222,13 @@ export default function AllPropertiesPage() {
         </div>
 
         {/* Properties Grid */}
-        {filteredProperties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProperties.map((property) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                onClick={() => handlePropertyClick(property)}
-              />
-            ))}
-          </div>
-        ) : (
+        <PropertyGridWithLoader
+          properties={filteredProperties}
+          loading={loading}
+          onPropertyClick={handlePropertyClick}
+        />
+        
+        {!loading && filteredProperties.length === 0 && (
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Search className="w-10 h-10 text-slate-400" />

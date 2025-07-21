@@ -92,7 +92,9 @@ export class PropertiesService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-    search?: string
+    search?: string,
+    sortBy?: string,
+    order?: 'ASC' | 'DESC'
   ): Promise<{
     properties: Property[];
     total: number;
@@ -103,11 +105,32 @@ export class PropertiesService {
     // Ensure page and limit are valid numbers
     const validPage = Math.max(1, Math.floor(Number(page)) || 1);
     const validLimit = Math.max(1, Math.min(100, Math.floor(Number(limit)) || 10));
+    
     const queryBuilder = this.propertyRepository
       .createQueryBuilder("property")
       .leftJoinAndSelect("property.operator", "operator")
-      .leftJoinAndSelect("property.media", "media")
-      .orderBy("property.created_at", "DESC");
+      .leftJoinAndSelect("property.media", "media");
+
+    // Handle sorting
+    if (sortBy && order) {
+      const validSortFields = {
+        'title': 'property.title',
+        'location': 'property.address', // Map location to address field
+        'price': 'property.price',
+        'bedrooms': 'property.bedrooms',
+        'bathrooms': 'property.bathrooms',
+        'property_type': 'property.property_type',
+        'created_at': 'property.created_at'
+      };
+
+      const sortField = validSortFields[sortBy] || 'property.created_at';
+      const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+      
+      queryBuilder.orderBy(sortField, sortOrder);
+    } else {
+      // Default sorting
+      queryBuilder.orderBy("property.created_at", "DESC");
+    }
 
     if (search) {
       queryBuilder.where(

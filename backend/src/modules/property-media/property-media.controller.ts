@@ -27,7 +27,7 @@ import { PropertyMedia } from "../../entities/property-media.entity";
 import { Auth } from "../../common/decorators/auth.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../entities/user.entity";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
 @ApiTags("Property Media")
 @Controller("properties/:propertyId/media")

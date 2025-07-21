@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import PropertyCard from "../components/PropertyCard";
+import PropertyGridWithLoader from "../components/PropertyGridWithLoader";
 import { Button } from "../components/ui/Button";
 import Logo from "../components/Logo";
 import { Search, Home, Lock, ArrowLeft } from "lucide-react";
@@ -184,15 +184,12 @@ export default function PublicPropertiesPage() {
           </div>
         ) : properties.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {properties.map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onClick={() => handlePropertyClick(property)}
-                />
-              ))}
-            </div>
+            <PropertyGridWithLoader
+              properties={properties}
+              loading={isInitialLoading || searchLoading}
+              onPropertyClick={handlePropertyClick}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+            />
 
             {/* Limited Access Notice */}
             {properties.length >= 6 && (

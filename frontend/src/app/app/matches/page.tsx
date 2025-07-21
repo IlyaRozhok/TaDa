@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { matchingAPI, MatchingResult, Property } from "../../lib/api";
 import { useTranslations } from "../../lib/language-context";
 import { selectUser } from "../../store/slices/authSlice";
-import PropertyCard from "../../components/PropertyCard";
+import MatchedPropertyGridWithLoader from "../../components/MatchedPropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
 import { useRouter } from "next/navigation";
 import {
@@ -592,26 +592,11 @@ export default function MatchesPage() {
               </div>
             ) : (
               // Grid View
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedMatches.map((matchResult) => (
-                  <div key={matchResult.property.id} className="relative">
-                    <PropertyCard
-                      property={matchResult.property}
-                      onClick={() => handlePropertyClick(matchResult.property)}
-                    />
-                    {/* Match Score Badge */}
-                    <div className="absolute top-3 right-3 z-10">
-                      <div
-                        className={`px-2 py-1 rounded-full text-xs font-bold border ${getScoreColor(
-                          matchResult.matchScore
-                        )}`}
-                      >
-                        {matchResult.matchScore}%
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <MatchedPropertyGridWithLoader
+                matchedProperties={sortedMatches}
+                loading={loading}
+                onPropertyClick={handlePropertyClick}
+              />
             )}
 
             {/* Load More Button */}

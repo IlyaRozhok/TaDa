@@ -7,9 +7,8 @@
 
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./src/app.module"; // Adjust path as needed
-import { AuthService, AuthStatus } from "./src/auth/auth.service";
-import { PendingRegistrationService } from "./src/auth/services/pending-registration.service";
-import { GoogleUser } from "./src/auth/strategies/google.strategy";
+import { AuthService } from "./backend/src/modules/auth/auth.service";
+import { PendingGoogleRegistrationService } from "./backend/src/modules/auth/services/pending-google-registration.service";
 
 async function testOAuthImplementation() {
   console.log("🧪 Testing Google OAuth Implementation");

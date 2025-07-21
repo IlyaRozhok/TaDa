@@ -22,7 +22,7 @@ import {
 import { UsersService } from "./users.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { User } from "../../entities/user.entity";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { IsEmail, IsOptional, IsString } from "class-validator";

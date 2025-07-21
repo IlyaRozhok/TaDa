@@ -8,7 +8,7 @@ import {
   useMatchedProperties,
 } from "../../../hooks/useProperties";
 import { selectUser } from "../../../store/slices/authSlice";
-import PropertyCard from "../../../components/PropertyCard";
+import MatchedPropertyGridWithLoader from "../../../components/MatchedPropertyGridWithLoader";
 import DashboardHeader from "../../../components/DashboardHeader";
 import FeaturedPropertiesSlider from "../../../components/FeaturedPropertiesSlider";
 import { useRouter } from "next/navigation";
@@ -233,22 +233,14 @@ function TenantDashboardContent() {
             </button>
           </div>
 
-          {matchedProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {matchedProperties.map((match) => (
-                <div key={match.property.id} className="relative">
-                  <PropertyCard
-                    property={match.property}
-                    onClick={() => handlePropertyClick(match.property)}
-                  />
-                  {/* Match Score Badge */}
-                  <div className="absolute top-43 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-bold text-green-700 border border-green-200">
-                    {Math.round(match.matchScore)}% Match
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
+          <MatchedPropertyGridWithLoader
+            matchedProperties={matchedProperties}
+            loading={matchedLoading}
+            onPropertyClick={handlePropertyClick}
+            skeletonCount={3}
+          />
+          
+          {!matchedLoading && matchedProperties.length === 0 && (
             <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="w-8 h-8 text-slate-400" />

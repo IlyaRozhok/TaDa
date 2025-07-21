@@ -17,7 +17,7 @@ import {
 import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
-import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { AuthGuard } from "@nestjs/passport";
 import { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
@@ -185,10 +185,10 @@ export class AuthController {
 
       console.log("🔍 Processing Google user data through auth service...");
 
-      // Check if user exists first
-      const result = await this.authService.checkGoogleUser(req.user);
+      // Use simplified Google auth flow
+      const result = await this.authService.googleAuth(req.user);
 
-      if (result.user) {
+      if (result.user && !result.isNewUser) {
         // Existing user - generate tokens and redirect
         console.log("✅ Existing user found:", {
           userId: result.user.id,
@@ -201,19 +201,13 @@ export class AuthController {
 
         const callbackUrl = `${process.env.FRONTEND_URL}/app/auth/callback?token=${tokens.access_token}&success=true&isNewUser=false`;
         return res.redirect(callbackUrl);
-      } else {
-        // New user - store Google data temporarily and redirect to role selection
-        console.log("🔄 New user detected - storing Google data temporarily");
+      } else if (result.tempToken && result.isNewUser) {
+        // New user - redirect to role selection with temp token
+        console.log("🔄 New user detected - redirecting to role selection");
+        console.log(`✅ Created temp token: ${result.tempToken}`);
 
-        const googleData = result.googleData;
-        const registrationId =
-          await this.authService.storeGoogleDataTemporarily(googleData);
-
-        console.log(`✅ Stored Google data with ID: ${registrationId}`);
-        console.log("🔍 Redirecting to role selection...");
-
-        // Redirect to frontend with registration ID for role selection
-        const callbackUrl = `${process.env.FRONTEND_URL}/app/auth/callback?needsRoleSelection=true&registrationId=${registrationId}`;
+        // Redirect directly to role selection page with temp token
+        const callbackUrl = `${process.env.FRONTEND_URL}/auth/select-role?tempToken=${result.tempToken}`;
         return res.redirect(callbackUrl);
       }
     } catch (error: any) {
@@ -257,26 +251,52 @@ export class AuthController {
     }
   }
 
+  @Get("temp-token/:token")
+  async getTempTokenInfo(@Param("token") token: string) {
+    try {
+      console.log("🔍 Getting temp token info:", token);
+
+      const tokenInfo = await this.authService.getTempTokenInfo(token);
+
+      if (!tokenInfo) {
+        throw new BadRequestException("Invalid or expired token");
+      }
+
+      return {
+        success: true,
+        googleData: {
+          email: tokenInfo.googleUserData.email,
+          full_name: tokenInfo.googleUserData.full_name,
+          avatar_url: tokenInfo.googleUserData.avatar_url,
+        },
+        expiresAt: tokenInfo.expiresAt,
+      };
+    } catch (error) {
+      console.error("❌ Get temp token info error:", error);
+      throw error;
+    }
+  }
+
   @Post("create-google-user")
   async createGoogleUser(
-    @Body() body: { registrationId: string; role: "tenant" | "operator" }
+    @Body() body: { tempToken: string; role: "tenant" | "operator" }
   ) {
     try {
       console.log(
-        `🔍 Creating Google user with role: ${body.role} for registration: ${body.registrationId}`
+        `🔍 Creating Google user with role: ${body.role} using temp token`
       );
 
-      if (!body.registrationId || !body.role) {
-        throw new BadRequestException("Registration ID and role are required");
+      if (!body.tempToken || !body.role) {
+        throw new BadRequestException("Temp token and role are required");
       }
 
       if (!["tenant", "operator"].includes(body.role)) {
         throw new BadRequestException("Role must be 'tenant' or 'operator'");
       }
 
-      // Create user from Google registration
-      const user = await this.authService.createGoogleUserFromRegistration(
-        body.registrationId,
+      // Create user from temp token with role
+      const user = await this.authService.createGoogleUserWithRole(
+        body.tempToken,
         body.role
       );
 
