@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback } from "react";
 import { PropertyMedia } from "../types";
-import apiClient from "../lib/api";
+import { propertyMediaAPI } from "../lib/api";
 import {
   Upload,
   X,
@@ -123,10 +123,9 @@ export default function MediaManager({
           prev.map((u) => (u.id === upload.id ? { ...u, progress: 50 } : u))
         );
 
-        const uploadedMedia = await apiClient.uploadPropertyMedia(
+        const uploadedMedia = await propertyMediaAPI.uploadPropertyMedia(
           propertyId,
-          upload.file,
-          accessToken
+          upload.file
         );
 
         setUploadingFiles((prev) =>
@@ -182,7 +181,7 @@ export default function MediaManager({
     if (disabled) return;
 
     try {
-      await apiClient.deletePropertyMedia(propertyId, mediaId, accessToken);
+      await propertyMediaAPI.deletePropertyMedia(propertyId, mediaId);
       onMediaUpdate(media.filter((m) => m.id !== mediaId));
       showMessage("success", "Media deleted successfully");
     } catch (error) {
@@ -194,10 +193,9 @@ export default function MediaManager({
     if (disabled) return;
 
     try {
-      const updatedMedia = await apiClient.setFeaturedMedia(
+      const updatedMedia = await propertyMediaAPI.setFeaturedMedia(
         propertyId,
-        mediaId,
-        accessToken
+        mediaId
       );
 
       // Update media list with new featured status
@@ -243,7 +241,7 @@ export default function MediaManager({
     }));
 
     try {
-      await apiClient.updateMediaOrder(propertyId, mediaOrders, accessToken);
+      await propertyMediaAPI.updateMediaOrder(propertyId, mediaOrders);
 
       // Update local state with new order
       const updatedMedia = newMedia.map((m, index) => ({

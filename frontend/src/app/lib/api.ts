@@ -460,6 +460,51 @@ export const featuredAPI = {
 };
 
 // Shortlist API
+// Property Media API
+export const propertyMediaAPI = {
+  uploadPropertyMedia: async (propertyId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post(
+      `/properties/${propertyId}/media`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  getPropertyMedia: async (propertyId: string) => {
+    const response = await api.get(`/properties/${propertyId}/media`);
+    return response.data;
+  },
+
+  deletePropertyMedia: async (propertyId: string, mediaId: string) => {
+    await api.delete(`/properties/${propertyId}/media/${mediaId}`);
+  },
+
+  setFeaturedMedia: async (propertyId: string, mediaId: string) => {
+    const response = await api.put(
+      `/properties/${propertyId}/media/${mediaId}/featured`
+    );
+    return response.data;
+  },
+
+  updateMediaOrder: async (
+    propertyId: string,
+    mediaOrders: { id: string; order_index: number }[]
+  ) => {
+    const response = await api.put(`/properties/${propertyId}/media/order`, {
+      mediaOrders,
+    });
+    return response.data;
+  },
+};
+
 export const shortlistAPI = {
   add: async (propertyId: string): Promise<{ message: string }> => {
     if (!propertyId || propertyId.trim() === "") {
