@@ -327,11 +327,6 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4">For Tenants</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a href="/properties" className="hover:text-white">
-                    Browse Properties
-                  </a>
-                </li>
-                <li>
                   <a
                     href="/app/auth/register?type=tenant"
                     className="hover:text-white"

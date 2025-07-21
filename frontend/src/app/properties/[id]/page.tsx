@@ -101,18 +101,6 @@ export default function PublicPropertyDetailPage() {
               </Link>
             </div>
             <nav className="flex items-center space-x-6">
-              <Link
-                href="/properties"
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Browse Properties
-              </Link>
-              <button
-                onClick={() => setAuthModalOpen(true)}
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Login
-              </button>
               <Button
                 size="sm"
                 onClick={() => setAuthModalOpen(true)}
