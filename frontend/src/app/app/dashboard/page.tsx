@@ -7,7 +7,7 @@ import {
   selectUser,
   selectIsAuthenticated,
 } from "../../store/slices/authSlice";
-import { redirectAfterLogin } from "../../utils/simpleRedirect";
+import { redirectAfterLogin, getUserRole } from "../../utils/simpleRedirect";
 
 export default function DashboardPage() {
   const user = useSelector(selectUser);
