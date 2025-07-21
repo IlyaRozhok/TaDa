@@ -19,6 +19,7 @@ import {
   Heart,
   DollarSign,
 } from "lucide-react";
+import PropertyMap from "../../components/PropertyMap";
 import Link from "next/link";
 
 export default function PublicPropertyDetailPage() {
@@ -215,6 +216,21 @@ export default function PublicPropertyDetailPage() {
                 {property.description}
               </p>
             </div>
+
+            {/* Property Location Map */}
+            {property.address && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                  Location
+                </h2>
+                <PropertyMap
+                  address={property.address}
+                  title={property.title}
+                  height="h-64"
+                  className="w-full"
+                />
+              </div>
+            )}
 
             {/* Lifestyle Features */}
             {property.lifestyle_features &&

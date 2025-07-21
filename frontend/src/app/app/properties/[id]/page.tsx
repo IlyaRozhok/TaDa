@@ -16,6 +16,7 @@ import {
   Heart,
   Bookmark,
 } from "lucide-react";
+import PropertyMap from "../../../components/PropertyMap";
 
 // Individual field skeleton loader component
 const FieldSkeleton = ({ className = "" }: { className?: string }) => (
@@ -449,6 +450,30 @@ export default function PropertyDetailPage() {
                   </p>
                 )}
               </div>
+
+              {/* Property Location Map */}
+              {!loading && property?.address && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                    Location
+                  </h2>
+                  <PropertyMap
+                    address={property.address}
+                    title={property.title}
+                    height="h-64"
+                    className="w-full"
+                  />
+                </div>
+              )}
+
+              {loading && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                    Location
+                  </h2>
+                  <FieldSkeleton className="h-64 w-full" />
+                </div>
+              )}
 
               {/* Property Stats Grid - Desktop View */}
               <div className="hidden lg:grid grid-cols-2 gap-4 mb-6">

@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Leaflet CSS */
+@import 'leaflet/dist/leaflet.css';
+
+/* Custom Leaflet marker styles */
+.custom-marker {
+  background: none !important;
+  border: none !important;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
