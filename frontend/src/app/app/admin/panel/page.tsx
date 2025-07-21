@@ -7,7 +7,7 @@ import {
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
 import DashboardHeader from "../../../components/DashboardHeader";
-import DashboardRouter from "../../../components/DashboardRouter";
+import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 import { useDebounce } from "../../../lib/utils";
 import AdminNotifications from "../../../components/AdminNotifications";
 import {
@@ -484,7 +484,10 @@ function AdminPanelContent() {
           : (selectedItem as unknown as PreferencesRow).user?.email ||
             "User preferences";
 
-      addNotification("success", `${itemType} "${itemName}" deleted successfully`);
+      addNotification(
+        "success",
+        `${itemType} "${itemName}" deleted successfully`
+      );
 
       setShowModal(null);
       setSelectedItem(null);
@@ -1173,7 +1176,10 @@ function AdminPanelContent() {
         const action = isEditing ? "updated" : "created";
         const userName = formData.full_name || formData.email;
 
-        addNotification("success", `User "${userName}" ${action} successfully!`);
+        addNotification(
+          "success",
+          `User "${userName}" ${action} successfully!`
+        );
 
         setShowModal(null);
         setSelectedItem(null);
@@ -1184,7 +1190,10 @@ function AdminPanelContent() {
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} user`;
 
-        addNotification("error", `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`);
+        addNotification(
+          "error",
+          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`
+        );
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -1422,7 +1431,10 @@ function AdminPanelContent() {
         const action = isEditing ? "updated" : "created";
         const propertyName = formData.title;
 
-        addNotification("success", `Property "${propertyName}" ${action} successfully!`);
+        addNotification(
+          "success",
+          `Property "${propertyName}" ${action} successfully!`
+        );
 
         setShowModal(null);
         setSelectedItem(null);
@@ -1433,7 +1445,10 @@ function AdminPanelContent() {
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} property`;
 
-        addNotification("error", `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`);
+        addNotification(
+          "error",
+          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`
+        );
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -1746,7 +1761,10 @@ function AdminPanelContent() {
             "User"
           : "User";
 
-        addNotification("success", `Preferences for "${userName}" ${action} successfully!`);
+        addNotification(
+          "success",
+          `Preferences for "${userName}" ${action} successfully!`
+        );
 
         setShowModal(null);
         setSelectedItem(null);
@@ -1757,7 +1775,10 @@ function AdminPanelContent() {
             ? err.message
             : `Failed to ${isEditing ? "update" : "create"} preferences`;
 
-        addNotification("error", `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`);
+        addNotification(
+          "error",
+          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`
+        );
         setError(errorMessage);
       } finally {
         setIsActionLoading(false);
@@ -2102,7 +2123,7 @@ function AdminPanelContent() {
       {activeSection === "preferences" && <AddEditPreferencesModal />}
       <DeleteModal />
 
-      <AdminNotifications 
+      <AdminNotifications
         notifications={notifications}
         onCloseNotification={removeNotification}
       />
@@ -2112,8 +2133,8 @@ function AdminPanelContent() {
 
 export default function AdminPanel() {
   return (
-    <DashboardRouter requiredRole="admin">
+    <SimpleDashboardRouter requiredRole="admin">
       <AdminPanelContent />
-    </DashboardRouter>
+    </SimpleDashboardRouter>
   );
 }

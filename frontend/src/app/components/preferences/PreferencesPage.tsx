@@ -18,7 +18,7 @@ import {
   TOTAL_STEPS,
 } from "@/app/constants/preferences";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
-import { getUserRole } from "@/app/components/DashboardRouter";
+import { getUserRole } from "@/app/utils/simpleRedirect";
 
 export default function PreferencesPage() {
   const router = useRouter();

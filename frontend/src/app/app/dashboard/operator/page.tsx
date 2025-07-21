@@ -121,7 +121,7 @@ const SuggestPropertyModal = memo(function SuggestPropertyModal({
   );
 });
 
-import DashboardRouter from "../../../components/DashboardRouter";
+import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 
 function OperatorDashboardContent() {
   const user = useSelector(selectUser);
@@ -464,8 +464,8 @@ function OperatorDashboardContent() {
 
 export default function OperatorDashboard() {
   return (
-    <DashboardRouter requiredRole="operator">
+    <SimpleDashboardRouter requiredRole="operator">
       <OperatorDashboardContent />
-    </DashboardRouter>
+    </SimpleDashboardRouter>
   );
 }

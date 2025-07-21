@@ -21,7 +21,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
-import DashboardRouter from "../../../components/DashboardRouter";
+import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
@@ -279,8 +279,8 @@ function TenantDashboardContent() {
 
 export default function TenantDashboard() {
   return (
-    <DashboardRouter requiredRole="tenant">
+    <SimpleDashboardRouter requiredRole="tenant">
       <TenantDashboardContent />
-    </DashboardRouter>
+    </SimpleDashboardRouter>
   );
 }

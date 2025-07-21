@@ -7,7 +7,7 @@ import { selectUser, selectIsAuthenticated } from "../store/slices/authSlice";
 import Link from "next/link";
 import { Button } from "@/app/components/ui/Button";
 import { ArrowRight, Home, Users, Search, Heart } from "lucide-react";
-import { getUserRole, getDashboardPath } from "../components/DashboardRouter";
+import { redirectAfterLogin } from "../utils/simpleRedirect";
 
 export default function LandingPage() {
   const user = useSelector(selectUser);
@@ -15,11 +15,8 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Если пользователь аутентифицирован, перенаправляем на соответствующий дашборд
     if (isAuthenticated && user) {
-      const userRole = getUserRole(user);
-      const dashboardPath = getDashboardPath(userRole);
-      router.push(dashboardPath);
+      redirectAfterLogin(user, router);
     }
   }, [isAuthenticated, user, router]);
 

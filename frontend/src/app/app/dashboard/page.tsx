@@ -7,10 +7,7 @@ import {
   selectUser,
   selectIsAuthenticated,
 } from "../../store/slices/authSlice";
-import {
-  getUserRole,
-  getDashboardPath,
-} from "../../components/DashboardRouter";
+import { redirectAfterLogin } from "../../utils/simpleRedirect";
 
 export default function DashboardPage() {
   const user = useSelector(selectUser);
@@ -19,28 +16,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log("🔄 Dashboard: Not authenticated, redirecting to home");
       router.replace("/");
       return;
     }
 
     if (!user) {
-      console.log("🔄 Dashboard: No user data, waiting...");
-      return;
+      return; // Still loading
     }
 
-    // Determine user role and redirect to appropriate dashboard
-    const userRole = getUserRole(user);
-    const dashboardPath = getDashboardPath(userRole);
-
-    console.log("🔄 Dashboard: Redirecting to role-specific dashboard", {
-      userRole,
-      dashboardPath,
-      user: { id: user.id, role: user.role, roles: user.roles },
-    });
-
-    // Immediate redirect without delay
-    router.replace(dashboardPath);
+    // Simple redirect to user's dashboard
+    redirectAfterLogin(user, router);
   }, [isAuthenticated, user, router]);
 
   // Show loading while determining dashboard

@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { setCredentials } from "../../../store/slices/authSlice";
 import { authAPI } from "../../../lib/api";
 import GlobalLoader from "../../../components/GlobalLoader";
+import { redirectAfterLogin } from "../../../utils/simpleRedirect";
 
 // Separate component that uses useSearchParams
 function AuthCallbackContent() {
@@ -109,29 +110,14 @@ function AuthCallbackContent() {
           })
         );
 
-        // Redirect based on user status and role
+        // Simple redirect based on user
         const user = profileResponse.user;
-
-        console.log("🔍 Deciding redirect based on user:", {
-          userId: user.id,
-          userEmail: user.email,
-          userRole: user.role,
-          isNewUser: isNewUser,
-          hasRole: !!user.role,
+        console.log("🔄 OAuth callback: Redirecting user", {
+          email: user.email,
+          role: user.role,
         });
 
-        if (!user.role) {
-          // User needs to select role first
-          console.log("✅ User has no role - redirecting to role selection");
-          router.replace("/?needsRole=true");
-        } else if (isNewUser) {
-          // New user with role can go to preferences
-          console.log("✅ New user with role - redirecting to preferences");
-          router.replace("/app/preferences");
-        } else {
-          console.log("✅ Existing user - redirecting to dashboard");
-          router.replace("/app/dashboard");
-        }
+        redirectAfterLogin(user, router);
       } catch (error: any) {
         console.error("OAuth callback error:", error.message || error);
 

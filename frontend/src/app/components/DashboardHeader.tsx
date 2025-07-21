@@ -18,7 +18,7 @@ import {
 import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
 import Logo from "./Logo";
-import { getUserRole } from "./DashboardRouter";
+import { getUserRole } from "../utils/simpleRedirect";
 
 interface DropdownItemProps {
   icon: React.ReactNode;

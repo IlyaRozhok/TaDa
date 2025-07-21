@@ -22,7 +22,9 @@ function HomeContent() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      router.push("/app/dashboard");
+      import("./utils/simpleRedirect").then(({ redirectAfterLogin }) => {
+        redirectAfterLogin(user, router);
+      });
     }
   }, [isAuthenticated, user, router]);
 

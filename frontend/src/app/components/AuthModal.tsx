@@ -8,6 +8,7 @@ import {
   selectIsAuthenticated,
 } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
+import { redirectAfterLogin } from "../utils/simpleRedirect";
 import {
   Loader2,
   Eye,
@@ -153,7 +154,7 @@ export default function AuthModal({
       );
 
       handleClose();
-      router.push("/app/dashboard");
+      redirectAfterLogin(response.user, router);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(

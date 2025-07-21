@@ -7,7 +7,7 @@ import {
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
 import DashboardHeader from "../../../components/DashboardHeader";
-import DashboardRouter from "../../../components/DashboardRouter";
+import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 import { adminAPI } from "../../../lib/api";
 import {
   Shield,
@@ -383,8 +383,8 @@ function AdminDashboardContent() {
 
 export default function AdminDashboard() {
   return (
-    <DashboardRouter requiredRole="admin">
+    <SimpleDashboardRouter requiredRole="admin">
       <AdminDashboardContent />
-    </DashboardRouter>
+    </SimpleDashboardRouter>
   );
 }

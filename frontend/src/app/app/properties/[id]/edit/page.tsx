@@ -7,7 +7,7 @@ import { propertiesAPI, CreatePropertyRequest } from "@/app/lib/api";
 import { Property, PropertyMedia } from "@/app/types";
 import DashboardHeader from "../../../../components/DashboardHeader";
 import MediaManager from "../../../../components/MediaManager";
-import { getUserRole } from "../../../../components/DashboardRouter";
+import { getUserRole } from "../../../../utils/simpleRedirect";
 import {
   ArrowLeft,
   Save,

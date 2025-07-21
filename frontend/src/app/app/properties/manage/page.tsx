@@ -8,7 +8,7 @@ import {
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
 import DashboardHeader from "../../../components/DashboardHeader";
-import { getUserRole } from "../../../components/DashboardRouter";
+import { getUserRole } from "../../../utils/simpleRedirect";
 import {
   ArrowLeft,
   Plus,
