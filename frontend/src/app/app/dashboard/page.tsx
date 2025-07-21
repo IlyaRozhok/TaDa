@@ -7,7 +7,11 @@ import {
   selectUser,
   selectIsAuthenticated,
 } from "../../store/slices/authSlice";
-import { redirectAfterLogin, getUserRole } from "../../utils/simpleRedirect";
+import {
+  redirectAfterLogin,
+  getUserRole,
+  getPrimaryRole,
+} from "../../utils/simpleRedirect";
 
 export default function DashboardPage() {
   const user = useSelector(selectUser);
@@ -21,6 +25,7 @@ export default function DashboardPage() {
       hasUser: !!user,
       userEmail: user?.email,
       userRole: user?.role,
+      primaryRole: user ? getPrimaryRole(user) : "unknown",
       userProvider: user?.provider,
     });
 
@@ -46,16 +51,23 @@ export default function DashboardPage() {
       console.error("⚠️ Dashboard timeout reached - forcing fallback");
       setTimeoutReached(true);
 
-      if (isAuthenticated) {
-        if (user?.role === "admin") {
-          router.replace("/app/admin/panel");
-        } else if (user?.role === "operator") {
+      if (isAuthenticated && user) {
+        const primaryRole = getPrimaryRole(user);
+        console.log(
+          `🔄 Timeout fallback: redirecting based on primary role "${primaryRole}"`
+        );
+
+        if (primaryRole === "admin") {
+          router.replace("/app/dashboard/admin");
+        } else if (primaryRole === "operator") {
           router.replace("/app/dashboard/operator");
-        } else if (user?.role === "tenant") {
+        } else if (primaryRole === "tenant") {
           router.replace("/app/dashboard/tenant");
         } else {
           // No role or unknown role - go to role selection
-          console.log("🔄 No role detected, redirecting to role selection");
+          console.log(
+            "🔄 No valid role detected, redirecting to role selection"
+          );
           router.replace("/?needsRole=true");
         }
       } else {
@@ -86,9 +98,10 @@ export default function DashboardPage() {
             <p className="text-slate-600 mb-2">Loading your dashboard...</p>
             {user && (
               <div className="text-xs text-slate-400 space-y-1">
-                <p>Redirecting to {getUserRole(user)} dashboard...</p>
+                <p>Redirecting to {getPrimaryRole(user)} dashboard...</p>
                 <p>User: {user.email}</p>
                 <p>Role: {user.role || "Not set"}</p>
+                <p>Primary Role: {getPrimaryRole(user)}</p>
               </div>
             )}
             {!user && isAuthenticated && (
@@ -108,6 +121,7 @@ export default function DashboardPage() {
             <p>isAuthenticated: {String(isAuthenticated)}</p>
             <p>hasUser: {String(!!user)}</p>
             <p>userRole: {user?.role || "none"}</p>
+            <p>primaryRole: {user ? getPrimaryRole(user) : "none"}</p>
             <p>userEmail: {user?.email || "none"}</p>
           </div>
         )}

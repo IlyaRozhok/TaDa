@@ -130,7 +130,7 @@ function SelectRoleContent() {
         // Redirect based on role
         setTimeout(() => {
           if (role === "admin") {
-            router.replace("/app/admin/panel");
+            router.replace("/app/dashboard/admin");
           } else if (role === "operator") {
             router.replace("/app/dashboard/operator");
           } else if (role === "tenant") {
