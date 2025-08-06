@@ -380,7 +380,7 @@ export class UsersService {
   async updateUserRole(userId: string, role: string): Promise<User> {
     const user = await this.findOne(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Update the user's role

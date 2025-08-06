@@ -99,7 +99,7 @@ export default function SessionManager() {
       } catch (error: any) {
         // Token invalid, clear it
         console.error("Token invalid:", error.message);
-        
+
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionExpiry");
         dispatch(logout());

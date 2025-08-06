@@ -239,7 +239,7 @@ function TenantDashboardContent() {
             onPropertyClick={handlePropertyClick}
             skeletonCount={3}
           />
-          
+
           {!matchedLoading && matchedProperties.length === 0 && (
             <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">

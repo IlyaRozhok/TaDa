@@ -222,7 +222,7 @@ export default function ShortlistPage() {
           loading={loading}
           onPropertyClick={(property) => handlePropertyClick(property.id)}
         />
-        
+
         {!loading && properties.length === 0 && (
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
