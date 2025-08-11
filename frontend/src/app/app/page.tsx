@@ -15,7 +15,10 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    const pathname =
+      typeof window !== "undefined" ? window.location.pathname : null;
+    // Redirect только если реально на главной ("/")
+    if (pathname === "/" && isAuthenticated && user) {
       redirectAfterLogin(user, router);
     }
   }, [isAuthenticated, user, router]);

@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Like } from "typeorm";
 
-import { User } from "../../entities/user.entity";
+import { User, UserRole, UserStatus } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -59,7 +59,7 @@ export class UsersService {
     if (updateUserDto.full_name) user.full_name = updateUserDto.full_name;
 
     // Update profile based on role
-    if (user.role === "tenant" && user.tenantProfile) {
+    if (user.role === UserRole.Tenant && user.tenantProfile) {
       if (updateUserDto.phone) user.tenantProfile.phone = updateUserDto.phone;
       if (updateUserDto.age_range)
         user.tenantProfile.age_range = updateUserDto.age_range;
@@ -83,7 +83,7 @@ export class UsersService {
         user.tenantProfile.additional_info = updateUserDto.additional_info;
 
       await this.tenantProfileRepository.save(user.tenantProfile);
-    } else if (user.role === "operator" && user.operatorProfile) {
+    } else if (user.role === UserRole.Operator && user.operatorProfile) {
       if (updateUserDto.phone) user.operatorProfile.phone = updateUserDto.phone;
       if (updateUserDto.company_name)
         user.operatorProfile.company_name = updateUserDto.company_name;
@@ -245,7 +245,7 @@ export class UsersService {
       user.role = dto.role;
 
       // If changing to tenant but no tenant profile exists, create one
-      if (dto.role === "tenant" && !user.tenantProfile) {
+      if (dto.role === UserRole.Tenant && !user.tenantProfile) {
         const tenantProfile = this.tenantProfileRepository.create({
           user: user,
           full_name: user.full_name,
@@ -255,7 +255,7 @@ export class UsersService {
       }
 
       // If changing to operator but no operator profile exists, create one
-      if (dto.role === "operator" && !user.operatorProfile) {
+      if (dto.role === UserRole.Operator && !user.operatorProfile) {
         const operatorProfile = this.operatorProfileRepository.create({
           user: user,
           full_name: user.full_name,
@@ -267,10 +267,10 @@ export class UsersService {
 
     // Handle phone number updates in the appropriate profile
     if (dto.phone !== undefined) {
-      if (user.role === "tenant" && user.tenantProfile) {
+      if (user.role === UserRole.Tenant && user.tenantProfile) {
         user.tenantProfile.phone = dto.phone;
         await this.tenantProfileRepository.save(user.tenantProfile);
-      } else if (user.role === "operator" && user.operatorProfile) {
+      } else if (user.role === UserRole.Operator && user.operatorProfile) {
         user.operatorProfile.phone = dto.phone;
         await this.operatorProfileRepository.save(user.operatorProfile);
       }
@@ -289,20 +289,20 @@ export class UsersService {
 
     const user = this.userRepository.create({
       email: dto.email,
-      role: dto.role || "tenant",
-      status: "active",
+      role: dto.role || UserRole.Tenant,
+      status: UserStatus.Active,
       password: await bcrypt.hash(dto.password, 10),
       full_name: dto.full_name,
     });
     const savedUser = await this.userRepository.save(user);
 
     // Create profile based on role
-    if (dto.role === "tenant") {
+    if (dto.role === UserRole.Tenant) {
       const tenantProfile = this.tenantProfileRepository.create({
         user: savedUser,
       });
       await this.tenantProfileRepository.save(tenantProfile);
-    } else if (dto.role === "operator") {
+    } else if (dto.role === UserRole.Operator) {
       const operatorProfile = this.operatorProfileRepository.create({
         user: savedUser,
       });
@@ -377,14 +377,19 @@ export class UsersService {
     }
   }
 
-  async updateUserRole(userId: string, role: string): Promise<User> {
+  async updateUserRole(userId: string, role: UserRole | string): Promise<User> {
     const user = await this.findOne(userId);
     if (!user) {
       throw new Error("User not found");
     }
 
+    // Convert string to enum if needed
+    const roleEnum = typeof role === 'string' 
+      ? Object.values(UserRole).find(r => r === role) || UserRole.Tenant
+      : role;
+
     // Update the user's role
-    await this.userRepository.update(userId, { role });
+    await this.userRepository.update(userId, { role: roleEnum });
 
     // Return the updated user
     return this.findOne(userId);

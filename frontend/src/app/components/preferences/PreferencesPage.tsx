@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle, AlertCircle, Lock } from "lucide-react";
 import { usePreferences } from "@/app/hooks/usePreferences";
 import { StepNavigation } from "./ui";
-import { LocationStep, BudgetStep, FeatureStep, PersonalStep } from "./steps";
+import {
+  LocationStep,
+  CommuteTimeStep,
+  BudgetStep,
+  FeatureStep,
+  PersonalStep,
+} from "./steps";
 import {
   BUILDING_STYLE_OPTIONS,
   LIFESTYLE_OPTIONS,
@@ -28,7 +34,6 @@ export default function PreferencesPage() {
   const {
     loading,
     step,
-    success,
     generalError,
     watchedData,
     backendErrors,
@@ -98,7 +103,6 @@ export default function PreferencesPage() {
     user: !!user,
     loading,
     step,
-    success,
     accessDenied,
   });
 
@@ -147,29 +151,8 @@ export default function PreferencesPage() {
     );
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-        <div className="max-w-md mx-auto text-center bg-white rounded-2xl p-8 shadow-lg border border-slate-200">
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-emerald-600" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-3">
-            Preferences Saved!
-          </h2>
-          <p className="text-slate-600 mb-8 text-lg leading-relaxed">
-            Your preferences have been successfully updated. We'll use these to
-            find your perfect home matches.
-          </p>
-          <div className="w-full bg-slate-100 rounded-lg p-4">
-            <p className="text-slate-600 text-sm">
-              Redirecting to dashboard...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Don't show success screen, just continue showing the form
+  // Toast notification will handle the success feedback
 
   const renderStep = () => {
     const stepProps = {
@@ -188,9 +171,12 @@ export default function PreferencesPage() {
         return <LocationStep {...stepProps} />;
 
       case 2:
-        return <BudgetStep {...stepProps} />;
+        return <CommuteTimeStep {...stepProps} />;
 
       case 3:
+        return <BudgetStep {...stepProps} />;
+
+      case 4:
         return (
           <FeatureStep
             {...stepProps}
@@ -204,7 +190,7 @@ export default function PreferencesPage() {
           />
         );
 
-      case 4:
+      case 5:
         return (
           <FeatureStep
             {...stepProps}
@@ -218,7 +204,7 @@ export default function PreferencesPage() {
           />
         );
 
-      case 5:
+      case 6:
         return (
           <FeatureStep
             {...stepProps}
@@ -232,7 +218,7 @@ export default function PreferencesPage() {
           />
         );
 
-      case 6:
+      case 7:
         return (
           <FeatureStep
             {...stepProps}
@@ -246,7 +232,7 @@ export default function PreferencesPage() {
           />
         );
 
-      case 7:
+      case 8:
         return (
           <FeatureStep
             {...stepProps}
@@ -262,7 +248,7 @@ export default function PreferencesPage() {
           />
         );
 
-      case 8:
+      case 9:
         return (
           <FeatureStep
             {...stepProps}
@@ -278,7 +264,7 @@ export default function PreferencesPage() {
           />
         );
 
-      case 9:
+      case 10:
         return (
           <FeatureStep
             {...stepProps}
@@ -292,10 +278,10 @@ export default function PreferencesPage() {
           />
         );
 
-      case 10:
+      case 11:
         return <PersonalStep {...stepProps} />;
 
-      case 11:
+      case 12:
         return <ReviewStep formData={watchedData} />;
 
       default:

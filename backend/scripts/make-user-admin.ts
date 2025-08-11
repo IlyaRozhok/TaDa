@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 import { DataSource } from "typeorm";
-import { User } from "../src/entities/user.entity";
+import { User, UserRole, UserStatus } from "../src/entities/user.entity";
 import dataSource from "../src/database/data-source";
 async function makeUserAdmin() {
   const targetEmail = process.argv[2];
@@ -76,8 +76,8 @@ async function makeUserAdmin() {
     );
 
     // Update user role to admin
-    user.role = "admin";
-    user.status = "active";
+    user.role = UserRole.Admin;
+    user.status = UserStatus.Active;
 
     await userRepository.save(user);
 

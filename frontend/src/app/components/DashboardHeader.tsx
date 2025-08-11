@@ -99,7 +99,6 @@ export default function DashboardHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  console.log("user", user);
   const handleLogout = () => {
     dispatch(logout());
     localStorage.removeItem("accessToken");
@@ -137,7 +136,6 @@ export default function DashboardHeader() {
   const userRole = getUserRole(user);
   const isAdmin = userRole === "admin";
 
-  console.log("user", user, "userRole", userRole);
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className=" px-4 sm:px-6 lg:px-8">

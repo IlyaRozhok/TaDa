@@ -92,7 +92,13 @@ const authSlice = createSlice({
     logout: (state) => {
       const userId = state.user?.id;
       const userEmail = state.user?.email;
-      
+
+      console.log("🚪 LOGOUT ACTION CALLED", {
+        userId,
+        userEmail,
+        callStack: new Error().stack,
+      });
+
       state.user = null;
       state.isAuthenticated = false;
       state.accessToken = null;
@@ -107,10 +113,10 @@ const authSlice = createSlice({
       // Log the logout event
       authLogger.info("User logged out", "logout", {
         user_id: userId,
-        user_email: userEmail
+        user_email: userEmail,
       });
     },
-    restoreSession: (
+    setAuth: (
       state,
       action: PayloadAction<{
         user: User;
@@ -119,22 +125,17 @@ const authSlice = createSlice({
     ) => {
       const { user, accessToken } = action.payload;
 
-      // Check if stored session is still valid (within 7 days)
-      const storedExpiry =
-        typeof window !== "undefined"
-          ? localStorage.getItem("sessionExpiry")
-          : null;
-
-      if (storedExpiry && Date.now() > parseInt(storedExpiry)) {
-        // Session expired, don't restore
-        console.log("🔐 Stored session has expired");
-        return;
-      }
-
       state.user = user;
       state.accessToken = accessToken;
       state.isAuthenticated = true;
-      state.sessionExpiry = storedExpiry ? parseInt(storedExpiry) : null;
+
+      // Store in localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("accessToken", accessToken);
+        const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+        localStorage.setItem("sessionExpiry", expiry.toString());
+        state.sessionExpiry = expiry;
+      }
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
@@ -144,7 +145,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, restoreSession, updateUser } =
+export const { setCredentials, logout, setAuth, updateUser } =
   authSlice.actions;
 export default authSlice.reducer;
 

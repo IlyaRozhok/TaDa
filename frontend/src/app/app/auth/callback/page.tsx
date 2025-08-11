@@ -3,8 +3,8 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setCredentials } from "../../../store/slices/authSlice";
-import { authAPI } from "../../../lib/api";
+import { setAuth } from "../../../store/slices/authSlice";
+import { authAPI, usersAPI } from "../../../lib/api";
 import GlobalLoader from "../../../components/GlobalLoader";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
 
@@ -75,19 +75,23 @@ function AuthCallbackContent() {
 
         console.log("🔍 Getting user profile...");
         // Get user profile with explicit token in request
-        const profileResponse = await authAPI.getProfile();
+        const profileResponse = await usersAPI.getMe();
 
         console.log("🔍 Profile response:", {
           hasResponse: !!profileResponse,
-          hasUser: !!profileResponse?.user,
-          userEmail: profileResponse?.user?.email,
-          userRole: profileResponse?.user?.role,
-          userProvider: profileResponse?.user?.provider,
-          fullUser: profileResponse?.user,
+          hasUser: !!profileResponse?.data?.user,
+          userEmail: profileResponse?.data?.user?.email,
+          userRole: profileResponse?.data?.user?.role,
+          userProvider: profileResponse?.data?.user?.provider,
+          fullUser: profileResponse?.data?.user,
         });
 
         // Validate profile response
-        if (!profileResponse || !profileResponse.user) {
+        if (
+          !profileResponse ||
+          !profileResponse.data ||
+          !profileResponse.data.user
+        ) {
           console.error("❌ Failed to get user profile");
           setError("Failed to get user profile. Please try logging in again.");
 
@@ -101,14 +105,14 @@ function AuthCallbackContent() {
         // Update Redux store
         console.log("🔍 Updating Redux store with user data");
         dispatch(
-          setCredentials({
-            user: profileResponse.user,
+          setAuth({
+            user: profileResponse.data.user,
             accessToken: token,
           })
         );
 
         // Simple redirect based on user
-        const user = profileResponse.user;
+        const user = profileResponse.data.user;
         console.log("🔄 OAuth callback: Redirecting user", {
           email: user.email,
           role: user.role,

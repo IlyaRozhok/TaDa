@@ -119,12 +119,12 @@ export class Preferences {
   let_duration: string;
 
   @ApiProperty({
-    description: "Preferred property type",
-    example: "apartment",
-    enum: ["any", "flats", "houses", "studio", "others"],
+    description: "Preferred property types",
+    example: ["flats", "houses"],
+    type: [String],
   })
-  @Column({ nullable: true })
-  property_type: string;
+  @Column("simple-array", { nullable: true })
+  property_type: string[];
 
   @ApiProperty({
     description: "Building style preferences",

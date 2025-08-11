@@ -1,6 +1,6 @@
 import AppDataSource from "../src/database/data-source";
 import { Property } from "../src/entities/property.entity";
-import { User } from "../src/entities/user.entity";
+import { User, UserRole, UserStatus } from "../src/entities/user.entity";
 import { OperatorProfile } from "../src/entities/operator-profile.entity";
 import { Shortlist } from "../src/entities/shortlist.entity";
 import { Favourite } from "../src/entities/favourite.entity";
@@ -36,7 +36,7 @@ async function seedProperties() {
 
     // Find or create an operator user
     let operator = await userRepository.findOne({
-      where: { role: "operator" },
+      where: { role: UserRole.Operator },
       relations: ["operatorProfile"],
     });
 
@@ -44,8 +44,8 @@ async function seedProperties() {
       // Create a test operator if none exists
       operator = userRepository.create({
         email: "operator@test.com",
-        role: "operator",
-        status: "active",
+        role: UserRole.Operator,
+        status: UserStatus.Active,
         password: "$2b$10$test.hash.here", // This is just for testing
       });
       await userRepository.save(operator);
@@ -62,13 +62,13 @@ async function seedProperties() {
 
     // Создаем пользователя-админа, если его нет
     let admin = await userRepository.findOne({
-      where: { role: "admin" },
+      where: { role: UserRole.Admin },
     });
     if (!admin) {
       admin = userRepository.create({
         email: "admin@test.com",
-        role: "admin",
-        status: "active",
+        role: UserRole.Admin,
+        status: UserStatus.Active,
         password: "$2b$10$admin.hash.here", // This is just for testing
       });
       await userRepository.save(admin);

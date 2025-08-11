@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  setCredentials,
-  selectIsAuthenticated,
-} from "../../store/slices/authSlice";
+import { useDispatch } from "react-redux";
+import { setAuth } from "../../store/slices/authSlice";
 import { authAPI } from "../../lib/api";
 import Link from "next/link";
 import {
@@ -25,7 +22,6 @@ import { Button } from "../../components/ui/Button";
 type UserType = "tenant" | "operator";
 
 export default function UnifiedAuthPage() {
-  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -39,11 +35,8 @@ export default function UnifiedAuthPage() {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/app/dashboard");
-    }
-  }, [isAuthenticated, router]);
+  // Removed automatic redirect for authenticated users to prevent redirect loops
+  // Users should explicitly navigate to where they want to go
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -51,29 +44,40 @@ export default function UnifiedAuthPage() {
     setIsLoading(true);
 
     try {
-      // First attempt - no role specified
-      const response = await authAPI.authenticate({
-        email,
-        password,
-        role: selectedRole || undefined,
-        rememberMe,
-      });
+      // Try to login first
+      let response;
 
-      if (response.requiresRegistration) {
-        // User doesn't exist, need to select role
-        setRequiresRegistration(true);
-        setStep("role");
-        setIsLoading(false);
-        return;
+      try {
+        response = await authAPI.login({ email, password });
+      } catch (loginError: any) {
+        if (loginError.response?.status === 404) {
+          // User doesn't exist, need to register
+          setRequiresRegistration(true);
+          setStep("role");
+          setIsLoading(false);
+          return;
+        }
+        throw loginError;
       }
 
-      // Success - either login or registration completed
+      // Success - login completed
+      console.log("🔍 Login successful:", {
+        hasUser: !!response.data.user,
+        hasToken: !!response.data.access_token,
+        userEmail: response.data.user?.email,
+        userRole: response.data.user?.role,
+      });
+
       dispatch(
-        setCredentials({
-          user: response.user,
-          accessToken: response.access_token,
+        setAuth({
+          user: response.data.user,
+          accessToken: response.data.access_token,
         })
       );
+
+      // Verify token was stored
+      const storedToken = localStorage.getItem("accessToken");
+      console.log("🔍 Token stored after login:", !!storedToken);
 
       router.push("/app/dashboard");
     } catch (err: unknown) {
@@ -91,12 +95,38 @@ export default function UnifiedAuthPage() {
     setSelectedRole(role);
   };
 
-  const handleRoleSubmit = () => {
+  const handleRoleSubmit = async () => {
     if (!selectedRole) {
       setError("Please select your account type");
       return;
     }
-    handleSubmit();
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Register new user
+      const response = await authAPI.register({
+        email,
+        password,
+        role: selectedRole,
+      });
+
+      // Success - registration completed
+      dispatch(
+        setAuth({
+          user: response.data.user,
+          accessToken: response.data.access_token,
+        })
+      );
+
+      router.push("/app/dashboard");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || "Registration failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleAuth = () => {

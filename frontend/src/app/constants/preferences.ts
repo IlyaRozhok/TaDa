@@ -160,4 +160,97 @@ export const STEP_CONFIGURATIONS = [
   },
 ] as const;
 
-export const TOTAL_STEPS = 11;
+// Property type options for step 3
+export const PROPERTY_TYPE_OPTIONS = [
+  "Flat",
+  "House",
+  "Studio",
+  "Room in shared house",
+] as const;
+
+// Furnishing options
+export const FURNISHING_OPTIONS = [
+  "Furnished",
+  "Unfurnished",
+  "Part Furnished",
+] as const;
+
+// Bedroom options
+export const BEDROOM_OPTIONS = [
+  "Studio",
+  "1 Bedroom",
+  "2 Bedrooms",
+  "3 Bedrooms",
+  "4+ Bedrooms",
+] as const;
+
+// Work & Study options
+export const WORK_STUDY_OPTIONS = [
+  { value: "co-working", label: "Co-working Space" },
+  { value: "high-speed-wifi", label: "High Speed Wi-Fi" },
+  { value: "meeting-rooms", label: "Meeting Rooms" },
+  { value: "business-center", label: "Business Center" },
+] as const;
+
+// Convenience options
+export const CONVENIENCE_FEATURES_OPTIONS = [
+  { value: "parking", label: "Parking Space" },
+  { value: "laundry", label: "Laundry Facilities" },
+  { value: "security", label: "24/7 Security" },
+  { value: "storage", label: "Storage Space" },
+  { value: "concierge", label: "Concierge Service" },
+] as const;
+
+// Pet-friendly options
+export const PET_FRIENDLY_OPTIONS = [
+  { value: "pet-park", label: "Pet Park" },
+  { value: "pet-sitting", label: "Pet Sitting" },
+  { value: "pet-washing", label: "Pet Washing" },
+  { value: "pet-friendly", label: "Pet Friendly" },
+] as const;
+
+// Luxury & Premium options
+export const LUXURY_PREMIUM_OPTIONS = [
+  { value: "concierge", label: "Concierge" },
+  { value: "spa", label: "Luxury Spa" },
+  { value: "private-dining", label: "Private Dining" },
+  { value: "valet", label: "Valet Service" },
+  { value: "wine-cellar", label: "Wine Cellar" },
+] as const;
+
+// Ideal Living Environment options
+export const IDEAL_LIVING_OPTIONS = [
+  "Quiet Professional",
+  "Social and Friendly",
+  "Family Oriented",
+  "Student Lifestyle",
+  "Creative and Artistic",
+  "No Preference",
+] as const;
+
+// Smoking options
+export const SMOKING_OPTIONS = [
+  "No",
+  "Yes",
+  "I don't smoke but I'm okay with it",
+  "I don't smoke and prefer non-smoking environments",
+] as const;
+
+// Hobby options with icons
+export const HOBBY_ICON_OPTIONS = [
+  { value: "reading", label: "Reading", icon: "📚" },
+  { value: "cooking", label: "Cooking", icon: "🍳" },
+  { value: "fitness", label: "Fitness", icon: "💪" },
+  { value: "music", label: "Music", icon: "🎵" },
+  { value: "travel", label: "Travel", icon: "🚗" },
+  { value: "gaming", label: "Gaming", icon: "🎮" },
+  { value: "art", label: "Art", icon: "🖼️" },
+  { value: "sport", label: "Sport", icon: "🏀" },
+  { value: "dancing", label: "Dancing", icon: "💃" },
+  { value: "hiking", label: "Hiking", icon: "🥾" },
+  { value: "yoga", label: "Yoga", icon: "🧘" },
+  { value: "swimming", label: "Swimming", icon: "🏊" },
+] as const;
+
+export const TOTAL_STEPS = 12; // For PreferencesPage (old version)
+export const TOTAL_STEPS_NEW = 16; // For NewPreferencesPage

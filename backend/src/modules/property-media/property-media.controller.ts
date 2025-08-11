@@ -158,4 +158,3 @@ export class PropertyMediaController {
     return await this.propertyMediaService.setFeaturedMedia(mediaId, user.id);
   }
 }
- 

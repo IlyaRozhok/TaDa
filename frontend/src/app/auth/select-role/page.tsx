@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setCredentials } from "../../store/slices/authSlice";
+import { setAuth } from "../../store/slices/authSlice";
 import GlobalLoader from "../../components/GlobalLoader";
 
 function SelectRoleContent() {
@@ -119,7 +119,7 @@ function SelectRoleContent() {
 
         // Update Redux store
         dispatch(
-          setCredentials({
+          setAuth({
             user: result.user,
             accessToken: result.tokens.access_token,
           })

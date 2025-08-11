@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   selectUser,
   selectIsAuthenticated,
-  setCredentials,
+  setAuth,
 } from "../../../store/slices/authSlice";
 import { authAPI } from "../../../lib/api";
 import Link from "next/link";
@@ -48,7 +48,7 @@ export default function SelectRolePage() {
 
       // Update user data in Redux store
       dispatch(
-        setCredentials({
+        setAuth({
           user: response.user,
           accessToken: response.access_token || localStorage.getItem("token"),
         })

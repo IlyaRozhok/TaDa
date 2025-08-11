@@ -1,5 +1,5 @@
-import PreferencesPage from "@/app/components/preferences/PreferencesPage";
+import NewPreferencesPage from "@/app/components/preferences/NewPreferencesPage";
 
 export default function PreferencesPageRoute() {
-  return <PreferencesPage />;
+  return <NewPreferencesPage />;
 }

@@ -3,10 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setCredentials,
-  selectIsAuthenticated,
-} from "../store/slices/authSlice";
+import { setAuth, selectIsAuthenticated } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
 import {
@@ -147,7 +144,7 @@ export default function AuthModal({
 
       // Success - either login or registration completed
       dispatch(
-        setCredentials({
+        setAuth({
           user: response.user,
           accessToken: response.access_token,
         })
@@ -224,7 +221,7 @@ export default function AuthModal({
 
         // Update user in Redux store
         dispatch(
-          setCredentials({
+          setAuth({
             user: response.user,
             accessToken: response.access_token,
           })

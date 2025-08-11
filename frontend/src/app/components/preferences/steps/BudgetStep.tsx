@@ -35,7 +35,6 @@ export const BudgetStep: React.FC<PreferencesStepProps> = ({
             type="number"
             min="500"
             max="10000"
-            placeholder="1000"
             value={formData.min_price || ""}
             onChange={(e) =>
               onUpdate("min_price", parseInt(e.target.value) || undefined)
@@ -49,7 +48,6 @@ export const BudgetStep: React.FC<PreferencesStepProps> = ({
             type="number"
             min="500"
             max="20000"
-            placeholder="5000"
             value={formData.max_price || ""}
             onChange={(e) =>
               onUpdate("max_price", parseInt(e.target.value) || undefined)
@@ -101,6 +99,7 @@ export const BudgetStep: React.FC<PreferencesStepProps> = ({
           onChange={(e) => onUpdate("furnishing", e.target.value)}
           error={errors.furnishing}
         >
+          <option value="" disabled hidden></option>
           <option value="furnished">Furnished</option>
           <option value="unfurnished">Unfurnished</option>
           <option value="part-furnished">Part Furnished</option>
@@ -114,6 +113,7 @@ export const BudgetStep: React.FC<PreferencesStepProps> = ({
           onChange={(e) => onUpdate("property_type", e.target.value)}
           error={errors.property_type}
         >
+          <option value="" disabled hidden></option>
           <option value="any">Any</option>
           <option value="flats">Flats</option>
           <option value="houses">Houses</option>

@@ -1,0 +1,172 @@
+.glassCard {
+  width: 100%;
+  min-height: 400px;
+  background: rgba(0, 0, 0, 0.5); // #00000080
+  backdrop-filter: blur(14.47px);
+  -webkit-backdrop-filter: blur(14.47px);
+  border-radius: 43.94px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  padding: 32px;
+  color: white;
+}
+
+// Calendar header styling
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+
+  h3 {
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    line-height: 1;
+  }
+
+  p {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+    margin-top: 4px;
+  }
+}
+
+// Navigation buttons (arrows)
+.navButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Weekday labels
+.weekDayLabel {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: 8px 0;
+}
+
+// Day cells
+.dayCell {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+
+  &:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &.today {
+    font-weight: 600;
+    color: white;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: white;
+    }
+  }
+
+  &.selected {
+    background: rgba(59, 130, 246, 0.8);
+    color: white;
+    font-weight: 500;
+
+    &:hover {
+      background: rgba(59, 130, 246, 0.9);
+    }
+  }
+
+  &.rangeStart {
+    background: rgba(59, 130, 246, 0.8);
+    color: white;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  &.rangeEnd {
+    background: rgba(59, 130, 246, 0.8);
+    color: white;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  &.inRange {
+    background: rgba(59, 130, 246, 0.3);
+    color: white;
+    border-radius: 0;
+
+    &:hover {
+      background: rgba(59, 130, 246, 0.4);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+}
+
+// Hide all bottom actions
+.bottomActions,
+.quickActions,
+.navigationButtons,
+.actionButton,
+.stepIndicator {
+  display: none !important;
+}
+
+// Remove unused effects
+.glassShine,
+.frostOverlay {
+  display: none;
+}

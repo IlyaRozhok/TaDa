@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import { User } from "../src/entities/user.entity";
+import { User, UserRole, UserStatus } from "../src/entities/user.entity";
 import { TenantProfile } from "../src/entities/tenant-profile.entity";
 import { OperatorProfile } from "../src/entities/operator-profile.entity";
 import dataSource from "../src/database/data-source";
@@ -31,8 +31,8 @@ async function updateUserRoles() {
     const fullName = user.full_name; // This uses the getter method
 
     // Update user role to admin
-    user.role = "admin";
-    user.status = "active";
+    user.role = UserRole.Admin;
+    user.status = UserStatus.Active;
     await userRepository.save(user);
 
     console.log(`User role updated successfully:`, user.role);

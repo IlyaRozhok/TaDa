@@ -169,13 +169,14 @@ export class CreatePreferencesDto {
   let_duration?: string;
 
   @ApiPropertyOptional({
-    description: "Preferred property type",
-    example: "flats",
-    enum: ["any", "flats", "houses", "studio", "others"],
+    description: "Preferred property types",
+    example: ["flats", "houses"],
+    type: [String],
   })
   @IsOptional()
-  @IsIn(["any", "flats", "houses", "studio", "others", "", null])
-  property_type?: string;
+  @IsArray()
+  @IsString({ each: true })
+  property_type?: string[];
 
   @ApiPropertyOptional({
     description: "Building style preferences",

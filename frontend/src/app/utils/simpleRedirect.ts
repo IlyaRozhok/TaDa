@@ -1,6 +1,8 @@
 // Максимально простая логика редиректа после логина
 // Никакого оверинжиниринга, только необходимый минимум
 
+import { isNavigationBlocked } from "./navigationGuard";
+
 // Простая функция для определения роли пользователя
 export function getUserRole(user: any): string {
   if (!user) return "unknown";
@@ -69,6 +71,12 @@ export function getRedirectPath(user: any): string {
 }
 
 export function redirectAfterLogin(user: any, router: any) {
+  // Check if navigation is blocked
+  if (isNavigationBlocked()) {
+    console.log(`⛔ Redirect blocked for ${user?.email}`);
+    return;
+  }
+
   const path = getRedirectPath(user);
   console.log(`🔄 Simple redirect: ${user?.email} (${user?.role}) → ${path}`);
   router.replace(path);

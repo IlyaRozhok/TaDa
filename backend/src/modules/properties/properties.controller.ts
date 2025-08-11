@@ -205,6 +205,7 @@ export class PropertiesController {
   @Roles("admin", "operator", "tenant")
   @Get()
   async findAll(
+    @Request() req,
     @Query("page") page: number = 1,
     @Query("limit") limit: number = 10,
     @Query("search") search?: string,
@@ -220,7 +221,8 @@ export class PropertiesController {
       limitNum,
       search,
       sortBy,
-      order
+      order,
+      req.user?.id
     );
 
     // Format response to match frontend expectations
@@ -239,8 +241,8 @@ export class PropertiesController {
     type: Property,
   })
   @Get(":id")
-  async findOne(@Param("id") id: string) {
-    return await this.propertiesService.findOne(id);
+  async findOne(@Param("id") id: string, @Request() req) {
+    return await this.propertiesService.findOne(id, req.user?.id);
   }
 
   @ApiOperation({ summary: "Delete property (Operators and Admins)" })

@@ -278,4 +278,3 @@ export const useFilteredProperties = (
     applyFilters,
   };
 };
- 

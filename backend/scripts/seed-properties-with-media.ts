@@ -1,7 +1,7 @@
 import AppDataSource from "../src/database/data-source";
 import { Property } from "../src/entities/property.entity";
 import { PropertyMedia } from "../src/entities/property-media.entity";
-import { User } from "../src/entities/user.entity";
+import { User, UserRole, UserStatus } from "../src/entities/user.entity";
 import { OperatorProfile } from "../src/entities/operator-profile.entity";
 import { S3Service } from "../src/common/services/s3.service";
 import { ConfigService } from "@nestjs/config";
@@ -336,7 +336,7 @@ async function seedPropertiesWithMedia() {
 
     // Find or create an operator user
     let operator = await userRepository.findOne({
-      where: { role: "operator" },
+      where: { role: UserRole.Operator },
       relations: ["operatorProfile"],
     });
 
@@ -344,8 +344,8 @@ async function seedPropertiesWithMedia() {
       // Create a test operator if none exists
       operator = userRepository.create({
         email: "operator@tada.com",
-        role: "operator",
-        status: "active",
+        role: UserRole.Operator,
+        status: UserStatus.Active,
         password: "$2b$10$test.hash.here", // This is just for testing
       });
       await userRepository.save(operator);

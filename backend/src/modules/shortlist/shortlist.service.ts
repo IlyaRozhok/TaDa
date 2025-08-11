@@ -8,7 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In } from "typeorm";
 import { Property } from "../../entities/property.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
-import { User } from "../../entities/user.entity";
+import { User, UserRole } from "../../entities/user.entity";
 import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
@@ -73,7 +73,7 @@ export class ShortlistService {
       throw new NotFoundException("User not found");
     }
 
-    if (user.role !== "tenant") {
+    if (user.role !== UserRole.Tenant) {
       throw new BadRequestException("Only tenants can have shortlists");
     }
 

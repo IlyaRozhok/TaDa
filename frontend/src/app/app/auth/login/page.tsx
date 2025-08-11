@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import AuthPage from "../page";
 
-export default function LoginRedirect() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/app/auth");
-  }, [router]);
-
-  return null;
+// Simply render the auth page component directly
+// No redirect needed - this prevents redirect chains
+export default function LoginPage() {
+  return <AuthPage />;
 }

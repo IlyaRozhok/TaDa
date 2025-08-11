@@ -10,7 +10,7 @@ import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
-import { User } from "../../entities/user.entity";
+import { User, UserRole, UserStatus } from "../../entities/user.entity";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
@@ -68,7 +68,7 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    const { email, password, role = "tenant" } = registerDto;
+    const { email, password, role = UserRole.Tenant } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
@@ -86,15 +86,15 @@ export class AuthService {
     const user = this.userRepository.create({
       email: email.toLowerCase(),
       password: hashedPassword,
-      role,
-      status: "active",
+      role: role as UserRole,
+      status: UserStatus.Active,
     });
 
     try {
       const savedUser = await this.userRepository.save(user);
 
       // Create profile based on role
-      if (role === "tenant") {
+      if (role === UserRole.Tenant) {
         const tenantProfile = this.tenantProfileRepository.create({
           user: savedUser,
         });
@@ -105,7 +105,7 @@ export class AuthService {
           user: savedUser,
         });
         await this.preferencesRepository.save(preferences);
-      } else if (role === "operator") {
+      } else if (role === UserRole.Operator) {
         const operatorProfile = this.operatorProfileRepository.create({
           user: savedUser,
         });
@@ -386,7 +386,7 @@ export class AuthService {
    */
   async createGoogleUserFromTempToken(
     tempToken: string,
-    role: "tenant" | "operator"
+    role: UserRole.Tenant | UserRole.Operator
   ) {
     try {
       console.log(
@@ -425,8 +425,8 @@ export class AuthService {
         google_id,
         full_name: full_name || null,
         avatar_url: avatar_url || null,
-        role,
-        status: "active",
+        role: role as UserRole,
+        status: UserStatus.Active,
         // Generate random password for OAuth users
         password: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10),
       });
@@ -435,7 +435,7 @@ export class AuthService {
       console.log(`✅ Created user: ${savedUser.email} with role: ${role}`);
 
       // Create role-specific profiles
-      if (role === "tenant") {
+      if (role === UserRole.Tenant) {
         const tenantProfile = this.tenantProfileRepository.create({
           user: savedUser,
         });
@@ -449,7 +449,7 @@ export class AuthService {
         console.log(
           `✅ Created tenant profile and preferences for: ${savedUser.email}`
         );
-      } else if (role === "operator") {
+      } else if (role === UserRole.Operator) {
         const operatorProfile = this.operatorProfileRepository.create({
           user: savedUser,
         });
@@ -502,7 +502,7 @@ export class AuthService {
     }
   }
 
-  async setUserRole(userId: string, role: "tenant" | "operator") {
+  async setUserRole(userId: string, role: UserRole.Tenant | UserRole.Operator) {
     try {
       console.log(`🔄 Setting role ${role} for user ${userId}`);
 
@@ -520,11 +520,11 @@ export class AuthService {
       }
 
       // Set the role
-      user.role = role;
+      user.role = role as UserRole;
       await this.userRepository.save(user);
 
       // Create appropriate profile
-      if (role === "tenant") {
+      if (role === UserRole.Tenant) {
         const tenantProfile = this.tenantProfileRepository.create({
           user: user,
           full_name: user.full_name || null,
@@ -536,7 +536,7 @@ export class AuthService {
           user: user,
         });
         await this.preferencesRepository.save(preferences);
-      } else if (role === "operator") {
+      } else if (role === UserRole.Operator) {
         const operatorProfile = this.operatorProfileRepository.create({
           user: user,
           full_name: user.full_name || null,
@@ -598,7 +598,7 @@ export class AuthService {
    */
   async createGoogleUserWithRole(
     tempToken: string,
-    role: "tenant" | "operator"
+    role: UserRole.Tenant | UserRole.Operator
   ) {
     console.log(`🔍 Creating Google user from temp token with role: ${role}`);
 

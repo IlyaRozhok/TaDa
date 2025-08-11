@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { useAppSelector } from "@/app/store/hooks";
 import { preferencesAPI } from "@/app/lib/api";
 import {
@@ -8,13 +9,19 @@ import {
   FormFieldErrors,
   PreferencesState,
 } from "@/app/types/preferences";
-import { TOTAL_STEPS } from "@/app/constants/preferences";
+import { TOTAL_STEPS_NEW } from "@/app/constants/preferences";
+import { waitForSessionManager } from "@/app/components/providers/SessionManager";
+import { blockNavigation } from "@/app/utils/navigationGuard";
+
+const TOTAL_STEPS = TOTAL_STEPS_NEW; // Use the new version with 16 steps
 
 export const usePreferences = () => {
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const router = useRouter();
   const scrollPositionRef = useRef<number>(0);
+  const hasCheckedAuthRef = useRef<boolean>(false);
+  const [sessionInitialized, setSessionInitialized] = useState(false);
 
   const [state, setState] = useState<PreferencesState>({
     loading: false,
@@ -30,6 +37,7 @@ export const usePreferences = () => {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<PreferencesFormData>({
     defaultValues: {
@@ -48,7 +56,7 @@ export const usePreferences = () => {
       max_bathrooms: 2,
       furnishing: "",
       let_duration: "",
-      property_type: "",
+      property_type: [],
       building_style: [],
       designer_furniture: false,
       house_shares: "show-all",
@@ -86,34 +94,140 @@ export const usePreferences = () => {
     }
   });
 
-  // Authentication check
+  // Wait for session initialization
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    const initSession = async () => {
+      try {
+        await waitForSessionManager();
+        setSessionInitialized(true);
+      } catch (error) {
+        console.error("Failed to wait for session manager:", error);
+        setSessionInitialized(true); // Still mark as initialized to prevent blocking
+      }
+    };
+    initSession();
+  }, []);
+
+  // Authentication check and load preferences
+  useEffect(() => {
+    // Wait for session to be initialized first
+    if (!sessionInitialized) {
+      console.log("⏳ Waiting for session initialization in usePreferences...");
+      return;
+    }
+
+    // Skip if we've already checked auth to prevent unwanted redirects
+    if (hasCheckedAuthRef.current && isAuthenticated && user) {
+      return;
+    }
+
+    // Only redirect if we've checked authentication and user is definitely not authenticated
+    // Important: check that session is initialized before checking authentication
+    if (sessionInitialized && isAuthenticated === false) {
+      console.log(
+        "🔒 User not authenticated, redirecting to login from usePreferences"
+      );
       router.push("/app/auth/login");
       return;
     }
 
+    // Only proceed if we have a user
+    if (!user) {
+      console.log("⏳ Waiting for user data in usePreferences...");
+      return;
+    }
+
+    // Check if operator role
     if (user.roles?.includes("operator")) {
+      console.log("👷 User is operator, redirecting from usePreferences");
       router.push("/app/dashboard/operator");
       return;
     }
 
+    // Mark as checked to prevent re-runs
+    hasCheckedAuthRef.current = true;
+
+    // Load existing preferences for tenant
+    console.log("📄 Loading preferences for tenant:", user.email);
     loadExistingPreferences();
-  }, [isAuthenticated, user, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionInitialized, isAuthenticated, user?.id]); // Include sessionInitialized in dependencies
 
   const loadExistingPreferences = async () => {
     try {
       const response = await preferencesAPI.get();
-      setState((prev) => ({ ...prev, existingPreferences: response.data }));
 
-      // Populate form with existing data
-      Object.keys(response.data).forEach((key) => {
-        if (response.data[key] !== null && response.data[key] !== undefined) {
-          setValue(key as keyof PreferencesFormData, response.data[key]);
-        }
-      });
-    } catch (error) {
-      console.log("No existing preferences found, using defaults");
+      if (response.data) {
+        setState((prev) => ({ ...prev, existingPreferences: response.data }));
+
+        // Populate form with existing data
+        Object.keys(response.data).forEach((key) => {
+          const value = response.data[key];
+
+          // Skip null/undefined values and special fields
+          if (
+            value === null ||
+            value === undefined ||
+            key === "id" ||
+            key === "user_id" ||
+            key === "user" ||
+            key === "created_at" ||
+            key === "updated_at"
+          ) {
+            return;
+          }
+
+          // Handle date fields
+          if (key === "move_in_date" && value) {
+            // Convert date to YYYY-MM-DD format for input[type=date]
+            const dateValue = value.split("T")[0];
+
+            setValue(key as keyof PreferencesFormData, dateValue);
+            return;
+          }
+
+          // Handle array fields
+          const arrayFields = [
+            "property_type",
+            "building_style",
+            "lifestyle_features",
+            "social_features",
+            "work_features",
+            "convenience_features",
+            "pet_friendly_features",
+            "luxury_features",
+            "hobbies",
+          ];
+
+          if (arrayFields.includes(key)) {
+            if (typeof value === "string") {
+              // Handle old string format or comma-separated values
+              const arrayValue = value.includes(",")
+                ? value.split(",").map((v) => v.trim())
+                : [value];
+
+              setValue(key as keyof PreferencesFormData, arrayValue);
+            } else if (Array.isArray(value)) {
+              setValue(key as keyof PreferencesFormData, value);
+            }
+            return;
+          }
+
+          // Handle boolean fields
+          if (key === "designer_furniture" || key === "smoker") {
+            const boolValue = value === true || value === "true" || value === 1;
+
+            setValue(key as keyof PreferencesFormData, boolValue);
+            return;
+          }
+
+          // Handle all other fields
+
+          setValue(key as keyof PreferencesFormData, value);
+        });
+      }
+    } catch (error: any) {
+      // Check if this is a 404 (no preferences yet) or another error
       setState((prev) => ({ ...prev, existingPreferences: null }));
     }
   };
@@ -160,22 +274,10 @@ export const usePreferences = () => {
     }
   }, [state.step]);
 
-  const onSubmit = async (data: PreferencesFormData) => {
-    console.log("🔍 Form submission started", {
-      currentStep: state.step,
-      totalSteps: TOTAL_STEPS,
-      isLastStep: state.step === TOTAL_STEPS,
-      formData: data,
-    });
-
-    if (state.step !== TOTAL_STEPS) {
-      console.log("❌ Form submission prevented - not on final step", {
-        currentStep: state.step,
-        totalSteps: TOTAL_STEPS,
-      });
-      return;
-    }
-
+  const onSubmit = async (
+    data: PreferencesFormData,
+    forceSubmit: boolean = false
+  ) => {
     setState((prev) => ({
       ...prev,
       loading: true,
@@ -184,39 +286,50 @@ export const usePreferences = () => {
     }));
 
     try {
-      console.log("📤 Processing form data for submission...");
-
-      // Convert "no-preference" values to null
+      // Convert "no-preference" values to null and handle empty arrays
       const processedData = Object.keys(data).reduce((acc, key) => {
         const value = data[key as keyof PreferencesFormData];
         if (value === "no-preference" || value === "") {
-          acc[key as keyof PreferencesFormData] = null as any;
+          (acc as any)[key] = null;
+        } else if (Array.isArray(value) && value.length === 0) {
+          // Keep empty arrays as they are (user explicitly cleared selection)
+          (acc as any)[key] = [];
         } else {
-          acc[key as keyof PreferencesFormData] = value;
+          (acc as any)[key] = value;
         }
         return acc;
       }, {} as PreferencesFormData);
 
-      console.log("📤 Sending data to API:", processedData);
-
-      const response = await preferencesAPI.create(processedData);
-
-      console.log("📥 API response:", response);
+      // Use update if preferences exist, create if not
+      const response = state.existingPreferences
+        ? await preferencesAPI.update(processedData)
+        : await preferencesAPI.create(processedData);
 
       if (response.status >= 200 && response.status < 300) {
-        console.log("✅ Preferences saved successfully");
-        setState((prev) => ({ ...prev, success: true }));
+        // Block navigation for 3 seconds after successful save
+        blockNavigation(3000);
+
+        setState((prev) => ({
+          ...prev,
+          existingPreferences: response.data,
+        }));
+
+        // Show success toast
+        toast.success("Preferences saved successfully!");
+
+        // Reset success state after a short delay to avoid UI issues
         setTimeout(() => {
-          router.push("/app/dashboard/tenant");
-        }, 2000);
+          setState((prev) => ({ ...prev, success: false }));
+        }, 100);
+
+        // Don't redirect, just return the response
+        return response;
       } else {
-        console.log("❌ API response error:", response.data);
         handleSubmitError(response.data);
       }
     } catch (error: any) {
-      console.error("❌ Form submission error:", error);
       const errorData = error?.response?.data || error;
-      console.error("❌ Error data:", errorData);
+
       handleSubmitError(errorData);
     } finally {
       setState((prev) => ({ ...prev, loading: false }));
@@ -233,11 +346,25 @@ export const usePreferences = () => {
       });
       setState((prev) => ({ ...prev, backendErrors: fieldErrors }));
     } else {
+      const errorMessage =
+        errorData?.message || "Failed to save preferences. Please try again.";
       setState((prev) => ({
         ...prev,
-        generalError:
-          errorData?.message || "Failed to save preferences. Please try again.",
+        generalError: errorMessage,
       }));
+      toast.error(errorMessage);
+    }
+  };
+
+  // Save preferences (can be called at any step)
+  const savePreferences = async () => {
+    const currentData = getValues();
+    try {
+      const result = await onSubmit(currentData, true); // Force submit even if not on last step
+      return result;
+    } catch (error) {
+      console.error("❌ Failed to save preferences:", error);
+      throw error;
     }
   };
 
@@ -252,6 +379,7 @@ export const usePreferences = () => {
     watch,
     setValue,
     errors,
+    getValues,
 
     // Actions
     updateField,
@@ -259,6 +387,7 @@ export const usePreferences = () => {
     nextStep,
     prevStep,
     onSubmit,
+    savePreferences,
 
     // Computed
     isLastStep: state.step === TOTAL_STEPS,

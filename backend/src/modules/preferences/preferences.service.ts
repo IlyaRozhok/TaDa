@@ -7,7 +7,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { Preferences } from "../../entities/preferences.entity";
-import { User } from "../../entities/user.entity";
+import { User, UserRole } from "../../entities/user.entity";
 import { CreatePreferencesDto } from "./dto/create-preferences.dto";
 import { UpdatePreferencesDto } from "./dto/update-preferences.dto";
 
@@ -31,7 +31,7 @@ export class PreferencesService {
     }
 
     if (
-      user.role === "operator" ||
+      user.role === UserRole.Operator ||
       (user.roles && user.roles.includes("operator"))
     ) {
       throw new ForbiddenException("Only tenants can set preferences");

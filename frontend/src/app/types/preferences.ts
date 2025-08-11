@@ -14,7 +14,7 @@ export interface PreferencesFormData {
   max_bathrooms?: number;
   furnishing?: string;
   let_duration?: string;
-  property_type?: string;
+  property_type?: string[];
   building_style?: string[];
   designer_furniture?: boolean;
   house_shares?: string;

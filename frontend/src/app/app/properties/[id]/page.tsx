@@ -48,12 +48,20 @@ export default function PropertyDetailPage() {
         setError(null);
 
         console.log("Fetching property with ID:", id);
-        const propertyData = await propertiesAPI.getById(id as string);
+        const response = await propertiesAPI.getById(id as string);
+        console.log("Property API response:", response);
+
+        // Handle both direct data and response.data formats
+        const propertyData = response.data || response;
+        console.log("Property data:", propertyData);
+
         setProperty(propertyData);
 
         // Check if property is shortlisted
         try {
-          const shortlistStatus = await shortlistAPI.checkStatus(id as string);
+          const response = await shortlistAPI.checkStatus(id as string);
+          const shortlistStatus = response.data?.isShortlisted || false;
+          console.log("Shortlist status:", shortlistStatus);
           setIsShortlisted(shortlistStatus);
         } catch (statusError) {
           // If status check fails (e.g., user not logged in), default to false
@@ -373,7 +381,7 @@ export default function PropertyDetailPage() {
                     ) : (
                       <>
                         <h1 className="text-3xl font-bold text-gray-900">
-                          {property?.title}
+                          {property?.title || "Property Title"}
                         </h1>
                         {property?.is_btr && (
                           <span className="bg-green-500 text-white px-2 py-1 rounded text-sm font-semibold">
@@ -389,7 +397,9 @@ export default function PropertyDetailPage() {
                     {loading ? (
                       <FieldSkeleton className="h-5 w-2/3" />
                     ) : (
-                      <span className="text-lg">{property?.address}</span>
+                      <span className="text-lg">
+                        {property?.address || "Address not specified"}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -515,7 +525,7 @@ export default function PropertyDetailPage() {
                     <FieldSkeleton className="h-5 w-20" />
                   ) : (
                     <span className="text-gray-900 capitalize">
-                      {property?.property_type}
+                      {property?.property_type || "Not specified"}
                     </span>
                   )}
                 </div>
@@ -525,7 +535,7 @@ export default function PropertyDetailPage() {
                     <FieldSkeleton className="h-5 w-24" />
                   ) : (
                     <span className="text-gray-900 capitalize">
-                      {property?.furnishing}
+                      {property?.furnishing || "Not specified"}
                     </span>
                   )}
                 </div>

@@ -21,7 +21,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { AuthGuard } from "@nestjs/passport";
 import { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { User } from "../../entities/user.entity";
+import { User, UserRole } from "../../entities/user.entity";
 
 @Controller("auth")
 export class AuthController {
@@ -63,11 +63,16 @@ export class AuthController {
         };
       }
 
+      // Convert string role to enum if needed
+      const roleEnum = Object.values(UserRole).includes(role as UserRole)
+        ? (role as UserRole)
+        : UserRole.Tenant;
+
       // Proceed with registration
       return this.authService.register({
         email,
         password,
-        role,
+        role: roleEnum,
       });
     }
   }
@@ -239,7 +244,10 @@ export class AuthController {
         );
       }
 
-      const updatedUser = await this.authService.setUserRole(user.userId, role);
+      const updatedUser = await this.authService.setUserRole(
+        user.userId,
+        role === "tenant" ? UserRole.Tenant : UserRole.Operator
+      );
 
       return {
         message: "Role set successfully",
@@ -297,7 +305,7 @@ export class AuthController {
       // Create user from temp token with role
       const user = await this.authService.createGoogleUserWithRole(
         body.tempToken,
-        body.role
+        body.role === "tenant" ? UserRole.Tenant : UserRole.Operator
       );
 
       // Generate tokens

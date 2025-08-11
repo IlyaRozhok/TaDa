@@ -203,12 +203,16 @@ export class MatchingService {
     }
 
     // Property type match
-    if (preferences.property_type && preferences.property_type !== "any") {
-      scores.property_type =
-        property.property_type.toLowerCase() ===
-        preferences.property_type.toLowerCase()
-          ? 100
-          : 0;
+    if (
+      preferences.property_type &&
+      preferences.property_type.length > 0 &&
+      !preferences.property_type.includes("any")
+    ) {
+      scores.property_type = preferences.property_type
+        .map((type) => type.toLowerCase())
+        .includes(property.property_type.toLowerCase())
+        ? 100
+        : 0;
     }
 
     // Furnishing match
@@ -398,9 +402,11 @@ export class MatchingService {
     // Property type match
     if (
       preferences.property_type &&
-      preferences.property_type !== "any" &&
-      property.property_type.toLowerCase() ===
-        preferences.property_type.toLowerCase()
+      preferences.property_type.length > 0 &&
+      !preferences.property_type.includes("any") &&
+      preferences.property_type
+        .map((type) => type.toLowerCase())
+        .includes(property.property_type.toLowerCase())
     ) {
       reasons.push(
         `Property type "${property.property_type}" matches preference`
@@ -521,10 +527,15 @@ export class MatchingService {
     }
 
     // Check property type
-    if (preferences.property_type && preferences.property_type !== "any") {
+    if (
+      preferences.property_type &&
+      preferences.property_type.length > 0 &&
+      !preferences.property_type.includes("any")
+    ) {
       if (
-        property.property_type.toLowerCase() !==
-        preferences.property_type.toLowerCase()
+        !preferences.property_type
+          .map((type) => type.toLowerCase())
+          .includes(property.property_type.toLowerCase())
       ) {
         return false;
       }

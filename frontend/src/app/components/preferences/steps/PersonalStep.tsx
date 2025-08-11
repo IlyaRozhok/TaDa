@@ -77,6 +77,7 @@ export const PersonalStep: React.FC<PreferencesStepProps> = ({
             }
             error={errors.ideal_living_environment}
           >
+            <option value="" disabled hidden></option>
             <option value="quiet-professional">Quiet Professional</option>
             <option value="social-friendly">Social & Friendly</option>
             <option value="family-oriented">Family Oriented</option>
@@ -92,6 +93,7 @@ export const PersonalStep: React.FC<PreferencesStepProps> = ({
             onChange={(e) => onUpdate("pets", e.target.value)}
             error={errors.pets}
           >
+            <option value="" disabled hidden></option>
             <option value="none">No Pets</option>
             <option value="dog">Dog</option>
             <option value="cat">Cat</option>
@@ -131,7 +133,6 @@ export const PersonalStep: React.FC<PreferencesStepProps> = ({
             value={formData.additional_info || ""}
             onChange={(e) => onUpdate("additional_info", e.target.value)}
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors resize-none text-black placeholder-gray-500 bg-white"
-            placeholder="e.g., I'm a quiet professional who enjoys cooking and reading. I keep a clean living space and am always respectful of neighbors. I'm looking for a peaceful home environment where I can relax after work..."
           />
           {errors.additional_info && (
             <p className="text-red-600 text-sm mt-1">
