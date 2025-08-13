@@ -23,13 +23,30 @@ export const usePreferences = () => {
   const hasCheckedAuthRef = useRef<boolean>(false);
   const [sessionInitialized, setSessionInitialized] = useState(false);
 
-  const [state, setState] = useState<PreferencesState>({
-    loading: false,
-    step: 1,
-    existingPreferences: null,
-    success: false,
-    backendErrors: {},
-    generalError: "",
+  const [state, setState] = useState<PreferencesState>(() => {
+    // Initialize step from localStorage if available
+    const savedStep =
+      typeof window !== "undefined"
+        ? localStorage.getItem("preferencesStep")
+        : null;
+    let initialStep = 1;
+
+    if (savedStep) {
+      const parsedStep = parseInt(savedStep, 10);
+      // Validate step is within bounds
+      if (parsedStep >= 1 && parsedStep <= TOTAL_STEPS) {
+        initialStep = parsedStep;
+      }
+    }
+
+    return {
+      loading: false,
+      step: initialStep,
+      existingPreferences: null,
+      success: false,
+      backendErrors: {},
+      generalError: "",
+    };
   });
 
   const {
@@ -42,8 +59,8 @@ export const usePreferences = () => {
   } = useForm<PreferencesFormData>({
     defaultValues: {
       primary_postcode: "",
-      secondary_location: "",
-      commute_location: "",
+      secondary_location: "no-preference",
+      commute_location: "no-preference",
       commute_time_walk: 15,
       commute_time_cycle: 20,
       commute_time_tube: 30,
@@ -54,7 +71,7 @@ export const usePreferences = () => {
       max_bedrooms: 3,
       min_bathrooms: 1,
       max_bathrooms: 2,
-      furnishing: "",
+      furnishing: "no-preference",
       let_duration: "",
       property_type: [],
       building_style: [],
@@ -68,9 +85,9 @@ export const usePreferences = () => {
       pet_friendly_features: [],
       luxury_features: [],
       hobbies: [],
-      ideal_living_environment: "",
+      ideal_living_environment: [],
       pets: "",
-      smoker: false,
+      smoker: "no-preference",
       additional_info: "",
     },
   });
@@ -93,6 +110,13 @@ export const usePreferences = () => {
       window.scrollTo(0, scrollPositionRef.current);
     }
   });
+
+  // Save current step to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("preferencesStep", state.step.toString());
+    }
+  }, [state.step]);
 
   // Wait for session initialization
   useEffect(() => {
@@ -179,10 +203,25 @@ export const usePreferences = () => {
 
           // Handle date fields
           if (key === "move_in_date" && value) {
-            // Convert date to YYYY-MM-DD format for input[type=date]
+            // Convert date to YYYY-MM-DD format for DateRangePicker
+            const dateValue = value.split("T")[0];
+            setValue(key as keyof PreferencesFormData, dateValue);
+            return;
+          }
+
+          if (key === "move_out_date" && value) {
+            // Convert date to YYYY-MM-DD format for DateRangePicker
             const dateValue = value.split("T")[0];
 
-            setValue(key as keyof PreferencesFormData, dateValue);
+            // Only set move_out_date if it's different from move_in_date
+            const moveInDate = response.data.move_in_date;
+            if (moveInDate && moveInDate.split("T")[0] === dateValue) {
+              // Same date as move_in_date, don't set move_out_date (single date selection)
+              setValue("move_out_date", undefined);
+            } else {
+              // Different date, set as range
+              setValue(key as keyof PreferencesFormData, dateValue);
+            }
             return;
           }
 
@@ -214,7 +253,7 @@ export const usePreferences = () => {
           }
 
           // Handle boolean fields
-          if (key === "designer_furniture" || key === "smoker") {
+          if (key === "designer_furniture") {
             const boolValue = value === true || value === "true" || value === 1;
 
             setValue(key as keyof PreferencesFormData, boolValue);
@@ -274,6 +313,14 @@ export const usePreferences = () => {
     }
   }, [state.step]);
 
+  const resetToFirstStep = useCallback(() => {
+    setState((prev) => ({ ...prev, step: 1 }));
+    // Clear saved step when resetting
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("preferencesStep");
+    }
+  }, []);
+
   const onSubmit = async (
     data: PreferencesFormData,
     forceSubmit: boolean = false
@@ -287,9 +334,19 @@ export const usePreferences = () => {
 
     try {
       // Convert "no-preference" values to null and handle empty arrays
+      // Exception: keep "no-preference" for furnishing field
       const processedData = Object.keys(data).reduce((acc, key) => {
         const value = data[key as keyof PreferencesFormData];
-        if (value === "no-preference" || value === "") {
+        if (value === "no-preference") {
+          // Keep "no-preference" for furnishing and secondary_location, convert to null for other fields
+          (acc as any)[key] =
+            key === "furnishing" ||
+            key === "secondary_location" ||
+            key === "commute_location" ||
+            key === "smoker"
+              ? "no-preference"
+              : null;
+        } else if (value === "") {
           (acc as any)[key] = null;
         } else if (Array.isArray(value) && value.length === 0) {
           // Keep empty arrays as they are (user explicitly cleared selection)
@@ -300,9 +357,40 @@ export const usePreferences = () => {
         return acc;
       }, {} as PreferencesFormData);
 
+      // For updates, only send changed data
+      let dataToSend = processedData;
+      if (state.existingPreferences) {
+        const changedData: Partial<PreferencesFormData> = {};
+
+        Object.keys(processedData).forEach((key) => {
+          const currentValue = processedData[key as keyof PreferencesFormData];
+          const existingValue = (state.existingPreferences as any)?.[key];
+
+          // Compare values, handling arrays and dates specially
+          const hasChanged =
+            Array.isArray(currentValue) && Array.isArray(existingValue)
+              ? JSON.stringify(currentValue.sort()) !==
+                JSON.stringify(existingValue.sort())
+              : currentValue !== existingValue;
+
+          if (hasChanged) {
+            (changedData as any)[key] = currentValue;
+          }
+        });
+
+        // Special handling for date fields: if any date changed, include both dates
+        if (changedData.move_in_date || changedData.move_out_date) {
+          changedData.move_in_date = processedData.move_in_date;
+          changedData.move_out_date = processedData.move_out_date;
+        }
+
+        console.log("🔄 Changed data to send:", changedData);
+        dataToSend = changedData as PreferencesFormData;
+      }
+
       // Use update if preferences exist, create if not
       const response = state.existingPreferences
-        ? await preferencesAPI.update(processedData)
+        ? await preferencesAPI.update(dataToSend)
         : await preferencesAPI.create(processedData);
 
       if (response.status >= 200 && response.status < 300) {
@@ -316,6 +404,11 @@ export const usePreferences = () => {
 
         // Show success toast
         toast.success("Preferences saved successfully!");
+
+        // Clear saved step from localStorage on successful save
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("preferencesStep");
+        }
 
         // Reset success state after a short delay to avoid UI issues
         setTimeout(() => {
@@ -386,6 +479,7 @@ export const usePreferences = () => {
     toggleFeature,
     nextStep,
     prevStep,
+    resetToFirstStep,
     onSubmit,
     savePreferences,
 

@@ -70,8 +70,10 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           <select
             ref={ref}
             {...props}
-            className={`w-full px-6 pt-8 pb-4 pr-12 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none ${
-              error ? "border-red-400 focus:border-red-500" : ""
+            className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white appearance-none border-0 shadow-sm ${
+              hasValue ? "text-gray-900" : "text-gray-400"
+            } ${
+              error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
             } ${className}`}
             onFocus={handleFocus}
             onBlur={handleBlur}
@@ -85,19 +87,17 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
             <ChevronDown className="w-5 h-5 text-gray-400" />
           </div>
 
-          {/* Floating label */}
-          <label
-            className={`absolute left-6 pointer-events-none ${
-              isInitialized ? "transition-all duration-200" : ""
-            } ${
-              isFocused || hasValue
-                ? "top-3 text-xs text-gray-500"
-                : "top-1/2 translate-y-1 text-base text-gray-400"
-            }`}
-          >
-            {label}
-            {required && <span className="text-red-500 ml-1">*</span>}
-          </label>
+          {/* Floating label - hide when no value to show placeholder in select */}
+          {hasValue && (
+            <label
+              className={`absolute left-6 pointer-events-none ${
+                isInitialized ? "transition-all duration-200" : ""
+              } top-3 text-xs text-gray-500`}
+            >
+              {label}
+              {required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+          )}
         </div>
         {tooltip && (
           <p className="text-xs text-gray-500 mt-1 px-6">{tooltip}</p>

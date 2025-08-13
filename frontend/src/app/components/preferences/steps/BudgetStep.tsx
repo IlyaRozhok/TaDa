@@ -95,11 +95,10 @@ export const BudgetStep: React.FC<PreferencesStepProps> = ({
         <SelectField
           label="Furnishing"
           tooltip="Whether you prefer furnished or unfurnished properties"
-          value={formData.furnishing || ""}
+          value={formData.furnishing || "no-preference"}
           onChange={(e) => onUpdate("furnishing", e.target.value)}
           error={errors.furnishing}
         >
-          <option value="" disabled hidden></option>
           <option value="furnished">Furnished</option>
           <option value="unfurnished">Unfurnished</option>
           <option value="part-furnished">Part Furnished</option>

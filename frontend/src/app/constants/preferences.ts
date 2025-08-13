@@ -170,9 +170,50 @@ export const PROPERTY_TYPE_OPTIONS = [
 
 // Furnishing options
 export const FURNISHING_OPTIONS = [
-  "Furnished",
-  "Unfurnished",
-  "Part Furnished",
+  { value: "furnished", label: "Furnished" },
+  { value: "unfurnished", label: "Unfurnished" },
+  { value: "part-furnished", label: "Part Furnished" },
+  { value: "no-preference", label: "No Preference" },
+] as const;
+
+// Secondary location options (Metro stations)
+export const SECONDARY_LOCATION_OPTIONS = [
+  { value: "kings-cross-st-pancras", label: "King's Cross St Pancras" },
+  { value: "oxford-circus", label: "Oxford Circus" },
+  { value: "liverpool-street", label: "Liverpool Street" },
+  { value: "paddington", label: "Paddington" },
+  { value: "waterloo", label: "Waterloo" },
+  { value: "victoria", label: "Victoria" },
+  { value: "green-park", label: "Green Park" },
+  { value: "bond-street", label: "Bond Street" },
+  { value: "baker-street", label: "Baker Street" },
+  { value: "canary-wharf", label: "Canary Wharf" },
+  { value: "london-bridge", label: "London Bridge" },
+  { value: "tottenham-court-road", label: "Tottenham Court Road" },
+  { value: "leicester-square", label: "Leicester Square" },
+  { value: "piccadilly-circus", label: "Piccadilly Circus" },
+  { value: "euston", label: "Euston" },
+  { value: "no-preference", label: "No Preference" },
+] as const;
+
+// Commute location options (Business districts and areas)
+export const COMMUTE_LOCATION_OPTIONS = [
+  { value: "canary-wharf", label: "Canary Wharf" },
+  { value: "city-of-london", label: "City of London" },
+  { value: "westminster", label: "Westminster" },
+  { value: "shoreditch", label: "Shoreditch" },
+  { value: "kings-cross", label: "King's Cross" },
+  { value: "paddington", label: "Paddington" },
+  { value: "south-bank", label: "South Bank" },
+  { value: "mayfair", label: "Mayfair" },
+  { value: "holborn", label: "Holborn" },
+  { value: "clerkenwell", label: "Clerkenwell" },
+  { value: "bermondsey", label: "Bermondsey" },
+  { value: "stratford", label: "Stratford" },
+  { value: "hammersmith", label: "Hammersmith" },
+  { value: "croydon", label: "Croydon" },
+  { value: "central-london", label: "Central London" },
+  { value: "no-preference", label: "No Preference" },
 ] as const;
 
 // Bedroom options
@@ -220,20 +261,24 @@ export const LUXURY_PREMIUM_OPTIONS = [
 
 // Ideal Living Environment options
 export const IDEAL_LIVING_OPTIONS = [
-  "Quiet Professional",
-  "Social and Friendly",
-  "Family Oriented",
-  "Student Lifestyle",
-  "Creative and Artistic",
-  "No Preference",
+  { value: "quiet-professional", label: "Quiet Professional" },
+  { value: "social-friendly", label: "Social and Friendly" },
+  { value: "family-oriented", label: "Family Oriented" },
+  { value: "student-lifestyle", label: "Student Lifestyle" },
+  { value: "creative-artistic", label: "Creative and Artistic" },
+  { value: "no-preference", label: "No Preference" },
 ] as const;
 
 // Smoking options
 export const SMOKING_OPTIONS = [
-  "No",
-  "Yes",
-  "I don't smoke but I'm okay with it",
-  "I don't smoke and prefer non-smoking environments",
+  { value: "no", label: "No" },
+  { value: "yes", label: "Yes" },
+  { value: "no-but-okay", label: "I don't smoke but I'm okay with it" },
+  {
+    value: "no-prefer-non-smoking",
+    label: "I don't smoke and prefer non-smoking environments",
+  },
+  { value: "no-preference", label: "No Preference" },
 ] as const;
 
 // Hobby options with icons

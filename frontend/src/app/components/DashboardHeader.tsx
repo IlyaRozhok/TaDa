@@ -120,7 +120,7 @@ export default function DashboardHeader() {
 
     switch (userRole) {
       case "admin":
-        router.push("/app/dashboard/admin");
+        router.push("/app/admin/panel");
         break;
       case "operator":
         router.push("/app/dashboard/operator");
@@ -151,61 +151,7 @@ export default function DashboardHeader() {
             </div>
           </button>
 
-          {/* Admin Navigation */}
-          {isAdmin && (
-            <div className="flex items-center gap-2">
-              <div className="bg-slate-100 rounded-lg p-1">
-                <button
-                  onClick={() => handleNavigation("/app/dashboard/admin")}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                    pathname === "/app/dashboard/admin"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <Shield className="w-4 h-4 inline mr-2" />
-                  Admin Dashboard
-                </button>
-                <button
-                  onClick={() =>
-                    handleNavigation("/app/dashboard/admin/tenant")
-                  }
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                    pathname === "/app/dashboard/admin/tenant"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <Users className="w-4 h-4 inline mr-2" />
-                  Tenant Dashboard
-                </button>
-                <button
-                  onClick={() =>
-                    handleNavigation("/app/dashboard/admin/operator")
-                  }
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                    pathname === "/app/dashboard/admin/operator"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <Building2 className="w-4 h-4 inline mr-2" />
-                  Operator Dashboard
-                </button>
-                <button
-                  onClick={() => handleNavigation("/app/admin/panel")}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                    pathname === "/app/admin/panel"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <Settings className="w-4 h-4 inline mr-2" />
-                  Admin Panel
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Admin Navigation removed; links moved to profile dropdown */}
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
@@ -288,13 +234,33 @@ export default function DashboardHeader() {
                       color="text-slate-700 hover:text-slate-900"
                     />
 
+                    {/* Admin-specific navigation moved here */}
                     {userRole === "admin" && (
-                      <DropdownItem
-                        icon={<Settings className="w-4 h-4" />}
-                        label="Administrator Panel"
-                        onClick={() => handleNavigation("/app/dashboard/admin")}
-                        color="text-amber-700 hover:text-amber-900"
-                      />
+                      <>
+                        <div className="border-t border-slate-100 my-2 mx-2"></div>
+                        <DropdownItem
+                          icon={<Shield className="w-4 h-4" />}
+                          label="Admin Panel"
+                          onClick={() => handleNavigation("/app/admin/panel")}
+                          color="text-slate-700 hover:text-slate-900"
+                        />
+                        <DropdownItem
+                          icon={<Users className="w-4 h-4" />}
+                          label="Tenant Dashboard"
+                          onClick={() =>
+                            handleNavigation("/app/dashboard/admin/tenant")
+                          }
+                          color="text-slate-700 hover:text-slate-900"
+                        />
+                        <DropdownItem
+                          icon={<Building2 className="w-4 h-4" />}
+                          label="Operator Dashboard"
+                          onClick={() =>
+                            handleNavigation("/app/dashboard/admin/operator")
+                          }
+                          color="text-slate-700 hover:text-slate-900"
+                        />
+                      </>
                     )}
 
                     {userRole === "tenant" && user?.tenantProfile && (

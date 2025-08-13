@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { PropertyMedia } from "../types";
 import { propertyMediaAPI } from "../lib/api";
 import {
@@ -14,6 +20,9 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
 } from "lucide-react";
 
 interface MediaManagerProps {
@@ -40,13 +49,61 @@ export default function MediaManager({
   disabled = false,
   maxFiles = 10,
 }: MediaManagerProps) {
+  console.log("🎬 MediaManager props:", {
+    propertyId,
+    media,
+    accessToken: !!accessToken,
+    disabled,
+  });
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<PropertyMedia | null>(
+    null
+  );
+  const [deleteConfirm, setDeleteConfirm] = useState<PropertyMedia | null>(
+    null
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Keep media list sorted by order_index; used across the component
+  const sortedMedia = useMemo(
+    () => [...media].sort((a, b) => a.order_index - b.order_index),
+    [media]
+  );
+
+  // Keyboard controls for fullscreen viewer
+  useEffect(() => {
+    if (!fullscreenImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setFullscreenImage(null);
+      }
+      if (e.key === "ArrowLeft") {
+        const currentIndex = sortedMedia.findIndex(
+          (m) => m.id === fullscreenImage.id
+        );
+        const prevIndex =
+          currentIndex > 0 ? currentIndex - 1 : sortedMedia.length - 1;
+        setFullscreenImage(sortedMedia[prevIndex]);
+      }
+      if (e.key === "ArrowRight") {
+        const currentIndex = sortedMedia.findIndex(
+          (m) => m.id === fullscreenImage.id
+        );
+        const nextIndex =
+          currentIndex < sortedMedia.length - 1 ? currentIndex + 1 : 0;
+        setFullscreenImage(sortedMedia[nextIndex]);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [fullscreenImage, sortedMedia]);
 
   const showMessage = (type: "success" | "error", text: string) => {
     setMessage({ type, text });
@@ -265,7 +322,7 @@ export default function MediaManager({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const sortedMedia = [...media].sort((a, b) => a.order_index - b.order_index);
+  // sortedMedia is defined above via useMemo
 
   return (
     <div className="space-y-4">
@@ -295,38 +352,39 @@ export default function MediaManager({
 
       {/* Upload Area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${
           disabled
             ? "border-gray-200 bg-gray-50"
-            : "border-gray-300 hover:border-gray-400 bg-white"
+            : "border-blue-300 hover:border-blue-400 bg-blue-50/30 hover:bg-blue-50/50"
         }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragEnter={(e) => e.preventDefault()}
       >
-        <div className="space-y-4">
-          <Upload className="w-8 h-8 mx-auto text-gray-400" />
-          <div>
-            <p className="text-base font-medium text-gray-900">
-              Upload media files
-            </p>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <Upload className="w-6 h-6 text-blue-600" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-medium text-gray-900">Upload Photos</p>
             <p className="text-sm text-gray-600">
-              Drag and drop files here, or{" "}
+              Drag & drop or{" "}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled}
-                className="text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+                className="text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 underline"
               >
                 browse
-              </button>
+              </button>{" "}
+              • JPG, PNG, WebP • Max 10MB
             </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Max {maxFiles} files, 10MB each • Images and videos supported
+          </div>
+          <div className="text-right text-sm">
+            <p className="text-blue-600 font-medium">
+              {media.length + uploadingFiles.length}/{maxFiles}
             </p>
-            <p className="text-xs text-gray-600 mt-1">
-              Current: {media.length + uploadingFiles.length}/{maxFiles} files
-            </p>
+            <p className="text-xs text-gray-500">files</p>
           </div>
         </div>
 
@@ -385,47 +443,100 @@ export default function MediaManager({
 
       {/* Media Grid */}
       {sortedMedia.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-900">
-            Property Media ({sortedMedia.length})
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-lg font-semibold text-gray-900">
+              Property Photos ({sortedMedia.length})
+            </h4>
+            <div className="text-xs text-gray-500">
+              Drag photos to reorder • Click star to set featured
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {sortedMedia.map((mediaItem) => (
               <div
                 key={mediaItem.id}
-                className={`relative group bg-white border rounded-lg overflow-hidden ${
-                  draggedItem === mediaItem.id ? "opacity-50" : ""
-                } ${disabled ? "pointer-events-none" : "cursor-move"}`}
+                className={`relative group bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
+                  draggedItem === mediaItem.id ? "opacity-50 scale-95" : ""
+                } ${
+                  disabled
+                    ? "pointer-events-none"
+                    : "cursor-move hover:border-blue-300"
+                } ${
+                  mediaItem.is_featured
+                    ? "ring-2 ring-yellow-400 border-yellow-300"
+                    : ""
+                }`}
                 draggable={!disabled}
                 onDragStart={(e) => handleDragStart(e, mediaItem.id)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDragDrop(e, mediaItem.id)}
               >
                 {/* Media Preview */}
-                <div className="aspect-square bg-gray-100">
+                <div className="aspect-square bg-gray-100 relative">
                   {mediaItem.type === "image" ? (
-                    <img
-                      src={mediaItem.url}
-                      alt={mediaItem.original_filename}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img
+                        src={mediaItem.url || mediaItem.s3_url}
+                        alt={mediaItem.original_filename || "Property image"}
+                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200"
+                        onClick={() => setFullscreenImage(mediaItem)}
+                        onLoad={() =>
+                          console.log(
+                            "✅ Image loaded:",
+                            mediaItem.url || mediaItem.s3_url
+                          )
+                        }
+                        onError={(e) => {
+                          console.error(
+                            "❌ Image failed to load:",
+                            mediaItem.url || mediaItem.s3_url
+                          );
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="hidden w-full h-full flex items-center justify-center bg-gray-200">
+                        <div className="text-center">
+                          <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">
+                            Image failed to load
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 break-all px-2">
+                            {mediaItem.original_filename}
+                          </p>
+                        </div>
+                      </div>
+                    </>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <VideoIcon className="w-8 h-8 text-gray-400" />
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <div className="text-center">
+                        <VideoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-xs text-gray-500">Video</p>
+                      </div>
                     </div>
                   )}
+
+                  {/* Debug info overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="truncate">
+                      URL: {mediaItem.url || mediaItem.s3_url || "No URL"}
+                    </p>
+                    <p className="truncate">Type: {mediaItem.type}</p>
+                  </div>
                 </div>
 
                 {/* Overlay Controls */}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all">
-                  <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* Featured Star */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  {/* Featured Star - Top Left */}
+                  <div className="absolute top-2 left-2">
                     <button
                       onClick={() => handleSetFeatured(mediaItem.id)}
-                      className={`p-1 rounded-full transition-colors ${
+                      className={`p-2 rounded-full transition-all duration-200 ${
                         mediaItem.is_featured
-                          ? "bg-yellow-500 text-white"
-                          : "bg-black bg-opacity-50 text-white hover:bg-opacity-70"
+                          ? "bg-yellow-500/90 text-white shadow-lg scale-110"
+                          : "bg-white/20 text-white hover:bg-white/30 hover:scale-105"
                       }`}
                       title={
                         mediaItem.is_featured
@@ -441,20 +552,41 @@ export default function MediaManager({
                     </button>
                   </div>
 
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* Delete Button */}
+                  {/* Actions - Top Right */}
+                  <div className="absolute top-2 right-2 flex gap-1">
                     <button
-                      onClick={() => handleDelete(mediaItem.id)}
-                      className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                      title="Delete media"
+                      onClick={() => setFullscreenImage(mediaItem)}
+                      className="p-2 bg-white/20 text-white rounded-full hover:bg-white/30 hover:scale-105 transition-all duration-200 shadow-lg"
+                      title="View full size"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(mediaItem)}
+                      className="p-2 bg-red-500/90 text-white rounded-full hover:bg-red-600/90 hover:scale-105 transition-all duration-200 shadow-lg"
+                      title="Delete image"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Drag Handle */}
-                  <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <GripVertical className="w-4 h-4 text-white" />
+                  {/* Drag Handle - Bottom Left */}
+                  <div className="absolute bottom-2 left-2">
+                    <div className="p-1 bg-white/20 rounded-full">
+                      <GripVertical className="w-4 h-4 text-white" />
+                    </div>
+                  </div>
+
+                  {/* File Info - Bottom Right */}
+                  <div className="absolute bottom-2 right-2">
+                    <div className="bg-black/50 rounded-lg px-2 py-1">
+                      <p className="text-xs text-white font-medium">
+                        {mediaItem.original_filename
+                          ?.split(".")
+                          .pop()
+                          ?.toUpperCase()}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -486,6 +618,214 @@ export default function MediaManager({
           <p className="text-xs">
             Upload images and videos to showcase your property
           </p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {sortedMedia.length === 0 && uploadingFiles.length === 0 && (
+        <div className="text-center py-12">
+          <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <ImageIcon className="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No photos yet
+          </h3>
+          <p className="text-gray-500 mb-4">
+            Upload some beautiful photos to showcase this property
+          </p>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            <Upload className="w-4 h-4 inline mr-2" />
+            Upload First Photo
+          </button>
+        </div>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div className="fixed inset-0 bg-black/90 z-[9999]">
+          <div className="relative w-screen h-screen flex items-center justify-center">
+            {/* Close Button */}
+            <button
+              onClick={() => setFullscreenImage(null)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Navigation Buttons */}
+            {sortedMedia.length > 1 && (
+              <>
+                <button
+                  onClick={() => {
+                    const currentIndex = sortedMedia.findIndex(
+                      (m) => m.id === fullscreenImage.id
+                    );
+                    const prevIndex =
+                      currentIndex > 0
+                        ? currentIndex - 1
+                        : sortedMedia.length - 1;
+                    setFullscreenImage(sortedMedia[prevIndex]);
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={() => {
+                    const currentIndex = sortedMedia.findIndex(
+                      (m) => m.id === fullscreenImage.id
+                    );
+                    const nextIndex =
+                      currentIndex < sortedMedia.length - 1
+                        ? currentIndex + 1
+                        : 0;
+                    setFullscreenImage(sortedMedia[nextIndex]);
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+
+            {/* Image */}
+            <img
+              src={fullscreenImage.url || fullscreenImage.s3_url}
+              alt={fullscreenImage.original_filename || "Property image"}
+              className="w-auto h-auto max-w-[100vw] max-h-[100vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {/* Image Info */}
+            <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-70 text-white p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {fullscreenImage.original_filename}
+                  </h3>
+                  <p className="text-sm text-gray-300 mt-1">
+                    {fullscreenImage.is_featured && "⭐ Featured • "}
+                    {sortedMedia.findIndex((m) => m.id === fullscreenImage.id) +
+                      1}{" "}
+                    of {sortedMedia.length}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetFeatured(fullscreenImage.id);
+                    }}
+                    className={`p-2 rounded-full transition-colors ${
+                      fullscreenImage.is_featured
+                        ? "bg-yellow-500 text-white"
+                        : "bg-gray-600 text-gray-300 hover:bg-gray-500"
+                    }`}
+                    title={
+                      fullscreenImage.is_featured
+                        ? "Featured image"
+                        : "Set as featured"
+                    }
+                  >
+                    {fullscreenImage.is_featured ? (
+                      <Star className="w-5 h-5 fill-current" />
+                    ) : (
+                      <StarOff className="w-5 h-5" />
+                    )}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteConfirm(fullscreenImage);
+                      setFullscreenImage(null);
+                    }}
+                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                    title="Delete image"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Click outside to close */}
+          <div
+            className="absolute inset-0 -z-10"
+            onClick={() => setFullscreenImage(null)}
+          />
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <X className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Delete Photo
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    This action cannot be undone
+                  </p>
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={deleteConfirm.url || deleteConfirm.s3_url}
+                    alt={deleteConfirm.original_filename}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {deleteConfirm.original_filename}
+                    </p>
+                    {deleteConfirm.is_featured && (
+                      <p className="text-xs text-yellow-600 flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current" />
+                        Featured image
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to delete this photo? It will be
+                permanently removed from the property.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleDelete(deleteConfirm.id);
+                    setDeleteConfirm(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete Photo
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

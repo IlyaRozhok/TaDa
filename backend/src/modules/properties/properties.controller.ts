@@ -144,6 +144,21 @@ export class PropertiesController {
     };
   }
 
+  @ApiOperation({ summary: "Get single property by ID (no auth required)" })
+  @ApiResponse({
+    status: 200,
+    description: "Property retrieved",
+    type: Property,
+  })
+  @Get("public/:id")
+  async getPublicProperty(@Param("id") id: string) {
+    console.log("🏠 Backend - Getting public property:", id);
+    const result = await this.propertiesService.findOne(id);
+    console.log("🏠 Backend - Returning property:", result?.title);
+    console.log("🖼️ Backend - Property has media:", !!result?.media?.length);
+    return result;
+  }
+
   @ApiOperation({ summary: "Get matched properties for logged-in tenant" })
   @ApiResponse({
     status: 200,

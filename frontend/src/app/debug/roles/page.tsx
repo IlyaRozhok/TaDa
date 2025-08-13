@@ -4,14 +4,14 @@ import { getPrimaryRole, getRedirectPath } from "../../utils/simpleRedirect";
 
 export default function RoleTestPage() {
   const testCases = [
-    { role: "admin", expected: "/app/dashboard/admin" },
+    { role: "admin", expected: "/app/admin/panel" },
     { role: "operator", expected: "/app/dashboard/operator" },
     { role: "tenant", expected: "/app/dashboard/tenant" },
-    { role: "tenant,admin", expected: "/app/dashboard/admin" },
-    { role: "admin,tenant", expected: "/app/dashboard/admin" },
+    { role: "tenant,admin", expected: "/app/admin/panel" },
+    { role: "admin,tenant", expected: "/app/admin/panel" },
     { role: "operator,tenant", expected: "/app/dashboard/operator" },
     { role: "tenant,operator", expected: "/app/dashboard/operator" },
-    { role: "admin,operator,tenant", expected: "/app/dashboard/admin" },
+    { role: "admin,operator,tenant", expected: "/app/admin/panel" },
     { role: "unknown", expected: "/?needsRole=true" },
     { role: "", expected: "/?needsRole=true" },
     { role: null, expected: "/?needsRole=true" },

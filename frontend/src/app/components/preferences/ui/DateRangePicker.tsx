@@ -26,12 +26,16 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [startDate, setStartDate] = useState<Date | null>(
-    value.start ? new Date(value.start) : null
-  );
-  const [endDate, setEndDate] = useState<Date | null>(
-    value.end ? new Date(value.end) : null
-  );
+  const [startDate, setStartDate] = useState<Date | null>(() => {
+    if (!value.start) return null;
+    const [year, month, day] = value.start.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  });
+  const [endDate, setEndDate] = useState<Date | null>(() => {
+    if (!value.end) return null;
+    const [year, month, day] = value.end.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  });
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +61,18 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     }
   }, [isInitialized]);
 
+  // Update internal state when props change (for data loading from server)
+  useEffect(() => {
+    // Create dates in local timezone to avoid off-by-one errors
+    const createLocalDate = (dateString: string) => {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day); // month is 0-indexed
+    };
+
+    setStartDate(value.start ? createLocalDate(value.start) : null);
+    setEndDate(value.end ? createLocalDate(value.end) : null);
+  }, [value.start, value.end]);
+
   const monthNames = [
     "January",
     "February",
@@ -78,6 +94,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
+  // Helper function to format date for input (avoiding timezone issues)
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const getFirstDayOfMonth = (date: Date) => {
     const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
     // Convert Sunday (0) to Monday-first week (6)
@@ -95,6 +119,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       // Start new selection
       setStartDate(selectedDate);
       setEndDate(null);
+
+      // For single date selection, also call onChange
+      onChange({
+        start: formatDateForInput(selectedDate),
+        end: formatDateForInput(selectedDate), // Same date for single selection
+      });
     } else {
       // Complete the range
       if (selectedDate < startDate) {
@@ -107,9 +137,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       // Trigger onChange when range is complete
       const start = selectedDate < startDate ? selectedDate : startDate;
       const end = selectedDate < startDate ? startDate : selectedDate;
+
       onChange({
-        start: start.toISOString().split("T")[0],
-        end: end.toISOString().split("T")[0],
+        start: formatDateForInput(start),
+        end: formatDateForInput(end),
       });
 
       // Close calendar after selection is complete
@@ -169,13 +200,47 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       return date >= startDate && date <= endDate;
     }
 
-    if (hoverDate && startDate) {
-      const hoverStart = startDate < hoverDate ? startDate : hoverDate;
-      const hoverEnd = startDate < hoverDate ? hoverDate : startDate;
-      return date >= hoverStart && date <= hoverEnd;
-    }
-
     return false;
+  };
+
+  const isHoverInRange = (day: number) => {
+    if (!startDate || !hoverDate || endDate) return false;
+
+    const date = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+
+    const hoverStart = startDate < hoverDate ? startDate : hoverDate;
+    const hoverEnd = startDate < hoverDate ? hoverDate : startDate;
+    return date >= hoverStart && date <= hoverEnd;
+  };
+
+  const isHoverRangeStart = (day: number) => {
+    if (!startDate || !hoverDate || endDate) return false;
+
+    const date = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+
+    const hoverStart = startDate < hoverDate ? startDate : hoverDate;
+    return date.toDateString() === hoverStart.toDateString();
+  };
+
+  const isHoverRangeEnd = (day: number) => {
+    if (!startDate || !hoverDate || endDate) return false;
+
+    const date = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+
+    const hoverEnd = startDate < hoverDate ? hoverDate : startDate;
+    return date.toDateString() === hoverEnd.toDateString();
   };
 
   const isRangeStart = (day: number) => {
@@ -221,13 +286,24 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       const rangeEnd = isRangeEnd(day);
       const isToday = date.toDateString() === new Date().toDateString();
 
+      // Hover states
+      const hoverInRange = isHoverInRange(day);
+      const hoverRangeStart = isHoverRangeStart(day);
+      const hoverRangeEnd = isHoverRangeEnd(day);
+
       const classNames = [styles.dayCell];
       if (disabled) classNames.push(styles.disabled);
       if (isToday) classNames.push(styles.today);
+
+      // Priority: actual selection over hover
       if (rangeStart) classNames.push(styles.rangeStart);
       else if (rangeEnd) classNames.push(styles.rangeEnd);
       else if (inRange) classNames.push(styles.inRange);
       else if (rangeStart || rangeEnd) classNames.push(styles.selected);
+      // Hover states (only when no actual range is selected)
+      else if (hoverRangeStart) classNames.push(styles.hoverRangeStart);
+      else if (hoverRangeEnd) classNames.push(styles.hoverRangeEnd);
+      else if (hoverInRange) classNames.push(styles.hoverInRange);
 
       days.push(
         <button
@@ -253,13 +329,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   return (
     <div className="relative" ref={pickerRef}>
+      {/* Removed fullscreen backdrop; blur will be local to the picker */}
       <div
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          w-full px-6 pt-8 pb-4 pr-12 bg-white rounded-full cursor-pointer
-          flex items-center
+          w-full px-6 pt-8 pb-4 pr-12 bg-white rounded-3xl cursor-pointer
+          flex items-center border-0 shadow-sm
           transition-all duration-200 focus:outline-none
-          ${error ? "border-red-400" : ""}
+          ${error ? "ring-2 ring-red-400" : ""}
           ${isOpen ? "" : ""}
         `}
       >
@@ -285,7 +362,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       {error && <p className="mt-1 text-sm text-red-600 px-6">{error}</p>}
 
       {isOpen && (
-        <div className={`absolute z-50 mt-2 ${styles.glassCard}`}>
+        <div
+          className={`absolute top-0 -translate-y-full -mt-2 left-0 right-0 z-50 ${styles.glassCard}`}
+        >
           {/* Calendar Header */}
           <div className={styles.calendarHeader}>
             <button
@@ -296,9 +375,11 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
               <ChevronLeft />
             </button>
 
-            <div className="text-center">
-              <h3>{monthNames[currentMonth.getMonth()]}</h3>
-              <p>{currentMonth.getFullYear()}</p>
+            <div className="text-center flex text-white ">
+              <div className="text-white mr-1">
+                {monthNames[currentMonth.getMonth()]}
+              </div>
+              <div className="text-white">{currentMonth.getFullYear()}</div>
             </div>
 
             <button

@@ -6,6 +6,7 @@ export interface PreferencesFormData {
   commute_time_cycle?: number;
   commute_time_tube?: number;
   move_in_date?: string;
+  move_out_date?: string;
   min_price?: number;
   max_price?: number;
   min_bedrooms?: number;
@@ -26,9 +27,9 @@ export interface PreferencesFormData {
   pet_friendly_features?: string[];
   luxury_features?: string[];
   hobbies?: string[];
-  ideal_living_environment?: string;
+  ideal_living_environment?: string[];
   pets?: string;
-  smoker?: boolean;
+  smoker?: string;
   additional_info?: string;
 }
 

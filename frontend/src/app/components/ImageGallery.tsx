@@ -24,16 +24,22 @@ export default function ImageGallery({
   const getDisplayImages = (): string[] => {
     if (media && media.length > 0) {
       // Sort by order_index and filter only images, then extract URLs
-      return media
-        .filter((item) => item.type === "image")
-        .sort((a, b) => a.order_index - b.order_index)
-        .map((item) => item.url);
+      const mediaUrls = media
+        .filter((item) => item.type === "image" || !item.type)
+        .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+        .map((item) => item.url || item.s3_url)
+        .filter(Boolean);
+
+      if (mediaUrls.length > 0) {
+        return mediaUrls;
+      }
     }
 
     if (images && images.length > 0) {
       return images;
     }
 
+    // Return placeholder only if no real images
     return [PROPERTY_PLACEHOLDER];
   };
 
@@ -60,7 +66,7 @@ export default function ImageGallery({
       {/* Main Image */}
       <div className="relative">
         <div
-          className="aspect-video bg-gray-200 rounded-lg overflow-hidden cursor-pointer"
+          className="bg-gray-200 rounded-lg overflow-hidden cursor-pointer h-96 w-full"
           onClick={() => setIsModalOpen(true)}
         >
           <img

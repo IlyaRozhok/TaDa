@@ -213,14 +213,24 @@ export class PropertiesService {
       throw new NotFoundException("Property not found");
     }
 
+    console.log("🏠 Backend - Property found:", property.id);
+    console.log("🖼️ Backend - Property media before URLs:", property.media);
+
     // Update presigned URLs for media
     const propertyWithUrls = await this.updateMediaPresignedUrls(property);
+
+    console.log(
+      "🖼️ Backend - Property media after URLs:",
+      propertyWithUrls.media
+    );
 
     // Add shortlist flag
     const [propertyWithFlag] = await this.addShortlistFlags(
       [propertyWithUrls],
       userId
     );
+
+    console.log("🖼️ Backend - Final property media:", propertyWithFlag.media);
 
     return propertyWithFlag;
   }

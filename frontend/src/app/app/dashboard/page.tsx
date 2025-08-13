@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
     switch (role) {
       case "admin":
-        router.replace("/app/dashboard/admin");
+        router.replace("/app/admin/panel");
         break;
       case "operator":
         router.replace("/app/dashboard/operator");

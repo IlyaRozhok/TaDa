@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { Lock, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { DateRangePicker } from "./ui/DateRangePicker";
+import { CustomDropdown } from "./ui/CustomDropdown";
+import { MetroDropdown } from "./ui/MetroDropdown";
+import { LocationDropdown } from "./ui/LocationDropdown";
 
 import { usePreferences } from "@/app/hooks/usePreferences";
 import {
@@ -17,6 +20,8 @@ import {
   LUXURY_PREMIUM_OPTIONS,
   PROPERTY_TYPE_OPTIONS,
   FURNISHING_OPTIONS,
+  SECONDARY_LOCATION_OPTIONS,
+  COMMUTE_LOCATION_OPTIONS,
   BEDROOM_OPTIONS,
   IDEAL_LIVING_OPTIONS,
   SMOKING_OPTIONS,
@@ -24,7 +29,6 @@ import {
   TOTAL_STEPS_NEW as TOTAL_STEPS,
 } from "@/app/constants/preferences";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
-import { getUserRole } from "@/app/utils/simpleRedirect";
 
 export default function NewPreferencesPage() {
   const router = useRouter();
@@ -35,10 +39,7 @@ export default function NewPreferencesPage() {
   const {
     loading,
     step,
-    generalError,
     watchedData,
-    backendErrors,
-    register,
     handleSubmit,
     updateField,
     toggleFeature,
@@ -52,7 +53,7 @@ export default function NewPreferencesPage() {
     isAuthenticated,
   } = usePreferences();
 
-  // Wait for session manager to initialize and check access
+  // Wait for session manager to initialize
   useEffect(() => {
     const initializeSession = async () => {
       try {
@@ -66,58 +67,14 @@ export default function NewPreferencesPage() {
     initializeSession();
   }, []);
 
-  // Check access permissions after user data is loaded
+  // Always allow access to preferences for any authenticated user (no redirects)
   useEffect(() => {
-    console.log("🔍 NewPreferencesPage permission check:", {
-      sessionReady,
-      isAuthenticated,
-      hasUser: !!user,
-      userEmail: user?.email,
-      userRole: user ? getUserRole(user) : null,
-      hasTenantProfile: user?.tenantProfile,
-      pathname: typeof window !== "undefined" ? window.location.pathname : null,
-    });
-
-    // Skip if already checked to prevent re-redirects after saving
-    if (hasCheckedAccess) {
-      console.log("⏸ Skipping access check - already checked");
-      return;
-    }
-
+    if (hasCheckedAccess) return;
     if (sessionReady && isAuthenticated && user) {
-      const userRole = getUserRole(user);
-      setHasCheckedAccess(true); // Mark as checked
-
-      // Allow tenants to access preferences even if tenantProfile is not created yet
-      if (userRole !== "tenant") {
-        console.log("🚫 Access denied:", {
-          userRole,
-          isTenant: userRole === "tenant",
-          hasTenantProfile: !!user.tenantProfile,
-          reason: "Not a tenant",
-        });
-        setAccessDenied(true);
-        setTimeout(() => {
-          if (userRole === "admin") {
-            console.log("🔄 Redirecting admin to admin dashboard");
-            router.push("/app/dashboard/admin");
-          } else if (userRole === "operator") {
-            console.log("🔄 Redirecting operator to operator dashboard");
-            router.push("/app/dashboard/operator");
-          } else {
-            console.log(
-              "🔄 Redirecting to /app/dashboard (which will redirect to home if not authenticated)"
-            );
-            router.push("/app/dashboard");
-          }
-        }, 2000);
-      } else {
-        // Explicitly allow access
-        setAccessDenied(false);
-      }
+      setHasCheckedAccess(true);
+      setAccessDenied(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionReady, isAuthenticated, user?.id]); // Don't depend on router or full user object to avoid re-runs
+  }, [sessionReady, isAuthenticated, user, hasCheckedAccess]);
 
   if (!sessionReady) {
     return (
@@ -140,6 +97,7 @@ export default function NewPreferencesPage() {
   }
 
   if (accessDenied) {
+    // Should never happen now, but keep graceful fallback
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
         <div className="max-w-md mx-auto text-center p-8">
@@ -157,15 +115,9 @@ export default function NewPreferencesPage() {
     );
   }
 
-  // Don't show success screen, just continue showing the form
-  // Toast notification will handle the success feedback
-
   const handleSave = async () => {
     try {
-      // Save current progress
-      console.log("💾 Saving preferences...");
       await savePreferences();
-      // Toast is already shown in savePreferences/onSubmit
       console.log("✅ Preferences saved successfully");
     } catch (error) {
       console.error("❌ Failed to save preferences:", error);
@@ -290,94 +242,74 @@ const LocationStep = ({ formData, onUpdate }: any) => (
   <div className="text-center">
     <h1 className="text-4xl font-bold text-black mb-4">Location and Commute</h1>
     <p className="text-gray-500 mb-6">
-      Select how you’ll be using platform. For now one account - one role
+      Where do you want to live and where will you commute to?
     </p>
 
     <div className="text-left">
       <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8">
+        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
           Location and date
         </h2>
 
         <div className="space-y-6">
-          <div className="relative">
-            <select
-              value={formData.primary_postcode || ""}
-              onChange={(e) => onUpdate("primary_postcode", e.target.value)}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none"
-            >
-              <option value="" disabled hidden></option>
-              <option value="SW1A 1AA">SW1A 1AA - Westminster</option>
-              <option value="E1 6AN">E1 6AN - Whitechapel</option>
-              <option value="N1 9AG">N1 9AG - Angel</option>
-              <option value="W1D 3QU">W1D 3QU - Soho</option>
-              <option value="SE1 9SG">SE1 9SG - London Bridge</option>
-              <option value="EC1A 4HD">EC1A 4HD - Barbican</option>
-              <option value="W2 1HB">W2 1HB - Paddington</option>
-              <option value="SW7 2AZ">SW7 2AZ - South Kensington</option>
-              <option value="E14 5AB">E14 5AB - Canary Wharf</option>
-              <option value="NW1 8NH">NW1 8NH - Camden</option>
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.primary_postcode
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Primary postcode
-            </label>
-          </div>
+          <CustomDropdown
+            label="Primary postcode"
+            value={formData.primary_postcode || ""}
+            onChange={(value) => onUpdate("primary_postcode", value)}
+            options={[
+              {
+                value: "NW1 6XE",
+                postcode: "NW1 6XE",
+                address: "221B Baker Street, Marylebone",
+              },
+              {
+                value: "SW1A 2AA",
+                postcode: "SW1A 2AA",
+                address: "10 Downing Street, Westminster",
+              },
+              {
+                value: "NW1 0JH",
+                postcode: "NW1 0JH",
+                address: "30 Camden High Street, Camden Town",
+              },
+              {
+                value: "E1 6RF",
+                postcode: "E1 6RF",
+                address: "12 Brick Lane, Shoreditch",
+              },
+              {
+                value: "W11 3JZ",
+                postcode: "W11 3JZ",
+                address: "89 Notting Hill Gate, Notting Hill",
+              },
+              {
+                value: "E2 8AA",
+                postcode: "E2 8AA",
+                address: "25 Kingsland Road, Dalston",
+              },
+              {
+                value: "SE1 1UN",
+                postcode: "SE1 1UN",
+                address: "50 Southwark Street, South Bank",
+              },
+            ]}
+          />
 
-          <div className="relative">
-            <select
-              value={formData.commute_location || ""}
-              onChange={(e) => onUpdate("commute_location", e.target.value)}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none"
-            >
-              <option value="" disabled hidden></option>
-              <option value="central-london">Central London</option>
-              <option value="east-london">East London</option>
-              <option value="west-london">West London</option>
-              <option value="north-london">North London</option>
-              <option value="south-london">South London</option>
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.commute_location
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Commute location
-            </label>
-          </div>
+          <LocationDropdown
+            label="Commute location"
+            value={formData.commute_location || "no-preference"}
+            options={COMMUTE_LOCATION_OPTIONS}
+            onChange={(value) => onUpdate("commute_location", value)}
+            placeholder="No Preference"
+          />
 
-          <div className="relative">
-            <select
-              value={formData.secondary_location || ""}
-              onChange={(e) => onUpdate("secondary_location", e.target.value)}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none"
-            >
-              <option value="" disabled hidden></option>
-              <option value="canary-wharf">Canary Wharf</option>
-              <option value="city">City</option>
-              <option value="westminster">Westminster</option>
-              <option value="shoreditch">Shoreditch</option>
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.secondary_location
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Secondary location (optional)
-            </label>
-          </div>
+          <MetroDropdown
+            label="Secondary location (optional)"
+            value={formData.secondary_location || "no-preference"}
+            options={SECONDARY_LOCATION_OPTIONS}
+            onChange={(value) => onUpdate("secondary_location", value)}
+            placeholder="No Preference"
+          />
 
           <DateRangePicker
             label="Move-in Date"
@@ -387,7 +319,11 @@ const LocationStep = ({ formData, onUpdate }: any) => (
             }}
             onChange={(range) => {
               onUpdate("move_in_date", range.start);
-              onUpdate("move_out_date", range.end);
+              // Only set move_out_date if it's different from move_in_date (range selection)
+              onUpdate(
+                "move_out_date",
+                range.start === range.end ? null : range.end
+              );
             }}
             placeholder="Select date range"
           />
@@ -406,7 +342,7 @@ const CommuteTimeStep = ({ formData, onUpdate }: any) => (
 
     <div className="text-left">
       <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8">
+        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
           Commute preferences
         </h2>
 
@@ -423,7 +359,7 @@ const CommuteTimeStep = ({ formData, onUpdate }: any) => (
                   Number(e.target.value) || undefined
                 )
               }
-              className="w-full px-6 pt-8 pb-4 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent"
+              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
               placeholder=""
             />
             <label
@@ -449,7 +385,7 @@ const CommuteTimeStep = ({ formData, onUpdate }: any) => (
                   Number(e.target.value) || undefined
                 )
               }
-              className="w-full px-6 pt-8 pb-4 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent"
+              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
               placeholder=""
             />
             <label
@@ -475,7 +411,7 @@ const CommuteTimeStep = ({ formData, onUpdate }: any) => (
                   Number(e.target.value) || undefined
                 )
               }
-              className="w-full px-6 pt-8 pb-4 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent"
+              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
               placeholder=""
             />
             <label
@@ -503,7 +439,9 @@ const BudgetStep = ({ formData, onUpdate }: any) => (
 
     <div className="space-y-8 text-left">
       <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8">Budget range</h2>
+        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
+          Budget range
+        </h2>
 
         <div className="space-y-6">
           <div className="relative">
@@ -511,7 +449,7 @@ const BudgetStep = ({ formData, onUpdate }: any) => (
               type="number"
               value={formData.min_price || ""}
               onChange={(e) => onUpdate("min_price", Number(e.target.value))}
-              className="w-full px-6 pt-8 pb-4 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent"
+              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
               placeholder=""
             />
             <label
@@ -530,7 +468,7 @@ const BudgetStep = ({ formData, onUpdate }: any) => (
               type="number"
               value={formData.max_price || ""}
               onChange={(e) => onUpdate("max_price", Number(e.target.value))}
-              className="w-full px-6 pt-8 pb-4 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent"
+              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
               placeholder=""
             />
             <label
@@ -557,7 +495,7 @@ const PropertyTypeStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
         Select property types
       </h2>
 
@@ -567,10 +505,10 @@ const PropertyTypeStep = ({ formData, onToggle }: any) => (
             key={type}
             type="button"
             onClick={() => onToggle("property_type", type)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.property_type?.includes(type)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             <div className="flex items-center justify-between">
@@ -609,7 +547,7 @@ const ApartmentSpecStep = ({ formData, onUpdate }: any) => (
 
     <div className="text-left">
       <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8">
+        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
           Bedrooms and furnishing
         </h2>
 
@@ -629,7 +567,7 @@ const ApartmentSpecStep = ({ formData, onUpdate }: any) => (
                   value === "Studio" ? 0 : parseInt(value.split(" ")[0]) || 1;
                 onUpdate("min_bedrooms", num);
               }}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none"
+              className="w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none border-0 shadow-sm"
             >
               <option value="" disabled hidden></option>
               {BEDROOM_OPTIONS.map((option) => (
@@ -665,7 +603,7 @@ const ApartmentSpecStep = ({ formData, onUpdate }: any) => (
                   value === "Studio" ? 0 : parseInt(value.split(" ")[0]) || 1;
                 onUpdate("max_bedrooms", num);
               }}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none"
+              className="w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none border-0 shadow-sm"
             >
               <option value="" disabled hidden></option>
               {BEDROOM_OPTIONS.map((option) => (
@@ -688,14 +626,13 @@ const ApartmentSpecStep = ({ formData, onUpdate }: any) => (
 
           <div className="relative">
             <select
-              value={formData.furnishing || ""}
+              value={formData.furnishing || "no-preference"}
               onChange={(e) => onUpdate("furnishing", e.target.value)}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none"
+              className="w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none border-0 shadow-sm"
             >
-              <option value="" disabled hidden></option>
               {FURNISHING_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -724,7 +661,7 @@ const BuildingStyleStep = ({ formData, onToggle }: any) => (
     <p className="text-gray-500 mb-16">Choose your preferred building types</p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
         Building style preferences
       </h2>
 
@@ -734,10 +671,10 @@ const BuildingStyleStep = ({ formData, onToggle }: any) => (
             key={option.value}
             type="button"
             onClick={() => onToggle("building_style", option.value)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.building_style?.includes(option.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             {option.label}
@@ -756,7 +693,7 @@ const LifestyleWellnessStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
         Lifestyle & Wellness
       </h2>
 
@@ -766,10 +703,10 @@ const LifestyleWellnessStep = ({ formData, onToggle }: any) => (
             key={option.value}
             type="button"
             onClick={() => onToggle("lifestyle_features", option.value)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.lifestyle_features?.includes(option.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             {option.label}
@@ -788,7 +725,7 @@ const SocialCommunityStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
         Social & Community
       </h2>
 
@@ -798,10 +735,10 @@ const SocialCommunityStep = ({ formData, onToggle }: any) => (
             key={option.value}
             type="button"
             onClick={() => onToggle("social_features", option.value)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.social_features?.includes(option.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             {option.label}
@@ -822,7 +759,9 @@ const WorkStudyStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">Work & Study</h2>
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
+        Work & Study
+      </h2>
 
       <div className="space-y-4">
         {WORK_STUDY_OPTIONS.map((option) => (
@@ -830,10 +769,10 @@ const WorkStudyStep = ({ formData, onToggle }: any) => (
             key={option.value}
             type="button"
             onClick={() => onToggle("work_features", option.value)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.work_features?.includes(option.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             {option.label}
@@ -852,7 +791,9 @@ const ConvenienceStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">Convenience</h2>
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
+        Convenience
+      </h2>
 
       <div className="space-y-4">
         {CONVENIENCE_FEATURES_OPTIONS.map((option) => (
@@ -860,10 +801,10 @@ const ConvenienceStep = ({ formData, onToggle }: any) => (
             key={option.value}
             type="button"
             onClick={() => onToggle("convenience_features", option.value)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.convenience_features?.includes(option.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             {option.label}
@@ -882,7 +823,9 @@ const PetFriendlyStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">Pet-Friendly</h2>
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
+        Pet-Friendly
+      </h2>
 
       <div className="space-y-4">
         {PET_FRIENDLY_OPTIONS.map((option) => (
@@ -890,10 +833,10 @@ const PetFriendlyStep = ({ formData, onToggle }: any) => (
             key={option.value}
             type="button"
             onClick={() => onToggle("pet_friendly_features", option.value)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.pet_friendly_features?.includes(option.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             {option.label}
@@ -912,7 +855,7 @@ const LuxuryPremiumStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
         Luxury & Premium
       </h2>
 
@@ -922,10 +865,10 @@ const LuxuryPremiumStep = ({ formData, onToggle }: any) => (
             key={option.value}
             type="button"
             onClick={() => onToggle("luxury_features", option.value)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
               formData.luxury_features?.includes(option.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             {option.label}
@@ -936,39 +879,49 @@ const LuxuryPremiumStep = ({ formData, onToggle }: any) => (
   </div>
 );
 
-const IdealLivingStep = ({ formData, onUpdate }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">
-      Ideal Living Environment
-    </h1>
-    <p className="text-gray-500 mb-6">
-      The type of household atmosphere you prefer
-    </p>
+const IdealLivingStep = ({ formData, onUpdate }: any) => {
+  const handleToggle = (value: string) => {
+    const currentValues = formData.ideal_living_environment || [];
+    const newValues = currentValues.includes(value)
+      ? currentValues.filter((v: string) => v !== value)
+      : [...currentValues, value];
+    onUpdate("ideal_living_environment", newValues);
+  };
 
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">
+  return (
+    <div className="text-center">
+      <h1 className="text-4xl font-bold text-black mb-4">
         Ideal Living Environment
-      </h2>
+      </h1>
+      <p className="text-gray-500 mb-6">
+        The type of household atmosphere you prefer (select multiple)
+      </p>
 
-      <div className="space-y-4">
-        {IDEAL_LIVING_OPTIONS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onUpdate("ideal_living_environment", option)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
-              formData.ideal_living_environment === option
-                ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
-            }`}
-          >
-            {option}
-          </button>
-        ))}
+      <div className="bg-gray-50 rounded-lg p-8">
+        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
+          Ideal Living Environment
+        </h2>
+
+        <div className="space-y-4">
+          {IDEAL_LIVING_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleToggle(option.value)}
+              className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
+                (formData.ideal_living_environment || []).includes(option.value)
+                  ? "bg-black text-white"
+                  : "bg-white text-black hover:bg-gray-50"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const SmokingStep = ({ formData, onUpdate }: any) => (
   <div className="text-center">
@@ -978,21 +931,23 @@ const SmokingStep = ({ formData, onUpdate }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8">Do you smoke?</h2>
+      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
+        Do you smoke?
+      </h2>
 
       <div className="space-y-4">
         {SMOKING_OPTIONS.map((option) => (
           <button
-            key={option}
+            key={option.label}
             type="button"
-            onClick={() => onUpdate("smoker", option)}
-            className={`w-full p-6 text-left rounded-lg border transition-colors ${
-              formData.smoker === option
+            onClick={() => onUpdate("smoker", option.value)}
+            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
+              formData.smoker === option.value
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
-            {option}
+            {option.label}
           </button>
         ))}
       </div>
@@ -1008,7 +963,7 @@ const PersonalPreferencesStep = ({ formData, onToggle }: any) => (
     </p>
 
     <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-4">
+      <h2 className="text-2xl font-semibold text-black mb-4 text-left">
         Hobbies & Interests
       </h2>
       <p className="text-blue-500 text-sm mb-8">
@@ -1022,10 +977,10 @@ const PersonalPreferencesStep = ({ formData, onToggle }: any) => (
             key={hobby.value}
             type="button"
             onClick={() => onToggle("hobbies", hobby.value)}
-            className={`p-4 rounded-lg border transition-colors text-center ${
+            className={`p-4 rounded-3xl border-0 shadow-sm transition-colors text-center ${
               formData.hobbies?.includes(hobby.value)
                 ? "bg-black text-white"
-                : "bg-gray-50 text-black hover:bg-gray-100"
+                : "bg-white text-black hover:bg-gray-50"
             }`}
           >
             <div className="text-2xl mb-2">{hobby.icon}</div>
@@ -1046,7 +1001,7 @@ const AboutYouStep = ({ formData, onUpdate }: any) => (
 
     <div className="text-left">
       <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8">
+        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
           Tell about yourself
         </h2>
 
@@ -1055,7 +1010,7 @@ const AboutYouStep = ({ formData, onUpdate }: any) => (
           onChange={(e) => onUpdate("additional_info", e.target.value)}
           placeholder="e.g., I'm a quiet professional who enjoys cooking and reading. I keep a clean living space and am always respectful of neighbors. I'm looking for a peaceful home environment where I can relax after work..."
           rows={8}
-          className="w-full p-4 border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 bg-white resize-none"
+          className="w-full p-4 border-0 rounded-3xl text-gray-700 placeholder-gray-400 bg-white resize-none shadow-sm"
         />
       </div>
     </div>

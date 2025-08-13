@@ -85,7 +85,7 @@ export default function PreferencesPage() {
         // Redirect based on user role
         setTimeout(() => {
           if (userRole === "admin") {
-            router.push("/app/dashboard/admin");
+            router.push("/app/admin/panel");
           } else if (userRole === "operator") {
             router.push("/app/dashboard/operator");
           } else {

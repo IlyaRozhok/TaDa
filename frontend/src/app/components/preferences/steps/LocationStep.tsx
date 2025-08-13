@@ -1,8 +1,17 @@
 import React, { useState } from "react";
 import { MapPin } from "lucide-react";
-import { InputField } from "../ui";
+import {
+  InputField,
+  SelectField,
+  MetroDropdown,
+  LocationDropdown,
+} from "../ui";
 import { DateRangePicker } from "../ui/DateRangePicker";
 import { PreferencesStepProps } from "@/app/types/preferences";
+import {
+  SECONDARY_LOCATION_OPTIONS,
+  COMMUTE_LOCATION_OPTIONS,
+} from "@/app/constants/preferences";
 
 export const LocationStep: React.FC<PreferencesStepProps> = ({
   formData,
@@ -34,19 +43,21 @@ export const LocationStep: React.FC<PreferencesStepProps> = ({
           error={errors.primary_postcode}
         />
 
-        <InputField
+        <MetroDropdown
           label="Secondary Location"
-          tooltip="Alternative area you'd consider"
-          value={formData.secondary_location || ""}
-          onChange={(e) => onUpdate("secondary_location", e.target.value)}
+          value={formData.secondary_location || "no-preference"}
+          options={SECONDARY_LOCATION_OPTIONS}
+          onChange={(value) => onUpdate("secondary_location", value)}
+          placeholder="No Preference"
           error={errors.secondary_location}
         />
 
-        <InputField
+        <LocationDropdown
           label="Commute Location"
-          tooltip="Where you commute to for work"
-          value={formData.commute_location || ""}
-          onChange={(e) => onUpdate("commute_location", e.target.value)}
+          value={formData.commute_location || "no-preference"}
+          options={COMMUTE_LOCATION_OPTIONS}
+          onChange={(value) => onUpdate("commute_location", value)}
+          placeholder="No Preference"
           error={errors.commute_location}
         />
 
@@ -58,7 +69,11 @@ export const LocationStep: React.FC<PreferencesStepProps> = ({
           }}
           onChange={(range) => {
             onUpdate("move_in_date", range.start);
-            onUpdate("move_out_date", range.end);
+            // Only set move_out_date if it's different from move_in_date (range selection)
+            onUpdate(
+              "move_out_date",
+              range.start === range.end ? null : range.end
+            );
           }}
           error={errors.move_in_date}
           placeholder="May 1 - May 2"

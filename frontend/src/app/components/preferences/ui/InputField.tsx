@@ -59,8 +59,8 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           <input
             ref={ref}
             {...props}
-            className={`w-full px-6 pt-8 pb-4 rounded-full focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer ${
-              error ? "border-red-400 focus:border-red-500" : ""
+            className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 shadow-sm ${
+              error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
             } ${className}`}
             placeholder=""
             onFocus={handleFocus}

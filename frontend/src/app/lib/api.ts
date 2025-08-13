@@ -98,6 +98,8 @@ export const propertiesAPI = {
 
   getById: (id: string) => api.get(`/properties/${id}`),
 
+  getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
+
   create: (data: any) => api.post("/properties", data),
 
   update: (id: string, data: any) => api.patch(`/properties/${id}`, data),
@@ -140,6 +142,77 @@ export const operatorAPI = {
 export const matchingAPI = {
   getDetailedMatches: (limit?: number) =>
     api.get("/matching/detailed-matches", { params: { limit } }),
+};
+
+export const propertyMediaAPI = {
+  uploadPropertyMedia: async (propertyId: string, file: File) => {
+    console.log(
+      "📤 Uploading media for property:",
+      propertyId,
+      "file:",
+      file.name
+    );
+    console.log(
+      "🔑 Current token:",
+      localStorage.getItem("accessToken") ? "Present" : "Missing"
+    );
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const response = await api.post(
+        `/properties/${propertyId}/media`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log("✅ Upload response:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Upload failed:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+      });
+      throw error;
+    }
+  },
+  getPropertyMedia: async (propertyId: string) => {
+    console.log("🔍 Getting media for property:", propertyId);
+    const response = await api.get(`/properties/${propertyId}/media`);
+    console.log("📋 Media response:", response.data);
+    return response.data;
+  },
+  deletePropertyMedia: async (propertyId: string, mediaId: string) => {
+    console.log("🗑️ Deleting media:", mediaId, "for property:", propertyId);
+    const response = await api.delete(
+      `/properties/${propertyId}/media/${mediaId}`
+    );
+    console.log("✅ Delete response:", response.data);
+    return response.data;
+  },
+  updatePropertyMedia: (propertyId: string, mediaId: string, data: any) =>
+    api.put(`/properties/${propertyId}/media/${mediaId}`, data),
+  setAsPrimary: (propertyId: string, mediaId: string) =>
+    api.patch(`/properties/${propertyId}/media/${mediaId}/primary`),
+  setFeaturedMedia: async (propertyId: string, mediaId: string) => {
+    const response = await api.put(
+      `/properties/${propertyId}/media/${mediaId}/featured`
+    );
+    return response.data;
+  },
+  updateMediaOrder: async (
+    propertyId: string,
+    mediaOrders: { id: string; order_index: number }[]
+  ) => {
+    const response = await api.put(`/properties/${propertyId}/media/order`, {
+      mediaOrders,
+    });
+    return response.data;
+  },
 };
 
 // Export types for compatibility

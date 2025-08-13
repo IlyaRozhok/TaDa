@@ -6,3 +6,5 @@ export { StepNavigation } from "./StepNavigation";
 export { FeatureSelector } from "./FeatureSelector";
 export { DatePicker } from "./DatePicker";
 export { DateRangePicker } from "./DateRangePicker";
+export { MetroDropdown } from "./MetroDropdown";
+export { LocationDropdown } from "./LocationDropdown";

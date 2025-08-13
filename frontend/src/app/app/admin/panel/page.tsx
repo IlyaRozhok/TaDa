@@ -10,6 +10,9 @@ import DashboardHeader from "../../../components/DashboardHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 import { useDebounce } from "../../../lib/utils";
 import AdminNotifications from "../../../components/AdminNotifications";
+import MediaManager from "../../../components/MediaManager";
+import { PropertyMedia } from "../../../types";
+import { propertyMediaAPI } from "../../../lib/api";
 import {
   Users,
   Building2,
@@ -29,6 +32,7 @@ import {
   X,
   Save,
   Plus,
+  Image as ImageIcon,
 } from "lucide-react";
 
 type AdminSection = "users" | "properties";
@@ -66,7 +70,7 @@ interface Property {
   description?: string;
   furnished?: string;
   operator_id?: string;
-  property_media?: unknown[];
+  property_media?: PropertyMedia[];
 }
 
 interface PreferencesRow {
@@ -188,6 +192,9 @@ function AdminPanelContent() {
   const [showModal, setShowModal] = useState<
     "view" | "edit" | "add" | "delete" | null
   >(null);
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [selectedPropertyForMedia, setSelectedPropertyForMedia] =
+    useState<Property | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "preferences">("info"); // For user detail tabs
   const [preferencesLoading, setPreferencesLoading] = useState(false);
@@ -793,6 +800,12 @@ function AdminPanelContent() {
     }
   };
 
+  const handleMediaEdit = (property: Property) => {
+    console.log("📸 Opening media editor for property:", property);
+    setSelectedPropertyForMedia(property);
+    setShowMediaModal(true);
+  };
+
   const handleSort = (field: string) => {
     setSort((prev) => ({
       field,
@@ -1353,8 +1366,31 @@ function AdminPanelContent() {
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center min-w-0">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
-                        <Building2 className="w-5 h-5 text-blue-600" />
+                      <div
+                        className="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity duration-150 relative overflow-hidden shadow-sm"
+                        onClick={() => handleMediaEdit(property)}
+                        title="Click to edit photos"
+                      >
+                        {property.property_media &&
+                        property.property_media.length > 0 ? (
+                          <img
+                            src={
+                              property.property_media[0]?.url ||
+                              property.property_media[0]?.s3_url ||
+                              "/placeholder-property.jpg"
+                            }
+                            alt={property.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/placeholder-property.jpg";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-blue-600" />
+                          </div>
+                        )}
                       </div>
                       <div className="ml-4 min-w-0 flex-1">
                         <div
@@ -1407,6 +1443,13 @@ function AdminPanelContent() {
                         title="Edit property"
                       >
                         <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleMediaEdit(property)}
+                        className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors duration-150"
+                        title="Manage photos"
+                      >
+                        <ImageIcon className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(property)}
@@ -2693,6 +2736,116 @@ function AdminPanelContent() {
     }
   };
 
+  const MediaModal = () => {
+    if (!showMediaModal || !selectedPropertyForMedia) return null;
+
+    // Ensure we always display fresh media from backend (presigned URLs)
+    const [loadingMedia, setLoadingMedia] = useState(false);
+    const [mediaList, setMediaList] = useState<PropertyMedia[]>(
+      selectedPropertyForMedia.property_media || []
+    );
+
+    useEffect(() => {
+      const fetchMedia = async () => {
+        try {
+          setLoadingMedia(true);
+          console.log(
+            "🖼️ Fetching media for property:",
+            selectedPropertyForMedia.id
+          );
+          const fresh = await propertyMediaAPI.getPropertyMedia(
+            selectedPropertyForMedia.id
+          );
+          console.log("🖼️ Fetched media:", fresh);
+          setMediaList(fresh);
+        } catch (e) {
+          console.error("❌ Failed to fetch media:", e);
+          // ignore, fallback to existing
+        } finally {
+          setLoadingMedia(false);
+        }
+      };
+
+      fetchMedia();
+    }, [selectedPropertyForMedia.id]);
+
+    const handleMediaUpdate = (updatedMedia: PropertyMedia[]) => {
+      // Update the property in the properties list
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === selectedPropertyForMedia.id
+            ? { ...p, property_media: updatedMedia }
+            : p
+        )
+      );
+      setMediaList(updatedMedia);
+    };
+
+    console.log("🎭 Rendering MediaModal:", {
+      showMediaModal,
+      selectedPropertyForMedia,
+      mediaList,
+    });
+
+    return (
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-[9999]">
+        <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Manage Photos
+                </h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  {selectedPropertyForMedia.title}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Property ID: {selectedPropertyForMedia.id}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  console.log("🚪 Closing media modal");
+                  setShowMediaModal(false);
+                }}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {loadingMedia && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-slate-600">Loading photos...</span>
+              </div>
+            )}
+            {!loadingMedia && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 font-medium">
+                    📸 Total photos: {mediaList.length}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Property ID: {selectedPropertyForMedia.id}
+                  </p>
+                </div>
+                <MediaManager
+                  propertyId={selectedPropertyForMedia.id}
+                  media={mediaList}
+                  accessToken={localStorage.getItem("accessToken") || ""}
+                  onMediaUpdate={handleMediaUpdate}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 admin-panel">
       <DashboardHeader />
@@ -2706,6 +2859,7 @@ function AdminPanelContent() {
       {activeSection === "users" && <AddEditUserModal />}
       {activeSection === "properties" && <AddEditPropertyModal />}
       <DeleteModal />
+      <MediaModal />
 
       <AdminNotifications
         notifications={notifications}
