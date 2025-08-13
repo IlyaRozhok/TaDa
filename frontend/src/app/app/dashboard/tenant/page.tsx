@@ -230,6 +230,7 @@ function TenantDashboardContent() {
             matchedProperties={matchedProperties}
             loading={matchedLoading}
             onPropertyClick={handlePropertyClick}
+            showShortlist={true}
             skeletonCount={3}
           />
 

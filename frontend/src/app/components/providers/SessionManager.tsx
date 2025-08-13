@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { setAuth, logout } from "../../store/slices/authSlice";
+import { fetchShortlist } from "../../store/slices/shortlistSlice";
+import { AppDispatch } from "../../store/store";
 import api from "../../lib/api";
 
 // Global promise for session initialization
@@ -21,7 +23,7 @@ export function waitForSessionManager(): Promise<void> {
 }
 
 export default function SessionManager() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -48,6 +50,12 @@ export default function SessionManager() {
               })
             );
             console.log("Session restored for:", response.data.user.email);
+
+            // Initialize shortlist for tenant users
+            if (response.data.user.role === "tenant") {
+              console.log("🛒 Initializing shortlist for tenant user");
+              dispatch(fetchShortlist());
+            }
           }
         } catch (error: any) {
           console.log("Token validation failed:", error.response?.status);

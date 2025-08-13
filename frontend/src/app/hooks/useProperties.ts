@@ -6,6 +6,7 @@ import {
   Property,
   PropertyFilters,
   MatchingResult,
+  DetailedMatchingResult,
   matchingAPI,
 } from "../lib/api";
 import { useDebounce, useDebouncedApiCall } from "./useDebounce";
@@ -32,7 +33,7 @@ interface UsePropertiesReturn {
 }
 
 interface UseMatchedPropertiesReturn {
-  matchedProperties: MatchingResult[];
+  matchedProperties: DetailedMatchingResult[];
   loading: boolean;
   error: string | null;
   fetchMatchedProperties: (limit?: number) => Promise<void>;
@@ -177,9 +178,9 @@ export const useProperties = (): UsePropertiesReturn => {
 
 // Hook for matched properties
 export const useMatchedProperties = (): UseMatchedPropertiesReturn => {
-  const [matchedProperties, setMatchedProperties] = useState<MatchingResult[]>(
-    []
-  );
+  const [matchedProperties, setMatchedProperties] = useState<
+    DetailedMatchingResult[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -188,11 +189,27 @@ export const useMatchedProperties = (): UseMatchedPropertiesReturn => {
       setLoading(true);
       setError(null);
 
+      console.log("🔍 Fetching matched properties with limit:", limit);
+
       const response = await matchingAPI.getDetailedMatches(limit);
-      setMatchedProperties(Array.isArray(response) ? response : []);
+      console.log("✅ Matched properties response:", response);
+
+      // Handle response data structure
+      const matchedData = response?.data || response;
+      const finalData = Array.isArray(matchedData) ? matchedData : [];
+
+      console.log(
+        "📊 Final matched properties:",
+        finalData.length,
+        "properties"
+      );
+      setMatchedProperties(finalData);
     } catch (err: unknown) {
-      console.error("Error fetching matched properties:", err);
-      setError(err instanceof Error ? err.message : "Failed to load matches");
+      console.error("❌ Error fetching matched properties:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load matches";
+      console.error("❌ Error details:", errorMessage);
+      setError(errorMessage);
       setMatchedProperties([]);
     } finally {
       setLoading(false);

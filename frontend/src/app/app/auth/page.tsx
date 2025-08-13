@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setAuth } from "../../store/slices/authSlice";
+import { fetchShortlist } from "../../store/slices/shortlistSlice";
+import { AppDispatch } from "../../store/store";
 import { authAPI } from "../../lib/api";
 import Link from "next/link";
 import {
@@ -33,7 +35,7 @@ export default function UnifiedAuthPage() {
   const [requiresRegistration, setRequiresRegistration] = useState(false);
 
   const router = useRouter();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   // Removed automatic redirect for authenticated users to prevent redirect loops
   // Users should explicitly navigate to where they want to go
@@ -74,6 +76,12 @@ export default function UnifiedAuthPage() {
           accessToken: response.data.access_token,
         })
       );
+
+      // Initialize shortlist for tenant users
+      if (response.data.user?.role === "tenant") {
+        console.log("🛒 Initializing shortlist for tenant user after login");
+        dispatch(fetchShortlist());
+      }
 
       // Verify token was stored
       const storedToken = localStorage.getItem("accessToken");
@@ -120,6 +128,14 @@ export default function UnifiedAuthPage() {
         })
       );
 
+      // Initialize shortlist for tenant users
+      if (response.data.user?.role === "tenant") {
+        console.log(
+          "🛒 Initializing shortlist for tenant user after registration"
+        );
+        dispatch(fetchShortlist());
+      }
+
       router.push("/app/dashboard");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -140,15 +156,8 @@ export default function UnifiedAuthPage() {
 
   if (step === "role" && requiresRegistration) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute inset-0 bg-black/50 z-0"></div>
-          <img
-            src="/auth-bg.jpg"
-            alt="Background"
-            className="w-full h-full object-cover"
-          />
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        <div className="absolute top-0 left-0 w-full h-full"></div>
 
         <div className="w-full max-w-md relative z-10">
           <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -280,15 +289,8 @@ export default function UnifiedAuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
-      <div className="absolute top-0 left-0 w-full h-full">
-        <div className="absolute inset-0 bg-black/50 z-0"></div>
-        <img
-          src="/auth-bg.jpg"
-          alt="Background"
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <div className="absolute top-0 left-0 w-full h-full"></div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="bg-white rounded-2xl shadow-xl p-8">

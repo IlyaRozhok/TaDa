@@ -2,8 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { propertiesAPI, shortlistAPI, Property } from "../../../lib/api";
+import {
+  addToShortlist,
+  removeFromShortlist,
+  selectShortlistProperties,
+} from "../../../store/slices/shortlistSlice";
+import { AppDispatch } from "../../../store/store";
 import {
   selectUser,
   selectIsAuthenticated,
@@ -29,8 +35,10 @@ import toast from "react-hot-toast";
 export default function PropertyPublicPage() {
   const { id } = useParams();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const shortlistProperties = useSelector(selectShortlistProperties);
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,21 +91,19 @@ export default function PropertyPublicPage() {
     fetchProperty();
   }, [id]);
 
-  // Check if property is in shortlist
+  // Check if property is in shortlist using Redux state (avoid API calls to prevent cycling)
   useEffect(() => {
-    const checkShortlistStatus = async () => {
-      if (!property || !isAuthenticated || !user) return;
+    if (!property || !isAuthenticated || !user || user.role !== "tenant") {
+      setIsInShortlist(false);
+      return;
+    }
 
-      try {
-        const response = await shortlistAPI.checkStatus(property.id);
-        setIsInShortlist(response.data?.isInShortlist || false);
-      } catch (error) {
-        console.log("Could not check shortlist status:", error);
-      }
-    };
-
-    checkShortlistStatus();
-  }, [property, isAuthenticated, user]);
+    // Check if current property is in shortlist from Redux state
+    const isPropertyInShortlist = shortlistProperties.some(
+      (shortlistProperty) => shortlistProperty.id === property.id
+    );
+    setIsInShortlist(isPropertyInShortlist);
+  }, [property, isAuthenticated, user, shortlistProperties]);
 
   const allImages: string[] = useMemo(() => {
     if (!property) {
@@ -107,8 +113,8 @@ export default function PropertyPublicPage() {
 
     console.log("🖼️ Processing images for property:", property.title);
 
-    // Try both property.media and property.property_media
-    const mediaArray = property.media || property.property_media || [];
+    // Use property.media for images
+    const mediaArray = property.media || [];
     console.log("🖼️ Media array found:", mediaArray);
 
     const mediaUrls = mediaArray
@@ -147,14 +153,26 @@ export default function PropertyPublicPage() {
       return;
     }
 
+    if (user.role !== "tenant") {
+      toast.error("Only tenants can add properties to shortlist");
+      return;
+    }
+
     setShortlistLoading(true);
     try {
       if (isInShortlist) {
-        await shortlistAPI.remove(id as string);
+        // Use Redux action instead of direct API call
+        await dispatch(removeFromShortlist(id as string)).unwrap();
         setIsInShortlist(false);
         toast.success("Removed from shortlist");
       } else {
-        await shortlistAPI.add(id as string);
+        // Use Redux action instead of direct API call
+        await dispatch(
+          addToShortlist({
+            propertyId: id as string,
+            property: property || undefined,
+          })
+        ).unwrap();
         setIsInShortlist(true);
         toast.success("Added to shortlist");
       }
@@ -282,7 +300,7 @@ export default function PropertyPublicPage() {
               <>
                 <div className="relative rounded-2xl overflow-hidden mb-4">
                   <ImageGallery
-                    media={property.media || property.property_media || []}
+                    media={property.media || []}
                     images={property.images || []}
                     alt={property.title || "Property"}
                   />

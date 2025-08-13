@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setAuth } from "../../../store/slices/authSlice";
+import { fetchShortlist } from "../../../store/slices/shortlistSlice";
+import { AppDispatch } from "../../../store/store";
 import { authAPI, usersAPI } from "../../../lib/api";
 import GlobalLoader from "../../../components/GlobalLoader";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
@@ -12,7 +14,7 @@ function AuthCallbackContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -110,6 +112,14 @@ function AuthCallbackContent() {
             accessToken: token,
           })
         );
+
+        // Initialize shortlist for tenant users
+        if (profileResponse.data.user?.role === "tenant") {
+          console.log(
+            "🛒 Initializing shortlist for tenant user via OAuth callback"
+          );
+          dispatch(fetchShortlist());
+        }
 
         // Simple redirect based on user
         const user = profileResponse.data.user;

@@ -21,10 +21,19 @@ const initialState: ShortlistState = {
 // Async thunks
 export const fetchShortlist = createAsyncThunk(
   "shortlist/fetchShortlist",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      const properties = await shortlistAPI.getAll();
-      return properties;
+      // Check user role before making API call
+      const state = getState() as { auth: { user: { role?: string } | null } };
+      const user = state?.auth?.user;
+
+      if (!user || user.role !== "tenant") {
+        console.warn("Shortlist fetch blocked: user is not a tenant");
+        return []; // Return empty array for non-tenants
+      }
+
+      const data = await shortlistAPI.getAll();
+      return data || [];
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch shortlist");
     }
@@ -33,10 +42,25 @@ export const fetchShortlist = createAsyncThunk(
 
 export const addToShortlist = createAsyncThunk(
   "shortlist/addToShortlist",
-  async (propertyId: string, { rejectWithValue }) => {
+  async (
+    { propertyId, property }: { propertyId: string; property?: Property },
+    { rejectWithValue, getState }
+  ) => {
     try {
-      await shortlistAPI.add(propertyId);
-      return propertyId;
+      // Check user role before making API call
+      const state = getState() as { auth: { user: { role?: string } | null } };
+      const user = state?.auth?.user;
+
+      if (!user || user.role !== "tenant") {
+        console.warn("Add to shortlist blocked: user is not a tenant");
+        return rejectWithValue("Only tenants can add properties to shortlist");
+      }
+
+      const data = await shortlistAPI.add(propertyId);
+      console.log("Add to shortlist response:", data);
+
+      // Return both the property ID and the property data (if available)
+      return { propertyId, property };
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to add to shortlist");
     }
@@ -45,9 +69,21 @@ export const addToShortlist = createAsyncThunk(
 
 export const removeFromShortlist = createAsyncThunk(
   "shortlist/removeFromShortlist",
-  async (propertyId: string, { rejectWithValue }) => {
+  async (propertyId: string, { rejectWithValue, getState }) => {
     try {
-      await shortlistAPI.remove(propertyId);
+      // Check user role before making API call
+      const state = getState() as { auth: { user: { role?: string } | null } };
+      const user = state?.auth?.user;
+
+      if (!user || user.role !== "tenant") {
+        console.warn("Remove from shortlist blocked: user is not a tenant");
+        return rejectWithValue(
+          "Only tenants can remove properties from shortlist"
+        );
+      }
+
+      const data = await shortlistAPI.remove(propertyId);
+      console.log("Remove from shortlist response:", data);
       return propertyId;
     } catch (error: any) {
       return rejectWithValue(
@@ -59,9 +95,19 @@ export const removeFromShortlist = createAsyncThunk(
 
 export const clearShortlist = createAsyncThunk(
   "shortlist/clearShortlist",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      await shortlistAPI.clear();
+      // Check user role before making API call
+      const state = getState() as { auth: { user: { role?: string } | null } };
+      const user = state?.auth?.user;
+
+      if (!user || user.role !== "tenant") {
+        console.warn("Clear shortlist blocked: user is not a tenant");
+        return rejectWithValue("Only tenants can clear shortlist");
+      }
+
+      const data = await shortlistAPI.clear();
+      console.log("Clear shortlist response:", data);
       return;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to clear shortlist");
@@ -71,8 +117,17 @@ export const clearShortlist = createAsyncThunk(
 
 export const fetchShortlistCount = createAsyncThunk(
   "shortlist/fetchShortlistCount",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
+      // Check user role before making API call
+      const state = getState() as { auth: { user: { role?: string } | null } };
+      const user = state?.auth?.user;
+
+      if (!user || user.role !== "tenant") {
+        console.warn("Shortlist count fetch blocked: user is not a tenant");
+        return 0; // Return 0 for non-tenants
+      }
+
       const count = await shortlistAPI.getCount();
       return count;
     } catch (error: any) {
@@ -126,10 +181,23 @@ const shortlistSlice = createSlice({
       })
       .addCase(
         addToShortlist.fulfilled,
-        (state, action: PayloadAction<string>) => {
-          state.count += 1;
-          // Note: We don't add the property to the list here because we don't have full property data
-          // The property will be added when we refetch the shortlist
+        (
+          state,
+          action: PayloadAction<{ propertyId: string; property?: Property }>
+        ) => {
+          const { propertyId, property } = action.payload;
+
+          // Check if property is already in shortlist (avoid duplicates)
+          const exists = state.properties.some((p) => p.id === propertyId);
+          if (!exists) {
+            state.count += 1;
+
+            // If property data is available, add it to the list immediately
+            if (property) {
+              state.properties.push(property);
+            }
+            // If no property data, it will be added when we refetch the shortlist
+          }
         }
       )
       .addCase(addToShortlist.rejected, (state, action) => {

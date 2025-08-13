@@ -41,7 +41,7 @@ export class UpdateUserDto {
     example: "1990-01-15",
   })
   @IsOptional()
-  @IsDateString()
+  @IsDateString({}, { message: "Date of birth must be a valid date string" })
   date_of_birth?: string;
 
   @ApiPropertyOptional({

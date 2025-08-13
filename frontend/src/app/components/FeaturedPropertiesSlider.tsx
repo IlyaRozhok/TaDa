@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Property } from "../types";
 import { useProperties } from "../hooks/useProperties";
+import PropertyCard from "./PropertyCard";
 
 // Helper function to generate random match percentage and status
 const generateRandomData = () => ({
@@ -345,11 +346,13 @@ export default function FeaturedPropertiesSlider() {
         {/* Properties Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {getVisibleProperties().map((property) => (
-            <FeaturedPropertyCard
+            <PropertyCard
               key={`${property.id}-${currentIndex}`}
               property={property}
-              randomData={randomDataMap[property.id] || generateRandomData()}
-              onClick={handlePropertyClick}
+              onClick={() => handlePropertyClick(property)}
+              showShortlist={true}
+              hasTopRightBadge={false}
+              showFeaturedBadge={true}
             />
           ))}
         </div>

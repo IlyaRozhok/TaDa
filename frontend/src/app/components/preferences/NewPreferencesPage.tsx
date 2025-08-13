@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Lock, ChevronDown, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Lock, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { DateRangePicker } from "./ui/DateRangePicker";
 import { CustomDropdown } from "./ui/CustomDropdown";
@@ -40,12 +40,10 @@ export default function NewPreferencesPage() {
     loading,
     step,
     watchedData,
-    handleSubmit,
     updateField,
     toggleFeature,
     nextStep,
     prevStep,
-    onSubmit,
     savePreferences,
     isLastStep,
     isFirstStep,
@@ -125,6 +123,23 @@ export default function NewPreferencesPage() {
     }
   };
 
+  const handleGoBack = () => {
+    router.push("/app/dashboard");
+  };
+
+  const handleFinish = async () => {
+    try {
+      await savePreferences();
+      console.log("✅ Preferences saved successfully");
+      // toast.success("Preferences saved successfully!");
+      // Optionally redirect to dashboard after successful save
+      // router.push("/app/dashboard");
+    } catch (error) {
+      console.error("❌ Failed to save preferences:", error);
+      toast.error("Failed to save preferences");
+    }
+  };
+
   const renderStep = () => {
     const stepProps = {
       formData: watchedData,
@@ -173,14 +188,20 @@ export default function NewPreferencesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 px-8">
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-black rounded-full mr-3"></div>
-          <span className="text-xl font-semibold">tada.co</span>
+          <button
+            onClick={handleGoBack}
+            className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-900" />
+          </button>
+          <div className="w-8 h-8 bg-slate-600 rounded-full mr-3"></div>
+          <span className="text-xl text-black font-semibold">tada.co</span>
         </div>
         <button
           onClick={handleSave}
-          className="text-gray-600 hover:text-black transition-colors font-medium"
+          className="cursor-pointer text-gray-600 border-1 rounded-2xl p-2 hover:text-black transition-colors font-medium"
         >
           Save
         </button>
@@ -188,9 +209,7 @@ export default function NewPreferencesPage() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-8 pb-32">
-        <form onSubmit={handleSubmit((data) => onSubmit(data, false))}>
-          {renderStep()}
-        </form>
+        <form onSubmit={(e) => e.preventDefault()}>{renderStep()}</form>
       </div>
 
       {/* Bottom Navigation */}
@@ -223,8 +242,8 @@ export default function NewPreferencesPage() {
             </div>
 
             <button
-              type={isLastStep ? "submit" : "button"}
-              onClick={isLastStep ? undefined : nextStep}
+              type="button"
+              onClick={isLastStep ? handleFinish : nextStep}
               disabled={loading}
               className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
             >

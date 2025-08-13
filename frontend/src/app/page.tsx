@@ -1,150 +1,306 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "./store/slices/authSlice";
+import { Property } from "./types";
+import { propertiesAPI } from "./lib/api";
+import HomepagePropertyCard from "./components/HomepagePropertyCard";
+import PropertyCardSkeleton from "./components/PropertyCardSkeleton";
+import AuthModal from "./components/AuthModal";
+import { Search, ChevronDown, MapPin } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { Building2, Users, MapPin, Shield, Star, Clock } from "lucide-react";
 
-export default function Home() {
+// Mock match data for demonstration
+const generateMockMatchData = (propertyId: string) => {
+  // Create a consistent hash from property ID for deterministic results
+  const hash = propertyId
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const matchScore = 75 + (hash % 25); // Range: 75-99%
+  return {
+    matchScore: Math.min(matchScore, 99),
+    matchReasons: [
+      "Budget matches your preferences",
+      "Great location for commuting",
+      "Property type fits your needs",
+    ],
+  };
+};
+
+export default function HomePage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const router = useRouter();
 
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [language] = useState("EN");
+  const [sortBy] = useState("Best Match Score");
+
+  // Auto-redirect authenticated users to their dashboard
   useEffect(() => {
-    // Auto-redirect authenticated users to their dashboard
     if (isAuthenticated && user) {
       const role = user.role || "tenant";
       router.replace(`/app/dashboard/${role}`);
     }
   }, [isAuthenticated, user, router]);
 
-  // Show landing page for non-authenticated users
+  // Fetch properties
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        const response = await propertiesAPI.getPublic(1, 20); // Get up to 20 properties for homepage
+        const data = response.data || response;
+        setProperties(
+          Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : []
+        );
+      } catch (err) {
+        console.error("Error fetching properties:", err);
+        setError("Failed to load properties");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  const handlePropertyClick = (property: Property) => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+    } else {
+      router.push(`/app/properties/${property.id}`);
+    }
+  };
+
+  const handleSignIn = () => {
+    setAuthModalOpen(true);
+  };
+
+  // Show loading state while redirecting authenticated users
   if (isAuthenticated && user) {
-    return null; // Redirecting...
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4"></div>
+          <p className="text-slate-600">Redirecting to dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50"></div>
+      {/* Header */}
+      <header className="border-b border-gray-100 sticky top-0 z-50 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="relative rounded-full overflow-hidden border-2 border-black shadow-lg bg-black w-10 h-10 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">TD</span>
+              </div>
+              <span className="text-2xl font-bold text-black">TADA</span>
+            </div>
 
-        <div className="relative max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 mb-6">
-            Find Your Perfect Home
-          </h1>
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md mx-8">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search property, location, or type of property"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
 
-          <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Connect with trusted property operators and discover your ideal
-            living space in London
-          </p>
+            {/* Right Section */}
+            <div className="flex items-center gap-4">
+              {/* Language Dropdown */}
+              <div className="relative">
+                <button className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+                  <span className="font-medium">{language}</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/app/auth"
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              Get Started
-            </Link>
+              {/* Sign In Button */}
+              <button
+                onClick={handleSignIn}
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-            <Link
-              href="/app/properties"
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              Browse Properties
-            </Link>
+      {/* Welcome Section */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto py-2 px-10 bg-gray-100 rounded-3xl">
+          <div className="flex items-center justify-between">
+            {/* Left Content */}
+            <div className="flex-1 max-w-2xl">
+              <h1 className="text-4xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+                Welcome to Tada Property —<br />
+                The Best Home Search Service
+              </h1>
+
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                Find your perfect London rental with ease. Sign in to explore
+                our smart search tools, curated listings, and tailored
+                recommendations — everything you need for a faster, smoother,
+                and more enjoyable property hunt.
+              </p>
+
+              <button
+                onClick={handleSignIn}
+                className="bg-black cursor-pointer text-white px-12 py-3 rounded-3xl font-semibold text-lg hover:bg-gray-800 transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
+
+            {/* Right House Illustration */}
+            <div className="hidden lg:block flex-shrink-0 ml-12">
+              <div className="relative w-90 h-94">
+                <Image
+                  src="/house_home.png"
+                  alt="Modern house illustration"
+                  width={370}
+                  height={306}
+                  className="w-full h-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-12">
-            Why Choose TaDa?
-          </h2>
+      {/* Listed Properties Section */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Section Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Listed property
+              </h2>
+              <p className="text-gray-600">
+                After you log in, our service gives you the best results
+                tailored to your preferences • {properties.length} items
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              icon={<Building2 className="w-8 h-8" />}
-              title="Verified Properties"
-              description="All properties are verified and managed by trusted operators"
-            />
+            <div className="flex items-center gap-4">
+              {/* Sort Dropdown */}
+              <div className="relative">
+                <button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50">
+                  <span>{sortBy}</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
 
-            <FeatureCard
-              icon={<Users className="w-8 h-8" />}
-              title="Direct Connection"
-              description="Connect directly with property operators, no middlemen"
-            />
-
-            <FeatureCard
-              icon={<MapPin className="w-8 h-8" />}
-              title="Prime Locations"
-              description="Properties in the best locations across London"
-            />
-
-            <FeatureCard
-              icon={<Shield className="w-8 h-8" />}
-              title="Secure Platform"
-              description="Your data and transactions are always secure"
-            />
-
-            <FeatureCard
-              icon={<Star className="w-8 h-8" />}
-              title="Quality Assured"
-              description="High standards for all listed properties"
-            />
-
-            <FeatureCard
-              icon={<Clock className="w-8 h-8" />}
-              title="Quick Process"
-              description="Find and secure your home in record time"
-            />
+              {/* Show Map Button */}
+              <button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50">
+                <MapPin className="w-4 h-4" />
+                <span>Show map</span>
+              </button>
+            </div>
           </div>
+
+          {/* Properties Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <PropertyCardSkeleton key={`skeleton-${index}`} />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+              <h3 className="text-xl font-semibold text-red-800 mb-4">
+                Failed to Load Properties
+              </h3>
+              <p className="text-red-600 mb-6">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {properties.slice(0, 6).map((property) => {
+                const mockMatch = generateMockMatchData(property.id);
+                return (
+                  <HomepagePropertyCard
+                    key={property.id}
+                    property={property}
+                    matchScore={mockMatch.matchScore}
+                    onClick={() => handlePropertyClick(property)}
+                    showShortlist={isAuthenticated} // Show shortlist for authenticated users
+                    isAuthenticated={isAuthenticated} // Pass authentication status
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* Sign In to Continue Button for Non-Authenticated Users */}
+          {!loading && !error && !isAuthenticated && (
+            <div className="text-center mt-8">
+              <button
+                onClick={handleSignIn}
+                className="bg-black text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-800 transition-colors shadow-lg"
+              >
+                Sign In to continue
+              </button>
+            </div>
+          )}
+
+          {/* Show More Properties Message for Authenticated Users */}
+          {!loading && !error && isAuthenticated && properties.length > 6 && (
+            <div className="text-center mt-12">
+              <div className="bg-gray-100 rounded-lg p-6">
+                <p className="text-gray-700 mb-4">
+                  Showing <span className="font-bold text-blue-600">6</span> of{" "}
+                  <span className="font-bold text-blue-600">
+                    {properties.length}
+                  </span>{" "}
+                  available properties. View all properties to see personalized
+                  matches based on your preferences.
+                </p>
+                <button
+                  onClick={() => router.push("/app/properties")}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  View All Properties
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-            Ready to Find Your New Home?
-          </h2>
-
-          <p className="text-xl text-gray-600 mb-8">
-            Join thousands of happy tenants who found their perfect home through
-            TaDa
-          </p>
-
-          <Link
-            href="/app/auth"
-            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
-          >
-            Start Your Search
-          </Link>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-      <div className="text-blue-600 mb-4">{icon}</div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </div>
   );
 }

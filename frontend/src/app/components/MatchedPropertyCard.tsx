@@ -36,6 +36,8 @@ export default function MatchedPropertyCard({
         showShortlist={showShortlist}
         imageLoaded={imageLoaded}
         onImageLoad={onImageLoad}
+        hasTopRightBadge={true}
+        showFeaturedBadge={false}
       />
 
       {/* Match Score Badge */}

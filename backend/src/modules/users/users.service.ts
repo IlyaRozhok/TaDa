@@ -61,6 +61,15 @@ export class UsersService {
     // Update profile based on role
     if (user.role === UserRole.Tenant && user.tenantProfile) {
       if (updateUserDto.phone) user.tenantProfile.phone = updateUserDto.phone;
+      if (
+        updateUserDto.date_of_birth &&
+        updateUserDto.date_of_birth.trim() !== ""
+      )
+        user.tenantProfile.date_of_birth = new Date(
+          updateUserDto.date_of_birth
+        );
+      if (updateUserDto.nationality)
+        user.tenantProfile.nationality = updateUserDto.nationality;
       if (updateUserDto.age_range)
         user.tenantProfile.age_range = updateUserDto.age_range;
       if (updateUserDto.occupation)
@@ -85,6 +94,15 @@ export class UsersService {
       await this.tenantProfileRepository.save(user.tenantProfile);
     } else if (user.role === UserRole.Operator && user.operatorProfile) {
       if (updateUserDto.phone) user.operatorProfile.phone = updateUserDto.phone;
+      if (
+        updateUserDto.date_of_birth &&
+        updateUserDto.date_of_birth.trim() !== ""
+      )
+        user.operatorProfile.date_of_birth = new Date(
+          updateUserDto.date_of_birth
+        );
+      if (updateUserDto.nationality)
+        user.operatorProfile.nationality = updateUserDto.nationality;
       if (updateUserDto.company_name)
         user.operatorProfile.company_name = updateUserDto.company_name;
       if (updateUserDto.business_address)
@@ -384,9 +402,10 @@ export class UsersService {
     }
 
     // Convert string to enum if needed
-    const roleEnum = typeof role === 'string' 
-      ? Object.values(UserRole).find(r => r === role) || UserRole.Tenant
-      : role;
+    const roleEnum =
+      typeof role === "string"
+        ? Object.values(UserRole).find((r) => r === role) || UserRole.Tenant
+        : role;
 
     // Update the user's role
     await this.userRepository.update(userId, { role: roleEnum });

@@ -127,7 +127,7 @@ export default function AllPropertiesPage() {
             </h3>
             <p className="text-red-600 mb-8">{error}</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => typeof window !== "undefined" && window.location.reload()}
               className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
             >
               Try Again

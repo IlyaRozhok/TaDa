@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { setAuth, selectIsAuthenticated } from "../store/slices/authSlice";
+import { fetchShortlist } from "../store/slices/shortlistSlice";
+import { AppDispatch } from "../store/store";
 import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
 import {
@@ -48,7 +50,7 @@ export default function AuthModal({
 
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   // Close modal on authentication success (except for OAuth role selection)
   useEffect(() => {
@@ -150,6 +152,12 @@ export default function AuthModal({
         })
       );
 
+      // Initialize shortlist for tenant users
+      if (response.user?.role === "tenant") {
+        console.log("🛒 Initializing shortlist for tenant user via AuthModal");
+        dispatch(fetchShortlist());
+      }
+
       handleClose();
       redirectAfterLogin(response.user, router);
     } catch (err: unknown) {
@@ -226,6 +234,14 @@ export default function AuthModal({
             accessToken: response.access_token,
           })
         );
+
+        // Initialize shortlist for tenant users
+        if (response.user?.role === "tenant") {
+          console.log(
+            "🛒 Initializing shortlist for tenant user via AuthModal role selection"
+          );
+          dispatch(fetchShortlist());
+        }
 
         // Clear registration ID from sessionStorage
         sessionStorage.removeItem("googleRegistrationId");

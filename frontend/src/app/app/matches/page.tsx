@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { matchingAPI, MatchingResult, Property } from "../../lib/api";
+import { matchingAPI, DetailedMatchingResult, Property } from "../../lib/api";
 import { useTranslations } from "../../lib/language-context";
 import { selectUser } from "../../store/slices/authSlice";
 import MatchedPropertyGridWithLoader from "../../components/MatchedPropertyGridWithLoader";
@@ -26,7 +26,9 @@ export default function MatchesPage() {
   const t = useTranslations();
   const router = useRouter();
   const user = useSelector(selectUser);
-  const [detailedMatches, setDetailedMatches] = useState<MatchingResult[]>([]);
+  const [detailedMatches, setDetailedMatches] = useState<
+    DetailedMatchingResult[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +70,19 @@ export default function MatchesPage() {
         setError(null);
 
         console.log("📡 Matches: Fetching detailed matches...");
-        const matches = await matchingAPI.getDetailedMatches(20);
-        setDetailedMatches(matches);
-        console.log("✅ Matches: Detailed matches loaded:", matches.length);
+        const response = await matchingAPI.getDetailedMatches(20);
+
+        // Extract data from axios response
+        const matches = response?.data || response;
+        console.log("🔍 Raw matches response:", { response, matches });
+
+        // Ensure matches is always an array
+        const matchesArray = Array.isArray(matches) ? matches : [];
+        setDetailedMatches(matchesArray);
+        console.log(
+          "✅ Matches: Detailed matches loaded:",
+          matchesArray.length
+        );
       } catch (err) {
         console.error("❌ Matches: Error fetching matches:", err);
         setError("Failed to load property matches");
@@ -85,6 +97,16 @@ export default function MatchesPage() {
   // Sort matches with robust handling
   const sortedMatches = useMemo(() => {
     console.log("🔄 Sorting matches by:", sortBy, "direction:", sortDirection);
+
+    // Ensure detailedMatches is an array before sorting
+    if (!Array.isArray(detailedMatches) || detailedMatches.length === 0) {
+      console.log(
+        "⚠️ detailedMatches is not an array or is empty:",
+        detailedMatches
+      );
+      return [];
+    }
+
     const sorted = [...detailedMatches].sort((a, b) => {
       let comparison = 0;
 
@@ -397,7 +419,7 @@ export default function MatchesPage() {
               {/* Update Preferences Button */}
               <button
                 onClick={() => router.push("/app/preferences")}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-400 transition-colors text-sm font-medium"
               >
                 <Settings className="w-4 h-4" />
                 Update Preferences

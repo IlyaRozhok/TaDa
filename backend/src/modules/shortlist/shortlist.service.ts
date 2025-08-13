@@ -103,9 +103,12 @@ export class ShortlistService {
     // Initialize shortlisted_properties if null
     const currentShortlist = tenantProfile.shortlisted_properties || [];
 
-    // Check if already shortlisted
+    // Check if already shortlisted - if yes, just return success (idempotent operation)
     if (currentShortlist.includes(propertyId)) {
-      throw new ConflictException("Property already in shortlist");
+      return {
+        success: true,
+        message: "Property already in shortlist",
+      };
     }
 
     // Add to shortlist
@@ -130,9 +133,12 @@ export class ShortlistService {
     // Initialize shortlisted_properties if null
     const currentShortlist = tenantProfile.shortlisted_properties || [];
 
-    // Check if property is in shortlist
+    // Check if property is in shortlist - if not, just return success (idempotent operation)
     if (!currentShortlist.includes(propertyId)) {
-      throw new NotFoundException("Property not found in shortlist");
+      return {
+        success: true,
+        message: "Property not in shortlist (already removed)",
+      };
     }
 
     // Remove from shortlist

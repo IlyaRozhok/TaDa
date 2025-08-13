@@ -62,12 +62,17 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
+      // Get profile data based on user role
+      const profile =
+        user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+
       // Format date_of_birth for HTML date input (YYYY-MM-DD)
       let formattedDateOfBirth = "";
-      if (user.date_of_birth) {
+      const dateOfBirth = profile?.date_of_birth;
+      if (dateOfBirth) {
         try {
           // Handle both date strings and Date objects
-          const date = new Date(user.date_of_birth);
+          const date = new Date(dateOfBirth);
           if (!isNaN(date.getTime())) {
             formattedDateOfBirth = date.toISOString().split("T")[0];
           }
@@ -79,10 +84,10 @@ export default function ProfilePage() {
       setFormData({
         full_name: user.full_name || "",
         email: user.email || "",
-        phone: user.phone || "",
+        phone: profile?.phone || "",
         date_of_birth: formattedDateOfBirth,
-        nationality: user.nationality || "",
-        occupation: user.occupation || "",
+        nationality: profile?.nationality || "",
+        occupation: profile?.occupation || "",
       });
     }
   }, [user]);
@@ -122,11 +127,48 @@ export default function ProfilePage() {
     try {
       const updateData: UpdateUserData = {};
 
+      // Get profile data based on user role for comparison
+      const profile =
+        user?.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+
       // Only include fields that have changed
       Object.keys(formData).forEach((key) => {
         const fieldKey = key as keyof UpdateUserData;
-        if (formData[fieldKey] !== user?.[fieldKey as keyof typeof user]) {
-          updateData[fieldKey] = formData[fieldKey];
+        let currentValue;
+
+        // Get current value from appropriate source
+        if (fieldKey === "full_name" || fieldKey === "email") {
+          currentValue = user?.[fieldKey];
+        } else if (fieldKey === "date_of_birth") {
+          // Format current date for comparison
+          const currentDate = profile?.date_of_birth;
+          if (currentDate) {
+            try {
+              const date = new Date(currentDate);
+              currentValue = !isNaN(date.getTime())
+                ? date.toISOString().split("T")[0]
+                : "";
+            } catch {
+              currentValue = "";
+            }
+          } else {
+            currentValue = "";
+          }
+        } else {
+          // phone, nationality, occupation come from profile
+          currentValue = profile?.[fieldKey as keyof typeof profile];
+        }
+
+        if (formData[fieldKey] !== currentValue) {
+          // Don't send empty date_of_birth
+          if (
+            fieldKey === "date_of_birth" &&
+            (!formData[fieldKey] || formData[fieldKey].trim() === "")
+          ) {
+            // Skip empty date
+          } else {
+            updateData[fieldKey] = formData[fieldKey];
+          }
         }
       });
 
@@ -225,9 +267,38 @@ export default function ProfilePage() {
   const hasChanges = useMemo(() => {
     if (!user) return false;
 
+    // Get profile data based on user role for comparison
+    const profile =
+      user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+
     return Object.keys(formData).some((key) => {
       const fieldKey = key as keyof UpdateUserData;
-      return formData[fieldKey] !== user?.[fieldKey as keyof typeof user];
+      let currentValue;
+
+      // Get current value from appropriate source
+      if (fieldKey === "full_name" || fieldKey === "email") {
+        currentValue = user[fieldKey];
+      } else if (fieldKey === "date_of_birth") {
+        // Format current date for comparison
+        const currentDate = profile?.date_of_birth;
+        if (currentDate) {
+          try {
+            const date = new Date(currentDate);
+            currentValue = !isNaN(date.getTime())
+              ? date.toISOString().split("T")[0]
+              : "";
+          } catch {
+            currentValue = "";
+          }
+        } else {
+          currentValue = "";
+        }
+      } else {
+        // phone, nationality, occupation come from profile
+        currentValue = profile?.[fieldKey as keyof typeof profile];
+      }
+
+      return formData[fieldKey] !== currentValue;
     });
   }, [formData, user]);
 

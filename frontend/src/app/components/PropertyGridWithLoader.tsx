@@ -27,11 +27,28 @@ export default function PropertyGridWithLoader({
   );
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
 
-  // Reset image loading state when properties change
+  // Update image loading state when properties change (preserve loaded states for existing properties)
   useEffect(() => {
     if (properties.length > 0) {
-      setImagesLoaded({});
+      // Only remove loaded states for properties that are no longer in the list
+      setImagesLoaded((prev) => {
+        const currentPropertyIds = new Set(properties.map((p) => p.id));
+        const filteredLoaded: { [key: string]: boolean } = {};
+
+        // Keep loaded states for properties that still exist
+        Object.keys(prev).forEach((propertyId) => {
+          if (currentPropertyIds.has(propertyId)) {
+            filteredLoaded[propertyId] = prev[propertyId];
+          }
+        });
+
+        return filteredLoaded;
+      });
       setAllImagesLoaded(false);
+    } else {
+      // No properties, clear all loaded states
+      setImagesLoaded({});
+      setAllImagesLoaded(true);
     }
   }, [properties]);
 

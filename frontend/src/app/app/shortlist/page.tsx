@@ -20,6 +20,7 @@ import {
 import { AppDispatch } from "../../store/store";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 
@@ -28,6 +29,8 @@ export default function ShortlistPage() {
   const dispatch = useDispatch<AppDispatch>();
   const t = useTranslations();
   const [sessionReady, setSessionReady] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [clearingShortlist, setClearingShortlist] = useState(false);
 
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
@@ -81,11 +84,25 @@ export default function ShortlistPage() {
     dispatch(fetchShortlist());
   };
 
-  const handleClearShortlist = async () => {
-    if (
-      window.confirm("Are you sure you want to clear your entire shortlist?")
-    ) {
-      dispatch(clearShortlist());
+  const handleClearShortlist = () => {
+    setShowClearModal(true);
+  };
+
+  const handleConfirmClear = async () => {
+    setClearingShortlist(true);
+    try {
+      await dispatch(clearShortlist()).unwrap();
+      setShowClearModal(false);
+    } catch (error) {
+      console.error("Failed to clear shortlist:", error);
+    } finally {
+      setClearingShortlist(false);
+    }
+  };
+
+  const handleCloseClearModal = () => {
+    if (!clearingShortlist) {
+      setShowClearModal(false);
     }
   };
 
@@ -280,6 +297,22 @@ export default function ShortlistPage() {
             </div>
           </div>
         )}
+
+        {/* Clear Shortlist Confirmation Modal */}
+        <ConfirmModal
+          isOpen={showClearModal}
+          onClose={handleCloseClearModal}
+          onConfirm={handleConfirmClear}
+          title="Clear Entire Shortlist"
+          message={`Are you sure you want to remove all ${count} ${
+            count === 1 ? "property" : "properties"
+          } from your shortlist? This action cannot be undone.`}
+          confirmText="Clear All"
+          cancelText="Keep Shortlist"
+          confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+          icon="heart"
+          loading={clearingShortlist}
+        />
       </div>
     </div>
   );

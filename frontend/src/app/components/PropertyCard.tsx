@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { Property } from "../types";
-import { shortlistAPI } from "../lib/api";
 import { selectUser } from "../store/slices/authSlice";
 import {
   addToShortlist,
@@ -14,6 +13,8 @@ import {
 import { AppDispatch } from "../store/store";
 import { Heart, MapPin, Bed, Bath, Calendar } from "lucide-react";
 import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
+import ConfirmModal from "./ui/ConfirmModal";
+import FeaturedBadge from "./ui/FeaturedBadge";
 
 interface PropertyCardProps {
   property: Property;
@@ -21,6 +22,8 @@ interface PropertyCardProps {
   showShortlist?: boolean;
   imageLoaded?: boolean;
   onImageLoad?: () => void;
+  hasTopRightBadge?: boolean; // Legacy prop for compatibility
+  showFeaturedBadge?: boolean; // Show featured badge on bottom right
 }
 
 export default function PropertyCard({
@@ -29,6 +32,8 @@ export default function PropertyCard({
   showShortlist = true,
   imageLoaded = true,
   onImageLoad,
+  hasTopRightBadge = false, // eslint-disable-line @typescript-eslint/no-unused-vars
+  showFeaturedBadge = false,
 }: PropertyCardProps) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -39,44 +44,41 @@ export default function PropertyCard({
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [shortlistError, setShortlistError] = useState<string | null>(null);
   const [shortlistSuccess, setShortlistSuccess] = useState<string | null>(null);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
 
-  // Check if property is in shortlist from Redux state
+  // Check if property is in shortlist from Redux state (only source of truth)
   useEffect(() => {
+    // Only use Redux state - no API fallback to prevent cycling calls
     const isInShortlist = shortlistProperties.some((p) => p.id === property.id);
-    setIsShortlisted(isInShortlist);
-  }, [shortlistProperties, property.id]);
 
-  // Fallback: check shortlist status from API if not in Redux state
-  useEffect(() => {
-    if (!showShortlist || !user || user.role !== "tenant") return;
-
-    const checkShortlistStatus = async () => {
-      try {
-        const status = await shortlistAPI.checkStatus(property.id);
-        if (status !== isShortlisted) {
-          setIsShortlisted(status);
-        }
-      } catch (error) {
-        console.error("Error checking shortlist status:", error);
-      }
-    };
-
-    // Only check if property is not in Redux state
-    const isInReduxState = shortlistProperties.some(
-      (p) => p.id === property.id
-    );
-    if (!isInReduxState) {
-      checkShortlistStatus();
+    // Only update local state if it differs from Redux state
+    // This prevents unnecessary re-renders and state conflicts
+    if (isInShortlist !== isShortlisted) {
+      setIsShortlisted(isInShortlist);
     }
-  }, [property.id, showShortlist, user, isShortlisted, shortlistProperties]);
+  }, [shortlistProperties, property.id, isShortlisted]);
 
   const handleShortlistToggle = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
 
     if (!showShortlist || !property?.id || !user || user.role !== "tenant") {
+      console.warn(
+        "Shortlist operation not allowed for non-tenant user or missing data"
+      );
       return;
     }
 
+    // If removing from shortlist, show confirmation modal
+    if (isShortlisted) {
+      setShowRemoveModal(true);
+      return;
+    }
+
+    // Add to shortlist directly (no confirmation needed)
+    await handleAddToShortlist();
+  };
+
+  const handleAddToShortlist = async () => {
     // Clear any existing messages
     setShortlistError(null);
     setShortlistSuccess(null);
@@ -84,25 +86,27 @@ export default function PropertyCard({
     try {
       setShortlistLoading(true);
 
-      if (isShortlisted) {
-        // Remove from shortlist using Redux action
-        await dispatch(removeFromShortlist(property.id)).unwrap();
-        setIsShortlisted(false);
-        setShortlistSuccess("Property removed from shortlist");
-      } else {
-        // Add to shortlist using Redux action
-        await dispatch(addToShortlist(property.id)).unwrap();
-        setIsShortlisted(true);
-        setShortlistSuccess("Property added to shortlist");
-      }
+      // Optimistically update UI immediately
+      setIsShortlisted(true);
+
+      await dispatch(
+        addToShortlist({ propertyId: property.id, property })
+      ).unwrap();
+      setShortlistSuccess("Property added to shortlist");
 
       // Clear success message after 3 seconds
       setTimeout(() => {
         setShortlistSuccess(null);
       }, 3000);
-    } catch (error: any) {
-      console.error("Error updating shortlist in PropertyCard:", error);
-      setShortlistError(error || "Failed to update shortlist");
+    } catch (error: unknown) {
+      console.error("Error adding to shortlist:", error);
+
+      // Revert optimistic update on error
+      setIsShortlisted(false);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to add to shortlist";
+      setShortlistError(errorMessage);
 
       // Clear error after 3 seconds
       setTimeout(() => {
@@ -110,6 +114,57 @@ export default function PropertyCard({
       }, 3000);
     } finally {
       setShortlistLoading(false);
+    }
+  };
+
+  const handleConfirmRemove = async () => {
+    // Clear any existing messages
+    setShortlistError(null);
+    setShortlistSuccess(null);
+
+    try {
+      setShortlistLoading(true);
+
+      // Optimistically update UI immediately
+      setIsShortlisted(false);
+      setShowRemoveModal(false);
+
+      await dispatch(removeFromShortlist(property.id)).unwrap();
+      setShortlistSuccess("Property removed from shortlist");
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setShortlistSuccess(null);
+      }, 3000);
+    } catch (error: unknown) {
+      console.error("Error removing from shortlist:", error);
+
+      // Revert optimistic update on error
+      setIsShortlisted(true);
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to remove from shortlist";
+      setShortlistError(errorMessage);
+
+      // Clear error after 3 seconds
+      setTimeout(() => {
+        setShortlistError(null);
+      }, 3000);
+    } finally {
+      setShortlistLoading(false);
+    }
+  };
+
+  const handleCloseRemoveModal = (e?: React.MouseEvent) => {
+    // Prevent any event propagation when closing modal
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (!shortlistLoading) {
+      setShowRemoveModal(false);
     }
   };
 
@@ -159,6 +214,8 @@ export default function PropertyCard({
     >
       {/* Image Section */}
       <div className="relative h-48 bg-slate-100">
+        {/* Featured Badge */}
+        {showFeaturedBadge && <FeaturedBadge />}
         <img
           src={getMainImage()}
           alt={property.title}
@@ -190,7 +247,7 @@ export default function PropertyCard({
           <button
             onClick={handleShortlistToggle}
             disabled={shortlistLoading}
-            className={`absolute top-3 right-3 w-10 h-10 rounded-full shadow-md transition-all duration-200 flex items-center justify-center ${
+            className={`absolute top-4 left-4 w-10 h-10 rounded-full shadow-md transition-all duration-200 flex items-center justify-center ${
               isShortlisted
                 ? "bg-rose-600 text-white hover:bg-rose-700"
                 : "bg-white/90 text-slate-600 hover:bg-white hover:text-rose-600"
@@ -254,7 +311,11 @@ export default function PropertyCard({
           </div>
           <div className="flex items-center">
             <Calendar className="w-4 h-4 mr-1" />
-            <span>{formatDate(property.available_from)}</span>
+            <span>
+              {property.available_from
+                ? formatDate(property.available_from)
+                : "Available now"}
+            </span>
           </div>
         </div>
 
@@ -305,6 +366,22 @@ export default function PropertyCard({
           </div>
         )}
       </div>
+
+      {/* Remove from Shortlist Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showRemoveModal}
+        onClose={handleCloseRemoveModal}
+        onConfirm={handleConfirmRemove}
+        title="Remove from Shortlist"
+        message={`Are you sure you want to remove "${
+          property.title || "this property"
+        }" from your shortlist?`}
+        confirmText="Remove"
+        cancelText="Keep"
+        confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+        icon="heart"
+        loading={shortlistLoading}
+      />
     </div>
   );
 }

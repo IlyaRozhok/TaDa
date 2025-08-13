@@ -1,6 +1,6 @@
 import axios from "axios";
-import { store } from "../store/store";
 import { logout } from "../store/slices/authSlice";
+import { Property } from "../types";
 
 // Create axios instance
 const api = axios.create({
@@ -55,7 +55,10 @@ api.interceptors.response.use(
       ) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionExpiry");
-        store.dispatch(logout());
+        // Use dynamic import to avoid circular dependency
+        import("../store/store").then(({ store }) => {
+          store.dispatch(logout());
+        });
       }
     }
 
@@ -73,6 +76,8 @@ export const authAPI = {
   googleAuth: (token: string) => api.post("/auth/google", { token }),
 
   selectRole: (role: string) => api.post("/auth/select-role", { role }),
+
+  updateProfile: (data: any) => api.put("/users/profile", data),
 };
 
 export const usersAPI = {
@@ -100,6 +105,9 @@ export const propertiesAPI = {
 
   getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
 
+  getPublic: (page: number = 1, limit: number = 6, search?: string) =>
+    api.get("/properties/public", { params: { page, limit, search } }),
+
   create: (data: any) => api.post("/properties", data),
 
   update: (id: string, data: any) => api.patch(`/properties/${id}`, data),
@@ -112,14 +120,24 @@ export const propertiesAPI = {
 };
 
 export const shortlistAPI = {
-  get: () => api.get("/shortlist"),
+  get: () => api.get("/shortlist").then((res) => res.data),
+  getAll: () => api.get("/shortlist").then((res) => res.data),
+  getCount: () =>
+    api.get("/shortlist/count").then((res) => res.data?.count || 0),
 
-  add: (propertyId: string) => api.post(`/shortlist/${propertyId}`),
+  add: (propertyId: string) =>
+    api.post(`/shortlist/${propertyId}`).then((res) => res.data),
 
-  remove: (propertyId: string) => api.delete(`/shortlist/${propertyId}`),
+  remove: (propertyId: string) =>
+    api.delete(`/shortlist/${propertyId}`).then((res) => res.data),
 
+  clear: () => api.delete("/shortlist").then((res) => res.data),
+
+  // Deprecated - should not be used anymore to avoid cycling calls
   checkStatus: (propertyId: string) =>
-    api.get(`/shortlist/check/${propertyId}`),
+    api
+      .get(`/shortlist/check/${propertyId}`)
+      .then((res) => res.data?.isShortlisted || false),
 };
 
 export const favouritesAPI = {
@@ -142,6 +160,12 @@ export const operatorAPI = {
 export const matchingAPI = {
   getDetailedMatches: (limit?: number) =>
     api.get("/matching/detailed-matches", { params: { limit } }),
+
+  getMatches: (limit?: number) =>
+    api.get("/matching/matches", { params: { limit } }),
+
+  getRecommendations: (limit?: number) =>
+    api.get("/matching/recommendations", { params: { limit } }),
 };
 
 export const propertyMediaAPI = {
@@ -233,6 +257,14 @@ export interface MatchingResult {
   total: number;
   page: number;
   totalPages: number;
+}
+
+// Detailed matching result from backend
+export interface DetailedMatchingResult {
+  property: Property;
+  matchScore: number;
+  matchReasons: string[];
+  perfectMatch: boolean;
 }
 
 export default api;

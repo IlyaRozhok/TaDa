@@ -1,11 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { MapPin } from "lucide-react";
-import {
-  InputField,
-  SelectField,
-  MetroDropdown,
-  LocationDropdown,
-} from "../ui";
+import { InputField, MetroDropdown, LocationDropdown } from "../ui";
 import { DateRangePicker } from "../ui/DateRangePicker";
 import { PreferencesStepProps } from "@/app/types/preferences";
 import {

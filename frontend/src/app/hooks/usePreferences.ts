@@ -265,14 +265,17 @@ export const usePreferences = () => {
           setValue(key as keyof PreferencesFormData, value);
         });
       }
-    } catch (error: any) {
+    } catch {
       // Check if this is a 404 (no preferences yet) or another error
       setState((prev) => ({ ...prev, existingPreferences: null }));
     }
   };
 
   const updateField = useCallback(
-    (field: keyof PreferencesFormData, value: any) => {
+    (
+      field: keyof PreferencesFormData,
+      value: string | number | boolean | string[] | undefined
+    ) => {
       setValue(field, value, { shouldValidate: false, shouldDirty: true });
     },
     [setValue]
@@ -321,10 +324,7 @@ export const usePreferences = () => {
     }
   }, []);
 
-  const onSubmit = async (
-    data: PreferencesFormData,
-    forceSubmit: boolean = false
-  ) => {
+  const onSubmit = async (data: PreferencesFormData) => {
     setState((prev) => ({
       ...prev,
       loading: true,
@@ -339,7 +339,7 @@ export const usePreferences = () => {
         const value = data[key as keyof PreferencesFormData];
         if (value === "no-preference") {
           // Keep "no-preference" for furnishing and secondary_location, convert to null for other fields
-          (acc as any)[key] =
+          (acc as Record<string, unknown>)[key] =
             key === "furnishing" ||
             key === "secondary_location" ||
             key === "commute_location" ||
@@ -347,12 +347,12 @@ export const usePreferences = () => {
               ? "no-preference"
               : null;
         } else if (value === "") {
-          (acc as any)[key] = null;
+          (acc as Record<string, unknown>)[key] = null;
         } else if (Array.isArray(value) && value.length === 0) {
           // Keep empty arrays as they are (user explicitly cleared selection)
-          (acc as any)[key] = [];
+          (acc as Record<string, unknown>)[key] = [];
         } else {
-          (acc as any)[key] = value;
+          (acc as Record<string, unknown>)[key] = value;
         }
         return acc;
       }, {} as PreferencesFormData);
@@ -364,7 +364,9 @@ export const usePreferences = () => {
 
         Object.keys(processedData).forEach((key) => {
           const currentValue = processedData[key as keyof PreferencesFormData];
-          const existingValue = (state.existingPreferences as any)?.[key];
+          const existingValue = (
+            state.existingPreferences as Record<string, unknown>
+          )?.[key];
 
           // Compare values, handling arrays and dates specially
           const hasChanged =
@@ -374,7 +376,7 @@ export const usePreferences = () => {
               : currentValue !== existingValue;
 
           if (hasChanged) {
-            (changedData as any)[key] = currentValue;
+            (changedData as Record<string, unknown>)[key] = currentValue;
           }
         });
 
@@ -420,8 +422,10 @@ export const usePreferences = () => {
       } else {
         handleSubmitError(response.data);
       }
-    } catch (error: any) {
-      const errorData = error?.response?.data || error;
+    } catch (error: unknown) {
+      const errorData =
+        (error as { response?: { data?: unknown }; [key: string]: unknown })
+          ?.response?.data || error;
 
       handleSubmitError(errorData);
     } finally {
@@ -429,18 +433,22 @@ export const usePreferences = () => {
     }
   };
 
-  const handleSubmitError = (errorData: any) => {
-    if (errorData?.errors) {
+  const handleSubmitError = (errorData: unknown) => {
+    const errorObj = errorData as Record<string, unknown>;
+    if (errorObj?.errors) {
       const fieldErrors: FormFieldErrors = {};
-      Object.keys(errorData.errors).forEach((field) => {
-        fieldErrors[field] = Array.isArray(errorData.errors[field])
-          ? errorData.errors[field][0]
-          : errorData.errors[field];
+      const errors = errorObj.errors as Record<string, unknown>;
+      Object.keys(errors).forEach((field) => {
+        const errorValue = errors[field];
+        fieldErrors[field] = Array.isArray(errorValue)
+          ? (errorValue[0] as string)
+          : (errorValue as string);
       });
       setState((prev) => ({ ...prev, backendErrors: fieldErrors }));
     } else {
       const errorMessage =
-        errorData?.message || "Failed to save preferences. Please try again.";
+        (errorObj?.message as string) ||
+        "Failed to save preferences. Please try again.";
       setState((prev) => ({
         ...prev,
         generalError: errorMessage,
@@ -453,7 +461,7 @@ export const usePreferences = () => {
   const savePreferences = async () => {
     const currentData = getValues();
     try {
-      const result = await onSubmit(currentData, true); // Force submit even if not on last step
+      const result = await onSubmit(currentData);
       return result;
     } catch (error) {
       console.error("❌ Failed to save preferences:", error);
