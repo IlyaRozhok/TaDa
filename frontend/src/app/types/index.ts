@@ -21,6 +21,8 @@ export interface Property {
   title: string;
   description: string;
   address?: string;
+  lat?: number;
+  lng?: number;
   property_type?: string;
   furnishing?: string;
   lifestyle_features?: string[];
