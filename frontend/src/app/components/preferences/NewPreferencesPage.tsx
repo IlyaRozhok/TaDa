@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Lock, ChevronDown, ArrowLeft } from "lucide-react";
+import { Lock, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { DateRangePicker } from "./ui/DateRangePicker";
 import { CustomDropdown } from "./ui/CustomDropdown";
 import { MetroDropdown } from "./ui/MetroDropdown";
 import { LocationDropdown } from "./ui/LocationDropdown";
+import { BedroomsDropdown, FurnishingDropdown } from "./ui";
 
 import { usePreferences } from "@/app/hooks/usePreferences";
 import {
@@ -19,10 +20,8 @@ import {
   PET_FRIENDLY_OPTIONS,
   LUXURY_PREMIUM_OPTIONS,
   PROPERTY_TYPE_OPTIONS,
-  FURNISHING_OPTIONS,
   SECONDARY_LOCATION_OPTIONS,
   COMMUTE_LOCATION_OPTIONS,
-  BEDROOM_OPTIONS,
   IDEAL_LIVING_OPTIONS,
   SMOKING_OPTIONS,
   HOBBY_ICON_OPTIONS,
@@ -278,36 +277,43 @@ const LocationStep = ({ formData, onUpdate }: any) => (
             options={[
               {
                 value: "NW1 6XE",
+                label: "NW1 6XE",
                 postcode: "NW1 6XE",
                 address: "221B Baker Street, Marylebone",
               },
               {
                 value: "SW1A 2AA",
+                label: "SW1A 2AA",
                 postcode: "SW1A 2AA",
                 address: "10 Downing Street, Westminster",
               },
               {
                 value: "NW1 0JH",
+                label: "NW1 0JH",
                 postcode: "NW1 0JH",
                 address: "30 Camden High Street, Camden Town",
               },
               {
                 value: "E1 6RF",
+                label: "E1 6RF",
                 postcode: "E1 6RF",
                 address: "12 Brick Lane, Shoreditch",
               },
               {
                 value: "W11 3JZ",
+                label: "W11 3JZ",
                 postcode: "W11 3JZ",
                 address: "89 Notting Hill Gate, Notting Hill",
               },
               {
                 value: "E2 8AA",
+                label: "E2 8AA",
                 postcode: "E2 8AA",
                 address: "25 Kingsland Road, Dalston",
               },
               {
                 value: "SE1 1UN",
+                label: "SE1 1UN",
                 postcode: "SE1 1UN",
                 address: "50 Southwark Street, South Bank",
               },
@@ -571,101 +577,32 @@ const ApartmentSpecStep = ({ formData, onUpdate }: any) => (
         </h2>
 
         <div className="space-y-8">
-          <div className="relative">
-            <select
-              value={
-                formData.min_bedrooms
-                  ? `${formData.min_bedrooms} Bedroom${
-                      formData.min_bedrooms > 1 ? "s" : ""
-                    }`
-                  : ""
-              }
-              onChange={(e) => {
-                const value = e.target.value;
-                const num =
-                  value === "Studio" ? 0 : parseInt(value.split(" ")[0]) || 1;
-                onUpdate("min_bedrooms", num);
-              }}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none border-0 shadow-sm"
-            >
-              <option value="" disabled hidden></option>
-              {BEDROOM_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.min_bedrooms
-                  ? "top-2 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Bedrooms (min)
-            </label>
-          </div>
+          <BedroomsDropdown
+            label="Bedrooms (min)"
+            value={formData.min_bedrooms || ""}
+            onChange={(value) =>
+              onUpdate("min_bedrooms", value === "" ? undefined : value)
+            }
+            placeholder="No Preference"
+            min={true}
+          />
 
-          <div className="relative">
-            <select
-              value={
-                formData.max_bedrooms
-                  ? `${formData.max_bedrooms} Bedroom${
-                      formData.max_bedrooms > 1 ? "s" : ""
-                    }`
-                  : ""
-              }
-              onChange={(e) => {
-                const value = e.target.value;
-                const num =
-                  value === "Studio" ? 0 : parseInt(value.split(" ")[0]) || 1;
-                onUpdate("max_bedrooms", num);
-              }}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none border-0 shadow-sm"
-            >
-              <option value="" disabled hidden></option>
-              {BEDROOM_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.max_bedrooms
-                  ? "top-2 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Bedrooms (max)
-            </label>
-          </div>
+          <BedroomsDropdown
+            label="Bedrooms (max)"
+            value={formData.max_bedrooms || ""}
+            onChange={(value) =>
+              onUpdate("max_bedrooms", value === "" ? undefined : value)
+            }
+            placeholder="No Preference"
+            min={false}
+          />
 
-          <div className="relative">
-            <select
-              value={formData.furnishing || "no-preference"}
-              onChange={(e) => onUpdate("furnishing", e.target.value)}
-              className="w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white appearance-none border-0 shadow-sm"
-            >
-              {FURNISHING_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.furnishing
-                  ? "top-2 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Furnishing
-            </label>
-          </div>
+          <FurnishingDropdown
+            label="Furnishing"
+            value={formData.furnishing || "no-preference"}
+            onChange={(value) => onUpdate("furnishing", value)}
+            placeholder="No Preference"
+          />
         </div>
       </div>
     </div>

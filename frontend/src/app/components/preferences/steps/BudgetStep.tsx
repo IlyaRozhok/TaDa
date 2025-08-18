@@ -1,6 +1,6 @@
 import React from "react";
 import { PoundSterling } from "lucide-react";
-import { InputField, SelectField } from "../ui";
+import { InputField, BedroomsDropdown, FurnishingDropdown } from "../ui";
 import { PreferencesStepProps } from "@/app/types/preferences";
 
 export const BudgetStep: React.FC<PreferencesStepProps> = ({
@@ -58,52 +58,32 @@ export const BudgetStep: React.FC<PreferencesStepProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SelectField
+        <BedroomsDropdown
           label="Bedrooms (min)"
-          tooltip="Minimum number of bedrooms"
           value={formData.min_bedrooms || ""}
-          onChange={(e) =>
-            onUpdate("min_bedrooms", parseInt(e.target.value) || undefined)
+          onChange={(value) =>
+            onUpdate("min_bedrooms", value === "" ? undefined : value)
           }
           error={errors.min_bedrooms}
-        >
-          <option value="">No Preference</option>
-          {[1, 2, 3, 4, 5].map((num) => (
-            <option key={num} value={num}>
-              {num} bedroom{num > 1 ? "s" : ""}
-            </option>
-          ))}
-        </SelectField>
+          min={true}
+        />
 
-        <SelectField
+        <BedroomsDropdown
           label="Bedrooms (max)"
-          tooltip="Maximum number of bedrooms"
           value={formData.max_bedrooms || ""}
-          onChange={(e) =>
-            onUpdate("max_bedrooms", parseInt(e.target.value) || undefined)
+          onChange={(value) =>
+            onUpdate("max_bedrooms", value === "" ? undefined : value)
           }
           error={errors.max_bedrooms}
-        >
-          <option value="">No Preference</option>
-          {[1, 2, 3, 4, 5].map((num) => (
-            <option key={num} value={num}>
-              {num} bedroom{num > 1 ? "s" : ""}
-            </option>
-          ))}
-        </SelectField>
+          min={false}
+        />
 
-        <SelectField
+        <FurnishingDropdown
           label="Furnishing"
-          tooltip="Whether you prefer furnished or unfurnished properties"
           value={formData.furnishing || "no-preference"}
-          onChange={(e) => onUpdate("furnishing", e.target.value)}
+          onChange={(value) => onUpdate("furnishing", value)}
           error={errors.furnishing}
-        >
-          <option value="furnished">Furnished</option>
-          <option value="unfurnished">Unfurnished</option>
-          <option value="part-furnished">Part Furnished</option>
-          <option value="no-preference">No Preference</option>
-        </SelectField>
+        />
 
         <SelectField
           label="Property Type"

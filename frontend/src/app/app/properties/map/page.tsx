@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../../store/slices/authSlice";
-import GoogleMap from "../../../components/GoogleMap";
+import TaDaMap from "../../../components/TaDaMap";
 import { Property } from "../../../types";
 import { propertiesAPI } from "../../../lib/api";
 import { useRouter } from "next/navigation";
+import { geocodingService } from "../../../lib/geocoding";
 
 export default function PropertiesMapPage() {
   const user = useSelector(selectUser);
@@ -29,45 +30,150 @@ export default function PropertiesMapPage() {
   useEffect(() => {
     const loadProperties = async () => {
       try {
+        console.log("Starting to load properties...");
         setIsLoading(true);
         setError(null);
 
         // Try to get all properties
+        console.log("Calling propertiesAPI.getAll()...");
         const response = await propertiesAPI.getAll();
+        console.log("API response:", response);
+
         const propertiesData = response.data?.data || response.data || [];
+        console.log("Properties data:", propertiesData);
 
-        // Filter properties that have coordinates
-        const propertiesWithCoords = propertiesData.filter(
-          (property: Property) => property.lat && property.lng
-        );
+        if (propertiesData.length > 0) {
+          console.log("Properties found, starting geocoding...");
 
-        // If no properties with coordinates, add mock coordinates to some properties
-        if (propertiesWithCoords.length === 0 && propertiesData.length > 0) {
-          const propertiesWithMockCoords = propertiesData
-            .slice(0, 5)
-            .map((property: Property, index: number) => ({
-              ...property,
-              lat: 51.532 + index * 0.01, // London area with slight offset
-              lng: -0.125 + index * 0.01,
-            }));
-          setProperties(propertiesWithMockCoords);
+          // Check if Google Maps is loaded
+          if (
+            typeof window !== "undefined" &&
+            window.google &&
+            window.google.maps
+          ) {
+            console.log(
+              "Google Maps API is loaded, proceeding with geocoding..."
+            );
+            // Use geocoding service to get coordinates for all properties
+            const propertiesWithCoords =
+              await geocodingService.geocodeProperties(propertiesData);
+            console.log("Properties with coordinates:", propertiesWithCoords);
+            setProperties(propertiesWithCoords);
+          } else {
+            console.log(
+              "Google Maps API not loaded, using fallback coordinates..."
+            );
+            // Use fallback coordinates if Google Maps is not loaded
+            const fallbackProperties = propertiesData.map(
+              (property: Property, index: number) => ({
+                ...property,
+                lat: 51.5074 + index * 0.01,
+                lng: -0.1278 + index * 0.01,
+              })
+            );
+            setProperties(fallbackProperties);
+          }
         } else {
-          setProperties(propertiesWithCoords);
+          console.log("No properties from API, using mock data...");
+          // If no properties from API, use fallback mock data
+          const mockProperties: Property[] = [
+            {
+              id: "1",
+              title: "Kings Cross Apartments",
+              description: "Modern apartment in Kings Cross, London",
+              address: "37 Swinton Street, Camden, London, WC1X 9NT",
+              price: 1712,
+              bedrooms: 1,
+              bathrooms: 1,
+              total_area: 497,
+              property_type: "APARTMENT",
+              furnishing: "Furnished",
+              is_btr: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              operator_id: "1",
+            },
+            {
+              id: "2",
+              title: "Camden Town Flats",
+              description: "Spacious flat in Camden Town, London",
+              address: "22 Brecknock Road, Camden, London, NW1 0AR",
+              price: 1500,
+              bedrooms: 2,
+              bathrooms: 1,
+              total_area: 600,
+              property_type: "APARTMENT",
+              furnishing: "Partially Furnished",
+              is_btr: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              operator_id: "1",
+            },
+            {
+              id: "3",
+              title: "St Pancras Studios",
+              description: "Cozy studio near St Pancras, London",
+              address: "1A Pancras Square, London, N1C 4AG",
+              price: 1800,
+              bedrooms: 1,
+              bathrooms: 1,
+              total_area: 550,
+              property_type: "APARTMENT",
+              furnishing: "Furnished",
+              is_btr: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              operator_id: "1",
+            },
+          ];
+
+          console.log("Geocoding mock properties...");
+
+          // Check if Google Maps is loaded
+          if (
+            typeof window !== "undefined" &&
+            window.google &&
+            window.google.maps
+          ) {
+            console.log(
+              "Google Maps API is loaded, proceeding with geocoding..."
+            );
+            // Geocode mock properties as well
+            const mockPropertiesWithCoords =
+              await geocodingService.geocodeProperties(mockProperties);
+            console.log(
+              "Mock properties with coordinates:",
+              mockPropertiesWithCoords
+            );
+            setProperties(mockPropertiesWithCoords);
+          } else {
+            console.log(
+              "Google Maps API not loaded, using fallback coordinates for mock properties..."
+            );
+            // Use fallback coordinates if Google Maps is not loaded
+            const fallbackMockProperties = mockProperties.map(
+              (property: Property, index: number) => ({
+                ...property,
+                lat: 51.5074 + index * 0.01,
+                lng: -0.1278 + index * 0.01,
+              })
+            );
+            setProperties(fallbackMockProperties);
+          }
         }
       } catch (err) {
         console.error("Error loading properties:", err);
         setError("Failed to load properties");
 
-        // Fallback to mock data
+        console.log("Using fallback mock data...");
+        // Fallback to mock data with geocoding
         const mockProperties: Property[] = [
           {
             id: "1",
             title: "Kings Cross Apartments",
-            description: "Modern apartment in Kings Cross",
+            description: "Modern apartment in Kings Cross, London",
             address: "37 Swinton Street, Camden, London, WC1X 9NT",
             price: 1712,
-            lat: 51.532,
-            lng: -0.1233,
             bedrooms: 1,
             bathrooms: 1,
             total_area: 497,
@@ -81,11 +187,9 @@ export default function PropertiesMapPage() {
           {
             id: "2",
             title: "Camden Town Flats",
-            description: "Spacious flat in Camden",
+            description: "Spacious flat in Camden Town, London",
             address: "22 Brecknock Road, Camden, London, NW1 0AR",
             price: 1500,
-            lat: 51.54,
-            lng: -0.142,
             bedrooms: 2,
             bathrooms: 1,
             total_area: 600,
@@ -99,11 +203,9 @@ export default function PropertiesMapPage() {
           {
             id: "3",
             title: "St Pancras Studios",
-            description: "Cozy studio near St Pancras",
+            description: "Cozy studio near St Pancras, London",
             address: "1A Pancras Square, London, N1C 4AG",
             price: 1800,
-            lat: 51.5325,
-            lng: -0.125,
             bedrooms: 1,
             bathrooms: 1,
             total_area: 550,
@@ -115,14 +217,68 @@ export default function PropertiesMapPage() {
             operator_id: "1",
           },
         ];
-        setProperties(mockProperties);
+
+        try {
+          console.log("Geocoding fallback properties...");
+
+          // Check if Google Maps is loaded
+          if (
+            typeof window !== "undefined" &&
+            window.google &&
+            window.google.maps
+          ) {
+            console.log(
+              "Google Maps API is loaded, proceeding with geocoding..."
+            );
+            const mockPropertiesWithCoords =
+              await geocodingService.geocodeProperties(mockProperties);
+            console.log(
+              "Fallback properties with coordinates:",
+              mockPropertiesWithCoords
+            );
+            setProperties(mockPropertiesWithCoords);
+          } else {
+            console.log(
+              "Google Maps API not loaded, using fallback coordinates..."
+            );
+            // Use fallback coordinates if Google Maps is not loaded
+            const fallbackProperties = mockProperties.map(
+              (property: Property, index: number) => ({
+                ...property,
+                lat: 51.5074 + index * 0.01,
+                lng: -0.1278 + index * 0.01,
+              })
+            );
+            console.log("Using fallback coordinates:", fallbackProperties);
+            setProperties(fallbackProperties);
+          }
+        } catch (geocodingError) {
+          console.error(
+            "Geocoding failed, using fallback coordinates:",
+            geocodingError
+          );
+          // Use fallback coordinates if geocoding fails
+          const fallbackProperties = mockProperties.map(
+            (property: Property, index: number) => ({
+              ...property,
+              lat: 51.5074 + index * 0.01,
+              lng: -0.1278 + index * 0.01,
+            })
+          );
+          console.log("Using fallback coordinates:", fallbackProperties);
+          setProperties(fallbackProperties);
+        }
       } finally {
+        console.log("Setting loading to false");
         setIsLoading(false);
       }
     };
 
     if (user) {
+      console.log("User found, loading properties...");
       loadProperties();
+    } else {
+      console.log("No user found");
     }
   }, [user]);
 
@@ -320,9 +476,9 @@ export default function PropertiesMapPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map */}
           <div className="lg:col-span-2">
-            <GoogleMap
-              center={{ lat: 51.532, lng: -0.125 }} // Kings Cross area
-              zoom={14}
+            <TaDaMap
+              center={{ lat: 51.5074, lng: -0.1278 }} // Лондон
+              zoom={13}
               properties={properties}
               onPropertyClick={handlePropertyClick}
               height="600px"

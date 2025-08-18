@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, selectUser } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
-import { User, Settings, LogOut, Shield } from "lucide-react";
+import { Settings, LogOut, Mail, Sliders } from "lucide-react";
+import styles from "./ui/DropdownStyles.module.scss";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,20 +40,52 @@ export default function UserDropdown() {
 
   const handleLogout = async () => {
     try {
+      console.log("🔄 Starting logout process...");
+
+      // Закрываем dropdown
+      setIsOpen(false);
+
+      // Вызываем API logout
       await authAPI.logout();
+      console.log("✅ API logout successful");
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("❌ Logout API error:", error);
+      // Продолжаем logout даже если API не ответил
     } finally {
-      // Очищаем состояние независимо от результата API вызова
-      dispatch(logout());
-      // Перенаправляем на главную страницу
-      router.push("/");
+      try {
+        // Очищаем Redux состояние
+        dispatch(logout());
+        console.log("✅ Redux state cleared");
+
+        // Очищаем все localStorage данные
+        localStorage.clear();
+        console.log("✅ LocalStorage cleared");
+
+        // Перенаправляем на главную страницу
+        router.push("/");
+        console.log("✅ Redirected to home page");
+      } catch (error) {
+        console.error("❌ Error during logout cleanup:", error);
+        // Принудительно перезагружаем страницу если что-то пошло не так
+        window.location.href = "/";
+      }
     }
   };
 
   const handleSettings = () => {
     setIsOpen(false);
     router.push("/app/security");
+  };
+
+  const handlePreferences = () => {
+    setIsOpen(false);
+    router.push("/app/preferences");
+  };
+
+  const handleSupport = () => {
+    setIsOpen(false);
+    // Можно добавить модальное окно поддержки или перенаправление
+    console.log("Support requested");
   };
 
   if (!user) return null;
@@ -63,60 +96,74 @@ export default function UserDropdown() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsOpen(true)}
-        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className={styles.avatarButton}
       >
-        <User className="h-5 w-5 text-gray-600" />
+        <div className={styles.userAvatarSmall}>
+          {user.full_name
+            ? user.full_name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)
+            : user.email?.[0].toUpperCase() || "U"}
+        </div>
         <span className="text-sm text-gray-700 hidden sm:block">
-          {user.full_name || user.email?.split('@')[0] || 'User'}
+          {user.full_name || user.email?.split("@")[0] || "User"}
         </span>
       </button>
 
       {/* Dropdown Menu */}
       {isMounted && isOpen && (
         <div
-          className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+          className={`absolute right-0 ${styles.dropdownContainer}`}
           onMouseLeave={() => setIsOpen(false)}
         >
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900">
-              {user.full_name}
-            </p>
-            <p className="text-xs text-gray-500">{user.email}</p>
-            <p className="text-xs text-blue-600 mt-1">
-              {user.roles?.includes("operator") ? "Оператор" : "Арендатор"}
-            </p>
+          <div className={styles.dropdownHeader}>
+            <div className="flex items-center space-x-4">
+              <div className={styles.userAvatar}>
+                {user.full_name
+                  ? user.full_name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)
+                  : user.email?.[0].toUpperCase() || "U"}
+              </div>
+              <div className={styles.userInfo}>
+                <p className={styles.userName}>{user.full_name || "User"}</p>
+                <p className={styles.userEmail}>{user.email}</p>
+                <p className={styles.userRole}>
+                  {user.roles?.includes("operator") ? "Operator" : "Tenant"}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Menu Items */}
-          <div className="py-1">
-            <button
-              onClick={handleSettings}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <Settings className="h-4 w-4 mr-3 text-gray-400" />
-              Настройки аккаунта
+          <div className={styles.dropdownBody}>
+            <button onClick={handleSettings} className={styles.dropdownItem}>
+              <Settings className={styles.dropdownIcon} />
+              <span className={styles.dropdownText}>Profile Settings</span>
             </button>
 
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                router.push("/app/security");
-              }}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <Shield className="h-4 w-4 mr-3 text-gray-400" />
-              Безопасность
+            <button onClick={handlePreferences} className={styles.dropdownItem}>
+              <Sliders className={styles.dropdownIcon} />
+              <span className={styles.dropdownText}>Change Preferences</span>
             </button>
 
-            <hr className="my-1 border-gray-200" />
+            <button onClick={handleSupport} className={styles.dropdownItem}>
+              <Mail className={styles.dropdownIcon} />
+              <span className={styles.dropdownText}>Support</span>
+            </button>
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="h-4 w-4 mr-3 text-red-400" />
-              Выйти
+            <hr className={styles.dropdownDivider} />
+
+            <button onClick={handleLogout} className={styles.dropdownItem}>
+              <LogOut className={styles.dropdownIcon} />
+              <span className={styles.dropdownText}>Logout</span>
             </button>
           </div>
         </div>

@@ -18,6 +18,7 @@ import {
 import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
 import Logo from "./Logo";
+import styles from "./ui/DropdownStyles.module.scss";
 import { getUserRole } from "../utils/simpleRedirect";
 
 interface DropdownItemProps {
@@ -134,7 +135,6 @@ export default function DashboardHeader() {
 
   // Get user role using the proper function
   const userRole = getUserRole(user);
-  const isAdmin = userRole === "admin";
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
@@ -196,18 +196,18 @@ export default function DashboardHeader() {
 
               {/* Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div
+                  className={`absolute right-0 top-full ${styles.dropdownContainer}`}
+                >
                   {/* User Info Header */}
-                  <div className="px-4 py-3 border-b border-slate-100">
+                  <div className={styles.dropdownHeader}>
                     <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">
-                          {getDisplayName()}
-                        </p>
-                        <p className="text-sm text-slate-500">
+                      <div className={styles.userInfo}>
+                        <p className={styles.userName}>{getDisplayName()}</p>
+                        <p className={styles.userEmail}>
                           {user?.email || "Loading..."}
                         </p>
-                        <p className="text-xs text-emerald-600 font-medium">
+                        <p className={styles.userRole}>
                           {userRole === "admin"
                             ? "Administrator"
                             : userRole === "operator"
@@ -219,7 +219,7 @@ export default function DashboardHeader() {
                   </div>
 
                   {/* Menu Items */}
-                  <div className="py-2 px-2">
+                  <div className={styles.dropdownBody}>
                     <DropdownItem
                       icon={<User className="w-4 h-4" />}
                       label="Profile Summary"
@@ -237,7 +237,7 @@ export default function DashboardHeader() {
                     {/* Admin-specific navigation moved here */}
                     {userRole === "admin" && (
                       <>
-                        <div className="border-t border-slate-100 my-2 mx-2"></div>
+                        <hr className={styles.dropdownDivider} />
                         <DropdownItem
                           icon={<Shield className="w-4 h-4" />}
                           label="Admin Panel"
@@ -265,7 +265,7 @@ export default function DashboardHeader() {
 
                     {userRole === "tenant" && user?.tenantProfile && (
                       <>
-                        <div className="border-t border-slate-100 my-2 mx-2"></div>
+                        <hr className={styles.dropdownDivider} />
                         <DropdownItem
                           icon={<Search className="w-4 h-4" />}
                           label="Preferences"
@@ -281,7 +281,7 @@ export default function DashboardHeader() {
                       </>
                     )}
 
-                    <div className="border-t border-slate-100 my-2 mx-2"></div>
+                    <hr className={styles.dropdownDivider} />
 
                     <DropdownItem
                       icon={<LogOut className="w-4 h-4" />}

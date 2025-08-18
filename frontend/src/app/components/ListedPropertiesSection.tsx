@@ -6,6 +6,7 @@ import { ChevronDown, Map } from "lucide-react";
 import { Property } from "../types";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import styles from "./ui/DropdownStyles.module.scss";
 
 interface ListedPropertiesSectionProps {
   properties: Property[];
@@ -55,7 +56,9 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
 
       {isOpen && (
         <>
-          <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+          <div
+            className={`absolute top-full left-0 ${styles.dropdownContainer}`}
+          >
             {sortOptions.map((option) => (
               <button
                 key={option.value}
@@ -63,16 +66,16 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
                   onSortChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`text-slate-900 block w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                  sortBy === option.value ? "bg-gray-100 font-medium" : ""
+                className={`${styles.dropdownItem} ${
+                  sortBy === option.value ? "bg-white/20" : ""
                 }`}
               >
-                {option.label}
+                <span className={styles.dropdownText}>{option.label}</span>
               </button>
             ))}
           </div>
           <div
-            className="fixed inset-0 z-40"
+            className={`fixed inset-0 ${styles.dropdownBackdrop}`}
             onClick={() => setIsOpen(false)}
           />
         </>
