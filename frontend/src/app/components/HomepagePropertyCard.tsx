@@ -142,10 +142,8 @@ export default function HomepagePropertyCard({
         {/* Match Badge - Left Top */}
         <div className="absolute top-3 left-3 z-10 group">
           <div
-            className={`w-20 bg-black/90 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg relative transition-all duration-200 ${
-              !isAuthenticated
-                ? "cursor-pointer hover:bg-black/100 hover:scale-105"
-                : ""
+            className={`w-20 bg-black/60 backdrop-blur-[3px] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg relative transition-all duration-200 ${
+              !isAuthenticated ? "cursor-pointer hover:bg-black/100" : ""
             }`}
           >
             {isAuthenticated ? Math.round(matchScore) : 0}% Match

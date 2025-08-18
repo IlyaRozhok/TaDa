@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "./store/slices/authSlice";
@@ -11,6 +11,7 @@ import PropertyCardSkeleton from "./components/PropertyCardSkeleton";
 import AuthModal from "./components/AuthModal";
 import { Search, ChevronDown, MapPin } from "lucide-react";
 import Image from "next/image";
+import { useDebounce } from "./hooks/useDebounce";
 
 // Mock match data for demonstration
 const generateMockMatchData = (propertyId: string) => {
@@ -35,12 +36,16 @@ export default function HomePage() {
   const router = useRouter();
 
   const [properties, setProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [language] = useState("EN");
   const [sortBy] = useState("Best Match Score");
+
+  // Debounce search term to avoid excessive filtering
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Auto-redirect authenticated users to their dashboard
   useEffect(() => {
@@ -57,9 +62,13 @@ export default function HomePage() {
         setLoading(true);
         const response = await propertiesAPI.getPublic(1, 20); // Get up to 20 properties for homepage
         const data = response.data || response;
-        setProperties(
-          Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : []
-        );
+        const fetchedProperties = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data)
+          ? data
+          : [];
+        setProperties(fetchedProperties);
+        setFilteredProperties(fetchedProperties);
       } catch (err) {
         console.error("Error fetching properties:", err);
         setError("Failed to load properties");
@@ -70,6 +79,42 @@ export default function HomePage() {
 
     fetchProperties();
   }, []);
+
+  // Filter properties based on search term
+  useEffect(() => {
+    if (!debouncedSearchTerm.trim()) {
+      setFilteredProperties(properties);
+      return;
+    }
+
+    const filtered = properties.filter((property) => {
+      const searchLower = debouncedSearchTerm.toLowerCase();
+
+      // Search in title
+      if (property.title?.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+
+      // Search in description
+      if (property.description?.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+
+      // Search in property_type
+      if (property.property_type?.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+
+      // Search in address (optional)
+      if (property.address?.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+
+      return false;
+    });
+
+    setFilteredProperties(filtered);
+  }, [debouncedSearchTerm, properties]);
 
   const handlePropertyClick = (property: Property) => {
     if (!isAuthenticated) {
@@ -122,6 +167,33 @@ export default function HomePage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+                {/* Search indicator */}
+                {searchTerm && debouncedSearchTerm !== searchTerm && (
+                  <div className="absolute inset-y-0 right-3 flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  </div>
+                )}
+                {/* Clear search button */}
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -201,7 +273,14 @@ export default function HomePage() {
               </h2>
               <p className="text-gray-600">
                 After you log in, our service gives you the best results
-                tailored to your preferences • {properties.length} items
+                tailored to your preferences • {filteredProperties.length} items
+                {searchTerm &&
+                  filteredProperties.length !== properties.length && (
+                    <span className="text-blue-600 font-medium">
+                      {" "}
+                      (filtered from {properties.length})
+                    </span>
+                  )}
               </p>
             </div>
 
@@ -242,9 +321,25 @@ export default function HomePage() {
                 Try Again
               </button>
             </div>
+          ) : filteredProperties.length === 0 && searchTerm ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                No properties found
+              </h3>
+              <p className="text-gray-600 mb-6">
+                No properties match your search for "{searchTerm}". Try
+                adjusting your search terms.
+              </p>
+              <button
+                onClick={() => setSearchTerm("")}
+                className="bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+              >
+                Clear Search
+              </button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.slice(0, 6).map((property) => {
+              {filteredProperties.slice(0, 6).map((property) => {
                 const mockMatch = generateMockMatchData(property.id);
                 return (
                   <HomepagePropertyCard
@@ -273,26 +368,30 @@ export default function HomePage() {
           )}
 
           {/* Show More Properties Message for Authenticated Users */}
-          {!loading && !error && isAuthenticated && properties.length > 6 && (
-            <div className="text-center mt-12">
-              <div className="bg-gray-100 rounded-lg p-6">
-                <p className="text-gray-700 mb-4">
-                  Showing <span className="font-bold text-blue-600">6</span> of{" "}
-                  <span className="font-bold text-blue-600">
-                    {properties.length}
-                  </span>{" "}
-                  available properties. View all properties to see personalized
-                  matches based on your preferences.
-                </p>
-                <button
-                  onClick={() => router.push("/app/properties")}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  View All Properties
-                </button>
+          {!loading &&
+            !error &&
+            isAuthenticated &&
+            filteredProperties.length > 6 && (
+              <div className="text-center mt-12">
+                <div className="bg-gray-100 rounded-lg p-6">
+                  <p className="text-gray-700 mb-4">
+                    Showing <span className="font-bold text-blue-600">6</span>{" "}
+                    of{" "}
+                    <span className="font-bold text-blue-600">
+                      {filteredProperties.length}
+                    </span>{" "}
+                    available properties. View all properties to see
+                    personalized matches based on your preferences.
+                  </p>
+                  <button
+                    onClick={() => router.push("/app/properties")}
+                    className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    View All Properties
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </section>
 

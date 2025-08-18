@@ -236,7 +236,7 @@ export default function EnhancedPropertyCard({
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
           >
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-gray-800 text-white">
+            <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
               <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
               </div>
@@ -245,7 +245,7 @@ export default function EnhancedPropertyCard({
 
             {/* Tooltip */}
             {showTooltip && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-gray-800 text-white rounded-lg p-4 shadow-xl z-40">
+              <div className="absolute top-full left-0 mt-7 w-80 bg-black/60 backdrop-blur-[3px] text-white rounded-lg p-4 shadow-xl z-40">
                 {/* Arrow */}
                 <div className="absolute -top-2 left-6">
                   <div className="w-4 h-4 bg-gray-800 rotate-45"></div>
@@ -289,14 +289,12 @@ export default function EnhancedPropertyCard({
           <button
             onClick={handleShortlistToggle}
             disabled={shortlistLoading}
-            className={`absolute top-4 right-4 w-12 h-12 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center z-10 ${
-              isShortlisted
-                ? "bg-rose-600 text-white hover:bg-rose-700"
-                : "bg-white/90 text-gray-600 hover:bg-white hover:text-rose-600"
-            } ${shortlistLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`absolute bg-black/60 backdrop-blur-[3px] top-4 right-4 w-12 h-12 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center z-10 ${
+              shortlistLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             <Heart
-              className={`w-6 h-6 transition-all duration-200 ${
+              className={`w-7 h-7 transition-all duration-200 ${
                 isShortlisted ? "fill-current" : ""
               }`}
             />
