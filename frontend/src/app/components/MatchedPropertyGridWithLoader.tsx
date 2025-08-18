@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import MatchedPropertyCard from "./MatchedPropertyCard";
+import { useSelector } from "react-redux";
+import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import { selectUser } from "../store/slices/authSlice";
 
 interface MatchedProperty {
   property: any; // Property type
@@ -16,6 +18,7 @@ interface MatchedPropertyGridWithLoaderProps {
   showShortlist?: boolean;
   className?: string;
   skeletonCount?: number;
+  userPreferences?: any;
 }
 
 export default function MatchedPropertyGridWithLoader({
@@ -23,9 +26,11 @@ export default function MatchedPropertyGridWithLoader({
   loading = false,
   onPropertyClick,
   showShortlist = true,
-  className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
+  className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8",
   skeletonCount = 6,
+  userPreferences,
 }: MatchedPropertyGridWithLoaderProps) {
+  const user = useSelector(selectUser);
   const [imagesLoaded, setImagesLoaded] = useState<{ [key: string]: boolean }>(
     {}
   );
@@ -100,12 +105,13 @@ export default function MatchedPropertyGridWithLoader({
   return (
     <div className={className}>
       {matchedProperties.map((match) => (
-        <MatchedPropertyCard
+        <EnhancedPropertyCard
           key={match.property.id}
           property={match.property}
           matchScore={match.matchScore}
+          userPreferences={userPreferences}
           onClick={() => onPropertyClick?.(match.property)}
-          showShortlist={showShortlist}
+          showShortlist={showShortlist && user?.role === "tenant"}
           imageLoaded={
             allImagesLoaded || imagesLoaded[match.property.id] || false
           }

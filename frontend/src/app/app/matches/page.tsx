@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { matchingAPI, DetailedMatchingResult, Property } from "../../lib/api";
+import {
+  matchingAPI,
+  DetailedMatchingResult,
+  Property,
+  preferencesAPI,
+} from "../../lib/api";
 import { useTranslations } from "../../lib/language-context";
 import { selectUser } from "../../store/slices/authSlice";
 import MatchedPropertyGridWithLoader from "../../components/MatchedPropertyGridWithLoader";
@@ -32,6 +37,7 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(true);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userPreferences, setUserPreferences] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"grid" | "detailed">("detailed");
   const [sortBy, setSortBy] = useState<"score" | "price" | "date">("score");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -182,19 +188,7 @@ export default function MatchesPage() {
   if (sessionLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardHeader
-          user={
-            user
-              ? {
-                  name: user.full_name || "User",
-                  email: user.email,
-                  role: user.roles?.includes("operator")
-                    ? "operator"
-                    : "tenant",
-                }
-              : undefined
-          }
-        />
+        <DashboardHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
@@ -214,19 +208,7 @@ export default function MatchesPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardHeader
-          user={
-            user
-              ? {
-                  name: user.full_name || "User",
-                  email: user.email,
-                  role: user.roles?.includes("operator")
-                    ? "operator"
-                    : "tenant",
-                }
-              : undefined
-          }
-        />
+        <DashboardHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -251,17 +233,7 @@ export default function MatchesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader
-        user={
-          user
-            ? {
-                name: user.full_name || "User",
-                email: user.email,
-                role: user.roles?.includes("operator") ? "operator" : "tenant",
-              }
-            : undefined
-        }
-      />
+      <DashboardHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -618,6 +590,7 @@ export default function MatchesPage() {
                 matchedProperties={sortedMatches}
                 loading={loading}
                 onPropertyClick={handlePropertyClick}
+                userPreferences={userPreferences}
               />
             )}
 

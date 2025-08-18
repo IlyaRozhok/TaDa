@@ -296,7 +296,7 @@ export default function PropertyCard({
         </div>
 
         {/* Property Details */}
-        <div className="flex items-center gap-4 mb-3 text-sm text-slate-600">
+        <div className="flex items-center gap-4 text-sm text-slate-600">
           <div className="flex items-center">
             <Bed className="w-4 h-4 mr-1" />
             <span>
@@ -322,7 +322,7 @@ export default function PropertyCard({
         {/* Features */}
         {property.lifestyle_features &&
           property.lifestyle_features.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
+            <div className="flex flex-wrap gap-">
               {property.lifestyle_features.slice(0, 3).map((feature, index) => (
                 <span
                   key={index}

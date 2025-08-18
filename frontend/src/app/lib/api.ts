@@ -112,6 +112,8 @@ export const usersAPI = {
 export const preferencesAPI = {
   get: () => api.get("/preferences"),
 
+  getPreferences: () => api.get("/preferences"),
+
   create: (data: any) => api.post("/preferences", data),
 
   update: (data: any) => api.put("/preferences", data),
