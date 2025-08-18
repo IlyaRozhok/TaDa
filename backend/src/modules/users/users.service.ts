@@ -305,29 +305,46 @@ export class UsersService {
       throw new Error("User with this email already exists");
     }
 
+    // Normalize role - handle both enum and string values
+    const userRole = dto.role || UserRole.Tenant;
+    const normalizedRole =
+      typeof userRole === "string"
+        ? Object.values(UserRole).find((role) => role === userRole) ||
+          UserRole.Tenant
+        : userRole;
+
     const user = this.userRepository.create({
       email: dto.email,
-      role: dto.role || UserRole.Tenant,
+      role: normalizedRole,
       status: UserStatus.Active,
       password: await bcrypt.hash(dto.password, 10),
       full_name: dto.full_name,
     });
     const savedUser = await this.userRepository.save(user);
 
-    // Create profile based on role
-    if (dto.role === UserRole.Tenant) {
+    // Create appropriate profile based on role
+    if (normalizedRole === UserRole.Tenant) {
       const tenantProfile = this.tenantProfileRepository.create({
         user: savedUser,
+        full_name: dto.full_name,
       });
-      await this.tenantProfileRepository.save(tenantProfile);
-    } else if (dto.role === UserRole.Operator) {
+      savedUser.tenantProfile =
+        await this.tenantProfileRepository.save(tenantProfile);
+    } else if (normalizedRole === UserRole.Operator) {
       const operatorProfile = this.operatorProfileRepository.create({
         user: savedUser,
+        full_name: dto.full_name,
       });
-      await this.operatorProfileRepository.save(operatorProfile);
+      savedUser.operatorProfile =
+        await this.operatorProfileRepository.save(operatorProfile);
     }
+    // Note: Admin users don't need tenant or operator profiles
 
-    return savedUser;
+    // Return user with relations loaded
+    return this.userRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ["tenantProfile", "operatorProfile"],
+    });
   }
 
   async adminDeleteUser(id: string): Promise<void> {

@@ -8,7 +8,7 @@ import {
 } from "../../../store/slices/authSlice";
 import DashboardHeader from "../../../components/DashboardHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
-import { useDebounce } from "../../../lib/utils";
+import { useDebounce } from "../../../hooks/useDebounce";
 import AdminNotifications from "../../../components/AdminNotifications";
 import MediaManager from "../../../components/MediaManager";
 import { PropertyMedia } from "../../../types";

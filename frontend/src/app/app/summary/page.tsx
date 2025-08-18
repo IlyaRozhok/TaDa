@@ -111,7 +111,7 @@ export default function ProfileSummaryPage() {
           matches,
           shortlistCount,
         ] = await Promise.allSettled([
-          authAPI.getProfile(),
+          usersAPI.getMe(),
           preferencesAPI.get(),
           propertiesAPI.getFeatured(100),
           matchingAPI.getMatches(100),

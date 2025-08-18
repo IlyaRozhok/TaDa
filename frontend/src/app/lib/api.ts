@@ -73,11 +73,30 @@ export const authAPI = {
 
   register: (data: any) => api.post("/auth/register", data),
 
+  checkUser: (email: string) => api.post("/auth/check-user", { email }),
+
+  authenticate: (data: {
+    email: string;
+    password: string;
+    role?: "tenant" | "operator";
+    rememberMe?: boolean;
+  }) => api.post("/auth/authenticate", data),
+
   googleAuth: (token: string) => api.post("/auth/google", { token }),
 
   selectRole: (role: string) => api.post("/auth/select-role", { role }),
 
   updateProfile: (data: any) => api.put("/users/profile", data),
+
+  updateUserRole: (userId: string, data: { role: string }) =>
+    api.put(`/users/${userId}/role`, data),
+
+  getProfile: () => api.get("/users/profile"),
+
+  logout: () => api.post("/auth/logout"),
+
+  createGoogleUser: (registrationId: string, role: "tenant" | "operator") =>
+    api.post("/auth/create-google-user", { registrationId, role }),
 };
 
 export const usersAPI = {

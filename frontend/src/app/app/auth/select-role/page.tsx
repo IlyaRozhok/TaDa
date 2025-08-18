@@ -41,8 +41,7 @@ export default function SelectRolePage() {
 
     try {
       // Update user role via API
-      const response = await authAPI.updateUserRole({
-        userId: user.id,
+      const response = await authAPI.updateUserRole(user.id, {
         role: selectedRole,
       });
 

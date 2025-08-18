@@ -46,48 +46,44 @@ export default function UnifiedAuthPage() {
     setIsLoading(true);
 
     try {
-      // Try to login first
-      let response;
+      // Step 1: Check if user exists
+      const checkResponse = await authAPI.checkUser(email);
 
-      try {
-        response = await authAPI.login({ email, password });
-      } catch (loginError: any) {
-        if (loginError.response?.status === 404) {
-          // User doesn't exist, need to register
-          setRequiresRegistration(true);
-          setStep("role");
-          setIsLoading(false);
-          return;
+      if (checkResponse.data.exists) {
+        // User exists - attempt login
+        const loginResponse = await authAPI.login({ email, password });
+
+        // Success - login completed
+        console.log("🔍 Login successful:", {
+          hasUser: !!loginResponse.data.user,
+          hasToken: !!loginResponse.data.access_token,
+          userEmail: loginResponse.data.user?.email,
+          userRole: loginResponse.data.user?.role,
+        });
+
+        dispatch(
+          setAuth({
+            user: loginResponse.data.user,
+            accessToken: loginResponse.data.access_token,
+          })
+        );
+
+        // Initialize shortlist for tenant users
+        if (loginResponse.data.user?.role === "tenant") {
+          console.log("🛒 Initializing shortlist for tenant user after login");
+          dispatch(fetchShortlist());
         }
-        throw loginError;
+
+        // Verify token was stored
+        const storedToken = localStorage.getItem("accessToken");
+        console.log("🔍 Token stored after login:", !!storedToken);
+
+        router.push("/app/dashboard");
+      } else {
+        // User doesn't exist - show role selection for registration
+        setRequiresRegistration(true);
+        setStep("role");
       }
-
-      // Success - login completed
-      console.log("🔍 Login successful:", {
-        hasUser: !!response.data.user,
-        hasToken: !!response.data.access_token,
-        userEmail: response.data.user?.email,
-        userRole: response.data.user?.role,
-      });
-
-      dispatch(
-        setAuth({
-          user: response.data.user,
-          accessToken: response.data.access_token,
-        })
-      );
-
-      // Initialize shortlist for tenant users
-      if (response.data.user?.role === "tenant") {
-        console.log("🛒 Initializing shortlist for tenant user after login");
-        dispatch(fetchShortlist());
-      }
-
-      // Verify token was stored
-      const storedToken = localStorage.getItem("accessToken");
-      console.log("🔍 Token stored after login:", !!storedToken);
-
-      router.push("/app/dashboard");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(

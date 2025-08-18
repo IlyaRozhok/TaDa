@@ -128,38 +128,36 @@ export default function AuthModal({
     setIsLoading(true);
 
     try {
-      // First attempt - no role specified
-      const response = await authAPI.authenticate({
-        email,
-        password,
-        role: selectedRole || undefined,
-        rememberMe,
-      });
+      // Step 1: Check if user exists
+      const checkResponse = await authAPI.checkUser(email);
 
-      if (response.requiresRegistration) {
-        // User doesn't exist, need to select role
+      if (checkResponse.data.exists) {
+        // User exists - attempt login
+        const loginResponse = await authAPI.login({ email, password });
+
+        // Success - login completed
+        dispatch(
+          setAuth({
+            user: loginResponse.data.user,
+            accessToken: loginResponse.data.access_token,
+          })
+        );
+
+        // Initialize shortlist for tenant users
+        if (loginResponse.data.user?.role === "tenant") {
+          console.log(
+            "🛒 Initializing shortlist for tenant user via AuthModal"
+          );
+          dispatch(fetchShortlist());
+        }
+
+        handleClose();
+        redirectAfterLogin(loginResponse.data.user, router);
+      } else {
+        // User doesn't exist - show role selection for registration
         setRequiresRegistration(true);
         setStep("role");
-        setIsLoading(false);
-        return;
       }
-
-      // Success - either login or registration completed
-      dispatch(
-        setAuth({
-          user: response.user,
-          accessToken: response.access_token,
-        })
-      );
-
-      // Initialize shortlist for tenant users
-      if (response.user?.role === "tenant") {
-        console.log("🛒 Initializing shortlist for tenant user via AuthModal");
-        dispatch(fetchShortlist());
-      }
-
-      handleClose();
-      redirectAfterLogin(response.user, router);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(
@@ -259,11 +257,44 @@ export default function AuthModal({
         setIsLoading(false);
       }
     } else {
-      // Regular registration - call authenticate
+      // Regular registration - register new user
       console.log(
-        "✅ AuthModal - calling authenticate for regular registration"
+        "✅ AuthModal - registering new user with role:",
+        selectedRole
       );
-      handleSubmit();
+
+      try {
+        const registerResponse = await authAPI.register({
+          email,
+          password,
+          role: selectedRole,
+        });
+
+        // Success - registration completed
+        dispatch(
+          setAuth({
+            user: registerResponse.data.user,
+            accessToken: registerResponse.data.access_token,
+          })
+        );
+
+        // Initialize shortlist for tenant users
+        if (registerResponse.data.user?.role === "tenant") {
+          console.log(
+            "🛒 Initializing shortlist for tenant user after registration"
+          );
+          dispatch(fetchShortlist());
+        }
+
+        handleClose();
+        redirectAfterLogin(registerResponse.data.user, router);
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        setError(
+          error.response?.data?.message ||
+            "Failed to create account. Please try again."
+        );
+      }
     }
   };
 
