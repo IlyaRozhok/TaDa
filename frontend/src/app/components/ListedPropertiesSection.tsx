@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Map } from "lucide-react";
+import { ChevronDown, Map, ChevronLeft, ChevronRight } from "lucide-react";
 import { Property } from "../types";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
@@ -21,6 +21,9 @@ interface ListedPropertiesSectionProps {
     primary_postcode?: string;
   };
   totalCount?: number;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 type SortOption = "bestMatch" | "lowPrice" | "highPrice" | "dateAdded";
@@ -90,6 +93,9 @@ export default function ListedPropertiesSection({
   loading,
   userPreferences,
   totalCount = 0,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
 }: ListedPropertiesSectionProps) {
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
@@ -272,6 +278,69 @@ export default function ListedPropertiesSection({
           </div>
         </div>
       ) : null}
+
+      {/* Pagination */}
+      {totalPages > 1 && onPageChange && (
+        <div className="flex justify-center items-center mt-8 gap-2">
+          {/* Previous button */}
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              currentPage === 1
+                ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Previous
+          </button>
+
+          {/* Page numbers */}
+          <div className="flex gap-1">
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => onPageChange(pageNum)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === pageNum
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Next button */}
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              currentPage === totalPages
+                ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

@@ -128,7 +128,7 @@ export const propertiesAPI = {
 
   getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
 
-  getPublic: (page: number = 1, limit: number = 6, search?: string) =>
+  getPublic: (page: number = 1, limit: number = 12, search?: string) =>
     api.get("/properties/public", { params: { page, limit, search } }),
 
   create: (data: any) => api.post("/properties", data),

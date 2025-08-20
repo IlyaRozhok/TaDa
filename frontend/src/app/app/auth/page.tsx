@@ -19,7 +19,6 @@ import {
   Building,
   CheckCircle,
 } from "lucide-react";
-import Logo from "../../components/Logo";
 import { Button } from "../../components/ui/Button";
 
 type UserType = "tenant" | "operator";
@@ -295,7 +294,7 @@ export default function UnifiedAuthPage() {
       <div className="w-full max-w-md relative z-10">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-6">
-            <Logo size="md" className="mx-auto mb-4" />
+            <div className="text-3xl font-bold text-black mb-4">:: TADA</div>
             <h2 className="text-2xl font-bold text-gray-900">
               Sign in to Tada
             </h2>
@@ -400,10 +399,10 @@ export default function UnifiedAuthPage() {
           </div>
 
           {/* Social Login */}
-          <div className="flex justify-center gap-4">
+          <div className="w-full">
             <button
               onClick={handleGoogleAuth}
-              className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -423,16 +422,16 @@ export default function UnifiedAuthPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
+              Continue with Google
             </button>
           </div>
 
           {/* Terms & Privacy */}
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-500">
-              By clicking Continue with Google, Facebook, or Apple, you agree to
-              Tada{" "}
+              By clicking Continue with Google, you agree to Tada{" "}
               <Link href="/terms" className="underline">
-                Term's of Use
+                Term&apos;s of Use
               </Link>{" "}
               and{" "}
               <Link href="/privacy" className="underline">

@@ -27,6 +27,9 @@ function TenantDashboardContent() {
   const [preferencesCount, setPreferencesCount] = useState(0);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [hasCompletePreferences, setHasCompletePreferences] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isSearchTriggered, setIsSearchTriggered] = useState(false);
 
   // Debounced search
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -117,7 +120,7 @@ function TenantDashboardContent() {
   }, [user]);
 
   // Load properties with search
-  const loadProperties = async (search: string) => {
+  const loadProperties = async (search: string, page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -125,11 +128,11 @@ function TenantDashboardContent() {
       // Try to load properties with search
       let response;
       try {
-        response = await propertiesAPI.getPublic(1, 50, search);
+        response = await propertiesAPI.getPublic(page, 12, search);
       } catch (searchError) {
         console.warn("⚠️ Search failed, trying to load all properties...");
         // Fallback: load all properties without search
-        response = await propertiesAPI.getPublic(1, 50);
+        response = await propertiesAPI.getPublic(page, 12);
       }
 
       // Extract properties from response - API returns {data: [...], total: number, ...}
@@ -138,6 +141,8 @@ function TenantDashboardContent() {
 
       setProperties(propertiesData);
       setTotalCount(totalCount);
+      setCurrentPage(page);
+      setTotalPages(response.data?.totalPages || Math.ceil(totalCount / 12));
 
       console.log("✅ Properties loaded:", {
         count: propertiesData.length,
@@ -205,9 +210,22 @@ function TenantDashboardContent() {
   // Load properties when search term changes
   useEffect(() => {
     if (user?.role === "tenant" && !sessionLoading) {
-      loadProperties(debouncedSearchTerm);
+      setCurrentPage(1); // Reset to first page on new search
+      setIsSearchTriggered(true);
+      loadProperties(debouncedSearchTerm, 1);
     }
   }, [debouncedSearchTerm, user, sessionLoading]);
+
+  // Load properties on page change (but not if it was triggered by search)
+  useEffect(() => {
+    if (user?.role === "tenant" && !sessionLoading && !isSearchTriggered) {
+      loadProperties(debouncedSearchTerm, currentPage);
+    }
+    // Reset the search trigger flag after handling
+    if (isSearchTriggered) {
+      setIsSearchTriggered(false);
+    }
+  }, [currentPage, user, sessionLoading, isSearchTriggered]);
 
   // Loading state
   if (!user || sessionLoading) {
@@ -282,6 +300,9 @@ function TenantDashboardContent() {
           loading={loading}
           userPreferences={userPreferences}
           totalCount={totalCount}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
         />
       </main>
     </div>

@@ -116,14 +116,14 @@ export class PropertiesController {
   @Get("public")
   async getPublicProperties(
     @Query("page") page: number = 1,
-    @Query("limit") limit: number = 6,
+    @Query("limit") limit: number = 12,
     @Query("search") search?: string,
     @Query("sortBy") sortBy?: string,
     @Query("order") order?: "ASC" | "DESC"
   ) {
-    // Ensure page and limit are numbers, max 6 for public access
+    // Ensure page and limit are numbers, max 12 for public access
     const pageNum = parseInt(page as any) || 1;
-    const limitNum = Math.min(parseInt(limit as any) || 6, 6);
+    const limitNum = Math.min(parseInt(limit as any) || 12, 12);
 
     const result = await this.propertiesService.findAll(
       pageNum,
@@ -140,7 +140,7 @@ export class PropertiesController {
       page: result.page,
       totalPages: result.totalPages,
       isPublic: true,
-      maxPublicProperties: 6,
+      maxPublicProperties: 12,
     };
   }
 
