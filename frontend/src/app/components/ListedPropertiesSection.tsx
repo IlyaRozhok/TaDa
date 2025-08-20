@@ -225,59 +225,68 @@ export default function ListedPropertiesSection({
       </div>
 
       {/* Properties Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, index) => (
-            <PropertyCardSkeleton key={`skeleton-${index}`} />
-          ))}
-        </div>
-      ) : sortedProperties.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedProperties.map(({ property, matchScore }) => (
-            <EnhancedPropertyCard
-              key={property.id}
-              property={property}
-              matchScore={
-                matchScore ||
-                70 +
-                  (Math.abs(
-                    property.id ? property.id.toString().charCodeAt(0) : 1
-                  ) %
-                    30)
-              } // Always ensure there's a match score
-              userPreferences={userPreferences}
-              onClick={() => handlePropertyClick(property.id)}
-              showShortlist={true}
-            />
-          ))}
-        </div>
-      ) : !loading ? (
-        <div className="text-center py-16">
-          <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h5a2 2 0 002-2V9a2 2 0 00-2-2H9a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
+      <div className="relative">
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border">
+              <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
+              <span className="text-sm text-gray-600">
+                Loading properties...
+              </span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No properties found
-            </h3>
-            <p className="text-gray-500">
-              Try adjusting your search terms or preferences to see more results
-            </p>
           </div>
-        </div>
-      ) : null}
+        )}
+
+        {sortedProperties.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedProperties.map(({ property, matchScore }) => (
+              <EnhancedPropertyCard
+                key={property.id}
+                property={property}
+                matchScore={
+                  matchScore ||
+                  70 +
+                    (Math.abs(
+                      property.id ? property.id.toString().charCodeAt(0) : 1
+                    ) %
+                      30)
+                } // Always ensure there's a match score
+                userPreferences={userPreferences}
+                onClick={() => handlePropertyClick(property.id)}
+                showShortlist={true}
+              />
+            ))}
+          </div>
+        ) : !loading ? (
+          <div className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h5a2 2 0 002-2V9a2 2 0 00-2-2H9a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No properties found
+              </h3>
+              <p className="text-gray-500">
+                Try adjusting your search terms or preferences to see more
+                results
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && onPageChange && (
