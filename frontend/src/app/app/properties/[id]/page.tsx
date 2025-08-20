@@ -438,10 +438,20 @@ export default function PropertyPublicPage() {
                 </div>
                 <div className="flex flex-col justify-start">
                   <div className="text-gray-600 text-sm">Property owner</div>
-                  <div className="font-semibold text-black mb-1 max-w-[200px]">
+                  <button
+                    className="font-semibold text-black mb-1 max-w-[200px] hover:text-gray-700 transition-colors text-left"
+                    onClick={() =>
+                      router.push(`/app/operators/${property.operator?.id}`)
+                    }
+                  >
                     {property.operator?.full_name}
-                  </div>
-                  <button className="text-black text-sm underline text-left cursor-pointer font-bold hover:text-slate-700 max-w-[180px]">
+                  </button>
+                  <button
+                    className="text-black text-sm underline text-left cursor-pointer font-bold hover:text-slate-700 max-w-[180px]"
+                    onClick={() =>
+                      router.push(`/app/operators/${property.operator?.id}`)
+                    }
+                  >
                     See more apartment from this owner
                   </button>
                 </div>
@@ -647,7 +657,10 @@ export default function PropertyPublicPage() {
             properties={[property]}
             center={
               property.lat && property.lng
-                ? { lat: property.lat, lng: property.lng }
+                ? { 
+                    lat: typeof property.lat === 'string' ? parseFloat(property.lat) : property.lat, 
+                    lng: typeof property.lng === 'string' ? parseFloat(property.lng) : property.lng 
+                  }
                 : { lat: 51.5074, lng: -0.1278 }
             }
             zoom={15}

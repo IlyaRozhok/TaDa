@@ -138,6 +138,13 @@ export default function TaDaMap({
         {properties.map((property) => {
           if (!property.lat || !property.lng) return null;
 
+          // Convert coordinates to numbers if they're strings
+          const lat = typeof property.lat === 'string' ? parseFloat(property.lat) : property.lat;
+          const lng = typeof property.lng === 'string' ? parseFloat(property.lng) : property.lng;
+
+          // Skip if coordinates are invalid
+          if (isNaN(lat) || isNaN(lng)) return null;
+
           // Choose marker color based on geocoding status
           const markerColor = property.geocoding_failed ? "#F59E0B" : "#3B82F6"; // Orange for failed, Blue for success
           const markerOutline = property.geocoding_failed
@@ -147,7 +154,7 @@ export default function TaDaMap({
           return (
             <Marker
               key={property.id}
-              position={{ lat: property.lat, lng: property.lng }}
+              position={{ lat, lng }}
               onClick={() => handleMarkerClick(property)}
               onMouseOver={() => handleMarkerMouseEnter(property)}
               onMouseOut={handleMarkerMouseLeave}
@@ -179,9 +186,15 @@ export default function TaDaMap({
         })}
 
         {/* Info Window for hovered property */}
-        {hoveredProperty && hoveredProperty.lat && hoveredProperty.lng && (
-          <InfoWindow
-            position={{ lat: hoveredProperty.lat, lng: hoveredProperty.lng }}
+        {hoveredProperty && hoveredProperty.lat && hoveredProperty.lng && (() => {
+          const lat = typeof hoveredProperty.lat === 'string' ? parseFloat(hoveredProperty.lat) : hoveredProperty.lat;
+          const lng = typeof hoveredProperty.lng === 'string' ? parseFloat(hoveredProperty.lng) : hoveredProperty.lng;
+          
+          if (isNaN(lat) || isNaN(lng)) return null;
+          
+          return (
+            <InfoWindow
+              position={{ lat, lng }}
             options={{
               disableAutoPan: true,
               pixelOffset: new google.maps.Size(0, -40),
@@ -229,7 +242,8 @@ export default function TaDaMap({
               </div>
             </div>
           </InfoWindow>
-        )}
+          );
+        })()}
       </GoogleMap>
 
       {/* Loading overlay */}

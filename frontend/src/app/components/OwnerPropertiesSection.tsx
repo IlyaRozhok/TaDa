@@ -95,7 +95,9 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
         </div>
         <button
           className="text-black text-sm underline hover:text-gray-600 font-medium"
-          onClick={() => (window.location.href = "/app/dashboard/tenant")}
+          onClick={() =>
+            (window.location.href = `/app/operators/${operatorId}`)
+          }
         >
           See more apartment from this owner
         </button>
