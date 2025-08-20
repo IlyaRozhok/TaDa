@@ -17,7 +17,7 @@ import {
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "../../../components/ui/Button";
 import DashboardHeader from "../../../components/DashboardHeader";
-import { MapPin, Heart, Share } from "lucide-react";
+import { Heart, Share, Search, Bell, ChevronDown, User } from "lucide-react";
 import PropertyMap from "../../../components/PropertyMap";
 import toast from "react-hot-toast";
 
@@ -241,17 +241,73 @@ export default function PropertyPublicPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader />
+      {/* Custom Navigation Bar */}
+      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Left: Logo */}
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold text-black">:: TADA</h1>
+          </div>
+
+          {/* Center: Search Bar */}
+          <div className="flex-1 max-w-2xl mx-8">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search property, location, or type of property"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+              />
+            </div>
+          </div>
+
+          {/* Right: Icons */}
+          <div className="flex items-center space-x-4">
+            <button className="text-black hover:text-gray-600 transition-colors">
+              <Heart className="h-6 w-6" />
+            </button>
+            <button className="text-black hover:text-gray-600 transition-colors">
+              <Bell className="h-6 w-6" />
+            </button>
+            <div className="flex items-center space-x-1 text-black cursor-pointer">
+              <span className="text-sm font-medium">EN</span>
+              <ChevronDown className="h-4 w-4" />
+            </div>
+            <button className="text-black hover:text-gray-600 transition-colors">
+              <User className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
+      </nav>
 
       {/* Header with title and actions */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex justify-between items-start mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {property.title || "Property Title"}
-            </h1>
-            <div className="flex items-center text-gray-600 mb-2">
-              <MapPin className="w-4 h-4 mr-1" />
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-black">
+                {property.title || "Property Title"}
+              </h1>
+              <button className="flex items-center gap-2 bg-white/90 hover:bg-white text-gray-600 transition-colors cursor-pointer rounded-lg px-3 py-2 shadow-lg">
+                <Share className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleShortlistToggle}
+                disabled={shortlistLoading}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-lg ${
+                  isInShortlist
+                    ? "bg-red-500/90 hover:bg-red-500 text-white"
+                    : "bg-white/90 hover:bg-white text-gray-600"
+                }`}
+              >
+                <Heart
+                  className={`w-4 h-4 ${isInShortlist ? "fill-current" : ""}`}
+                />
+              </button>
+            </div>
+            <div className="flex items-center text-black mb-2">
               <span>{property.address || "Address not available"}</span>
               <span className="mx-2">•</span>
               <span className="text-sm">
@@ -259,76 +315,67 @@ export default function PropertyPublicPage() {
               </span>
             </div>
           </div>
-          {/* Removed buttons from header - will be moved above image */}
         </div>
       </div>
 
       {/* Main content: gallery + sticky price card */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Gallery */}
+          {/* Left: Gallery with preview carousel */}
           <div className="lg:col-span-2">
             {allImages.length > 0 ? (
               <>
+                {/* Main image */}
                 <div className="relative rounded-2xl overflow-hidden mb-4">
-                  {/* Action buttons positioned above image top-right */}
-                  <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-                    <button className="flex items-center gap-2 bg-white/90 hover:bg-white text-gray-600 transition-colors cursor-pointer rounded-lg px-3 py-2 shadow-lg">
-                      <Share className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleShortlistToggle}
-                      disabled={shortlistLoading}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-lg ${
-                        isInShortlist
-                          ? "bg-red-500/90 hover:bg-red-500 text-white"
-                          : "bg-white/90 hover:bg-white text-gray-600"
-                      }`}
-                    >
-                      <Heart
-                        className={`w-4 h-4 ${
-                          isInShortlist ? "fill-current" : ""
-                        }`}
-                      />
-                    </button>
-                  </div>
-
                   <ImageGallery
                     media={property.media || []}
                     images={property.images || []}
                     alt={property.title || "Property"}
                   />
-                  {allImages.length > 1 && (
-                    <button className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-900 text-sm font-semibold rounded-lg px-4 py-2 shadow-lg">
-                      See all photo ({allImages.length})
-                    </button>
-                  )}
+
+                  {/* Match indicator */}
+                  <div className="absolute top-4 left-4 bg-black/80 text-white px-3 py-2 rounded-lg border border-white/20">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border border-white/30 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      </div>
+                      <span className="text-sm font-medium">90% Match</span>
+                    </div>
+                  </div>
+
+                  {/* Photo counter */}
+                  <div className="absolute top-4 right-4 bg-black/80 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                    1 / {allImages.length}
+                  </div>
                 </div>
+
+                {/* Preview carousel - 2x2 grid */}
+                {/* <div className="grid grid-cols-2 gap-2 max-w-[200px] mb-4">
+                  {allImages.slice(0, 4).map((image, index) => (
+                    <div
+                      key={index}
+                      className={`w-24 h-20 rounded-lg overflow-hidden border-2 ${
+                        index === 0 ? "border-black" : "border-gray-200"
+                      }`}
+                    >
+                      <img
+                        src={image}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div> */}
+
+                {/* See all photos button */}
+                {allImages.length > 1 && (
+                  <button className="text-black text-sm underline hover:text-gray-600">
+                    See all photo ({allImages.length})
+                  </button>
+                )}
               </>
             ) : (
               <div className="relative rounded-2xl overflow-hidden mb-4 bg-gray-100 h-96 flex items-center justify-center">
-                {/* Action buttons positioned above placeholder top-right */}
-                <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-                  <button className="flex items-center gap-2 bg-white/90 hover:bg-white text-gray-600 transition-colors cursor-pointer rounded-lg px-3 py-2 shadow-lg">
-                    <Share className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleShortlistToggle}
-                    disabled={shortlistLoading}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-lg ${
-                      isInShortlist
-                        ? "bg-red-500/90 hover:bg-red-500 text-white"
-                        : "bg-white/90 hover:bg-white text-gray-600"
-                    }`}
-                  >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        isInShortlist ? "fill-current" : ""
-                      }`}
-                    />
-                  </button>
-                </div>
-
                 <div className="text-center text-gray-500">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-lg flex items-center justify-center">
                     <svg
@@ -354,33 +401,36 @@ export default function PropertyPublicPage() {
             )}
           </div>
 
-          {/* Right: Price card */}
+          {/* Right: Operator info and booking */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24">
+            <div className="rounded-xl ">
               {/* Property owner info */}
-              <div className="bg-white rounded-xl p-6 mb-6 border">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    AUTHOR
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      Property owner
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      {property.operator?.full_name || "Property Operator"}
-                    </p>
+
+              <div className="flex items-start gap-3 mb-3 max-w-[400px]">
+                <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs">
+                  <div className="text-center leading-tight">
+                    <div>AUTHOR</div>
+                    <div>KING&apos;S</div>
+                    <div>CROSS</div>
                   </div>
                 </div>
-                <button className="text-gray-600 text-sm underline hover:text-gray-900">
-                  See more apartment from this owner
-                </button>
+                <div className="flex flex-col justify-start">
+                  <div className="text-gray-600 text-sm">Property owner</div>
+                  <div className="font-semibold text-black mb-1 max-w-[200px]">
+                    {property.operator?.full_name}
+                  </div>
+                  <button className="text-black text-sm underline text-left cursor-pointer font-bold hover:text-slate-700 max-w-[180px]">
+                    See more apartment from this owner
+                  </button>
+                </div>
               </div>
 
               {/* Availability */}
-              <div className="bg-white rounded-xl p-6 mb-6 border">
-                <p className="text-gray-600 text-sm mb-2">Available from</p>
-                <p className="text-lg font-semibold text-gray-900">
+              <div className="flex items-baseline justify-start mt-4 p-3">
+                <p className="text-md font-semibold text-black mr-1">
+                  Available from
+                </p>
+                <p className="text-md font-bold text-black mr-2">
                   {property.available_from
                     ? new Date(property.available_from).toLocaleDateString(
                         "en-GB",
@@ -390,54 +440,56 @@ export default function PropertyPublicPage() {
                           year: "numeric",
                         }
                       )
-                    : "To be confirmed"}
+                    : "20 March 2024"}
                 </p>
               </div>
 
-              {/* Price card */}
-              <div className="bg-white rounded-xl p-6 border">
-                <div className="text-3xl font-bold text-gray-900 mb-1">
-                  £{Number(property.price || 0).toLocaleString()}
+              {/* Price and booking */}
+              <div className="p-3">
+                <div className="flex items-center justify-start mb-2">
+                  <div className="text-3xl font-bold text-black mr-2">
+                    £{Number(property.price || 1712).toLocaleString()}
+                  </div>
+                  <div className="text-md text-gray-600 mr-2">
+                    Price per month
+                  </div>
                 </div>
-                <p className="text-gray-600 text-sm mb-6">Price per month</p>
 
-                <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white py-4 rounded-full text-base font-semibold mb-4">
+                <Button className="w-full bg-black hover:bg-gray-800 cursor-pointer text-white py-4 rounded-full text-base font-semibold my-2">
                   Book this apartment
                 </Button>
 
                 <p className="text-xs text-gray-500 mb-6 text-center">
-                  You won't be charged yet, only after reservation and approve
-                  your form
+                  You won&apos;t be charged yet, only after reservation and
+                  approve your form
                 </p>
 
                 {/* Payment breakdown */}
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">
+                  <h4 className="font-semibold text-black mb-3">
                     More about next payments
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">
                         2 month x £
-                        {Number(property.price || 0).toLocaleString()}
+                        {Number(property.price || 1712).toLocaleString()}
                       </span>
-                      <span className="font-semibold text-gray-900">
-                        £{(Number(property.price || 0) * 2).toLocaleString()}
+                      <span className="font-semibold text-black">
+                        £{(Number(property.price || 1712) * 2).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Tada fee</span>
-                      <span className="font-semibold text-gray-900">
-                        £{(Number(property.price || 0) * 0.1).toLocaleString()}
-                      </span>
+                      <span className="font-semibold text-black">£142.5</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t font-semibold">
-                      <span className="text-gray-900">Total</span>
-                      <span className="text-gray-900">
+                      <span className="text-black">Total</span>
+                      <span className="text-black">
                         £
                         {(
-                          Number(property.price || 0) * 2 +
-                          Number(property.price || 0) * 0.1
+                          Number(property.price || 1712) * 2 +
+                          142.5
                         ).toLocaleString()}
                       </span>
                     </div>
@@ -451,38 +503,44 @@ export default function PropertyPublicPage() {
 
       {/* Details */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Details</h2>
+        <h2 className="text-2xl font-semibold text-black mb-6">Details</h2>
         <div className="bg-white rounded-2xl border p-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8">
             <div>
               <p className="text-sm text-gray-500 mb-1">Property type</p>
-              <p className="font-semibold text-gray-900">Built to rent</p>
+              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                Built to rent
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Property type</p>
-              <p className="font-semibold text-gray-900">Apartment</p>
+              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                Apartment
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Furnishing</p>
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
                 {property.furnishing || "Furnished"}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Bedrooms</p>
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
                 {property.bedrooms || 1}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Bathrooms</p>
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
                 {property.bathrooms || 1}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Size</p>
-              <p className="font-semibold text-gray-900">497 sq ft</p>
+              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                497 sq ft
+              </p>
             </div>
           </div>
         </div>
@@ -490,13 +548,13 @@ export default function PropertyPublicPage() {
 
       {/* About apartment */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        <h2 className="text-2xl font-semibold text-black mb-6">
           About apartment
         </h2>
         <div className="text-gray-700 leading-relaxed space-y-4">
           <p>
             {property.description ||
-              "No description available for this property."}
+              "Kings Cross Apartments — это апартаменты в центре города Лондон, расположенные в 700 м и 600 м соответственно от следующих достопримечательностей: Железнодорожный вокзал Кингс-Кросс и Станция метро King's Cross St Pancras. Среди удобств есть гостиная зона и бесплатный Wi-Fi. В каждой единице"}
           </p>
           <button className="text-gray-600 underline text-sm hover:text-gray-900">
             More information
@@ -506,7 +564,7 @@ export default function PropertyPublicPage() {
 
       {/* What this place offers */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+        <h2 className="text-2xl font-semibold text-black mb-6">
           What this place offers
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

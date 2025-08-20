@@ -21,7 +21,7 @@ export default function UserDropdown() {
     setIsMounted(true);
   }, []);
 
-  // Закрыть dropdown при клике вне его
+  // Закрыть dropdown при клике вне его или нажатии Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -32,11 +32,20 @@ export default function UserDropdown() {
       }
     }
 
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
-  }, []);
+  }, [isOpen]);
 
   const handleLogout = async () => {
     try {
@@ -95,7 +104,6 @@ export default function UserDropdown() {
       {/* User Avatar/Icon */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        onMouseEnter={() => setIsOpen(true)}
         className={styles.avatarButton}
       >
         <div className={styles.userAvatarSmall}>
@@ -115,10 +123,7 @@ export default function UserDropdown() {
 
       {/* Dropdown Menu */}
       {isMounted && isOpen && (
-        <div
-          className={`absolute right-0 ${styles.dropdownContainer}`}
-          onMouseLeave={() => setIsOpen(false)}
-        >
+        <div className={`absolute right-0 ${styles.dropdownContainer}`}>
           {/* User Info */}
           <div className={styles.dropdownHeader}>
             <div className="flex items-center space-x-4">

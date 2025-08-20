@@ -17,6 +17,7 @@ export default function PropertiesMapPage() {
     null
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasGoogleMapsKey, setHasGoogleMapsKey] = useState(false);
 
@@ -24,6 +25,54 @@ export default function PropertiesMapPage() {
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     setHasGoogleMapsKey(!!apiKey);
+  }, []);
+
+  // Wait for Google Maps to be ready
+  const [isGoogleMapsReady, setIsGoogleMapsReady] = useState(false);
+
+  useEffect(() => {
+    const checkGoogleMapsReady = () => {
+      if (
+        typeof window !== "undefined" &&
+        window.google &&
+        window.google.maps &&
+        window.google.maps.Geocoder
+      ) {
+        console.log("🗺️ Google Maps API fully ready");
+        setIsGoogleMapsReady(true);
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately
+    if (checkGoogleMapsReady()) {
+      return;
+    }
+
+    // Poll for Google Maps readiness with shorter timeout
+    let attempts = 0;
+    const maxAttempts = 6; // 3 seconds max (6 attempts * 500ms)
+
+    const checkInterval = setInterval(() => {
+      attempts++;
+      console.log(
+        `🔄 Checking Google Maps API readiness... (${attempts}/${maxAttempts})`
+      );
+
+      if (checkGoogleMapsReady()) {
+        clearInterval(checkInterval);
+      } else if (attempts >= maxAttempts) {
+        console.warn(
+          "⚠️ Google Maps API timeout after 3s, proceeding with fallback coordinates"
+        );
+        clearInterval(checkInterval);
+        setIsGoogleMapsReady(true); // Proceed anyway to avoid infinite loading
+      }
+    }, 500);
+
+    // Cleanup
+    return () => clearInterval(checkInterval);
   }, []);
 
   // Load properties from API
@@ -42,39 +91,177 @@ export default function PropertiesMapPage() {
         const propertiesData = response.data?.data || response.data || [];
         console.log("Properties data:", propertiesData);
 
-        if (propertiesData.length > 0) {
-          console.log("Properties found, starting geocoding...");
+        // Clean and validate property data
+        const cleanedPropertiesData = propertiesData.map(
+          (property: Property) => {
+            // Fix incorrect addresses that contain property details instead of actual addresses
+            let cleanAddress = property.address;
+            if (cleanAddress) {
+              // Check if address contains property details instead of actual address
+              if (
+                cleanAddress.includes("bed") ||
+                cleanAddress.includes("bath") ||
+                cleanAddress.includes("sq ft") ||
+                cleanAddress.includes("•")
+              ) {
+                console.warn(
+                  `⚠️ Property ${property.id} has incorrect address: "${cleanAddress}"`
+                );
+                cleanAddress = "London, UK"; // Fallback to generic address
+              }
+            } else {
+              cleanAddress = "London, UK";
+            }
 
-          // Check if Google Maps is loaded
+            return {
+              ...property,
+              address: cleanAddress,
+              original_address: property.address, // Keep original for reference
+            };
+          }
+        );
+
+        console.log("Cleaned properties data:", cleanedPropertiesData);
+
+        if (cleanedPropertiesData.length > 0) {
+          console.log("Properties found, checking geocoding availability...");
+
+          // Check if Google Maps is ready for geocoding
           if (
-            typeof window !== "undefined" &&
-            window.google &&
-            window.google.maps
+            !isGoogleMapsReady ||
+            !window.google ||
+            !window.google.maps ||
+            !window.google.maps.Geocoder
           ) {
             console.log(
-              "Google Maps API is loaded, proceeding with geocoding..."
+              "⏳ Google Maps API not ready, using fallback coordinates"
             );
-            // Use geocoding service to get coordinates for all properties
-            const propertiesWithCoords =
-              await geocodingService.geocodeProperties(propertiesData);
-            console.log("Properties with coordinates:", propertiesWithCoords);
-            setProperties(propertiesWithCoords);
-          } else {
-            console.log(
-              "Google Maps API not loaded, using fallback coordinates..."
-            );
-            // Use fallback coordinates if Google Maps is not loaded
-            const fallbackProperties = propertiesData.map(
-              (property: Property, index: number) => ({
-                ...property,
-                lat: 51.5074 + index * 0.01,
-                lng: -0.1278 + index * 0.01,
-              })
+            // Use improved fallback coordinates if Maps isn't ready
+            const fallbackProperties = cleanedPropertiesData.map(
+              (property: Property) => {
+                // Use hash-based fallback similar to geocoding service
+                const hash = property.address
+                  ? property.address.split("").reduce((a, b) => {
+                      a = (a << 5) - a + b.charCodeAt(0);
+                      return a & a;
+                    }, 0)
+                  : Math.floor(Math.random() * 1000);
+                const lat = 51.28 + (Math.abs(hash % 1000) / 1000) * 0.41;
+                const lng =
+                  -0.51 + (Math.abs((hash >> 10) % 1000) / 1000) * 0.84;
+
+                return {
+                  ...property,
+                  lat,
+                  lng,
+                  geocoding_failed: true,
+                  fallback_reason: "maps_not_ready" as const,
+                  original_address: property.address,
+                };
+              }
             );
             setProperties(fallbackProperties);
+            return;
+          }
+
+          console.log("✅ Google Maps API ready, starting geocoding...");
+          setIsGeocoding(true);
+
+          try {
+            // Google Maps is ready, proceed with geocoding
+            console.log(
+              "Google Maps API is fully loaded, proceeding with geocoding..."
+            );
+
+            // Verify geocoding service is available
+            await geocodingService.initialize();
+            console.log("Geocoding service initialized successfully");
+
+            // Use geocoding service to get coordinates for all properties
+            const propertiesWithCoords =
+              await geocodingService.geocodeProperties(cleanedPropertiesData);
+            console.log("Properties with coordinates:", propertiesWithCoords);
+
+            // Count successful vs fallback geocoding
+            const successfulGeocode = propertiesWithCoords.filter(
+              (p) => !p.geocoding_failed
+            ).length;
+            const fallbackGeocode = propertiesWithCoords.filter(
+              (p) => p.geocoding_failed
+            ).length;
+            console.log(
+              `📊 Geocoding results: ${successfulGeocode} successful, ${fallbackGeocode} fallback`
+            );
+
+            setProperties(propertiesWithCoords);
+          } catch (geocodingError) {
+            console.error("Geocoding failed:", geocodingError);
+            // Use fallback coordinates if geocoding fails
+            const fallbackProperties = cleanedPropertiesData.map(
+              (property: Property) => {
+                const hash = property.address
+                  ? property.address.split("").reduce((a, b) => {
+                      a = (a << 5) - a + b.charCodeAt(0);
+                      return a & a;
+                    }, 0)
+                  : Math.random() * 1000;
+                const lat = 51.28 + (Math.abs(hash % 1000) / 1000) * 0.41;
+                const lng =
+                  -0.51 + (Math.abs((hash >> 10) % 1000) / 1000) * 0.84;
+
+                return {
+                  ...property,
+                  lat,
+                  lng,
+                  geocoding_failed: true,
+                  fallback_reason: "geocoding_error" as const,
+                  original_address: property.address,
+                  geocoding_error:
+                    geocodingError instanceof Error
+                      ? geocodingError.message
+                      : String(geocodingError),
+                };
+              }
+            );
+            setProperties(fallbackProperties);
+          } finally {
+            setIsGeocoding(false);
           }
         } else {
           console.log("No properties from API, using mock data...");
+
+          // Wait for Google Maps to be fully ready before geocoding mock data
+          if (!isGoogleMapsReady) {
+            console.log(
+              "⏳ Google Maps API not ready for mock data, using simple fallback"
+            );
+            // Use simple fallback for mock data if Maps isn't ready
+            const simpleMockProperties: Property[] = [
+              {
+                id: "1",
+                title: "Test Property",
+                description: "Sample test property",
+                address: "Central London, UK",
+                price: 3210,
+                bedrooms: 1,
+                bathrooms: 1,
+                total_area: 497,
+                property_type: "APARTMENT",
+                furnishing: "Furnished",
+                is_btr: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                operator_id: "1",
+                lat: 51.5074,
+                lng: -0.1278,
+                geocoding_failed: true,
+                fallback_reason: "maps_not_ready" as const,
+              },
+            ];
+            setProperties(simpleMockProperties);
+            return;
+          }
+
           // If no properties from API, use fallback mock data
           const mockProperties: Property[] = [
             {
@@ -128,24 +315,57 @@ export default function PropertiesMapPage() {
           ];
 
           console.log("Geocoding mock properties...");
+          setIsGeocoding(true);
 
           // Check if Google Maps is loaded
           if (
             typeof window !== "undefined" &&
             window.google &&
-            window.google.maps
+            window.google.maps &&
+            window.google.maps.Geocoder
           ) {
             console.log(
-              "Google Maps API is loaded, proceeding with geocoding..."
+              "Google Maps API is fully loaded, proceeding with geocoding..."
             );
-            // Geocode mock properties as well
-            const mockPropertiesWithCoords =
-              await geocodingService.geocodeProperties(mockProperties);
-            console.log(
-              "Mock properties with coordinates:",
-              mockPropertiesWithCoords
-            );
-            setProperties(mockPropertiesWithCoords);
+            try {
+              // Verify geocoding service is available
+              await geocodingService.initialize();
+              console.log("Geocoding service initialized successfully");
+
+              // Geocode mock properties as well
+              const mockPropertiesWithCoords =
+                await geocodingService.geocodeProperties(mockProperties);
+              console.log(
+                "Mock properties with coordinates:",
+                mockPropertiesWithCoords
+              );
+
+              // Count successful vs fallback geocoding for mock data
+              const successfulGeocode = mockPropertiesWithCoords.filter(
+                (p) => !p.geocoding_failed
+              ).length;
+              const fallbackGeocode = mockPropertiesWithCoords.filter(
+                (p) => p.geocoding_failed
+              ).length;
+              console.log(
+                `📊 Mock geocoding results: ${successfulGeocode} successful, ${fallbackGeocode} fallback`
+              );
+
+              setProperties(mockPropertiesWithCoords);
+            } catch (geocodingError) {
+              console.error("Mock geocoding failed:", geocodingError);
+              // Use fallback coordinates if geocoding fails
+              const fallbackMockProperties = mockProperties.map(
+                (property: Property, index: number) => ({
+                  ...property,
+                  lat: 51.5074 + index * 0.01,
+                  lng: -0.1278 + index * 0.01,
+                })
+              );
+              setProperties(fallbackMockProperties);
+            } finally {
+              setIsGeocoding(false);
+            }
           } else {
             console.log(
               "Google Maps API not loaded, using fallback coordinates for mock properties..."
@@ -159,6 +379,7 @@ export default function PropertiesMapPage() {
               })
             );
             setProperties(fallbackMockProperties);
+            setIsGeocoding(false);
           }
         }
       } catch (err) {
@@ -166,6 +387,39 @@ export default function PropertiesMapPage() {
         setError("Failed to load properties");
 
         console.log("Using fallback mock data...");
+
+        // Wait for Google Maps to be fully ready before geocoding error fallback data
+        if (!isGoogleMapsReady) {
+          console.log(
+            "⏳ Google Maps API not ready for error fallback, using simple coordinates"
+          );
+          const simpleErrorProperties: Property[] = [
+            {
+              id: "1",
+              title: "Sample Property",
+              description: "Property data temporarily unavailable",
+              address: "London, UK",
+              price: 3210,
+              bedrooms: 1,
+              bathrooms: 1,
+              total_area: 497,
+              property_type: "APARTMENT",
+              furnishing: "Furnished",
+              is_btr: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              operator_id: "1",
+              lat: 51.5074,
+              lng: -0.1278,
+              geocoding_failed: true,
+              fallback_reason: "maps_not_ready" as const,
+              geocoding_error: "Google Maps API not ready",
+            },
+          ];
+          setProperties(simpleErrorProperties);
+          return;
+        }
+
         // Fallback to mock data with geocoding
         const mockProperties: Property[] = [
           {
@@ -220,23 +474,56 @@ export default function PropertiesMapPage() {
 
         try {
           console.log("Geocoding fallback properties...");
+          setIsGeocoding(true);
 
           // Check if Google Maps is loaded
           if (
             typeof window !== "undefined" &&
             window.google &&
-            window.google.maps
+            window.google.maps &&
+            window.google.maps.Geocoder
           ) {
             console.log(
-              "Google Maps API is loaded, proceeding with geocoding..."
+              "Google Maps API is fully loaded, proceeding with geocoding..."
             );
-            const mockPropertiesWithCoords =
-              await geocodingService.geocodeProperties(mockProperties);
-            console.log(
-              "Fallback properties with coordinates:",
-              mockPropertiesWithCoords
-            );
-            setProperties(mockPropertiesWithCoords);
+            try {
+              // Verify geocoding service is available
+              await geocodingService.initialize();
+              console.log("Geocoding service initialized successfully");
+
+              const mockPropertiesWithCoords =
+                await geocodingService.geocodeProperties(mockProperties);
+              console.log(
+                "Fallback properties with coordinates:",
+                mockPropertiesWithCoords
+              );
+
+              // Count successful vs fallback geocoding for fallback data
+              const successfulGeocode = mockPropertiesWithCoords.filter(
+                (p) => !p.geocoding_failed
+              ).length;
+              const fallbackGeocode = mockPropertiesWithCoords.filter(
+                (p) => p.geocoding_failed
+              ).length;
+              console.log(
+                `📊 Fallback geocoding results: ${successfulGeocode} successful, ${fallbackGeocode} fallback`
+              );
+
+              setProperties(mockPropertiesWithCoords);
+            } catch (geocodingError) {
+              console.error("Fallback geocoding failed:", geocodingError);
+              // Use fallback coordinates if geocoding fails
+              const fallbackProperties = mockProperties.map(
+                (property: Property, index: number) => ({
+                  ...property,
+                  lat: 51.5074 + index * 0.01,
+                  lng: -0.1278 + index * 0.01,
+                })
+              );
+              setProperties(fallbackProperties);
+            } finally {
+              setIsGeocoding(false);
+            }
           } else {
             console.log(
               "Google Maps API not loaded, using fallback coordinates..."
@@ -251,12 +538,14 @@ export default function PropertiesMapPage() {
             );
             console.log("Using fallback coordinates:", fallbackProperties);
             setProperties(fallbackProperties);
+            setIsGeocoding(false);
           }
         } catch (geocodingError) {
           console.error(
             "Geocoding failed, using fallback coordinates:",
             geocodingError
           );
+          setIsGeocoding(true);
           // Use fallback coordinates if geocoding fails
           const fallbackProperties = mockProperties.map(
             (property: Property, index: number) => ({
@@ -267,6 +556,7 @@ export default function PropertiesMapPage() {
           );
           console.log("Using fallback coordinates:", fallbackProperties);
           setProperties(fallbackProperties);
+          setIsGeocoding(false);
         }
       } finally {
         console.log("Setting loading to false");
@@ -275,12 +565,13 @@ export default function PropertiesMapPage() {
     };
 
     if (user) {
-      console.log("User found, loading properties...");
+      console.log("User found, loading properties immediately...");
       loadProperties();
     } else {
       console.log("No user found");
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // Removed isGoogleMapsReady dependency to load data immediately
 
   const handlePropertyClick = (propertyId: string) => {
     const property = properties.find((p) => p.id === propertyId);
@@ -333,6 +624,21 @@ export default function PropertiesMapPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">Loading properties...</p>
+          <p className="text-gray-500 text-sm mt-2">Fetching property data</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isGeocoding) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Setting up map...</p>
+          <p className="text-gray-500 text-sm mt-2">
+            Processing property addresses for map display
+          </p>
         </div>
       </div>
     );
@@ -466,6 +772,21 @@ export default function PropertiesMapPage() {
             </div>
             <div className="text-sm text-gray-500">
               {properties.length} properties found
+              {properties.length > 0 && (
+                <div className="mt-1 flex items-center gap-4">
+                  <span className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    {properties.filter((p) => !p.geocoding_failed).length} exact
+                  </span>
+                  {properties.filter((p) => p.geocoding_failed).length > 0 && (
+                    <span className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                      {properties.filter((p) => p.geocoding_failed).length}{" "}
+                      approximate
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -483,6 +804,7 @@ export default function PropertiesMapPage() {
               onPropertyClick={handlePropertyClick}
               height="600px"
               className="h-[600px]"
+              showLoadingOverlay={false} // We handle loading at the page level
             />
           </div>
 
@@ -504,12 +826,38 @@ export default function PropertiesMapPage() {
                     }`}
                     onClick={() => setSelectedProperty(property)}
                   >
-                    <h4 className="font-medium text-gray-900 mb-1">
-                      {property.title}
-                    </h4>
+                    <div className="flex items-start justify-between mb-1">
+                      <h4 className="font-medium text-gray-900 flex-1">
+                        {property.title}
+                      </h4>
+                      {property.geocoding_failed && (
+                        <div className="flex items-center gap-1 ml-2">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                          <span className="text-xs text-orange-600">~</span>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600 mb-2">
-                      {property.address}
+                      {property.formatted_address || property.address}
+                      {property.original_address &&
+                        property.original_address !== property.address && (
+                          <span className="text-xs text-gray-400 block mt-1">
+                            Original: {property.original_address}
+                          </span>
+                        )}
                     </p>
+                    {property.geocoding_failed &&
+                      property.fallback_reason === "maps_not_ready" && (
+                        <p className="text-xs text-blue-500 mb-1">
+                          ⏳ Address will be refined when map loads
+                        </p>
+                      )}
+                    {property.geocoding_failed &&
+                      property.fallback_reason === "geocoding_error" && (
+                        <p className="text-xs text-orange-500 mb-1">
+                          📍 Using approximate location
+                        </p>
+                      )}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">
                         {property.bedrooms} bed • {property.bathrooms} bath
@@ -557,8 +905,16 @@ export default function PropertiesMapPage() {
                 <div className="space-y-4">
                   <div>
                     <p className="text-gray-600 mb-2">
-                      {selectedProperty.address}
+                      {selectedProperty.formatted_address ||
+                        selectedProperty.address}
                     </p>
+                    {selectedProperty.geocoding_failed &&
+                      selectedProperty.original_address && (
+                        <p className="text-xs text-orange-600 mb-1">
+                          📍 Approximate location based on:{" "}
+                          {selectedProperty.original_address}
+                        </p>
+                      )}
                   </div>
 
                   <div className="flex items-center gap-6 text-sm">

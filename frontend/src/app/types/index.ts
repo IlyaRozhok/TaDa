@@ -46,6 +46,13 @@ export interface Property {
   created_at: string;
   updated_at: string;
   operator_id: string;
+  // Geocoding fields
+  formatted_address?: string;
+  place_id?: string;
+  geocoding_failed?: boolean;
+  original_address?: string;
+  geocoding_error?: string;
+  fallback_reason?: "geocoding_returned_null" | "geocoding_error" | "maps_not_ready";
   // Media files from S3
   media?: PropertyMedia[];
   // Deprecated: will be removed in favor of media

@@ -243,12 +243,34 @@ function AdminPanelContent() {
     const [formData, setFormData] = useState({
       primary_postcode: preferences?.primary_postcode || "",
       secondary_location: preferences?.secondary_location || "",
+      commute_location: preferences?.commute_location || "",
+      commute_time_walk: preferences?.commute_time_walk || 0,
+      commute_time_cycle: preferences?.commute_time_cycle || 0,
+      commute_time_tube: preferences?.commute_time_tube || 0,
+      move_in_date: preferences?.move_in_date || "",
       min_price: preferences?.min_price || 0,
       max_price: preferences?.max_price || 0,
       min_bedrooms: preferences?.min_bedrooms || 0,
       max_bedrooms: preferences?.max_bedrooms || 0,
-      property_type: preferences?.property_type || "any",
+      min_bathrooms: preferences?.min_bathrooms || 0,
+      max_bathrooms: preferences?.max_bathrooms || 0,
       furnishing: preferences?.furnishing || "any",
+      let_duration: preferences?.let_duration || "",
+      property_type: preferences?.property_type || "any",
+      building_style: preferences?.building_style || [],
+      designer_furniture: preferences?.designer_furniture || false,
+      house_shares: preferences?.house_shares || "",
+      lifestyle_features: preferences?.lifestyle_features || [],
+      social_features: preferences?.social_features || [],
+      work_features: preferences?.work_features || [],
+      convenience_features: preferences?.convenience_features || [],
+      pet_friendly_features: preferences?.pet_friendly_features || [],
+      luxury_features: preferences?.luxury_features || [],
+      hobbies: preferences?.hobbies || [],
+      ideal_living_environment: preferences?.ideal_living_environment || "",
+      pets: preferences?.pets || "",
+      smoker: preferences?.smoker || false,
+      additional_info: preferences?.additional_info || "",
     });
 
     const handleSavePreferences = async () => {
@@ -378,56 +400,295 @@ function AdminPanelContent() {
             </div>
 
             {preferences && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <label className="text-sm font-medium text-slate-600">
-                    Primary Postcode
-                  </label>
-                  <p className="text-slate-900">
-                    {preferences.primary_postcode || "Not specified"}
-                  </p>
+              <div className="space-y-6">
+                {/* Location & Commute Section */}
+                <div>
+                  <h4 className="text-md font-semibold text-slate-800 mb-3">
+                    Location & Commute
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Primary Postcode
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.primary_postcode || "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Secondary Location
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.secondary_location || "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Commute Location
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.commute_location || "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Move-in Date
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.move_in_date || "Not specified"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <label className="text-sm font-medium text-slate-600">
-                    Secondary Location
-                  </label>
-                  <p className="text-slate-900">
-                    {preferences.secondary_location || "Not specified"}
-                  </p>
+
+                {/* Commute Times Section */}
+                <div>
+                  <h4 className="text-md font-semibold text-slate-800 mb-3">
+                    Commute Times
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Walk (min)
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.commute_time_walk || 0}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Cycle (min)
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.commute_time_cycle || 0}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Tube (min)
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.commute_time_tube || 0}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <label className="text-sm font-medium text-slate-600">
-                    Price Range
-                  </label>
-                  <p className="text-slate-900">
-                    £{preferences.min_price?.toLocaleString() || 0} - £
-                    {preferences.max_price?.toLocaleString() || 0}
-                  </p>
+
+                {/* Property Requirements Section */}
+                <div>
+                  <h4 className="text-md font-semibold text-slate-800 mb-3">
+                    Property Requirements
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Price Range
+                      </label>
+                      <p className="text-slate-900">
+                        £{preferences.min_price?.toLocaleString() || 0} - £
+                        {preferences.max_price?.toLocaleString() || 0}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Bedrooms
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.min_bedrooms || 0} -{" "}
+                        {preferences.max_bedrooms || 0}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Bathrooms
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.min_bathrooms || 0} -{" "}
+                        {preferences.max_bathrooms || 0}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Property Type
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.property_type || "Any"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Furnishing
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.furnishing || "Any"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Let Duration
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.let_duration || "Not specified"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <label className="text-sm font-medium text-slate-600">
-                    Bedrooms
-                  </label>
-                  <p className="text-slate-900">
-                    {preferences.min_bedrooms || 0} -{" "}
-                    {preferences.max_bedrooms || 0}
-                  </p>
+
+                {/* Features Section */}
+                <div>
+                  <h4 className="text-md font-semibold text-slate-800 mb-3">
+                    Features & Preferences
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Building Style
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.building_style?.length > 0
+                          ? preferences.building_style.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Designer Furniture
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.designer_furniture ? "Yes" : "No"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        House Shares
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.house_shares || "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Ideal Living Environment
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.ideal_living_environment ||
+                          "Not specified"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <label className="text-sm font-medium text-slate-600">
-                    Property Type
-                  </label>
-                  <p className="text-slate-900">
-                    {preferences.property_type || "Any"}
-                  </p>
+
+                {/* Lifestyle Features Section */}
+                <div>
+                  <h4 className="text-md font-semibold text-slate-800 mb-3">
+                    Lifestyle Features
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Lifestyle Features
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.lifestyle_features?.length > 0
+                          ? preferences.lifestyle_features.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Social Features
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.social_features?.length > 0
+                          ? preferences.social_features.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Work Features
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.work_features?.length > 0
+                          ? preferences.work_features.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Convenience Features
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.convenience_features?.length > 0
+                          ? preferences.convenience_features.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Pet Friendly Features
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.pet_friendly_features?.length > 0
+                          ? preferences.pet_friendly_features.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Luxury Features
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.luxury_features?.length > 0
+                          ? preferences.luxury_features.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <label className="text-sm font-medium text-slate-600">
-                    Furnishing
-                  </label>
-                  <p className="text-slate-900">
-                    {preferences.furnishing || "Any"}
-                  </p>
+
+                {/* Personal Preferences Section */}
+                <div>
+                  <h4 className="text-md font-semibold text-slate-800 mb-3">
+                    Personal Preferences
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Hobbies
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.hobbies?.length > 0
+                          ? preferences.hobbies.join(", ")
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Pets
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.pets || "Not specified"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Smoker
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.smoker ? "Yes" : "No"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <label className="text-sm font-medium text-slate-600">
+                        Additional Info
+                      </label>
+                      <p className="text-slate-900">
+                        {preferences.additional_info || "Not specified"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -440,142 +701,426 @@ function AdminPanelContent() {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-6">
+              {/* Location & Commute Section */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Primary Postcode
-                </label>
-                <input
-                  type="text"
-                  value={formData.primary_postcode}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      primary_postcode: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., SW1A 1AA"
-                />
+                <h4 className="text-md font-semibold text-slate-800 mb-3">
+                  Location & Commute
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Primary Postcode
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.primary_postcode}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          primary_postcode: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., SW1A 1AA"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Secondary Location
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.secondary_location}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          secondary_location: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Central London"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Commute Location
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.commute_location}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          commute_location: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Canary Wharf"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Move-in Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.move_in_date}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          move_in_date: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Commute Times Section */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Secondary Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.secondary_location}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      secondary_location: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Central London"
-                />
+                <h4 className="text-md font-semibold text-slate-800 mb-3">
+                  Commute Times (minutes)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Walk
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.commute_time_walk}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          commute_time_walk: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Cycle
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.commute_time_cycle}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          commute_time_cycle: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Tube
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.commute_time_tube}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          commute_time_tube: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Property Requirements Section */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Min Price
-                </label>
-                <input
-                  type="number"
-                  value={formData.min_price}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      min_price: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
-                />
+                <h4 className="text-md font-semibold text-slate-800 mb-3">
+                  Property Requirements
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Min Price (£)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.min_price}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          min_price: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Max Price (£)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.max_price}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          max_price: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Min Bedrooms
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.min_bedrooms}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          min_bedrooms: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Max Bedrooms
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.max_bedrooms}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          max_bedrooms: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Min Bathrooms
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.min_bathrooms}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          min_bathrooms: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Max Bathrooms
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.max_bathrooms}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          max_bathrooms: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Property Type
+                    </label>
+                    <select
+                      value={formData.property_type}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          property_type: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="any">Any</option>
+                      <option value="apartment">Apartment</option>
+                      <option value="house">House</option>
+                      <option value="studio">Studio</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Furnishing
+                    </label>
+                    <select
+                      value={formData.furnishing}
+                      onChange={(e) =>
+                        setFormData({ ...formData, furnishing: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="any">Any</option>
+                      <option value="furnished">Furnished</option>
+                      <option value="unfurnished">Unfurnished</option>
+                      <option value="part_furnished">Part Furnished</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Let Duration
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.let_duration}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          let_duration: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 12 months"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Additional Preferences Section */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Max Price
-                </label>
-                <input
-                  type="number"
-                  value={formData.max_price}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      max_price: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
-                />
+                <h4 className="text-md font-semibold text-slate-800 mb-3">
+                  Additional Preferences
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      House Shares
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.house_shares}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          house_shares: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Not interested"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Ideal Living Environment
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.ideal_living_environment}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ideal_living_environment: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Quiet neighborhood"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Pets
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.pets}
+                      onChange={(e) =>
+                        setFormData({ ...formData, pets: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Cat, Dog"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Additional Info
+                    </label>
+                    <textarea
+                      value={formData.additional_info}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          additional_info: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Any additional preferences or requirements..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Boolean Preferences Section */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Min Bedrooms
-                </label>
-                <input
-                  type="number"
-                  value={formData.min_bedrooms}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      min_bedrooms: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Max Bedrooms
-                </label>
-                <input
-                  type="number"
-                  value={formData.max_bedrooms}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      max_bedrooms: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Property Type
-                </label>
-                <select
-                  value={formData.property_type}
-                  onChange={(e) =>
-                    setFormData({ ...formData, property_type: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="any">Any</option>
-                  <option value="apartment">Apartment</option>
-                  <option value="house">House</option>
-                  <option value="studio">Studio</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Furnishing
-                </label>
-                <select
-                  value={formData.furnishing}
-                  onChange={(e) =>
-                    setFormData({ ...formData, furnishing: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="any">Any</option>
-                  <option value="furnished">Furnished</option>
-                  <option value="unfurnished">Unfurnished</option>
-                  <option value="part_furnished">Part Furnished</option>
-                </select>
+                <h4 className="text-md font-semibold text-slate-800 mb-3">
+                  Preferences
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="designer_furniture"
+                      checked={formData.designer_furniture}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          designer_furniture: e.target.checked,
+                        })
+                      }
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <label
+                      htmlFor="designer_furniture"
+                      className="ml-2 text-sm font-medium text-slate-700"
+                    >
+                      Designer Furniture
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="smoker"
+                      checked={formData.smoker}
+                      onChange={(e) =>
+                        setFormData({ ...formData, smoker: e.target.checked })
+                      }
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <label
+                      htmlFor="smoker"
+                      className="ml-2 text-sm font-medium text-slate-700"
+                    >
+                      Smoker
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1646,16 +2191,18 @@ function AdminPanelContent() {
                 >
                   User Information
                 </button>
-                <button
-                  onClick={() => setActiveTab("preferences")}
-                  className={`px-6 py-3 font-medium text-sm transition-colors ${
-                    activeTab === "preferences"
-                      ? "text-blue-600 border-b-2 border-blue-600"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Preferences
-                </button>
+                {(selectedItem as any)?.role === "tenant" && (
+                  <button
+                    onClick={() => setActiveTab("preferences")}
+                    className={`px-6 py-3 font-medium text-sm transition-colors ${
+                      activeTab === "preferences"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Preferences
+                  </button>
+                )}
               </div>
 
               {/* Tab Content */}
@@ -1699,8 +2246,8 @@ function AdminPanelContent() {
                     </div>
                   ))}
                 </div>
-              ) : (
-                // Preferences tab
+              ) : (selectedItem as any)?.role === "tenant" ? (
+                // Preferences tab - only for tenants
                 <UserPreferencesTab
                   userId={(selectedItem as any).id}
                   preferences={userPreferences}
@@ -1709,6 +2256,16 @@ function AdminPanelContent() {
                     fetchUserPreferences((selectedItem as any).id)
                   }
                 />
+              ) : (
+                <div className="text-center py-12">
+                  <Target className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                    No Preferences Available
+                  </h3>
+                  <p className="text-slate-600">
+                    Preferences are only available for tenant users.
+                  </p>
+                </div>
               )}
             </div>
           ) : (

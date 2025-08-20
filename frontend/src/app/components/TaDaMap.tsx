@@ -17,6 +17,7 @@ interface TaDaMapProps {
   height?: string;
   onPropertyClick?: (propertyId: string) => void;
   className?: string;
+  showLoadingOverlay?: boolean;
 }
 
 export default function TaDaMap({
@@ -26,6 +27,7 @@ export default function TaDaMap({
   height = "500px",
   onPropertyClick,
   className = "",
+  showLoadingOverlay = true,
 }: TaDaMapProps) {
   const [hoveredProperty, setHoveredProperty] = useState<Property | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -136,6 +138,12 @@ export default function TaDaMap({
         {properties.map((property) => {
           if (!property.lat || !property.lng) return null;
 
+          // Choose marker color based on geocoding status
+          const markerColor = property.geocoding_failed ? "#F59E0B" : "#3B82F6"; // Orange for failed, Blue for success
+          const markerOutline = property.geocoding_failed
+            ? "#D97706"
+            : "#1E40AF";
+
           return (
             <Marker
               key={property.id}
@@ -148,14 +156,24 @@ export default function TaDaMap({
                   "data:image/svg+xml;charset=UTF-8," +
                   encodeURIComponent(`
                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="16" cy="16" r="16" fill="#1F2937"/>
-                    <circle cx="16" cy="16" r="12" fill="#3B82F6"/>
+                    <circle cx="16" cy="16" r="16" fill="${markerOutline}"/>
+                    <circle cx="16" cy="16" r="12" fill="${markerColor}"/>
                     <circle cx="16" cy="16" r="6" fill="white"/>
+                    ${
+                      property.geocoding_failed
+                        ? '<text x="16" y="21" text-anchor="middle" font-size="16" fill="white">!</text>'
+                        : ""
+                    }
                   </svg>
                 `),
                 scaledSize: new google.maps.Size(32, 32),
                 anchor: new google.maps.Point(16, 16),
               }}
+              title={
+                property.geocoding_failed
+                  ? `${property.title} (Approximate location)`
+                  : property.title
+              }
             />
           );
         })}
@@ -173,11 +191,28 @@ export default function TaDaMap({
               <h3 className="font-bold text-gray-900 mb-1 text-sm">
                 {hoveredProperty.title}
               </h3>
-              {hoveredProperty.address && (
-                <p className="text-xs text-gray-600 mb-2">
-                  {hoveredProperty.address}
-                </p>
+              {/* Show geocoding status */}
+              {hoveredProperty.geocoding_failed && (
+                <div className="flex items-center gap-1 mb-2">
+                  <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                  <span className="text-xs text-orange-600 font-medium">
+                    Approximate location
+                  </span>
+                </div>
               )}
+              {/* Show address - prioritize formatted_address from geocoding */}
+              <p className="text-xs text-gray-600 mb-2">
+                {hoveredProperty.formatted_address || hoveredProperty.address}
+                {hoveredProperty.original_address &&
+                  hoveredProperty.original_address !==
+                    hoveredProperty.address &&
+                  hoveredProperty.original_address !==
+                    hoveredProperty.formatted_address && (
+                    <span className="text-xs text-gray-400 block mt-1">
+                      Original: {hoveredProperty.original_address}
+                    </span>
+                  )}
+              </p>
               <p className="text-sm font-bold text-blue-600">
                 £{hoveredProperty.price.toLocaleString()}/month
               </p>
@@ -198,7 +233,7 @@ export default function TaDaMap({
       </GoogleMap>
 
       {/* Loading overlay */}
-      {isLoading && (
+      {isLoading && showLoadingOverlay && (
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -210,27 +245,47 @@ export default function TaDaMap({
         </div>
       )}
 
-      {/* Map controls overlay */}
-      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-md p-2">
-        <button
-          onClick={() => map?.panTo(center)}
-          className="p-2 hover:bg-gray-100 rounded transition-colors"
-          title="Reset to center"
-        >
-          <svg
-            className="w-5 h-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      {/* Map controls and legend overlay */}
+      <div className="absolute top-4 right-4 space-y-2">
+        {/* Map controls */}
+        <div className="bg-white rounded-lg shadow-md p-2">
+          <button
+            onClick={() => map?.panTo(center)}
+            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            title="Reset to center"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Legend */}
+        {properties.some((p) => p.geocoding_failed) && (
+          <div className="bg-white rounded-lg shadow-md p-3 text-xs">
+            <h4 className="font-semibold text-gray-800 mb-2">Legend</h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                <span className="text-gray-600">Exact location</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-orange-400 rounded-full"></div>
+                <span className="text-gray-600">Approximate location</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
