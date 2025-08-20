@@ -6,7 +6,7 @@ import {
   selectUser,
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
-import DashboardHeader from "../../../components/DashboardHeader";
+import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 import { useDebounce } from "../../../hooks/useDebounce";
 import AdminNotifications from "../../../components/AdminNotifications";
@@ -3405,7 +3405,7 @@ function AdminPanelContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 admin-panel">
-      <DashboardHeader />
+      <UniversalHeader />
 
       <div className="flex">
         {renderSidebar()}

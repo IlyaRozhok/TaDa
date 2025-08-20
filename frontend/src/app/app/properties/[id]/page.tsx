@@ -16,9 +16,9 @@ import {
 } from "../../../store/slices/authSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "../../../components/ui/Button";
-import DashboardHeader from "../../../components/DashboardHeader";
-import { Heart, Share, Search, Bell, ChevronDown, User } from "lucide-react";
+import { Heart, Share } from "lucide-react";
 import PropertyMap from "../../../components/PropertyMap";
+import UniversalHeader from "../../../components/UniversalHeader";
 import toast from "react-hot-toast";
 
 export default function PropertyPublicPage() {
@@ -176,8 +176,8 @@ export default function PropertyPublicPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <UniversalHeader />
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4" />
@@ -192,8 +192,8 @@ export default function PropertyPublicPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <UniversalHeader />
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-red-800 mb-4">
               Failed to Load Property
@@ -214,8 +214,8 @@ export default function PropertyPublicPage() {
   if (!property) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <UniversalHeader />
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-yellow-800 mb-4">
               Property Not Found
@@ -241,49 +241,10 @@ export default function PropertyPublicPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Custom Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Left: Logo */}
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-black">:: TADA</h1>
-          </div>
-
-          {/* Center: Search Bar */}
-          <div className="flex-1 max-w-2xl mx-8">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search property, location, or type of property"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
-              />
-            </div>
-          </div>
-
-          {/* Right: Icons */}
-          <div className="flex items-center space-x-4">
-            <button className="text-black hover:text-gray-600 transition-colors">
-              <Heart className="h-6 w-6" />
-            </button>
-            <button className="text-black hover:text-gray-600 transition-colors">
-              <Bell className="h-6 w-6" />
-            </button>
-            <div className="flex items-center space-x-1 text-black cursor-pointer">
-              <span className="text-sm font-medium">EN</span>
-              <ChevronDown className="h-4 w-4" />
-            </div>
-            <button className="text-black hover:text-gray-600 transition-colors">
-              <User className="h-6 w-6" />
-            </button>
-          </div>
-        </div>
-      </nav>
+      <UniversalHeader />
 
       {/* Header with title and actions */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -319,7 +280,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Main content: gallery + sticky price card */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Gallery with preview carousel */}
           <div className="lg:col-span-2">
@@ -447,10 +408,10 @@ export default function PropertyPublicPage() {
               {/* Price and booking */}
               <div className="p-3">
                 <div className="flex items-center justify-start mb-2">
-                  <div className="text-3xl font-bold text-black mr-2">
+                  <div className="text-3xl font-bold text-black mr-3">
                     £{Number(property.price || 1712).toLocaleString()}
                   </div>
-                  <div className="text-md text-gray-600 mr-2">
+                  <div className="text-md text-gray-600 ml-3">
                     Price per month
                   </div>
                 </div>
@@ -481,11 +442,11 @@ export default function PropertyPublicPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Tada fee</span>
-                      <span className="font-semibold text-black">£142.5</span>
+                      <span className="text-gray-600">£142.5</span>
                     </div>
-                    <div className="flex justify-between pt-2 border-t font-semibold">
-                      <span className="text-black">Total</span>
-                      <span className="text-black">
+                    <div className="flex justify-between pt-2 border-t">
+                      <span className="text-gray-600">Total</span>
+                      <span className="text-gray-600">
                         £
                         {(
                           Number(property.price || 1712) * 2 +
@@ -502,7 +463,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Details */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-2xl font-semibold text-black mb-6">Details</h2>
         <div className="bg-white rounded-2xl border p-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8">
@@ -547,7 +508,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* About apartment */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-2xl font-semibold text-black mb-6">
           About apartment
         </h2>
@@ -563,7 +524,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* What this place offers */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-2xl font-semibold text-black mb-6">
           What this place offers
         </h2>
@@ -593,7 +554,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Location */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           Appart location
         </h2>

@@ -12,7 +12,7 @@ import {
   TenantRow,
   OperatorProperty,
 } from "../../../store/slices/operatorSlice";
-import DashboardHeader from "../../../components/DashboardHeader";
+import UniversalHeader from "../../../components/UniversalHeader";
 import { Plus, Building2, Users, Eye, BarChart3, X, Send } from "lucide-react";
 import Link from "next/link";
 import { AppDispatch } from "../../../store/store";
@@ -151,8 +151,8 @@ function OperatorDashboardContent() {
   if (!user || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <UniversalHeader />
+        <div className="max-w-8xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="w-12 h-12 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
@@ -166,9 +166,9 @@ function OperatorDashboardContent() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader />
+      <UniversalHeader />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-8 sm:mb-12 ">
           <div className="relative overflow-hidden bg-gradient-to-r from-[#203A43] to-[#004e92] rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">

@@ -19,7 +19,7 @@ import {
 } from "../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../store/store";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
-import DashboardHeader from "../../components/DashboardHeader";
+import UniversalHeader from "../../components/UniversalHeader";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
@@ -115,8 +115,8 @@ export default function ShortlistPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <UniversalHeader />
+        <div className="max-w-[95%] mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="w-12 h-12 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
@@ -132,8 +132,8 @@ export default function ShortlistPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <UniversalHeader />
+        <div className="max-w-[95%] mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Heart className="w-6 h-6 text-red-600" />
@@ -180,9 +180,9 @@ export default function ShortlistPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader />
+      <UniversalHeader />
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-[95%] mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <button

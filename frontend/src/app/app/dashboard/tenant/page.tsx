@@ -7,7 +7,7 @@ import { propertiesAPI, preferencesAPI, matchingAPI } from "../../../lib/api";
 import { selectUser } from "../../../store/slices/authSlice";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
-import TenantDashboardHeader from "../../../components/TenantDashboardHeader";
+import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import TenantPerfectMatchSection from "../../../components/TenantPerfectMatchSection";
 import ListedPropertiesSection from "../../../components/ListedPropertiesSection";
 
@@ -259,14 +259,14 @@ function TenantDashboardContent() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <TenantDashboardHeader
+      <TenantUniversalHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         preferencesCount={preferencesCount}
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Perfect Match Section - only show if preferences are NOT complete */}
         {!hasCompletePreferences && (
           <TenantPerfectMatchSection
