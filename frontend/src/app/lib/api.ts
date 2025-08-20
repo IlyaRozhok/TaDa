@@ -122,6 +122,8 @@ export const preferencesAPI = {
 export const propertiesAPI = {
   getAll: (params?: any) => api.get("/properties", { params }),
 
+  getAllPublic: (params?: any) => api.get("/properties/public/all", { params }),
+
   getById: (id: string) => api.get(`/properties/${id}`),
 
   getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),

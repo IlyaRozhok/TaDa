@@ -66,6 +66,14 @@ export class PropertiesService {
     if (property.media && property.media.length > 0) {
       for (const media of property.media) {
         try {
+          // Skip S3 processing for test media (direct URLs from Unsplash)
+          if (
+            media.s3_key.startsWith("test-media/") ||
+            media.url?.includes("unsplash.com")
+          ) {
+            // Keep the existing URL for test data
+            continue;
+          }
           media.url = await this.s3Service.getPresignedUrl(media.s3_key);
         } catch (error) {
           console.error(

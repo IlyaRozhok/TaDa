@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { propertiesAPI, Property } from "../../../lib/api";
+import { PropertyMedia } from "../../../types";
 import {
   addToShortlist,
   removeFromShortlist,
@@ -17,8 +18,10 @@ import {
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "../../../components/ui/Button";
 import { Heart, Share } from "lucide-react";
-import PropertyMap from "../../../components/PropertyMap";
+import TaDaMap from "../../../components/TaDaMap";
 import UniversalHeader from "../../../components/UniversalHeader";
+import OwnerPropertiesSection from "../../../components/OwnerPropertiesSection";
+import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import toast from "react-hot-toast";
 
 export default function PropertyPublicPage() {
@@ -34,6 +37,19 @@ export default function PropertyPublicPage() {
   const [error, setError] = useState<string | null>(null);
   const [isInShortlist, setIsInShortlist] = useState(false);
   const [shortlistLoading, setShortlistLoading] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [showAllOffers, setShowAllOffers] = useState(false);
+
+  // Check if description needs truncation
+  const needsTruncation = (text: string) => {
+    const words = text.split(" ");
+    return words.length > 50; // Approximate 3 lines = ~50 words
+  };
+
+  // Format amenity name (replace underscores with spaces, capitalize)
+  const formatAmenityName = (name: string) => {
+    return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  };
 
   console.log("🏠 Component state:", {
     id,
@@ -70,9 +86,9 @@ export default function PropertyPublicPage() {
           console.log("❌ No property data received");
           setError("No property data received from server");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("❌ Error fetching property:", err);
-        setError(err.message || "Failed to load property details");
+        setError((err as Error)?.message || "Failed to load property details");
       } finally {
         setLoading(false);
       }
@@ -107,12 +123,12 @@ export default function PropertyPublicPage() {
     console.log("🖼️ Media array found:", mediaArray);
 
     const mediaUrls = mediaArray
-      .map((m: any) => {
-        const url = m.url || m.s3_url;
+      .map((m: PropertyMedia) => {
+        const url = m.url;
         console.log("🖼️ Processing media item:", {
           id: m.id,
           url,
-          s3_key: m.s3_key,
+          type: m.type,
         });
         return url;
       })
@@ -165,9 +181,9 @@ export default function PropertyPublicPage() {
         setIsInShortlist(true);
         toast.success("Added to shortlist");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Shortlist error:", error);
-      toast.error(error.message || "Failed to update shortlist");
+      toast.error((error as Error)?.message || "Failed to update shortlist");
     } finally {
       setShortlistLoading(false);
     }
@@ -177,7 +193,7 @@ export default function PropertyPublicPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <UniversalHeader />
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4" />
@@ -193,7 +209,7 @@ export default function PropertyPublicPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <UniversalHeader />
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-red-800 mb-4">
               Failed to Load Property
@@ -215,7 +231,7 @@ export default function PropertyPublicPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <UniversalHeader />
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-yellow-800 mb-4">
               Property Not Found
@@ -235,16 +251,14 @@ export default function PropertyPublicPage() {
     );
   }
 
-  const publishDate = new Date(
-    (property as any).created_at || (property as any).createdAt || Date.now()
-  );
+  const publishDate = new Date(property.created_at || Date.now());
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       <UniversalHeader />
 
       {/* Header with title and actions */}
-      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -280,7 +294,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Main content: gallery + sticky price card */}
-      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Gallery with preview carousel */}
           <div className="lg:col-span-2">
@@ -336,7 +350,7 @@ export default function PropertyPublicPage() {
                 )}
               </>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden mb-4 bg-gray-100 h-96 flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden mb-4 h-96 flex items-center justify-center">
                 <div className="text-center text-gray-500">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-lg flex items-center justify-center">
                     <svg
@@ -360,6 +374,53 @@ export default function PropertyPublicPage() {
                 </div>
               </div>
             )}
+
+            {/* Details section under gallery */}
+            <div className="mt-8">
+              <h2 className="text-2xl font-semibold text-black mb-3">
+                Details
+              </h2>
+              <div className="bg-white rounded-2xl border p-6">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-8">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">BTR</p>
+                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                      Built to rent
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Property type</p>
+                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                      Apartment
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Furnishing</p>
+                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                      {property.furnishing || "unfurnished"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Bedrooms</p>
+                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                      {property.bedrooms || 4}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Bathrooms</p>
+                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                      {property.bathrooms || 3}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Size</p>
+                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
+                      497 sq ft
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right: Operator info and booking */}
@@ -462,99 +523,119 @@ export default function PropertyPublicPage() {
         </div>
       </div>
 
-      {/* Details */}
-      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-black mb-6">Details</h2>
-        <div className="bg-white rounded-2xl border p-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Property type</p>
-              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
-                Built to rent
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Property type</p>
-              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
-                Apartment
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Furnishing</p>
-              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
-                {property.furnishing || "Furnished"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Bedrooms</p>
-              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
-                {property.bedrooms || 1}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Bathrooms</p>
-              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
-                {property.bathrooms || 1}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Size</p>
-              <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg">
-                497 sq ft
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* About apartment */}
-      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-black mb-6">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h2 className="text-2xl font-semibold text-black mb-3">
           About apartment
         </h2>
         <div className="text-gray-700 leading-relaxed space-y-4">
-          <p>
-            {property.description ||
-              "Kings Cross Apartments — это апартаменты в центре города Лондон, расположенные в 700 м и 600 м соответственно от следующих достопримечательностей: Железнодорожный вокзал Кингс-Кросс и Станция метро King's Cross St Pancras. Среди удобств есть гостиная зона и бесплатный Wi-Fi. В каждой единице"}
-          </p>
-          <button className="text-gray-600 underline text-sm hover:text-gray-900">
-            More information
-          </button>
+          {(() => {
+            const description =
+              property.description ||
+              "Spacious family home spread over three floors with a beautiful rear garden. Perfect for families, featuring multiple reception rooms and a modern kitchen extension.";
+            const showTruncation = needsTruncation(description);
+
+            return (
+              <>
+                <div
+                  className={`${
+                    showTruncation && !showFullDescription ? "line-clamp-3" : ""
+                  } overflow-hidden`}
+                >
+                  {description}
+                </div>
+                {showTruncation && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="text-black underline text-sm hover:text-gray-600 font-medium"
+                  >
+                    {showFullDescription ? "Show less" : "More information"}
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
       {/* What this place offers */}
-      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-black mb-6">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h2 className="text-2xl font-semibold text-black mb-3">
           What this place offers
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Real lifestyle features from property */}
-          {(property.lifestyle_features || []).map((amenity, i) => (
-            <div key={i} className="flex items-center gap-3 py-3">
-              <div className="w-5 h-5 border border-gray-300 rounded-sm flex items-center justify-center">
-                <div className="w-3 h-3 bg-gray-800 rounded-sm"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
+          {(() => {
+            // Get amenities from property or use defaults from screenshot
+            const allAmenities =
+              property.lifestyle_features &&
+              property.lifestyle_features.length > 0
+                ? property.lifestyle_features
+                : [
+                    "Family_home",
+                    "Rear_garden",
+                    "Multiple_reception",
+                    "Kitchen_extension",
+                    "Three_floors",
+                  ];
+
+            const visibleAmenities = showAllOffers
+              ? allAmenities
+              : allAmenities.slice(0, 5);
+
+            return visibleAmenities.map((amenity, i) => (
+              <div key={i} className="flex items-center gap-3 py-3">
+                <svg
+                  className="w-6 h-6 text-gray-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+                <span className="text-gray-800">
+                  {formatAmenityName(amenity)}
+                </span>
               </div>
-              <span className="text-gray-800 capitalize">{amenity}</span>
-            </div>
-          ))}
-          {(!property.lifestyle_features ||
-            property.lifestyle_features.length === 0) && (
-            <div className="col-span-full text-center py-8 text-gray-500">
-              No amenities listed for this property
-            </div>
-          )}
+            ));
+          })()}
         </div>
-        {property.lifestyle_features &&
-          property.lifestyle_features.length > 0 && (
-            <button className="mt-6 px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-              See all offers ({property.lifestyle_features.length})
-            </button>
-          )}
+        {(() => {
+          const allAmenities =
+            property.lifestyle_features &&
+            property.lifestyle_features.length > 0
+              ? property.lifestyle_features
+              : [
+                  "Family_home",
+                  "Rear_garden",
+                  "Multiple_reception",
+                  "Kitchen_extension",
+                  "Three_floors",
+                ];
+
+          const hiddenCount = allAmenities.length - 5;
+
+          return (
+            hiddenCount > 0 && (
+              <button
+                onClick={() => setShowAllOffers(!showAllOffers)}
+                className="mt-6 px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {showAllOffers
+                  ? `Show less`
+                  : `See all offers (${allAmenities.length})`}
+              </button>
+            )
+          );
+        })()}
       </div>
 
       {/* Location */}
-      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           Appart location
         </h2>
@@ -562,14 +643,272 @@ export default function PropertyPublicPage() {
           {property.address || "Address not available"}
         </p>
         <div className="rounded-2xl overflow-hidden border">
-          <PropertyMap
-            address={property.address || "London, UK"}
-            title={property.title}
-            height="h-[400px]"
+          <TaDaMap
+            properties={[property]}
+            center={
+              property.lat && property.lng
+                ? { lat: property.lat, lng: property.lng }
+                : { lat: 51.5074, lng: -0.1278 }
+            }
+            zoom={15}
+            height="400px"
             className="w-full"
+            showLoadingOverlay={false}
           />
         </div>
       </div>
+
+      {/* Accommodation Terms */}
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h2 className="text-2xl font-semibold text-black mb-3">
+          Accommodation Terms
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Kings Cross Apartments accepts special requests — add them on the next
+          step
+        </p>
+
+        <div className="space-y-6">
+          {/* Check-in */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-black mb-1">Check-in</h3>
+              <div className="text-gray-700">
+                <p className="font-medium">From 4:00 PM</p>
+                <p className="text-sm mt-1">
+                  When registering for check-in, you must present a valid ID
+                  with photo and credit card.
+                </p>
+                <p className="text-sm mt-1">
+                  Please inform the administration in advance how many people
+                  will be arriving.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Check-out */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m10 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-black mb-1">Check-out</h3>
+              <div className="text-gray-700">
+                <p className="font-medium">Until 11:00 AM</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Cancellation/Prepayment */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-black mb-1">
+                Cancellation/Prepayment
+              </h3>
+              <div className="text-gray-700">
+                <p className="text-sm">
+                  Cancellation and prepayment policies vary depending on
+                  accommodation type.{" "}
+                  <button className="text-blue-600 underline hover:text-blue-800">
+                    Check accommodation dates
+                  </button>{" "}
+                  and familiarize yourself with the terms that apply to your
+                  desired option.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Children policy */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-black mb-1">Children policy</h3>
+              <div className="text-gray-700 space-y-3">
+                <p className="font-medium">Children accommodation policy</p>
+                <p className="text-sm">
+                  Children of all ages are allowed to stay.
+                </p>
+                <p className="text-sm">
+                  To see exact prices and occupancy information, please specify
+                  the number of children in your group and their ages when
+                  searching.
+                </p>
+                <div className="mt-4">
+                  <p className="font-medium text-sm mb-2">
+                    Crib and extra bed policy
+                  </p>
+                  <p className="text-sm">
+                    Extra beds and cribs are not provided.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Age restrictions */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-black mb-1">
+                No age restrictions
+              </h3>
+              <div className="text-gray-700">
+                <p className="text-sm">
+                  There are no age restrictions for check-in.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment system */}
+        <div className="mt-8 p-6 bg-gray-50 rounded-2xl border">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-black mb-1">
+                Payment system via Booking.com
+              </h3>
+              <div className="text-gray-700">
+                <p className="text-sm">
+                  Booking.com accepts payment for this reservation on behalf of
+                  the accommodation, but asks you to have cash on hand for any
+                  additional expenses on site.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Important notes */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-black mb-4">
+            * Important Notes
+          </h3>
+          <p className="text-gray-600 text-sm mb-4">
+            Important information for guests of this accommodation option.
+          </p>
+
+          <div className="space-y-4 text-gray-700 text-sm">
+            <p>
+              When registering for check-in, you must present a valid ID with
+              photo and bank card. Please note that fulfilling special requests
+              is not guaranteed and may require additional payment.
+            </p>
+            <p>
+              Please inform Kings Cross Apartments in advance of your expected
+              arrival time. You can use the &quot;Special Requests&quot; field
+              when booking or contact the property directly — contact details
+              are provided in your booking confirmation.
+            </p>
+            <p>
+              Bachelor/bachelorette parties and similar events are not allowed
+              at this property.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* See more apartments from this owner */}
+      {property.operator && (
+        <OwnerPropertiesSection
+          operatorId={property.operator.id}
+          operatorName={property.operator.full_name}
+          currentPropertyId={property.id}
+        />
+      )}
+
+      {/* Other options from your preferences */}
+      <PreferencePropertiesSection
+        currentPropertyId={property.id}
+        currentOperatorId={property.operator?.id}
+      />
     </div>
   );
 }

@@ -264,7 +264,7 @@ export default function HomePage() {
 
       {/* Listed Properties Section */}
       <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-[92%] mx-auto px-4">
           {/* Section Header */}
           <div className="flex justify-between items-center mb-8">
             <div>

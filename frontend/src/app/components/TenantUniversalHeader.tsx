@@ -51,7 +51,7 @@ export default function TenantUniversalHeader({
 
   return (
     <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-      <div className="max-w-8xl mx-auto flex items-center justify-between">
+      <div className="max-w-[95%] mx-auto flex items-center justify-between">
         {/* Left: Logo - clickable to dashboard */}
         <div className="flex items-center">
           <button
@@ -79,12 +79,12 @@ export default function TenantUniversalHeader({
           {/* Preferences Button */}
           <button
             onClick={() => router.push("/app/preferences")}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium"
           >
             <Settings className="w-4 h-4" />
             <span>Your preferences</span>
             {preferencesCount > 0 && (
-              <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[1.25rem] text-center">
+              <span className="bg-slate-800 text-white text-xs px-2 py-0.5 rounded-full min-w-[1.25rem] text-center">
                 {preferencesCount}
               </span>
             )}

@@ -144,6 +144,34 @@ export class PropertiesController {
     };
   }
 
+  @ApiOperation({
+    summary: "Get all public properties with operators (no auth required)",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "All public properties with operators retrieved",
+    type: [Property],
+  })
+  @Get("public/all")
+  async getAllPublicProperties(
+    @Query("search") search?: string,
+    @Query("sortBy") sortBy?: string,
+    @Query("order") order?: "ASC" | "DESC"
+  ) {
+    const result = await this.propertiesService.findAll(
+      1,
+      100, // Get up to 100 properties
+      search,
+      sortBy,
+      order
+    );
+
+    return {
+      data: result.properties,
+      total: result.total,
+    };
+  }
+
   @ApiOperation({ summary: "Get single property by ID (no auth required)" })
   @ApiResponse({
     status: 200,
