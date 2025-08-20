@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Lock, ArrowLeft } from "lucide-react";
+import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import TenantUniversalHeader from "../TenantUniversalHeader";
 import { DateRangePicker } from "./ui/DateRangePicker";
 import { CustomDropdown } from "./ui/CustomDropdown";
 import { MetroDropdown } from "./ui/MetroDropdown";
@@ -34,6 +35,7 @@ export default function NewPreferencesPage() {
   const [sessionReady, setSessionReady] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const {
     loading,
@@ -187,27 +189,19 @@ export default function NewPreferencesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 px-8">
-        <div className="flex items-center">
-          <button
-            onClick={handleGoBack}
-            className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-900" />
-          </button>
-          <div className="w-8 h-8 bg-slate-600 rounded-full mr-3"></div>
-          <span className="text-xl text-black font-semibold">tada.co</span>
-        </div>
-        <button
-          onClick={handleSave}
-          className="cursor-pointer text-gray-600 border-1 rounded-2xl p-2 hover:text-black transition-colors font-medium"
-        >
-          Save
-        </button>
-      </div>
+      <TenantUniversalHeader
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        preferencesCount={0}
+        showBackButton={false}
+        showSearchInput={false}
+        showPreferencesButton={false}
+        showSaveButton={true}
+        onSaveClick={handleSave}
+      />
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-8 pb-32">
+      <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
         <form onSubmit={(e) => e.preventDefault()}>{renderStep()}</form>
       </div>
 

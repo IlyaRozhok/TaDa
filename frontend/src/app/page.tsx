@@ -144,7 +144,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="border-b border-gray-100 sticky top-0 z-50 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
             <div className="flex items-center gap-3">
@@ -220,8 +220,8 @@ export default function HomePage() {
       </header>
 
       {/* Welcome Section */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto py-2 px-10 bg-gray-100 rounded-3xl">
+      <section className="mt-4">
+        <div className="max-w-[93%] mx-auto py-2 px-10 bg-gray-100 rounded-3xl">
           <div className="flex items-center justify-between">
             {/* Left Content */}
             <div className="flex-1 max-w-2xl">

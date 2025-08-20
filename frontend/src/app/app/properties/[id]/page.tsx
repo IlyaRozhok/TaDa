@@ -657,9 +657,15 @@ export default function PropertyPublicPage() {
             properties={[property]}
             center={
               property.lat && property.lng
-                ? { 
-                    lat: typeof property.lat === 'string' ? parseFloat(property.lat) : property.lat, 
-                    lng: typeof property.lng === 'string' ? parseFloat(property.lng) : property.lng 
+                ? {
+                    lat:
+                      typeof property.lat === "string"
+                        ? parseFloat(property.lat)
+                        : property.lat,
+                    lng:
+                      typeof property.lng === "string"
+                        ? parseFloat(property.lng)
+                        : property.lng,
                   }
                 : { lat: 51.5074, lng: -0.1278 }
             }

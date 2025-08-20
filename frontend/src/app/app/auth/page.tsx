@@ -7,6 +7,7 @@ import { setAuth } from "../../store/slices/authSlice";
 import { fetchShortlist } from "../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../store/store";
 import { authAPI } from "../../lib/api";
+import { redirectAfterLogin } from "../../utils/simpleRedirect";
 import Link from "next/link";
 import {
   Loader2,
@@ -78,7 +79,10 @@ export default function UnifiedAuthPage() {
         const storedToken = localStorage.getItem("accessToken");
         console.log("🔍 Token stored after login:", !!storedToken);
 
-        router.push("/app/dashboard");
+        // Redirect based on user role
+        setTimeout(() => {
+          redirectAfterLogin(loginResponse.data.user, router);
+        }, 100);
       } else {
         // User doesn't exist - show role selection for registration
         setRequiresRegistration(true);

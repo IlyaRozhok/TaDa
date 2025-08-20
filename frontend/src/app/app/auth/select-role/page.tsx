@@ -9,6 +9,7 @@ import {
   setAuth,
 } from "../../../store/slices/authSlice";
 import { authAPI } from "../../../lib/api";
+import { redirectAfterLogin } from "../../../utils/simpleRedirect";
 import Link from "next/link";
 import { ArrowLeft, User, Building, Loader2, CheckCircle } from "lucide-react";
 import Logo from "../../../components/Logo";
@@ -53,8 +54,10 @@ export default function SelectRolePage() {
         })
       );
 
-      // Redirect to appropriate dashboard
-      router.push("/app/dashboard");
+      // Redirect to appropriate dashboard based on role
+      setTimeout(() => {
+        redirectAfterLogin(response.user, router);
+      }, 100);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(
@@ -68,7 +71,11 @@ export default function SelectRolePage() {
 
   const handleSkip = () => {
     // User can skip role selection for now and go to dashboard with default role
-    router.push("/app/dashboard");
+    if (user) {
+      redirectAfterLogin(user, router);
+    } else {
+      router.push("/app/dashboard");
+    }
   };
 
   if (!isAuthenticated || !user) {
