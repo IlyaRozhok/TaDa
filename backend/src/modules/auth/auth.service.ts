@@ -18,10 +18,15 @@ import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { v4 as uuidv4 } from "uuid";
 import * as crypto from "crypto";
-import {
-  PendingGoogleRegistrationService,
-  GoogleUserData,
-} from "./services/pending-google-registration.service";
+
+// Local Google user data type (replaces removed service)
+type GoogleUserData = {
+  google_id: string;
+  email: string;
+  full_name: string;
+  avatar_url?: string | null;
+  email_verified: boolean;
+};
 
 // Simplified session structure - only for admin sessions management
 export interface SessionData {
@@ -56,8 +61,7 @@ export class AuthService {
     private operatorProfileRepository: Repository<OperatorProfile>,
     @InjectRepository(Preferences)
     private preferencesRepository: Repository<Preferences>,
-    private jwtService: JwtService,
-    private pendingGoogleService: PendingGoogleRegistrationService
+    private jwtService: JwtService
   ) {}
 
   async checkUserExists(email: string): Promise<boolean> {
@@ -141,7 +145,6 @@ export class AuthService {
         user: userWithoutPassword,
       };
     } catch (error) {
-      console.error("Registration error:", error);
       throw new InternalServerErrorException("Failed to register user");
     }
   }
@@ -302,8 +305,6 @@ export class AuthService {
     tempToken?: string;
   }> {
     try {
-      console.log("🔍 Checking Google user existence:", googleUser.email);
-
       if (!googleUser || !googleUser.email || !googleUser.google_id) {
         throw new BadRequestException("Invalid Google user data");
       }
@@ -317,8 +318,6 @@ export class AuthService {
       });
 
       if (existingUser) {
-        console.log("✅ Found existing user:", existingUser.email);
-
         // Update Google ID if not set
         if (!existingUser.google_id) {
           existingUser.google_id = google_id;
@@ -329,9 +328,6 @@ export class AuthService {
       }
 
       // New user - create temporary token for role selection
-      console.log(
-        "🔄 New Google user - creating temp token for role selection"
-      );
       const tempTokenId = uuidv4();
       const tempToken: TempGoogleToken = {
         id: tempTokenId,
@@ -346,7 +342,6 @@ export class AuthService {
 
       return { tempToken: tempTokenId };
     } catch (error) {
-      console.error("❌ Error checking Google user:", error);
       throw new InternalServerErrorException("Failed to check user");
     }
   }
@@ -389,10 +384,6 @@ export class AuthService {
     role: UserRole.Tenant | UserRole.Operator
   ) {
     try {
-      console.log(
-        `🔍 Creating Google user with role: ${role} using temp token`
-      );
-
       // Get and validate temp token
       const tokenData = this.tempGoogleTokens.get(tempToken);
       if (!tokenData) {
@@ -413,7 +404,6 @@ export class AuthService {
       });
 
       if (existingUser) {
-        console.log("⚠️ User already exists, returning existing user");
         // Clean up temp token
         this.tempGoogleTokens.delete(tempToken);
         return existingUser;
@@ -432,7 +422,6 @@ export class AuthService {
       });
 
       const savedUser = await this.userRepository.save(user);
-      console.log(`✅ Created user: ${savedUser.email} with role: ${role}`);
 
       // Create role-specific profiles
       if (role === UserRole.Tenant) {
@@ -445,17 +434,11 @@ export class AuthService {
           user: savedUser,
         });
         await this.preferencesRepository.save(preferences);
-
-        console.log(
-          `✅ Created tenant profile and preferences for: ${savedUser.email}`
-        );
       } else if (role === UserRole.Operator) {
         const operatorProfile = this.operatorProfileRepository.create({
           user: savedUser,
         });
         await this.operatorProfileRepository.save(operatorProfile);
-
-        console.log(`✅ Created operator profile for: ${savedUser.email}`);
       }
 
       // Return user with relations
@@ -464,7 +447,6 @@ export class AuthService {
         relations: ["tenantProfile", "operatorProfile", "preferences"],
       });
     } catch (error) {
-      console.error("❌ Error creating Google user:", error);
       throw new InternalServerErrorException("Failed to create user");
     }
   }
@@ -474,21 +456,17 @@ export class AuthService {
    */
   async googleAuth(googleUser: any) {
     try {
-      console.log("🔍 Google Auth service called with user:", googleUser);
-
       // Use the new method to check user
       const result = await this.checkGoogleUser(googleUser);
 
       if (result.user) {
         // Existing user - generate tokens and return
-        console.log("✅ Existing user authenticated via Google");
         return {
           user: result.user,
           isNewUser: false,
         };
       } else if (result.tempToken) {
         // New user - return temp token for role selection
-        console.log("🔄 New user - temp token created for role selection");
         return {
           tempToken: result.tempToken,
           isNewUser: true,
@@ -497,15 +475,12 @@ export class AuthService {
 
       throw new InternalServerErrorException("Unexpected auth result");
     } catch (error) {
-      console.error("❌ Google Auth error:", error);
       throw error;
     }
   }
 
   async setUserRole(userId: string, role: UserRole.Tenant | UserRole.Operator) {
     try {
-      console.log(`🔄 Setting role ${role} for user ${userId}`);
-
       const user = await this.userRepository.findOne({
         where: { id: userId },
         relations: ["tenantProfile", "operatorProfile"],
@@ -544,15 +519,12 @@ export class AuthService {
         await this.operatorProfileRepository.save(operatorProfile);
       }
 
-      console.log(`✅ Successfully set role ${role} for user ${user.email}`);
-
       // Return updated user with relations
       return await this.userRepository.findOne({
         where: { id: userId },
         relations: ["tenantProfile", "operatorProfile", "preferences"],
       });
     } catch (error) {
-      console.error("Error setting user role:", error);
       throw error;
     }
   }
@@ -579,8 +551,8 @@ export class AuthService {
   }
 
   async storeGoogleDataTemporarily(googleData: any): Promise<string> {
-    console.log(`🔍 Storing Google data temporarily for: ${googleData.email}`);
-
+    // Deprecated method: previously used PendingGoogleRegistrationService
+    // Keeping signature for compatibility; now returns a generated token using internal temp storage
     const googleUserData: GoogleUserData = {
       google_id: googleData.google_id,
       email: googleData.email,
@@ -589,7 +561,14 @@ export class AuthService {
       email_verified: googleData.email_verified || true,
     };
 
-    return this.pendingGoogleService.storeGoogleData(googleUserData);
+    const tempTokenId = uuidv4();
+    const tempToken: TempGoogleToken = {
+      id: tempTokenId,
+      googleUserData,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    };
+    this.tempGoogleTokens.set(tempTokenId, tempToken);
+    return tempTokenId;
   }
 
   /**
@@ -600,17 +579,11 @@ export class AuthService {
     tempToken: string,
     role: UserRole.Tenant | UserRole.Operator
   ) {
-    console.log(`🔍 Creating Google user from temp token with role: ${role}`);
-
     // Use the new method that handles temp tokens
     const user = await this.createGoogleUserFromTempToken(tempToken, role);
 
     // Clean up temp token after successful creation
     this.tempGoogleTokens.delete(tempToken);
-
-    console.log(
-      `✅ Successfully created Google user: ${user.email} with role: ${role}`
-    );
 
     return user;
   }

@@ -176,49 +176,27 @@ export class AuthController {
   @UseGuards(AuthGuard("google"))
   async googleAuthCallback(@Req() req: any, @Res() res: Response) {
     try {
-      console.log("🔍 Google callback started");
-      console.log("User from strategy:", req.user);
-
       if (!req.user) {
-        console.error("❌ No user data from Google strategy");
         return res.redirect(
           `${process.env.FRONTEND_URL}/app/auth/callback?success=false&error=${encodeURIComponent(
             "Authentication failed - no user data"
           )}`
         );
       }
-
-      console.log("🔍 Processing Google user data through auth service...");
-
       // Use simplified Google auth flow
       const result = await this.authService.googleAuth(req.user);
 
       if (result.user && !result.isNewUser) {
-        // Existing user - generate tokens and redirect
-        console.log("✅ Existing user found:", {
-          userId: result.user.id,
-          userEmail: result.user.email,
-          userRole: result.user.role,
-        });
-
-        console.log("🔍 Generating tokens for existing user...");
         const tokens = await this.authService.generateTokens(result.user);
 
         const callbackUrl = `${process.env.FRONTEND_URL}/app/auth/callback?token=${tokens.access_token}&success=true&isNewUser=false`;
         return res.redirect(callbackUrl);
       } else if (result.tempToken && result.isNewUser) {
-        // New user - redirect to role selection with temp token
-        console.log("🔄 New user detected - redirecting to role selection");
-        console.log(`✅ Created temp token: ${result.tempToken}`);
-
         // Redirect directly to role selection page with temp token
         const callbackUrl = `${process.env.FRONTEND_URL}/auth/select-role?tempToken=${result.tempToken}`;
         return res.redirect(callbackUrl);
       }
     } catch (error: any) {
-      console.error("❌ Google callback error:", error);
-      console.error("Error stack:", error.stack);
-
       const errorMessage =
         error instanceof Error ? error.message : "Authentication failed";
       return res.redirect(
@@ -254,7 +232,6 @@ export class AuthController {
         user: updatedUser,
       };
     } catch (error) {
-      console.error("Set role error:", error);
       throw error;
     }
   }
@@ -262,8 +239,6 @@ export class AuthController {
   @Get("temp-token/:token")
   async getTempTokenInfo(@Param("token") token: string) {
     try {
-      console.log("🔍 Getting temp token info:", token);
-
       const tokenInfo = await this.authService.getTempTokenInfo(token);
 
       if (!tokenInfo) {
@@ -280,7 +255,6 @@ export class AuthController {
         expiresAt: tokenInfo.expiresAt,
       };
     } catch (error) {
-      console.error("❌ Get temp token info error:", error);
       throw error;
     }
   }
@@ -290,10 +264,6 @@ export class AuthController {
     @Body() body: { tempToken: string; role: "tenant" | "operator" }
   ) {
     try {
-      console.log(
-        `🔍 Creating Google user with role: ${body.role} using temp token`
-      );
-
       if (!body.tempToken || !body.role) {
         throw new BadRequestException("Temp token and role are required");
       }
@@ -311,10 +281,6 @@ export class AuthController {
       // Generate tokens
       const tokens = await this.authService.generateTokens(user);
 
-      console.log(
-        `✅ Google user created successfully: ${user.email} with role: ${user.role}`
-      );
-
       return {
         success: true,
         user: {
@@ -330,8 +296,6 @@ export class AuthController {
         access_token: tokens.access_token,
       };
     } catch (error: any) {
-      console.error("❌ Error creating Google user:", error);
-
       if (error instanceof BadRequestException) {
         throw error;
       }

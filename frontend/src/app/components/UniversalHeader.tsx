@@ -28,7 +28,7 @@ export default function UniversalHeader() {
   }, [isLanguageOpen]);
 
   const handleLogoClick = () => {
-    router.push("/app/dashboard");
+    router.push("/app/dashboard/tenant");
   };
 
   const handleFavouritesClick = () => {
