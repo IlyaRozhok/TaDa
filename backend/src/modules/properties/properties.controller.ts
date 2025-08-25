@@ -113,7 +113,7 @@ export class PropertiesController {
     @Query("sortBy") sortBy?: string,
     @Query("order") order?: "ASC" | "DESC"
   ) {
-    // Ensure page and limit are numbers, max 12 for public access
+  
     const pageNum = parseInt(page as any) || 1;
     const limitNum = Math.min(parseInt(limit as any) || 12, 12);
 
@@ -125,7 +125,7 @@ export class PropertiesController {
       order
     );
 
-    // Format response to match frontend expectations
+  
     return {
       data: result.properties,
       total: result.total,
