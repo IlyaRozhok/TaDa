@@ -27,7 +27,6 @@ export class PropertiesService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(TenantProfile)
-    private readonly tenantProfileRepository: Repository<TenantProfile>,
     private readonly matchingService: MatchingService,
     private readonly s3Service: S3Service
   ) {}

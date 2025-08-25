@@ -3,7 +3,6 @@ import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { ConfigService } from "@nestjs/config";
-import * as cors from "cors";
 import * as path from "path";
 import { AppModule } from "./app.module";
 
@@ -25,7 +24,7 @@ async function bootstrap() {
   // Consider using a dedicated static file server (e.g., Nginx, S3, CDN) for serving uploads in production.
 
   app.enableCors({
-    origin: ["https://tada.illiacodes.dev", "http://localhost:3000"],
+    origin: ["https://ta-da.co", "https://www.ta-da.co"],
     credentials: false,
   });
 
