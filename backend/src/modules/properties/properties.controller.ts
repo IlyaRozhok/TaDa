@@ -8,12 +8,8 @@ import {
   UseGuards,
   Request,
   Query,
-  UseInterceptors,
-  UploadedFiles,
   Patch,
-  UploadedFile,
 } from "@nestjs/common";
-import { FilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiTags,
   ApiOperation,
@@ -27,10 +23,6 @@ import { Property } from "../../entities/property.entity";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
-import {
-  imageUploadOptions,
-  convertFilePathsToUrls,
-} from "../../common/utils/file-upload.util";
 @ApiTags("Properties")
 @Controller("properties")
 export class PropertiesController {
@@ -296,52 +288,5 @@ export class PropertiesController {
   @Delete(":id")
   async remove(@Param("id") id: string, @Request() req) {
     return await this.propertiesService.remove(id, req.user.id, req.user.roles);
-  }
-
-  @ApiOperation({
-    summary: "Create property with local file upload (Operators and Admins)",
-  })
-  @ApiResponse({
-    status: 201,
-    description: "Property created successfully",
-    type: Property,
-  })
-  @ApiConsumes("multipart/form-data")
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("operator", "admin")
-  @UseInterceptors(FilesInterceptor("images", 10, imageUploadOptions))
-  @Post("with-upload")
-  async createWithUpload(
-    @Body() createPropertyDto: CreatePropertyDto,
-    @UploadedFiles() files: Express.Multer.File[],
-    @Request() req
-  ) {
-    // Handle FormData arrays correctly - lifestyle_features[] comes as a single field
-    if (
-      createPropertyDto.lifestyle_features &&
-      typeof createPropertyDto.lifestyle_features === "string"
-    ) {
-      // If it's a single string, convert to array
-      createPropertyDto.lifestyle_features = [
-        createPropertyDto.lifestyle_features,
-      ];
-    }
-
-    // Convert uploaded files to URLs
-    const imageUrls = files
-      ? convertFilePathsToUrls(files, req.protocol + "://" + req.get("host"))
-      : [];
-
-    const propertyData = {
-      ...createPropertyDto,
-      images: imageUrls,
-    };
-
-    return await this.propertiesService.create(
-      propertyData,
-      req.user.id,
-      req.user.roles
-    );
   }
 }
