@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  backend-prod:
+    image: rental_platform_api:prod
+    container_name: backend-prod
+    restart: unless-stopped
+    env_file:
+      - /etc/tada/env/.env.production
+    ports:
+      - "3001:3001"
+    command: ["node", "dist/src/main.js"]
+
+  backend-stage:
+    image: rental_platform_api:stage
+    container_name: backend-stage
+    restart: unless-stopped
+    env_file:
+      - /etc/tada/env/.env.stage
+    ports:
+      - "3002:3002"
+    command: ["node", "dist/src/main.js"]

@@ -1,10 +1,11 @@
-FROM node:18
+FROM node:18-alpine
 
 WORKDIR /app
 
-COPY . .
+COPY package*.json ./
+RUN npm ci
 
-RUN npm install
+COPY . .
 RUN npm run build
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main.js"]

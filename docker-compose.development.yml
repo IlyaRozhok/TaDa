@@ -1,0 +1,35 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: rental_platform_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rental_platform
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rental_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    backend:
+      build:
+        context: ./backend
+        dockerfile: Dockerfile.dev
+      container_name: tada-backend
+      env_file:
+        - ./backend/.env.development
+      ports:
+        - "5001:5001"
+      command: npm run start:dev
+      depends_on:
+        - postgres
+volumes:
+  postgres_data:

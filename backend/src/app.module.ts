@@ -2,9 +2,6 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-// Entities
-import { User, Preferences } from "./entities";
-
 // Controllers
 import { AppController } from "./app.controller";
 
@@ -21,6 +18,7 @@ import { OperatorModule } from "./modules/operator/operator.module";
 import { FeaturedModule } from "./modules/featured/featured.module";
 import { dataSourceOptions } from "./database/data-source";
 import { S3Service } from "./common/services/s3.service";
+import { typeOrmConfig } from "./database/typeorm.config";
 
 @Module({
   imports: [
@@ -28,8 +26,10 @@ import { S3Service } from "./common/services/s3.service";
       isGlobal: true,
       envFilePath: ".env",
     }),
-
     TypeOrmModule.forRoot(dataSourceOptions),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => typeOrmConfig(process.env),
+    }),
 
     AuthModule,
     UsersModule,
