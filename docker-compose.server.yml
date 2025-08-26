@@ -4,10 +4,13 @@ services:
     image: rental_platform_api:prod
     container_name: backend-prod
     restart: unless-stopped
+
     env_file:
-      - /etc/tada/env/.env.production
+      - ./env/.env.production
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["node", "dist/src/main.js"]
 
   backend-stage:
@@ -15,7 +18,9 @@ services:
     container_name: backend-stage
     restart: unless-stopped
     env_file:
-      - /etc/tada/env/.env.stage
+      - ./env/.env.stage
     ports:
-      - "3002:3002"
+      - "127.0.0.1:3002:3002"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["node", "dist/src/main.js"]
