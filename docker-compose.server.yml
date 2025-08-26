@@ -1,8 +1,10 @@
-version: "3.8"
 services:
   backend-prod:
-    image: rental_platform_api:prod
     container_name: backend-prod
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: rental_platform_api:prod
     restart: unless-stopped
 
     env_file:
@@ -14,8 +16,11 @@ services:
     command: ["node", "dist/src/main.js"]
 
   backend-stage:
-    image: rental_platform_api:stage
     container_name: backend-stage
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: rental_platform_api:stage
     restart: unless-stopped
     env_file:
       - ./env/.env.stage
