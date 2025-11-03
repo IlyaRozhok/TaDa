@@ -19,7 +19,7 @@ import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
 import Logo from "./Logo";
 import styles from "./ui/DropdownStyles.module.scss";
-import { getUserRole } from "../utils/simpleRedirect";
+import { getRedirectPath, getUserRole } from "../utils/simpleRedirect";
 
 interface DropdownItemProps {
   icon: React.ReactNode;
@@ -116,21 +116,8 @@ export default function DashboardHeader() {
   const handleLogoClick = () => {
     if (!user) return;
 
-    // Use the existing getUserRole function to determine the correct dashboard
-    const userRole = getUserRole(user);
-
-    switch (userRole) {
-      case "admin":
-        router.push("/app/admin/panel");
-        break;
-      case "operator":
-        router.push("/app/dashboard/operator");
-        break;
-      case "tenant":
-      default:
-        router.push("/app/dashboard/tenant");
-        break;
-    }
+    const path = getRedirectPath(user);
+    router.replace(path);
   };
 
   // Get user role using the proper function
@@ -168,8 +155,35 @@ export default function DashboardHeader() {
                 className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition-all duration-200 group"
               >
                 {/* Avatar */}
-                <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                  {getUserInitials()}
+                <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white text-sm font-semibold overflow-hidden">
+                  {user?.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to initials if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const initials = parent.querySelector(
+                            ".fallback-initials-header"
+                          );
+                          if (initials) {
+                            (initials as HTMLElement).style.display = "flex";
+                          }
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`fallback-initials-header w-full h-full flex items-center justify-center ${
+                      user?.avatar_url ? "hidden" : ""
+                    }`}
+                  >
+                    {getUserInitials()}
+                  </div>
                 </div>
 
                 {/* User Info */}
@@ -220,13 +234,6 @@ export default function DashboardHeader() {
 
                   {/* Menu Items */}
                   <div className={styles.dropdownBody}>
-                    <DropdownItem
-                      icon={<User className="w-4 h-4" />}
-                      label="Profile Summary"
-                      onClick={() => handleNavigation("/app/summary")}
-                      color="text-slate-700 hover:text-slate-900"
-                    />
-
                     <DropdownItem
                       icon={<Settings className="w-4 h-4" />}
                       label="Profile Settings"

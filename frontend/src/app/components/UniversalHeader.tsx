@@ -2,12 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import { Heart, Bell, ChevronDown } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import styles from "./ui/DropdownStyles.module.scss";
+import { selectUser } from "../store/slices/authSlice";
+import { getRedirectPath } from "../utils/simpleRedirect";
 
 export default function UniversalHeader() {
   const router = useRouter();
+  const user = useSelector(selectUser);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("EN");
 
@@ -28,7 +32,8 @@ export default function UniversalHeader() {
   }, [isLanguageOpen]);
 
   const handleLogoClick = () => {
-    router.push("/app/dashboard/tenant");
+    const path = getRedirectPath(user);
+    router.replace(path);
   };
 
   const handleFavouritesClick = () => {

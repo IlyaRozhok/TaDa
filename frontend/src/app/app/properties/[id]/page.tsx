@@ -51,14 +51,6 @@ export default function PropertyPublicPage() {
     return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  console.log("🏠 Component state:", {
-    id,
-    loading,
-    error,
-    hasProperty: !!property,
-    propertyTitle: property?.title,
-  });
-
   useEffect(() => {
     const fetchProperty = async () => {
       if (!id) {
@@ -70,24 +62,16 @@ export default function PropertyPublicPage() {
         setLoading(true);
         setError(null);
         const response = await propertiesAPI.getByIdPublic(id as string);
-        console.log("🏠 Raw API response:", response);
 
         // Extract data from response (might be response.data or direct response)
         const propertyData = response.data || response;
-        console.log("🏠 Property data extracted:", propertyData);
-        console.log("🖼️ Property title:", propertyData.title);
-        console.log("🖼️ Media array:", propertyData.media);
-        console.log("🖼️ Images array:", propertyData.images);
 
         if (propertyData) {
-          console.log("✅ Property data set successfully:", propertyData.title);
           setProperty(propertyData);
         } else {
-          console.log("❌ No property data received");
           setError("No property data received from server");
         }
       } catch (err: unknown) {
-        console.error("❌ Error fetching property:", err);
         setError((err as Error)?.message || "Failed to load property details");
       } finally {
         setLoading(false);
@@ -112,41 +96,22 @@ export default function PropertyPublicPage() {
 
   const allImages: string[] = useMemo(() => {
     if (!property) {
-      console.log("🖼️ No property data");
       return [];
     }
 
-    console.log("🖼️ Processing images for property:", property.title);
-
     // Use property.media for images
     const mediaArray = property.media || [];
-    console.log("🖼️ Media array found:", mediaArray);
 
     const mediaUrls = mediaArray
       .map((m: PropertyMedia) => {
         const url = m.url;
-        console.log("🖼️ Processing media item:", {
-          id: m.id,
-          url,
-          type: m.type,
-        });
         return url;
       })
       .filter(Boolean);
 
-    console.log("🖼️ Media URLs extracted:", mediaUrls);
-
     const legacy = property.images || [];
-    console.log("🖼️ Legacy images:", legacy);
 
     const allUrls = [...mediaUrls, ...legacy];
-    console.log("🖼️ Final image URLs:", allUrls);
-
-    if (allUrls.length > 0) {
-      console.log(`🖼️ Returning ${allUrls.length} images for property`);
-    } else {
-      console.log("🖼️ No images found, will show placeholder");
-    }
 
     // Only return real property images, no fallbacks
     return allUrls;
@@ -182,7 +147,9 @@ export default function PropertyPublicPage() {
         toast.success("Added to shortlist");
       }
     } catch (error: unknown) {
-      console.error("Shortlist error:", error);
+      // Keep error logging for errors, as per best practice
+      // But if you want to remove all console usage, comment out the next line:
+      // console.error("Shortlist error:", error);
       toast.error((error as Error)?.message || "Failed to update shortlist");
     } finally {
       setShortlistLoading(false);

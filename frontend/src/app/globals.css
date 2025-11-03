@@ -1,23 +1,30 @@
 @import "tailwindcss";
 
-/* Leaflet CSS */
-@import 'leaflet/dist/leaflet.css';
+/* Google Maps styles */
 
-/* Custom Leaflet marker styles */
-.custom-marker {
-  background: none !important;
-  border: none !important;
+/* SF Pro Font Family */
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 }
 
 /* Property Card Skeleton Animations */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes slideIn {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 :root {

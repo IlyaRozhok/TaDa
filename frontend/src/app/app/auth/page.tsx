@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setAuth } from "../../store/slices/authSlice";
@@ -20,22 +20,89 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-
-type UserType = "tenant" | "operator";
+import OnboardingFlow from "../../components/OnboardingFlow";
+import Logo from "../../components/Logo";
 
 export default function UnifiedAuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [step, setStep] = useState<"credentials" | "role">("credentials");
-  const [requiresRegistration, setRequiresRegistration] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [newUser, setNewUser] = useState<any>(null);
+  const [isGoogleAuth, setIsGoogleAuth] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+
+  // Check for Google auth parameters and existing users without roles
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tempToken = urlParams.get("tempToken");
+    const error = urlParams.get("error");
+    const needsRole = urlParams.get("needsRole");
+    const isGoogleAuthParam = urlParams.get("isGoogleAuth");
+
+    if (error) {
+      setError("Google authentication failed. Please try again.");
+      return;
+    }
+
+    if (tempToken) {
+      // Handle Google auth callback with temp token
+      authAPI
+        .getTempTokenInfo(tempToken)
+        .then((response) => {
+          const googleUserData = response.data;
+          setNewUser(googleUserData);
+          setShowOnboarding(true);
+        })
+        .catch((err) => {
+          console.error("Failed to get temp token info:", err);
+          setError("Failed to retrieve Google user data");
+        });
+    } else if (needsRole === "true" && isGoogleAuthParam === "true") {
+      // Handle Google auth that needs role selection
+      setIsGoogleAuth(true);
+      setShowOnboarding(true);
+
+      // Get Google registration data from sessionStorage
+      const googleRegistrationId = sessionStorage.getItem(
+        "googleRegistrationId"
+      );
+      if (googleRegistrationId) {
+        // Create a temporary user object for Google auth
+        setNewUser({
+          id: googleRegistrationId,
+          email: "Google User", // Will be filled from API
+          role: null,
+          provider: "google",
+        });
+      }
+    }
+
+    // Check if user is already authenticated but doesn't have a role
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      // Check if user has a role set
+      authAPI
+        .getMe()
+        .then((response) => {
+          const user = response.data;
+          if (user && !user.role) {
+            // User exists but doesn't have a role - show onboarding
+            setNewUser(user);
+            setShowOnboarding(true);
+          }
+        })
+        .catch((error) => {
+          // Token might be invalid, clear it
+          localStorage.removeItem("accessToken");
+        });
+    }
+  }, []);
 
   // Removed automatic redirect for authenticated users to prevent redirect loops
   // Users should explicitly navigate to where they want to go
@@ -53,13 +120,6 @@ export default function UnifiedAuthPage() {
         // User exists - attempt login
         const loginResponse = await authAPI.login({ email, password });
 
-        // Success - login completed
-        console.log("🔍 Login successful:", {
-          hasUser: !!loginResponse.data.user,
-          hasToken: !!loginResponse.data.access_token,
-          userEmail: loginResponse.data.user?.email,
-          userRole: loginResponse.data.user?.role,
-        });
 
         dispatch(
           setAuth({
@@ -70,82 +130,56 @@ export default function UnifiedAuthPage() {
 
         // Initialize shortlist for tenant users
         if (loginResponse.data.user?.role === "tenant") {
-          console.log("🛒 Initializing shortlist for tenant user after login");
+          
           dispatch(fetchShortlist());
         }
 
         // Verify token was stored
         const storedToken = localStorage.getItem("accessToken");
-        console.log("🔍 Token stored after login:", !!storedToken);
+        
 
         // Redirect based on user role
         setTimeout(() => {
           redirectAfterLogin(loginResponse.data.user, router);
         }, 100);
       } else {
-        // User doesn't exist - show role selection for registration
-        setRequiresRegistration(true);
-        setStep("role");
+        // User doesn't exist - show onboarding for new registration
+        setNewUser({
+          email: email,
+          password: password,
+          role: null,
+          provider: "local",
+        });
+        setShowOnboarding(true);
       }
     } catch (err: unknown) {
+      console.error("🔍 Authentication error:", err);
       const error = err as { response?: { data?: { message?: string } } };
-      setError(
-        error.response?.data?.message ||
-          "Authentication failed. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleRoleSelect = (role: UserType) => {
-    setSelectedRole(role);
-  };
+      let errorMessage = "Authentication failed. Please try again.";
 
-  const handleRoleSubmit = async () => {
-    if (!selectedRole) {
-      setError("Please select your account type");
-      return;
-    }
-
-    setIsLoading(true);
-    setError("");
-
-    try {
-      // Register new user
-      const response = await authAPI.register({
-        email,
-        password,
-        role: selectedRole,
-      });
-
-      // Success - registration completed
-      dispatch(
-        setAuth({
-          user: response.data.user,
-          accessToken: response.data.access_token,
-        })
-      );
-
-      // Initialize shortlist for tenant users
-      if (response.data.user?.role === "tenant") {
-        console.log(
-          "🛒 Initializing shortlist for tenant user after registration"
-        );
-        dispatch(fetchShortlist());
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 401) {
+        errorMessage =
+          "Invalid email or password. Please check your credentials.";
+      } else if (error.response?.status === 400) {
+        errorMessage = "Invalid input. Please check your email and password.";
+      } else if (error.response?.status >= 500) {
+        errorMessage = "Server error. Please try again later.";
       }
 
-      router.push("/app/dashboard");
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || "Registration failed");
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleAuth = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+    
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   const handleForgotPassword = () => {
@@ -153,137 +187,25 @@ export default function UnifiedAuthPage() {
     router.push("/app/auth/forgot-password");
   };
 
-  if (step === "role" && requiresRegistration) {
+  const handleOnboardingComplete = () => {
+    // Initialize shortlist for tenant users
+    if (newUser?.role === "tenant") {
+     
+      dispatch(fetchShortlist());
+    }
+
+    // Redirect to appropriate dashboard
+    redirectAfterLogin(newUser, router);
+  };
+
+  // Show onboarding flow for new users
+  if (showOnboarding && newUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative">
-        <div className="absolute top-0 left-0 w-full h-full"></div>
-
-        <div className="w-full max-w-md relative z-10">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <div className="text-center mb-6">
-              <Logo size="md" className="mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">
-                Choose Your Account Type
-              </h2>
-              <p className="text-gray-600 mt-2">
-                Select how you want to use TaDa
-              </p>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{error}</p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {/* Tenant Option */}
-              <div
-                onClick={() => handleRoleSelect("tenant")}
-                className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedRole === "tenant"
-                    ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`p-2 rounded-full ${
-                      selectedRole === "tenant"
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    <User className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h3
-                      className={`font-semibold ${
-                        selectedRole === "tenant"
-                          ? "text-gray-900"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      I'm looking for a place
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Find and save properties
-                    </p>
-                  </div>
-                  {selectedRole === "tenant" && (
-                    <CheckCircle className="w-5 h-5 text-gray-900" />
-                  )}
-                </div>
-              </div>
-
-              {/* Operator Option */}
-              <div
-                onClick={() => handleRoleSelect("operator")}
-                className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedRole === "operator"
-                    ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`p-2 rounded-full ${
-                      selectedRole === "operator"
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    <Building className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h3
-                      className={`font-semibold ${
-                        selectedRole === "operator"
-                          ? "text-gray-900"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      I have properties to rent
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      List and manage properties
-                    </p>
-                  </div>
-                  {selectedRole === "operator" && (
-                    <CheckCircle className="w-5 h-5 text-gray-900" />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleRoleSubmit}
-              disabled={!selectedRole || isLoading}
-              className="w-full mt-6 bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-lg font-medium"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Creating account...
-                </div>
-              ) : (
-                "Continue"
-              )}
-            </Button>
-
-            <button
-              onClick={() => {
-                setStep("credentials");
-                setRequiresRegistration(false);
-                setError("");
-              }}
-              className="mt-4 text-sm text-gray-600 hover:text-gray-900 w-full text-center"
-            >
-              Back to login
-            </button>
-          </div>
-        </div>
-      </div>
+      <OnboardingFlow
+        user={newUser}
+        onComplete={handleOnboardingComplete}
+        isGoogleAuth={isGoogleAuth}
+      />
     );
   }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectUser,
@@ -17,34 +17,64 @@ import { Button } from "../../../components/ui/Button";
 
 type UserType = "tenant" | "operator";
 
-export default function SelectRolePage() {
+function SelectRoleContent() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [googleData, setGoogleData] = useState<any>(null);
+  const [tempToken, setTempToken] = useState<string | null>(null);
 
   const router = useRouter();
   const dispatch = useDispatch();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (!isAuthenticated || !user) {
+    // Check for tempToken in URL
+    const token = searchParams.get("tempToken");
+    if (token) {
+      setTempToken(token);
+      // Fetch Google user data from tempToken
+      fetchGoogleUserData(token);
+    } else if (!isAuthenticated || !user) {
+      // Only redirect if no tempToken and not authenticated
       router.push("/app/auth/register");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, searchParams]);
+
+  const fetchGoogleUserData = async (token: string) => {
+    try {
+      const response = await authAPI.getTempTokenInfo(token);
+      setGoogleData(response.data.googleData);
+    } catch (error) {
+      console.error("Failed to fetch Google user data:", error);
+      setError("Invalid or expired token. Please try again.");
+    }
+  };
 
   const handleRoleSelection = async () => {
-    if (!selectedRole || !user) return;
+    if (!selectedRole) return;
 
     setIsLoading(true);
     setError("");
 
     try {
-      // Update user role via API
-      const response = await authAPI.updateUserRole(user.id, {
-        role: selectedRole,
-      });
+      let response;
+
+      if (tempToken) {
+        // Create new user from tempToken
+        response = await authAPI.createGoogleUserFromTempToken(tempToken, {
+          role: selectedRole,
+        });
+      } else if (user) {
+        // Update existing user role
+        response = await authAPI.updateUserRole(user.id, {
+          role: selectedRole,
+        });
+      } else {
+        throw new Error("No user or tempToken available");
+      }
 
       // Update user data in Redux store
       dispatch(
@@ -61,8 +91,7 @@ export default function SelectRolePage() {
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(
-        error.response?.data?.message ||
-          "Failed to update role. Please try again."
+        error.response?.data?.message || "Failed to set role. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -78,7 +107,7 @@ export default function SelectRolePage() {
     }
   };
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated && !user && !tempToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -124,11 +153,12 @@ export default function SelectRolePage() {
           <div className="text-center mb-6">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Welcome to TaDa, {user.email}!
+              Welcome to TaDa, {googleData?.email || user?.email}!
             </h2>
             <p className="text-gray-600">
-              Your account has been created successfully. Now let&apos;s
-              personalize your experience.
+              {tempToken
+                ? "Your Google account has been verified. Now let's personalize your experience."
+                : "Your account has been created successfully. Now let's personalize your experience."}
             </p>
           </div>
 
@@ -223,5 +253,22 @@ export default function SelectRolePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SelectRolePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <SelectRoleContent />
+    </Suspense>
   );
 }

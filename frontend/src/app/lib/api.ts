@@ -4,7 +4,7 @@ import { Property } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+  baseURL: `${process.env.NEXT_PUBLIC_API_URL}` || "http://localhost:5001/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -16,9 +16,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("🔑 Adding token to request:", config.url);
-    } else {
-      console.log("⚠️ No token found for request:", config.url);
     }
     return config;
   },
@@ -31,27 +28,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log("❌ API Error:", {
-      status: error.response?.status,
-      url: error.config?.url,
-      message: error.response?.data?.message,
-    });
-
     // Only handle 401 errors for actual API calls
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
 
-      console.log("🔓 401 error detected:", {
-        path: currentPath,
-        shouldLogout:
-          !currentPath.includes("/preferences") &&
-          !currentPath.includes("/auth"),
-      });
-
-      // Don't logout on preferences or auth pages
+      // Don't logout on preferences, auth, or onboarding pages
       if (
         !currentPath.includes("/preferences") &&
-        !currentPath.includes("/auth")
+        !currentPath.includes("/auth") &&
+        !currentPath.includes("/onboarding")
       ) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionExpiry");
@@ -97,6 +82,18 @@ export const authAPI = {
 
   createGoogleUser: (registrationId: string, role: "tenant" | "operator") =>
     api.post("/auth/create-google-user", { registrationId, role }),
+
+  getTempTokenInfo: (tempToken: string) =>
+    api.get(`/auth/temp-token/${tempToken}`),
+
+  createGoogleUserFromTempToken: (
+    tempToken: string,
+    data: { role: "tenant" | "operator" }
+  ) =>
+    api.post(`/auth/create-google-user-from-temp-token`, {
+      tempToken,
+      ...data,
+    }),
 };
 
 export const usersAPI = {
@@ -137,8 +134,6 @@ export const propertiesAPI = {
 
   delete: (id: string) => api.delete(`/properties/${id}`),
 
-  getFeatured: () => api.get("/featured/properties"),
-
   getMatched: () => api.get("/matching/matches"),
 };
 
@@ -163,14 +158,6 @@ export const shortlistAPI = {
       .then((res) => res.data?.isShortlisted || false),
 };
 
-export const favouritesAPI = {
-  get: () => api.get("/favourites"),
-
-  add: (propertyId: string) => api.post(`/favourites/${propertyId}`),
-
-  remove: (propertyId: string) => api.delete(`/favourites/${propertyId}`),
-};
-
 export const operatorAPI = {
   getDashboard: () => api.get("/operator/dashboard"),
 
@@ -184,25 +171,27 @@ export const matchingAPI = {
   getDetailedMatches: (limit?: number) =>
     api.get("/matching/detailed-matches", { params: { limit } }),
 
-  getMatches: (limit?: number) =>
-    api.get("/matching/matches", { params: { limit } }),
+  // getMatches: (limit?: number) =>
+  //   api.get("/matching/matches", { params: { limit } }),
 
   getRecommendations: (limit?: number) =>
     api.get("/matching/recommendations", { params: { limit } }),
 };
 
+export const operatorsAPI = {
+  getAll: () => api.get("/residential-complexes/operators"),
+};
+
+export const residentialComplexesAPI = {
+  getAll: (params?: any) => api.get("/residential-complexes", { params }),
+  getById: (id: string) => api.get(`/residential-complexes/${id}`),
+  create: (data: any) => api.post("/residential-complexes", data),
+  update: (id: string, data: any) => api.patch(`/residential-complexes/${id}`, data),
+  delete: (id: string) => api.delete(`/residential-complexes/${id}`),
+};
+
 export const propertyMediaAPI = {
   uploadPropertyMedia: async (propertyId: string, file: File) => {
-    console.log(
-      "📤 Uploading media for property:",
-      propertyId,
-      "file:",
-      file.name
-    );
-    console.log(
-      "🔑 Current token:",
-      localStorage.getItem("accessToken") ? "Present" : "Missing"
-    );
     const formData = new FormData();
     formData.append("file", file);
     try {
@@ -215,42 +204,26 @@ export const propertyMediaAPI = {
           },
         }
       );
-      console.log("✅ Upload response:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("❌ Upload failed:", {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        url: error.config?.url,
-      });
       throw error;
     }
   },
   getPropertyMedia: async (propertyId: string) => {
-    console.log("🔍 Getting media for property:", propertyId);
     const response = await api.get(`/properties/${propertyId}/media`);
-    console.log("📋 Media response:", response.data);
     return response.data;
   },
   deletePropertyMedia: async (propertyId: string, mediaId: string) => {
-    console.log("🗑️ Deleting media:", mediaId, "for property:", propertyId);
     const response = await api.delete(
       `/properties/${propertyId}/media/${mediaId}`
     );
-    console.log("✅ Delete response:", response.data);
     return response.data;
   },
   updatePropertyMedia: (propertyId: string, mediaId: string, data: any) =>
     api.put(`/properties/${propertyId}/media/${mediaId}`, data),
   setAsPrimary: (propertyId: string, mediaId: string) =>
     api.patch(`/properties/${propertyId}/media/${mediaId}/primary`),
-  setFeaturedMedia: async (propertyId: string, mediaId: string) => {
-    const response = await api.put(
-      `/properties/${propertyId}/media/${mediaId}/featured`
-    );
-    return response.data;
-  },
+
   updateMediaOrder: async (
     propertyId: string,
     mediaOrders: { id: string; order_index: number }[]

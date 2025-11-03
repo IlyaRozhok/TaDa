@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PropertyFilters } from "../../lib/api";
 import { Property } from "../../types";
-import { useTranslations } from "../../lib/language-context";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
 import { useFilteredProperties } from "../../hooks/useProperties";
@@ -22,7 +21,6 @@ import {
 
 export default function AllPropertiesPage() {
   const router = useRouter();
-  const t = useTranslations();
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -127,7 +125,9 @@ export default function AllPropertiesPage() {
             </h3>
             <p className="text-red-600 mb-8">{error}</p>
             <button
-              onClick={() => typeof window !== "undefined" && window.location.reload()}
+              onClick={() =>
+                typeof window !== "undefined" && window.location.reload()
+              }
               className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
             >
               Try Again
@@ -180,14 +180,14 @@ export default function AllPropertiesPage() {
                   placeholder="Search properties, locations, or types..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
               </div>
 
               {/* Filter Button */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-6 py-3 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                className="flex items-center gap-2 px-6 py-3 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-500 transition-colors font-medium"
               >
                 <SlidersHorizontal className="w-5 h-5" />
                 Filters
@@ -227,7 +227,7 @@ export default function AllPropertiesPage() {
           loading={loading}
           onPropertyClick={handlePropertyClick}
         />
-        
+
         {!loading && filteredProperties.length === 0 && (
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">

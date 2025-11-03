@@ -13,3 +13,4 @@ import { Preferences } from "../../entities/preferences.entity";
   providers: [OperatorService],
 })
 export class OperatorModule {}
+

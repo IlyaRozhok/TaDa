@@ -103,13 +103,6 @@ export default function ListedPropertiesSection({
   // Combine and sort properties
   const getAllProperties = () => {
     // Safety check - ensure properties is an array
-    if (!properties) {
-      console.log(
-        "⚠️ ListedPropertiesSection: properties is null/undefined:",
-        properties
-      );
-      return [];
-    }
 
     // Handle case where properties might be an object with data key
     let actualProperties = properties;
@@ -122,26 +115,8 @@ export default function ListedPropertiesSection({
       const propertiesWithData = properties as { data: Property[] };
       if (Array.isArray(propertiesWithData.data)) {
         actualProperties = propertiesWithData.data;
-        console.log(
-          "🔄 ListedPropertiesSection: Extracted properties from object.data:",
-          actualProperties
-        );
       }
     }
-
-    if (!Array.isArray(actualProperties)) {
-      console.log(
-        "⚠️ ListedPropertiesSection: properties is still not an array after extraction:",
-        actualProperties
-      );
-      return [];
-    }
-
-    console.log("🔍 ListedPropertiesSection: Processing properties:", {
-      propertiesCount: actualProperties.length,
-      matchedPropertiesCount: matchedProperties.length,
-      firstProperty: actualProperties[0],
-    });
 
     // Create a lookup of matched properties for easy access
     const matchedLookup: Record<string, number> = {};
@@ -155,10 +130,6 @@ export default function ListedPropertiesSection({
       matchScore: matchedLookup[property.id] || 0,
     }));
 
-    console.log("✅ ListedPropertiesSection: Combined properties:", {
-      total: allProps.length,
-      withMatchScores: allProps.filter((p) => p.matchScore > 0).length,
-    });
 
     // Sort based on selected option
     return allProps.sort((a, b) => {

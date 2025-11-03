@@ -19,17 +19,17 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    backend:
-      build:
-        context: ./backend
-        dockerfile: Dockerfile.dev
-      container_name: tada-backend
-      env_file:
-        - ./backend/.env.development
-      ports:
-        - "5001:5001"
-      command: npm run start:dev
-      depends_on:
-        - postgres
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: tada-backend
+    env_file:
+      - ./backend/.env.development
+    ports:
+      - "5001:5001"
+    command: npm run start:dev
+    depends_on:
+      - postgres
 volumes:
   postgres_data:

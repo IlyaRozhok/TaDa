@@ -40,3 +40,4 @@ export class Favourite {
   @CreateDateColumn()
   created_at: Date;
 }
+

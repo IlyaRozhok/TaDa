@@ -5,13 +5,17 @@ import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser, updateUser } from "../../store/slices/authSlice";
 import { authAPI } from "../../lib/api";
-import DashboardHeader from "../../components/DashboardHeader";
+import TenantUniversalHeader from "../../components/TenantUniversalHeader";
+import { GlassmorphismDatePicker } from "../../components/preferences/ui/GlassmorphismDatePicker";
+import { GlassmorphismDropdown } from "../../components/preferences/ui/GlassmorphismDropdown";
+import { ErrorMessage } from "../../components/preferences/ui/ErrorMessage";
 import {
   ArrowLeft,
   User as UserIcon,
   Save,
   AlertCircle,
   CheckCircle2,
+  Edit3,
 } from "lucide-react";
 
 interface UpdateUserData {
@@ -42,6 +46,73 @@ const OCCUPATION_OPTIONS = [
   { value: "retired", label: "Retired" },
 ];
 
+// Local InputField component with proper centering
+interface LocalInputFieldProps {
+  label: string;
+  type?: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
+  error?: string;
+  max?: string;
+}
+
+const LocalInputField: React.FC<LocalInputFieldProps> = ({
+  label,
+  type = "text",
+  name,
+  value,
+  onChange,
+  required = false,
+  error,
+  max,
+}) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const hasValue = !!value;
+
+  useEffect(() => {
+    if (!isInitialized) {
+      setTimeout(() => setIsInitialized(true), 100);
+    }
+  }, [isInitialized]);
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          max={max}
+          className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm ${
+            error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+          }`}
+          placeholder=""
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+        />
+        <label
+          className={`absolute left-6 pointer-events-none ${
+            isInitialized ? "transition-all duration-200" : ""
+          } ${
+            isFocused || hasValue
+              ? "top-3 text-xs text-gray-500"
+              : "top-1/2 -translate-y-1/2 text-base text-gray-400"
+          }`}
+        >
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      </div>
+      <ErrorMessage error={error} />
+    </div>
+  );
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -50,6 +121,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState<UpdateUserData>({
     full_name: "",
@@ -61,7 +133,7 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && !isEditing) {
       // Get profile data based on user role
       const profile =
         user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
@@ -90,7 +162,7 @@ export default function ProfilePage() {
         occupation: profile?.occupation || "",
       });
     }
-  }, [user]);
+  }, [user, isEditing]);
 
   // Validation functions
 
@@ -178,12 +250,12 @@ export default function ProfilePage() {
         return;
       }
 
-      console.log("🔄 Updating profile with:", updateData);
 
-      // Make API call
-      const response = await authAPI.updateProfile(updateData);
 
-      console.log("✅ Profile update response:", response);
+
+
+
+
 
       // Update Redux state with new user data
       dispatch(updateUser(updateData));
@@ -304,276 +376,274 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="w-12 h-12 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading profile...</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
     );
   }
 
+  // Get profile data based on user role
+  const profile =
+    user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <DashboardHeader />
+    <div className="min-h-screen bg-white">
+      <TenantUniversalHeader
+        searchTerm=""
+        onSearchChange={() => {}}
+        showSearchInput={false}
+        showPreferencesButton={false}
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.push("/app/dashboard/tenant")}
-            className="flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-6 font-medium group"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-            Back to Dashboard
-          </button>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-black mb-2">
+            Profile Settings
+          </h1>
+          <p className="text-gray-600">
+            The type of household atmosphere you prefer
+          </p>
+        </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <UserIcon className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 mb-1">
-                  Profile Settings
-                </h1>
-                <p className="text-slate-600">
-                  Manage your personal information and preferences
-                </p>
-              </div>
-            </div>
+        {/* Avatar Section */}
+        <div className="text-center mb-8">
+          <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
+            {user?.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt="Profile"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to default icon if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                  const parent = target.parentElement;
+                  if (parent) {
+                    const icon = parent.querySelector(".fallback-icon");
+                    if (icon) {
+                      (icon as HTMLElement).style.display = "block";
+                    }
+                  }
+                }}
+              />
+            ) : null}
+            <UserIcon
+              className={`w-12 h-12 text-gray-400 ${
+                user?.avatar_url ? "fallback-icon hidden" : ""
+              }`}
+            />
+          </div>
+          <div className="space-y-2">
+            {user?.provider === "google" && (
+              <p className="text-sm text-gray-500">
+                Profile picture from Google
+              </p>
+            )}
+            <button className="text-gray-500 hover:text-gray-700 font-medium border border-gray-300 px-4 py-2 rounded-lg transition-colors">
+              Change avatar
+            </button>
           </div>
         </div>
 
-        {/* Profile Form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
-          <div className="p-8">
+        {/* Personal Info Card */}
+        <div className="bg-gray-50 rounded-3xl p-8 max-w-lg mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-black">Personal Info</h2>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-gray-700 hover:text-gray-900 font-medium border border-gray-300 px-6 py-3 rounded-full transition-colors"
+              >
+                Edit info
+              </button>
+            )}
+          </div>
+
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
+
+          {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Error/Success Messages */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
+              {/* Full Name */}
+              <LocalInputField
+                label="Full name"
+                type="text"
+                name="full_name"
+                value={formData.full_name}
+                onChange={handleInputChange}
+                required
+                error={errors.full_name}
+              />
 
-              {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-                  <span>{success}</span>
-                </div>
-              )}
+              {/* Email */}
+              <LocalInputField
+                label="Email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                error={errors.email}
+              />
 
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  Personal Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Full Name */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="full_name"
-                      value={formData.full_name}
-                      onChange={handleInputChange}
-                      required
-                      className={`text-slate-900 w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                        errors.full_name
-                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                          : "border-slate-300 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                      placeholder="Enter your full name"
-                    />
-                    {errors.full_name && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.full_name}
-                      </p>
-                    )}
-                  </div>
+              {/* Phone Number */}
+              <LocalInputField
+                label="Phone number (option)"
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                error={errors.phone}
+              />
 
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className={`text-slate-900 w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                        errors.email
-                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                          : "border-slate-300 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                      placeholder="Enter your email"
-                    />
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
+              {/* Date of Birth */}
+              <GlassmorphismDatePicker
+                label="Date of Birth"
+                value={formData.date_of_birth}
+                onChange={(date) =>
+                  setFormData((prev) => ({ ...prev, date_of_birth: date }))
+                }
+                error={errors.date_of_birth}
+                maxDate={new Date()}
+                minDate={new Date("1900-01-01")}
+              />
 
-                  {/* Phone Number */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className={`w-full text-slate-900 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                        errors.phone
-                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                          : "border-slate-300 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                      placeholder="Enter your phone number"
-                    />
-                    {errors.phone && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.phone}
-                      </p>
-                    )}
-                  </div>
+              {/* Nationality */}
+              <LocalInputField
+                label="Nationality"
+                type="text"
+                name="nationality"
+                value={formData.nationality}
+                onChange={handleInputChange}
+                error={errors.nationality}
+              />
 
-                  {/* Date of Birth */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      Date of Birth
-                    </label>
-                    <input
-                      type="date"
-                      name="date_of_birth"
-                      value={formData.date_of_birth}
-                      onChange={handleInputChange}
-                      max={new Date().toISOString().split("T")[0]}
-                      className={`w-full text-slate-900 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                        errors.date_of_birth
-                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                          : "border-slate-300 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                    />
-                    {errors.date_of_birth && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.date_of_birth}
-                      </p>
-                    )}
-                  </div>
+              {/* Occupation */}
+              <GlassmorphismDropdown
+                label="Occupation"
+                value={formData.occupation}
+                options={OCCUPATION_OPTIONS}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    occupation: value as string,
+                  }))
+                }
+                error={errors.occupation}
+                placeholder="Select occupation"
+              />
 
-                  {/* Nationality */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      Nationality
-                    </label>
-                    <input
-                      type="text"
-                      name="nationality"
-                      value={formData.nationality}
-                      onChange={handleInputChange}
-                      className={`text-slate-900 w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                        errors.nationality
-                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                          : "border-slate-300 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                      placeholder="Enter your nationality"
-                    />
-                    {errors.nationality && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.nationality}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Occupation */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">
-                      Occupation
-                    </label>
-                    <select
-                      name="occupation"
-                      value={formData.occupation}
-                      onChange={handleInputChange}
-                      className={`text-slate-900 w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                        errors.occupation
-                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                          : "border-slate-300 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                    >
-                      {OCCUPATION_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.occupation && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.occupation}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="border-t border-slate-200 pt-6">
-                {/* Status Info */}
-                {!hasChanges && (
-                  <div className="mb-4 text-center">
-                    <p className="text-sm text-slate-500">
-                      Make changes to your profile to enable the update button
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button
-                    type="submit"
-                    disabled={isLoading || !hasChanges}
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Updating Profile...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5" />
-                        Update Profile
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => router.push("/app/dashboard/tenant")}
-                    className="flex-1 bg-white border border-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-slate-50"
-                  >
-                    Back to Dashboard
-                  </button>
-                </div>
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 bg-white border border-gray-300 text-gray-700 px-6 py-4 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !hasChanges}
+                  className="flex-1 bg-black text-white px-6 py-4 rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save info"
+                  )}
+                </button>
               </div>
             </form>
-          </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Full Name */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Full name</div>
+                <div className="text-black font-medium">
+                  {formData.full_name || "Not provided"}
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Email</div>
+                <div className="text-black font-medium">
+                  {formData.email || "Not provided"}
+                </div>
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">
+                  Phone number <span className="text-gray-400">(option)</span>
+                </div>
+                <div className="text-black font-medium">
+                  {formData.phone || "Not provided"}
+                </div>
+              </div>
+
+              {/* Date of Birth */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Date of Birth</div>
+                <div className="text-black font-medium">
+                  {formatDate(formData.date_of_birth) || "Not provided"}
+                </div>
+              </div>
+
+              {/* Nationality */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Nationality</div>
+                <div className="text-black font-medium">
+                  {formData.nationality || "Not provided"}
+                </div>
+              </div>
+
+              {/* Occupation */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Occupation</div>
+                <div className="text-black font-medium">
+                  {OCCUPATION_OPTIONS.find(
+                    (opt) => opt.value === formData.occupation
+                  )?.label || "Not provided"}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -139,3 +139,4 @@ export class TenantProfile {
   @Column({ type: "uuid", nullable: true })
   userId: string;
 }
+

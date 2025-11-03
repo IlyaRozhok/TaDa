@@ -7,7 +7,6 @@ import { setAuth } from "../../../store/slices/authSlice";
 import { fetchShortlist } from "../../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../../store/store";
 import { authAPI, usersAPI } from "../../../lib/api";
-import GlobalLoader from "../../../components/GlobalLoader";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
 
 function AuthCallbackContent() {
@@ -19,8 +18,6 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      console.log("🔍 OAuth callback started");
-
       try {
         const token = searchParams.get("token");
         const success = searchParams.get("success");
@@ -85,7 +82,6 @@ function AuthCallbackContent() {
           userEmail: profileResponse?.data?.user?.email,
           userRole: profileResponse?.data?.user?.role,
           userProvider: profileResponse?.data?.user?.provider,
-          fullUser: profileResponse?.data?.user,
         });
 
         // Validate profile response
@@ -115,9 +111,6 @@ function AuthCallbackContent() {
 
         // Initialize shortlist for tenant users
         if (profileResponse.data.user?.role === "tenant") {
-          console.log(
-            "🛒 Initializing shortlist for tenant user via OAuth callback"
-          );
           dispatch(fetchShortlist());
         }
 
@@ -171,9 +164,7 @@ function AuthCallbackContent() {
   }, [searchParams, router, dispatch]);
 
   if (loading) {
-    return (
-      <GlobalLoader isLoading={true} message="Completing authentication..." />
-    );
+    return null; // No loader, just redirect
   }
 
   if (error) {
@@ -232,7 +223,7 @@ function AuthCallbackContent() {
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<GlobalLoader isLoading={true} message="Loading..." />}>
+    <Suspense fallback={null}>
       <AuthCallbackContent />
     </Suspense>
   );

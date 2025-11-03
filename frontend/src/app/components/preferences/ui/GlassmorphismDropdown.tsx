@@ -32,7 +32,14 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    direction: "up" | "down";
+  }>({ top: 0, left: 0, width: 0, direction: "down" });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
@@ -51,12 +58,22 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
       }
     };
 
+    const handleResize = () => {
+      if (isOpen) {
+        calculateDropdownPosition();
+      }
+    };
+
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("keydown", handleEscape);
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("scroll", handleResize);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
         document.removeEventListener("keydown", handleEscape);
+        window.removeEventListener("resize", handleResize);
+        window.removeEventListener("scroll", handleResize);
       };
     }
   }, [isOpen]);
@@ -78,7 +95,31 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
     setIsOpen(false);
   };
 
+  const calculateDropdownPosition = () => {
+    if (!inputRef.current) return;
+
+    const rect = inputRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const dropdownHeight = 200; // Approximate dropdown height
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    // Determine direction based on available space
+    const direction =
+      spaceBelow < dropdownHeight && spaceAbove > spaceBelow ? "up" : "down";
+
+    setDropdownPosition({
+      top: direction === "up" ? rect.top - dropdownHeight : rect.bottom,
+      left: rect.left,
+      width: rect.width,
+      direction,
+    });
+  };
+
   const handleToggle = () => {
+    if (!isOpen) {
+      calculateDropdownPosition();
+    }
     setIsOpen(!isOpen);
   };
 
@@ -86,6 +127,7 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
     <div className="relative w-full" ref={dropdownRef}>
       {/* Input Field */}
       <div
+        ref={inputRef}
         className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white cursor-pointer border-0 shadow-sm ${
           hasValue ? "text-gray-900" : "text-gray-400"
         } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
@@ -112,10 +154,15 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
         }`}
       />
 
-      {/* Dropdown List - Absolute positioning with proper stacking context */}
+      {/* Dropdown List - Fixed positioning to prevent page height changes */}
       {isOpen && (
         <div
-          className={`absolute backdrop-blur-[3px] top-full left-0 right-0 mt-2 z-[9999] ${styles.dropdownCard}`}
+          className={`fixed backdrop-blur-[3px] z-[9999] ${styles.dropdownCard}`}
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+          }}
         >
           <div className={styles.scrollContainer}>
             {options.map((option) => (

@@ -46,7 +46,6 @@ interface Property {
     id: string;
     type: string;
     url: string;
-    is_featured: boolean;
     order_index: number;
   }>;
 }
@@ -104,7 +103,10 @@ export default function ManagePropertiesPage() {
     try {
       setIsLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
       const response = await fetch(`${apiUrl}/properties/my-properties`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -128,7 +130,10 @@ export default function ManagePropertiesPage() {
     try {
       setIsLoadingTenants(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
       const response = await fetch(
         `${apiUrl}/properties/${propertyId}/interested-tenants`,
         {
@@ -169,7 +174,10 @@ export default function ManagePropertiesPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
       const response = await fetch(`${apiUrl}/properties/${propertyId}`, {
         method: "DELETE",
         headers: {
@@ -306,7 +314,7 @@ export default function ManagePropertiesPage() {
 
                     if (property.media && property.media.length > 0) {
                       const featuredImage = property.media.find(
-                        (item) => item.is_featured && item.type === "image"
+                        (item) => item.type === "image"
                       );
                       if (featuredImage) {
                         imageUrl = featuredImage.url;

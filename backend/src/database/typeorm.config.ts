@@ -1,3 +1,5 @@
+import { TypeOrmModuleOptions } from "@nestjs/typeorm";
+
 export const typeOrmConfig = (env: NodeJS.ProcessEnv): TypeOrmModuleOptions => {
   const isDev = env.NODE_ENV === "development";
   const isStage = env.NODE_ENV === "stage";

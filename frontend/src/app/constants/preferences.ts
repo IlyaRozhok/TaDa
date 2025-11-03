@@ -227,58 +227,63 @@ export const BEDROOM_OPTIONS = [
 
 // Work & Study options
 export const WORK_STUDY_OPTIONS = [
-  { value: "co-working", label: "Co-working Space" },
-  { value: "high-speed-wifi", label: "High Speed Wi-Fi" },
-  { value: "meeting-rooms", label: "Meeting Rooms" },
-  { value: "business-center", label: "Business Center" },
+  { value: "co-working", label: "Co-working Space", icon: Wifi },
+  { value: "high-speed-wifi", label: "High Speed Wi-Fi", icon: Wifi },
+  { value: "meeting-rooms", label: "Meeting Rooms", icon: Wifi },
+  { value: "business-center", label: "Business Center", icon: Wifi },
 ] as const;
 
 // Convenience options
 export const CONVENIENCE_FEATURES_OPTIONS = [
-  { value: "parking", label: "Parking Space" },
-  { value: "laundry", label: "Laundry Facilities" },
-  { value: "security", label: "24/7 Security" },
-  { value: "storage", label: "Storage Space" },
-  { value: "concierge", label: "Concierge Service" },
+  { value: "parking", label: "Parking Space", icon: Car },
+  { value: "laundry", label: "Laundry Facilities", icon: Home },
+  { value: "security", label: "24/7 Security", icon: Home },
+  { value: "storage", label: "Storage Space", icon: Home },
+  { value: "concierge", label: "Concierge Service", icon: Home },
 ] as const;
 
 // Pet-friendly options
 export const PET_FRIENDLY_OPTIONS = [
-  { value: "pet-park", label: "Pet Park" },
-  { value: "pet-sitting", label: "Pet Sitting" },
-  { value: "pet-washing", label: "Pet Washing" },
-  { value: "pet-friendly", label: "Pet Friendly" },
+  { value: "pet-park", label: "Pet Park", icon: Dog },
+  { value: "pet-sitting", label: "Pet Sitting", icon: Dog },
+  { value: "pet-washing", label: "Pet Washing", icon: Dog },
+  { value: "pet-friendly", label: "Pet Friendly", icon: Dog },
 ] as const;
 
 // Luxury & Premium options
 export const LUXURY_PREMIUM_OPTIONS = [
-  { value: "concierge", label: "Concierge" },
-  { value: "spa", label: "Luxury Spa" },
-  { value: "private-dining", label: "Private Dining" },
-  { value: "valet", label: "Valet Service" },
-  { value: "wine-cellar", label: "Wine Cellar" },
+  { value: "concierge", label: "Concierge", icon: Crown },
+  { value: "spa", label: "Luxury Spa", icon: Crown },
+  { value: "private-dining", label: "Private Dining", icon: Crown },
+  { value: "valet", label: "Valet Service", icon: Crown },
+  { value: "wine-cellar", label: "Wine Cellar", icon: Crown },
 ] as const;
 
 // Ideal Living Environment options
 export const IDEAL_LIVING_OPTIONS = [
-  { value: "quiet-professional", label: "Quiet Professional" },
-  { value: "social-friendly", label: "Social and Friendly" },
-  { value: "family-oriented", label: "Family Oriented" },
-  { value: "student-lifestyle", label: "Student Lifestyle" },
-  { value: "creative-artistic", label: "Creative and Artistic" },
-  { value: "no-preference", label: "No Preference" },
+  { value: "quiet-professional", label: "Quiet Professional", icon: Home },
+  { value: "social-friendly", label: "Social and Friendly", icon: Coffee },
+  { value: "family-oriented", label: "Family Oriented", icon: Home },
+  { value: "student-lifestyle", label: "Student Lifestyle", icon: Home },
+  { value: "creative-artistic", label: "Creative and Artistic", icon: Home },
+  { value: "no-preference", label: "No Preference", icon: Home },
 ] as const;
 
 // Smoking options
 export const SMOKING_OPTIONS = [
-  { value: "no", label: "No" },
-  { value: "yes", label: "Yes" },
-  { value: "no-but-okay", label: "I don't smoke but I'm okay with it" },
+  { value: "no", label: "No", icon: Home },
+  { value: "yes", label: "Yes", icon: Home },
+  {
+    value: "no-but-okay",
+    label: "I don't smoke but I'm okay with it",
+    icon: Home,
+  },
   {
     value: "no-prefer-non-smoking",
     label: "I don't smoke and prefer non-smoking environments",
+    icon: Home,
   },
-  { value: "no-preference", label: "No Preference" },
+  { value: "no-preference", label: "No Preference", icon: Home },
 ] as const;
 
 // Hobby options with icons

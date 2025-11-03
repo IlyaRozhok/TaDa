@@ -8,6 +8,11 @@ interface User {
   status: string;
   created_at: string;
   updated_at: string;
+  // Google OAuth fields
+  provider?: string;
+  google_id?: string;
+  avatar_url?: string;
+  email_verified?: boolean;
   // Computed properties from getter methods
   full_name?: string;
   roles?: string[];

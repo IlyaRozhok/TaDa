@@ -19,12 +19,22 @@ export default function SimpleDashboardRouter({
   const router = useRouter();
 
   useEffect(() => {
+    console.log("🔍 SimpleDashboardRouter check:", {
+      isAuthenticated,
+      hasUser: !!user,
+      userRole: user?.role,
+      requiredRole,
+      userEmail: user?.email,
+    });
+
     if (!isAuthenticated) {
+      console.log("❌ Not authenticated, redirecting to /");
       router.replace("/");
       return;
     }
 
     if (!user) {
+      console.log("⏳ User still loading");
       return; // Still loading
     }
 
@@ -33,8 +43,20 @@ export default function SimpleDashboardRouter({
       const userRole = user.role || "tenant";
       const hasAccess = userRole === requiredRole || userRole === "admin";
 
+      console.log("🔍 Role check:", {
+        userRole,
+        requiredRole,
+        hasAccess,
+        isAdmin: userRole === "admin",
+      });
+
       if (!hasAccess) {
+        console.log(
+          `❌ Access denied, redirecting to /app/dashboard/${userRole}`
+        );
         router.replace(`/app/dashboard/${userRole}`);
+      } else {
+        console.log("✅ Access granted");
       }
     }
   }, [isAuthenticated, user, requiredRole, router]);

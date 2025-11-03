@@ -117,7 +117,7 @@ export default function EnhancedPropertyCard({
 
   const getMainImage = () => {
     if (property.media && property.media.length > 0) {
-      const featuredImage = property.media.find((media) => media.is_featured);
+      const featuredImage = property.media?.[0];
       return featuredImage ? featuredImage.url : property.media[0].url;
     }
     if (property.images && property.images.length > 0) {

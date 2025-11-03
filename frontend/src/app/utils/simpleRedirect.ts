@@ -52,7 +52,6 @@ export function getRedirectPath(user: any): string {
   // Определяем основную роль (с поддержкой множественных ролей)
   const primaryRole = getPrimaryRole(user);
 
-  console.log(`🔍 Role resolution: "${user.role}" → "${primaryRole}"`);
 
   // В зависимости от основной роли - на соответствующий дашборд
   switch (primaryRole) {
@@ -79,5 +78,11 @@ export function redirectAfterLogin(user: any, router: any) {
 
   const path = getRedirectPath(user);
   console.log(`🔄 Simple redirect: ${user?.email} (${user?.role}) → ${path}`);
+  console.log(`🔍 User details:`, {
+    email: user?.email,
+    role: user?.role,
+    id: user?.id,
+    provider: user?.provider,
+  });
   router.replace(path);
 }

@@ -62,18 +62,14 @@ export default function PropertiesMapPage() {
         setIsLoading(true);
         setError(null);
 
-        // Try to get all properties
-        console.log("Calling propertiesAPI.getAll()...");
         const response = await propertiesAPI.getAll();
-        console.log("API response:", response);
+
 
         const propertiesData = response.data?.data || response.data || [];
-        console.log("Properties data:", propertiesData);
 
         if (propertiesData.length > 0) {
           console.log("Properties found, starting geocoding...");
 
-          // Check if Google Maps is loaded
           if (
             typeof window !== "undefined" &&
             window.google &&
@@ -85,13 +81,9 @@ export default function PropertiesMapPage() {
             // Use geocoding service to get coordinates for all properties
             const propertiesWithCoords =
               await geocodingService.geocodeProperties(propertiesData);
-            console.log("Properties with coordinates:", propertiesWithCoords);
             setProperties(propertiesWithCoords);
             setFilteredProperties(propertiesWithCoords);
           } else {
-            console.log(
-              "Google Maps API not loaded, using fallback coordinates..."
-            );
             // Use fallback coordinates if Google Maps is not loaded
             const fallbackProperties = propertiesData.map(
               (property: Property, index: number) => ({

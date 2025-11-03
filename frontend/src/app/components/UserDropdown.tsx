@@ -83,7 +83,7 @@ export default function UserDropdown() {
 
   const handleSettings = () => {
     setIsOpen(false);
-    router.push("/app/security");
+    router.push("/app/profile");
   };
 
   const handlePreferences = () => {
@@ -107,14 +107,39 @@ export default function UserDropdown() {
         className={styles.avatarButton}
       >
         <div className={styles.userAvatarSmall}>
-          {user.full_name
-            ? user.full_name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2)
-            : user.email?.[0].toUpperCase() || "U"}
+          {user.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt="Profile"
+              className="w-full h-full object-cover rounded-full"
+              onError={(e) => {
+                // Fallback to initials if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                const parent = target.parentElement;
+                if (parent) {
+                  const initials = parent.querySelector(".fallback-initials");
+                  if (initials) {
+                    (initials as HTMLElement).style.display = "flex";
+                  }
+                }
+              }}
+            />
+          ) : null}
+          <div
+            className={`fallback-initials w-full h-full flex items-center justify-center ${
+              user.avatar_url ? "hidden" : ""
+            }`}
+          >
+            {user.full_name
+              ? user.full_name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2)
+              : user.email?.[0].toUpperCase() || "U"}
+          </div>
         </div>
         <span className="text-sm text-gray-700 hidden sm:block">
           {user.full_name || user.email?.split("@")[0] || "User"}
@@ -128,20 +153,50 @@ export default function UserDropdown() {
           <div className={styles.dropdownHeader}>
             <div className="flex items-center space-x-4">
               <div className={styles.userAvatar}>
-                {user.full_name
-                  ? user.full_name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)
-                  : user.email?.[0].toUpperCase() || "U"}
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt="Profile"
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      // Fallback to initials if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                      const parent = target.parentElement;
+                      if (parent) {
+                        const initials = parent.querySelector(
+                          ".fallback-initials-large"
+                        );
+                        if (initials) {
+                          (initials as HTMLElement).style.display = "flex";
+                        }
+                      }
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`fallback-initials-large w-full h-full flex items-center justify-center ${
+                    user.avatar_url ? "hidden" : ""
+                  }`}
+                >
+                  {user.full_name
+                    ? user.full_name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)
+                    : user.email?.[0].toUpperCase() || "U"}
+                </div>
               </div>
               <div className={styles.userInfo}>
                 <p className={styles.userName}>{user.full_name || "User"}</p>
                 <p className={styles.userEmail}>{user.email}</p>
                 <p className={styles.userRole}>
                   {user.roles?.includes("operator") ? "Operator" : "Tenant"}
+                  {user.provider === "google" && (
+                    <span className="ml-2 text-xs text-gray-500">(Google)</span>
+                  )}
                 </p>
               </div>
             </div>

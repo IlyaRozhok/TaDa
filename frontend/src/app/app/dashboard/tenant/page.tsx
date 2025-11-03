@@ -1,246 +1,36 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
-import { Property } from "../../../types";
-import { propertiesAPI, preferencesAPI, matchingAPI } from "../../../lib/api";
 import { selectUser } from "../../../store/slices/authSlice";
-import { useDebounce } from "../../../hooks/useDebounce";
-import { waitForSessionManager } from "../../../components/providers/SessionManager";
+import { useTenantDashboard } from "../../../hooks/useTenantDashboard";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import TenantPerfectMatchSection from "../../../components/TenantPerfectMatchSection";
 import ListedPropertiesSection from "../../../components/ListedPropertiesSection";
+import LoadingPage from "../../../components/ui/LoadingSpinner";
+import ErrorBoundary from "../../../components/ErrorBoundary";
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
+  const {
+    state,
+    setSearchTerm,
+    loadProperties,
+    clearError,
+  } = useTenantDashboard();
 
-  // State management
-  const [searchTerm, setSearchTerm] = useState("");
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [matchedProperties, setMatchedProperties] = useState<
-    Array<{ property: Property; matchScore: number }>
-  >([]);
-  const [userPreferences, setUserPreferences] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
-  const [preferencesCount, setPreferencesCount] = useState(0);
-  const [sessionLoading, setSessionLoading] = useState(true);
-  const [hasCompletePreferences, setHasCompletePreferences] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isSearchTriggered, setIsSearchTriggered] = useState(false);
-
-  // Debounced search
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  // Initialize dashboard
-  useEffect(() => {
-    const initializeDashboard = async () => {
-      try {
-        setSessionLoading(true);
-        await waitForSessionManager();
-
-        // Load user preferences
-        try {
-          const preferencesResponse = await preferencesAPI.get();
-          setUserPreferences(preferencesResponse.data);
-
-          // Count filled preferences (rough estimate)
-          const prefs = preferencesResponse.data;
-          let count = 0;
-          let requiredFieldsCount = 0;
-
-          // Required fields for "complete" status
-          if (prefs?.min_price && prefs?.max_price) {
-            count++;
-            requiredFieldsCount++;
-          }
-          if (prefs?.min_bedrooms) {
-            count++;
-            requiredFieldsCount++;
-          }
-          if (prefs?.property_type?.length > 0) count++;
-          if (prefs?.lifestyle_features?.length > 0) count++;
-          if (prefs?.primary_postcode) {
-            count++;
-            requiredFieldsCount++;
-          }
-
-          setPreferencesCount(count);
-
-          // Check if all required fields are filled (min 3 required fields)
-          const isComplete = requiredFieldsCount >= 3;
-          setHasCompletePreferences(isComplete);
-
-          console.log("✅ User preferences loaded:", preferencesResponse.data);
-        } catch (error) {
-          console.error("❌ Failed to load preferences:", error);
-        }
-
-        // Load matched properties (only if user has preferences)
-        try {
-          if (userPreferences && preferencesCount > 0) {
-            const matchingResponse = await matchingAPI.getMatches();
-            setMatchedProperties(matchingResponse.data || []);
-            console.log("✅ Matched properties loaded:", matchingResponse.data);
-          } else {
-            setMatchedProperties([]);
-          }
-        } catch (error) {
-          console.error("❌ Failed to load matched properties:", error);
-          // Don't fail the whole dashboard if matching fails
-          setMatchedProperties([]);
-        }
-
-        // Load all properties initially (always, regardless of preferences)
-        console.log("🏠 Loading initial properties...");
-        await loadProperties("");
-
-        console.log("📊 Dashboard initialization complete:", {
-          hasPreferences: !!userPreferences,
-          preferencesCount,
-          propertiesCount: properties.length,
-          matchedPropertiesCount: matchedProperties.length,
-          propertiesState: properties,
-          propertiesType: typeof properties,
-          isArray: Array.isArray(properties),
-        });
-      } catch (error) {
-        console.error("❌ Failed to initialize dashboard:", error);
-        setError("Failed to load dashboard data");
-      } finally {
-        setSessionLoading(false);
-      }
-    };
-
-    if (user?.role === "tenant") {
-      initializeDashboard();
-    }
-  }, [user]);
-
-  // Load properties with search
-  const loadProperties = async (search: string, page: number = 1) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Try to load properties with search
-      let response;
-      try {
-        response = await propertiesAPI.getPublic(page, 12, search);
-      } catch (searchError) {
-        console.warn("⚠️ Search failed, trying to load all properties...");
-        // Fallback: load all properties without search
-        response = await propertiesAPI.getPublic(page, 12);
-      }
-
-      // Extract properties from response - API returns {data: [...], total: number, ...}
-      const propertiesData = response.data?.data || response.data || [];
-      const totalCount = response.data?.total || propertiesData.length;
-
-      setProperties(propertiesData);
-      setTotalCount(totalCount);
-      setCurrentPage(page);
-      setTotalPages(response.data?.totalPages || Math.ceil(totalCount / 12));
-
-      console.log("✅ Properties loaded:", {
-        count: propertiesData.length,
-        totalCount,
-        searchTerm: search,
-        hasData: propertiesData.length > 0,
-        responseStructure: {
-          hasData: !!response.data,
-          hasDataData: !!response.data?.data,
-          responseDataType: typeof response.data,
-          dataDataType: typeof response.data?.data,
-        },
-      });
-
-      // If no properties found, try to load featured properties as fallback
-      if (propertiesData.length === 0 && !search) {
-        console.log(
-          "🔄 No properties found, loading featured properties as fallback..."
-        );
-        try {
-          const featuredResponse = await propertiesAPI.getFeatured();
-          // Extract featured properties data
-          const featuredData =
-            featuredResponse.data?.data || featuredResponse.data || [];
-          if (featuredData.length > 0) {
-            setProperties(featuredData);
-            setTotalCount(featuredData.length);
-            console.log(
-              "✅ Featured properties loaded as fallback:",
-              featuredData.length
-            );
-          } else {
-            console.warn("⚠️ No featured properties available either");
-            // Try to load any properties without filters
-            try {
-              const allResponse = await propertiesAPI.getAll();
-              // Extract all properties data
-              const allData = allResponse.data?.data || allResponse.data || [];
-              if (allData.length > 0) {
-                setProperties(allData);
-                setTotalCount(allData.length);
-                console.log(
-                  "✅ All properties loaded as final fallback:",
-                  allData.length
-                );
-              }
-            } catch (allError) {
-              console.warn("⚠️ All properties fallback also failed");
-            }
-          }
-        } catch (featuredError) {
-          console.warn("⚠️ Featured properties fallback also failed");
-        }
-      }
-    } catch (error: any) {
-      console.error("❌ Failed to load properties:", error);
-      setError("Failed to load properties");
-      setProperties([]);
-      setTotalCount(0);
-    } finally {
-      setLoading(false);
-    }
+  // Handle search term changes
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
   };
 
-  // Load properties when search term changes
-  useEffect(() => {
-    if (user?.role === "tenant" && !sessionLoading) {
-      setCurrentPage(1); // Reset to first page on new search
-      setIsSearchTriggered(true);
-      loadProperties(debouncedSearchTerm, 1);
-    }
-  }, [debouncedSearchTerm, user, sessionLoading]);
-
-  // Load properties on page change (but not if it was triggered by search)
-  useEffect(() => {
-    if (user?.role === "tenant" && !sessionLoading && !isSearchTriggered) {
-      loadProperties(debouncedSearchTerm, currentPage);
-    }
-    // Reset the search trigger flag after handling
-    if (isSearchTriggered) {
-      setIsSearchTriggered(false);
-    }
-  }, [currentPage, user, sessionLoading, isSearchTriggered]);
-
   // Loading state
-  if (!user || sessionLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+  if (!user || state.sessionLoading) {
+    return <LoadingPage text="Loading dashboard..." />;
   }
 
   // Error state
-  if (error) {
+  if (state.error) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -262,9 +52,9 @@ function TenantDashboardContent() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Something went wrong
           </h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 mb-6">{state.error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={clearError}
             className="bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
             Try Again
@@ -275,37 +65,39 @@ function TenantDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <TenantUniversalHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        preferencesCount={preferencesCount}
-      />
-
-      {/* Main Content */}
-      <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Perfect Match Section - only show if preferences are NOT complete */}
-        {!hasCompletePreferences && (
-          <TenantPerfectMatchSection
-            hasPreferences={!!userPreferences && preferencesCount > 0}
-            preferencesCount={preferencesCount}
-          />
-        )}
-
-        {/* Listed Properties Section */}
-        <ListedPropertiesSection
-          properties={properties}
-          matchedProperties={matchedProperties}
-          loading={loading}
-          userPreferences={userPreferences}
-          totalCount={totalCount}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
+    <ErrorBoundary>
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <TenantUniversalHeader
+          searchTerm={state.searchTerm}
+          onSearchChange={handleSearchChange}
+          preferencesCount={state.preferencesCount}
         />
-      </main>
-    </div>
+
+        {/* Main Content */}
+        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Perfect Match Section - only show if preferences are NOT complete */}
+          {!state.hasCompletePreferences && (
+            <TenantPerfectMatchSection
+              hasPreferences={!!state.userPreferences && state.preferencesCount > 0}
+              preferencesCount={state.preferencesCount}
+            />
+          )}
+
+          {/* Listed Properties Section */}
+          <ListedPropertiesSection
+            properties={state.properties}
+            matchedProperties={state.matchedProperties}
+            loading={state.loading}
+            userPreferences={state.userPreferences}
+            totalCount={state.totalCount}
+            currentPage={state.currentPage}
+            totalPages={state.totalPages}
+            onPageChange={(page) => loadProperties(state.searchTerm, page)}
+          />
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
 

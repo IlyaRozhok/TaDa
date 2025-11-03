@@ -12,8 +12,6 @@ import { propertyMediaAPI } from "../lib/api";
 import {
   Upload,
   X,
-  Star,
-  StarOff,
   GripVertical,
   Image as ImageIcon,
   Video as VideoIcon,
@@ -51,7 +49,7 @@ export default function MediaManager({
 }: MediaManagerProps) {
   console.log("🎬 MediaManager props:", {
     propertyId,
-    media,
+    mediaCount: media?.length || 0,
     accessToken: !!accessToken,
     disabled,
   });
@@ -246,27 +244,6 @@ export default function MediaManager({
     }
   };
 
-  const handleSetFeatured = async (mediaId: string) => {
-    if (disabled) return;
-
-    try {
-      const updatedMedia = await propertyMediaAPI.setFeaturedMedia(
-        propertyId,
-        mediaId
-      );
-
-      // Update media list with new featured status
-      const newMedia = media.map((m) => ({
-        ...m,
-        is_featured: m.id === mediaId,
-      }));
-      onMediaUpdate(newMedia);
-      showMessage("success", "Featured image updated");
-    } catch (error) {
-      showMessage("error", "Failed to update featured image");
-    }
-  };
-
   const handleDragStart = (e: React.DragEvent, mediaId: string) => {
     setDraggedItem(mediaId);
     e.dataTransfer.effectAllowed = "move";
@@ -448,9 +425,7 @@ export default function MediaManager({
             <h4 className="text-lg font-semibold text-gray-900">
               Property Photos ({sortedMedia.length})
             </h4>
-            <div className="text-xs text-gray-500">
-              Drag photos to reorder • Click star to set featured
-            </div>
+            <div className="text-xs text-gray-500">Drag photos to reorder</div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {sortedMedia.map((mediaItem) => (
@@ -529,29 +504,6 @@ export default function MediaManager({
 
                 {/* Overlay Controls */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                  {/* Featured Star - Top Left */}
-                  <div className="absolute top-2 left-2">
-                    <button
-                      onClick={() => handleSetFeatured(mediaItem.id)}
-                      className={`p-2 rounded-full transition-all duration-200 ${
-                        mediaItem.is_featured
-                          ? "bg-yellow-500/90 text-white shadow-lg scale-110"
-                          : "bg-white/20 text-white hover:bg-white/30 hover:scale-105"
-                      }`}
-                      title={
-                        mediaItem.is_featured
-                          ? "Featured image"
-                          : "Set as featured"
-                      }
-                    >
-                      {mediaItem.is_featured ? (
-                        <Star className="w-4 h-4 fill-current" />
-                      ) : (
-                        <StarOff className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-
                   {/* Actions - Top Right */}
                   <div className="absolute top-2 right-2 flex gap-1">
                     <button
@@ -598,11 +550,6 @@ export default function MediaManager({
                   <p className="text-xs text-gray-500">
                     {formatFileSize(Number(mediaItem.file_size))}
                   </p>
-                  {mediaItem.is_featured && (
-                    <p className="text-xs text-yellow-600 font-medium">
-                      Featured
-                    </p>
-                  )}
                 </div>
               </div>
             ))}
@@ -718,28 +665,6 @@ export default function MediaManager({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSetFeatured(fullscreenImage.id);
-                    }}
-                    className={`p-2 rounded-full transition-colors ${
-                      fullscreenImage.is_featured
-                        ? "bg-yellow-500 text-white"
-                        : "bg-gray-600 text-gray-300 hover:bg-gray-500"
-                    }`}
-                    title={
-                      fullscreenImage.is_featured
-                        ? "Featured image"
-                        : "Set as featured"
-                    }
-                  >
-                    {fullscreenImage.is_featured ? (
-                      <Star className="w-5 h-5 fill-current" />
-                    ) : (
-                      <StarOff className="w-5 h-5" />
-                    )}
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
                       setDeleteConfirm(fullscreenImage);
                       setFullscreenImage(null);
                     }}
@@ -792,12 +717,6 @@ export default function MediaManager({
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {deleteConfirm.original_filename}
                     </p>
-                    {deleteConfirm.is_featured && (
-                      <p className="text-xs text-yellow-600 flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-current" />
-                        Featured image
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>

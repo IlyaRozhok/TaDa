@@ -12,3 +12,4 @@ import { Property } from "../../entities/property.entity";
   exports: [FavouritesService],
 })
 export class FavouritesModule {}
+

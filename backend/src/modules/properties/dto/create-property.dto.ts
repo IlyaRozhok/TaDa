@@ -141,3 +141,4 @@ export class CreatePropertyDto {
   @IsOptional()
   is_btr?: boolean;
 }
+

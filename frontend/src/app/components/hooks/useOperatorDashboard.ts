@@ -65,7 +65,7 @@ export function useOperatorDashboard() {
       results.forEach((result, index) => {
         const names = ["Dashboard Counts", "Tenants", "Properties"];
         if (result.status === "fulfilled") {
-          console.log(`✅ ${names[index]} loaded successfully`);
+          console.log(`${names[index]} loaded successfully`);
         } else {
           console.error(`❌ ${names[index]} failed:`, result.reason);
         }

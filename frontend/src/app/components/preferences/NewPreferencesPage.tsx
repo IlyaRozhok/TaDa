@@ -5,13 +5,19 @@ import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import TenantUniversalHeader from "../TenantUniversalHeader";
-import { DateRangePicker } from "./ui/DateRangePicker";
-import { CustomDropdown } from "./ui/CustomDropdown";
-import { MetroDropdown } from "./ui/MetroDropdown";
-import { LocationDropdown } from "./ui/LocationDropdown";
-import { BedroomsDropdown, FurnishingDropdown } from "./ui";
-
 import { usePreferences } from "@/app/hooks/usePreferences";
+import { waitForSessionManager } from "@/app/components/providers/SessionManager";
+import { getRedirectPath } from "@/app/utils/simpleRedirect";
+import {
+  LocationStep,
+  CommuteTimeStep,
+  BudgetStep,
+  PropertyTypeStep,
+  ApartmentSpecStep,
+  MultiSelectStep,
+  PersonalPreferencesStep,
+  AboutYouStep,
+} from "./steps";
 import {
   BUILDING_STYLE_OPTIONS,
   LIFESTYLE_OPTIONS,
@@ -20,15 +26,10 @@ import {
   CONVENIENCE_FEATURES_OPTIONS,
   PET_FRIENDLY_OPTIONS,
   LUXURY_PREMIUM_OPTIONS,
-  PROPERTY_TYPE_OPTIONS,
-  SECONDARY_LOCATION_OPTIONS,
-  COMMUTE_LOCATION_OPTIONS,
   IDEAL_LIVING_OPTIONS,
   SMOKING_OPTIONS,
-  HOBBY_ICON_OPTIONS,
   TOTAL_STEPS_NEW as TOTAL_STEPS,
 } from "@/app/constants/preferences";
-import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 
 export default function NewPreferencesPage() {
   const router = useRouter();
@@ -125,7 +126,8 @@ export default function NewPreferencesPage() {
   };
 
   const handleGoBack = () => {
-    router.push("/app/dashboard");
+    const path = getRedirectPath(user);
+    router.replace(path);
   };
 
   const handleFinish = async () => {
@@ -160,23 +162,104 @@ export default function NewPreferencesPage() {
       case 5:
         return <ApartmentSpecStep {...stepProps} />;
       case 6:
-        return <BuildingStyleStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Building style preferences"
+            description="Choose your preferred building types"
+            stepTitle="Building style preferences"
+            options={BUILDING_STYLE_OPTIONS}
+            category="building_style"
+            {...stepProps}
+          />
+        );
       case 7:
-        return <LifestyleWellnessStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Lifestyle & Wellness"
+            description="Select wellness and fitness amenities that matter to you"
+            stepTitle="Lifestyle & Wellness"
+            options={LIFESTYLE_OPTIONS}
+            category="lifestyle_features"
+            {...stepProps}
+          />
+        );
       case 8:
-        return <SocialCommunityStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Social & Community"
+            description="Choose social spaces and community features you'd enjoy"
+            stepTitle="Social & Community"
+            options={SOCIAL_OPTIONS}
+            category="social_features"
+            {...stepProps}
+          />
+        );
       case 9:
-        return <WorkStudyStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Work & Study"
+            description="Select work and study facilities you need for productivity"
+            stepTitle="Work & Study"
+            options={WORK_STUDY_OPTIONS}
+            category="work_features"
+            {...stepProps}
+          />
+        );
       case 10:
-        return <ConvenienceStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Convenience"
+            description="Choose convenience features that make daily life easier"
+            stepTitle="Convenience"
+            options={CONVENIENCE_FEATURES_OPTIONS}
+            category="convenience_features"
+            {...stepProps}
+          />
+        );
       case 11:
-        return <PetFriendlyStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Pet-Friendly"
+            description="Select pet-friendly amenities if you have or plan to get pets"
+            stepTitle="Pet-Friendly"
+            options={PET_FRIENDLY_OPTIONS}
+            category="pet_friendly_features"
+            {...stepProps}
+          />
+        );
       case 12:
-        return <LuxuryPremiumStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Luxury & Premium"
+            description="Choose luxury amenities and premium services you value"
+            stepTitle="Luxury & Premium"
+            options={LUXURY_PREMIUM_OPTIONS}
+            category="luxury_features"
+            {...stepProps}
+          />
+        );
       case 13:
-        return <IdealLivingStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Ideal Living Environment"
+            description="The type of household atmosphere you prefer (select multiple)"
+            stepTitle="Ideal Living Environment"
+            options={IDEAL_LIVING_OPTIONS}
+            category="ideal_living_environment"
+            {...stepProps}
+          />
+        );
       case 14:
-        return <SmokingStep {...stepProps} />;
+        return (
+          <MultiSelectStep
+            title="Smoking"
+            description="Important for matching with smoke-friendly accommodations"
+            stepTitle="Do you smoke?"
+            options={SMOKING_OPTIONS}
+            category="smoker"
+            {...stepProps}
+          />
+        );
       case 15:
         return <PersonalPreferencesStep {...stepProps} />;
       case 16:
@@ -248,721 +331,3 @@ export default function NewPreferencesPage() {
     </div>
   );
 }
-
-// Step Components
-const LocationStep = ({ formData, onUpdate }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Location and Commute</h1>
-    <p className="text-gray-500 mb-6">
-      Where do you want to live and where will you commute to?
-    </p>
-
-    <div className="text-left">
-      <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-          Location and date
-        </h2>
-
-        <div className="space-y-6">
-          <CustomDropdown
-            label="Primary postcode"
-            value={formData.primary_postcode || ""}
-            onChange={(value) => onUpdate("primary_postcode", value)}
-            options={[
-              {
-                value: "NW1 6XE",
-                label: "NW1 6XE",
-                postcode: "NW1 6XE",
-                address: "221B Baker Street, Marylebone",
-              },
-              {
-                value: "SW1A 2AA",
-                label: "SW1A 2AA",
-                postcode: "SW1A 2AA",
-                address: "10 Downing Street, Westminster",
-              },
-              {
-                value: "NW1 0JH",
-                label: "NW1 0JH",
-                postcode: "NW1 0JH",
-                address: "30 Camden High Street, Camden Town",
-              },
-              {
-                value: "E1 6RF",
-                label: "E1 6RF",
-                postcode: "E1 6RF",
-                address: "12 Brick Lane, Shoreditch",
-              },
-              {
-                value: "W11 3JZ",
-                label: "W11 3JZ",
-                postcode: "W11 3JZ",
-                address: "89 Notting Hill Gate, Notting Hill",
-              },
-              {
-                value: "E2 8AA",
-                label: "E2 8AA",
-                postcode: "E2 8AA",
-                address: "25 Kingsland Road, Dalston",
-              },
-              {
-                value: "SE1 1UN",
-                label: "SE1 1UN",
-                postcode: "SE1 1UN",
-                address: "50 Southwark Street, South Bank",
-              },
-            ]}
-          />
-
-          <LocationDropdown
-            label="Commute location"
-            value={formData.commute_location || "no-preference"}
-            options={COMMUTE_LOCATION_OPTIONS}
-            onChange={(value) => onUpdate("commute_location", value)}
-            placeholder="No Preference"
-          />
-
-          <MetroDropdown
-            label="Secondary location (optional)"
-            value={formData.secondary_location || "no-preference"}
-            options={SECONDARY_LOCATION_OPTIONS}
-            onChange={(value) => onUpdate("secondary_location", value)}
-            placeholder="No Preference"
-          />
-
-          <DateRangePicker
-            label="Move-in Date"
-            value={{
-              start: formData.move_in_date || null,
-              end: formData.move_out_date || null,
-            }}
-            onChange={(range) => {
-              onUpdate("move_in_date", range.start);
-              // Only set move_out_date if it's different from move_in_date (range selection)
-              onUpdate(
-                "move_out_date",
-                range.start === range.end ? null : range.end
-              );
-            }}
-            placeholder="Select date range"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const CommuteTimeStep = ({ formData, onUpdate }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Maximum Commute Time</h1>
-    <p className="text-gray-500 mb-6">
-      How long are you willing to commute using different transport methods?
-    </p>
-
-    <div className="text-left">
-      <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-          Commute preferences
-        </h2>
-
-        <div className="space-y-6">
-          <div className="relative">
-            <input
-              type="number"
-              min="1"
-              max="120"
-              value={formData.commute_time_walk || ""}
-              onChange={(e) =>
-                onUpdate(
-                  "commute_time_walk",
-                  Number(e.target.value) || undefined
-                )
-              }
-              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
-              placeholder=""
-            />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.commute_time_walk
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Walking (minutes)
-            </label>
-          </div>
-
-          <div className="relative">
-            <input
-              type="number"
-              min="1"
-              max="120"
-              value={formData.commute_time_cycle || ""}
-              onChange={(e) =>
-                onUpdate(
-                  "commute_time_cycle",
-                  Number(e.target.value) || undefined
-                )
-              }
-              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
-              placeholder=""
-            />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.commute_time_cycle
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Cycling (minutes)
-            </label>
-          </div>
-
-          <div className="relative">
-            <input
-              type="number"
-              min="1"
-              max="120"
-              value={formData.commute_time_tube || ""}
-              onChange={(e) =>
-                onUpdate(
-                  "commute_time_tube",
-                  Number(e.target.value) || undefined
-                )
-              }
-              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
-              placeholder=""
-            />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.commute_time_tube
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Tube/Public Transport (minutes)
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const BudgetStep = ({ formData, onUpdate }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Your Budget</h1>
-    <p className="text-gray-500 mb-6">
-      Select how you'll be using platform. For now one account - one role
-    </p>
-
-    <div className="space-y-8 text-left">
-      <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-          Budget range
-        </h2>
-
-        <div className="space-y-6">
-          <div className="relative">
-            <input
-              type="number"
-              value={formData.min_price || ""}
-              onChange={(e) => onUpdate("min_price", Number(e.target.value))}
-              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
-              placeholder=""
-            />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.min_price
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Minimum (£/Month)
-            </label>
-          </div>
-
-          <div className="relative">
-            <input
-              type="number"
-              value={formData.max_price || ""}
-              onChange={(e) => onUpdate("max_price", Number(e.target.value))}
-              className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
-              placeholder=""
-            />
-            <label
-              className={`absolute left-6 transition-all duration-200 pointer-events-none ${
-                formData.max_price
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 translate-y-1 text-base text-gray-400"
-              }`}
-            >
-              Maximum (£/Month)
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const PropertyTypeStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Property type</h1>
-    <p className="text-gray-500 mb-6">
-      Select all property types you're interested in
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Select property types
-      </h2>
-
-      <div className="space-y-4">
-        {PROPERTY_TYPE_OPTIONS.map((type) => (
-          <button
-            key={type}
-            type="button"
-            onClick={() => onToggle("property_type", type)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.property_type?.includes(type)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{type}</span>
-              {formData.property_type?.includes(type) && (
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const ApartmentSpecStep = ({ formData, onUpdate }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">
-      Specify your apartment
-    </h1>
-    <p className="text-gray-500 mb-6">
-      Select how you'll be using platform. For now one account - one role
-    </p>
-
-    <div className="text-left">
-      <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-          Bedrooms and furnishing
-        </h2>
-
-        <div className="space-y-8">
-          <BedroomsDropdown
-            label="Bedrooms (min)"
-            value={formData.min_bedrooms || ""}
-            onChange={(value) =>
-              onUpdate("min_bedrooms", value === "" ? undefined : value)
-            }
-            placeholder="No Preference"
-            min={true}
-          />
-
-          <BedroomsDropdown
-            label="Bedrooms (max)"
-            value={formData.max_bedrooms || ""}
-            onChange={(value) =>
-              onUpdate("max_bedrooms", value === "" ? undefined : value)
-            }
-            placeholder="No Preference"
-            min={false}
-          />
-
-          <FurnishingDropdown
-            label="Furnishing"
-            value={formData.furnishing || "no-preference"}
-            onChange={(value) => onUpdate("furnishing", value)}
-            placeholder="No Preference"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const BuildingStyleStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">
-      Building style preferences
-    </h1>
-    <p className="text-gray-500 mb-16">Choose your preferred building types</p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Building style preferences
-      </h2>
-
-      <div className="space-y-4">
-        {BUILDING_STYLE_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle("building_style", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.building_style?.includes(option.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const LifestyleWellnessStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Lifestyle & Wellness</h1>
-    <p className="text-gray-500 mb-6">
-      Select wellness and fitness amenities that matter to you
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Lifestyle & Wellness
-      </h2>
-
-      <div className="space-y-4">
-        {LIFESTYLE_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle("lifestyle_features", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.lifestyle_features?.includes(option.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const SocialCommunityStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Social & Community</h1>
-    <p className="text-gray-500 mb-6">
-      Choose social spaces and community features you'd enjoy
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Social & Community
-      </h2>
-
-      <div className="space-y-4">
-        {SOCIAL_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle("social_features", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.social_features?.includes(option.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-// New steps according to screenshots
-
-const WorkStudyStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Work & Study</h1>
-    <p className="text-gray-500 mb-6">
-      Select work and study facilities you need for productivity
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Work & Study
-      </h2>
-
-      <div className="space-y-4">
-        {WORK_STUDY_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle("work_features", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.work_features?.includes(option.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const ConvenienceStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Convenience</h1>
-    <p className="text-gray-500 mb-6">
-      Choose convenience features that make daily life easier
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Convenience
-      </h2>
-
-      <div className="space-y-4">
-        {CONVENIENCE_FEATURES_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle("convenience_features", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.convenience_features?.includes(option.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const PetFriendlyStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Pet-Friendly</h1>
-    <p className="text-gray-500 mb-6">
-      Select pet-friendly amenities if you have or plan to get pets
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Pet-Friendly
-      </h2>
-
-      <div className="space-y-4">
-        {PET_FRIENDLY_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle("pet_friendly_features", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.pet_friendly_features?.includes(option.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const LuxuryPremiumStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Luxury & Premium</h1>
-    <p className="text-gray-500 mb-6">
-      Choose luxury amenities and premium services you value
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Luxury & Premium
-      </h2>
-
-      <div className="space-y-4">
-        {LUXURY_PREMIUM_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle("luxury_features", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.luxury_features?.includes(option.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const IdealLivingStep = ({ formData, onUpdate }: any) => {
-  const handleToggle = (value: string) => {
-    const currentValues = formData.ideal_living_environment || [];
-    const newValues = currentValues.includes(value)
-      ? currentValues.filter((v: string) => v !== value)
-      : [...currentValues, value];
-    onUpdate("ideal_living_environment", newValues);
-  };
-
-  return (
-    <div className="text-center">
-      <h1 className="text-4xl font-bold text-black mb-4">
-        Ideal Living Environment
-      </h1>
-      <p className="text-gray-500 mb-6">
-        The type of household atmosphere you prefer (select multiple)
-      </p>
-
-      <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-          Ideal Living Environment
-        </h2>
-
-        <div className="space-y-4">
-          {IDEAL_LIVING_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleToggle(option.value)}
-              className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-                (formData.ideal_living_environment || []).includes(option.value)
-                  ? "bg-black text-white"
-                  : "bg-white text-black hover:bg-gray-50"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SmokingStep = ({ formData, onUpdate }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Smoking</h1>
-    <p className="text-gray-500 mb-6">
-      Important for matching with smoke-friendly accommodations
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-        Do you smoke?
-      </h2>
-
-      <div className="space-y-4">
-        {SMOKING_OPTIONS.map((option) => (
-          <button
-            key={option.label}
-            type="button"
-            onClick={() => onUpdate("smoker", option.value)}
-            className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
-              formData.smoker === option.value
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const PersonalPreferencesStep = ({ formData, onToggle }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">Personal Preferences</h1>
-    <p className="text-gray-500 mb-6">
-      Tell us about yourself and your living preferences
-    </p>
-
-    <div className="bg-gray-50 rounded-lg p-8">
-      <h2 className="text-2xl font-semibold text-black mb-4 text-left">
-        Hobbies & Interests
-      </h2>
-      <p className="text-blue-500 text-sm mb-8">
-        Select activities you enjoy (helps match you with like-minded
-        housemates)
-      </p>
-
-      <div className="grid grid-cols-3 gap-4">
-        {HOBBY_ICON_OPTIONS.map((hobby) => (
-          <button
-            key={hobby.value}
-            type="button"
-            onClick={() => onToggle("hobbies", hobby.value)}
-            className={`p-4 rounded-3xl border-0 shadow-sm transition-colors text-center ${
-              formData.hobbies?.includes(hobby.value)
-                ? "bg-black text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            <div className="text-2xl mb-2">{hobby.icon}</div>
-            <div className="text-sm font-medium">{hobby.label}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const AboutYouStep = ({ formData, onUpdate }: any) => (
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-black mb-4">About you</h1>
-    <p className="text-gray-500 mb-6">
-      Tell potential landlords and housemates about yourself (optional)
-    </p>
-
-    <div className="text-left">
-      <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
-          Tell about yourself
-        </h2>
-
-        <textarea
-          value={formData.additional_info || ""}
-          onChange={(e) => onUpdate("additional_info", e.target.value)}
-          placeholder="e.g., I'm a quiet professional who enjoys cooking and reading. I keep a clean living space and am always respectful of neighbors. I'm looking for a peaceful home environment where I can relax after work..."
-          rows={8}
-          className="w-full p-4 border-0 rounded-3xl text-gray-700 placeholder-gray-400 bg-white resize-none shadow-sm"
-        />
-      </div>
-    </div>
-  </div>
-);

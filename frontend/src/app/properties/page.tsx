@@ -10,7 +10,7 @@ import Link from "next/link";
 import { Property } from "../types";
 import { useProperties } from "../hooks/useProperties";
 import { useDebounce } from "../hooks/useDebounce";
-import AuthModal from "../components/AuthModal";
+import OnboardingModal from "../components/OnboardingModal";
 
 export default function PublicPropertiesPage() {
   const router = useRouter();
@@ -235,7 +235,7 @@ export default function PublicPropertiesPage() {
       </div>
 
       {/* Auth Modal */}
-      <AuthModal
+      <OnboardingModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
       />

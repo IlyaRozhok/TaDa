@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { useTranslations } from "../../lib/language-context";
 import {
   selectIsAuthenticated,
   selectUser,
@@ -27,7 +26,6 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 export default function ShortlistPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const t = useTranslations();
   const [sessionReady, setSessionReady] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearingShortlist, setClearingShortlist] = useState(false);

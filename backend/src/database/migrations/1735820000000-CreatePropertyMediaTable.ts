@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
 export class CreatePropertyMediaTable1735820000000
   implements MigrationInterface
@@ -6,6 +11,13 @@ export class CreatePropertyMediaTable1735820000000
   name = "CreatePropertyMediaTable1735820000000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Check if table already exists
+    const tableExists = await queryRunner.hasTable("property_media");
+    if (tableExists) {
+      console.log("Table property_media already exists, skipping creation");
+      return;
+    }
+
     await queryRunner.createTable(
       new Table({
         name: "property_media",
@@ -103,4 +115,3 @@ export class CreatePropertyMediaTable1735820000000
     await queryRunner.dropTable("property_media");
   }
 }
- 

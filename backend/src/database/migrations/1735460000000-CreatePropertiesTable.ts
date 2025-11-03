@@ -78,6 +78,20 @@ export class CreatePropertiesTable1735460000000 implements MigrationInterface {
             default: false,
           },
           {
+            name: "lat",
+            type: "decimal",
+            precision: 10,
+            scale: 7,
+            isNullable: true,
+          },
+          {
+            name: "lng",
+            type: "decimal",
+            precision: 10,
+            scale: 7,
+            isNullable: true,
+          },
+          {
             name: "operator_id",
             type: "uuid",
             isNullable: false,

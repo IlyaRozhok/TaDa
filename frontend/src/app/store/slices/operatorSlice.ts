@@ -87,7 +87,7 @@ export const fetchDashboardCounts = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
       // Get token from Redux store
       const state = getState() as any;

@@ -16,7 +16,7 @@ interface UsePropertiesReturn {
   loading: boolean;
   error: string | null;
   fetchProperties: () => Promise<void>;
-  fetchFeaturedProperties: (limit?: number) => Promise<void>;
+
   fetchPublicProperties: (
     page?: number,
     limit?: number,
@@ -70,27 +70,6 @@ export const useProperties = (): UsePropertiesReturn => {
       console.error("Error fetching properties:", err);
       setError(
         err instanceof Error ? err.message : "Failed to load properties"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchFeaturedProperties = useCallback(async (limit = 6) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await propertiesAPI.getFeatured(limit);
-      const propertiesData = response.data || response;
-
-      setProperties(Array.isArray(propertiesData) ? propertiesData : []);
-    } catch (err: unknown) {
-      console.error("Error fetching featured properties:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load featured properties"
       );
     } finally {
       setLoading(false);
@@ -168,7 +147,7 @@ export const useProperties = (): UsePropertiesReturn => {
     loading,
     error,
     fetchProperties,
-    fetchFeaturedProperties,
+
     fetchPublicProperties,
     fetchPropertyById,
     debouncedSearchProperties,
@@ -192,7 +171,11 @@ export const useMatchedProperties = (): UseMatchedPropertiesReturn => {
       console.log("🔍 Fetching matched properties with limit:", limit);
 
       const response = await matchingAPI.getDetailedMatches(limit);
-      console.log("✅ Matched properties response:", response);
+      console.log("✅ Matched properties response:", {
+        hasResponse: !!response,
+        hasData: !!response?.data,
+        dataType: typeof response?.data,
+      });
 
       // Handle response data structure
       const matchedData = response?.data || response;

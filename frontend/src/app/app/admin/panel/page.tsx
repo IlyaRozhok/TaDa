@@ -35,7 +35,12 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-type AdminSection = "users" | "properties";
+type AdminSection =
+  | "users"
+  | "properties"
+  | "rs-properties"
+  | "operators"
+  | "residential-complexes";
 
 interface FilterState {
   role?: string;
@@ -70,7 +75,41 @@ interface Property {
   description?: string;
   furnished?: string;
   operator_id?: string;
+  residential_complex_id?: string;
   property_media?: PropertyMedia[];
+}
+
+interface Operator {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  operatorProfile?: {
+    full_name?: string;
+    company_name?: string;
+    phone?: string;
+    business_address?: string;
+  };
+}
+
+interface ResidentialComplex {
+  id: string;
+  name: string;
+  address: string;
+  description?: string;
+  total_units?: number;
+  year_built?: number;
+  amenities?: string[];
+  postcode?: string;
+  city?: string;
+  country?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  website?: string;
+  operator_id: string;
+  created_at: string;
+  operator?: Operator;
 }
 
 interface PreferencesRow {
@@ -148,7 +187,7 @@ const SearchBar = React.memo(
         placeholder={`Search ${activeSection}...`}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none text-black focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
       {searchLoading && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -167,6 +206,14 @@ function AdminPanelContent() {
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [users, setUsers] = useState<User[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [residentialComplexes, setResidentialComplexes] = useState<
+    ResidentialComplex[]
+  >([]);
+  const [allResidentialComplexes, setAllResidentialComplexes] = useState<
+    ResidentialComplex[]
+  >([]);
+  const [allOperators, setAllOperators] = useState<Operator[]>([]);
   const [userPreferences, setUserPreferences] = useState<PreferencesRow | null>(
     null
   );
@@ -1190,7 +1237,16 @@ function AdminPanelContent() {
             });
             if (!usersResponse.ok) throw new Error("Failed to fetch users");
             const usersData = await usersResponse.json();
-            if (usersData.data) {
+            if (usersData.users) {
+              setUsers(usersData.users);
+              setPagination((prev) => ({
+                ...prev,
+                total: usersData.total || 0,
+                totalPages:
+                  usersData.totalPages ||
+                  Math.ceil((usersData.total || 0) / prev.limit),
+              }));
+            } else if (usersData.data) {
               setUsers(usersData.data);
               setPagination((prev) => ({
                 ...prev,
@@ -1208,6 +1264,40 @@ function AdminPanelContent() {
                 totalPages: Math.ceil(usersArray.length / prev.limit),
               }));
             }
+            break;
+          case "operators":
+            const operatorsResponse = await fetch(
+              `${apiUrl}/residential-complexes/operators`,
+              {
+                headers,
+              }
+            );
+            if (!operatorsResponse.ok)
+              throw new Error("Failed to fetch operators");
+            const operatorsData = await operatorsResponse.json();
+            setOperators(operatorsData);
+            setPagination((prev) => ({
+              ...prev,
+              total: operatorsData.length || 0,
+              totalPages: Math.ceil((operatorsData.length || 0) / prev.limit),
+            }));
+            break;
+          case "residential-complexes":
+            const complexesResponse = await fetch(
+              `${apiUrl}/residential-complexes?${params}`,
+              {
+                headers,
+              }
+            );
+            if (!complexesResponse.ok)
+              throw new Error("Failed to fetch residential complexes");
+            const complexesData = await complexesResponse.json();
+            setResidentialComplexes(complexesData);
+            setPagination((prev) => ({
+              ...prev,
+              total: complexesData.length || 0,
+              totalPages: Math.ceil((complexesData.length || 0) / prev.limit),
+            }));
             break;
 
           case "properties":
@@ -1238,6 +1328,73 @@ function AdminPanelContent() {
                 ...prev,
                 total: propertiesArray.length,
                 totalPages: Math.ceil(propertiesArray.length / prev.limit),
+              }));
+            }
+            break;
+          case "rs-properties":
+            // Fetch properties
+            const rsPropertiesResponse = await fetch(
+              `${apiUrl}/properties?${params}`,
+              {
+                headers,
+              }
+            );
+            if (!rsPropertiesResponse.ok)
+              throw new Error("Failed to fetch RS properties");
+            const rsPropertiesData = await rsPropertiesResponse.json();
+
+            // Fetch all residential complexes for display
+            const allComplexesResponse = await fetch(
+              `${apiUrl}/residential-complexes`,
+              {
+                headers,
+              }
+            );
+            if (!allComplexesResponse.ok)
+              throw new Error("Failed to fetch residential complexes");
+            const allComplexesData = await allComplexesResponse.json();
+            setAllResidentialComplexes(
+              Array.isArray(allComplexesData) ? allComplexesData : []
+            );
+
+            // Fetch all operators for display
+            const allOperatorsResponse = await fetch(
+              `${apiUrl}/residential-complexes/operators`,
+              {
+                headers,
+              }
+            );
+            if (!allOperatorsResponse.ok)
+              throw new Error("Failed to fetch operators");
+            const allOperatorsData = await allOperatorsResponse.json();
+            setAllOperators(
+              Array.isArray(allOperatorsData) ? allOperatorsData : []
+            );
+
+            if (rsPropertiesData.data) {
+              // Filter properties that have residential_complex_id
+              const filteredProperties = rsPropertiesData.data.filter(
+                (property: Property) => property.residential_complex_id
+              );
+              setProperties(filteredProperties);
+              setPagination((prev) => ({
+                ...prev,
+                total: filteredProperties.length,
+                totalPages: Math.ceil(filteredProperties.length / prev.limit),
+              }));
+            } else {
+              const propertiesArray = Array.isArray(rsPropertiesData)
+                ? rsPropertiesData
+                : [];
+              // Filter properties that have residential_complex_id
+              const filteredProperties = propertiesArray.filter(
+                (property: Property) => property.residential_complex_id
+              );
+              setProperties(filteredProperties);
+              setPagination((prev) => ({
+                ...prev,
+                total: filteredProperties.length,
+                totalPages: Math.ceil(filteredProperties.length / prev.limit),
               }));
             }
             break;
@@ -1393,6 +1550,16 @@ function AdminPanelContent() {
         case "properties":
           endpoint = `${apiUrl}/properties/${selectedItem.id}`;
           break;
+        case "rs-properties":
+          endpoint = `${apiUrl}/properties/${selectedItem.id}`;
+          break;
+        case "operators":
+          // Operators are users, so we delete them as users
+          endpoint = `${apiUrl}/users/${selectedItem.id}`;
+          break;
+        case "residential-complexes":
+          endpoint = `${apiUrl}/residential-complexes/${selectedItem.id}`;
+          break;
       }
 
       const response = await fetch(endpoint, {
@@ -1411,13 +1578,26 @@ function AdminPanelContent() {
           ? "User"
           : activeSection === "properties"
           ? "Property"
+          : activeSection === "rs-properties"
+          ? "RS Property"
+          : activeSection === "operators"
+          ? "Operator"
+          : activeSection === "residential-complexes"
+          ? "Residential Complex"
           : "Preferences";
       const itemName =
         activeSection === "users"
           ? (selectedItem as unknown as User).full_name ||
             (selectedItem as unknown as User).email
-          : activeSection === "properties"
+          : activeSection === "properties" || activeSection === "rs-properties"
           ? (selectedItem as unknown as Property).title
+          : activeSection === "operators"
+          ? (selectedItem as unknown as Operator).operatorProfile
+              ?.company_name ||
+            (selectedItem as unknown as Operator).operatorProfile?.full_name ||
+            (selectedItem as unknown as Operator).email
+          : activeSection === "residential-complexes"
+          ? (selectedItem as unknown as ResidentialComplex).name
           : (selectedItem as unknown as PreferencesRow).user?.email ||
             "User preferences";
 
@@ -1603,6 +1783,39 @@ function AdminPanelContent() {
             <Building2 className="w-5 h-5" />
             <span className="font-medium">Properties</span>
           </button>
+          <button
+            onClick={() => setActiveSection("rs-properties")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              activeSection === "rs-properties"
+                ? "bg-violet-50 text-violet-700 border border-violet-200"
+                : "text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <Building2 className="w-5 h-5" />
+            <span className="font-medium">RS Properties</span>
+          </button>
+          <button
+            onClick={() => setActiveSection("operators")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              activeSection === "operators"
+                ? "bg-violet-50 text-violet-700 border border-violet-200"
+                : "text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <Shield className="w-5 h-5" />
+            <span className="font-medium">Operators</span>
+          </button>
+          <button
+            onClick={() => setActiveSection("residential-complexes")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              activeSection === "residential-complexes"
+                ? "bg-violet-50 text-violet-700 border border-violet-200"
+                : "text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <Building2 className="w-5 h-5" />
+            <span className="font-medium">Res. Complexes</span>
+          </button>
         </nav>
       </div>
     </div>
@@ -1617,13 +1830,15 @@ function AdminPanelContent() {
           </h3>
           <p className="text-slate-600">Manage user accounts and permissions</p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="px-6 py-3 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-slate-900/10 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Add User</span>
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleAdd}
+            className="px-6 py-3 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-slate-900/10 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add User</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white text-black rounded-xl shadow-sm border border-slate-200">
@@ -1699,435 +1914,127 @@ function AdminPanelContent() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-100">
-              {users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-slate-50 transition-colors duration-150"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center min-w-0">
-                      <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
-                        <Users className="w-5 h-5 text-slate-600" />
-                      </div>
-                      <div className="ml-4 min-w-0 flex-1">
-                        <div
-                          className="text-sm font-semibold text-slate-900 truncate"
-                          title={user.full_name || "No name"}
-                        >
-                          {user.full_name || "No name"}
-                        </div>
-                        <div
-                          className="text-sm text-slate-600 truncate"
-                          title={user.email}
-                        >
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                        user.role === "admin"
-                          ? "bg-purple-100 text-purple-800 border border-purple-200"
-                          : user.role === "operator"
-                          ? "bg-blue-100 text-blue-800 border border-blue-200"
-                          : "bg-green-100 text-green-800 border border-green-200"
-                      }`}
-                    >
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                        user.status === "active"
-                          ? "bg-green-100 text-green-800 border border-green-200"
-                          : user.status === "inactive"
-                          ? "bg-slate-100 text-slate-800 border border-slate-200"
-                          : "bg-red-100 text-red-800 border border-red-200"
-                      }`}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        onClick={() => handleView(user)}
-                        className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-150"
-                        title="View user"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors duration-150"
-                        title="Edit user"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user)}
-                        className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
-                        title="Delete user"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <Users className="w-12 h-12 text-slate-300 mb-4" />
+                      <h3 className="text-lg font-medium text-slate-900 mb-2">
+                        No users found
+                      </h3>
+                      <p className="text-slate-600">
+                        {searchTerm || Object.keys(filters).length > 0
+                          ? "Try adjusting your search or filters"
+                          : "No users have been registered yet"}
+                      </p>
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="px-6 py-4 border-t border-slate-200">
-          <Pagination />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPropertiesSection = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-semibold text-slate-900">
-            Properties Management
-          </h3>
-          <p className="text-slate-600">Manage property listings and details</p>
-        </div>
-        <button
-          onClick={handleAdd}
-          className="px-6 py-3 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-slate-900/10 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Property</span>
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <SearchBar
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                activeSection={activeSection}
-                searchLoading={searchLoading}
-              />
-            </div>
-            {sort.field && (
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <span>Sorted by:</span>
-                <span className="font-medium text-blue-600">
-                  {sort.field === "title"
-                    ? "Title"
-                    : sort.field === "location"
-                    ? "Location"
-                    : sort.field === "price"
-                    ? "Price"
-                    : sort.field === "bedrooms"
-                    ? "Bedrooms"
-                    : sort.field === "bathrooms"
-                    ? "Bathrooms"
-                    : sort.field === "property_type"
-                    ? "Type"
-                    : sort.field === "created_at"
-                    ? "Created Date"
-                    : sort.field}
-                </span>
-                <span className="text-xs text-slate-500">
-                  ({sort.direction === "asc" ? "↑ ascending" : "↓ descending"})
-                </span>
-                <button
-                  onClick={() => setSort({ field: "", direction: "desc" })}
-                  className="text-xs text-slate-400 hover:text-slate-600 underline ml-2"
-                  title="Clear sorting"
-                >
-                  clear
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
-            <colgroup>
-              <col className="w-1/4" />
-              <col className="w-24" />
-              <col className="w-16" />
-              <col className="w-16" />
-              <col className="w-20" />
-              <col className="w-24" />
-              <col className="w-28" />
-            </colgroup>
-            <thead className="bg-slate-100 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-xs">Property</div>
-                    <div className="flex gap-2 text-xs">
-                      <SortButton field="title" label="Title" compact={true} />
-                      <span className="text-slate-400">|</span>
-                      <SortButton
-                        field="location"
-                        label="Location"
-                        compact={true}
-                      />
-                    </div>
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="price" label="Price" />
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="bedrooms" label="Bedrooms" />
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="bathrooms" label="Baths" />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="property_type" label="Type" />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="created_at" label="Created" />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-100">
-              {properties.map((property) => (
-                <tr
-                  key={property.id}
-                  className="hover:bg-slate-50 transition-colors duration-150"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center min-w-0">
-                      <div
-                        className="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity duration-150 relative overflow-hidden shadow-sm"
-                        onClick={() => handleMediaEdit(property)}
-                        title="Click to edit photos"
-                      >
-                        {property.property_media &&
-                        property.property_media.length > 0 ? (
-                          <img
-                            src={
-                              property.property_media[0]?.url ||
-                              property.property_media[0]?.s3_url ||
-                              "/placeholder-property.jpg"
-                            }
-                            alt={property.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = "/placeholder-property.jpg";
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
-                            <Building2 className="w-5 h-5 text-blue-600" />
+              ) : (
+                users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="hover:bg-slate-50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center min-w-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                          <Users className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div className="ml-4 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="text-sm font-semibold text-slate-900 truncate"
+                              title={user.full_name || "No name"}
+                            >
+                              {user.full_name || "No name"}
+                            </div>
+                            {/* Show warning icon for users with inconsistent data */}
+                            {((user.role === "tenant" &&
+                              (!user.tenantProfile || user.operatorProfile)) ||
+                              (user.role === "operator" &&
+                                (!user.operatorProfile ||
+                                  user.tenantProfile ||
+                                  user.preferences)) ||
+                              (user.role === "admin" &&
+                                (user.tenantProfile ||
+                                  user.operatorProfile ||
+                                  user.preferences))) && (
+                              <div
+                                className="w-4 h-4 bg-yellow-100 rounded-full flex items-center justify-center cursor-help"
+                                title="User has inconsistent profile data."
+                              >
+                                <span className="text-yellow-600 text-xs font-bold">
+                                  !
+                                </span>
+                              </div>
+                            )}
                           </div>
-                        )}
+                          <div
+                            className="text-sm text-slate-600 truncate"
+                            title={user.email}
+                          >
+                            {user.email}
+                          </div>
+                        </div>
                       </div>
-                      <div className="ml-4 min-w-0 flex-1">
-                        <div
-                          className="text-sm font-semibold text-slate-900 truncate"
-                          title={property.title}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                          user.role === "admin"
+                            ? "bg-purple-100 text-purple-800 border border-purple-200"
+                            : user.role === "operator"
+                            ? "bg-blue-100 text-blue-800 border border-blue-200"
+                            : "bg-green-100 text-green-800 border border-green-200"
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                          user.status === "active"
+                            ? "bg-green-100 text-green-800 border border-green-200"
+                            : user.status === "inactive"
+                            ? "bg-slate-100 text-slate-800 border border-slate-200"
+                            : "bg-red-100 text-red-800 border border-red-200"
+                        }`}
+                      >
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleView(user)}
+                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-150"
+                          title="View user"
                         >
-                          {property.title}
-                        </div>
-                        <div
-                          className="text-sm text-slate-600 truncate"
-                          title={property.location}
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors duration-150"
+                          title="Edit user"
                         >
-                          {property.location}
-                        </div>
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user)}
+                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
+                          title="Delete user"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                    £{property.price.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
-                    {property.bedrooms}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
-                    {property.bathrooms}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    <span
-                      className="truncate block"
-                      title={property.property_type}
-                    >
-                      {property.property_type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {new Date(property.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        onClick={() => handleView(property)}
-                        className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-150"
-                        title="View property"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(property)}
-                        className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors duration-150"
-                        title="Edit property"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleMediaEdit(property)}
-                        className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors duration-150"
-                        title="Manage photos"
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(property)}
-                        className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
-                        title="Delete property"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="px-6 py-4 border-t border-slate-200">
-          <Pagination />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPreferencesSection = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-semibold text-slate-900">
-            User Preferences
-          </h3>
-          <p className="text-slate-600">
-            Manage user search preferences and requirements
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="p-6 border-b border-slate-200">
-          <SearchBar
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            activeSection={activeSection}
-            searchLoading={searchLoading}
-          />
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-100 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  User
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="min_price" label="Budget" />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="min_bedrooms" label="Bedrooms" />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  <SortButton field="property_type" label="Type" />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-100">
-              {userPreferences && (
-                <tr
-                  key={userPreferences.id}
-                  className="hover:bg-slate-50 transition-colors duration-150"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-violet-200 rounded-full flex items-center justify-center shadow-sm">
-                        <Target className="w-5 h-5 text-violet-600" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-slate-900">
-                          {userPreferences.user?.full_name || "No name"}
-                        </div>
-                        <div className="text-sm text-slate-600">
-                          {userPreferences.user?.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    £{userPreferences.min_price?.toLocaleString() || 0} - £
-                    {userPreferences.max_price?.toLocaleString() || 0}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {userPreferences.min_bedrooms || 0} -{" "}
-                    {userPreferences.max_bedrooms || 0}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {userPreferences.property_type || "Any"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {userPreferences.primary_postcode ||
-                      userPreferences.secondary_location ||
-                      "Not specified"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleView(userPreferences)}
-                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-150"
-                        title="View preferences"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(userPreferences)}
-                        className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-150"
-                        title="Edit preferences"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(userPreferences)}
-                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-150"
-                        title="Delete preferences"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -2136,6 +2043,965 @@ function AdminPanelContent() {
         <div className="px-6 py-4 border-t border-slate-200">
           <Pagination />
         </div>
+      </div>
+    </div>
+  );
+
+  const renderPropertiesSection = () => {
+    // Ensure properties is an array
+    const propertiesArray = Array.isArray(properties) ? properties : [];
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-2xl font-semibold text-slate-900">
+              Properties Management
+            </h3>
+            <p className="text-slate-600">
+              Manage property listings and details
+            </p>
+          </div>
+          <button
+            onClick={handleAdd}
+            className="px-6 py-3 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-slate-900/10 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Property</span>
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <SearchBar
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  activeSection={activeSection}
+                  searchLoading={searchLoading}
+                />
+              </div>
+              {sort.field && (
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <span>Sorted by:</span>
+                  <span className="font-medium text-blue-600">
+                    {sort.field === "title"
+                      ? "Title"
+                      : sort.field === "location"
+                      ? "Location"
+                      : sort.field === "price"
+                      ? "Price"
+                      : sort.field === "bedrooms"
+                      ? "Bedrooms"
+                      : sort.field === "bathrooms"
+                      ? "Bathrooms"
+                      : sort.field === "property_type"
+                      ? "Type"
+                      : sort.field === "created_at"
+                      ? "Created Date"
+                      : sort.field}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    ({sort.direction === "asc" ? "↑ ascending" : "↓ descending"}
+                    )
+                  </span>
+                  <button
+                    onClick={() => setSort({ field: "", direction: "desc" })}
+                    className="text-xs text-slate-400 hover:text-slate-600 underline ml-2"
+                    title="Clear sorting"
+                  >
+                    clear
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-1/4" />
+                <col className="w-24" />
+                <col className="w-16" />
+                <col className="w-16" />
+                <col className="w-20" />
+                <col className="w-24" />
+                <col className="w-28" />
+              </colgroup>
+              <thead className="bg-slate-100 border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-xs">Property</div>
+                      <div className="flex gap-2 text-xs">
+                        <SortButton
+                          field="title"
+                          label="Title"
+                          compact={true}
+                        />
+                        <span className="text-slate-400">|</span>
+                        <SortButton
+                          field="location"
+                          label="Location"
+                          compact={true}
+                        />
+                      </div>
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="price" label="Price" />
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="bedrooms" label="Bedrooms" />
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="bathrooms" label="Baths" />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="property_type" label="Type" />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="created_at" label="Created" />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-100">
+                {propertiesArray.map((property) => (
+                  <tr
+                    key={property.id}
+                    className="hover:bg-slate-50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center min-w-0">
+                        <div
+                          className="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity duration-150 relative overflow-hidden shadow-sm"
+                          onClick={() => handleMediaEdit(property)}
+                          title="Click to edit photos"
+                        >
+                          {property.property_media &&
+                          property.property_media.length > 0 ? (
+                            <img
+                              src={
+                                property.property_media[0]?.url ||
+                                property.property_media[0]?.s3_url ||
+                                "/placeholder-property.jpg"
+                              }
+                              alt={property.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder-property.jpg";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-blue-600" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-4 min-w-0 flex-1">
+                          <div
+                            className="text-sm font-semibold text-slate-900 truncate"
+                            title={property.title}
+                          >
+                            {property.title}
+                          </div>
+                          <div
+                            className="text-sm text-slate-600 truncate"
+                            title={property.location}
+                          >
+                            {property.location}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                      £{property.price.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
+                      {property.bedrooms}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
+                      {property.bathrooms}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      <span
+                        className="truncate block"
+                        title={property.property_type}
+                      >
+                        {property.property_type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      {new Date(property.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleView(property)}
+                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-150"
+                          title="View property"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(property)}
+                          className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors duration-150"
+                          title="Edit property"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleMediaEdit(property)}
+                          className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors duration-150"
+                          title="Manage photos"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(property)}
+                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
+                          title="Delete property"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="px-6 py-4 border-t border-slate-200">
+            <Pagination />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderRSPropertiesSection = () => {
+    // Ensure properties is an array
+    const propertiesArray = Array.isArray(properties) ? properties : [];
+
+    // Helper function to get residential complex name
+    const getResidentialComplexName = (complexId: string | undefined) => {
+      if (!complexId) return "Not Linked";
+      const complex = allResidentialComplexes.find((c) => c.id === complexId);
+      return complex ? complex.name : "Unknown Complex";
+    };
+
+    // Helper function to get operator name
+    const getOperatorName = (complexId: string | undefined) => {
+      if (!complexId) return "No Owner";
+      const complex = allResidentialComplexes.find((c) => c.id === complexId);
+      if (!complex || !complex.operator_id) return "No Owner";
+      const operator = allOperators.find((o) => o.id === complex.operator_id);
+      if (!operator) return "Unknown Owner";
+      return (
+        operator.operatorProfile?.company_name ||
+        operator.operatorProfile?.full_name ||
+        operator.email
+      );
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-2xl font-semibold text-slate-900">
+              RS Properties Management
+            </h3>
+            <p className="text-slate-600">
+              Manage properties linked to residential complexes
+            </p>
+          </div>
+          <button
+            onClick={handleAdd}
+            className="px-6 py-3 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg hover:shadow-slate-900/10 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add RS Property</span>
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <SearchBar
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  activeSection={activeSection}
+                  searchLoading={searchLoading}
+                />
+              </div>
+              {sort.field && (
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <span>Sorted by:</span>
+                  <span className="font-medium text-blue-600">
+                    {sort.field === "title"
+                      ? "Title"
+                      : sort.field === "location"
+                      ? "Location"
+                      : sort.field === "price"
+                      ? "Price"
+                      : sort.field === "bedrooms"
+                      ? "Bedrooms"
+                      : sort.field === "bathrooms"
+                      ? "Bathrooms"
+                      : sort.field === "property_type"
+                      ? "Type"
+                      : sort.field === "created_at"
+                      ? "Created Date"
+                      : sort.field}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    ({sort.direction === "asc" ? "↑ ascending" : "↓ descending"}
+                    )
+                  </span>
+                  <button
+                    onClick={() => setSort({ field: "", direction: "desc" })}
+                    className="text-xs text-slate-400 hover:text-slate-600 underline ml-2"
+                    title="Clear sorting"
+                  >
+                    clear
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-1/4" />
+                <col className="w-24" />
+                <col className="w-16" />
+                <col className="w-16" />
+                <col className="w-20" />
+                <col className="w-24" />
+                <col className="w-28" />
+                <col className="w-32" />
+                <col className="w-32" />
+              </colgroup>
+              <thead className="bg-slate-100 border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-xs">Property</div>
+                      <div className="flex gap-2 text-xs">
+                        <SortButton
+                          field="title"
+                          label="Title"
+                          compact={true}
+                        />
+                        <span className="text-slate-400">|</span>
+                        <SortButton
+                          field="location"
+                          label="Location"
+                          compact={true}
+                        />
+                      </div>
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="price" label="Price" />
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="bedrooms" label="Bedrooms" />
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="bathrooms" label="Baths" />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="property_type" label="Type" />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    <SortButton field="created_at" label="Created" />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Residential Complex
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Owner
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-100">
+                {propertiesArray.map((property) => (
+                  <tr
+                    key={property.id}
+                    className="hover:bg-slate-50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center min-w-0">
+                        <div
+                          className="w-10 h-10 rounded-full flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity duration-150 relative overflow-hidden shadow-sm"
+                          onClick={() => handleMediaEdit(property)}
+                          title="Click to edit photos"
+                        >
+                          {property.property_media &&
+                          property.property_media.length > 0 ? (
+                            <img
+                              src={
+                                property.property_media[0]?.url ||
+                                property.property_media[0]?.s3_url ||
+                                "/placeholder-property.jpg"
+                              }
+                              alt={property.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder-property.jpg";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-blue-600" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-4 min-w-0 flex-1">
+                          <div
+                            className="text-sm font-semibold text-slate-900 truncate"
+                            title={property.title}
+                          >
+                            {property.title}
+                          </div>
+                          <div
+                            className="text-sm text-slate-600 truncate"
+                            title={property.location}
+                          >
+                            {property.location}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                      £{property.price.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
+                      {property.bedrooms}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 text-center">
+                      {property.bathrooms}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      <span
+                        className="truncate block"
+                        title={property.property_type}
+                      >
+                        {property.property_type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      {new Date(property.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {getResidentialComplexName(
+                          property.residential_complex_id
+                        )}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {getOperatorName(property.residential_complex_id)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleView(property)}
+                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-150"
+                          title="View property"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(property)}
+                          className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors duration-150"
+                          title="Edit property"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleMediaEdit(property)}
+                          className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors duration-150"
+                          title="Manage photos"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(property)}
+                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
+                          title="Delete property"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="px-6 py-4 border-t border-slate-200">
+            <Pagination />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderOperatorsSection = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl font-semibold text-slate-900">
+            Operators Management
+          </h3>
+          <p className="text-slate-600 mt-1">
+            View and manage all operators in the system
+          </p>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white text-black rounded-lg border border-slate-200 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search operators..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Operators Table */}
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="full_name" label="Name" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="email" label="Email" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="company_name" label="Company" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="phone" label="Phone" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="status" label="Status" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="created_at" label="Created" />
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
+              {operators
+                .slice(
+                  (pagination.page - 1) * pagination.limit,
+                  pagination.page * pagination.limit
+                )
+                .map((operator) => (
+                  <tr key={operator.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-slate-900">
+                        {operator.operatorProfile?.full_name || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-900">
+                        {operator.email}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-900">
+                        {operator.operatorProfile?.company_name || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-900">
+                        {operator.operatorProfile?.phone || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          operator.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : operator.status === "inactive"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {operator.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {new Date(operator.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleView(operator)}
+                          className="text-violet-600 hover:text-violet-900 p-1 rounded"
+                          title="View operator"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="bg-white px-4 py-3 border-t border-slate-200 sm:px-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-slate-700">
+                    Showing{" "}
+                    <span className="font-medium">
+                      {(pagination.page - 1) * pagination.limit + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(
+                        pagination.page * pagination.limit,
+                        pagination.total
+                      )}
+                    </span>{" "}
+                    of <span className="font-medium">{pagination.total}</span>{" "}
+                    results
+                  </p>
+                </div>
+                <div>
+                  <nav
+                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                    aria-label="Pagination"
+                  >
+                    <button
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    {Array.from(
+                      { length: pagination.totalPages },
+                      (_, i) => i + 1
+                    )
+                      .filter(
+                        (page) =>
+                          page === 1 ||
+                          page === pagination.totalPages ||
+                          Math.abs(page - pagination.page) <= 2
+                      )
+                      .map((page, index, array) => (
+                        <React.Fragment key={page}>
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700">
+                              ...
+                            </span>
+                          )}
+                          <button
+                            onClick={() => handlePageChange(page)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              page === pagination.page
+                                ? "z-10 bg-violet-50 border-violet-500 text-violet-600"
+                                : "bg-white border-slate-300 text-slate-500 hover:bg-slate-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                    <button
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page === pagination.totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderResidentialComplexesSection = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl font-semibold text-slate-900">
+            Residential Complexes Management
+          </h3>
+          <p className="text-slate-600 mt-1">
+            Manage all residential complexes in the system
+          </p>
+        </div>
+        <button
+          onClick={handleAdd}
+          className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Complex
+        </button>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white text-black rounded-lg border border-slate-200 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search complexes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Complexes Table */}
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="name" label="Name" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="address" label="Address" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="total_units" label="Units" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="operator" label="Operator" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <SortButton field="created_at" label="Created" />
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
+              {residentialComplexes
+                .slice(
+                  (pagination.page - 1) * pagination.limit,
+                  pagination.page * pagination.limit
+                )
+                .map((complex) => (
+                  <tr key={complex.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-slate-900">
+                        {complex.name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-900">
+                        {complex.address}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-900">
+                        {complex.total_units || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-900">
+                        {complex.operator?.operatorProfile?.company_name ||
+                          complex.operator?.operatorProfile?.full_name ||
+                          complex.operator?.email ||
+                          "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {new Date(complex.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleView(complex)}
+                          className="text-violet-600 hover:text-violet-900 p-1 rounded"
+                          title="View complex"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(complex)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                          title="Edit complex"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(complex)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded"
+                          title="Delete complex"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="bg-white px-4 py-3 border-t border-slate-200 sm:px-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-slate-700">
+                    Showing{" "}
+                    <span className="font-medium">
+                      {(pagination.page - 1) * pagination.limit + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(
+                        pagination.page * pagination.limit,
+                        pagination.total
+                      )}
+                    </span>{" "}
+                    of <span className="font-medium">{pagination.total}</span>{" "}
+                    results
+                  </p>
+                </div>
+                <div>
+                  <nav
+                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                    aria-label="Pagination"
+                  >
+                    <button
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    {Array.from(
+                      { length: pagination.totalPages },
+                      (_, i) => i + 1
+                    )
+                      .filter(
+                        (page) =>
+                          page === 1 ||
+                          page === pagination.totalPages ||
+                          Math.abs(page - pagination.page) <= 2
+                      )
+                      .map((page, index, array) => (
+                        <React.Fragment key={page}>
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700">
+                              ...
+                            </span>
+                          )}
+                          <button
+                            onClick={() => handlePageChange(page)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              page === pagination.page
+                                ? "z-10 bg-violet-50 border-violet-500 text-violet-600"
+                                : "bg-white border-slate-300 text-slate-500 hover:bg-slate-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                    <button
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page === pagination.totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2237,7 +3103,13 @@ function AdminPanelContent() {
                               {String(value)}
                             </span>
                           ) : typeof value === "object" ? (
-                            JSON.stringify(value, null, 2)
+                            (() => {
+                              try {
+                                return JSON.stringify(value, null, 2);
+                              } catch (error) {
+                                return `[Circular Reference: ${typeof value}]`;
+                              }
+                            })()
                           ) : (
                             String(value)
                           )}
@@ -2335,42 +3207,109 @@ function AdminPanelContent() {
           "Content-Type": "application/json",
         };
 
-        const endpoint = isEditing
-          ? `${apiUrl}/users/${selectedItem?.id}`
-          : `${apiUrl}/users`;
+        if (isEditing) {
+          // Check if role is being changed
+          const originalRole = selectedItem?.role as string;
+          const newRole = formData.role;
 
-        const body = {
-          full_name: formData.full_name.trim(),
-          email: formData.email.trim(),
-          role: formData.role,
-          ...(formData.phone?.trim() && { phone: formData.phone.trim() }),
-          ...(!isEditing && {
+          if (originalRole !== newRole) {
+            // Show warning about role change
+            const confirmed = window.confirm(
+              `Are you sure you want to change the user role from "${originalRole}" to "${newRole}"?\n\n` +
+                `This will automatically:\n` +
+                `• Remove the old profile (${originalRole} profile)\n` +
+                `• Create a new profile (${newRole} profile)\n` +
+                `• ${
+                  newRole === "tenant"
+                    ? "Create preferences"
+                    : "Remove preferences"
+                }\n\n` +
+                `This action cannot be undone.`
+            );
+
+            if (!confirmed) {
+              setIsActionLoading(false);
+              return;
+            }
+          }
+
+          // Update user data
+          const updateData = {
+            full_name: formData.full_name.trim(),
+            email: formData.email.trim(),
+            ...(formData.phone?.trim() && { phone: formData.phone.trim() }),
+          };
+
+          // Update basic user info
+          const userResponse = await fetch(
+            `${apiUrl}/users/${selectedItem?.id}`,
+            {
+              method: "PUT",
+              headers,
+              body: JSON.stringify(updateData),
+            }
+          );
+
+          if (!userResponse.ok) {
+            const errorData = await userResponse.json();
+            throw new Error(errorData.message || "Failed to update user");
+          }
+
+          // If role is being changed, use the dedicated role update endpoint
+          if (originalRole !== newRole) {
+            const roleResponse = await fetch(
+              `${apiUrl}/users/${selectedItem?.id}/role`,
+              {
+                method: "PUT",
+                headers,
+                body: JSON.stringify({ role: newRole }),
+              }
+            );
+
+            if (!roleResponse.ok) {
+              const errorData = await roleResponse.json();
+              throw new Error(
+                errorData.message || "Failed to update user role"
+              );
+            }
+
+            addNotification(
+              "success",
+              `User "${formData.full_name}" role changed from "${originalRole}" to "${newRole}" successfully!`
+            );
+          } else {
+            addNotification(
+              "success",
+              `User "${formData.full_name}" updated successfully!`
+            );
+          }
+        } else {
+          // Creating new user
+          const endpoint = `${apiUrl}/users`;
+          const body = {
+            full_name: formData.full_name.trim(),
+            email: formData.email.trim(),
+            role: formData.role,
+            ...(formData.phone?.trim() && { phone: formData.phone.trim() }),
             password: formData.password || "defaultPassword123",
-          }),
-        };
+          };
 
-        const response = await fetch(endpoint, {
-          method: isEditing ? "PUT" : "POST",
-          headers,
-          body: JSON.stringify(body),
-        });
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(body),
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message ||
-              `Failed to ${isEditing ? "update" : "create"} user`
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to create user");
+          }
+
+          addNotification(
+            "success",
+            `User "${formData.full_name}" created successfully!`
           );
         }
-
-        // Show success toast
-        const action = isEditing ? "updated" : "created";
-        const userName = formData.full_name || formData.email;
-
-        addNotification(
-          "success",
-          `User "${userName}" ${action} successfully!`
-        );
 
         setShowModal(null);
         setSelectedItem(null);
@@ -2556,12 +3495,15 @@ function AdminPanelContent() {
       available_from: isEditing
         ? (selectedItem?.available_from as string) || ""
         : "",
+      residential_complex_id: isEditing
+        ? (selectedItem?.residential_complex_id as string) || ""
+        : "",
     });
 
     if (
       !showModal ||
       (showModal !== "add" && showModal !== "edit") ||
-      activeSection !== "properties"
+      (activeSection !== "properties" && activeSection !== "rs-properties")
     )
       return null;
     if (showModal === "edit" && !selectedItem) return null;
@@ -2602,6 +3544,9 @@ function AdminPanelContent() {
           property_type: formData.property_type,
           furnishing: formData.furnishing,
           available_from: formData.available_from,
+          ...(formData.residential_complex_id && {
+            residential_complex_id: formData.residential_complex_id,
+          }),
         };
 
         const response = await fetch(endpoint, {
@@ -2833,6 +3778,31 @@ function AdminPanelContent() {
                   <option value="part-furnished">Part Furnished</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Residential Complex (Optional)
+                </label>
+                <select
+                  value={formData.residential_complex_id}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      residential_complex_id: e.target.value,
+                    })
+                  }
+                  className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-400 transition-colors shadow-sm"
+                >
+                  <option value="">
+                    Select a residential complex (optional)
+                  </option>
+                  {residentialComplexes.map((complex) => (
+                    <option key={complex.id} value={complex.id}>
+                      {complex.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex gap-3 pt-6">
@@ -2858,6 +3828,505 @@ function AdminPanelContent() {
                     <Save className="w-4 h-4" />
                     <span>
                       {isEditing ? "Update Property" : "Create Property"}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const AddEditResidentialComplexModal = () => {
+    const isEditing = showModal === "edit";
+    const [formData, setFormData] = useState({
+      name: isEditing ? (selectedItem?.name as string) || "" : "",
+      address: isEditing ? (selectedItem?.address as string) || "" : "",
+      description: isEditing ? (selectedItem?.description as string) || "" : "",
+      total_units: isEditing ? (selectedItem?.total_units as number) || 0 : 0,
+      year_built: isEditing
+        ? (selectedItem?.year_built as number) || new Date().getFullYear()
+        : new Date().getFullYear(),
+      amenities: isEditing
+        ? ((selectedItem?.amenities as string[]) || []).join(", ")
+        : "",
+      postcode: isEditing ? (selectedItem?.postcode as string) || "" : "",
+      city: isEditing ? (selectedItem?.city as string) || "" : "",
+      country: isEditing ? (selectedItem?.country as string) || "" : "",
+      latitude: isEditing ? (selectedItem?.latitude as number) || 0 : 0,
+      longitude: isEditing ? (selectedItem?.longitude as number) || 0 : 0,
+      contact_phone: isEditing
+        ? (selectedItem?.contact_phone as string) || ""
+        : "",
+      contact_email: isEditing
+        ? (selectedItem?.contact_email as string) || ""
+        : "",
+      website: isEditing ? (selectedItem?.website as string) || "" : "",
+      operator_id: isEditing ? (selectedItem?.operator_id as string) || "" : "",
+    });
+
+    if (
+      !showModal ||
+      (showModal !== "add" && showModal !== "edit") ||
+      activeSection !== "residential-complexes"
+    )
+      return null;
+    if (showModal === "edit" && !selectedItem) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!selectedItem && isEditing) return;
+
+      setIsActionLoading(true);
+
+      try {
+        if (!formData.name?.trim()) {
+          throw new Error("Name is required");
+        }
+        if (!formData.address?.trim()) {
+          throw new Error("Address is required");
+        }
+        if (!formData.operator_id) {
+          throw new Error("Operator is required");
+        }
+
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const token = localStorage.getItem("accessToken");
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+
+        const endpoint = isEditing
+          ? `${apiUrl}/residential-complexes/${selectedItem?.id}`
+          : `${apiUrl}/residential-complexes`;
+
+        const amenitiesArray = formData.amenities
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a.length > 0);
+
+        const body = {
+          name: formData.name.trim(),
+          address: formData.address.trim(),
+          description: formData.description?.trim() || undefined,
+          total_units: formData.total_units || undefined,
+          year_built: formData.year_built || undefined,
+          amenities: amenitiesArray.length > 0 ? amenitiesArray : undefined,
+          postcode: formData.postcode?.trim() || undefined,
+          city: formData.city?.trim() || undefined,
+          country: formData.country?.trim() || undefined,
+          latitude: formData.latitude || undefined,
+          longitude: formData.longitude || undefined,
+          contact_phone: formData.contact_phone?.trim() || undefined,
+          contact_email: formData.contact_email?.trim() || undefined,
+          website: formData.website?.trim() || undefined,
+          operator_id: formData.operator_id,
+        };
+
+        const response = await fetch(endpoint, {
+          method: isEditing ? "PATCH" : "POST",
+          headers,
+          body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message ||
+              `Failed to ${isEditing ? "update" : "create"} residential complex`
+          );
+        }
+
+        const action = isEditing ? "updated" : "created";
+        const complexName = formData.name;
+
+        addNotification(
+          "success",
+          `Residential Complex "${complexName}" ${action} successfully!`
+        );
+
+        setShowModal(null);
+        setSelectedItem(null);
+        fetchData(false);
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : `Failed to ${
+                isEditing ? "update" : "create"
+              } residential complex`;
+
+        addNotification(
+          "error",
+          `${isEditing ? "Update" : "Creation"} failed: ${errorMessage}`
+        );
+        setError(errorMessage);
+      } finally {
+        setIsActionLoading(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                {isEditing ? (
+                  <Edit3 className="w-5 h-5 text-white" />
+                ) : (
+                  <Plus className="w-5 h-5 text-white" />
+                )}
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {isEditing
+                    ? "Edit Residential Complex"
+                    : "Add Residential Complex"}
+                </h2>
+                <p className="text-slate-600 text-sm">
+                  {isEditing
+                    ? "Update residential complex information"
+                    : "Create a new residential complex"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowModal(null)}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b pb-2">
+                Basic Information
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Complex Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., Sunset Gardens"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Operator <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.operator_id}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        operator_id: e.target.value,
+                      })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    required
+                  >
+                    <option value="">Select an operator</option>
+                    {operators.map((operator) => (
+                      <option key={operator.id} value={operator.id}>
+                        {operator.operatorProfile?.company_name ||
+                          operator.operatorProfile?.full_name ||
+                          operator.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., 123 Sunset Boulevard, London"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., London"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Postcode
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.postcode}
+                    onChange={(e) =>
+                      setFormData({ ...formData, postcode: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., SW1A 1AA"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) =>
+                      setFormData({ ...formData, country: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., United Kingdom"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    rows={3}
+                    placeholder="Modern residential complex with luxury amenities..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Property Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b pb-2">
+                Property Details
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Total Units
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.total_units || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        total_units: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., 150"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Year Built
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.year_built || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        year_built: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., 2020"
+                    min="1800"
+                    max={new Date().getFullYear() + 5}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Amenities
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.amenities}
+                    onChange={(e) =>
+                      setFormData({ ...formData, amenities: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., Gym, Swimming Pool, Parking, Concierge (comma separated)"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Separate amenities with commas
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Location Coordinates */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b pb-2">
+                Location Coordinates
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Latitude
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.latitude || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        latitude: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., 51.5074"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Longitude
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.longitude || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        longitude: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., -0.1278"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b pb-2">
+                Contact Information
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Contact Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.contact_phone}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        contact_phone: e.target.value,
+                      })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., +44 20 7123 4567"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Contact Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        contact_email: e.target.value,
+                      })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., info@complex.com"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) =>
+                      setFormData({ ...formData, website: e.target.value })
+                    }
+                    className="text-black w-full px-4 py-3 bg-white/80 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 hover:border-slate-400 transition-colors shadow-sm"
+                    placeholder="e.g., https://complex.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-6">
+              <button
+                type="button"
+                onClick={() => setShowModal(null)}
+                className="flex-1 px-6 py-3 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors duration-200 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isActionLoading}
+                className="flex-1 px-6 py-3 bg-gradient-to-br from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white rounded-lg shadow-sm transition-all duration-200 font-medium flex items-center justify-center space-x-2 hover:shadow-lg disabled:opacity-70"
+              >
+                {isActionLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>{isEditing ? "Updating..." : "Creating..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>
+                      {isEditing ? "Update Complex" : "Create Complex"}
                     </span>
                   </>
                 )}
@@ -3288,6 +4757,12 @@ function AdminPanelContent() {
         return renderUsersSection();
       case "properties":
         return renderPropertiesSection();
+      case "rs-properties":
+        return renderRSPropertiesSection();
+      case "operators":
+        return renderOperatorsSection();
+      case "residential-complexes":
+        return renderResidentialComplexesSection();
       default:
         return null;
     }
@@ -3415,6 +4890,10 @@ function AdminPanelContent() {
       <ViewModal />
       {activeSection === "users" && <AddEditUserModal />}
       {activeSection === "properties" && <AddEditPropertyModal />}
+      {activeSection === "rs-properties" && <AddEditPropertyModal />}
+      {activeSection === "residential-complexes" && (
+        <AddEditResidentialComplexModal />
+      )}
       <DeleteModal />
       <MediaModal />
 

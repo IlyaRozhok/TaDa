@@ -30,8 +30,9 @@
     "diagnose:oauth": "ts-node scripts/diagnose-oauth-redirect.ts",
     "test:auth-me": "ts-node scripts/test-auth-me.ts",
     "test:oauth-flow": "ts-node scripts/test-oauth-flow.ts",
-    "deploy:migrations": "ts-node scripts/deploy-migrations.ts",
-    "deploy:migrations:prod": "node dist/scripts/deploy-migrations.js"
+    "deploy:migrations": "ts-node scripts/run-migration.ts",
+    "deploy:migrations:prod": "node dist/scripts/deploy-migrations.js",
+    "reset:db": "ts-node scripts/reset-database.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",

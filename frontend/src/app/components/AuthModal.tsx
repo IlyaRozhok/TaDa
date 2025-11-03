@@ -8,57 +8,40 @@ import { fetchShortlist } from "../store/slices/shortlistSlice";
 import { AppDispatch } from "../store/store";
 import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
-import {
-  Loader2,
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  User,
-  Building,
-  CheckCircle,
-  X,
-} from "lucide-react";
+import { useOnboardingContext } from "../contexts/OnboardingContext";
+import { useAuthContext } from "../contexts/AuthContext";
+import { ApiError } from "../types/api";
+import { Loader2, Eye, EyeOff, Mail, Lock, X } from "lucide-react";
 import Logo from "./Logo";
 import { Button } from "./ui/Button";
-
-type UserType = "tenant" | "operator";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  forceRoleSelection?: boolean;
-  isOAuthRoleSelection?: boolean;
 }
 
-export default function AuthModal({
-  isOpen,
-  onClose,
-  forceRoleSelection = false,
-  isOAuthRoleSelection = false,
-}: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [step, setStep] = useState<"credentials" | "role">("credentials");
-  const [requiresRegistration, setRequiresRegistration] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const onboardingContext = useOnboardingContext();
+  const authContext = useAuthContext();
 
-  // Close modal on authentication success (except for OAuth role selection)
+  // Close modal on authentication success
   useEffect(() => {
-    if (isAuthenticated && !isOAuthRoleSelection) {
+    if (isAuthenticated) {
       onClose();
-      router.push("/app/dashboard");
+      // Let the auth system handle the redirect
     }
-  }, [isAuthenticated, isOAuthRoleSelection, onClose, router]);
+  }, [isAuthenticated, onClose]);
 
   // Close modal on escape key
   useEffect(() => {
@@ -91,30 +74,33 @@ export default function AuthModal({
     };
   }, [isOpen, onClose]);
 
-  // Handle forced role selection for OAuth users
+  // Sync with OnboardingContext when modal opens
   useEffect(() => {
-    console.log("🔍 AuthModal - checking forceRoleSelection:", {
-      forceRoleSelection,
-      isOpen,
-      isOAuthRoleSelection,
-    });
+    if (isOpen) {
+      // Load data from context if available
+      if (onboardingContext.userData.email) {
+        setEmail(onboardingContext.userData.email);
+      }
+      if (onboardingContext.userData.password) {
+        setPassword(onboardingContext.userData.password);
+      }
 
-    if (forceRoleSelection && isOpen) {
-      console.log("✅ AuthModal - forcing role selection step");
-      setStep("role");
-      setRequiresRegistration(true);
+      console.log("🔍 AuthModal - synced with context:", {
+        email: onboardingContext.userData.email,
+        password: onboardingContext.userData.password ? "***" : "empty",
+        role: onboardingContext.selectedRole,
+      });
     }
-  }, [forceRoleSelection, isOpen]);
+  }, [isOpen, onboardingContext.userData, onboardingContext.selectedRole]);
 
   const resetForm = () => {
     setEmail("");
     setPassword("");
-    setSelectedRole(null);
     setShowPassword(false);
     setError("");
-    setStep("credentials");
-    setRequiresRegistration(false);
     setRememberMe(false);
+    // Clear context data
+    onboardingContext.clearOnboardingData();
   };
 
   const handleClose = () => {
@@ -145,166 +131,71 @@ export default function AuthModal({
 
         // Initialize shortlist for tenant users
         if (loginResponse.data.user?.role === "tenant") {
-          console.log(
-            "🛒 Initializing shortlist for tenant user via AuthModal"
-          );
           dispatch(fetchShortlist());
         }
 
         handleClose();
         redirectAfterLogin(loginResponse.data.user, router);
       } else {
-        // User doesn't exist - show role selection for registration
-        setRequiresRegistration(true);
-        setStep("role");
+        // User doesn't exist - save data to context and redirect to onboarding for registration
+        console.log(
+          "🔍 AuthModal - user doesn't exist, saving data and redirecting to onboarding"
+        );
+
+        // Save user data to AuthContext before redirecting
+        console.log("🔍 AuthModal - saving user data to AuthContext:", {
+          email: email,
+          password: password ? "***" : "empty",
+        });
+
+        authContext.setCredentials({
+          email: email,
+          password: password,
+        });
+
+        console.log("🔍 AuthModal - credentials saved to AuthContext");
+
+        // Verify that credentials were actually saved
+        setTimeout(() => {
+          console.log("🔍 AuthModal - verification after save:", {
+            hasCredentials: !!authContext.credentials,
+            email: authContext.credentials?.email,
+            password: authContext.credentials?.password ? "***" : "empty",
+          });
+        }, 100);
+
+        handleClose();
+        router.push("/onboarding");
       }
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(
-        error.response?.data?.message ||
-          "Authentication failed. Please try again."
-      );
+      console.error("🔍 AuthModal authentication error:", err);
+      const error = err as ApiError;
+
+      let errorMessage = "Authentication failed. Please try again.";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 401) {
+        errorMessage =
+          "Invalid email or password. Please check your credentials.";
+      } else if (error.response?.status === 400) {
+        errorMessage = "Invalid input. Please check your email and password.";
+      } else if (error.response?.status && error.response.status >= 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRoleSelect = (role: UserType) => {
-    setSelectedRole(role);
-  };
-
-  const handleRoleSubmit = async () => {
-    if (!selectedRole) {
-      setError("Please select your account type");
-      return;
-    }
-
-    console.log("🔍 AuthModal - handling role submit:", {
-      selectedRole,
-      isOAuthRoleSelection,
-    });
-
-    if (isOAuthRoleSelection) {
-      // Google OAuth role selection - create user with role
-      console.log(
-        "✅ AuthModal - creating Google user with role:",
-        selectedRole
-      );
-      setIsLoading(true);
-
-      try {
-        // Get registration ID from sessionStorage
-        const registrationId = sessionStorage.getItem("googleRegistrationId");
-
-        if (!registrationId) {
-          throw new Error(
-            "Registration ID not found. Please try signing in again."
-          );
-        }
-
-        console.log(
-          "🔍 Creating Google user with registration ID:",
-          registrationId
-        );
-
-        const response = await authAPI.createGoogleUser(
-          registrationId,
-          selectedRole
-        );
-
-        console.log("✅ AuthModal - Google user created successfully:", {
-          userId: response.user?.id,
-          userRole: response.user?.role,
-          userEmail: response.user?.email,
-        });
-
-        // Store the access token
-        localStorage.setItem("accessToken", response.access_token);
-        localStorage.setItem(
-          "sessionExpiry",
-          String(Date.now() + 24 * 60 * 60 * 1000)
-        );
-
-        // Update user in Redux store
-        dispatch(
-          setAuth({
-            user: response.user,
-            accessToken: response.access_token,
-          })
-        );
-
-        // Initialize shortlist for tenant users
-        if (response.user?.role === "tenant") {
-          console.log(
-            "🛒 Initializing shortlist for tenant user via AuthModal role selection"
-          );
-          dispatch(fetchShortlist());
-        }
-
-        // Clear registration ID from sessionStorage
-        sessionStorage.removeItem("googleRegistrationId");
-
-        handleClose();
-        router.push("/app/dashboard");
-      } catch (err: unknown) {
-        const error = err as { response?: { data?: { message?: string } } };
-        console.error("❌ AuthModal - Google user creation failed:", error);
-        setError(
-          error.response?.data?.message ||
-            "Failed to create account. Please try again."
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Regular registration - register new user
-      console.log(
-        "✅ AuthModal - registering new user with role:",
-        selectedRole
-      );
-
-      try {
-        const registerResponse = await authAPI.register({
-          email,
-          password,
-          role: selectedRole,
-        });
-
-        // Success - registration completed
-        dispatch(
-          setAuth({
-            user: registerResponse.data.user,
-            accessToken: registerResponse.data.access_token,
-          })
-        );
-
-        // Initialize shortlist for tenant users
-        if (registerResponse.data.user?.role === "tenant") {
-          console.log(
-            "🛒 Initializing shortlist for tenant user after registration"
-          );
-          dispatch(fetchShortlist());
-        }
-
-        handleClose();
-        redirectAfterLogin(registerResponse.data.user, router);
-      } catch (err: unknown) {
-        const error = err as { response?: { data?: { message?: string } } };
-        setError(
-          error.response?.data?.message ||
-            "Failed to create account. Please try again."
-        );
-      }
-    }
-  };
-
   const handleGoogleAuth = () => {
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
     console.log("🔍 AuthModal - Google Auth button clicked");
-    console.log(
-      "🔍 Redirecting to:",
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/google`
-    );
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+    console.log("🔍 Redirecting to:", `${apiUrl}/auth/google`);
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   const handleForgotPassword = () => {
@@ -314,157 +205,6 @@ export default function AuthModal({
   };
 
   if (!isOpen) return null;
-
-  // Role Selection Step
-  if (step === "role" && requiresRegistration) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Simple dark backdrop */}
-        <div className="absolute inset-0 bg-black/50" />
-
-        {/* Modal Container */}
-        <div
-          ref={modalRef}
-          className="relative w-full max-w-md bg-white rounded-2xl shadow-lg p-8"
-        >
-          {/* Close Button */}
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="text-center mb-6">
-            <Logo size="md" className="mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900">
-              Choose Your Account Type
-            </h2>
-            <p className="text-gray-600 mt-2">
-              Select how you want to use TaDa
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
-              {error.includes("created with Google") && (
-                <p className="text-red-600 text-sm mt-2">
-                  👆 Please use the Google button to sign in instead.
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {/* Tenant Option */}
-            <div
-              onClick={() => handleRoleSelect("tenant")}
-              className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedRole === "tenant"
-                  ? "border-gray-900 bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-full ${
-                    selectedRole === "tenant"
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  <User className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <h3
-                    className={`font-semibold ${
-                      selectedRole === "tenant"
-                        ? "text-gray-900"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    I&apos;m looking for a place
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Find and save properties
-                  </p>
-                </div>
-                {selectedRole === "tenant" && (
-                  <CheckCircle className="w-5 h-5 text-gray-900" />
-                )}
-              </div>
-            </div>
-
-            {/* Operator Option */}
-            <div
-              onClick={() => handleRoleSelect("operator")}
-              className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedRole === "operator"
-                  ? "border-gray-900 bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-full ${
-                    selectedRole === "operator"
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  <Building className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <h3
-                    className={`font-semibold ${
-                      selectedRole === "operator"
-                        ? "text-gray-900"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    I have properties to rent
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    List and manage properties
-                  </p>
-                </div>
-                {selectedRole === "operator" && (
-                  <CheckCircle className="w-5 h-5 text-gray-900" />
-                )}
-              </div>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleRoleSubmit}
-            disabled={!selectedRole || isLoading}
-            className="w-full mt-6 bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-medium"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Creating account...
-              </div>
-            ) : (
-              "Continue"
-            )}
-          </Button>
-
-          <button
-            onClick={() => {
-              setStep("credentials");
-              setRequiresRegistration(false);
-              setError("");
-            }}
-            className="mt-4 text-sm text-gray-600 hover:text-gray-900 w-full text-center"
-          >
-            Back to login
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Credentials Step
   return (
@@ -512,7 +252,15 @@ export default function AuthModal({
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  // Update context
+                  onboardingContext.setUserData({
+                    email: e.target.value,
+                    password: password,
+                    provider: "local",
+                  });
+                }}
                 className="text-slate-900 w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none transition-colors"
                 placeholder="email@gmail.com"
                 required
@@ -530,7 +278,15 @@ export default function AuthModal({
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  // Update context
+                  onboardingContext.setUserData({
+                    email: email,
+                    password: e.target.value,
+                    provider: "local",
+                  });
+                }}
                 className="text-slate-900 w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none transition-colors"
                 placeholder="••••••••"
                 required
@@ -621,40 +377,14 @@ export default function AuthModal({
               Continue with Google
             </span>
           </button>
-
-          {/* Disabled social buttons */}
-          <div className="flex gap-3 opacity-50">
-            <button
-              className="flex-1 p-3 border border-gray-300 rounded-lg cursor-not-allowed"
-              disabled
-            >
-              <svg
-                className="w-5 h-5 mx-auto"
-                viewBox="0 0 24 24"
-                fill="#1877F2"
-              >
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            </button>
-
-            <button
-              className="flex-1 p-3 border border-gray-300 rounded-lg cursor-not-allowed"
-              disabled
-            >
-              <svg className="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="black">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-              </svg>
-            </button>
-          </div>
         </div>
 
         {/* Terms & Privacy */}
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500">
-            By clicking Continue with Google, Facebook, or Apple, you agree to
-            Tada{" "}
+            By clicking Continue with Google, you agree to Tada{" "}
             <a href="/terms" className="underline">
-              Term's of Use
+              Term&apos;s of Use
             </a>{" "}
             and{" "}
             <a href="/privacy" className="underline">
@@ -663,7 +393,7 @@ export default function AuthModal({
           </p>
           <p className="text-xs text-gray-500 mt-2">
             Tada may send you communications; you may change your preferences in
-            your account settings. We'll never post without your permission
+            your account settings. We&apos;ll never post without your permission
           </p>
         </div>
       </div>

@@ -22,17 +22,14 @@ export default function MapSetupInstructions() {
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-yellow-800">
-          Google Maps API не активирован
+          Проблема с Google Maps API
         </h3>
       </div>
 
       <p className="text-yellow-700 mb-4">
         Ошибка{" "}
-        <code className="bg-yellow-100 px-1 rounded">
-          ApiNotActivatedMapError
-        </code>{" "}
-        означает, что Google Maps JavaScript API не активирован в вашем проекте
-        Google Cloud.
+        <code className="bg-yellow-100 px-1 rounded">InvalidKeyMapError</code>{" "}
+        означает, что API ключ неверный или не настроен правильно.
       </p>
 
       <div className="bg-white rounded-lg p-4 mb-4">
@@ -42,6 +39,20 @@ export default function MapSetupInstructions() {
           <div className="flex items-start gap-3">
             <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-blue-600 text-sm font-bold">1</span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-700 font-medium">
+                Создайте файл .env.local в папке frontend/
+              </p>
+              <p className="text-xs text-gray-500">
+                Добавьте: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=ваш_ключ
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-600 text-sm font-bold">2</span>
             </div>
             <div>
               <p className="text-sm text-gray-700 font-medium">
@@ -60,25 +71,11 @@ export default function MapSetupInstructions() {
 
           <div className="flex items-start gap-3">
             <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-blue-600 text-sm font-bold">2</span>
-            </div>
-            <div>
-              <p className="text-sm text-gray-700 font-medium">
-                Выберите ваш проект
-              </p>
-              <p className="text-xs text-gray-500">
-                Или создайте новый, если у вас его нет
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <span className="text-blue-600 text-sm font-bold">3</span>
             </div>
             <div>
               <p className="text-sm text-gray-700 font-medium">
-                Перейдите в "APIs & Services" → "Library"
+                Перейдите в "APIs & Services" → "Credentials"
               </p>
             </div>
           </div>
@@ -89,7 +86,7 @@ export default function MapSetupInstructions() {
             </div>
             <div>
               <p className="text-sm text-gray-700 font-medium">
-                Найдите "Maps JavaScript API"
+                Найдите ваш API ключ и нажмите "Edit"
               </p>
             </div>
           </div>
@@ -100,7 +97,18 @@ export default function MapSetupInstructions() {
             </div>
             <div>
               <p className="text-sm text-gray-700 font-medium">
-                Нажмите "Enable"
+                В "API restrictions" выберите "Restrict key"
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-600 text-sm font-bold">6</span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-700 font-medium">
+                Выберите API: "Maps JavaScript API" и "Geocoding API"
               </p>
             </div>
           </div>
@@ -110,14 +118,11 @@ export default function MapSetupInstructions() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
         <h4 className="font-medium text-blue-900 mb-2">Важно:</h4>
         <ul className="text-sm text-blue-800 space-y-1">
+          <li>• API ключ должен быть в проекте, где активированы нужные API</li>
           <li>
-            • API ключ должен быть в проекте, где активирован Maps JavaScript
-            API
+            • Обязательно включите "Maps JavaScript API" и "Geocoding API"
           </li>
-          <li>
-            • После активации API может потребоваться несколько минут для
-            распространения
-          </li>
+          <li>• Добавьте домен localhost:3000 в "Application restrictions"</li>
           <li>• Убедитесь, что у вас включен биллинг в Google Cloud</li>
         </ul>
       </div>

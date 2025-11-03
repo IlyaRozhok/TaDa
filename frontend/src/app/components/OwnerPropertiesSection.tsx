@@ -107,7 +107,7 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {properties.map((property, index) => {
           const primaryImage =
-            property.media?.find((m) => m.is_featured)?.url ||
+            property.media?.[0]?.url ||
             property.media?.[0]?.url ||
             "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop";
 

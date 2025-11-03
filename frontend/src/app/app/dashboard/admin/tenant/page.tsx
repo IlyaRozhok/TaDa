@@ -8,7 +8,6 @@ import {
   Property,
   MatchingResult,
 } from "../../../../lib/api";
-import { useTranslations } from "../../../../lib/language-context";
 import { selectUser } from "../../../../store/slices/authSlice";
 import PropertyCard from "../../../../components/PropertyCard";
 import DashboardHeader from "../../../../components/DashboardHeader";
@@ -28,7 +27,6 @@ import { waitForSessionManager } from "../../../../components/providers/SessionM
 
 function AdminTenantDashboard() {
   const user = useSelector(selectUser);
-  const t = useTranslations();
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
   const [matchedProperties, setMatchedProperties] = useState<MatchingResult[]>(
@@ -43,7 +41,6 @@ function AdminTenantDashboard() {
         await waitForSessionManager();
         await Promise.all([fetchProperties(), fetchMatchedProperties()]);
       } catch (err) {
-        console.error("Dashboard initialization error:", err);
         setError("Failed to load dashboard");
       } finally {
         setLoading(false);

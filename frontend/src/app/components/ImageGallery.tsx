@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { memo } from "react";
 
 import { PropertyMedia } from "../types";
 import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
@@ -12,7 +13,7 @@ interface ImageGalleryProps {
   alt: string;
 }
 
-export default function ImageGallery({
+const ImageGallery = memo(function ImageGallery({
   images,
   media,
   alt,
@@ -27,7 +28,7 @@ export default function ImageGallery({
       const mediaUrls = media
         .filter((item) => item.type === "image" || !item.type)
         .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
-        .map((item) => item.url || item.s3_url)
+        .map((item) => item.url)
         .filter(Boolean);
 
       if (mediaUrls.length > 0) {
@@ -180,4 +181,6 @@ export default function ImageGallery({
       )}
     </div>
   );
-}
+});
+
+export default ImageGallery;

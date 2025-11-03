@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import {
   Heart,
   Bell,
@@ -12,6 +13,8 @@ import {
 } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import styles from "./ui/DropdownStyles.module.scss";
+import { selectUser } from "../store/slices/authSlice";
+import { getRedirectPath } from "../utils/simpleRedirect";
 
 interface TenantUniversalHeaderProps {
   searchTerm: string;
@@ -37,6 +40,7 @@ export default function TenantUniversalHeader({
   showPreferencesButton = true,
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
+  const user = useSelector(selectUser);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("EN");
 
@@ -57,7 +61,8 @@ export default function TenantUniversalHeader({
   }, [isLanguageOpen]);
 
   const handleLogoClick = () => {
-    router.push("/app/dashboard");
+    const path = getRedirectPath(user);
+    router.replace(path);
   };
 
   const handleFavouritesClick = () => {
@@ -150,16 +155,14 @@ export default function TenantUniversalHeader({
               <div
                 className={`absolute right-0 top-full ${styles.dropdownContainer}`}
               >
-                <div className="max-h-80 overflow-y-auto">
+                <div className="max-h-80 overflow-y">
                   {[
                     { code: "EN", name: "English" },
                     { code: "FR", name: "Français" },
                     { code: "ES", name: "Español" },
                     { code: "IT", name: "Italiano" },
-                    { code: "NL", name: "Nederlands" },
                     { code: "PT", name: "Português" },
                     { code: "RU", name: "Русский" },
-                    { code: "ZH", name: "中文" },
                   ].map((lang) => (
                     <button
                       key={lang.code}

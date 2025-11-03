@@ -182,7 +182,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-16">
+          <div className="mt-18 grid grid-cols-1 md:grid-cols-2 gap-16">
             {/* For Tenants */}
             <div>
               <h3 className="text-2xl font-bold text-gray-900 mb-8">

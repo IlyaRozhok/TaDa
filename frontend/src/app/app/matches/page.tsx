@@ -8,7 +8,6 @@ import {
   Property,
   preferencesAPI,
 } from "../../lib/api";
-import { useTranslations } from "../../lib/language-context";
 import { selectUser } from "../../store/slices/authSlice";
 import MatchedPropertyGridWithLoader from "../../components/MatchedPropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
@@ -28,7 +27,6 @@ import {
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 
 export default function MatchesPage() {
-  const t = useTranslations();
   const router = useRouter();
   const user = useSelector(selectUser);
   const [detailedMatches, setDetailedMatches] = useState<
@@ -80,7 +78,11 @@ export default function MatchesPage() {
 
         // Extract data from axios response
         const matches = response?.data || response;
-        console.log("🔍 Raw matches response:", { response, matches });
+        console.log("🔍 Raw matches response:", {
+          hasResponse: !!response,
+          hasData: !!response?.data,
+          matchesCount: Array.isArray(matches) ? matches.length : 0,
+        });
 
         // Ensure matches is always an array
         const matchesArray = Array.isArray(matches) ? matches : [];
@@ -425,8 +427,7 @@ export default function MatchesPage() {
                             ) {
                               const featuredImage =
                                 matchResult.property.media.find(
-                                  (item) =>
-                                    item.is_featured && item.type === "image"
+                                  (item) => item.type === "image"
                                 );
                               if (featuredImage) {
                                 imageUrl = featuredImage.url;

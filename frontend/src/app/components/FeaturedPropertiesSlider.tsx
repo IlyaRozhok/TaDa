@@ -18,9 +18,7 @@ const generateRandomData = () => ({
 const getFirstImage = (property: Property) => {
   // Use media if available
   if (property.media && property.media.length > 0) {
-    const featuredImage = property.media.find(
-      (item) => item.is_featured && item.type === "image"
-    );
+    const featuredImage = property.media.find((item) => item.type === "image");
     if (featuredImage) {
       return featuredImage.url;
     }
@@ -131,21 +129,20 @@ export default function FeaturedPropertiesSlider() {
     [key: string]: { matchPercent: number; isPopular: boolean; isNew: boolean };
   }>({});
 
-  // Use the properties hook for featured properties
-  const { properties, loading, error, fetchFeaturedProperties } =
-    useProperties();
+  // Use the properties hook for public properties
+  const { properties, loading, error, fetchPublicProperties } = useProperties();
 
   useEffect(() => {
-    const loadFeaturedProperties = async () => {
+    const loadProperties = async () => {
       try {
-        await fetchFeaturedProperties(6);
+        await fetchPublicProperties(1, 6);
       } catch (err: any) {
-        console.error("Error fetching featured properties:", err);
+        console.error("Error fetching properties:", err);
       }
     };
 
-    loadFeaturedProperties();
-  }, [fetchFeaturedProperties]);
+    loadProperties();
+  }, [fetchPublicProperties]);
 
   // Update random data when properties change
   useEffect(() => {

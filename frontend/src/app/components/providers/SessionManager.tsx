@@ -53,7 +53,7 @@ export default function SessionManager() {
 
             // Initialize shortlist for tenant users
             if (response.data.user.role === "tenant") {
-              console.log("🛒 Initializing shortlist for tenant user");
+              
               dispatch(fetchShortlist());
             }
           }

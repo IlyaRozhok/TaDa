@@ -52,7 +52,10 @@ export interface Property {
   geocoding_failed?: boolean;
   original_address?: string;
   geocoding_error?: string;
-  fallback_reason?: "geocoding_returned_null" | "geocoding_error" | "maps_not_ready";
+  fallback_reason?:
+    | "geocoding_returned_null"
+    | "geocoding_error"
+    | "maps_not_ready";
   // Media files from S3
   media?: PropertyMedia[];
   // Deprecated: will be removed in favor of media
@@ -69,7 +72,6 @@ export interface PropertyMedia {
   original_filename: string;
   file_size: number;
   order_index: number;
-  is_featured: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -78,4 +80,19 @@ export interface UploadResponse {
   url: string;
   key: string;
   message?: string;
+}
+
+export interface CreatePropertyRequest {
+  title: string;
+  description: string;
+  address: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  property_type: string;
+  furnishing: string;
+  lifestyle_features: string[];
+  available_from: string;
+  is_btr: boolean;
+  media_ids?: string[];
 }

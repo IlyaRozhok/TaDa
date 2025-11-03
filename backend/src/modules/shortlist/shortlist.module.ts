@@ -18,3 +18,4 @@ import { S3Service } from "../../common/services/s3.service";
   exports: [ShortlistService],
 })
 export class ShortlistModule {}
+
