@@ -509,16 +509,6 @@ secrets/
 *.dmg
 
 # Image
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.tiff
-*.ico
-*.svg
-*.webp
-
 # Video
 *.mp4
 *.avi
