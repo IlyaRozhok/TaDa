@@ -1,21 +1,28 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Image from "next/image";
 import TenantsSection from "./TenantsSection";
 
 const TenantsWrapper = () => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   return (
     <section className="relative bg-white h-full">
       {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/tenants-bg.png')",
-        }}
-      ></div>
-
-      {/* Dark overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/30"></div>
+      <div className="absolute inset-0">
+        <Image
+          src="/tenants-bg.png"
+          alt="Background"
+          fill
+          className={`object-cover transition-opacity duration-300 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          sizes="100vw"
+          quality={85}
+          onLoad={() => setImageLoaded(true)}
+        />
+      </div>
 
       {/* Content */}
       <div className="relative z-10">

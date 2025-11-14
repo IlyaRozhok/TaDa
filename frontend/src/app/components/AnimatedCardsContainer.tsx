@@ -29,7 +29,7 @@ const AnimatedCardsContainer = ({
       </div>
 
       {/* Desktop: Grid layout */}
-      <div className="hidden lg:block px-4">
+      <div className="hidden lg:block">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map((card) => (
             <div

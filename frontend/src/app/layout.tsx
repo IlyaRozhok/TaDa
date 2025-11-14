@@ -53,6 +53,20 @@ export default function RootLayout({
         />
         <meta httpEquiv="Expires" content="0" />
 
+        {/* Preload critical hero background images */}
+        <link
+          rel="preload"
+          as="image"
+          href="/bg.png"
+          fetchPriority="high"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/tenant-landing-bg.png"
+          fetchPriority="high"
+        />
+
         {/* EmailJS Script */}
         <script
           type="text/javascript"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import LandingSwitcher, { LandingType } from "./LandingSwitcher";
 import RequestDemoModal from "./RequestDemoModal";
@@ -30,8 +30,22 @@ const TenantsHeroSection = ({
   onContactClick?: () => void;
 }) => {
   const { t } = useTranslation();
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    // Force a small delay to ensure transition is visible on first load
+    // This ensures the opacity-0 state is rendered before transition starts
+    const timer = setTimeout(() => {
+      // Small delay to ensure initial render with opacity-0
+    }, 1);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <section id="hero" className="relative min-h-screen overflow-hidden pb-5">
+      {/* Background color fallback - matching image colors */}
+      <div className="absolute inset-0 bg-black"></div>
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
@@ -39,14 +53,24 @@ const TenantsHeroSection = ({
           alt="Background"
           fill
           priority
-          className="object-cover"
+          fetchPriority="high"
+          className={`object-cover transition-opacity duration-700 ease-in-out ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
           sizes="100vw"
           quality={85}
+          onLoadingComplete={() => {
+            // Add small delay to ensure transition is visible
+            setTimeout(() => setImageLoaded(true), 10);
+          }}
+          onLoad={() => {
+            // Add small delay to ensure transition is visible
+            setTimeout(() => setImageLoaded(true), 10);
+          }}
         />
       </div>
 
       {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/20 z-[1]" />
 
       {/* Text content positioned on the left */}
       <div className="relative z-20 mt-12 container mx-auto px-4 pt-24 md:pt-32 lg:pt-0 lg:flex lg:items-center lg:min-h-screen">

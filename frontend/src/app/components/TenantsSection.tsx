@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import CardsSlider from "./CardsSlider";
-import DesktopCardsSlider from "./DesktopCardsSlider";
+import ResponsiveCardsDisplay from "./ResponsiveCardsDisplay";
 import { useTranslation } from "../hooks/useTranslation";
 import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
 
@@ -13,6 +12,7 @@ const TenantsSection = () => {
       id: 1,
       category: t(operatorKeys.rent.card1.label),
       title: t(operatorKeys.rent.card1.title),
+      text: t(operatorKeys.rent.card1.description),
       description: t(operatorKeys.rent.card1.description),
       icon: true,
     },
@@ -20,6 +20,7 @@ const TenantsSection = () => {
       id: 2,
       category: t(operatorKeys.rent.card2.label),
       title: t(operatorKeys.rent.card2.title),
+      text: t(operatorKeys.rent.card2.description),
       description: t(operatorKeys.rent.card2.description),
       icon: true,
     },
@@ -27,6 +28,7 @@ const TenantsSection = () => {
       id: 3,
       category: t(operatorKeys.rent.card3.label),
       title: t(operatorKeys.rent.card3.title),
+      text: t(operatorKeys.rent.card3.description),
       description: t(operatorKeys.rent.card3.description),
       icon: true,
     },
@@ -34,13 +36,11 @@ const TenantsSection = () => {
       id: 4,
       category: t(operatorKeys.rent.card4.label),
       title: t(operatorKeys.rent.card4.title),
+      text: t(operatorKeys.rent.card4.description),
       description: t(operatorKeys.rent.card4.description),
       icon: true,
     },
   ];
-
-  const sliderLeftPaddingClasses =
-    "pl-4 sm:pl-6 md:pl-8 lg:pl-[calc((100vw-1024px)/2+1rem)] xl:pl-[calc((100vw-1280px)/2+1rem)] 2xl:pl-[calc((100vw-1536px)/2+1rem)] pr-0";
 
   return (
     <section id="tenants" className="md:py-21 py-5 relative overflow-hidden">
@@ -62,28 +62,8 @@ const TenantsSection = () => {
         </div>
       </div>
 
-      {/* Mobile: Slider */}
-      <div className="block lg:hidden">
-        <div
-          className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
-        >
-          <CardsSlider
-            cards={tenantCards.map((card) => ({
-              ...card,
-              text: card.description,
-            }))}
-          />
-        </div>
-      </div>
-
-      {/* Desktop: Slider */}
-      <div className="hidden lg:block">
-        <div
-          className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
-        >
-          <DesktopCardsSlider cards={tenantCards} />
-        </div>
-      </div>
+      {/* Responsive Cards Display - uses same container padding */}
+      <ResponsiveCardsDisplay cards={tenantCards} />
     </section>
   );
 };
