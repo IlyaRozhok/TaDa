@@ -11,6 +11,7 @@ import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
 import SilenceConsole from "./components/SilenceConsole";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

@@ -3,37 +3,48 @@
 import React from "react";
 import Image from "next/image";
 import { useTranslation } from "../hooks/useTranslation";
-import { generalKeys } from "../lib/translationsKeys/generalKeys";
+import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
+import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
 
-const PartnersSection = () => {
+interface PartnersSectionProps {
+  landingType?: "operators" | "tenants";
+}
+
+const PartnersSection = ({
+  landingType = "operators",
+}: PartnersSectionProps) => {
   const { t } = useTranslation();
+
+  // Choose keys based on landing type
+  const keys = landingType === "tenants" ? tenantKeys : operatorKeys;
+
   const partners = [
     {
       id: 1,
       name: "Stripe",
       logo: "/stripe.png",
-      description: t(generalKeys.partners.stripe),
+      description: t(keys.partners.stripe),
       highlighted: false,
     },
     {
       id: 2,
       name: "Experian",
       logo: "/experian.png",
-      description: t(generalKeys.partners.experian),
+      description: t(keys.partners.experian),
       highlighted: false,
     },
     {
       id: 3,
       name: "Deposit Protection Service",
       logo: "/depos-protect-service.png",
-      description: t(generalKeys.partners.dps),
+      description: t(keys.partners.dps),
       highlighted: false,
     },
     {
       id: 4,
       name: "Octopus Energy",
       logo: "/octopus.png",
-      description: t(generalKeys.partners.energy),
+      description: t(keys.partners.energy),
       highlighted: false,
     },
   ];
@@ -47,7 +58,7 @@ const PartnersSection = () => {
         {/* Section Title */}
         <div className="text-center md:mb-16 mt-10 md:mt-0">
           <h2 className="text-4xl md:text-5xl lg:text-7xl font-sf-pro font-semibold text-gray-900 mb-8">
-            {t(generalKeys.partners.title)}
+            {t(keys.partners.title)}
           </h2>
         </div>
 

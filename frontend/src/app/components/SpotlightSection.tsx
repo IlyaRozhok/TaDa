@@ -112,7 +112,7 @@ const SpotlightSection = ({ onBookClick }: SpotlightSectionProps) => {
           {/* CTA Button */}
           <button
             onClick={onBookClick}
-            className="bg-black w-full sm:w-[300px] cursor-pointer text-white px-8 py-4 rounded-full font-semibold hover:bg-black/20 hover:text-black transition-colors mb-8"
+            className="bg-black w-auto cursor-pointer text-white px-8 py-4 rounded-full font-semibold hover:bg-black/20 hover:text-black transition-colors mb-8"
           >
             {t(operatorKeys.spotlight.ctaBtn)}
           </button>

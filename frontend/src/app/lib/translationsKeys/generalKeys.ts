@@ -3,13 +3,6 @@ export const generalKeys = {
     operators: "landing.operators.web.header.segment.1",
     tenants: "landing.operators.web.header.segment.2",
   },
-  partners: {
-    title: "landing.operators.web.partners.title",
-    stripe: "landing.operators.web.partner1",
-    experian: "landing.operators.web.partner2",
-    dps: "landing.operators.web.partner3",
-    energy: "landing.operators.web.partner4",
-  },
   social: {
     label: "landing.operators.web.sm.subtitle",
     title: "landing.operators.web.sm.title",

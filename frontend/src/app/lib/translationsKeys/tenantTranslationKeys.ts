@@ -105,4 +105,11 @@ export const tenantKeys = {
     gradientTextTop: "landing.operators.web.sm.text1",
     gradientTextBottom: "landing.tenant.web.sm.text2",
   },
+  partners: {
+    title: "landing.tenant.web.header.block6",
+    stripe: "landing.tenant.web.partner1",
+    experian: "landing.tenant.web.partner2",
+    dps: "landing.tenant.web.partner3",
+    energy: "landing.tenant.web.partner4",
+  },
 };

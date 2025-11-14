@@ -89,4 +89,11 @@ export const operatorKeys = {
       description: "landing.operators.web.about.label3.description",
     },
   },
+  partners: {
+    title: "landing.operators.web.partners.title",
+    stripe: "landing.operators.web.partner1",
+    experian: "landing.operators.web.partner2",
+    dps: "landing.operators.web.partner3",
+    energy: "landing.operators.web.partner4",
+  },
 };

@@ -75,7 +75,7 @@ const TenantsHeroSection = ({
       {/* Text content positioned on the left */}
       <div className="relative z-20 mt-12 container mx-auto px-4 pt-24 md:pt-32 lg:pt-0 lg:flex lg:items-center lg:min-h-screen">
         <div className="text-white space-y-4 md:space-y-6 lg:space-y-6 xl:space-y-8 w-full lg:max-w-[45%] xl:max-w-[50%] 2xl:max-w-[55%]">
-          <h1 className="font-sf-pro font-semibold text-5xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-7xl 2xl:text-8xl max-w-[700px] leading-tight">
+          <h1 className="font-sf-pro font-semibold text-5xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-7xl 2xl:text-8xl max-w-[700px] 2xl:leading-[100px]">
             {t(tenantKeys.hero.title)}
           </h1>
           <p className="font-sf-pro font-regular text-lg sm:text-xl md:text-xl lg:text-lg xl:text-xl 2xl:text-2xl leading-6 sm:leading-7 lg:leading-6 xl:leading-7 2xl:leading-8 tracking-[0.22px] max-w-xl md:max-w-2xl lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
@@ -86,7 +86,7 @@ const TenantsHeroSection = ({
           <div className="pt-4">
             <button
               onClick={onContactClick}
-              className="bg-white text-black w-full sm:w-[160px] hover:text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-black transition-colors shadow-lg cursor-pointer"
+              className="bg-white text-black w-full sm:w-auto hover:text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-black transition-colors shadow-lg cursor-pointer"
             >
               {t(tenantKeys.hero.ctaBtn)}
             </button>
@@ -244,7 +244,7 @@ const TenantsCardsSection = ({
       <div className="text-center mt-6 md:mt-16 px-4">
         <button
           onClick={onContactClick}
-          className="bg-black w-full sm:w-[200px] text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
+          className="bg-black w-auto text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
         >
           {t(tenantKeys.rentSection.ctaBtn)}
         </button>
@@ -554,7 +554,7 @@ const GenerationRentSection = ({
           {/* CTA Button */}
           <button
             onClick={onContactClick}
-            className="bg-black w-full sm:w-[160px] cursor-pointer text-white px-8 py-4 rounded-full font-semibold hover:bg-black/20 hover:text-black transition-colors mb-8"
+            className="bg-black w-auto cursor-pointer text-white px-8 py-4 rounded-full font-semibold hover:bg-black/20 hover:text-black transition-colors mb-8"
           >
             {t(tenantKeys.generation.ctaBtn)}
           </button>
@@ -722,7 +722,7 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
     <>
       <HeroWrapper />
       <CardsSection />
-      <PartnersSection />
+      <PartnersSection landingType="operators" />
       <TenantsWrapper />
       <SpotlightSection onBookClick={() => setIsRequestDemoOpen(true)} />
       <SocialMediaSection />
@@ -740,7 +740,7 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
       />
       <TenantsFeaturesSection />
       <TenantsSocialMediaSection />
-      <PartnersSection />
+      <PartnersSection landingType="tenants" />
       <AboutUsSection />
       <Footer />
     </>
@@ -750,7 +750,7 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
     <>
       {/* Header with switcher */}
       <Header onSignIn={onSignIn} landingType={currentType}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-[160px]">
           <LandingSwitcher
             currentType={currentType}
             onSwitch={handleSwitch}
