@@ -63,6 +63,7 @@ const DesktopCardsSlider = ({ cards }: DesktopCardsSliderProps) => {
                     alt={card.title || `Feature ${card.id}`}
                     width={300}
                     height={256}
+                    quality={100}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -102,9 +103,9 @@ const DesktopCardsSlider = ({ cards }: DesktopCardsSliderProps) => {
         /* Slider - For 5+ cards */
         <div className="relative w-full">
           {/* Slider Container */}
-          <div className="overflow-hidden">
+          <div className="overflow-x-hidden overflow-y-visible">
             <div
-              className="flex transition-transform duration-500 ease-in-out pl-4"
+              className="flex transition-transform duration-500 ease-in-out"
               style={{
                 transform: `translateX(-${currentIndex * 28.5}%)`,
                 gap: "1rem", // 16px gap
@@ -128,6 +129,7 @@ const DesktopCardsSlider = ({ cards }: DesktopCardsSliderProps) => {
                           alt={card.title || `Feature ${card.id}`}
                           width={300}
                           height={256}
+                          quality={100}
                           className="w-full h-full object-cover"
                         />
                       </div>

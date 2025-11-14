@@ -2,10 +2,6 @@
 
 import { useEffect } from "react";
 
-/**
- * Disables console logging in the browser to avoid circular JSON errors
- * from logging complex React/DOM objects. No-ops in production by default too.
- */
 export default function SilenceConsole() {
   useEffect(() => {
     const original = { ...console } as Console;

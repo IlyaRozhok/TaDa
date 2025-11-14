@@ -74,7 +74,7 @@ function AuthCallbackContent() {
 
         console.log("🔍 Getting user profile...");
         // Get user profile with explicit token in request
-        const profileResponse = await usersAPI.getMe();
+        const profileResponse = await authAPI.getMe();
 
         console.log("🔍 Profile response:", {
           hasResponse: !!profileResponse,

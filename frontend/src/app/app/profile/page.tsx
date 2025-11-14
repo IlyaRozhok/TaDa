@@ -3,20 +3,16 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
-import { selectUser, updateUser } from "../../store/slices/authSlice";
-import { authAPI } from "../../lib/api";
+import {
+  selectUser,
+  selectIsAuthenticated,
+  updateUser,
+} from "../../store/slices/authSlice";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { GlassmorphismDatePicker } from "../../components/preferences/ui/GlassmorphismDatePicker";
 import { GlassmorphismDropdown } from "../../components/preferences/ui/GlassmorphismDropdown";
 import { ErrorMessage } from "../../components/preferences/ui/ErrorMessage";
-import {
-  ArrowLeft,
-  User as UserIcon,
-  Save,
-  AlertCircle,
-  CheckCircle2,
-  Edit3,
-} from "lucide-react";
+import { User as UserIcon, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface UpdateUserData {
   full_name?: string;
@@ -117,6 +113,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -131,6 +128,21 @@ export default function ProfilePage() {
     nationality: "",
     occupation: "",
   });
+
+  // Check authentication and redirect if not authenticated
+  useEffect(() => {
+    // Check if token exists in localStorage
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
+
+    // If no token or not authenticated, redirect to landing page
+    if (!token || !isAuthenticated) {
+      router.replace("/app/auth/login");
+      return;
+    }
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     if (user && !isEditing) {
@@ -250,13 +262,6 @@ export default function ProfilePage() {
         return;
       }
 
-
-
-
-
-
-
-
       // Update Redux state with new user data
       dispatch(updateUser(updateData));
 
@@ -373,6 +378,13 @@ export default function ProfilePage() {
       return formData[fieldKey] !== currentValue;
     });
   }, [formData, user]);
+
+  // If not authenticated or no token, don't render anything (redirect will happen)
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  if (!token || !isAuthenticated) {
+    return null;
+  }
 
   if (!user) {
     return (

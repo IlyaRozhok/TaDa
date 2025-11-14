@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../../store/slices/authSlice";
 import { useTenantDashboard } from "../../../hooks/useTenantDashboard";
@@ -9,15 +10,12 @@ import TenantPerfectMatchSection from "../../../components/TenantPerfectMatchSec
 import ListedPropertiesSection from "../../../components/ListedPropertiesSection";
 import LoadingPage from "../../../components/ui/LoadingSpinner";
 import ErrorBoundary from "../../../components/ErrorBoundary";
+import { waitForSessionManager } from "../../../components/providers/SessionManager";
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
-  const {
-    state,
-    setSearchTerm,
-    loadProperties,
-    clearError,
-  } = useTenantDashboard();
+  const { state, setSearchTerm, loadProperties, clearError } =
+    useTenantDashboard();
 
   // Handle search term changes
   const handleSearchChange = (term: string) => {
@@ -79,7 +77,9 @@ function TenantDashboardContent() {
           {/* Perfect Match Section - only show if preferences are NOT complete */}
           {!state.hasCompletePreferences && (
             <TenantPerfectMatchSection
-              hasPreferences={!!state.userPreferences && state.preferencesCount > 0}
+              hasPreferences={
+                !!state.userPreferences && state.preferencesCount > 0
+              }
               preferencesCount={state.preferencesCount}
             />
           )}
@@ -103,6 +103,48 @@ function TenantDashboardContent() {
 
 export default function TenantDashboardPage() {
   const user = useSelector(selectUser);
+  const router = useRouter();
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeSession = async () => {
+      try {
+        await waitForSessionManager();
+      } catch (error) {
+        console.error("Failed to wait for session manager:", error);
+      } finally {
+        if (isMounted) {
+          setSessionReady(true);
+        }
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!sessionReady) {
+      return;
+    }
+
+    if (!user) {
+      router.replace("/");
+    }
+  }, [sessionReady, user, router]);
+
+  if (!sessionReady) {
+    return <LoadingPage text="Loading dashboard..." />;
+  }
+
+  if (!user) {
+    return <LoadingPage text="Redirecting..." />;
+  }
 
   // Redirect non-tenants
   if (user && user.role !== "tenant") {

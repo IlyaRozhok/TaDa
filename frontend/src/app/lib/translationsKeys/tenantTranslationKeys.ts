@@ -54,15 +54,15 @@ export const tenantKeys = {
     },
     amenitiesCard: {
       title: "landing.tenant.web.gr.card2.title",
-      description: "landing.tenant.web.gr.card2.title",
+      description: "landing.tenant.web.gr.card2.description",
     },
     professionalCard: {
       title: "landing.tenant.web.gr.card3.title",
-      description: "landing.tenant.web.gr.card3.title",
+      description: "landing.tenant.web.gr.card3.description",
     },
     vettedCard: {
       title: "landing.tenant.web.gr.card4.title",
-      description: "landing.tenant.web.gr.card4.title",
+      description: "landing.tenant.web.gr.card4.description",
     },
   },
   relocation: {

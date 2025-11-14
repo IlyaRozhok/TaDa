@@ -80,7 +80,7 @@ function SelectRoleContent() {
       dispatch(
         setAuth({
           user: response.user,
-          accessToken: response.access_token || localStorage.getItem("token"),
+          accessToken: response.access_token || localStorage.getItem("accessToken"),
         })
       );
 

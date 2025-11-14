@@ -257,7 +257,7 @@ const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
                   Uploading...
                 </div>
               ) : (
-                `Choose Files (${mediaFiles.length}/${maxFiles})`
+                `Choose Files`
               )}
             </button>
           </div>

@@ -33,15 +33,20 @@ const TenantsHeroSection = ({
   return (
     <section id="hero" className="relative min-h-screen overflow-hidden pb-5">
       {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/tenant-landing-bg.png')",
-        }}
-      />
+      <div className="absolute inset-0">
+        <Image
+          src="/tenant-landing-bg.png"
+          alt="Background"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+          quality={85}
+        />
+      </div>
 
       {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/20" />
+      <div className="absolute inset-0 bg-black/20 z-[1]" />
 
       {/* Text content positioned on the left */}
       <div className="relative z-20 mt-12 container mx-auto px-4 pt-24 md:pt-32 lg:pt-0 lg:flex lg:items-center lg:min-h-screen">
@@ -98,6 +103,7 @@ const TenantsHeroSection = ({
                 width={800}
                 height={600}
                 className="w-full h-full object-contain"
+                priority
               />
             </div>
           </div>
@@ -136,6 +142,7 @@ const TenantsHeroSection = ({
                 width={600}
                 height={400}
                 className="w-full h-full object-contain"
+                priority
               />
             </div>
           </div>
@@ -222,6 +229,7 @@ const TenantsCardsSection = ({
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TenantsBTRSection = () => {
   const { t } = useTranslation();
   const partners = [
@@ -351,6 +359,9 @@ const TenantsFeaturesSection = () => {
     },
   ];
 
+  const sliderLeftPaddingClasses =
+    "pl-4 sm:pl-6 md:pl-8 lg:pl-[calc((100vw-1024px)/2+1rem)] xl:pl-[calc((100vw-1280px)/2+1rem)] 2xl:pl-[calc((100vw-1536px)/2+1rem)] pr-0";
+
   return (
     <section
       id="relocation-support"
@@ -370,12 +381,20 @@ const TenantsFeaturesSection = () => {
 
       {/* Mobile: Slider with padding */}
       <div className="block lg:hidden">
-        <CardsSlider cards={features} />
+        <div
+          className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
+        >
+          <CardsSlider cards={features} />
+        </div>
       </div>
 
       {/* Desktop: Slider without right padding */}
-      <div className="hidden lg:block overflow-hidden">
-        <DesktopCardsSlider cards={features} />
+      <div className="hidden lg:block">
+        <div
+          className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
+        >
+          <DesktopCardsSlider cards={features} />
+        </div>
       </div>
     </section>
   );

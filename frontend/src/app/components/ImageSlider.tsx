@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 
 interface ImageCard {
   id: number;
@@ -73,9 +74,12 @@ const ImageSlider = ({ cards }: ImageSliderProps) => {
           {cards.map((card) => (
             <div key={card.id} className="flex-shrink-0 w-[90%]">
               <div className="relative rounded-2xl overflow-hidden h-full">
-                <img
+                <Image
                   src={card.image}
                   alt={`Image ${card.id}`}
+                  width={1200}
+                  height={800}
+                  quality={100}
                   className="w-full h-full object-cover"
                 />
               </div>

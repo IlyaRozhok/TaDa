@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { Property } from "../types";
 import { useProperties } from "../hooks/useProperties";
 import PropertyCard from "./PropertyCard";
@@ -62,9 +63,12 @@ const FeaturedPropertyCard: React.FC<PropertyCardProps> = ({
     >
       {/* Property Image */}
       <div className="relative h-48 overflow-hidden">
-        <img
+        <Image
           src={getFirstImage(property)}
           alt={property.title}
+          width={800}
+          height={400}
+          quality={100}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
 

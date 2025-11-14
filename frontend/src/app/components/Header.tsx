@@ -177,10 +177,10 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
                               setLanguage(lang.langCode);
                               setIsLanguageOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 hover:text-black transition-colors bg-black/50 backdrop-blur-[10px] ${
+                            className={`w-full text-left px-4 py-2 text-sm transition-colors bg-black/50 backdrop-blur-[10px] ${
                               selectedLanguage === lang.code
-                                ? "bg-black font-semibold"
-                                : "text-gray-400"
+                                ? "bg-black font-semibold text-white hover:text-white hover:bg-black/80"
+                                : "text-gray-400 hover:bg-gray-100 hover:text-black"
                             }`}
                           >
                             {lang.name}

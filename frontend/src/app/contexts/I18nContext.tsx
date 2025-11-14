@@ -8,6 +8,14 @@ import React, {
   useCallback,
 } from "react";
 
+// Синхронный импорт начальных переводов для предотвращения мигания
+import enTranslations from "../../translations/en.json";
+import esTranslations from "../../translations/es.json";
+import plTranslations from "../../translations/pl.json";
+import ruTranslations from "../../translations/ru.json";
+import ukTranslations from "../../translations/uk.json";
+import zhTranslations from "../../translations/zh-Hans-CN.json";
+
 type LanguageCode = "en" | "es" | "pl" | "ru" | "uk" | "zh-Hans-CN";
 
 interface Translations {
@@ -46,76 +54,55 @@ const LANGUAGE_DISPLAY_MAP: Record<LanguageCode, string> = {
   "zh-Hans-CN": "ZH",
 };
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<LanguageCode>("en");
-  const [translations, setTranslations] = useState<Translations>({});
-  const [isLoading, setIsLoading] = useState(true);
+// Предзагруженные переводы для всех языков
+const PRELOADED_TRANSLATIONS: Record<LanguageCode, Translations> = {
+  en: enTranslations as Translations,
+  es: esTranslations as Translations,
+  pl: plTranslations as Translations,
+  ru: ruTranslations as Translations,
+  uk: ukTranslations as Translations,
+  "zh-Hans-CN": zhTranslations as Translations,
+};
 
-  // Загрузка языка из localStorage при инициализации (только на клиенте)
+export function I18nProvider({ children }: { children: React.ReactNode }) {
+  // Начинаем с английского по умолчанию (для SSR)
+  const [language, setLanguageState] = useState<LanguageCode>("en");
+  const [translations, setTranslations] = useState<Translations>(
+    PRELOADED_TRANSLATIONS["en"]
+  );
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Инициализация языка из localStorage или браузера (только на клиенте)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    let targetLang: LanguageCode = "en";
+
     if (savedLang && isValidLanguageCode(savedLang)) {
-      setLanguageState(savedLang as LanguageCode);
+      targetLang = savedLang as LanguageCode;
     } else {
       // Определение языка браузера
       const browserLang = navigator.language.split("-")[0].toLowerCase();
       const mappedLang =
         Object.values(LANGUAGE_MAP).find((code) => code === browserLang) ||
         "en";
-      setLanguageState(mappedLang as LanguageCode);
+      targetLang = mappedLang;
     }
+
+    if (targetLang !== language) {
+      setLanguageState(targetLang);
+      setTranslations(PRELOADED_TRANSLATIONS[targetLang]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Загрузка переводов
+  // Обновление переводов при смене языка (используем предзагруженные)
   useEffect(() => {
-    const loadTranslations = async () => {
-      setIsLoading(true);
-      try {
-        // Динамический импорт с маппингом для Next.js
-        let translationsModule;
-        switch (language) {
-          case "en":
-            translationsModule = await import("../../translations/en.json");
-            break;
-          case "es":
-            translationsModule = await import("../../translations/es.json");
-            break;
-          case "pl":
-            translationsModule = await import("../../translations/pl.json");
-            break;
-          case "ru":
-            translationsModule = await import("../../translations/ru.json");
-            break;
-          case "uk":
-            translationsModule = await import("../../translations/uk.json");
-            break;
-          case "zh-Hans-CN":
-            translationsModule = await import(
-              "../../translations/zh-Hans-CN.json"
-            );
-            break;
-          default:
-            translationsModule = await import("../../translations/en.json");
-        }
-        setTranslations(translationsModule.default || translationsModule);
-      } catch (error) {
-        console.error(`Failed to load translations for ${language}:`, error);
-        // Fallback на английский
-        try {
-          const fallback = await import("../../translations/en.json");
-          setTranslations(fallback.default || fallback);
-        } catch (fallbackError) {
-          console.error("Failed to load fallback translations:", fallbackError);
-          setTranslations({});
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadTranslations();
+    if (PRELOADED_TRANSLATIONS[language]) {
+      setTranslations(PRELOADED_TRANSLATIONS[language]);
+      setIsLoading(false);
+    }
   }, [language]);
 
   const setLanguage = useCallback((lang: LanguageCode) => {

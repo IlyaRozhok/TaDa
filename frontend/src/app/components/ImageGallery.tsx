@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { memo } from "react";
+import Image from "next/image";
 
 import { PropertyMedia } from "../types";
 import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
@@ -57,9 +58,9 @@ const ImageGallery = memo(function ImageGallery({
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const target = e.target as HTMLImageElement;
-    target.src =
-      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCAwIDQwMCAyNDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjQwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTAwTDIwMCAxMjVMMjI1IDEwMEwyNTAgMTI1VjE2MEgxNTBWMTI1TDE3NSAxMDBaIiBmaWxsPSIjOUIxMDRGIi8+CjxjaXJjbGUgY3g9IjE4MCIgY3k9IjExMCIgcj0iOCIgZmlsbD0iIzlCMTA0RiIvPgo8L3N2Zz4K";
+    // Для next/image ошибки обрабатываются автоматически через unoptimized fallback
+    // Если нужно, можно добавить состояние для отображения placeholder
+    console.error("Image failed to load:", displayImages[selectedImage]);
   };
 
   return (
@@ -67,14 +68,17 @@ const ImageGallery = memo(function ImageGallery({
       {/* Main Image */}
       <div className="relative">
         <div
-          className="bg-gray-200 rounded-lg overflow-hidden cursor-pointer h-96 w-full"
+          className="bg-gray-200 rounded-lg overflow-hidden cursor-pointer h-96 w-full relative"
           onClick={() => setIsModalOpen(true)}
         >
-          <img
+          <Image
             src={displayImages[selectedImage]}
             alt={`${alt} - Image ${selectedImage + 1}`}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover hover:scale-105 transition-transform duration-300"
             onError={handleImageError}
+            loading="lazy"
           />
 
           {/* Image Counter */}
@@ -117,17 +121,20 @@ const ImageGallery = memo(function ImageGallery({
             <button
               key={index}
               onClick={() => setSelectedImage(index)}
-              className={`aspect-square bg-gray-200 rounded-lg overflow-hidden border-2 transition-all ${
+              className={`aspect-square bg-gray-200 rounded-lg overflow-hidden border-2 transition-all relative ${
                 selectedImage === index
                   ? "border-blue-500 ring-2 ring-blue-200"
                   : "border-gray-300 hover:border-gray-400"
               }`}
             >
-              <img
+              <Image
                 src={image}
                 alt={`${alt} - Thumbnail ${index + 1}`}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 25vw, (max-width: 1200px) 16vw, 12vw"
+                className="object-cover"
                 onError={handleImageError}
+                loading="lazy"
               />
             </button>
           ))}
@@ -147,12 +154,17 @@ const ImageGallery = memo(function ImageGallery({
             </button>
 
             {/* Modal Image */}
-            <img
-              src={displayImages[selectedImage]}
-              alt={`${alt} - Full size ${selectedImage + 1}`}
-              className="max-w-full max-h-full object-contain"
-              onError={handleImageError}
-            />
+            <div className="relative w-full h-full max-w-6xl max-h-[90vh]">
+              <Image
+                src={displayImages[selectedImage]}
+                alt={`${alt} - Full size ${selectedImage + 1}`}
+                fill
+                sizes="90vw"
+                className="object-contain"
+                onError={handleImageError}
+                priority
+              />
+            </div>
 
             {/* Modal Navigation */}
             {displayImages.length > 1 && (

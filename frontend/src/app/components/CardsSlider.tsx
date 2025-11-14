@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import RichText from "./RichText";
 
 interface Card {
@@ -76,7 +77,7 @@ const CardsSlider = ({ cards }: CardsSliderProps) => {
     <div className="relative">
       {/* Slider Container */}
       <div
-        className="overflow-hidden relative"
+        className="overflow-x-hidden overflow-y-visible relative"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -100,9 +101,12 @@ const CardsSlider = ({ cards }: CardsSliderProps) => {
                 {/* Card Image */}
                 {card.image && (
                   <div className="h-64 bg-gray-100 overflow-hidden flex items-center justify-center">
-                    <img
+                    <Image
                       src={card.image}
                       alt={card.title || card.text || `Card ${card.id}`}
+                      width={800}
+                      height={400}
+                      quality={100}
                       className="w-full h-full object-cover rounded-2xl"
                     />
                   </div>

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { Property } from "../types";
 import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
 import FeaturedBadge from "./ui/FeaturedBadge";
@@ -16,6 +17,9 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   onImageLoad,
   showFeaturedBadge = false,
 }) => {
+  const [imgSrc, setImgSrc] = useState<string>("");
+  const [hasError, setHasError] = useState(false);
+
   const getMainImage = () => {
     if (property.media && property.media.length > 0) {
       const featuredImage = property.media?.[0];
@@ -27,29 +31,55 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
     return PROPERTY_PLACEHOLDER;
   };
 
+  const imageUrl = imgSrc || getMainImage();
+
+  useEffect(() => {
+    // Reset error state when property changes
+    setHasError(false);
+    setImgSrc("");
+  }, [property.id]);
+
   return (
     <div className="relative h-48 bg-slate-100">
       {/* Featured Badge */}
       {showFeaturedBadge && <FeaturedBadge />}
 
-      <img
-        src={getMainImage()}
-        alt={property.title}
-        className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${
-          imageLoaded ? "opacity-100" : "opacity-0"
-        }`}
-        onLoad={() => {
-          if (onImageLoad) {
-            onImageLoad();
-          }
-        }}
-        onError={(e) => {
-          e.currentTarget.src = PROPERTY_PLACEHOLDER;
-          if (onImageLoad) {
-            onImageLoad();
-          }
-        }}
-      />
+      {hasError ? (
+        <img
+          src={PROPERTY_PLACEHOLDER}
+          alt={property.title}
+          className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => {
+            if (onImageLoad) {
+              onImageLoad();
+            }
+          }}
+        />
+      ) : (
+        <Image
+          src={imageUrl}
+          alt={property.title}
+          width={800}
+          height={400}
+          quality={100}
+          className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => {
+            if (onImageLoad) {
+              onImageLoad();
+            }
+          }}
+          onError={() => {
+            setHasError(true);
+            if (onImageLoad) {
+              onImageLoad();
+            }
+          }}
+        />
+      )}
 
       {/* Loading overlay when image is not loaded */}
       {!imageLoaded && (

@@ -39,6 +39,9 @@ const TenantsSection = () => {
     },
   ];
 
+  const sliderLeftPaddingClasses =
+    "pl-4 sm:pl-6 md:pl-8 lg:pl-[calc((100vw-1024px)/2+1rem)] xl:pl-[calc((100vw-1280px)/2+1rem)] 2xl:pl-[calc((100vw-1536px)/2+1rem)] pr-0";
+
   return (
     <section id="tenants" className="md:py-21 py-5 relative overflow-hidden">
       {/* Background overlay */}
@@ -61,17 +64,25 @@ const TenantsSection = () => {
 
       {/* Mobile: Slider */}
       <div className="block lg:hidden">
-        <CardsSlider
-          cards={tenantCards.map((card) => ({
-            ...card,
-            text: card.description,
-          }))}
-        />
+        <div
+          className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
+        >
+          <CardsSlider
+            cards={tenantCards.map((card) => ({
+              ...card,
+              text: card.description,
+            }))}
+          />
+        </div>
       </div>
 
       {/* Desktop: Slider */}
       <div className="hidden lg:block">
-        <DesktopCardsSlider cards={tenantCards} />
+        <div
+          className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
+        >
+          <DesktopCardsSlider cards={tenantCards} />
+        </div>
       </div>
     </section>
   );

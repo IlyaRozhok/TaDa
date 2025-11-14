@@ -24,17 +24,24 @@ interface ResponsiveCardsDisplayProps {
 }
 
 const ResponsiveCardsDisplay = ({ cards }: ResponsiveCardsDisplayProps) => {
+  const sliderLeftPaddingClasses =
+    "pl-4 sm:pl-6 md:pl-8 lg:pl-[calc((100vw-1024px)/2+1rem)] xl:pl-[calc((100vw-1280px)/2+1rem)] 2xl:pl-[calc((100vw-1536px)/2+1rem)] pr-0";
+
   return (
     <>
       {/* Mobile: Always slider */}
       <div className="block lg:hidden">
-        <CardsSlider
-          cards={cards.map((card) => ({
-            ...card,
-            text: card.text || card.description,
-            description: card.text || card.description,
-          }))}
-        />
+        <div
+          className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
+        >
+          <CardsSlider
+            cards={cards.map((card) => ({
+              ...card,
+              text: card.text || card.description,
+              description: card.text || card.description,
+            }))}
+          />
+        </div>
       </div>
 
       {/* Desktop: Static grid for 4 cards, slider for 5+ cards */}
@@ -56,6 +63,7 @@ const ResponsiveCardsDisplay = ({ cards }: ResponsiveCardsDisplayProps) => {
                         alt={card.title || `Feature ${card.id}`}
                         width={300}
                         height={256}
+                        quality={100}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -97,7 +105,11 @@ const ResponsiveCardsDisplay = ({ cards }: ResponsiveCardsDisplayProps) => {
           </div>
         ) : (
           /* Use DesktopCardsSlider for 5+ cards (including Tenants section with 5 cards) */
-          <DesktopCardsSlider cards={cards} />
+          <div
+            className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
+          >
+            <DesktopCardsSlider cards={cards} />
+          </div>
         )}
       </div>
     </>

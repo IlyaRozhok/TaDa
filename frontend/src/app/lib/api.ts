@@ -78,6 +78,8 @@ export const authAPI = {
 
   getProfile: () => api.get("/users/profile"),
 
+  getMe: () => api.get("/auth/me"),
+
   logout: () => api.post("/auth/logout"),
 
   createGoogleUser: (registrationId: string, role: "tenant" | "operator") =>
@@ -188,6 +190,75 @@ export const residentialComplexesAPI = {
   create: (data: any) => api.post("/residential-complexes", data),
   update: (id: string, data: any) => api.patch(`/residential-complexes/${id}`, data),
   delete: (id: string) => api.delete(`/residential-complexes/${id}`),
+};
+
+export const buildingsAPI = {
+  getAll: (params?: any) => api.get("/buildings", { params }),
+  getById: (id: string) => api.get(`/buildings/${id}`),
+  create: (data: any) => api.post("/buildings", data),
+  update: (id: string, data: any) => api.patch(`/buildings/${id}`, data),
+  delete: (id: string) => api.delete(`/buildings/${id}`),
+  getOperators: () => api.get("/buildings/operators"),
+  uploadLogo: async (file: File) => {
+    const formData = new FormData();
+    formData.append("logo", file);
+    try {
+      const response = await api.post("/buildings/upload/logo", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+  uploadVideo: async (file: File) => {
+    const formData = new FormData();
+    formData.append("video", file);
+    try {
+      const response = await api.post("/buildings/upload/video", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+  uploadPhotos: async (files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file, index) => {
+      formData.append("photos", file);
+    });
+    try {
+      const response = await api.post("/buildings/upload/photos", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+  uploadDocuments: async (files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file, index) => {
+      formData.append("documents", file);
+    });
+    try {
+      const response = await api.post("/buildings/upload/documents", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
 };
 
 export const propertyMediaAPI = {

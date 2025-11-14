@@ -55,6 +55,7 @@ const HeroSection = () => {
                 width={800}
                 height={600}
                 className="w-full h-full object-contain"
+                priority
               />
             </div>
           </div>
@@ -93,6 +94,7 @@ const HeroSection = () => {
                 width={600}
                 height={400}
                 className="w-full h-full object-fit"
+                priority
               />
             </div>
           </div>
