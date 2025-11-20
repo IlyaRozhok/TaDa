@@ -18,6 +18,7 @@ async function bootstrap() {
       "http://localhost:3000",
       "http://localhost:3001",
       "https://ta-da.co",
+      "https://www.ta-da.co",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
