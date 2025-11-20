@@ -3,14 +3,51 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
-import { PropertyMedia } from "./property-media.entity";
+import { Building } from "./building.entity";
+
+// Enums for property types
+export enum PropertyType {
+  Flat = "flat",
+  Apartment = "apartment",
+  House = "house",
+  Room = "room",
+  Studio = "studio",
+  Penthouse = "penthouse",
+}
+
+export enum BuildingType {
+  ProfessionalManagement = "professional_management",
+  BTR = "btr",
+  Luxury = "luxury",
+  CoLiving = "co_living",
+  StudentAccommodation = "student_accommodation",
+  RetirementHome = "retirement_home",
+}
+
+export enum Furnishing {
+  Furnished = "furnished",
+  PartFurnished = "part_furnished",
+  Unfurnished = "unfurnished",
+  DesignerFurniture = "designer_furniture",
+}
+
+export enum LetDuration {
+  Any = "any",
+  LongTerm = "long_term",
+  ShortTerm = "short_term",
+  Flexible = "flexible",
+}
+
+export enum Bills {
+  Included = "included",
+  Excluded = "excluded",
+}
 
 @Entity("properties")
 export class Property {
@@ -18,91 +55,154 @@ export class Property {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ApiProperty({
-    description: "Property title",
-    example: "Luxury 2-bed flat in Central London",
-  })
+  // REQUIRED FIELDS
+  @ApiProperty({ description: "Apartment number", example: "12A" })
   @Column()
-  title: string;
+  apartment_number: string;
 
+  @ApiProperty({ description: "Building ID" })
+  @Column("uuid")
+  building_id: string;
+
+  // OPTIONAL FIELDS
   @ApiProperty({
     description: "Property description",
     example: "Beautiful modern apartment with stunning city views",
   })
-  @Column("text")
-  description: string;
+  @Column("text", { nullable: true })
+  descriptions: string;
 
-  @ApiProperty({
-    description: "Property address",
-    example: "123 Oxford Street, London W1D 2HX",
-  })
-  @Column()
-  address: string;
-
-  @ApiProperty({ description: "Monthly rent price", example: 2500 })
-  @Column("decimal", { precision: 10, scale: 2 })
+  @ApiProperty({ description: "Monthly rent price (PCM)", example: 2500 })
+  @Column("decimal", { precision: 10, scale: 2, nullable: true })
   price: number;
 
-  @ApiProperty({ description: "Number of bedrooms", example: 2 })
-  @Column("int")
-  bedrooms: number;
-
-  @ApiProperty({ description: "Number of bathrooms", example: 2 })
-  @Column("int")
-  bathrooms: number;
-
-  @ApiProperty({ description: "Property type", example: "apartment" })
-  @Column()
-  property_type: string;
-
-  @ApiProperty({
-    description: "Furnishing type",
-    example: "furnished",
-    enum: ["furnished", "unfurnished", "part-furnished"],
-  })
-  @Column()
-  furnishing: string;
-
-  @ApiProperty({
-    description: "Lifestyle features",
-    example: ["gym", "pool", "concierge"],
-    type: [String],
-  })
-  @Column("simple-array", { nullable: true })
-  lifestyle_features: string[];
+  @ApiProperty({ description: "Deposit amount", example: 2500 })
+  @Column("decimal", { precision: 10, scale: 2, nullable: true })
+  deposit: number;
 
   @ApiProperty({ description: "Available from date", example: "2024-03-01" })
-  @Column("date")
+  @Column("date", { nullable: true })
   available_from: Date;
 
   @ApiProperty({
-    description: "Property images URLs",
-    example: ["/uploads/property1.jpg", "/uploads/property2.jpg"],
+    description: "Bills (energy, Wi-Fi, water, council tax)",
+    enum: Bills,
+    example: Bills.Included,
+  })
+  @Column({
+    type: "enum",
+    enum: Bills,
+    default: Bills.Excluded,
+    nullable: true,
+  })
+  bills: Bills;
+
+  @ApiProperty({
+    description: "Property type",
+    enum: PropertyType,
+    example: PropertyType.Apartment,
+  })
+  @Column({
+    type: "enum",
+    enum: PropertyType,
+    nullable: true,
+  })
+  property_type: PropertyType;
+
+  @ApiProperty({ description: "Number of bedrooms", example: 2 })
+  @Column("int", { nullable: true })
+  bedrooms: number;
+
+  @ApiProperty({ description: "Number of bathrooms", example: 2 })
+  @Column("int", { nullable: true })
+  bathrooms: number;
+
+  @ApiProperty({
+    description: "Building type",
+    enum: BuildingType,
+    example: BuildingType.BTR,
+  })
+  @Column({
+    type: "enum",
+    enum: BuildingType,
+    nullable: true,
+  })
+  building_type: BuildingType;
+
+  @ApiProperty({
+    description: "Furnishing type",
+    enum: Furnishing,
+    example: Furnishing.Furnished,
+  })
+  @Column({
+    type: "enum",
+    enum: Furnishing,
+    nullable: true,
+  })
+  furnishing: Furnishing;
+
+  @ApiProperty({
+    description: "Let duration",
+    enum: LetDuration,
+    example: LetDuration.LongTerm,
+  })
+  @Column({
+    type: "enum",
+    enum: LetDuration,
+    default: LetDuration.Any,
+    nullable: true,
+  })
+  let_duration: LetDuration;
+
+  @ApiProperty({ description: "Floor number", example: 5 })
+  @Column("int", { nullable: true })
+  floor: number;
+
+  @ApiProperty({ description: "Has outdoor space", example: true })
+  @Column("boolean", { default: false, nullable: true })
+  outdoor_space: boolean;
+
+  @ApiProperty({ description: "Has balcony", example: true })
+  @Column("boolean", { default: false, nullable: true })
+  balcony: boolean;
+
+  @ApiProperty({ description: "Has terrace", example: false })
+  @Column("boolean", { default: false, nullable: true })
+  terrace: boolean;
+
+  @ApiProperty({ description: "Square meters", example: 65.5 })
+  @Column("decimal", { precision: 10, scale: 2, nullable: true })
+  square_meters: number;
+
+  @ApiProperty({
+    description: "Property photos URLs (S3)",
+    example: [
+      "https://s3.amazonaws.com/bucket/photo1.jpg",
+      "https://s3.amazonaws.com/bucket/photo2.jpg",
+    ],
     type: [String],
   })
   @Column("simple-array", { nullable: true })
-  images: string[];
-
-  @ApiProperty({ description: "Is Build-to-Rent property", example: true })
-  @Column("boolean", { default: false })
-  is_btr: boolean;
+  photos: string[];
 
   @ApiProperty({
-    description: "Property latitude coordinate",
-    example: 51.5074,
+    description: "Property video URL (S3)",
+    example: "https://s3.amazonaws.com/bucket/video.mp4",
+    nullable: true,
   })
-  @Column("decimal", { precision: 10, scale: 7, nullable: true })
-  lat: number;
+  @Column({ nullable: true })
+  video: string;
 
   @ApiProperty({
-    description: "Property longitude coordinate",
-    example: -0.1278,
+    description: "Property documents URL (S3)",
+    example: "https://s3.amazonaws.com/bucket/document.pdf",
+    nullable: true,
   })
-  @Column("decimal", { precision: 10, scale: 7, nullable: true })
-  lng: number;
+  @Column({ nullable: true })
+  documents: string;
 
-  @ApiProperty({ description: "Property operator/landlord ID" })
-  @Column("uuid")
+  @ApiProperty({ description: "Operator ID (from building)" })
+  @Column("uuid", { nullable: true })
   operator_id: string;
 
   @ApiProperty({ description: "Property creation date" })
@@ -114,10 +214,15 @@ export class Property {
   updated_at: Date;
 
   // Relations
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.id, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "operator_id" })
   operator: User;
 
-  @OneToMany(() => PropertyMedia, (media) => media.property)
-  media: PropertyMedia[];
+  @ManyToOne(() => Building, (building) => building.properties, {
+    onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "building_id" })
+  building: Building;
 }

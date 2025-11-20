@@ -161,9 +161,6 @@ export default function EditPropertyPage() {
       errors.price = "Price must be greater than 0";
     }
 
-    if (!formData.available_from) {
-      errors.available_from = "Available from date is required";
-    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;

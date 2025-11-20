@@ -132,7 +132,7 @@ const TenantsSocialMediaSection = () => {
             {/* Close */}
             <button
               onClick={() => setIsVideoOpen(false)}
-              className="absolute -top-10 right-0 text-white/90 hover:text-white"
+              className="absolute top-2 right-2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 text-white text-xl font-semibold transition-colors shadow-lg"
               aria-label="Close video"
             >
               ✕

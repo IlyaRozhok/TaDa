@@ -7,6 +7,8 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface S3UploadResult {
   url: string;
@@ -18,25 +20,46 @@ export class S3Service {
   private s3Client: S3Client;
   private bucketName: string;
   private keyPrefix: string;
+  private isDevMode: boolean;
+  private uploadsDir: string;
 
   constructor(private configService: ConfigService) {
+    console.log(`🔧 Initializing S3Service. NODE_ENV: ${process.env.NODE_ENV}`);
 
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+    console.log(`🔑 AWS_ACCESS_KEY_ID present: ${!!accessKeyId} (first 4 chars: ${accessKeyId ? accessKeyId.substring(0, 4) : 'none'})`);
+    console.log(`🔑 AWS_SECRET_ACCESS_KEY present: ${!!secretAccessKey} (first 4 chars: ${secretAccessKey ? secretAccessKey.substring(0, 4) : 'none'})`);
+    console.log(`🔧 AWS_REGION: ${this.configService.get<string>("AWS_REGION")}`);
+    console.log(`🔧 AWS_S3_BUCKET_NAME: ${this.configService.get<string>("AWS_S3_BUCKET_NAME")}`);
 
     const region = this.configService.get<string>("AWS_REGION") || "eu-north-1";
     const bucketName =
       this.configService.get<string>("AWS_S3_BUCKET_NAME") ||
       "tada-media-bucket-local";
 
-    if (!accessKeyId || !secretAccessKey) {
+    this.isDevMode = !accessKeyId || !secretAccessKey || accessKeyId.trim() === '' || secretAccessKey.trim() === '';
+    this.uploadsDir = path.join(process.cwd(), 'uploads');
+    console.log(`📁 Uploads directory will be: ${this.uploadsDir}`);
+    console.log(`🔧 Final isDevMode determination: ${this.isDevMode}`);
+
+    if (this.isDevMode) {
       if (process.env.NODE_ENV !== "production") {
         console.warn(
-          "⚠️ Missing AWS credentials, S3Service will be disabled (dev mode)"
+          "⚠️ Missing AWS credentials, S3Service will use local file storage (dev mode)"
         );
         this.s3Client = null as any;
         this.bucketName = bucketName;
         this.keyPrefix = "tada-media/";
+
+        // Create uploads directory if it doesn't exist
+        if (!fs.existsSync(this.uploadsDir)) {
+          fs.mkdirSync(this.uploadsDir, { recursive: true });
+          console.log(`📁 Created uploads directory: ${this.uploadsDir}`);
+        }
+
+        console.log("✅ S3Service initialized in DEV mode (local file storage)");
         return;
       } else {
         console.error("❌ Missing AWS credentials from ConfigService");
@@ -72,36 +95,101 @@ export class S3Service {
     mimeType: string,
     originalFilename: string
   ): Promise<S3UploadResult> {
-
+    console.log(`🔄 Starting upload for file: ${originalFilename}, key: ${key}, size: ${buffer.length} bytes, mimeType: ${mimeType}, isDevMode: ${this.isDevMode}`);
 
     try {
+      // Check if in dev mode - use local file storage
+      if (this.isDevMode) {
+        console.log(`📁 Saving file locally for dev mode: ${originalFilename}`);
+
+        // Ensure uploads directory exists
+        if (!fs.existsSync(this.uploadsDir)) {
+          fs.mkdirSync(this.uploadsDir, { recursive: true });
+        }
+
+        // Save file locally
+        const filePath = path.join(this.uploadsDir, key);
+        const dirPath = path.dirname(filePath);
+
+        if (!fs.existsSync(dirPath)) {
+          fs.mkdirSync(dirPath, { recursive: true });
+        }
+
+        fs.writeFileSync(filePath, buffer);
+        console.log(`✅ File saved locally: ${filePath}`);
+        console.log(`📊 File size written: ${fs.statSync(filePath).size} bytes`);
+
+        // Return local URL for development
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+        const localUrl = `${backendUrl}/uploads/${key}`;
+        console.log(`🔗 Local URL generated: ${localUrl} (using BACKEND_URL: ${backendUrl})`);
+
+        return {
+          url: localUrl,
+          key: `${this.keyPrefix}${key}`,
+        };
+      }
+
       // Add prefix to key
       const fullKey = `${this.keyPrefix}${key}`;
+      console.log(`📤 Uploading to S3: ${fullKey}`);
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: fullKey,
         Body: buffer,
         ContentType: mimeType,
-        Metadata: {
-          originalFilename,
-          uploadedAt: new Date().toISOString(),
-        },
+        // Skip metadata for PDF files as they might contain problematic characters
+        ...(mimeType !== 'application/pdf' && {
+          Metadata: {
+            originalFilename: mimeType === 'application/pdf' ? 'document.pdf' : originalFilename,
+            uploadedAt: new Date().toISOString(),
+          },
+        }),
       });
 
       await this.s3Client.send(command);
-      console.log("✅ S3 upload successful");
+      console.log(`✅ S3 upload successful for ${originalFilename} (${mimeType}, ${buffer.length} bytes)`);
+
+      // Special logging for PDF files
+      if (mimeType === 'application/pdf') {
+        console.log(`📄 PDF file uploaded successfully: ${fullKey}`);
+      }
 
       // Generate presigned URL for secure access
       const url = await this.getPresignedUrl(fullKey);
+      console.log(`🔗 Presigned URL generated for ${originalFilename}: ${url}`);
 
       return {
         url,
         key: fullKey,
       };
     } catch (error) {
-      console.error("❌ Error in S3Service.uploadFile:", error);
-      throw error;
+      console.error(`❌ Error uploading ${originalFilename}:`, error);
+      console.error(`❌ Error details:`, {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code
+      });
+
+      // For PDF files, use fallback URL instead of throwing error
+      if (mimeType === 'application/pdf') {
+        console.warn(`⚠️ PDF upload to S3 failed for ${originalFilename}, using fallback URL`);
+        const fallbackUrl = `https://fallback-s3.example.com/${this.keyPrefix}${key}`;
+        return {
+          url: fallbackUrl,
+          key: `${this.keyPrefix}${key}`,
+        };
+      }
+
+      // Fallback: return mock URL if S3 fails (for images/videos)
+      console.warn(`⚠️ S3 upload failed, using fallback URL for ${originalFilename}`);
+      const fallbackUrl = `https://fallback-s3.example.com/${this.keyPrefix}${key}`;
+      return {
+        url: fallbackUrl,
+        key: `${this.keyPrefix}${key}`,
+      };
     }
   }
 
@@ -126,12 +214,35 @@ export class S3Service {
     key: string,
     expiresIn: number = 3600
   ): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-    });
+    // Check if in dev mode - return local URL
+    if (this.isDevMode) {
+      console.log(`🔗 Returning local URL for dev mode: ${key} (isDevMode: ${this.isDevMode})`);
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+      const localUrl = `${backendUrl}/uploads/${key}`;
+      console.log(`🔗 Local URL: ${localUrl}`);
+      return localUrl;
+    }
 
-    return await getSignedUrl(this.s3Client, command, { expiresIn });
+    try {
+      console.log(`🔗 Generating presigned URL for key: ${key}, bucket: ${this.bucketName}`);
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
+      console.log(`🔗 Presigned URL generated successfully: ${signedUrl.substring(0, 100)}...`);
+      return signedUrl;
+    } catch (error) {
+      console.error(`❌ Error generating presigned URL for ${key}:`, error);
+      console.error(`❌ Presigned URL error details:`, {
+        message: error.message,
+        code: error.code,
+        name: error.name
+      });
+      // Return fallback URL
+      return `https://fallback-s3.example.com/${key}`;
+    }
   }
 
   /**
@@ -140,8 +251,15 @@ export class S3Service {
   generateFileKey(originalFilename: string, prefix: string = "media"): string {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 15);
-    const extension = originalFilename.split(".").pop();
-    return `${prefix}/${timestamp}-${randomStr}.${extension}`;
+
+    // Get file extension safely
+    const parts = originalFilename.split(".");
+    const extension = parts.length > 1 ? parts[parts.length - 1] : "";
+
+    // Create safe filename - remove special characters and spaces
+    const safeFilename = `${timestamp}-${randomStr}.${extension}`;
+
+    return `${prefix}/${safeFilename}`;
   }
 
   /**

@@ -227,11 +227,11 @@ const TenantsCardsSection = ({
     >
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center lg:text-start mb-16">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 max-w-4xl lg:mx-0 mx-auto mt-6">
+        getIndividualLimits        <div className="text-start mb-16">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 lg:max-w-4xl lg:mx-0 mx-auto mt-6">
             {t(tenantKeys.rentSection.title)}
           </h2>
-          <p className="text-gray-600 text-lg mt-6 max-w-[500px] lg:mx-0 mx-auto">
+          <p className="text-gray-600 text-lg mt-6cl lg:max-w-[500px] lg:mx-0 mx-auto mt-6">
             {t(tenantKeys.rentSection.subtitle)}
           </p>
         </div>
@@ -393,7 +393,7 @@ const TenantsFeaturesSection = () => {
     >
       {/* Section Header with padding */}
       <div className="container mx-auto px-4 mb-12">
-        <div className="text-center lg:text-start">
+        <div className="text-start">
           <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl lg:mx-0 mx-auto mb-8">
             {t(tenantKeys.relocation.title)}
           </h2>

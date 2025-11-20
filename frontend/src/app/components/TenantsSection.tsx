@@ -49,14 +49,14 @@ const TenantsSection = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center lg:text-start mb-16">
+        <div className="text-start mb-16">
           <p className="text-white text-2xl font-medium mb-4 mt-5">
             {t(operatorKeys.rent.label)}
           </p>
           <h2 className="text-4xl md:text-5xl lg:text-7xl font-sf-pro font-semibold text-white leading-tight max-w-4xl lg:mx-0 mx-auto">
             {t(operatorKeys.rent.title)}
           </h2>
-          <p className="text-white text-2xl mt-6 max-w-2xl lg:mx-0 mx-auto">
+          <p className="text-white text-2xl mt-6 lg:mx-0 mx-auto">
             {t(operatorKeys.rent.subtitle)}
           </p>
         </div>

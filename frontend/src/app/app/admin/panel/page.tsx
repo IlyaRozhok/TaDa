@@ -12,13 +12,20 @@ import { useDebounce } from "../../../hooks/useDebounce";
 import AdminNotifications from "../../../components/AdminNotifications";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
+import AdminPropertiesSection from "../../../components/AdminPropertiesSection";
 import AddUserModal from "../../../components/AddUserModal";
 import AddBuildingModal from "../../../components/AddBuildingModal";
+import AddPropertyModal from "../../../components/AddPropertyModal";
 import EditUserModal from "../../../components/EditUserModal";
 import EditBuildingModal from "../../../components/EditBuildingModal";
+import EditPropertyModal from "../../../components/EditPropertyModal";
+import ViewPropertyModal from "../../../components/ViewPropertyModal";
+import { buildingsAPI, propertiesAPI } from "../../../lib/api";
+import { Property } from "../../../types/property";
 import {
   Users,
   Building2,
+  Home,
   Eye,
   Edit3,
   Trash2,
@@ -27,7 +34,7 @@ import {
   Save,
 } from "lucide-react";
 
-type AdminSection = "users" | "buildings";
+type AdminSection = "users" | "buildings" | "properties";
 
 interface SortState {
   field: string;
@@ -61,13 +68,14 @@ function AdminPanelContent() {
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [users, setUsers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
     direction: "desc",
   });
-  const [selectedItem, setSelectedItem] = useState<User | Building | null>(
+  const [selectedItem, setSelectedItem] = useState<User | Building | Property | null>(
     null
   );
   const [showModal, setShowModal] = useState<
@@ -127,6 +135,12 @@ function AdminPanelContent() {
             const data = await response.json();
             setBuildings(data.data || data || []);
           }
+        } else if (activeSection === "properties") {
+          const response = await fetch(`${apiUrl}/properties`, { headers });
+          if (response.ok) {
+            const data = await response.json();
+            setProperties(data.data || data || []);
+          }
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -140,19 +154,107 @@ function AdminPanelContent() {
   }, [activeSection]);
 
   // Event handlers
-  const handleView = (item: User | Building) => {
+  const handleView = (item: User | Building | Property) => {
     setSelectedItem(item);
     setShowModal("view");
   };
 
-  const handleEdit = (item: User | Building) => {
+  const handleEdit = (item: User | Building | Property) => {
     setSelectedItem(item);
     setShowModal("edit");
   };
 
-  const handleDelete = (item: User | Building) => {
+  const handleDelete = (item: User | Building | Property) => {
     setSelectedItem(item);
     setShowModal("delete");
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedItem) return;
+
+    setIsActionLoading(true);
+    try {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      };
+
+      if (activeSection === "buildings") {
+        const building = selectedItem as Building;
+        console.log("🗑️ Deleting building:", building.id);
+        
+        const response = await buildingsAPI.delete(building.id);
+        console.log("✅ Delete response:", response);
+
+        if (response.status === 200 || response.status === 204) {
+          // Remove from local state
+          setBuildings((prevBuildings) =>
+            prevBuildings.filter((b) => b.id !== building.id)
+          );
+          
+          addNotification(
+            "success",
+            `Building "${building.name}" deleted successfully`
+          );
+          setShowModal(null);
+          setSelectedItem(null);
+        } else {
+          throw new Error("Unexpected response status");
+        }
+      } else if (activeSection === "properties") {
+        const property = selectedItem as Property;
+        console.log("🗑️ Deleting property:", property.id);
+        
+        const response = await propertiesAPI.delete(property.id);
+        console.log("✅ Delete response:", response);
+
+        if (response.status === 200 || response.status === 204) {
+          // Remove from local state
+          setProperties((prevProperties) =>
+            prevProperties.filter((p) => p.id !== property.id)
+          );
+          
+          addNotification(
+            "success",
+            `Property "${property.apartment_number}" deleted successfully`
+          );
+          setShowModal(null);
+          setSelectedItem(null);
+        } else {
+          throw new Error("Unexpected response status");
+        }
+      } else if (activeSection === "users") {
+        const user = selectedItem as User;
+        const response = await fetch(`${apiUrl}/users/${user.id}`, {
+          method: "DELETE",
+          headers,
+        });
+
+        if (response.ok) {
+          setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
+          addNotification(
+            "success",
+            `User "${user.full_name || user.email}" deleted successfully`
+          );
+          setShowModal(null);
+          setSelectedItem(null);
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to delete user");
+        }
+      }
+    } catch (error: any) {
+      console.error("❌ Delete error:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete item. Please try again.";
+      addNotification("error", errorMessage);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleAdd = () => {
@@ -205,12 +307,7 @@ function AdminPanelContent() {
     }
   };
 
-  const handleCreateBuilding = async (data: {
-    name: string;
-    address: string;
-    number_of_units: number;
-    type_of_unit: string;
-  }) => {
+  const handleCreateBuilding = async (data: any) => {
     setIsActionLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
@@ -236,6 +333,15 @@ function AdminPanelContent() {
         `Building "${data.name}" created successfully!`
       );
       setShowModal(null);
+
+      // Reload buildings list
+      if (activeSection === "buildings") {
+        const response = await fetch(`${apiUrl}/buildings`, { headers });
+        if (response.ok) {
+          const buildingsData = await response.json();
+          setBuildings(buildingsData.data || buildingsData || []);
+        }
+      }
     } catch (error: any) {
       addNotification("error", `Failed to create building: ${error.message}`);
     } finally {
@@ -282,6 +388,8 @@ function AdminPanelContent() {
   const handleUpdateBuilding = async (id: string, data: any) => {
     setIsActionLoading(true);
     try {
+      console.log("🔄 Updating building:", { id, data, operator_id: data.operator_id });
+      
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const token = localStorage.getItem("accessToken");
       const headers = {
@@ -300,12 +408,15 @@ function AdminPanelContent() {
         throw new Error(errorData.message || "Failed to update building");
       }
 
+      const updatedBuilding = await response.json();
+      console.log("✅ Building updated successfully:", updatedBuilding);
+
       addNotification(
         "success",
         `Building "${data.name}" updated successfully!`
       );
 
-      // Refresh buildings list
+      // Refresh buildings list and update selectedItem
       if (activeSection === "buildings") {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
         const headers = {
@@ -314,14 +425,122 @@ function AdminPanelContent() {
         };
         const response = await fetch(`${apiUrl}/buildings`, { headers });
         if (response.ok) {
-          const data = await response.json();
-          setBuildings(data.data || data || []);
+          const buildingsData = await response.json();
+          const updatedBuildings = buildingsData.data || buildingsData || [];
+          setBuildings(updatedBuildings);
+          
+          // Update selectedItem with the updated building from the list
+          const updatedBuildingFromList = updatedBuildings.find((b: Building) => b.id === id);
+          if (updatedBuildingFromList) {
+            console.log("🔄 Updating selectedItem with:", updatedBuildingFromList);
+            setSelectedItem(updatedBuildingFromList);
+          }
         }
       }
 
       setShowModal(null);
     } catch (error: any) {
+      console.error("❌ Failed to update building:", error);
       addNotification("error", `Failed to update building: ${error.message}`);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleCreateProperty = async (data: any) => {
+    console.log('🎯 handleCreateProperty received data:', JSON.stringify(data, null, 2));
+    setIsActionLoading(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const token = localStorage.getItem("accessToken");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      console.log('📮 Sending to API:', JSON.stringify(data, null, 2));
+      const response = await fetch(`${apiUrl}/properties`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create property");
+      }
+
+      addNotification(
+        "success",
+        `Property "${data.apartment_number}" created successfully!`
+      );
+      setShowModal(null);
+
+      // Reload properties
+      if (activeSection === "properties") {
+        const response = await fetch(`${apiUrl}/properties`, { headers });
+        if (response.ok) {
+          const data = await response.json();
+          setProperties(data.data || data || []);
+        }
+      }
+    } catch (error: any) {
+      addNotification("error", `Failed to create property: ${error.message}`);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleUpdateProperty = async (id: string, data: any) => {
+    setIsActionLoading(true);
+    try {
+      console.log("🔄 Updating property:", { id, data });
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const token = localStorage.getItem("accessToken");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await fetch(`${apiUrl}/properties/${id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update property");
+      }
+
+      const updatedProperty = await response.json();
+      console.log("✅ Property updated successfully:", updatedProperty);
+
+      addNotification(
+        "success",
+        `Property "${data.apartment_number}" updated successfully!`
+      );
+
+      // Refresh properties list
+      if (activeSection === "properties") {
+        const response = await fetch(`${apiUrl}/properties`, { headers });
+        if (response.ok) {
+          const propertiesData = await response.json();
+          const updatedProperties = propertiesData.data || propertiesData || [];
+          setProperties(updatedProperties);
+          
+          const updatedPropertyFromList = updatedProperties.find((p: Property) => p.id === id);
+          if (updatedPropertyFromList) {
+            setSelectedItem(updatedPropertyFromList);
+          }
+        }
+      }
+
+      setShowModal(null);
+    } catch (error: any) {
+      console.error("❌ Failed to update property:", error);
+      addNotification("error", `Failed to update property: ${error.message}`);
     } finally {
       setIsActionLoading(false);
     }
@@ -366,6 +585,17 @@ function AdminPanelContent() {
         >
           <Building2 className="w-5 h-5" />
           <span className="font-medium">Buildings</span>
+        </button>
+        <button
+          onClick={() => setActiveSection("properties")}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            activeSection === "properties"
+              ? "bg-violet-50 text-violet-700 border border-violet-200"
+              : "text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span className="font-medium">Properties</span>
         </button>
       </nav>
     </div>
@@ -428,6 +658,21 @@ function AdminPanelContent() {
             }}
           />
         );
+      case "properties":
+        return (
+          <AdminPropertiesSection
+            properties={properties}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            searchLoading={false}
+            sort={sort}
+            setSort={setSort}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onAdd={handleAdd}
+          />
+        );
       default:
         return null;
     }
@@ -460,6 +705,15 @@ function AdminPanelContent() {
   const DeleteModal = () => {
     if (!selectedItem || showModal !== "delete") return null;
 
+    const itemName =
+      activeSection === "buildings"
+        ? (selectedItem as Building).name
+        : activeSection === "properties"
+        ? (selectedItem as Property).apartment_number
+        : (selectedItem as User).full_name ||
+          (selectedItem as User).email ||
+          "this item";
+
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -468,31 +722,44 @@ function AdminPanelContent() {
               Delete {activeSection.slice(0, -1)}
             </h3>
             <button
-              onClick={() => setShowModal(null)}
-              className="text-gray-500 hover:text-gray-700"
+              onClick={() => {
+                setShowModal(null);
+                setSelectedItem(null);
+              }}
+              disabled={isActionLoading}
+              className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
           <p className="mb-4 text-black">
-            Are you sure you want to delete this item?
+            Are you sure you want to delete <strong>"{itemName}"</strong>? This
+            action cannot be undone.
           </p>
           <div className="flex gap-3">
             <button
-              onClick={() => setShowModal(null)}
-              className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded"
+              onClick={() => {
+                setShowModal(null);
+                setSelectedItem(null);
+              }}
+              disabled={isActionLoading}
+              className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
             >
               Cancel
             </button>
             <button
-              onClick={() => {
-                // TODO: Implement delete logic
-                addNotification("success", "Item deleted successfully");
-                setShowModal(null);
-              }}
-              className="flex-1 px-4 py-2 bg-black text-white hover:bg-red-900 rounded"
+              onClick={handleConfirmDelete}
+              disabled={isActionLoading}
+              className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              Delete
+              {isActionLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                "Delete"
+              )}
             </button>
           </div>
         </div>
@@ -509,7 +776,15 @@ function AdminPanelContent() {
         <div className="flex-1 p-6">{renderContent()}</div>
       </div>
 
-      <ViewModal />
+      {activeSection !== "properties" && <ViewModal />}
+
+      {activeSection === "properties" && (
+        <ViewPropertyModal
+          isOpen={showModal === "view"}
+          onClose={() => setShowModal(null)}
+          property={selectedItem as Property}
+        />
+      )}
 
       <AddUserModal
         isOpen={activeSection === "users" && showModal === "add"}
@@ -522,6 +797,13 @@ function AdminPanelContent() {
         isOpen={activeSection === "buildings" && showModal === "add"}
         onClose={() => setShowModal(null)}
         onSubmit={handleCreateBuilding}
+        isLoading={isActionLoading}
+      />
+
+      <AddPropertyModal
+        isOpen={activeSection === "properties" && showModal === "add"}
+        onClose={() => setShowModal(null)}
+        onSubmit={handleCreateProperty}
         isLoading={isActionLoading}
       />
 
@@ -538,6 +820,14 @@ function AdminPanelContent() {
         onClose={() => setShowModal(null)}
         building={selectedItem as Building}
         onSubmit={handleUpdateBuilding}
+        isLoading={isActionLoading}
+      />
+
+      <EditPropertyModal
+        isOpen={activeSection === "properties" && showModal === "edit"}
+        onClose={() => setShowModal(null)}
+        property={selectedItem as Property}
+        onSubmit={handleUpdateProperty}
         isLoading={isActionLoading}
       />
 

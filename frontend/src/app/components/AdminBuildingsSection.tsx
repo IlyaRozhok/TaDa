@@ -47,7 +47,6 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
   onEdit,
   onDelete,
   onAdd,
-  onRefresh,
 }) => {
   const SortButton = ({
     field,
@@ -60,7 +59,6 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
   }) => {
     const isActive = sort.field === field;
     const isAsc = isActive && sort.direction === "asc";
-    const isDesc = isActive && sort.direction === "desc";
 
     return (
       <button
@@ -280,7 +278,9 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                         )}
                         {building.photos && building.photos.length > 0 && (
                           <div className="flex items-center space-x-1">
-                            <span className="text-xs text-slate-500">Photos({building.photos.length})</span>
+                            <span className="text-xs text-slate-500">
+                              Photos({building.photos.length})
+                            </span>
                             <div className="w-6 h-6 rounded border border-slate-200 overflow-hidden">
                               <img
                                 src={building.photos[0]}
@@ -292,7 +292,9 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                         )}
                         {building.video && (
                           <div className="flex items-center space-x-1">
-                            <span className="text-xs text-slate-500">Video</span>
+                            <span className="text-xs text-slate-500">
+                              Video
+                            </span>
                             <div className="w-6 h-6 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
                               <div className="w-3 h-3 bg-slate-400 rounded-sm"></div>
                             </div>
@@ -302,13 +304,20 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                           <div className="flex items-center space-x-1">
                             <span className="text-xs text-slate-500">PDF</span>
                             <div className="w-6 h-6 bg-red-100 rounded border border-red-200 flex items-center justify-center">
-                              <span className="text-xs font-bold text-red-600">PDF</span>
+                              <span className="text-xs font-bold text-red-600">
+                                PDF
+                              </span>
                             </div>
                           </div>
                         )}
-                        {!building.logo && (!building.photos || building.photos.length === 0) && !building.video && !building.documents && (
-                          <span className="text-xs text-slate-400">No media</span>
-                        )}
+                        {!building.logo &&
+                          (!building.photos || building.photos.length === 0) &&
+                          !building.video &&
+                          !building.documents && (
+                            <span className="text-xs text-slate-400">
+                              No media
+                            </span>
+                          )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -328,7 +337,17 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onDelete(building)}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log(
+                              "🗑️ Delete button clicked for building:",
+                              building.id,
+                              building.name
+                            );
+                            onDelete(building);
+                          }}
                           className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-150"
                           title="Delete building"
                         >

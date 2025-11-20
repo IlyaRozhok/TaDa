@@ -105,18 +105,20 @@ export class UsersController {
   @ApiOperation({ summary: "Get all users (admin only)" })
   @ApiResponse({ status: 200, description: "List of users", type: [User] })
   async getAllUsers(
-    @Query("page") page = 1,
-    @Query("limit") limit = 10,
+    @Query("page") page: string = "1",
+    @Query("limit") limit: string = "10",
     @Query("search") search?: string,
-    @Query("sortBy") sortBy = "created_at",
+    @Query("role") role?: string,
+    @Query("sortBy") sortBy: string = "created_at",
     @Query("order") order: "ASC" | "DESC" = "DESC"
   ) {
     return this.usersService.findAllPaginated({
-      page,
-      limit,
+      page: parseInt(page),
+      limit: parseInt(limit),
       search,
+      role,
       sortBy,
-      order,
+      sortOrder: order,
     });
   }
 

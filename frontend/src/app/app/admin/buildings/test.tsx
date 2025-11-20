@@ -102,7 +102,7 @@ const AMENITIES_LIST = [
   "Parking",
   "Bike storage",
   "Parcel room",
-  "SLA Maintenance",
+  "Maintenance",
   "Events calendar",
   "Pet areas",
   "Kids room",

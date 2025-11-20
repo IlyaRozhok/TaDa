@@ -40,4 +40,3 @@ export class Shortlist {
   @CreateDateColumn()
   created_at: Date;
 }
-

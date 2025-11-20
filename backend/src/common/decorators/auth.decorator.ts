@@ -11,4 +11,3 @@ export function Auth(...roles: string[]) {
     Roles(...roles)
   );
 }
-

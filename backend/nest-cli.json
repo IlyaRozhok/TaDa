@@ -4,7 +4,8 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["**/*.hbs"],
-    "watchAssets": true
+    "webpack": false,
+    "tsConfigPath": "tsconfig.json"
   }
-} 
+}
+

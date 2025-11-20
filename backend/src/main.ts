@@ -3,8 +3,8 @@ import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
-import * as path from "path";
 import { AppModule } from "./app.module";
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -13,21 +13,23 @@ async function bootstrap() {
   app.use(require("express").json({ limit: "10mb" }));
   app.use(require("express").urlencoded({ limit: "10mb", extended: true }));
 
-  const origins = (process.env.CORS_ORIGINS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
   app.enableCors({
-    origin: origins,
-    credentials: false,
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://stage.ta-da.co",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   });
 
-  if (origins.length) {
-    app.enableCors({ origin: origins, credentials: false });
-  }
-
   app.setGlobalPrefix("api");
+
+  // Serve static files from uploads directory (for dev mode)
+  app.useStaticAssets(path.join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

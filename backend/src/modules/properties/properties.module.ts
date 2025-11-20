@@ -1,30 +1,23 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ConfigModule } from "@nestjs/config";
-import { PropertiesService } from "./properties.service";
-import { PropertiesController } from "./properties.controller";
+import { MulterModule } from "@nestjs/platform-express";
+import { PropertyService } from "../property/property.service";
+import { PropertyController } from "../property/property.controller";
 import { Property } from "../../entities/property.entity";
-import { Favourite } from "../../entities/favourite.entity";
-import { Shortlist } from "../../entities/shortlist.entity";
-import { User } from "../../entities/user.entity";
-import { TenantProfile } from "../../entities/tenant-profile.entity";
-import { MatchingModule } from "../matching/matching.module";
+import { Building } from "../../entities/building.entity";
 import { S3Service } from "../../common/services/s3.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Property,
-      Favourite,
-      Shortlist,
-      User,
-      TenantProfile,
-    ]),
-    MatchingModule,
-    ConfigModule,
+    TypeOrmModule.forFeature([Property, Building]),
+    MulterModule.register({
+      limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB for videos
+      },
+    }),
   ],
-  controllers: [PropertiesController],
-  providers: [PropertiesService, S3Service],
-  exports: [PropertiesService],
+  controllers: [PropertyController],
+  providers: [PropertyService, S3Service],
+  exports: [PropertyService],
 })
 export class PropertiesModule {}

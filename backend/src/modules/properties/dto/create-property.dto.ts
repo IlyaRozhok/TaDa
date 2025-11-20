@@ -140,5 +140,13 @@ export class CreatePropertyDto {
   @IsBoolean()
   @IsOptional()
   is_btr?: boolean;
-}
 
+  @ApiProperty({
+    description: "Residential complex ID (optional)",
+    example: "uuid-string",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  residential_complex_id?: string;
+}

@@ -7,15 +7,22 @@ import { Property } from "../../entities/property.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { User } from "../../entities/user.entity";
 import { S3Service } from "../../common/services/s3.service";
+import { Shortlist } from "../../entities/shortlist.entity";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Property, TenantProfile, User]),
+    TypeOrmModule.forFeature([Property, Shortlist, TenantProfile, User]),
     ConfigModule,
   ],
-  controllers: [ShortlistController],
-  providers: [ShortlistService, S3Service],
-  exports: [ShortlistService],
+  controllers: [
+    ShortlistController
+  ],
+  providers: [
+    ShortlistService,
+    S3Service
+  ],
+  exports: [
+    ShortlistService
+  ],
 })
 export class ShortlistModule {}
-

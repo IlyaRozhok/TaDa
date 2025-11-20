@@ -11,7 +11,7 @@ export default function SilenceConsole() {
     console.error = (...args: unknown[]) => {
       // Keep errors visible in dev tools without serializing complex objects
       if (process.env.NODE_ENV === "development") {
-        original.error?.(typeof args?.[0] === "string" ? args[0] : "Error");
+        original.error?.call(original, typeof args?.[0] === "string" ? args[0] : "Error");
       }
     };
     console.info = () => {};

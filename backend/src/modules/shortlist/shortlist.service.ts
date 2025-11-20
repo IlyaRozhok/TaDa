@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
   BadRequestException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -22,42 +21,6 @@ export class ShortlistService {
     private userRepository: Repository<User>,
     private readonly s3Service: S3Service
   ) {}
-
-  /**
-   * Update presigned URLs for property media
-   */
-  private async updateMediaPresignedUrls(
-    property: Property
-  ): Promise<Property> {
-    if (property.media && property.media.length > 0) {
-      for (const media of property.media) {
-        try {
-          media.url = await this.s3Service.getPresignedUrl(media.s3_key);
-        } catch (error) {
-          console.error(
-            "Error generating presigned URL for media:",
-            media.id,
-            error
-          );
-          // Fallback to S3 direct URL
-          media.url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${media.s3_key}`;
-        }
-      }
-    }
-    return property;
-  }
-
-  /**
-   * Update presigned URLs for multiple properties
-   */
-  private async updateMultiplePropertiesMediaUrls(
-    properties: Property[]
-  ): Promise<Property[]> {
-    for (const property of properties) {
-      await this.updateMediaPresignedUrls(property);
-    }
-    return properties;
-  }
 
   /**
    * Get tenant profile for a user
@@ -164,15 +127,14 @@ export class ShortlistService {
       return [];
     }
 
-    // Fetch properties with media and operator relations
+    // Fetch properties with building and operator relations
     const properties = await this.propertyRepository.find({
       where: { id: In(shortlistedPropertyIds) },
-      relations: ["media", "operator"],
+      relations: ["building", "building.operator", "operator"],
       order: { created_at: "DESC" },
     });
 
-    // Update presigned URLs for all properties
-    return await this.updateMultiplePropertiesMediaUrls(properties);
+    return properties;
   }
 
   async isPropertyShortlisted(
@@ -223,3 +185,5 @@ export class ShortlistService {
     };
   }
 }
+
+

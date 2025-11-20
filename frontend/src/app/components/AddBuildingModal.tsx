@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Plus, Minus, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 import { buildingsAPI, usersAPI } from "../lib/api";
@@ -57,14 +57,15 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const [formData, setFormData] = useState({
     name: "",
     address: "",
-    number_of_units: 1,
-    type_of_unit: "studio" as
+    number_of_units: null as number | null,
+    type_of_unit: "" as
       | "studio"
       | "1-bed"
       | "2-bed"
       | "3-bed"
       | "Duplex"
-      | "penthouse",
+      | "penthouse"
+      | "",
     logo: "",
     video: "",
     photos: [] as string[],
@@ -78,13 +79,14 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     pet_policy: false,
     pets: null as Pet[] | null,
     smoking_area: false,
-    tenant_type: "family" as
+    tenant_type: "" as
       | "corporateLets"
       | "sharers"
       | "student"
       | "family"
-      | "elder",
-    operator_id: "",
+      | "elder"
+      | "",
+    operator_id: null as string | null,
   });
 
   // File states
@@ -92,6 +94,15 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+
+  // Preview URLs
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [documentPreviews, setDocumentPreviews] = useState<string[]>([]);
+
+  // File input refs
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Operators state
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -103,13 +114,33 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       const loadOperators = async () => {
         setOperatorsLoading(true);
         try {
-          const response = await usersAPI.getAll();
-          // Filter only operators
-          const operatorsList = response.data.users?.filter((user: any) => user.role === 'operator') || [];
-          setOperators(operatorsList);
+          // Fetch all operators using role filter and high limit
+          const response = await usersAPI.getAll({
+            role: "operator",
+            limit: 1000, // Get all operators
+            page: 1,
+          });
+
+          // Handle paginated response format: { users: [], total, page, limit, totalPages }
+          const responseData = response.data || {};
+          const operatorsList =
+            responseData.users ||
+            (Array.isArray(responseData) ? responseData : []) ||
+            [];
+
+          // Filter to ensure only operators (double check)
+          const filteredOperators = operatorsList.filter(
+            (user: any) => user.role === "operator" || user.role === "Operator"
+          );
+
+          console.log(
+            `✅ Loaded ${filteredOperators.length} operators from API`
+          );
+          console.log("Operators list:", filteredOperators);
+          setOperators(filteredOperators);
         } catch (error) {
-          console.error('Failed to load operators:', error);
-          toast.error('Failed to load operators');
+          console.error("Failed to load operators:", error);
+          toast.error("Failed to load operators");
         } finally {
           setOperatorsLoading(false);
         }
@@ -118,6 +149,57 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       loadOperators();
     }
   }, [isOpen]);
+
+  // Generate preview URLs for logo
+  useEffect(() => {
+    if (logoFile) {
+      const url = URL.createObjectURL(logoFile);
+      setLogoPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setLogoPreview(null);
+    }
+  }, [logoFile]);
+
+  // Generate preview URLs for video
+  useEffect(() => {
+    if (videoFile) {
+      const url = URL.createObjectURL(videoFile);
+      setVideoPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setVideoPreview(null);
+    }
+  }, [videoFile]);
+
+  // Generate preview URLs for photos
+  useEffect(() => {
+    const urls = photoFiles.map((file) => {
+      try {
+        return URL.createObjectURL(file);
+      } catch (error) {
+        console.error("Error creating preview URL:", error);
+        return "";
+      }
+    });
+    setPhotoPreviews(urls);
+    return () => {
+      urls.forEach((url) => {
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [photoFiles]);
+
+  // Generate preview URLs for documents (PDF thumbnails)
+  useEffect(() => {
+    const urls = documentFiles.map((file) => URL.createObjectURL(file));
+    setDocumentPreviews(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [documentFiles]);
 
   const uploadAllFiles = async () => {
     const uploadPromises = [];
@@ -216,17 +298,103 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     // Upload files first
     const uploadResult = await uploadAllFiles();
 
+    // Ensure operator_id is only the ID string, not an object
+    let operatorIdValue: string | null = null;
+    if (formData.operator_id) {
+      if (
+        typeof formData.operator_id === "string" &&
+        formData.operator_id.trim() !== ""
+      ) {
+        operatorIdValue = formData.operator_id.trim();
+      } else if (
+        typeof formData.operator_id === "object" &&
+        formData.operator_id !== null &&
+        "id" in formData.operator_id
+      ) {
+        // If somehow an object was passed, extract the ID
+        operatorIdValue = (formData.operator_id as any).id;
+        console.warn(
+          "⚠️ operator_id was an object, extracting ID:",
+          operatorIdValue
+        );
+      }
+    }
+
     // Prepare data with uploaded URLs
-    const buildingData = {
-      ...formData,
-      logo: uploadResult.uploadedUrls.logo || formData.logo,
-      video: uploadResult.uploadedUrls.video || formData.video,
-      photos:
+    const buildingData: any = {
+      name: formData.name,
+      // Only send operator_id as string or null, never as object
+      operator_id: operatorIdValue,
+    };
+
+    // Add optional fields only if they have values
+    if (formData.address && formData.address.trim() !== "") {
+      buildingData.address = formData.address;
+    }
+    if (formData.number_of_units != null) {
+      buildingData.number_of_units = formData.number_of_units;
+    }
+    if (formData.type_of_unit && formData.type_of_unit !== "") {
+      buildingData.type_of_unit = formData.type_of_unit;
+    }
+    if (uploadResult.uploadedUrls.logo || (formData.logo && formData.logo.trim() !== "")) {
+      buildingData.logo = uploadResult.uploadedUrls.logo || formData.logo;
+    }
+    if (uploadResult.uploadedUrls.video || (formData.video && formData.video.trim() !== "")) {
+      buildingData.video = uploadResult.uploadedUrls.video || formData.video;
+    }
+    if (
+      uploadResult.uploadedUrls.photos.length > 0 ||
+      (formData.photos && formData.photos.length > 0)
+    ) {
+      buildingData.photos =
         uploadResult.uploadedUrls.photos.length > 0
           ? uploadResult.uploadedUrls.photos
-          : formData.photos,
-      documents: uploadResult.uploadedUrls.documents || formData.documents,
-    };
+          : formData.photos;
+    }
+    if (
+      uploadResult.uploadedUrls.documents ||
+      (formData.documents && formData.documents.trim() !== "")
+    ) {
+      buildingData.documents = uploadResult.uploadedUrls.documents || formData.documents;
+    }
+    if (formData.metro_stations && formData.metro_stations.length > 0) {
+      buildingData.metro_stations = formData.metro_stations;
+    }
+    if (formData.commute_times && formData.commute_times.length > 0) {
+      buildingData.commute_times = formData.commute_times;
+    }
+    if (formData.local_essentials && formData.local_essentials.length > 0) {
+      buildingData.local_essentials = formData.local_essentials;
+    }
+    if (formData.amenities && formData.amenities.length > 0) {
+      buildingData.amenities = formData.amenities;
+    }
+    if (formData.is_concierge) {
+      buildingData.is_concierge = formData.is_concierge;
+    }
+    if (formData.concierge_hours) {
+      buildingData.concierge_hours = formData.concierge_hours;
+    }
+    if (formData.pet_policy) {
+      buildingData.pet_policy = formData.pet_policy;
+    }
+    if (formData.pets && formData.pets.length > 0) {
+      buildingData.pets = formData.pets;
+    }
+    if (formData.smoking_area) {
+      buildingData.smoking_area = formData.smoking_area;
+    }
+    if (formData.tenant_type && formData.tenant_type !== "") {
+      buildingData.tenant_type = formData.tenant_type;
+    }
+
+    console.log("📤 Submitting building data (Add):", {
+      operator_id: buildingData.operator_id,
+      operator_id_type: typeof buildingData.operator_id,
+      formData_operator_id: formData.operator_id,
+      formData_operator_id_type: typeof formData.operator_id,
+    });
 
     await onSubmit(buildingData);
     if (!isLoading) {
@@ -250,7 +418,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         pets: null,
         smoking_area: false,
         tenant_type: "family",
-        operator_id: "",
+        operator_id: null,
       });
 
       // Reset file states
@@ -258,6 +426,12 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       setVideoFile(null);
       setPhotoFiles([]);
       setDocumentFiles([]);
+
+      // Reset preview states
+      setLogoPreview(null);
+      setVideoPreview(null);
+      setPhotoPreviews([]);
+      setDocumentPreviews([]);
     }
   };
 
@@ -356,11 +530,11 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     "Parking",
     "Bike storage",
     "Parcel room",
-    "SLA Maintenance",
+    "Maintenance",
     "Events calendar",
     "Pet areas",
     "Kids' room",
-    "Garden"
+    "Garden",
   ];
 
   const toggleAmenity = (amenity: string) => {
@@ -437,7 +611,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address *
+                  Address
                 </label>
                 <input
                   type="text"
@@ -446,32 +620,31 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     setFormData({ ...formData, address: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Number of Units *
+                  Number of Units
                 </label>
                 <input
                   type="number"
-                  value={formData.number_of_units}
+                  value={formData.number_of_units || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      number_of_units: parseInt(e.target.value) || 1,
+                      number_of_units:
+                        e.target.value === "" ? null : parseInt(e.target.value),
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   min="1"
-                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type of Unit *
+                  Type of Unit
                 </label>
                 <select
                   value={formData.type_of_unit}
@@ -482,8 +655,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                  required
                 >
+                  <option value="">Select Type</option>
                   <option value="studio">Studio</option>
                   <option value="1-bed">1-bed</option>
                   <option value="2-bed">2-bed</option>
@@ -495,7 +668,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tenant Type *
+                  Tenant Type
                 </label>
                 <select
                   value={formData.tenant_type}
@@ -506,8 +679,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                  required
                 >
+                  <option value="">Select Type</option>
                   <option value="corporateLets">Corporate Lets</option>
                   <option value="sharers">Sharers</option>
                   <option value="student">Student</option>
@@ -521,28 +694,43 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   Operator *
                 </label>
                 <select
-                  value={formData.operator_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, operator_id: e.target.value })
-                  }
+                  value={formData.operator_id || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({
+                      ...formData,
+                      operator_id: value === "" ? null : value,
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   required
                   disabled={operatorsLoading}
                 >
                   <option value="">
-                    {operatorsLoading ? "Loading operators..." : "Select an operator"}
+                    {operatorsLoading
+                      ? "Loading operators..."
+                      : "Select an operator"}
                   </option>
-                  {operators.map((operator) => (
-                    <option key={operator.id} value={operator.id}>
-                      {operator.operatorProfile?.company_name ||
-                       operator.operatorProfile?.full_name ||
-                       operator.full_name ||
-                       operator.email}
-                    </option>
-                  ))}
+                  {operators.map((operator) => {
+                    const displayName =
+                      operator.operatorProfile?.company_name ||
+                      operator.operatorProfile?.full_name ||
+                      operator.full_name ||
+                      operator.email;
+                    return (
+                      <option key={operator.id} value={operator.id}>
+                        {displayName}{" "}
+                        {operator.email && displayName !== operator.email
+                          ? `(${operator.email})`
+                          : ""}
+                      </option>
+                    );
+                  })}
                 </select>
                 {!operatorsLoading && operators.length === 0 && (
-                  <p className="text-sm text-gray-500 mt-1">No operators available</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    No operators available
+                  </p>
                 )}
               </div>
             </div>
@@ -574,18 +762,29 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     Upload a logo image file (PNG, JPG, etc.)
                   </p>
                   {logoFile && (
-                    <div className="flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">
-                        {logoFile.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setLogoFile(null)}
-                        className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                      >
-                        Remove
-                      </button>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Upload className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-600">
+                          {logoFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setLogoFile(null)}
+                          className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {logoPreview && (
+                        <div className="mt-2">
+                          <img
+                            src={logoPreview}
+                            alt="Logo preview"
+                            className="max-w-xs max-h-32 object-contain border border-gray-300 rounded-md"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -610,18 +809,31 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     Upload a video file (MP4, AVI, etc.)
                   </p>
                   {videoFile && (
-                    <div className="flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-gray-600">
-                        {videoFile.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setVideoFile(null)}
-                        className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                      >
-                        Remove
-                      </button>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Upload className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-600">
+                          {videoFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setVideoFile(null)}
+                          className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {videoPreview && (
+                        <div className="mt-2">
+                          <video
+                            src={videoPreview}
+                            controls
+                            className="max-w-md max-h-64 border border-gray-300 rounded-md"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -634,12 +846,19 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 </label>
                 <div className="space-y-2">
                   <input
+                    ref={photoInputRef}
                     type="file"
                     accept="image/*"
                     multiple
                     onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      setPhotoFiles(files);
+                      const newFiles = Array.from(e.target.files || []);
+                      if (newFiles.length > 0) {
+                        setPhotoFiles((prev) => [...prev, ...newFiles]);
+                        // Reset input so user can select the same file again if needed
+                        if (photoInputRef.current) {
+                          photoInputRef.current.value = "";
+                        }
+                      }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
                   />
@@ -662,24 +881,49 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           Clear All
                         </button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
                         {photoFiles.map((file, index) => (
                           <div
-                            key={index}
-                            className="flex items-center gap-1 text-xs text-gray-600"
+                            key={`${file.name}-${index}`}
+                            className="relative border border-gray-300 rounded-md overflow-hidden group bg-gray-50"
                           >
-                            <span className="truncate">{file.name}</span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setPhotoFiles((prev) =>
-                                  prev.filter((_, i) => i !== index)
-                                )
-                              }
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              ×
-                            </button>
+                            <div className="relative w-full h-32 bg-gray-100">
+                              {photoPreviews[index] ? (
+                                <img
+                                  src={photoPreviews[index]}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.error(
+                                      "Failed to load image preview"
+                                    );
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  <Upload className="w-8 h-8" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center z-10">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setPhotoFiles((prev) =>
+                                      prev.filter((_, i) => i !== index)
+                                    )
+                                  }
+                                  className="opacity-0 group-hover:opacity-100 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-opacity"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                            <div className="p-2 bg-white">
+                              <p className="text-xs text-gray-600 truncate">
+                                {file.name}
+                              </p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -723,24 +967,49 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           Clear All
                         </button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
                         {documentFiles.map((file, index) => (
                           <div
                             key={index}
-                            className="flex items-center gap-1 text-xs text-gray-600"
+                            className="relative border border-gray-300 rounded-md overflow-hidden group bg-gray-50"
                           >
-                            <span className="truncate">{file.name}</span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDocumentFiles((prev) =>
-                                  prev.filter((_, i) => i !== index)
-                                )
-                              }
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              ×
-                            </button>
+                            <div className="flex flex-col items-center justify-center p-4 h-32">
+                              <svg
+                                className="w-12 h-12 text-red-600 mb-2"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <p className="text-xs text-gray-600 text-center truncate w-full px-2">
+                                {file.name}
+                              </p>
+                            </div>
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDocumentFiles((prev) =>
+                                    prev.filter((_, i) => i !== index)
+                                  )
+                                }
+                                className="opacity-0 group-hover:opacity-100 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-opacity"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            {documentPreviews[index] && (
+                              <iframe
+                                src={documentPreviews[index]}
+                                className="hidden"
+                                title={`PDF preview ${index + 1}`}
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
@@ -900,7 +1169,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     className="border border-gray-200 rounded-md p-4"
                   >
                     <div className="flex justify-between items-center mb-4">
-                      <h5 className="font-medium">Pet {index + 1}</h5>
+                      <h5 className="font-medium text-black">
+                        Pet {index + 1}
+                      </h5>
                       <button
                         type="button"
                         onClick={() => removePet(index)}
@@ -1010,7 +1281,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           {/* Metro Stations */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
-              Metro Stations *
+              Metro Stations
             </h4>
 
             {formData.metro_stations.map((station, index) => (
@@ -1063,7 +1334,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           {/* Commute Times */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
-              Commute Times *
+              Commute Times
             </h4>
 
             {formData.commute_times.map((time, index) => (
@@ -1116,7 +1387,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           {/* Local Essentials */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
-              Local Essentials *
+              Local Essentials
             </h4>
 
             {formData.local_essentials.map((essential, index) => (

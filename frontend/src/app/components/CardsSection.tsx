@@ -41,7 +41,7 @@ const CardsSection = () => {
     >
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center lg:text-start mb-16">
+        <div className="text-start mb-16">
           <p className="text-black font-semibold text-md tracking-wide mb-4 mt-5">
             {t(operatorKeys.howItWorks.label)}
           </p>

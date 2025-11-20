@@ -103,7 +103,8 @@ export const usersAPI = {
 
   update: (id: string, data: any) => api.patch(`/users/${id}`, data),
 
-  getAll: () => api.get("/users"),
+  getAll: (params?: { role?: string; limit?: number; page?: number; search?: string }) => 
+    api.get("/users", { params }),
 
   getById: (id: string) => api.get(`/users/${id}`),
 };
@@ -118,26 +119,7 @@ export const preferencesAPI = {
   update: (data: any) => api.put("/preferences", data),
 };
 
-export const propertiesAPI = {
-  getAll: (params?: any) => api.get("/properties", { params }),
-
-  getAllPublic: (params?: any) => api.get("/properties/public/all", { params }),
-
-  getById: (id: string) => api.get(`/properties/${id}`),
-
-  getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
-
-  getPublic: (page: number = 1, limit: number = 12, search?: string) =>
-    api.get("/properties/public", { params: { page, limit, search } }),
-
-  create: (data: any) => api.post("/properties", data),
-
-  update: (id: string, data: any) => api.patch(`/properties/${id}`, data),
-
-  delete: (id: string) => api.delete(`/properties/${id}`),
-
-  getMatched: () => api.get("/matching/matches"),
-};
+// Removed duplicate - see propertiesAPI definition below
 
 export const shortlistAPI = {
   get: () => api.get("/shortlist").then((res) => res.data),
@@ -250,6 +232,68 @@ export const buildingsAPI = {
     });
     try {
       const response = await api.post("/buildings/upload/documents", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+};
+
+export const propertiesAPI = {
+  // Admin CRUD operations
+  getAll: (params?: any) => api.get("/properties", { params }),
+  getById: (id: string) => api.get(`/properties/${id}`),
+  create: (data: any) => api.post("/properties", data),
+  update: (id: string, data: any) => api.patch(`/properties/${id}`, data),
+  delete: (id: string) => api.delete(`/properties/${id}`),
+  
+  // Public endpoints
+  getAllPublic: (params?: any) => api.get("/properties/public/all", { params }),
+  getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
+  getPublic: (page: number = 1, limit: number = 12, search?: string) =>
+    api.get("/properties/public", { params: { page, limit, search } }),
+  getMatched: () => api.get("/matching/matches"),
+  
+  // Media upload endpoints
+  uploadPhotos: async (files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("photos", file);
+    });
+    try {
+      const response = await api.post("/properties/upload/photos", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+  uploadVideo: async (file: File) => {
+    const formData = new FormData();
+    formData.append("video", file);
+    try {
+      const response = await api.post("/properties/upload/video", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+  uploadDocuments: async (file: File) => {
+    const formData = new FormData();
+    formData.append("documents", file);
+    try {
+      const response = await api.post("/properties/upload/documents", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

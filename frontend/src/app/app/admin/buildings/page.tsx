@@ -10,6 +10,7 @@ import {
 } from "../../../store/slices/authSlice";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 import UniversalHeader from "../../../components/UniversalHeader";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { buildingsAPI } from "../../../lib/api";
 import {
   Building2,
@@ -102,7 +103,7 @@ const AMENITIES_LIST = [
   "Parking",
   "Bike storage",
   "Parcel room",
-  "SLA Maintenance",
+  "Maintenance",
   "Events calendar",
   "Pet areas",
   "Kids room",
@@ -139,6 +140,16 @@ export default function BuildingsPage() {
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
   const [viewingBuilding, setViewingBuilding] = useState<Building | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    buildingId: string | null;
+    buildingName: string;
+  }>({
+    isOpen: false,
+    buildingId: null,
+    buildingName: "",
+  });
+  const [deleting, setDeleting] = useState(false);
 
   const [formData, setFormData] = useState<{
     name: string;
@@ -306,16 +317,104 @@ export default function BuildingsPage() {
     setShowViewModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this building?")) return;
+  const handleDeleteClick = (building: Building) => {
+    console.log("handleDeleteClick called with building:", building);
+    setDeleteConfirm({
+      isOpen: true,
+      buildingId: building.id,
+      buildingName: building.name,
+    });
+    console.log("Delete confirmation modal should now be open");
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.buildingId) {
+      console.error("No building ID provided for deletion");
+      return;
+    }
+
+    const buildingIdToDelete = deleteConfirm.buildingId;
+    setDeleting(true);
 
     try {
-      await buildingsAPI.delete(id);
-      toast.success("Building deleted successfully");
-      fetchBuildings();
-    } catch {
-      toast.error("Failed to delete building");
+      console.log(
+        "🗑️ Starting deletion process for building ID:",
+        buildingIdToDelete
+      );
+
+      // Call the delete API
+      const response = await buildingsAPI.delete(buildingIdToDelete);
+
+      console.log("📦 Delete API response:", response);
+      console.log("📦 Response status:", response?.status);
+      console.log("📦 Response data:", response?.data);
+
+      // Verify the response
+      if (!response) {
+        throw new Error("No response received from delete API");
+      }
+
+      const responseData = response.data || {};
+      const isSuccess =
+        (response.status === 200 || response.status === 204) &&
+        (responseData.success === true || responseData.message);
+
+      if (isSuccess) {
+        console.log("✅ Delete successful, removing from UI");
+
+        // Remove from local state
+        setBuildings((prevBuildings) => {
+          const updated = prevBuildings.filter(
+            (building) => building.id !== buildingIdToDelete
+          );
+          console.log(
+            `📊 Buildings before: ${prevBuildings.length}, after: ${updated.length}`
+          );
+          return updated;
+        });
+
+        // Close modal
+        setDeleteConfirm({
+          isOpen: false,
+          buildingId: null,
+          buildingName: "",
+        });
+
+        toast.success(responseData?.message || "Building deleted successfully");
+      } else {
+        throw new Error(
+          responseData?.message ||
+            `Unexpected response status: ${response.status}`
+        );
+      }
+    } catch (error: any) {
+      console.error("❌ Delete failed - Full error object:", error);
+      console.error("❌ Error response:", error?.response);
+      console.error("❌ Error response data:", error?.response?.data);
+      console.error("❌ Error response status:", error?.response?.status);
+      console.error("❌ Error message:", error?.message);
+      console.error("❌ Error stack:", error?.stack);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to delete building. Please check console for details.";
+
+      toast.error(errorMessage);
+
+      // Keep modal open on error so user can try again
+    } finally {
+      setDeleting(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({
+      isOpen: false,
+      buildingId: null,
+      buildingName: "",
+    });
   };
 
   const validateFileUploads = (): string[] => {
@@ -821,6 +920,7 @@ export default function BuildingsPage() {
                       </div>
                       <div className="flex gap-2">
                         <button
+                          type="button"
                           onClick={() => handleView(building)}
                           className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                         >
@@ -828,6 +928,7 @@ export default function BuildingsPage() {
                           View
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleEdit(building)}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                         >
@@ -835,7 +936,17 @@ export default function BuildingsPage() {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(building.id)}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log(
+                              "Delete button clicked for building:",
+                              building.id,
+                              building.name
+                            );
+                            handleDeleteClick(building);
+                          }}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -2044,6 +2155,19 @@ export default function BuildingsPage() {
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={deleteConfirm.isOpen}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Building"
+          message={`Are you sure you want to delete "${deleteConfirm.buildingName}"? This action cannot be undone and will permanently remove the building and all associated data.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          icon="danger"
+          loading={deleting}
+        />
       </div>
     </SimpleDashboardRouter>
   );

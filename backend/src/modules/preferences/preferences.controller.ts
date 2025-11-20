@@ -73,12 +73,11 @@ export class PreferencesController {
     @CurrentUser() user: User,
     @Body() createPreferencesDto: CreatePreferencesDto
   ): Promise<Preferences> {
-    console.log("📥 Received preferences data:", createPreferencesDto);
     const result = await this.preferencesService.upsert(
       user.id,
       createPreferencesDto
     );
-    console.log("💾 Saved preferences:", result);
+
     return result;
   }
 
@@ -96,7 +95,6 @@ export class PreferencesController {
   })
   async findMy(@CurrentUser() user: User): Promise<Preferences | null> {
     const preferences = await this.preferencesService.findByUserId(user.id);
-    console.log("📤 Returning preferences for user:", user.id, preferences);
     return preferences;
   }
 
