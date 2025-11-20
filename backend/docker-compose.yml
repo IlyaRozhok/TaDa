@@ -3,11 +3,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: tada-backend-stage
+    container_name: tada-backend-prod-hetzner
     ports:
       - "3002:3002"
     env_file:
-      - ./backend/.env.stage
+      - ./backend/.env.production
     command: node dist/main.js
     networks:
       - rental_network_stage
