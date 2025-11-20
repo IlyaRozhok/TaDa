@@ -54,91 +54,26 @@ console.log("");
 
 // Function to drop all tables
 async function dropAllTables(client) {
-  console.log("🗑️  Dropping all tables...");
+  async function dropAllTables(client) {
+    console.log("🗑️  Dropping all tables...");
 
-  try {
-    // Get all table names
-    const result = await client.query(`
-      SELECT tablename 
-      FROM pg_tables 
-      WHERE schemaname = 'public'
-    `);
-
-    const tables = result.rows.map((row) => row.tablename);
-
-    if (tables.length === 0) {
-      console.log("✅ No tables to drop");
-      return;
-    }
-
-    console.log(`📋 Found ${tables.length} tables to drop`);
-
-    // Drop all foreign key constraints first
-    console.log("🔓 Dropping foreign key constraints...");
     await client.query(`
-      DO $$ 
-      DECLARE 
+      DO $$
+      DECLARE
         r RECORD;
       BEGIN
         FOR r IN (
-          SELECT conname, conrelid::regclass
-          FROM pg_constraint
-          WHERE contype = 'f'
-          AND connamespace = 'public'::regnamespace
-        ) 
-        LOOP
-          EXECUTE 'ALTER TABLE ' || r.conrelid || ' DROP CONSTRAINT ' || r.conname;
+          SELECT tablename
+          FROM pg_tables
+          WHERE schemaname = 'public'
+        ) LOOP
+          EXECUTE 'DROP TABLE IF EXISTS "' || r.tablename || '" CASCADE';
         END LOOP;
-      END $$;
+      END
+      $$;
     `);
 
-    // Drop all tables
-    for (const table of tables) {
-      console.log(`   Dropping table: ${table}`);
-      await client.query(`DROP TABLE IF EXISTS "${table}" CASCADE`);
-    }
-
-    // Drop all enum types
-    console.log("🗑️  Dropping enum types...");
-    await client.query(`
-      DO $$ 
-      DECLARE 
-        r RECORD;
-      BEGIN
-        FOR r IN (
-          SELECT typname
-          FROM pg_type
-          WHERE typtype = 'e'
-          AND typnamespace = 'public'::regnamespace
-        ) 
-        LOOP
-          EXECUTE 'DROP TYPE IF EXISTS ' || r.typname || ' CASCADE';
-        END LOOP;
-      END $$;
-    `);
-
-    // Drop all sequences
-    console.log("🗑️  Dropping sequences...");
-    await client.query(`
-      DO $$ 
-      DECLARE 
-        r RECORD;
-      BEGIN
-        FOR r IN (
-          SELECT sequence_name
-          FROM information_schema.sequences
-          WHERE sequence_schema = 'public'
-        ) 
-        LOOP
-          EXECUTE 'DROP SEQUENCE IF EXISTS ' || r.sequence_name || ' CASCADE';
-        END LOOP;
-      END $$;
-    `);
-
-    console.log("✅ All tables, constraints, and types dropped successfully");
-  } catch (error) {
-    console.error("❌ Error dropping tables:", error.message);
-    throw error;
+    console.log("✅ All tables dropped");
   }
 }
 
