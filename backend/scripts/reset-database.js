@@ -1,45 +1,32 @@
 #!/usr/bin/env node
 
 /**
- * 🔄 Database Reset Script
+ * 🔄 Simple Database Reset Script
  *
- * This script completely resets the database by:
- * 1. Dropping all tables (including migrations table)
- * 2. Re-running all migrations
- * 3. Optionally running seed script
+ * 1. DROP SCHEMA public CASCADE;
+ * 2. CREATE SCHEMA public;
+ * 3. npm run migration:run:prod
+ * 4. (optional) node scripts/seed-staging.js
  *
- * WARNING: This will DELETE ALL DATA in the database!
- *
- * Usage:
- *   node scripts/reset-database.js [--seed]
- *
- * Environment variables required:
- *   - DB_HOST
- *   - DB_PORT
- *   - DB_USERNAME
- *   - DB_PASSWORD
- *   - DB_NAME
+ * ВАЖНО: УДАЛИТ ВСЕ ДАННЫЕ В БАЗЕ!
  */
 
 const { Client } = require("pg");
 const { execSync } = require("child_process");
 const path = require("path");
 
-// Parse command line arguments
 const args = process.argv.slice(2);
 const shouldSeed = args.includes("--seed");
 
-// Load environment variables (optional - will use system env if dotenv not available)
+// dotenv не обязателен, просто пробуем
 try {
   require("dotenv").config();
-} catch (e) {
-  // dotenv is optional - will use system environment variables
-}
+} catch (e) {}
 
-// Database configuration
+// Конфиг базы из env
 const dbConfig = {
   host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT || "5432"),
+  port: parseInt(process.env.DB_PORT || "5432", 10),
   user: process.env.DB_USERNAME || "postgres",
   password: process.env.DB_PASSWORD || "password",
   database: process.env.DB_NAME || "rental_platform",
@@ -52,117 +39,16 @@ console.log(`🌐 Host: ${dbConfig.host}:${dbConfig.port}`);
 console.log(`👤 User: ${dbConfig.user}`);
 console.log("");
 
-// Function to drop all tables
-async function dropAllTables(client) {
-  async function dropAllTables(client) {
-    console.log("🗑️  Dropping all tables...");
-
-    await client.query(`
-      DO $$
-      DECLARE
-        r RECORD;
-      BEGIN
-        FOR r IN (
-          SELECT tablename
-          FROM pg_tables
-          WHERE schemaname = 'public'
-        ) LOOP
-          EXECUTE 'DROP TABLE IF EXISTS "' || r.tablename || '" CASCADE';
-        END LOOP;
-      END
-      $$;
-    `);
-
-    console.log("✅ All tables dropped");
-  }
-}
-
-// Function to run migrations
-async function runMigrations() {
-  console.log("");
-  console.log("🚀 Running migrations...");
-  console.log("=".repeat(50));
-
-  try {
-    // Check if we need to build first
-    const distPath = path.join(
-      __dirname,
-      "..",
-      "dist",
-      "database",
-      "data-source.js"
-    );
-    const fs = require("fs");
-
-    if (!fs.existsSync(distPath)) {
-      console.log("📦 Building project first...");
-      execSync("npm run build", {
-        cwd: path.join(__dirname, ".."),
-        stdio: "inherit",
-      });
-    }
-
-    // Run migrations
-    console.log("🔄 Applying migrations...");
-    execSync("npm run migration:run:prod", {
-      cwd: path.join(__dirname, ".."),
-      stdio: "inherit",
-      env: { ...process.env },
-    });
-
-    console.log("✅ Migrations applied successfully");
-  } catch (error) {
-    console.error("❌ Error running migrations:", error.message);
-    throw error;
-  }
-}
-
-// Function to run seed script
-async function runSeed() {
-  if (!shouldSeed) {
-    return;
-  }
-
-  console.log("");
-  console.log("🌱 Running seed script...");
-  console.log("=".repeat(50));
-
-  try {
-    // Determine which seed script to use
-    // Check if DB_HOST contains 'stage' or if NODE_ENV is staging
-    const isStaging =
-      (process.env.DB_HOST && process.env.DB_HOST.includes("stage")) ||
-      process.env.NODE_ENV === "production" ||
-      process.env.NODE_ENV === "prod";
-
-    const seedScript = isStaging ? "seed-staging.js" : "seed-database.js";
-    console.log(`📝 Using seed script: ${seedScript}`);
-
-    execSync(`node scripts/${seedScript}`, {
-      cwd: path.join(__dirname, ".."),
-      stdio: "inherit",
-      env: { ...process.env },
-    });
-
-    console.log("✅ Seed script completed successfully");
-  } catch (error) {
-    console.error("❌ Error running seed script:", error.message);
-    throw error;
-  }
-}
-
-// Main function
-async function main() {
+// 1) Полный дроп схемы public
+async function resetSchema() {
   const client = new Client(dbConfig);
 
   try {
-    // Connect to database
     console.log("🔌 Connecting to database...");
     await client.connect();
-    console.log("✅ Connected to database");
+    console.log("✅ Connected");
     console.log("");
 
-    // Confirm before proceeding
     if (!process.env.SKIP_CONFIRMATION) {
       console.log("⚠️  WARNING: This will DELETE ALL DATA in the database!");
       console.log(
@@ -171,17 +57,57 @@ async function main() {
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
-    // Drop all tables
-    await dropAllTables(client);
+    console.log("🗑️  Dropping schema public CASCADE...");
+    await client.query("DROP SCHEMA IF EXISTS public CASCADE;");
+    console.log("📦 Recreating schema public...");
+    await client.query("CREATE SCHEMA public;");
+    console.log("✅ Schema public reset complete");
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
 
-    // Close connection
-    await client.end();
+// 2) Миграции
+function runMigrations() {
+  console.log("");
+  console.log("🚀 Running migrations...");
+  console.log("=".repeat(50));
 
-    // Run migrations
-    await runMigrations();
+  execSync("npm run migration:run:prod", {
+    cwd: path.join(__dirname, ".."),
+    stdio: "inherit",
+    env: { ...process.env },
+  });
 
-    // Run seed if requested
-    await runSeed();
+  console.log("✅ Migrations applied successfully");
+}
+
+// 3) Сидинг (по флагу --seed)
+function runSeed() {
+  if (!shouldSeed) return;
+
+  console.log("");
+  console.log("🌱 Running seed script...");
+  console.log("=".repeat(50));
+
+  // Можешь поменять на seed-database.js, если нужно
+  const seedScript = "seed-staging.js";
+
+  execSync(`node scripts/${seedScript}`, {
+    cwd: path.join(__dirname, ".."),
+    stdio: "inherit",
+    env: { ...process.env },
+  });
+
+  console.log("✅ Seed script completed successfully");
+}
+
+// Main
+async function main() {
+  try {
+    await resetSchema();
+    runMigrations();
+    runSeed();
 
     console.log("");
     console.log("🎉 Database reset completed successfully!");
@@ -191,17 +117,12 @@ async function main() {
     console.error("❌ Database reset failed:", error.message);
     console.error(error);
     process.exit(1);
-  } finally {
-    if (!client.ended) {
-      await client.end();
-    }
   }
 }
 
-// Run the script
 if (require.main === module) {
-  main().catch((error) => {
-    console.error("❌ Fatal error:", error);
+  main().catch((err) => {
+    console.error("❌ Fatal error:", err);
     process.exit(1);
   });
 }

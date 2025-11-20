@@ -4,7 +4,7 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
-import * as path from 'path';
+import * as path from "path";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -17,7 +17,7 @@ async function bootstrap() {
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://stage.ta-da.co",
+      "https://ta-da.co",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -27,8 +27,8 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
 
   // Serve static files from uploads directory (for dev mode)
-  app.useStaticAssets(path.join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/',
+  app.useStaticAssets(path.join(__dirname, "..", "uploads"), {
+    prefix: "/uploads/",
   });
 
   app.useGlobalPipes(
