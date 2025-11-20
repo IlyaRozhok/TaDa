@@ -27,7 +27,6 @@ async function bootstrap() {
 
   app.setGlobalPrefix("api");
 
-  // Serve static files from uploads directory (for dev mode)
   app.useStaticAssets(path.join(__dirname, "..", "uploads"), {
     prefix: "/uploads/",
   });
