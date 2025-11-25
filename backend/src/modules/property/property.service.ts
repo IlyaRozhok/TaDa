@@ -35,12 +35,9 @@ export class PropertyService {
       building_id: createPropertyDto.building_id,
       operator_id: building.operator_id,
       title: createPropertyDto.title,
+      description: createPropertyDto.description,
       photos: createPropertyDto.photos || [],
     };
-
-    if (createPropertyDto.description) {
-      propertyData.description = createPropertyDto.description;
-    }
 
     if (createPropertyDto.price != null) {
       propertyData.price = createPropertyDto.price;
@@ -68,11 +65,11 @@ export class PropertyService {
     if (updatePropertyDto.building_id && updatePropertyDto.building_id !== property.building_id) {
       const building = await this.buildingRepository.findOne({
         where: { id: updatePropertyDto.building_id },
-      });
+    });
 
       if (!building) {
         throw new NotFoundException("Building not found");
-      }
+    }
 
       updateData.building_id = updatePropertyDto.building_id;
       updateData.operator_id = building.operator_id;

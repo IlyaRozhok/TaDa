@@ -31,9 +31,9 @@ export class Property {
   @Column()
   title: string;
 
-  @ApiProperty({ description: "Property description", example: "Beautiful modern apartment", required: false })
-  @Column("text", { nullable: true })
-  description?: string;
+  @ApiProperty({ description: "Property description", example: "Beautiful modern apartment" })
+  @Column("text")
+  description: string;
 
   @ApiProperty({ description: "Monthly rent price (PCM)", example: 2500, required: false })
   @Column("decimal", { precision: 10, scale: 2, nullable: true })

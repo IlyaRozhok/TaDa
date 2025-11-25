@@ -31,11 +31,10 @@ export class CreatePropertyDto {
   @ApiProperty({
     description: "Property description",
     example: "Beautiful modern apartment",
-    required: false,
+    required: true,
   })
-  @IsOptional()
   @IsString()
-  description?: string;
+  description: string;
 
   @ApiProperty({
     description: "Monthly rent price (PCM)",
