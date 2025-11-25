@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString, IsUUID } from "class-validator";
+import { IsOptional, IsString, IsUUID, IsNumber, IsDateString, IsEnum } from "class-validator";
 import {
   PropertyType,
   BuildingType,
@@ -10,6 +10,71 @@ import {
 
 export class CreatePropertyDto {
   // REQUIRED FIELDS
+  @ApiProperty({
+    description: "Property title",
+    example: "Modern 2BR Apartment",
+    required: true,
+  })
+  @IsString()
+  title: string;
+
+  @ApiProperty({
+    description: "Property description",
+    example: "Beautiful modern apartment with stunning city views",
+    required: true,
+  })
+  @IsString()
+  description: string;
+
+  @ApiProperty({
+    description: "Property address",
+    example: "123 Main St, London",
+    required: true,
+  })
+  @IsString()
+  address: string;
+
+  @ApiProperty({
+    description: "Monthly rent price (PCM)",
+    example: 2500,
+    required: true,
+  })
+  @IsNumber()
+  price: number;
+
+  @ApiProperty({
+    description: "Number of bedrooms",
+    example: 2,
+    required: true,
+  })
+  @IsNumber()
+  bedrooms: number;
+
+  @ApiProperty({
+    description: "Number of bathrooms",
+    example: 2,
+    required: true,
+  })
+  @IsNumber()
+  bathrooms: number;
+
+  @ApiProperty({
+    description: "Furnishing type",
+    enum: Furnishing,
+    example: Furnishing.Furnished,
+    required: true,
+  })
+  @IsEnum(Furnishing)
+  furnishing: Furnishing;
+
+  @ApiProperty({
+    description: "Available from date",
+    example: "2024-03-01",
+    required: true,
+  })
+  @IsDateString()
+  available_from: string;
+
   @ApiProperty({
     description: "Apartment number",
     example: "12A",
@@ -36,28 +101,12 @@ export class CreatePropertyDto {
   descriptions?: string;
 
   @ApiProperty({
-    description: "Monthly rent price (PCM)",
-    example: 2500,
-    required: false,
-  })
-  @IsOptional()
-  price?: number;
-
-  @ApiProperty({
     description: "Deposit amount",
     example: 2500,
     required: false,
   })
   @IsOptional()
   deposit?: number;
-
-  @ApiProperty({
-    description: "Available from date",
-    example: "2024-03-01",
-    required: false,
-  })
-  @IsOptional()
-  available_from?: string;
 
   @ApiProperty({
     description: "Bills (energy, Wi-Fi, water, council tax)",
@@ -77,21 +126,6 @@ export class CreatePropertyDto {
   @IsOptional()
   property_type?: PropertyType;
 
-  @ApiProperty({
-    description: "Number of bedrooms",
-    example: 2,
-    required: false,
-  })
-  @IsOptional()
-  bedrooms?: number;
-
-  @ApiProperty({
-    description: "Number of bathrooms",
-    example: 2,
-    required: false,
-  })
-  @IsOptional()
-  bathrooms?: number;
 
   @ApiProperty({
     description: "Building type",
@@ -102,14 +136,6 @@ export class CreatePropertyDto {
   @IsOptional()
   building_type?: BuildingType;
 
-  @ApiProperty({
-    description: "Furnishing type",
-    enum: Furnishing,
-    example: Furnishing.Furnished,
-    required: false,
-  })
-  @IsOptional()
-  furnishing?: Furnishing;
 
   @ApiProperty({
     description: "Let duration",

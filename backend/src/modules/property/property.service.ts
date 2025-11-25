@@ -34,6 +34,14 @@ export class PropertyService {
 
     // Clean and prepare data
     const propertyData: any = {
+      title: createPropertyDto.title,
+      description: createPropertyDto.description,
+      address: createPropertyDto.address,
+      price: Number(createPropertyDto.price),
+      bedrooms: Number(createPropertyDto.bedrooms),
+      bathrooms: Number(createPropertyDto.bathrooms),
+      furnishing: createPropertyDto.furnishing,
+      available_from: new Date(createPropertyDto.available_from),
       apartment_number: createPropertyDto.apartment_number,
       building_id: createPropertyDto.building_id,
       operator_id: building.operator_id,

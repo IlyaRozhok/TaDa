@@ -56,6 +56,18 @@ export class Property {
   id: string;
 
   // REQUIRED FIELDS
+  @ApiProperty({ description: "Property title", example: "Modern 2BR Apartment" })
+  @Column()
+  title: string;
+
+  @ApiProperty({ description: "Property description", example: "Beautiful modern apartment with stunning city views" })
+  @Column("text")
+  description: string;
+
+  @ApiProperty({ description: "Property address", example: "123 Main St, London" })
+  @Column()
+  address: string;
+
   @ApiProperty({ description: "Apartment number", example: "12A" })
   @Column()
   apartment_number: string;
@@ -63,6 +75,30 @@ export class Property {
   @ApiProperty({ description: "Building ID" })
   @Column("uuid")
   building_id: string;
+
+  @ApiProperty({ description: "Property types", example: ["apartment", "flat"] })
+  @Column("text", { array: true, nullable: true })
+  property_types: string[];
+
+  @ApiProperty({ description: "Lifestyle features", example: "gym, pool, parking" })
+  @Column("text", { nullable: true })
+  lifestyle_features: string;
+
+  @ApiProperty({ description: "Property images URLs", example: "image1.jpg,image2.jpg" })
+  @Column("text", { nullable: true })
+  images: string;
+
+  @ApiProperty({ description: "Is BTR property", example: true })
+  @Column("boolean", { default: false })
+  is_btr: boolean;
+
+  @ApiProperty({ description: "Latitude coordinate", example: 51.5074 })
+  @Column("decimal", { precision: 10, scale: 7, nullable: true })
+  lat: number;
+
+  @ApiProperty({ description: "Longitude coordinate", example: -0.1278 })
+  @Column("decimal", { precision: 10, scale: 7, nullable: true })
+  lng: number;
 
   // OPTIONAL FIELDS
   @ApiProperty({
@@ -73,7 +109,7 @@ export class Property {
   descriptions: string;
 
   @ApiProperty({ description: "Monthly rent price (PCM)", example: 2500 })
-  @Column("decimal", { precision: 10, scale: 2, nullable: true })
+  @Column("decimal", { precision: 10, scale: 2 })
   price: number;
 
   @ApiProperty({ description: "Deposit amount", example: 2500 })
@@ -81,7 +117,7 @@ export class Property {
   deposit: number;
 
   @ApiProperty({ description: "Available from date", example: "2024-03-01" })
-  @Column("date", { nullable: true })
+  @Column("date")
   available_from: Date;
 
   @ApiProperty({
@@ -110,11 +146,11 @@ export class Property {
   property_type: PropertyType;
 
   @ApiProperty({ description: "Number of bedrooms", example: 2 })
-  @Column("int", { nullable: true })
+  @Column("int")
   bedrooms: number;
 
   @ApiProperty({ description: "Number of bathrooms", example: 2 })
-  @Column("int", { nullable: true })
+  @Column("int")
   bathrooms: number;
 
   @ApiProperty({
@@ -137,7 +173,6 @@ export class Property {
   @Column({
     type: "enum",
     enum: Furnishing,
-    nullable: true,
   })
   furnishing: Furnishing;
 
