@@ -24,7 +24,9 @@ const portArg = args.find((arg) => arg.startsWith("--port="));
 
 // Load environment variables
 try {
-  require("dotenv").config({ path: path.join(__dirname, "..", ".env.test-prod") });
+  require("dotenv").config({
+    path: path.join(__dirname, "..", ".env.test-prod"),
+  });
 } catch (e) {
   // dotenv is optional
 }
@@ -32,7 +34,9 @@ try {
 // Database configuration
 const dbConfig = {
   host: hostArg ? hostArg.split("=")[1] : process.env.DB_HOST || "localhost",
-  port: portArg ? parseInt(portArg.split("=")[1]) : parseInt(process.env.DB_PORT || "5432"),
+  port: portArg
+    ? parseInt(portArg.split("=")[1])
+    : parseInt(process.env.DB_PORT || "5432"),
   user: process.env.DB_USERNAME || "postgres",
   password: process.env.DB_PASSWORD || "test_prod_password",
   database: process.env.DB_NAME || "rental_platform",
@@ -53,10 +57,38 @@ const expectedTables = [
 
 // Expected columns for key tables
 const expectedColumns = {
-  users: ["id", "email", "password", "role", "full_name", "created_at", "updated_at"],
-  properties: ["id", "title", "description", "address", "price", "created_at", "updated_at"],
-  operator_profiles: ["id", "user_id", "company_name", "created_at", "updated_at"],
-  tenant_profiles: ["id", "user_id", "created_at", "updated_at"],
+  users: [
+    "id",
+    "email",
+    "password",
+    "role",
+    "full_name",
+    "created_at",
+    "updated_at",
+  ],
+  properties: [
+    "id",
+    "title",
+    "description",
+    "address",
+    "price",
+    "created_at",
+    "updated_at",
+  ],
+  operator_profiles: [
+    "id",
+    "userid",
+    "company_name",
+    "created_at",
+    "updated_at",
+  ],
+  tenant_profiles: ["id", "userid", "created_at", "updated_at"],
+};
+
+// Column name mapping for PostgreSQL (case sensitive)
+const columnMapping = {
+  operator_profiles: { userid: "userId" },
+  tenant_profiles: { userid: "userId" },
 };
 
 console.log("🧪 Database Initialization Test");
@@ -144,19 +176,29 @@ async function checkTableColumns() {
 
   for (const [table, expectedCols] of Object.entries(expectedColumns)) {
     try {
-      const result = await client.query(`
+      const result = await client.query(
+        `
         SELECT column_name 
         FROM information_schema.columns 
         WHERE table_schema = 'public' AND table_name = $1
-      `, [table]);
-
-      const existingCols = result.rows.map((row) => row.column_name);
-      const missingCols = expectedCols.filter(
-        (col) => !existingCols.includes(col)
+      `,
+        [table]
       );
 
+      const existingCols = result.rows.map((row) => row.column_name);
+      const missingCols = expectedCols.filter((col) => {
+        // Check if column exists with its expected name or mapped name
+        const mappedName = columnMapping[table] && columnMapping[table][col];
+        return (
+          !existingCols.includes(col) &&
+          (!mappedName || !existingCols.includes(mappedName))
+        );
+      });
+
       if (missingCols.length > 0) {
-        console.error(`   ❌ Table '${table}' missing columns: ${missingCols.join(", ")}`);
+        console.error(
+          `   ❌ Table '${table}' missing columns: ${missingCols.join(", ")}`
+        );
         allPassed = false;
       } else {
         console.log(`   ✅ Table '${table}' has all required columns`);
@@ -231,7 +273,11 @@ async function checkMigrations() {
     if (result.rows.length > 0) {
       console.log("   📝 Latest migrations:");
       result.rows.slice(0, 5).forEach((migration) => {
-        console.log(`      • ${migration.name} (${new Date(parseInt(migration.timestamp)).toISOString()})`);
+        console.log(
+          `      • ${migration.name} (${new Date(
+            parseInt(migration.timestamp)
+          ).toISOString()})`
+        );
       });
       console.log("   ✅ Migrations table exists and has records");
     } else {
@@ -360,5 +406,3 @@ if (require.main === module) {
 }
 
 module.exports = { main, runTests };
-
-
