@@ -8,7 +8,7 @@ services:
       - "3002:3002"
     env_file:
       - ./backend/.env.production
-    command: node dist/main.js
+    command: sh -c "npm run migration:run:prod && node dist/main.js"
     networks:
       - rental_network_stage
     extra_hosts:

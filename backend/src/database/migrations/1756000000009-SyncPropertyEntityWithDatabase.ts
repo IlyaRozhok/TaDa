@@ -201,4 +201,3 @@ export class SyncPropertyEntityWithDatabase1756000000009
     console.log("✅ Successfully reverted Property entity sync");
   }
 }
-
