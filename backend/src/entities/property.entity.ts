@@ -26,10 +26,10 @@ export class Property {
   @Column("uuid")
   building_id: string;
 
-  // BASIC OPTIONAL FIELDS
-  @ApiProperty({ description: "Property title", example: "Modern 2BR Apartment", required: false })
-  @Column({ nullable: true })
-  title?: string;
+  // BASIC FIELDS
+  @ApiProperty({ description: "Property title", example: "Modern 2BR Apartment" })
+  @Column()
+  title: string;
 
   @ApiProperty({ description: "Property description", example: "Beautiful modern apartment", required: false })
   @Column("text", { nullable: true })

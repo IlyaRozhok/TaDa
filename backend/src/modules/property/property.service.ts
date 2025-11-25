@@ -34,13 +34,9 @@ export class PropertyService {
       apartment_number: createPropertyDto.apartment_number,
       building_id: createPropertyDto.building_id,
       operator_id: building.operator_id,
+      title: createPropertyDto.title,
       photos: createPropertyDto.photos || [],
     };
-
-    // Add optional fields
-    if (createPropertyDto.title) {
-      propertyData.title = createPropertyDto.title;
-    }
 
     if (createPropertyDto.description) {
       propertyData.description = createPropertyDto.description;

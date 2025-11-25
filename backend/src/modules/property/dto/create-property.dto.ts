@@ -19,15 +19,14 @@ export class CreatePropertyDto {
   @IsUUID()
   building_id: string;
 
-  // OPTIONAL FIELDS
+  // REQUIRED FIELDS
   @ApiProperty({
     description: "Property title",
     example: "Modern 2BR Apartment",
-    required: false,
+    required: true,
   })
-  @IsOptional()
   @IsString()
-  title?: string;
+  title: string;
 
   @ApiProperty({
     description: "Property description",
