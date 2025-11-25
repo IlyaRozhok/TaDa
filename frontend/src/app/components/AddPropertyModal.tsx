@@ -159,16 +159,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       return;
     }
 
-    if (!formData.description.trim()) {
-      toast.error("Please enter a property description");
-      return;
-    }
-
-    if (!formData.apartment_number.trim()) {
-      toast.error("Please enter an apartment number");
-      return;
-    }
-
     if (!formData.building_id) {
       toast.error("Please select a building");
       return;
@@ -290,7 +280,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Apartment Number *
+                Apartment Number
               </label>
               <input
                 type="text"
@@ -299,7 +289,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   setFormData({ ...formData, apartment_number: e.target.value })
                 }
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
-                required
               />
             </div>
 
@@ -575,7 +564,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Description *
+              Description
             </label>
             <textarea
               value={formData.description}
@@ -585,7 +574,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
               rows={4}
               placeholder="Describe the property..."
-              required
             />
           </div>
 

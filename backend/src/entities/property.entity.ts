@@ -18,32 +18,51 @@ export class Property {
   id: string;
 
   // REQUIRED FIELDS
-  @ApiProperty({ description: "Apartment number", example: "12A" })
-  @Column()
-  apartment_number: string;
+  @ApiProperty({ description: "Apartment number", example: "12A", required: false })
+  @Column({ nullable: true })
+  apartment_number?: string;
 
   @ApiProperty({ description: "Building ID" })
   @Column("uuid")
   building_id: string;
 
   // BASIC FIELDS
-  @ApiProperty({ description: "Property title", example: "Modern 2BR Apartment" })
+  @ApiProperty({
+    description: "Property title",
+    example: "Modern 2BR Apartment",
+  })
   @Column()
   title: string;
 
-  @ApiProperty({ description: "Property description", example: "Beautiful modern apartment" })
-  @Column("text")
-  description: string;
+  @ApiProperty({
+    description: "Property description",
+    example: "Beautiful modern apartment",
+    required: false,
+  })
+  @Column("text", { nullable: true })
+  description?: string;
 
-  @ApiProperty({ description: "Monthly rent price (PCM)", example: 2500, required: false })
+  @ApiProperty({
+    description: "Monthly rent price (PCM)",
+    example: 2500,
+    required: false,
+  })
   @Column("decimal", { precision: 10, scale: 2, nullable: true })
   price?: number;
 
-  @ApiProperty({ description: "Number of bedrooms", example: 2, required: false })
+  @ApiProperty({
+    description: "Number of bedrooms",
+    example: 2,
+    required: false,
+  })
   @Column("int", { nullable: true })
   bedrooms?: number;
 
-  @ApiProperty({ description: "Number of bathrooms", example: 2, required: false })
+  @ApiProperty({
+    description: "Number of bathrooms",
+    example: 2,
+    required: false,
+  })
   @Column("int", { nullable: true })
   bathrooms?: number;
 

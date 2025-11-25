@@ -4,12 +4,12 @@ import { IsOptional, IsString, IsUUID, IsNumber, IsArray } from "class-validator
 export class CreatePropertyDto {
   // REQUIRED FIELDS
   @ApiProperty({
-    description: "Apartment number",
-    example: "12A",
+    description: "Property title",
+    example: "Modern 2BR Apartment",
     required: true,
   })
   @IsString()
-  apartment_number: string;
+  title: string;
 
   @ApiProperty({
     description: "Building ID",
@@ -19,22 +19,24 @@ export class CreatePropertyDto {
   @IsUUID()
   building_id: string;
 
-  // REQUIRED FIELDS
+  // OPTIONAL FIELDS
   @ApiProperty({
-    description: "Property title",
-    example: "Modern 2BR Apartment",
-    required: true,
+    description: "Apartment number",
+    example: "12A",
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  title: string;
+  apartment_number?: string;
 
   @ApiProperty({
     description: "Property description",
     example: "Beautiful modern apartment",
-    required: true,
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  description: string;
+  description?: string;
 
   @ApiProperty({
     description: "Monthly rent price (PCM)",

@@ -31,13 +31,20 @@ export class PropertyService {
 
     // Prepare data
     const propertyData: any = {
-      apartment_number: createPropertyDto.apartment_number,
       building_id: createPropertyDto.building_id,
       operator_id: building.operator_id,
       title: createPropertyDto.title,
-      description: createPropertyDto.description,
       photos: createPropertyDto.photos || [],
     };
+
+    // Add optional fields if provided
+    if (createPropertyDto.apartment_number) {
+      propertyData.apartment_number = createPropertyDto.apartment_number;
+    }
+
+    if (createPropertyDto.description) {
+      propertyData.description = createPropertyDto.description;
+    }
 
     if (createPropertyDto.price != null) {
       propertyData.price = createPropertyDto.price;
