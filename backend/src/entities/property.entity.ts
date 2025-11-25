@@ -182,7 +182,7 @@ export class Property {
     ],
     type: [String],
   })
-  @Column("simple-array", { nullable: true })
+  @Column("text", { array: true, nullable: true, default: [] })
   photos: string[];
 
   @ApiProperty({
