@@ -41,77 +41,89 @@ export default function UniversalHeader() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-      <div className="max-w-[95%] mx-auto flex items-center justify-between">
-        {/* Left: Logo - clickable to dashboard */}
-        <div className="flex items-center">
-          <button
-            onClick={handleLogoClick}
-            className="text-2xl font-bold text-black hover:text-gray-700 transition-colors"
-          >
-            :: TADA
-          </button>
-        </div>
-
-        {/* Right: Icons */}
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={handleFavouritesClick}
-            className="text-black hover:text-gray-600 transition-colors"
-          >
-            <Heart className="h-6 w-6" />
-          </button>
-          <button className="text-black hover:text-gray-600 transition-colors">
-            <Bell className="h-6 w-6" />
-          </button>
-
-          {/* Language Dropdown */}
-          <div className="relative language-dropdown">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white border-b border-gray-200">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-3 md:py-4">
+        <div className="flex items-center justify-between">
+          {/* Left: Logo - clickable to dashboard */}
+          <div className="flex items-center flex-shrink-0">
             <button
-              onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={handleLogoClick}
+              className="text-gray-900 text-sm sm:text-lg md:text-xl font-semibold transition-colors hover:text-gray-700"
             >
-              <span>{selectedLanguage}</span>
-              <ChevronDown className="w-3 h-3" />
+              <img
+                src="/landing-logo.svg"
+                alt="TADA Logo"
+                className="h-6 pl-5 cursor-pointer"
+              />
             </button>
-
-            {isLanguageOpen && (
-              <div
-                className={`absolute right-0 top-full ${styles.dropdownContainer}`}
-              >
-                <div className="max-h-80 overflow-y-auto">
-                  {[
-                    { code: "EN", name: "English" },
-                    { code: "FR", name: "Français" },
-                    { code: "ES", name: "Español" },
-                    { code: "IT", name: "Italiano" },
-                    { code: "NL", name: "Nederlands" },
-                    { code: "PT", name: "Português" },
-                    { code: "RU", name: "Русский" },
-                    { code: "ZH", name: "中文" },
-                  ].map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setSelectedLanguage(lang.code);
-                        setIsLanguageOpen(false);
-                      }}
-                      className={`${styles.dropdownItem} ${
-                        selectedLanguage === lang.code ? "bg-white/20" : ""
-                      }`}
-                    >
-                      <span className={styles.dropdownText}>{lang.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* User Dropdown */}
-          <UserDropdown />
+          {/* Right: Icons */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <button
+              onClick={handleFavouritesClick}
+              className="text-gray-600 hover:text-gray-900 transition-colors p-2 rounded-lg hover:bg-gray-100"
+            >
+              <Heart className="h-5 w-5" />
+            </button>
+            <button className="text-gray-600 hover:text-gray-900 transition-colors p-2 rounded-lg hover:bg-gray-100">
+              <Bell className="h-5 w-5" />
+            </button>
+
+            {/* Language Dropdown */}
+            <div className="relative language-dropdown">
+              <button
+                onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+                className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors rounded-lg w-14 border border-gray-200 hover:bg-gray-50"
+              >
+                <span className="min-w-[1.5rem] text-center">
+                  {selectedLanguage}
+                </span>
+                <ChevronDown
+                  className={`w-3 h-3 flex-shrink-0 transition-transform ${
+                    isLanguageOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isLanguageOpen && (
+                <div className="absolute right-0 top-full mt-2 rounded-lg shadow-lg bg-white border border-gray-200 min-w-[150px] z-50">
+                  <div className="max-h-80 overflow-y-auto rounded-lg">
+                    {[
+                      { code: "EN", name: "English" },
+                      { code: "FR", name: "Français" },
+                      { code: "ES", name: "Español" },
+                      { code: "IT", name: "Italiano" },
+                      { code: "NL", name: "Nederlands" },
+                      { code: "PT", name: "Português" },
+                      { code: "RU", name: "Русский" },
+                      { code: "ZH", name: "中文" },
+                    ].map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setSelectedLanguage(lang.code);
+                          setIsLanguageOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                          selectedLanguage === lang.code
+                            ? "bg-gray-100 font-semibold text-gray-900"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {lang.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Dropdown */}
+            <UserDropdown />
+          </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 }

@@ -75,9 +75,9 @@ function AdminPanelContent() {
     field: "created_at",
     direction: "desc",
   });
-  const [selectedItem, setSelectedItem] = useState<User | Building | Property | null>(
-    null
-  );
+  const [selectedItem, setSelectedItem] = useState<
+    User | Building | Property | null
+  >(null);
   const [showModal, setShowModal] = useState<
     "view" | "edit" | "add" | "delete" | null
   >(null);
@@ -174,8 +174,7 @@ function AdminPanelContent() {
 
     setIsActionLoading(true);
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const headers = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -184,7 +183,7 @@ function AdminPanelContent() {
       if (activeSection === "buildings") {
         const building = selectedItem as Building;
         console.log("🗑️ Deleting building:", building.id);
-        
+
         const response = await buildingsAPI.delete(building.id);
         console.log("✅ Delete response:", response);
 
@@ -193,7 +192,7 @@ function AdminPanelContent() {
           setBuildings((prevBuildings) =>
             prevBuildings.filter((b) => b.id !== building.id)
           );
-          
+
           addNotification(
             "success",
             `Building "${building.name}" deleted successfully`
@@ -206,7 +205,7 @@ function AdminPanelContent() {
       } else if (activeSection === "properties") {
         const property = selectedItem as Property;
         console.log("🗑️ Deleting property:", property.id);
-        
+
         const response = await propertiesAPI.delete(property.id);
         console.log("✅ Delete response:", response);
 
@@ -215,7 +214,7 @@ function AdminPanelContent() {
           setProperties((prevProperties) =>
             prevProperties.filter((p) => p.id !== property.id)
           );
-          
+
           addNotification(
             "success",
             `Property "${property.apartment_number}" deleted successfully`
@@ -388,8 +387,12 @@ function AdminPanelContent() {
   const handleUpdateBuilding = async (id: string, data: any) => {
     setIsActionLoading(true);
     try {
-      console.log("🔄 Updating building:", { id, data, operator_id: data.operator_id });
-      
+      console.log("🔄 Updating building:", {
+        id,
+        data,
+        operator_id: data.operator_id,
+      });
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const token = localStorage.getItem("accessToken");
       const headers = {
@@ -418,7 +421,8 @@ function AdminPanelContent() {
 
       // Refresh buildings list and update selectedItem
       if (activeSection === "buildings") {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
         const headers = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -428,11 +432,16 @@ function AdminPanelContent() {
           const buildingsData = await response.json();
           const updatedBuildings = buildingsData.data || buildingsData || [];
           setBuildings(updatedBuildings);
-          
+
           // Update selectedItem with the updated building from the list
-          const updatedBuildingFromList = updatedBuildings.find((b: Building) => b.id === id);
+          const updatedBuildingFromList = updatedBuildings.find(
+            (b: Building) => b.id === id
+          );
           if (updatedBuildingFromList) {
-            console.log("🔄 Updating selectedItem with:", updatedBuildingFromList);
+            console.log(
+              "🔄 Updating selectedItem with:",
+              updatedBuildingFromList
+            );
             setSelectedItem(updatedBuildingFromList);
           }
         }
@@ -448,7 +457,10 @@ function AdminPanelContent() {
   };
 
   const handleCreateProperty = async (data: any) => {
-    console.log('🎯 handleCreateProperty received data:', JSON.stringify(data, null, 2));
+    console.log(
+      "🎯 handleCreateProperty received data:",
+      JSON.stringify(data, null, 2)
+    );
     setIsActionLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
@@ -458,7 +470,7 @@ function AdminPanelContent() {
         "Content-Type": "application/json",
       };
 
-      console.log('📮 Sending to API:', JSON.stringify(data, null, 2));
+      console.log("📮 Sending to API:", JSON.stringify(data, null, 2));
       const response = await fetch(`${apiUrl}/properties`, {
         method: "POST",
         headers,
@@ -472,7 +484,9 @@ function AdminPanelContent() {
 
       addNotification(
         "success",
-        `Property "${data.title || data.apartment_number || 'Property'}" created successfully!`
+        `Property "${
+          data.title || data.apartment_number || "Property"
+        }" created successfully!`
       );
       setShowModal(null);
 
@@ -486,7 +500,10 @@ function AdminPanelContent() {
       }
     } catch (error: any) {
       console.error("Error creating property:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Failed to create property";
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to create property";
       addNotification("error", `Failed to create property: ${errorMessage}`);
       // Don't close modal on error - let user see the error and try again
     } finally {
@@ -498,7 +515,7 @@ function AdminPanelContent() {
     setIsActionLoading(true);
     try {
       console.log("🔄 Updating property:", { id, data });
-      
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const token = localStorage.getItem("accessToken");
       const headers = {
@@ -532,8 +549,10 @@ function AdminPanelContent() {
           const propertiesData = await response.json();
           const updatedProperties = propertiesData.data || propertiesData || [];
           setProperties(updatedProperties);
-          
-          const updatedPropertyFromList = updatedProperties.find((p: Property) => p.id === id);
+
+          const updatedPropertyFromList = updatedProperties.find(
+            (p: Property) => p.id === id
+          );
           if (updatedPropertyFromList) {
             setSelectedItem(updatedPropertyFromList);
           }
@@ -551,17 +570,15 @@ function AdminPanelContent() {
 
   // Sidebar
   const renderSidebar = () => (
-    <div className="w-64 bg-white border-r border-slate-200 min-h-screen">
-      <div className="p-6 border-b border-slate-200">
+    <div className="w-64 min-h-screen bg-white border-r border-gray-200">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
-            <Users className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+            <Users className="w-4 h-4 text-gray-700" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">
-              Admin Panel
-            </h2>
-            <p className="text-xs text-slate-600">Management Console</p>
+            <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
+            <p className="text-xs text-gray-500">Management Console</p>
           </div>
         </div>
       </div>
@@ -569,10 +586,10 @@ function AdminPanelContent() {
       <nav className="space-y-2 p-4">
         <button
           onClick={() => setActiveSection("users")}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
             activeSection === "users"
-              ? "bg-violet-50 text-violet-700 border border-violet-200"
-              : "text-slate-600 hover:bg-slate-50"
+              ? "bg-gray-100 text-gray-900"
+              : "text-gray-600 hover:bg-gray-50"
           }`}
         >
           <Users className="w-5 h-5" />
@@ -580,10 +597,10 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("buildings")}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
             activeSection === "buildings"
-              ? "bg-violet-50 text-violet-700 border border-violet-200"
-              : "text-slate-600 hover:bg-slate-50"
+              ? "bg-gray-100 text-gray-900"
+              : "text-gray-600 hover:bg-gray-50"
           }`}
         >
           <Building2 className="w-5 h-5" />
@@ -591,10 +608,10 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("properties")}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
             activeSection === "properties"
-              ? "bg-violet-50 text-violet-700 border border-violet-200"
-              : "text-slate-600 hover:bg-slate-50"
+              ? "bg-gray-100 text-gray-900"
+              : "text-gray-600 hover:bg-gray-50"
           }`}
         >
           <Home className="w-5 h-5" />
@@ -610,8 +627,8 @@ function AdminPanelContent() {
       return (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <div className="w-12 h-12 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading {activeSection}...</p>
+            <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading {activeSection}...</p>
           </div>
         </div>
       );
@@ -648,15 +665,20 @@ function AdminPanelContent() {
             onAdd={handleAdd}
             onRefresh={() => {
               if (activeSection === "buildings") {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+                const apiUrl =
+                  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
                 const headers = {
                   "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                  Authorization: `Bearer ${localStorage.getItem(
+                    "accessToken"
+                  )}`,
                 };
                 fetch(`${apiUrl}/buildings`, { headers })
-                  .then(response => response.json())
-                  .then(data => setBuildings(data.data || data || []))
-                  .catch(error => console.error("Error refreshing buildings:", error));
+                  .then((response) => response.json())
+                  .then((data) => setBuildings(data.data || data || []))
+                  .catch((error) =>
+                    console.error("Error refreshing buildings:", error)
+                  );
               }
             }}
           />
@@ -686,20 +708,22 @@ function AdminPanelContent() {
     if (!selectedItem || showModal !== "view") return null;
 
     return (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl p-6 w-full max-w-md">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">
+            <h3 className="text-lg font-semibold text-white">
               View {activeSection.slice(0, -1)}
             </h3>
             <button
               onClick={() => setShowModal(null)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-white/80 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <pre className="text-sm">{JSON.stringify(selectedItem, null, 2)}</pre>
+          <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto">
+            {JSON.stringify(selectedItem, null, 2)}
+          </pre>
         </div>
       </div>
     );
@@ -718,10 +742,10 @@ function AdminPanelContent() {
           "this item";
 
     return (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl p-6 w-full max-w-md">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-black">
+            <h3 className="text-lg font-semibold text-white">
               Delete {activeSection.slice(0, -1)}
             </h3>
             <button
@@ -730,14 +754,15 @@ function AdminPanelContent() {
                 setSelectedItem(null);
               }}
               disabled={isActionLoading}
-              className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
+              className="text-white/80 hover:text-white disabled:opacity-50 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="mb-4 text-black">
-            Are you sure you want to delete <strong>"{itemName}"</strong>? This
-            action cannot be undone.
+          <p className="mb-4 text-white/90">
+            Are you sure you want to delete{" "}
+            <strong className="text-white">"{itemName}"</strong>? This action
+            cannot be undone.
           </p>
           <div className="flex gap-3">
             <button
@@ -746,14 +771,14 @@ function AdminPanelContent() {
                 setSelectedItem(null);
               }}
               disabled={isActionLoading}
-              className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+              className="flex-1 px-4 py-2 text-white/90 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg disabled:opacity-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirmDelete}
               disabled={isActionLoading}
-              className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
             >
               {isActionLoading ? (
                 <>
@@ -771,10 +796,10 @@ function AdminPanelContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50">
       <UniversalHeader />
 
-      <div className="flex">
+      <div className="flex pt-20 md:pt-24">
         {renderSidebar()}
         <div className="flex-1 p-6">{renderContent()}</div>
       </div>

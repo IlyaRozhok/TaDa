@@ -279,16 +279,16 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-900">Edit Property</h2>
+        <div className="flex items-center justify-between p-6 border-b border-white/10">
+          <h2 className="text-2xl font-bold text-white">Edit Property</h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
           >
-            <X className="w-5 h-5 text-slate-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -300,7 +300,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Apartment Number
               </label>
               <input
@@ -309,12 +309,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, apartment_number: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Building *
               </label>
               <select
@@ -322,7 +322,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, building_id: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 required
               >
                 <option value="">Select Building</option>
@@ -335,7 +335,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Price (£ PCM)
               </label>
               <input
@@ -348,13 +348,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 min="0"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Deposit (£)
               </label>
               <input
@@ -367,13 +367,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 min="0"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Available From
               </label>
               <input
@@ -382,12 +382,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, available_from: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Property Type
               </label>
               <select
@@ -398,7 +398,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     property_type: e.target.value as PropertyType,
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               >
                 <option value="">Select Type</option>
                 {Object.values(PropertyType).map((type) => (
@@ -410,7 +410,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Building Type
               </label>
               <select
@@ -421,7 +421,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     building_type: e.target.value as BuildingType,
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               >
                 <option value="">Select Type</option>
                 {Object.values(BuildingType).map((type) => (
@@ -435,7 +435,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Furnishing
               </label>
               <select
@@ -446,7 +446,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     furnishing: e.target.value as Furnishing,
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               >
                 <option value="">Select Type</option>
                 {Object.values(Furnishing).map((type) => (
@@ -460,7 +460,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Let Duration
               </label>
               <select
@@ -471,7 +471,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     let_duration: e.target.value as LetDuration,
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               >
                 <option value="">Select Duration</option>
                 {Object.values(LetDuration).map((type) => (
@@ -485,7 +485,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Bills
               </label>
               <select
@@ -493,7 +493,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, bills: e.target.value as Bills })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               >
                 <option value="">Select Option</option>
                 {Object.values(Bills).map((type) => (
@@ -505,7 +505,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Bedrooms
               </label>
               <input
@@ -518,13 +518,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 min="0"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Bathrooms
               </label>
               <input
@@ -537,13 +537,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 min="0"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Floor
               </label>
               <input
@@ -556,13 +556,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 min="0"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Square Meters
               </label>
               <input
@@ -575,7 +575,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 min="0"
                 step="0.1"
               />
@@ -584,7 +584,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-white/90 mb-2">
               Description
             </label>
             <textarea
@@ -592,7 +592,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               onChange={(e) =>
                 setFormData({ ...formData, descriptions: e.target.value })
               }
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+              className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               rows={4}
               placeholder="Describe the property..."
             />
@@ -609,7 +609,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 }
                 className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
               />
-              <span className="text-sm text-slate-700">Outdoor Space</span>
+              <span className="text-sm text-white/90">Outdoor Space</span>
             </label>
 
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -621,7 +621,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 }
                 className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
               />
-              <span className="text-sm text-slate-700">Balcony</span>
+              <span className="text-sm text-white/90">Balcony</span>
             </label>
 
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -633,7 +633,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 }
                 className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
               />
-              <span className="text-sm text-slate-700">Terrace</span>
+              <span className="text-sm text-white/90">Terrace</span>
             </label>
           </div>
 
@@ -642,7 +642,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             {/* Existing Photos */}
             {displayPhotos.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Current Photos
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -668,7 +668,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
             {/* New Photos */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Add New Photos
               </label>
               <input
@@ -677,7 +677,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 accept="image/*"
                 multiple
                 onChange={handlePhotoChange}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               />
               {photoPreviews.length > 0 && (
                 <div className="mt-2 grid grid-cols-4 gap-2">
@@ -705,7 +705,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             <div>
               {formData.video && !removedVideo && (
                 <div className="mb-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Current Video
                   </label>
                   <div className="relative">
@@ -724,7 +724,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   </div>
                 </div>
               )}
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 {formData.video && !removedVideo
                   ? "Replace Video"
                   : "Add Video"}
@@ -738,7 +738,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     setVideoFile(e.target.files[0]);
                   }
                 }}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               />
               {videoPreview && (
                 <div className="mt-2 relative">
@@ -767,7 +767,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             <div>
               {formData.documents && !removedDocuments && (
                 <div className="mb-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Current Document
                   </label>
                   <div className="flex items-center justify-between p-2 bg-slate-100 rounded-lg">
@@ -789,7 +789,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   </div>
                 </div>
               )}
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 {formData.documents && !removedDocuments
                   ? "Replace Document"
                   : "Add Document"}
@@ -803,11 +803,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     setDocumentFile(e.target.files[0]);
                   }
                 }}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               />
               {documentFile && (
                 <div className="mt-2 flex items-center justify-between p-2 bg-green-100 rounded-lg">
-                  <span className="text-sm text-slate-700">
+                  <span className="text-sm text-white/90">
                     {documentFile.name}
                   </span>
                   <button
@@ -828,18 +828,18 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">
             <button
               type="button"
               onClick={handleClose}
-              className="px-6 py-2.5 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+              className="px-6 py-2.5 text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-gradient-to-br from-slate-800 to-slate-900 hover:from-violet-500 hover:to-pink-600 text-white rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
               <span>{isLoading ? "Saving..." : "Save Changes"}</span>

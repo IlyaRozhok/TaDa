@@ -25,7 +25,6 @@
   COPY --from=builder /app/dist ./dist
   
   # Копируем скрипты и доп. код, если оттуда что-то используется
-  COPY scripts ./scripts
   COPY database ./database
   
   USER nestjs

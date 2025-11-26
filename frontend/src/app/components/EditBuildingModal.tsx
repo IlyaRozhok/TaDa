@@ -666,28 +666,30 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
-          <h3 className="text-lg font-semibold text-black">Edit Building</h3>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-white/10">
+          <h2 className="text-2xl font-bold text-white">Edit Building</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Basic Information
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Name *
                 </label>
                 <input
@@ -696,13 +698,13 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Address
                 </label>
                 <input
@@ -711,12 +713,12 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Number of Units
                 </label>
                 <input
@@ -729,13 +731,13 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                         e.target.value === "" ? null : parseInt(e.target.value),
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   min="1"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Type of Unit
                 </label>
                 <select
@@ -746,7 +748,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       type_of_unit: e.target.value as any,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 >
                   <option value="">Select Type</option>
                   <option value="studio">Studio</option>
@@ -759,7 +761,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Tenant Type
                 </label>
                 <select
@@ -770,7 +772,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       tenant_type: e.target.value as any,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                 >
                   <option value="">Select Type</option>
                   <option value="corporateLets">Corporate Lets</option>
@@ -782,7 +784,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Operator *
                 </label>
                 <select
@@ -794,7 +796,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       operator_id: value === "" ? null : value,
                     });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   required
                   disabled={operatorsLoading}
                 >
@@ -830,14 +832,14 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Media */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Media Files
             </h4>
 
             <div className="space-y-6">
               {/* Logo Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Logo (Image File)
                 </label>
                 <div className="space-y-2">
@@ -848,7 +850,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       const file = e.target.files?.[0];
                       if (file) setLogoFile(file);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
                   />
                   <p className="text-xs text-gray-500">
                     Upload a new logo image file (PNG, JPG, etc.) - this will
@@ -917,7 +919,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
               {/* Video Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Video (Video File)
                 </label>
                 <div className="space-y-2">
@@ -928,7 +930,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       const file = e.target.files?.[0];
                       if (file) setVideoFile(file);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
                   />
                   <p className="text-xs text-gray-500">
                     Upload a new video file (MP4, AVI, etc.) - this will replace
@@ -1001,7 +1003,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
               {/* Photos Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Photos (Image Files)
                 </label>
                 <div className="space-y-2">
@@ -1020,7 +1022,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                         }
                       }
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
                   />
                   <p className="text-xs text-gray-500">
                     Upload additional photo files (PNG, JPG, etc.) - these will
@@ -1167,7 +1169,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
               {/* Documents Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Documents (PDF Files)
                 </label>
                 <div className="space-y-2">
@@ -1179,7 +1181,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       const files = Array.from(e.target.files || []);
                       setDocumentFiles(files);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
                   />
                   <p className="text-xs text-gray-500">
                     Upload additional PDF document files - these will be added
@@ -1306,7 +1308,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Amenities */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Amenities
             </h4>
 
@@ -1322,7 +1324,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   />
                   <label
                     htmlFor={`amenity-${amenity}`}
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                    className="text-sm font-medium text-white/90 cursor-pointer"
                   >
                     {amenity}
                   </label>
@@ -1332,7 +1334,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
             {formData.amenities.length > 0 && (
               <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                <p className="text-sm font-medium text-gray-700 mb-2">
+                <p className="text-sm font-medium text-white/90 mb-2">
                   Selected amenities ({formData.amenities.length}):
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -1351,7 +1353,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Concierge */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Concierge
             </h4>
 
@@ -1367,7 +1369,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
               />
               <label
                 htmlFor="is_concierge"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-white/90"
               >
                 Has Concierge Service
               </label>
@@ -1376,7 +1378,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             {formData.is_concierge && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Opening Hour (0-23)
                   </label>
                   <input
@@ -1393,11 +1395,11 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                         },
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Closing Hour (0-23)
                   </label>
                   <input
@@ -1414,7 +1416,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                         },
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   />
                 </div>
               </div>
@@ -1423,7 +1425,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Pets */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Pet Policy
             </h4>
 
@@ -1439,7 +1441,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
               />
               <label
                 htmlFor="pet_policy"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-white/90"
               >
                 Pets Allowed
               </label>
@@ -1467,7 +1469,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-white/90 mb-2">
                           Type
                         </label>
                         <select
@@ -1475,7 +1477,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                           onChange={(e) =>
                             updatePet(index, "type", e.target.value)
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                          className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                         >
                           <option value="dog">Dog</option>
                           <option value="cat">Cat</option>
@@ -1485,7 +1487,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
                       {pet.type === "other" && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-white/90 mb-2">
                             Custom Type
                           </label>
                           <input
@@ -1494,14 +1496,14 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                             onChange={(e) =>
                               updatePet(index, "customType", e.target.value)
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                            className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                             placeholder="e.g., Hamster"
                           />
                         </div>
                       )}
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-white/90 mb-2">
                           Size (Optional)
                         </label>
                         <select
@@ -1513,7 +1515,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                               e.target.value || undefined
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                          className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                         >
                           <option value="">Not specified</option>
                           <option value="small">Small</option>
@@ -1528,7 +1530,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                 <button
                   type="button"
                   onClick={addPet}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
                 >
                   <Plus className="w-4 h-4" />
                   Add Pet Type
@@ -1539,7 +1541,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Smoking Area */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Other
             </h4>
 
@@ -1555,7 +1557,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
               />
               <label
                 htmlFor="smoking_area"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-white/90"
               >
                 Has Smoking Area
               </label>
@@ -1564,7 +1566,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Metro Stations */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Metro Stations
             </h4>
 
@@ -1576,7 +1578,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   onChange={(e) =>
                     updateMetroStation(index, "label", e.target.value)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   placeholder="Station name"
                 />
                 <input
@@ -1589,7 +1591,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       parseInt(e.target.value) || 0
                     )
                   }
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   placeholder="min"
                   min="0"
                 />
@@ -1606,7 +1608,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             <button
               type="button"
               onClick={addMetroStation}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
             >
               <Plus className="w-4 h-4" />
               Add Metro Station
@@ -1615,7 +1617,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Commute Times */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Commute Times
             </h4>
 
@@ -1627,7 +1629,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   onChange={(e) =>
                     updateCommuteTime(index, "label", e.target.value)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   placeholder="Destination"
                 />
                 <input
@@ -1640,7 +1642,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       parseInt(e.target.value) || 0
                     )
                   }
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   placeholder="min"
                   min="0"
                 />
@@ -1657,7 +1659,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             <button
               type="button"
               onClick={addCommuteTime}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
             >
               <Plus className="w-4 h-4" />
               Add Commute Time
@@ -1666,7 +1668,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Local Essentials */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-gray-900 border-b pb-2">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
               Local Essentials
             </h4>
 
@@ -1678,7 +1680,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   onChange={(e) =>
                     updateLocalEssential(index, "label", e.target.value)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   placeholder="Essential name"
                 />
                 <input
@@ -1691,7 +1693,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       parseInt(e.target.value) || 0
                     )
                   }
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                   placeholder="m"
                   min="0"
                 />
@@ -1708,32 +1710,28 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             <button
               type="button"
               onClick={addLocalEssential}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
             >
               <Plus className="w-4 h-4" />
               Add Local Essential
             </button>
           </div>
 
-          <div className="flex gap-3 pt-6 border-t">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+              className="px-6 py-2.5 text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-6 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              {isLoading ? "Updating..." : "Update Building"}
+              <Save className="w-4 h-4" />
+              <span>{isLoading ? "Saving..." : "Save Changes"}</span>
             </button>
           </div>
         </form>
