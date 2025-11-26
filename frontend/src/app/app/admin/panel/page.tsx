@@ -573,12 +573,13 @@ function AdminPanelContent() {
     <div className="w-64 min-h-screen bg-white border-r border-gray-200">
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Users className="w-4 h-4 text-gray-700" />
-          </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
-            <p className="text-xs text-gray-500">Management Console</p>
+            <img
+              src="/black-logo.svg"
+              alt="TADA Logo"
+              className="h-8 cursor-pointer"
+            />
+            <p className="text-xs text-black">Management Console</p>
           </div>
         </div>
       </div>
@@ -588,8 +589,8 @@ function AdminPanelContent() {
           onClick={() => setActiveSection("users")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
             activeSection === "users"
-              ? "bg-gray-100 text-gray-900"
-              : "text-gray-600 hover:bg-gray-50"
+              ? "bg-gray-100 text-black"
+              : "text-black hover:bg-gray-50"
           }`}
         >
           <Users className="w-5 h-5" />
@@ -599,8 +600,8 @@ function AdminPanelContent() {
           onClick={() => setActiveSection("buildings")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
             activeSection === "buildings"
-              ? "bg-gray-100 text-gray-900"
-              : "text-gray-600 hover:bg-gray-50"
+              ? "bg-gray-100 text-black"
+              : "text-black hover:bg-gray-50"
           }`}
         >
           <Building2 className="w-5 h-5" />
@@ -610,8 +611,8 @@ function AdminPanelContent() {
           onClick={() => setActiveSection("properties")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
             activeSection === "properties"
-              ? "bg-gray-100 text-gray-900"
-              : "text-gray-600 hover:bg-gray-50"
+              ? "bg-gray-100 text-black"
+              : "text-black hover:bg-gray-50"
           }`}
         >
           <Home className="w-5 h-5" />
@@ -628,7 +629,7 @@ function AdminPanelContent() {
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading {activeSection}...</p>
+            <p className="text-black">Loading {activeSection}...</p>
           </div>
         </div>
       );

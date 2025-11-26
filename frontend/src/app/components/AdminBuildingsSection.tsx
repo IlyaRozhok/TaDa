@@ -107,10 +107,10 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-semibold text-gray-900">
+          <h3 className="text-2xl font-semibold text-black">
             Buildings Management
           </h3>
-          <p className="text-gray-600">Manage building listings and details</p>
+          <p className="text-black">Manage building listings and details</p>
         </div>
         <button
           onClick={onAdd}
@@ -132,7 +132,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                   placeholder="Search buildings..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-black bg-white"
                 />
                 {searchLoading && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -142,9 +142,9 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
               </div>
             </div>
             {sort.field && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-black">
                 <span>Sorted by:</span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-black">
                   {sort.field === "name"
                     ? "Name"
                     : sort.field === "address"
@@ -182,22 +182,22 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   <SortButton field="name" label="Name" />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   <SortButton field="address" label="Address" />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   <SortButton field="number_of_units" label="Units" />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   <SortButton field="type_of_unit" label="Unit Type" />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Media
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-white/90 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -207,11 +207,11 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
-                      <Building2 className="w-12 h-12 text-white/40 mb-4" />
-                      <h3 className="text-lg font-medium text-white mb-2">
+                      <Building2 className="w-12 h-12 text-black mb-4" />
+                      <h3 className="text-lg font-medium text-black mb-2">
                         No buildings found
                       </h3>
-                      <p className="text-white/70">
+                      <p className="text-black">
                         {searchTerm
                           ? "Try adjusting your search"
                           : "No buildings have been registered yet"}
@@ -230,35 +230,35 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                         <div className="flex-shrink-0 w-10 h-10">
                           {building.photos && building.photos.length > 0 ? (
                             <img
-                              className="w-10 h-10 rounded-lg object-cover border border-white/20"
+                              className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                               src={building.photos[0]}
                               alt={building.name}
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-white/50" />
+                            <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-black" />
                             </div>
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-white">
+                          <div className="text-sm font-medium text-black">
                             {building.name}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-white max-w-xs truncate">
+                      <div className="text-sm text-black max-w-xs truncate">
                         {building.address}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black border border-gray-200">
                         {building.number_of_units}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black border border-gray-200">
                         {building.type_of_unit}
                       </span>
                     </td>
@@ -266,8 +266,8 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                       <div className="flex items-center space-x-1">
                         {building.logo && (
                           <div className="flex items-center space-x-1">
-                            <span className="text-xs text-white/60">Logo</span>
-                            <div className="w-6 h-6 rounded border border-white/20 overflow-hidden">
+                            <span className="text-xs text-black">Logo</span>
+                            <div className="w-6 h-6 rounded border border-gray-200 overflow-hidden">
                               <img
                                 src={building.logo}
                                 alt="Logo"
@@ -278,10 +278,10 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                         )}
                         {building.photos && building.photos.length > 0 && (
                           <div className="flex items-center space-x-1">
-                            <span className="text-xs text-white/60">
+                            <span className="text-xs text-black">
                               Photos({building.photos.length})
                             </span>
-                            <div className="w-6 h-6 rounded border border-white/20 overflow-hidden">
+                            <div className="w-6 h-6 rounded border border-gray-200 overflow-hidden">
                               <img
                                 src={building.photos[0]}
                                 alt="Photo"
@@ -292,17 +292,17 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                         )}
                         {building.video && (
                           <div className="flex items-center space-x-1">
-                            <span className="text-xs text-white/60">
+                            <span className="text-xs text-black">
                               Video
                             </span>
-                            <div className="w-6 h-6 bg-white/10 rounded border border-white/20 flex items-center justify-center">
-                              <div className="w-3 h-3 bg-white/30 rounded-sm"></div>
+                            <div className="w-6 h-6 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                              <div className="w-3 h-3 bg-gray-300 rounded-sm"></div>
                             </div>
                           </div>
                         )}
                         {building.documents && (
                           <div className="flex items-center space-x-1">
-                            <span className="text-xs text-white/60">PDF</span>
+                            <span className="text-xs text-black">PDF</span>
                             <div className="w-6 h-6 bg-red-100 rounded border border-red-200 flex items-center justify-center">
                               <span className="text-xs font-bold text-red-600">
                                 PDF
@@ -314,7 +314,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                           (!building.photos || building.photos.length === 0) &&
                           !building.video &&
                           !building.documents && (
-                            <span className="text-xs text-white/50">
+                            <span className="text-xs text-black">
                               No media
                             </span>
                           )}
