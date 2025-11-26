@@ -20,8 +20,8 @@ import { typeOrmConfig } from "./database/typeorm.config";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV ? undefined : ".env",
-      ignoreEnvFile: !!process.env.NODE_ENV,
+      envFilePath: ".env",
+      ignoreEnvFile: false,
     }),
     TypeOrmModule.forRootAsync({
       useFactory: () => typeOrmConfig(process.env),

@@ -9,7 +9,7 @@ import PropertyDetails from "../../components/property/PropertyDetails";
 import PropertyAmenities from "../../components/property/PropertyAmenities";
 import PropertyLocation from "../../components/property/PropertyLocation";
 import PropertyCTA from "../../components/property/PropertyCTA";
-import OnboardingModal from "../../components/OnboardingModal";
+import AuthModal from "../../components/AuthModal";
 import { LoadingPage } from "../../components/ui/LoadingSpinner";
 import ErrorBoundary from "../../components/ErrorBoundary";
 
@@ -119,7 +119,7 @@ export default function PublicPropertyDetailPage() {
         <PropertyCTA />
 
         {/* Auth Modal */}
-        <OnboardingModal
+        <AuthModal
           isOpen={state.authModalOpen}
           onClose={() => setAuthModalOpen(false)}
         />

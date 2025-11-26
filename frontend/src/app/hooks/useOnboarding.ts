@@ -7,7 +7,6 @@ import { redirectAfterLogin } from "../utils/simpleRedirect";
 
 interface OnboardingState {
   currentStep: number;
-  selectedRole: "tenant" | "operator" | null;
   isLoading: boolean;
   error: string;
   registeredUser: any;
@@ -17,8 +16,6 @@ interface OnboardingState {
 interface UseOnboardingReturn {
   state: OnboardingState;
   setCurrentStep: (step: number) => void;
-  setSelectedRole: (role: "tenant" | "operator" | null) => void;
-  handleRoleSelection: (role: "tenant" | "operator") => Promise<void>;
   handleComplete: () => Promise<void>;
   handleSkip: () => void;
   clearError: () => void;
@@ -34,7 +31,6 @@ export const useOnboarding = (
 
   const [state, setState] = useState<OnboardingState>({
     currentStep: 1,
-    selectedRole: null,
     isLoading: false,
     error: "",
     registeredUser: null,
@@ -45,79 +41,9 @@ export const useOnboarding = (
     setState((prev) => ({ ...prev, currentStep: step }));
   }, []);
 
-  const setSelectedRole = useCallback((role: "tenant" | "operator" | null) => {
-    setState((prev) => ({ ...prev, selectedRole: role }));
-  }, []);
-
   const clearError = useCallback(() => {
     setState((prev) => ({ ...prev, error: "" }));
   }, []);
-
-  const handleRoleSelection = useCallback(
-    async (role: "tenant" | "operator") => {
-      try {
-        setState((prev) => ({ ...prev, isLoading: true, error: "" }));
-
-        if (isGoogleAuth && user?.registrationId) {
-          // Handle Google auth user registration
-          const response = await authAPI.createGoogleUser(
-            user.registrationId,
-            role
-          );
-          const { user: newUser, accessToken } = response.data;
-
-          setState((prev) => ({
-            ...prev,
-            registeredUser: newUser,
-            registeredToken: accessToken,
-            selectedRole: role,
-          }));
-
-          // Set auth state
-          dispatch(
-            setAuth({
-              user: newUser,
-              accessToken,
-              isAuthenticated: true,
-            })
-          );
-
-          // Move to next step
-          setCurrentStep(2);
-        } else {
-          // Handle regular user role selection
-          const response = await authAPI.selectRole(role);
-          const { user: updatedUser } = response.data;
-
-          setState((prev) => ({
-            ...prev,
-            selectedRole: role,
-          }));
-
-          // Update user in store
-          dispatch(
-            setAuth({
-              user: updatedUser,
-              accessToken: user?.accessToken,
-              isAuthenticated: true,
-            })
-          );
-
-          // Move to next step
-          setCurrentStep(2);
-        }
-      } catch (error: any) {
-        console.error("Error selecting role:", error);
-        setState((prev) => ({
-          ...prev,
-          error: error.response?.data?.message || "Failed to select role",
-        }));
-      } finally {
-        setState((prev) => ({ ...prev, isLoading: false }));
-      }
-    },
-    [isGoogleAuth, user, dispatch, setCurrentStep]
-  );
 
   const handleComplete = useCallback(async () => {
     try {
@@ -132,7 +58,7 @@ export const useOnboarding = (
           new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
         );
 
-        // Redirect based on role
+        // Redirect to tenant dashboard
         redirectAfterLogin(state.registeredUser, router);
       } else {
         // Regular flow completion
@@ -161,8 +87,6 @@ export const useOnboarding = (
   return {
     state,
     setCurrentStep,
-    setSelectedRole,
-    handleRoleSelection,
     handleComplete,
     handleSkip,
     clearError,

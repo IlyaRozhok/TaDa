@@ -1,5 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString, IsUUID, IsNumber, IsArray } from "class-validator";
+import {
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsNumber,
+  IsArray,
+} from "class-validator";
 
 export class CreatePropertyDto {
   // REQUIRED FIELDS
@@ -76,4 +82,3 @@ export class CreatePropertyDto {
   @IsString({ each: true })
   photos?: string[];
 }
-

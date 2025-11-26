@@ -4,7 +4,6 @@ import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import EmailJSInitializer from "./components/EmailJSInitializer";
-import { OnboardingProvider } from "./contexts/OnboardingContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { I18nProvider } from "./contexts/I18nContext";
 import { Toaster } from "react-hot-toast";
@@ -83,58 +82,56 @@ export default function RootLayout({
           <I18nProvider>
             <ReduxProvider>
               <AuthProvider>
-                <OnboardingProvider>
-                  <SessionManager />
-                  <SilenceConsole />
-                  <EmailJSInitializer />
-                  {children}
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
+                <SessionManager />
+                <SilenceConsole />
+                <EmailJSInitializer />
+                {children}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: "#363636",
+                      color: "#fff",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      maxWidth: "400px",
+                    },
+                    success: {
                       duration: 4000,
                       style: {
-                        background: "#363636",
+                        background:
+                          "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                         color: "#fff",
+                        border: "1px solid #059669",
                         borderRadius: "12px",
                         padding: "16px",
-                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                        boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
                         fontSize: "14px",
                         fontWeight: "500",
                         maxWidth: "400px",
                       },
-                      success: {
-                        duration: 4000,
-                        style: {
-                          background:
-                            "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                          color: "#fff",
-                          border: "1px solid #059669",
-                          borderRadius: "12px",
-                          padding: "16px",
-                          boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          maxWidth: "400px",
-                        },
+                    },
+                    error: {
+                      duration: 6000,
+                      style: {
+                        background:
+                          "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                        color: "#fff",
+                        border: "1px solid #dc2626",
+                        borderRadius: "12px",
+                        padding: "16px",
+                        boxShadow: "0 10px 25px rgba(239, 68, 68, 0.3)",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        maxWidth: "400px",
                       },
-                      error: {
-                        duration: 6000,
-                        style: {
-                          background:
-                            "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                          color: "#fff",
-                          border: "1px solid #dc2626",
-                          borderRadius: "12px",
-                          padding: "16px",
-                          boxShadow: "0 10px 25px rgba(239, 68, 68, 0.3)",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          maxWidth: "400px",
-                        },
-                      },
-                    }}
-                  />
-                </OnboardingProvider>
+                    },
+                  }}
+                />
               </AuthProvider>
             </ReduxProvider>
           </I18nProvider>

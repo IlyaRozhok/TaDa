@@ -8,7 +8,6 @@ import { fetchShortlist } from "../store/slices/shortlistSlice";
 import { AppDispatch } from "../store/store";
 import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
-import { useOnboardingContext } from "../contexts/OnboardingContext";
 import { useAuthContext } from "../contexts/AuthContext";
 import { ApiError } from "../types/api";
 import { Loader2, Eye, EyeOff, Mail, Lock, X } from "lucide-react";
@@ -32,7 +31,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const onboardingContext = useOnboardingContext();
   const authContext = useAuthContext();
 
   // Close modal on authentication success
@@ -74,24 +72,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     };
   }, [isOpen, onClose]);
 
-  // Sync with OnboardingContext when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      // Load data from context if available
-      if (onboardingContext.userData.email) {
-        setEmail(onboardingContext.userData.email);
-      }
-      if (onboardingContext.userData.password) {
-        setPassword(onboardingContext.userData.password);
-      }
-
-      console.log("🔍 AuthModal - synced with context:", {
-        email: onboardingContext.userData.email,
-        password: onboardingContext.userData.password ? "***" : "empty",
-        role: onboardingContext.selectedRole,
-      });
-    }
-  }, [isOpen, onboardingContext.userData, onboardingContext.selectedRole]);
 
   const resetForm = () => {
     setEmail("");
@@ -99,8 +79,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setShowPassword(false);
     setError("");
     setRememberMe(false);
-    // Clear context data
-    onboardingContext.clearOnboardingData();
   };
 
   const handleClose = () => {
@@ -137,35 +115,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         handleClose();
         redirectAfterLogin(loginResponse.data.user, router);
       } else {
-        // User doesn't exist - save data to context and redirect to onboarding for registration
-        console.log(
-          "🔍 AuthModal - user doesn't exist, saving data and redirecting to onboarding"
-        );
-
-        // Save user data to AuthContext before redirecting
-        console.log("🔍 AuthModal - saving user data to AuthContext:", {
-          email: email,
-          password: password ? "***" : "empty",
-        });
-
-        authContext.setCredentials({
-          email: email,
-          password: password,
-        });
-
-        console.log("🔍 AuthModal - credentials saved to AuthContext");
-
-        // Verify that credentials were actually saved
-        setTimeout(() => {
-          console.log("🔍 AuthModal - verification after save:", {
-            hasCredentials: !!authContext.credentials,
-            email: authContext.credentials?.email,
-            password: authContext.credentials?.password ? "***" : "empty",
-          });
-        }, 100);
-
-        handleClose();
-        router.push("/onboarding");
+        // User doesn't exist - show error
+        throw new Error("Account not found. Please check your email or create a new account.");
       }
     } catch (err: unknown) {
       console.error("🔍 AuthModal authentication error:", err);
@@ -252,15 +203,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  // Update context
-                  onboardingContext.setUserData({
-                    email: e.target.value,
-                    password: password,
-                    provider: "local",
-                  });
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 className="text-slate-900 w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none transition-colors"
                 placeholder="email@gmail.com"
                 required
@@ -278,15 +221,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  // Update context
-                  onboardingContext.setUserData({
-                    email: email,
-                    password: e.target.value,
-                    provider: "local",
-                  });
-                }}
+                onChange={(e) => setPassword(e.target.value)}
                 className="text-slate-900 w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none transition-colors"
                 placeholder="••••••••"
                 required

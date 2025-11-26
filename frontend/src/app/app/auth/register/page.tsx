@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useOnboardingContext } from "../../../contexts/OnboardingContext";
 import { useAuth } from "../../../hooks/useAuth";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
@@ -16,20 +15,11 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const router = useRouter();
-  const onboardingContext = useOnboardingContext();
   const { register, isLoading, error, setError } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const updatedData = { ...formData, [name]: value };
-    setFormData(updatedData);
-
-    // Update context
-    onboardingContext.setUserData({
-      email: updatedData.email,
-      password: updatedData.password,
-      provider: "local",
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,25 +31,15 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!onboardingContext.selectedRole) {
-      setError("Please select a role first");
-      return;
-    }
-
     try {
       await register({
         email: formData.email,
         password: formData.password,
-        role: onboardingContext.selectedRole,
       });
     } catch (err) {
       // Error is already set by the hook
       console.error("Registration failed:", err);
     }
-  };
-
-  const handleRoleSelect = (role: "tenant" | "operator") => {
-    onboardingContext.handleRoleSelect(role);
   };
 
   return (
@@ -69,47 +49,8 @@ export default function RegisterPage() {
           <div className="text-3xl font-bold text-black mb-4">:: TADA</div>
           <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
           <p className="text-gray-600 mt-2">
-            Choose your role and complete registration
+            Join TaDa and start your rental journey
           </p>
-        </div>
-
-        {/* Role Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Choose your role
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleRoleSelect("tenant")}
-              className={`p-3 rounded-lg border-2 transition-all ${
-                onboardingContext.selectedRole === "tenant"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 hover:border-gray-300 text-gray-700"
-              }`}
-            >
-              <div className="text-center">
-                <div className="text-lg mb-1">🏠</div>
-                <div className="font-medium text-sm">Tenant</div>
-                <div className="text-xs text-gray-500">Find your home</div>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleSelect("operator")}
-              className={`p-3 rounded-lg border-2 transition-all ${
-                onboardingContext.selectedRole === "operator"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 hover:border-gray-300 text-gray-700"
-              }`}
-            >
-              <div className="text-center">
-                <div className="text-lg mb-1">🏢</div>
-                <div className="font-medium text-sm">Property Owner</div>
-                <div className="text-xs text-gray-500">Manage properties</div>
-              </div>
-            </button>
-          </div>
         </div>
 
         {error && (
@@ -203,7 +144,7 @@ export default function RegisterPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading || !onboardingContext.selectedRole}
+            disabled={isLoading}
             className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (

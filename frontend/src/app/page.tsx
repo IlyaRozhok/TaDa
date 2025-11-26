@@ -8,7 +8,7 @@ import { Property } from "./types";
 import { propertiesAPI } from "./lib/api";
 import HomepagePropertyCard from "./components/HomepagePropertyCard";
 import PropertyCardSkeleton from "./components/PropertyCardSkeleton";
-import OnboardingModal from "./components/OnboardingModal";
+import AuthModal from "./components/AuthModal";
 import DualLandingWrapper from "./components/DualLandingWrapper";
 import { Search, ChevronDown, MapPin } from "lucide-react";
 import Image from "next/image";
@@ -351,8 +351,8 @@ export default function HomePage() {
         </>
       )}
 
-      {/* Onboarding Modal */}
-      <OnboardingModal
+      {/* Auth Modal */}
+      <AuthModal
         isOpen={authModalOpen}
         onClose={() => {
           console.log("🔍 onClose called, setting authModalOpen to false");

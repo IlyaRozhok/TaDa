@@ -34,8 +34,9 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, role = UserRole.Tenant } = registerDto;
-    console.log("🔍 Registering user with email:", email, "role:", role);
+    const { email, password } = registerDto;
+    const role = UserRole.Tenant; // All new users are tenants by default
+    console.log("🔍 Registering user with email:", email, "as tenant");
 
     // Validate registration data
     await this.authValidationService.validateRegistration(registerDto);
@@ -57,12 +58,8 @@ export class AuthService {
     try {
       const savedUser = await this.userRepository.save(user);
 
-      // Create appropriate profile based on role
-      if (role === UserRole.Tenant) {
-        await this.createTenantProfile(savedUser);
-      } else if (role === UserRole.Operator) {
-        await this.createOperatorProfile(savedUser);
-      }
+      // Create tenant profile for all users
+      await this.createTenantProfile(savedUser);
 
       // Generate tokens
       const accessToken = this.authTokenService.generateAccessToken(savedUser);
@@ -184,7 +181,7 @@ export class AuthService {
     });
 
     if (!user) {
-      // Create new user from Google data
+      // Create new user from Google data (always as tenant)
       user = this.userRepository.create({
         email: googleUser.email.toLowerCase(),
         google_id: googleUser.google_id,
@@ -192,13 +189,13 @@ export class AuthService {
         avatar_url: googleUser.avatar_url,
         email_verified: googleUser.email_verified,
         provider: "google",
-        role: UserRole.Tenant, // Default role
+        role: UserRole.Tenant,
         status: UserStatus.Active,
       });
 
       user = await this.userRepository.save(user);
 
-      // Create tenant profile for Google users
+      // Create tenant profile for all Google users
       await this.createTenantProfile(user);
     } else {
       // Update existing user with latest Google data
@@ -211,7 +208,7 @@ export class AuthService {
     return user;
   }
 
-  async createGoogleUserFromTempToken(tempToken: string, role: UserRole) {
+  async createGoogleUserFromTempToken(tempToken: string) {
     const tokenInfo = await this.authTokenService.getTempTokenInfo(tempToken);
 
     if (!tokenInfo) {
@@ -225,17 +222,14 @@ export class AuthService {
       avatar_url: tokenInfo.googleUserData.avatar_url,
       email_verified: tokenInfo.googleUserData.email_verified,
       provider: "google",
-      role: role,
+      role: UserRole.Tenant, // Always tenant
       status: UserStatus.Active,
     });
 
     const savedUser = await this.userRepository.save(user);
 
-    if (role === UserRole.Tenant) {
-      await this.createTenantProfile(savedUser);
-    } else if (role === UserRole.Operator) {
-      await this.createOperatorProfile(savedUser);
-    }
+    // Create tenant profile for all users
+    await this.createTenantProfile(savedUser);
 
     return savedUser;
   }

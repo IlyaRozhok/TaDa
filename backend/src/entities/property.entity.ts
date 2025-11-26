@@ -18,7 +18,11 @@ export class Property {
   id: string;
 
   // REQUIRED FIELDS
-  @ApiProperty({ description: "Apartment number", example: "12A", required: false })
+  @ApiProperty({
+    description: "Apartment number",
+    example: "12A",
+    required: false,
+  })
   @Column({ nullable: true })
   apartment_number?: string;
 

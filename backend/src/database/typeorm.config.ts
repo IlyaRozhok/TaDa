@@ -8,7 +8,7 @@ export const typeOrmConfig = (env: NodeJS.ProcessEnv): TypeOrmModuleOptions => {
     type: "postgres",
     host: env.DB_HOST,
     port: Number(env.DB_PORT ?? 5432),
-    username: env.DB_USERNAME,
+    username: env.DB_USER,
     password: env.DB_PASSWORD,
     database: env.DB_NAME,
     autoLoadEntities: true,

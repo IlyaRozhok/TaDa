@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useOnboardingContext } from "../../contexts/OnboardingContext";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -22,9 +21,7 @@ export default function AuthForm({
     confirmPassword: "",
   });
 
-  const onboardingContext = useOnboardingContext();
-
-  // Load saved data from context and localStorage
+  // Load saved data from localStorage
   useEffect(() => {
     const savedData = localStorage.getItem("authFormData");
     if (savedData) {
@@ -39,16 +36,7 @@ export default function AuthForm({
         console.error("Error parsing saved auth data:", e);
       }
     }
-
-    // Also sync with context
-    if (onboardingContext.userData.email) {
-      setFormData((prev) => ({
-        ...prev,
-        email: onboardingContext.userData.email,
-        password: onboardingContext.userData.password,
-      }));
-    }
-  }, [onboardingContext.userData]);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -57,13 +45,6 @@ export default function AuthForm({
 
     // Save to localStorage
     localStorage.setItem("authFormData", JSON.stringify(updatedData));
-
-    // Update context
-    onboardingContext.setUserData({
-      email: updatedData.email,
-      password: updatedData.password,
-      provider: "local",
-    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

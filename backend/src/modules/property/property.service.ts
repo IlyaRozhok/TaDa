@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Property } from "../../entities/property.entity";
@@ -15,7 +12,7 @@ export class PropertyService {
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
     @InjectRepository(Building)
-    private readonly buildingRepository: Repository<Building>,
+    private readonly buildingRepository: Repository<Building>
   ) {}
 
   async create(createPropertyDto: CreatePropertyDto): Promise<Property> {
@@ -64,19 +61,25 @@ export class PropertyService {
     return this.findOne(savedProperty.id);
   }
 
-  async update(id: string, updatePropertyDto: UpdatePropertyDto): Promise<Property> {
+  async update(
+    id: string,
+    updatePropertyDto: UpdatePropertyDto
+  ): Promise<Property> {
     const property = await this.findOne(id);
     const updateData: any = {};
 
     // Update building if changed
-    if (updatePropertyDto.building_id && updatePropertyDto.building_id !== property.building_id) {
+    if (
+      updatePropertyDto.building_id &&
+      updatePropertyDto.building_id !== property.building_id
+    ) {
       const building = await this.buildingRepository.findOne({
         where: { id: updatePropertyDto.building_id },
-    });
+      });
 
       if (!building) {
         throw new NotFoundException("Building not found");
-    }
+      }
 
       updateData.building_id = updatePropertyDto.building_id;
       updateData.operator_id = building.operator_id;

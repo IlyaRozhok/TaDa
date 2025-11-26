@@ -20,7 +20,7 @@ export class AuthValidationService {
   ) {}
 
   async validateRegistration(registerDto: RegisterDto): Promise<void> {
-    const { email, password, role = UserRole.Tenant } = registerDto;
+    const { email, password } = registerDto;
 
     // Validate email format
     if (!this.isValidEmail(email)) {
@@ -34,10 +34,6 @@ export class AuthValidationService {
       );
     }
 
-    // Validate role
-    if (!this.isValidRole(role)) {
-      throw new BadRequestException("Invalid user role");
-    }
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({

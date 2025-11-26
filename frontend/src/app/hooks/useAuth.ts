@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setAuth } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
-import { useOnboardingContext } from "../contexts/OnboardingContext";
 
 interface AuthUserData {
   email: string;
@@ -18,7 +17,6 @@ export function useAuth() {
 
   const router = useRouter();
   const dispatch = useDispatch();
-  const onboardingContext = useOnboardingContext();
 
   const login = async (data: AuthUserData) => {
     setIsLoading(true);
@@ -54,7 +52,7 @@ export function useAuth() {
     }
   };
 
-  const register = async (data: AuthUserData & { role: string }) => {
+  const register = async (data: AuthUserData) => {
     setIsLoading(true);
     setError("");
 
@@ -70,9 +68,6 @@ export function useAuth() {
 
       localStorage.setItem("accessToken", response.data.access_token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
-
-      // Clear onboarding data
-      onboardingContext.clearOnboardingData();
 
       // Redirect based on user role
       const userRole = response.data.user?.role;
@@ -110,16 +105,8 @@ export function useAuth() {
       localStorage.setItem("accessToken", response.data.access_token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Clear onboarding data
-      onboardingContext.clearOnboardingData();
-
-      // Redirect to preferences for tenant, dashboard for operator
-      const userRole = response.data.user?.role;
-      if (userRole === "tenant") {
-        router.push("/app/preferences");
-      } else {
-        router.push("/app/dashboard/operator");
-      }
+      // All new users are tenants, redirect to tenant dashboard
+      router.push("/app/dashboard/tenant");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed");
       throw err;

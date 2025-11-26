@@ -69,7 +69,6 @@ export const authAPI = {
 
   googleAuth: (token: string) => api.post("/auth/google", { token }),
 
-  selectRole: (role: string) => api.post("/auth/select-role", { role }),
 
   updateProfile: (data: any) => api.put("/users/profile", data),
 
@@ -82,20 +81,10 @@ export const authAPI = {
 
   logout: () => api.post("/auth/logout"),
 
-  createGoogleUser: (registrationId: string, role: "tenant" | "operator") =>
-    api.post("/auth/create-google-user", { registrationId, role }),
 
   getTempTokenInfo: (tempToken: string) =>
     api.get(`/auth/temp-token/${tempToken}`),
 
-  createGoogleUserFromTempToken: (
-    tempToken: string,
-    data: { role: "tenant" | "operator" }
-  ) =>
-    api.post(`/auth/create-google-user-from-temp-token`, {
-      tempToken,
-      ...data,
-    }),
 };
 
 export const usersAPI = {
