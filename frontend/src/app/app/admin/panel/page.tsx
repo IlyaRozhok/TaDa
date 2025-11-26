@@ -69,7 +69,6 @@ function AdminPanelContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
@@ -114,7 +113,6 @@ function AdminPanelContent() {
   // Load data based on active section
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
       try {
         const apiUrl =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
@@ -145,8 +143,6 @@ function AdminPanelContent() {
       } catch (error) {
         console.error("Error loading data:", error);
         addNotification("error", "Failed to load data");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -624,17 +620,6 @@ function AdminPanelContent() {
 
   // Content rendering
   const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-black">Loading {activeSection}...</p>
-          </div>
-        </div>
-      );
-    }
-
     switch (activeSection) {
       case "users":
         return (
