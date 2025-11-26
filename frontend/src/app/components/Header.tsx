@@ -16,9 +16,10 @@ interface HeaderProps {
   onSignIn?: () => void;
   children?: React.ReactNode;
   landingType?: "operators" | "tenants";
+  disabled?: boolean;
 }
 
-const Header = ({ children, landingType = "operators" }: HeaderProps) => {
+const Header = ({ children, landingType = "operators", disabled = false }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const { language, setLanguage } = useI18n();
@@ -55,6 +56,7 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
 
   // Smooth scroll function
   const scrollToSection = (sectionId: string) => {
+    if (disabled) return;
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({
@@ -67,6 +69,7 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
   };
 
   const toggleMobileMenu = () => {
+    if (disabled) return;
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
@@ -115,15 +118,16 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 py-3 md:py-4">
+      <header className={`fixed top-0 left-0 right-0 z-50 py-3 md:py-4 ${disabled ? 'pointer-events-none' : ''}`}>
         <div className="container mx-auto">
           <div className="rounded-full px-4 py-2 md:py-3">
-            <div className="h-18 rounded-full px-4 flex items-center justify-between bg-black/50 backdrop-blur-[3px]">
+            <div className={`h-18 rounded-full px-4 flex items-center justify-between bg-black/50 backdrop-blur-[3px] ${disabled ? 'opacity-70' : ''}`}>
               {/* Logo */}
               <div className="flex items-center flex-shrink-0">
                 <button
                   onClick={() => scrollToSection("hero")}
-                  className="text-white text-sm sm:text-lg md:text-xl font-semibold"
+                  disabled={disabled}
+                  className="text-white text-sm sm:text-lg md:text-xl font-semibold disabled:cursor-default"
                 >
                   <img
                     src="/landing-logo.svg"
@@ -139,7 +143,8 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
                   <button
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
-                    className="text-white hover:text-gray-400 transition-colors text-sm cursor-pointer"
+                    disabled={disabled}
+                    className="text-white hover:text-gray-400 transition-colors text-sm cursor-pointer disabled:cursor-default disabled:hover:text-white"
                   >
                     {item.label}
                   </button>
@@ -154,8 +159,9 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
                 {/* Language Dropdown */}
                 <div className="relative language-dropdown">
                   <button
-                    onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-                    className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-white hover:text-gray-300 transition-colors rounded-lg w-14 cursor-pointer"
+                    onClick={() => !disabled && setIsLanguageOpen(!isLanguageOpen)}
+                    disabled={disabled}
+                    className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-white hover:text-gray-300 transition-colors rounded-lg w-14 cursor-pointer disabled:cursor-default disabled:hover:text-white"
                   >
                     <span className="min-w-[1.5rem] text-center">
                       {selectedLanguage}
@@ -194,6 +200,7 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
                 {/* Request Demo Button */}
                 <button
                   onClick={() => {
+                    if (disabled) return;
                     setModalSource(
                       landingType === "tenants"
                         ? "tenant-contact"
@@ -201,7 +208,8 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
                     );
                     setIsRequestDemoOpen(true);
                   }}
-                  className="bg-black cursor-pointer text-white px-3 sm:px-4 md:px-6 py-2 md:py-3 rounded-full hover:bg-black/20 transition-colors font-medium text-xs sm:text-sm flex-shrink-0 hidden lg:inline"
+                  disabled={disabled}
+                  className="bg-black cursor-pointer text-white px-3 sm:px-4 md:px-6 py-2 md:py-3 rounded-full hover:bg-black/20 transition-colors font-medium text-xs sm:text-sm flex-shrink-0 hidden lg:inline disabled:cursor-default disabled:hover:bg-black"
                 >
                   <span className="hidden sm:inline">
                     {landingType === "tenants"
@@ -215,8 +223,9 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
 
                 {/* Mobile menu button */}
                 <button
-                  className="lg:hidden text-white flex-shrink-0"
+                  className="lg:hidden text-white flex-shrink-0 disabled:cursor-default"
                   onClick={toggleMobileMenu}
+                  disabled={disabled}
                 >
                   <svg
                     className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 ${
@@ -250,7 +259,7 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
       </header>
 
       {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen && !disabled && (
         <div className="fixed inset-0 z-40 lg:hidden">
           {/* Backdrop */}
           <div
@@ -300,15 +309,17 @@ const Header = ({ children, landingType = "operators" }: HeaderProps) => {
       )}
 
       {/* Request Demo Modal */}
-      <RequestDemoModal
-        isOpen={isRequestDemoOpen}
-        onClose={() => {
-          setIsRequestDemoOpen(false);
-          setModalSource(undefined);
-        }}
-        landingType={landingType}
-        modalSource={modalSource}
-      />
+      {!disabled && (
+        <RequestDemoModal
+          isOpen={isRequestDemoOpen}
+          onClose={() => {
+            setIsRequestDemoOpen(false);
+            setModalSource(undefined);
+          }}
+          landingType={landingType}
+          modalSource={modalSource}
+        />
+      )}
     </>
   );
 };

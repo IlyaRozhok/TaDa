@@ -301,7 +301,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Apartment Number *
+                Apartment Number
               </label>
               <input
                 type="text"
@@ -310,7 +310,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   setFormData({ ...formData, apartment_number: e.target.value })
                 }
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-black"
-                required
               />
             </div>
 

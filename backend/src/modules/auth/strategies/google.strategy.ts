@@ -12,18 +12,27 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
     const clientSecret = configService.get("GOOGLE_CLIENT_SECRET");
     const callbackURL = configService.get("GOOGLE_CALLBACK_URL");
 
+    // Log configuration (without exposing secret)
+    console.log("🔍 Google OAuth Configuration:");
+    console.log("  - Client ID:", clientID ? `${clientID.substring(0, 10)}...` : "NOT SET");
+    console.log("  - Client Secret:", clientSecret ? "SET" : "NOT SET");
+    console.log("  - Callback URL:", callbackURL || "NOT SET");
+
     // Validate environment variables
     if (!clientID) {
+      console.error("❌ GOOGLE_CLIENT_ID is not configured");
       throw new Error("GOOGLE_CLIENT_ID is not configured");
     }
     if (!clientSecret) {
+      console.error("❌ GOOGLE_CLIENT_SECRET is not configured");
       throw new Error("GOOGLE_CLIENT_SECRET is not configured");
     }
     if (!callbackURL) {
+      console.error("❌ GOOGLE_CALLBACK_URL is not configured");
       throw new Error("GOOGLE_CALLBACK_URL is not configured");
     }
 
-    // Strategy initialized
+    console.log("✅ Google OAuth Strategy initialized");
 
     super({
       clientID,
@@ -40,17 +49,24 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
     done: VerifyCallback
   ): Promise<any> {
     try {
+      console.log("🔍 Google OAuth validate called");
+      console.log("  - Profile ID:", profile?.id || "missing");
+      console.log("  - Profile emails:", profile?.emails?.length || 0);
+
       if (!profile || !profile.id) {
+        console.error("❌ Invalid profile data from Google");
         return done(new Error("Invalid profile data from Google"), null);
       }
 
       const { id, name, emails, photos } = profile;
 
       if (!emails || !emails.length || !emails[0].value) {
+        console.error("❌ No email found in Google profile");
         return done(new Error("No email found in Google profile"), null);
       }
 
       if (!name || (!name.givenName && !name.familyName)) {
+        console.error("❌ No name found in Google profile");
         return done(new Error("No name found in Google profile"), null);
       }
 
@@ -65,8 +81,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
         refreshToken,
       };
 
+      console.log("✅ Google OAuth user validated:", user.email);
       done(null, user);
     } catch (error) {
+      console.error("❌ Google OAuth validate error:", error);
       done(error, null);
     }
   }

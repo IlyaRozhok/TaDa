@@ -9,21 +9,13 @@ import { AppDispatch } from "../../store/store";
 import { authAPI } from "../../lib/api";
 import { redirectAfterLogin } from "../../utils/simpleRedirect";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { Button } from "../../components/ui/Button";
-import Logo from "../../components/Logo";
-
-type UserType = "tenant" | "operator";
+import Image from "next/image";
+import { X } from "lucide-react";
+import Header from "../../components/Header";
 
 export default function AuthPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isLogin, setIsLogin] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -78,269 +70,116 @@ export default function AuthPage() {
     }
   }, [router, dispatch]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      if (isLogin) {
-        // Login
-        const response = await authAPI.login({ email, password });
-
-        dispatch(setAuth({
-          user: response.data.user,
-          accessToken: response.data.access_token,
-        }));
-
-        localStorage.setItem("accessToken", response.data.access_token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-
-        // Load shortlist
-        dispatch(fetchShortlist());
-
-        // Redirect based on role
-        redirectAfterLogin(response.data.user, router);
-      } else {
-        // Register
-        if (password !== confirmPassword) {
-          setError("Passwords do not match");
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await authAPI.register({ email, password });
-
-        dispatch(setAuth({
-          user: response.data.user,
-          accessToken: response.data.access_token,
-        }));
-
-        localStorage.setItem("accessToken", response.data.access_token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-
-        // New users go to tenant dashboard
-        router.push("/app/dashboard/tenant");
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || `${isLogin ? "Login" : "Registration"} failed`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleGoogleAuth = () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
     window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50 flex items-center justify-center p-4">
-      <div className="absolute top-6 left-6">
-        <Link href="/" className="hover:opacity-80 transition-opacity">
-          <Logo size="sm" />
-        </Link>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background color fallback */}
+      <div className="absolute inset-0 bg-black"></div>
+      
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/bg.png"
+          alt="Background"
+          fill
+          priority
+          fetchPriority="high"
+          className={`object-cover transition-opacity duration-700 ease-in-out ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          sizes="100vw"
+          quality={85}
+          onLoadingComplete={() => {
+            setTimeout(() => setImageLoaded(true), 10);
+          }}
+          onLoad={() => {
+            setTimeout(() => setImageLoaded(true), 10);
+          }}
+        />
       </div>
 
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isLogin ? "Welcome Back" : "Create Account"}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {isLogin
-                ? "Sign in to your TaDa account"
-                : "Join TaDa and start your rental journey"
-              }
-            </p>
-          </div>
+      {/* Dark overlay for better readability */}
+      <div className="absolute inset-0 bg-black/40"></div>
 
-          {/* Error */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
+      {/* Header from landing */}
+      <Header landingType="tenants" disabled={true} />
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
+      {/* Modal Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md relative">
+          <div className="bg-black/50 backdrop-blur-[10px] rounded-3xl shadow-2xl border border-white/10 p-8">
+            {/* Close Button */}
+            <button
+              onClick={() => router.push("/")}
+              className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold text-white">
+                Sign In to Tada
+              </h1>
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder={isLogin ? "Enter your password" : "Create a password"}
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm Password (only for registration) */}
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    placeholder="Confirm your password"
-                    required
-                    minLength={6}
-                  />
-                </div>
-                {password && confirmPassword && password !== confirmPassword && (
-                  <p className="text-red-600 text-sm mt-1">
-                    Passwords do not match
-                  </p>
-                )}
+            {/* Error */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/20 backdrop-blur-[5px] border border-red-400/30 rounded-lg">
+                <p className="text-white text-sm">{error}</p>
               </div>
             )}
 
-            {/* Remember Me (only for login) */}
-            {isLogin && (
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                  Remember me
-                </label>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {isLogin ? "Signing in..." : "Creating account..."}
-                </div>
-              ) : (
-                isLogin ? "Sign In" : "Create Account"
-              )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-sm text-gray-500">Or</span>
-            <div className="flex-1 border-t border-gray-300"></div>
-          </div>
-
-          {/* Google Auth */}
-          <div className="w-full">
-            <button
-              onClick={handleGoogleAuth}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Continue with Google
-            </button>
-          </div>
-
-          {/* Terms & Privacy */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
-              By signing up, you agree to TaDa{" "}
-              <Link href="/terms" className="underline">
-                Terms of Use
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="underline">
-                Privacy Policy
-              </Link>
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              TaDa may send you communications; you may change your preferences
-              in your account settings. We'll never post without your permission
-            </p>
-          </div>
-
-          {/* Toggle between login/register */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            {/* Google Auth */}
+            <div className="w-full">
               <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError("");
-                  setConfirmPassword("");
-                }}
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                onClick={handleGoogleAuth}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg hover:bg-white/20 transition-colors font-medium text-white"
               >
-                {isLogin ? "Sign up" : "Sign in"}
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                Continue with Google
               </button>
-            </p>
+            </div>
+
+            {/* Terms & Privacy */}
+            <div className="mt-6 text-center">
+              <p className="text-xs text-white/80">
+                By clicking Continue with Google, you agree to Tada{" "}
+                <Link href="/terms" className="underline hover:text-white transition-colors">
+                  Terms of Use
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="underline hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+              </p>
+              <p className="text-xs text-white/80 mt-2">
+                Tada may send you communications; you may change your preferences
+                in your account settings. We'll never post without your permission
+              </p>
+            </div>
           </div>
         </div>
       </div>

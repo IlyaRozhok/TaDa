@@ -33,6 +33,33 @@ function AuthCallbackContent() {
           apiUrl: process.env.NEXT_PUBLIC_API_URL,
         });
 
+        // Handle OAuth errors
+        const oauthError = searchParams.get("error");
+        const errorDetails = searchParams.get("details");
+        
+        if (oauthError) {
+          console.error("❌ OAuth error detected:", { oauthError, errorDetails });
+          let errorMessage = "Ошибка авторизации через Google";
+          
+          if (oauthError === "oauth_error") {
+            if (errorDetails === "invalid_client") {
+              errorMessage = "OAuth клиент не найден. Проверьте настройки Google Cloud Console.";
+            } else if (errorDetails === "access_denied") {
+              errorMessage = "Доступ отклонен. Вы отменили авторизацию.";
+            } else {
+              errorMessage = `Ошибка OAuth: ${errorDetails || oauthError}`;
+            }
+          } else if (oauthError === "no_user_data") {
+            errorMessage = "Не удалось получить данные пользователя от Google.";
+          } else if (oauthError === "auth_failed") {
+            errorMessage = "Авторизация не удалась. Попробуйте снова.";
+          }
+          
+          setError(errorMessage);
+          setLoading(false);
+          return;
+        }
+
         // Handle new user that needs role selection
         if (needsRoleSelection && registrationId) {
           console.log("🔄 New user needs role selection");
@@ -50,8 +77,9 @@ function AuthCallbackContent() {
           console.error("❌ Invalid callback parameters:", {
             token: !!token,
             success,
+            allParams: Object.fromEntries(searchParams.entries()),
           });
-          setError("Invalid callback parameters");
+          setError("Неверные параметры авторизации. Попробуйте войти снова.");
           setLoading(false);
           return;
         }
@@ -190,12 +218,35 @@ function AuthCallbackContent() {
             Authentication Error
           </h2>
           <p className="text-gray-600 mb-8">{error}</p>
+          {error?.includes("OAuth клиент не найден") && (
+            <div className="mb-6 p-4 bg-gray-100 border border-gray-400 rounded-lg text-left">
+              <p className="text-sm text-gray-900 font-semibold mb-2">Что нужно проверить:</p>
+              <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                <li>Переменная GOOGLE_CLIENT_ID в .env файле правильная</li>
+                <li>GOOGLE_CALLBACK_URL точно совпадает с настройками в Google Cloud Console</li>
+                <li>OAuth 2.0 Client ID существует в Google Cloud Console</li>
+                <li>Authorized redirect URIs включает ваш callback URL</li>
+              </ul>
+              <p className="text-xs text-gray-600 mt-3">
+                Проверьте конфигурацию: <code className="bg-gray-200 px-1 rounded">GET /api/auth/google/config-check</code>
+              </p>
+            </div>
+          )}
           <div className="space-y-3">
             <button
-              onClick={() => router.push("/")}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              onClick={() => router.push("/app/auth")}
+              className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
             >
-              Try Again
+              Попробовать снова
+            </button>
+            <button
+              onClick={() => {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+                window.open(`${apiUrl}/auth/google/config-check`, "_blank");
+              }}
+              className="w-full text-gray-500 px-6 py-2 text-sm hover:text-gray-900 transition-colors border border-gray-300 rounded-lg"
+            >
+              Проверить конфигурацию OAuth
             </button>
             <button
               onClick={() => {
@@ -206,11 +257,12 @@ function AuthCallbackContent() {
                   },
                   searchParams: Object.fromEntries(searchParams.entries()),
                   currentURL: window.location.href,
+                  apiUrl: process.env.NEXT_PUBLIC_API_URL,
                 });
               }}
-              className="w-full text-gray-500 px-6 py-2 text-sm hover:text-gray-700 transition-colors"
+              className="w-full text-gray-500 px-6 py-2 text-sm hover:text-gray-900 transition-colors"
             >
-              Show Debug Info (Check Console)
+              Показать отладочную информацию (в консоли)
             </button>
           </div>
         </div>

@@ -198,11 +198,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         JSON.stringify(propertyData, null, 2)
       );
       await onSubmit(propertyData);
+      // Don't show toast here - let the parent component handle notifications
       handleClose();
-      toast.success("Property created successfully");
     } catch (error: any) {
       console.error("Failed to create property:", error);
-      toast.error(error.response?.data?.message || "Failed to create property");
+      // Re-throw error so parent component can handle it
+      // Don't close modal on error - let user see the error
+      throw error;
     }
   };
 

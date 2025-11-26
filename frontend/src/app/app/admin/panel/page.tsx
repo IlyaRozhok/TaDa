@@ -472,7 +472,7 @@ function AdminPanelContent() {
 
       addNotification(
         "success",
-        `Property "${data.apartment_number}" created successfully!`
+        `Property "${data.title || data.apartment_number || 'Property'}" created successfully!`
       );
       setShowModal(null);
 
@@ -485,7 +485,10 @@ function AdminPanelContent() {
         }
       }
     } catch (error: any) {
-      addNotification("error", `Failed to create property: ${error.message}`);
+      console.error("Error creating property:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to create property";
+      addNotification("error", `Failed to create property: ${errorMessage}`);
+      // Don't close modal on error - let user see the error and try again
     } finally {
       setIsActionLoading(false);
     }

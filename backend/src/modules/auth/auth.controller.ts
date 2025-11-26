@@ -138,6 +138,7 @@ export class AuthController {
   @Get("google")
   @UseGuards(AuthGuard("google"))
   async googleAuth() {
+    console.log("🔍 Google OAuth endpoint called - redirecting to Google");
     // This endpoint will be handled by Passport Google Strategy
     // The actual logic is in the GoogleStrategy.validate method
     // Passport will automatically redirect to Google OAuth
@@ -147,19 +148,63 @@ export class AuthController {
   @UseGuards(AuthGuard("google"))
   async googleCallback(@Req() req: Request, @Res() res: Response) {
     try {
+      console.log("🔍 Google OAuth callback received");
+      console.log("  - User data:", req.user ? "present" : "missing");
+      console.log("  - Query params:", JSON.stringify(req.query));
+      console.log("  - Error in query:", req.query.error || "none");
+
+      // Check for OAuth errors in query params
+      if (req.query.error) {
+        console.error("❌ Google OAuth error:", {
+          error: req.query.error,
+          error_description: req.query.error_description,
+        });
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        const errorUrl = `${frontendUrl}/app/auth/callback?error=oauth_error&details=${req.query.error}`;
+        res.redirect(errorUrl);
+        return;
+      }
+
       if (!req.user) {
-        throw new UnauthorizedException("No user data from Google");
+        console.error("❌ No user data from Google");
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        const errorUrl = `${frontendUrl}/app/auth/callback?error=no_user_data`;
+        res.redirect(errorUrl);
+        return;
       }
 
       const user = await this.authService.googleAuth(req.user);
       const tokens = await this.authService.generateTokens(user);
 
-      const callbackUrl = `${process.env.FRONTEND_URL}/app/auth/callback?token=${tokens.accessToken}&success=true`;
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const callbackUrl = `${frontendUrl}/app/auth/callback?token=${tokens.accessToken}&success=true`;
+      console.log("✅ Google OAuth successful, redirecting to:", callbackUrl);
       res.redirect(callbackUrl);
     } catch (error) {
-      console.error("Google callback error:", error);
-      const errorUrl = `${process.env.FRONTEND_URL}/app/auth/callback?error=auth_failed`;
+      console.error("❌ Google callback error:", error);
+      console.error("  - Error message:", error?.message);
+      console.error("  - Error stack:", error?.stack);
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const errorUrl = `${frontendUrl}/app/auth/callback?error=auth_failed`;
       res.redirect(errorUrl);
     }
+  }
+
+  @Get("google/config-check")
+  async checkGoogleConfig() {
+    const clientID = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const callbackURL = process.env.GOOGLE_CALLBACK_URL;
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    return {
+      configured: !!(clientID && clientSecret && callbackURL),
+      clientID: clientID ? `${clientID.substring(0, 15)}...` : "NOT SET",
+      clientSecret: clientSecret ? "SET" : "NOT SET",
+      callbackURL: callbackURL || "NOT SET",
+      frontendUrl: frontendUrl || "NOT SET",
+      expectedCallbackUrl: callbackURL,
+      note: "Проверьте, что GOOGLE_CALLBACK_URL точно совпадает с настройками в Google Cloud Console",
+    };
   }
 }
