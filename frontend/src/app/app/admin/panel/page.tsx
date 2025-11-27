@@ -295,6 +295,15 @@ function AdminPanelContent() {
         `User "${data.full_name}" created successfully!`
       );
       setShowModal(null);
+
+      // Reload users list
+      if (activeSection === "users") {
+        const response = await fetch(`${apiUrl}/users`, { headers });
+        if (response.ok) {
+          const usersData = await response.json();
+          setUsers(usersData.users || usersData || []);
+        }
+      }
     } catch (error: any) {
       addNotification("error", `Failed to create user: ${error.message}`);
     } finally {
@@ -368,10 +377,32 @@ function AdminPanelContent() {
         throw new Error(errorData.message || "Failed to update user");
       }
 
+      const updatedUser = await response.json();
+      console.log("✅ User updated successfully:", updatedUser);
+
       addNotification(
         "success",
         `User "${data.full_name}" updated successfully!`
       );
+
+      // Reload users list
+      if (activeSection === "users") {
+        const response = await fetch(`${apiUrl}/users`, { headers });
+        if (response.ok) {
+          const usersData = await response.json();
+          const updatedUsers = usersData.users || usersData || [];
+          setUsers(updatedUsers);
+
+          // Update selectedItem with the updated user from the list
+          const updatedUserFromList = updatedUsers.find(
+            (u: User) => u.id === id
+          );
+          if (updatedUserFromList) {
+            setSelectedItem(updatedUserFromList);
+          }
+        }
+      }
+
       setShowModal(null);
     } catch (error: any) {
       addNotification("error", `Failed to update user: ${error.message}`);
@@ -693,23 +724,176 @@ function AdminPanelContent() {
   const ViewModal = () => {
     if (!selectedItem || showModal !== "view") return null;
 
+    const building =
+      activeSection === "buildings" ? (selectedItem as Building) : null;
+    const user = activeSection === "users" ? (selectedItem as User) : null;
+
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl p-6 w-full max-w-md">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">
-              View {activeSection.slice(0, -1)}
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8 max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
+            <h3 className="text-2xl font-bold text-white">
+              {building
+                ? building.name
+                : user
+                ? user.full_name || user.email
+                : `View ${activeSection.slice(0, -1)}`}
             </h3>
             <button
               onClick={() => setShowModal(null)}
-              className="text-white/80 hover:text-white transition-colors"
+              className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto">
-            {JSON.stringify(selectedItem, null, 2)}
-          </pre>
+          <div className="p-6 overflow-y-auto flex-1">
+            {user ? (
+              <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
+                {JSON.stringify(selectedItem, null, 2)}
+              </pre>
+            ) : building ? (
+              <div className="space-y-6">
+                {/* Key Info Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                    <div className="text-sm text-white/70 mb-1">Address</div>
+                    <div className="text-lg font-semibold text-white">
+                      {building.address || "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                    <div className="text-sm text-white/70 mb-1">Units</div>
+                    <div className="text-lg font-semibold text-white">
+                      {building.number_of_units || "-"}
+                    </div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                    <div className="text-sm text-white/70 mb-1">Unit Type</div>
+                    <div className="text-lg font-semibold text-white">
+                      {building.type_of_unit || "-"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Building Details */}
+                <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+                  <h3 className="text-lg font-semibold text-white mb-3">
+                    Building Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between py-2 border-b border-white/10">
+                      <span className="text-white/70">Name</span>
+                      <span className="font-medium text-white">
+                        {building.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-white/10">
+                      <span className="text-white/70">Address</span>
+                      <span className="font-medium text-white">
+                        {building.address || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-white/10">
+                      <span className="text-white/70">Number of Units</span>
+                      <span className="font-medium text-white">
+                        {building.number_of_units || "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-white/70">Unit Type</span>
+                      <span className="font-medium text-white">
+                        {building.type_of_unit || "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Media */}
+                {(building.photos && building.photos.length > 0) ||
+                building.logo ||
+                building.video ||
+                building.documents ? (
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-3">
+                      Media
+                    </h3>
+                    <div className="space-y-3">
+                      {building.logo && (
+                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                          <div className="text-sm text-white/70 mb-2">Logo</div>
+                          <img
+                            src={building.logo}
+                            alt="Building logo"
+                            className="max-w-xs max-h-32 object-contain rounded-lg border border-white/20"
+                          />
+                        </div>
+                      )}
+                      {building.photos && building.photos.length > 0 && (
+                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                          <div className="text-sm text-white/70 mb-2">
+                            Photos ({building.photos.length})
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {building.photos.slice(0, 6).map((photo, index) => (
+                              <img
+                                key={index}
+                                src={photo}
+                                alt={`Building photo ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border border-white/20"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {building.video && (
+                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                          <div className="text-sm text-white/70 mb-2">
+                            Video
+                          </div>
+                          <video
+                            src={building.video}
+                            className="max-w-md max-h-64 border border-white/20 rounded-lg"
+                            controls
+                          />
+                        </div>
+                      )}
+                      {building.documents && (
+                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                          <div className="text-sm text-white/70 mb-2">
+                            Documents
+                          </div>
+                          <a
+                            href={building.documents}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
+                          >
+                            View Documents (PDF)
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : user ? (
+              <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
+                {JSON.stringify(selectedItem, null, 2)}
+              </pre>
+            ) : (
+              <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
+                {JSON.stringify(selectedItem, null, 2)}
+              </pre>
+            )}
+          </div>
+          <div className="flex items-center justify-end p-6 border-t border-white/10 flex-shrink-0">
+            <button
+              onClick={() => setShowModal(null)}
+              className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -729,7 +913,7 @@ function AdminPanelContent() {
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl p-6 w-full max-w-md">
+        <div className="bg-black/10 backdrop-blur-[5px] border border-white/10 rounded-3xl p-6 w-full max-w-md">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">
               Delete {activeSection.slice(0, -1)}
@@ -740,7 +924,7 @@ function AdminPanelContent() {
                 setSelectedItem(null);
               }}
               disabled={isActionLoading}
-              className="text-white/80 hover:text-white disabled:opacity-50 transition-colors"
+              className="text-white/80 cursor-pointer hover:text-white disabled:opacity-50 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -757,14 +941,14 @@ function AdminPanelContent() {
                 setSelectedItem(null);
               }}
               disabled={isActionLoading}
-              className="flex-1 px-4 py-2 text-white/90 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2 cursor-pointer text-white/90 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg disabled:opacity-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirmDelete}
               disabled={isActionLoading}
-              className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 px-4 py-2 cursor-pointer bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
             >
               {isActionLoading ? (
                 <>

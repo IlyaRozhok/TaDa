@@ -54,6 +54,15 @@ export class CreatePropertyDto {
   price?: number;
 
   @ApiProperty({
+    description: "Security deposit",
+    example: 2500,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  deposit?: number;
+
+  @ApiProperty({
     description: "Number of bedrooms",
     example: 2,
     required: false,

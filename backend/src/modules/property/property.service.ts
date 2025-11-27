@@ -47,6 +47,10 @@ export class PropertyService {
       propertyData.price = createPropertyDto.price;
     }
 
+    if (createPropertyDto.deposit != null) {
+      propertyData.deposit = createPropertyDto.deposit;
+    }
+
     if (createPropertyDto.bedrooms != null) {
       propertyData.bedrooms = createPropertyDto.bedrooms;
     }
@@ -100,6 +104,10 @@ export class PropertyService {
 
     if (updatePropertyDto.price !== undefined) {
       updateData.price = updatePropertyDto.price;
+    }
+
+    if (updatePropertyDto.deposit !== undefined) {
+      updateData.deposit = updatePropertyDto.deposit;
     }
 
     if (updatePropertyDto.bedrooms !== undefined) {

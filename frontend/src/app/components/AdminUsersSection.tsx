@@ -216,21 +216,21 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => onView(user)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="View user"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => onEdit(user)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Edit user"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => onDelete(user)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Delete user"
                         >
                           <Trash2 className="w-4 h-4" />

@@ -15,11 +15,14 @@ interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onSubmit: (id: string, data: {
-    full_name: string;
-    email: string;
-    role: string;
-  }) => Promise<void>;
+  onSubmit: (
+    id: string,
+    data: {
+      full_name: string;
+      email: string;
+      role: string;
+    }
+  ) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -56,19 +59,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   if (!isOpen || !user) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-[10px] flex items-center justify-center z-50 p-4">
-      <div className="bg-black/90 backdrop-blur-[30px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-md my-8">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center z-50 p-4">
+      <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-md my-8">
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h2 className="text-2xl font-bold text-white">Edit User</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto"
+        >
           <div>
             <label className="block text-sm font-medium text-white/90 mb-2">
               Full Name
@@ -76,7 +82,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             <input
               type="text"
               value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, full_name: e.target.value })
+              }
               className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               required
             />
@@ -89,7 +97,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               required
             />
@@ -101,7 +111,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             </label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
               className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
             >
               <option value="tenant">Tenant</option>
@@ -114,17 +126,16 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
+              className="px-6 py-2.5 text-white/90 cursor-pointer hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
-              <span>{isLoading ? "Saving..." : "Save Changes"}</span>
+              <span>{isLoading ? "Updating..." : "Update"}</span>
             </button>
           </div>
         </form>

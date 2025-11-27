@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Save, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { X, Save, Trash2, Upload } from "lucide-react";
 import { propertiesAPI, buildingsAPI } from "../lib/api";
 import {
   Property,
@@ -40,7 +39,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     descriptions: "",
     price: null as number | null,
     deposit: null as number | null,
-    available_from: null,
+    available_from: null as string | null,
     bills: "" as Bills | "",
     property_type: "" as PropertyType | "",
     bedrooms: null as number | null,
@@ -91,7 +90,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         deposit: property.deposit || null,
         available_from: property.available_from
           ? new Date(property.available_from).toISOString().split("T")[0]
-          : "",
+          : null,
         bills: property.bills || "",
         property_type: property.property_type || "",
         bedrooms: property.bedrooms || null,
@@ -133,7 +132,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       setBuildings(buildingsData);
     } catch (error) {
       console.error("Failed to load buildings:", error);
-      toast.error("Failed to load buildings");
     }
   };
 
@@ -206,8 +204,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     if (!property) return;
 
     if (!formData.building_id) {
-      toast.error("Please select a building");
-      return;
+      throw new Error("Please select a building");
     }
 
     try {
@@ -244,20 +241,65 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       const finalDocuments =
         uploadedDocuments || (removedDocuments ? "" : formData.documents);
 
-      // Don't send operator_id - it will be automatically updated from building on backend if needed
-      const propertyData = {
-        ...formData,
-        photos: allPhotos,
-        video: finalVideo,
-        documents: finalDocuments,
+      // Normalize data before sending - ensure numbers are numbers, not strings
+      const normalizeNumber = (
+        value: number | null | undefined | string
+      ): number | null => {
+        if (
+          value === null ||
+          value === undefined ||
+          value === "" ||
+          value === "0"
+        ) {
+          return null;
+        }
+        const num = Number(value);
+        return isNaN(num) || num <= 0 ? null : num;
       };
+
+      // Build the property data object, ensuring all numeric fields are properly converted
+      const propertyData: any = {
+        building_id: formData.building_id,
+        apartment_number: formData.apartment_number?.trim() || null,
+        descriptions: formData.descriptions?.trim() || null,
+        // Convert numeric fields to proper numbers or null
+        price: normalizeNumber(formData.price),
+        deposit: normalizeNumber(formData.deposit),
+        bedrooms: normalizeNumber(formData.bedrooms),
+        bathrooms: normalizeNumber(formData.bathrooms),
+        floor: normalizeNumber(formData.floor),
+        square_meters: normalizeNumber(formData.square_meters),
+        // Optional enum fields
+        property_type: formData.property_type || null,
+        building_type: formData.building_type || null,
+        furnishing: formData.furnishing || null,
+        let_duration: formData.let_duration || null,
+        bills: formData.bills || null,
+        available_from: formData.available_from || null,
+        // Boolean fields
+        outdoor_space: formData.outdoor_space,
+        balcony: formData.balcony,
+        terrace: formData.terrace,
+        // Media
+        photos: allPhotos,
+        video: finalVideo || null,
+        documents: finalDocuments || null,
+      };
+
+      // Remove null values from optional fields (except for explicitly nullable fields like price, deposit)
+      // But keep null for fields that backend expects to be nullable
+      Object.keys(propertyData).forEach((key) => {
+        if (propertyData[key] === "" || propertyData[key] === undefined) {
+          propertyData[key] = null;
+        }
+      });
 
       await onSubmit(property.id, propertyData);
       handleClose();
-      toast.success("Property updated successfully");
     } catch (error: any) {
       console.error("Failed to update property:", error);
-      toast.error(error.response?.data?.message || "Failed to update property");
+      // Re-throw error so parent component can handle it
+      throw error;
     }
   };
 
@@ -279,14 +321,14 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h2 className="text-2xl font-bold text-white">Edit Property</h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
@@ -378,9 +420,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               </label>
               <input
                 type="date"
-                value={formData.available_from}
+                value={formData.available_from || ""}
                 onChange={(e) =>
-                  setFormData({ ...formData, available_from: e.target.value })
+                  setFormData({
+                    ...formData,
+                    available_from: e.target.value || null,
+                  })
                 }
                 className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               />
@@ -671,14 +716,25 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Add New Photos
               </label>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoChange}
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
+              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-8 h-8 text-white/70 mb-2" />
+                  <p className="text-sm text-white/90 font-medium">
+                    Click to upload photos
+                  </p>
+                  <p className="text-xs text-white/60 mt-1">
+                    PNG, JPG - Multiple files allowed
+                  </p>
+                </div>
+              </label>
               {photoPreviews.length > 0 && (
                 <div className="mt-2 grid grid-cols-4 gap-2">
                   {photoPreviews.map((preview, index) => (
@@ -691,7 +747,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       <button
                         type="button"
                         onClick={() => removeNewPhoto(index)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity border border-white/20"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -717,7 +773,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setRemovedVideo(true)}
-                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full"
+                      className="absolute top-1 right-1 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -729,17 +785,28 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   ? "Replace Video"
                   : "Add Video"}
               </label>
-              <input
-                ref={videoInputRef}
-                type="file"
-                accept="video/*"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setVideoFile(e.target.files[0]);
-                  }
-                }}
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
+              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setVideoFile(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-8 h-8 text-white/70 mb-2" />
+                  <p className="text-sm text-white/90 font-medium">
+                    Click to upload video
+                  </p>
+                  <p className="text-xs text-white/60 mt-1">
+                    MP4, AVI up to 100MB
+                  </p>
+                </div>
+              </label>
               {videoPreview && (
                 <div className="mt-2 relative">
                   <video
@@ -755,7 +822,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         videoInputRef.current.value = "";
                       }
                     }}
-                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full"
+                    className="absolute top-1 right-1 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -782,7 +849,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setRemovedDocuments(true)}
-                      className="p-1 bg-red-500 text-white rounded-full"
+                      className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -794,17 +861,26 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   ? "Replace Document"
                   : "Add Document"}
               </label>
-              <input
-                ref={documentInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setDocumentFile(e.target.files[0]);
-                  }
-                }}
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
+              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                <input
+                  ref={documentInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setDocumentFile(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-8 h-8 text-white/70 mb-2" />
+                  <p className="text-sm text-white/90 font-medium">
+                    Click to upload document
+                  </p>
+                  <p className="text-xs text-white/60 mt-1">PDF file</p>
+                </div>
+              </label>
               {documentFile && (
                 <div className="mt-2 flex items-center justify-between p-2 bg-green-100 rounded-lg">
                   <span className="text-sm text-white/90">
@@ -818,7 +894,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         documentInputRef.current.value = "";
                       }
                     }}
-                    className="p-1 bg-red-500 text-white rounded-full"
+                    className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -832,17 +908,16 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="px-6 py-2.5 text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
+              className="px-6 py-2.5 text-white/90 cursor-pointer hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
-              <span>{isLoading ? "Saving..." : "Save Changes"}</span>
+              <span>{isLoading ? "Updating..." : "Update"}</span>
             </button>
           </div>
         </form>

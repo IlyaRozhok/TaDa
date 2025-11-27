@@ -222,9 +222,7 @@ function AdminOperatorDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-slate-100 border border-slate-200 rounded-xl p-6 text-left cursor-not-allowed opacity-50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center">
-                <Plus className="w-6 h-6 text-slate-400" />
-              </div>
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center"></div>
               <div>
                 <h3 className="text-lg font-semibold text-slate-500 mb-1">
                   Add Property

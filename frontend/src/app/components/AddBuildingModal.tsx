@@ -337,10 +337,16 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     if (formData.type_of_unit && formData.type_of_unit !== "") {
       buildingData.type_of_unit = formData.type_of_unit;
     }
-    if (uploadResult.uploadedUrls.logo || (formData.logo && formData.logo.trim() !== "")) {
+    if (
+      uploadResult.uploadedUrls.logo ||
+      (formData.logo && formData.logo.trim() !== "")
+    ) {
       buildingData.logo = uploadResult.uploadedUrls.logo || formData.logo;
     }
-    if (uploadResult.uploadedUrls.video || (formData.video && formData.video.trim() !== "")) {
+    if (
+      uploadResult.uploadedUrls.video ||
+      (formData.video && formData.video.trim() !== "")
+    ) {
       buildingData.video = uploadResult.uploadedUrls.video || formData.video;
     }
     if (
@@ -356,7 +362,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       uploadResult.uploadedUrls.documents ||
       (formData.documents && formData.documents.trim() !== "")
     ) {
-      buildingData.documents = uploadResult.uploadedUrls.documents || formData.documents;
+      buildingData.documents =
+        uploadResult.uploadedUrls.documents || formData.documents;
     }
     if (formData.metro_stations && formData.metro_stations.length > 0) {
       buildingData.metro_stations = formData.metro_stations;
@@ -574,21 +581,24 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h2 className="text-2xl font-bold text-white">Add New Building</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto"
+        >
           {/* Basic Information */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
@@ -751,29 +761,37 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   Logo (Image File)
                 </label>
                 <div className="space-y-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) setLogoFile(file);
-                    }}
-                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Upload a logo image file (PNG, JPG, etc.)
-                  </p>
+                  <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setLogoFile(file);
+                      }}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center justify-center">
+                      <Upload className="w-8 h-8 text-white/70 mb-2" />
+                      <p className="text-sm text-white/90 font-medium">
+                        Click to upload logo
+                      </p>
+                      <p className="text-xs text-white/60 mt-1">
+                        PNG, JPG up to 10MB
+                      </p>
+                    </div>
+                  </label>
                   {logoFile && (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Upload className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-gray-600">
+                      <div className="flex items-center gap-2 p-3 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg">
+                        <Upload className="w-4 h-4 text-white/70" />
+                        <span className="text-sm text-white/90 flex-1">
                           {logoFile.name}
                         </span>
                         <button
                           type="button"
                           onClick={() => setLogoFile(null)}
-                          className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-colors border border-white/20"
                         >
                           Remove
                         </button>
@@ -783,7 +801,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           <img
                             src={logoPreview}
                             alt="Logo preview"
-                            className="max-w-xs max-h-32 object-contain border border-gray-300 rounded-md"
+                            className="max-w-xs max-h-32 object-contain border border-white/20 rounded-lg"
                           />
                         </div>
                       )}
@@ -798,29 +816,37 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   Video (Video File)
                 </label>
                 <div className="space-y-2">
-                  <input
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) setVideoFile(file);
-                    }}
-                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Upload a video file (MP4, AVI, etc.)
-                  </p>
+                  <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setVideoFile(file);
+                      }}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center justify-center">
+                      <Upload className="w-8 h-8 text-white/70 mb-2" />
+                      <p className="text-sm text-white/90 font-medium">
+                        Click to upload video
+                      </p>
+                      <p className="text-xs text-white/60 mt-1">
+                        MP4, AVI up to 100MB
+                      </p>
+                    </div>
+                  </label>
                   {videoFile && (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Upload className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-gray-600">
+                      <div className="flex items-center gap-2 p-3 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg">
+                        <Upload className="w-4 h-4 text-white/70" />
+                        <span className="text-sm text-white/90 flex-1">
                           {videoFile.name}
                         </span>
                         <button
                           type="button"
                           onClick={() => setVideoFile(null)}
-                          className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-colors border border-white/20"
                         >
                           Remove
                         </button>
@@ -830,7 +856,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           <video
                             src={videoPreview}
                             controls
-                            className="max-w-md max-h-64 border border-gray-300 rounded-md"
+                            className="max-w-md max-h-64 border border-white/20 rounded-lg"
                           >
                             Your browser does not support the video tag.
                           </video>
@@ -847,38 +873,46 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   Photos (Image Files)
                 </label>
                 <div className="space-y-2">
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      const newFiles = Array.from(e.target.files || []);
-                      if (newFiles.length > 0) {
-                        setPhotoFiles((prev) => [...prev, ...newFiles]);
-                        // Reset input so user can select the same file again if needed
-                        if (photoInputRef.current) {
-                          photoInputRef.current.value = "";
+                  <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        const newFiles = Array.from(e.target.files || []);
+                        if (newFiles.length > 0) {
+                          setPhotoFiles((prev) => [...prev, ...newFiles]);
+                          // Reset input so user can select the same file again if needed
+                          if (photoInputRef.current) {
+                            photoInputRef.current.value = "";
+                          }
                         }
-                      }
-                    }}
-                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Upload multiple photo files (PNG, JPG, etc.)
-                  </p>
+                      }}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center justify-center">
+                      <Upload className="w-8 h-8 text-white/70 mb-2" />
+                      <p className="text-sm text-white/90 font-medium">
+                        Click to upload photos
+                      </p>
+                      <p className="text-xs text-white/60 mt-1">
+                        PNG, JPG - Multiple files allowed
+                      </p>
+                    </div>
+                  </label>
                   {photoFiles.length > 0 && (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Upload className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-gray-600">
+                      <div className="flex items-center gap-2 p-3 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg mb-3">
+                        <Upload className="w-4 h-4 text-white/70" />
+                        <span className="text-sm text-white/90 flex-1">
                           {photoFiles.length} photo
                           {photoFiles.length > 1 ? "s" : ""} selected
                         </span>
                         <button
                           type="button"
                           onClick={() => setPhotoFiles([])}
-                          className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-colors border border-white/20"
                         >
                           Clear All
                         </button>
@@ -887,9 +921,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                         {photoFiles.map((file, index) => (
                           <div
                             key={`${file.name}-${index}`}
-                            className="relative border border-gray-300 rounded-md overflow-hidden group bg-gray-50"
+                            className="relative border border-white/20 rounded-lg overflow-hidden group bg-white/5"
                           >
-                            <div className="relative w-full h-32 bg-gray-100">
+                            <div className="relative w-full h-32 bg-white/5">
                               {photoPreviews[index] ? (
                                 <img
                                   src={photoPreviews[index]}
@@ -903,11 +937,11 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                   }}
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <div className="w-full h-full flex items-center justify-center text-white/40">
                                   <Upload className="w-8 h-8" />
                                 </div>
                               )}
-                              <div className="absolute inset-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center z-10">
+                              <div className="absolute inset-0 group-hover:bg-black/50 transition-opacity flex items-center justify-center z-10">
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -915,14 +949,14 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                       prev.filter((_, i) => i !== index)
                                     )
                                   }
-                                  className="opacity-0 group-hover:opacity-100 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-opacity"
+                                  className="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-opacity border border-white/20"
                                 >
                                   Remove
                                 </button>
                               </div>
                             </div>
-                            <div className="p-2 bg-white">
-                              <p className="text-xs text-gray-600 truncate">
+                            <div className="p-2 bg-white/5">
+                              <p className="text-xs text-white/70 truncate">
                                 {file.name}
                               </p>
                             </div>
@@ -940,31 +974,39 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   Documents (PDF Files)
                 </label>
                 <div className="space-y-2">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      setDocumentFiles(files);
-                    }}
-                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-white/90 hover:file:bg-gray-100"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Upload PDF document files
-                  </p>
+                  <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setDocumentFiles(files);
+                      }}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center justify-center">
+                      <Upload className="w-8 h-8 text-white/70 mb-2" />
+                      <p className="text-sm text-white/90 font-medium">
+                        Click to upload documents
+                      </p>
+                      <p className="text-xs text-white/60 mt-1">
+                        PDF files - Multiple files allowed
+                      </p>
+                    </div>
+                  </label>
                   {documentFiles.length > 0 && (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Upload className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-gray-600">
+                      <div className="flex items-center gap-2 p-3 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg mb-3">
+                        <Upload className="w-4 h-4 text-white/70" />
+                        <span className="text-sm text-white/90 flex-1">
                           {documentFiles.length} PDF file
                           {documentFiles.length > 1 ? "s" : ""} selected
                         </span>
                         <button
                           type="button"
                           onClick={() => setDocumentFiles([])}
-                          className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-colors border border-white/20"
                         >
                           Clear All
                         </button>
@@ -973,11 +1015,11 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                         {documentFiles.map((file, index) => (
                           <div
                             key={index}
-                            className="relative border border-gray-300 rounded-md overflow-hidden group bg-gray-50"
+                            className="relative border border-white/20 rounded-lg overflow-hidden group bg-white/5"
                           >
                             <div className="flex flex-col items-center justify-center p-4 h-32">
                               <svg
-                                className="w-12 h-12 text-red-600 mb-2"
+                                className="w-12 h-12 text-white/50 mb-2"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -988,11 +1030,11 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              <p className="text-xs text-gray-600 text-center truncate w-full px-2">
+                              <p className="text-xs text-white/70 text-center truncate w-full px-2">
                                 {file.name}
                               </p>
                             </div>
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-opacity flex items-center justify-center">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1000,7 +1042,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                     prev.filter((_, i) => i !== index)
                                   )
                                 }
-                                className="opacity-0 group-hover:opacity-100 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-opacity"
+                                className="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-opacity border border-white/20"
                               >
                                 Remove
                               </button>
@@ -1171,7 +1213,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     className="border border-gray-200 rounded-md p-4"
                   >
                     <div className="flex justify-between items-center mb-4">
-                      <h5 className="font-medium text-black">
+                      <h5 className="font-medium text-white">
                         Pet {index + 1}
                       </h5>
                       <button
@@ -1246,9 +1288,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <button
                   type="button"
                   onClick={addPet}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-200"
                 >
-                  <Plus className="w-4 h-4" />
                   Add Pet Type
                 </button>
               </div>
@@ -1326,9 +1367,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
             <button
               type="button"
               onClick={addMetroStation}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
             >
-              <Plus className="w-4 h-4" />
               Add Metro Station
             </button>
           </div>
@@ -1379,9 +1419,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
             <button
               type="button"
               onClick={addCommuteTime}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
             >
-              <Plus className="w-4 h-4" />
               Add Commute Time
             </button>
           </div>
@@ -1432,9 +1471,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
             <button
               type="button"
               onClick={addLocalEssential}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-white/90 rounded-md hover:bg-gray-200"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
             >
-              <Plus className="w-4 h-4" />
               Add Local Essential
             </button>
           </div>
@@ -1443,17 +1481,16 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
+              className="px-6 py-2.5 cursor-pointer text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
-              <span>{isLoading ? "Creating..." : "Create Building"}</span>
+              <span>{isLoading ? "Creating..." : "Create"}</span>
             </button>
           </div>
         </form>

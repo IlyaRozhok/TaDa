@@ -197,12 +197,12 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black border border-gray-200">
-                        {building.number_of_units}
+                        {building.number_of_units || "-"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black border border-gray-200">
-                        {building.type_of_unit}
+                        {building.type_of_unit || "-"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -263,14 +263,14 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => onView(building)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="View building"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => onEdit(building)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Edit building"
                         >
                           <Edit className="w-4 h-4" />
@@ -287,7 +287,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                             );
                             onDelete(building);
                           }}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Delete building"
                         >
                           <Trash2 className="w-4 h-4" />

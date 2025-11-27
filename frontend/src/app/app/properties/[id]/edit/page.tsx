@@ -161,7 +161,6 @@ export default function EditPropertyPage() {
       errors.price = "Price must be greater than 0";
     }
 
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -523,10 +522,7 @@ export default function EditPropertyPage() {
                     Saving...
                   </>
                 ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Save Changes
-                  </>
+                  <>Save Changes</>
                 )}
               </Button>
             </div>

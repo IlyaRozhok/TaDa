@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Upload, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
 import { propertiesAPI, buildingsAPI } from "../lib/api";
 import {
   PropertyType,
@@ -88,7 +87,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       setBuildings(buildingsData);
     } catch (error) {
       console.error("Failed to load buildings:", error);
-      toast.error("Failed to load buildings");
     }
   };
 
@@ -155,13 +153,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error("Please enter a property title");
-      return;
+      throw new Error("Please enter a property title");
     }
 
     if (!formData.building_id) {
-      toast.error("Please select a building");
-      return;
+      throw new Error("Please select a building");
     }
 
     try {
@@ -242,14 +238,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-black/50 backdrop-blur-[10px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h2 className="text-2xl font-bold text-white">Add New Property</h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
@@ -639,14 +635,25 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Photos
               </label>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoChange}
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
+              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-8 h-8 text-white/70 mb-2" />
+                  <p className="text-sm text-white/90 font-medium">
+                    Click to upload photos
+                  </p>
+                  <p className="text-xs text-white/60 mt-1">
+                    PNG, JPG - Multiple files allowed
+                  </p>
+                </div>
+              </label>
               {photoPreviews.length > 0 && (
                 <div className="mt-2 grid grid-cols-4 gap-2">
                   {photoPreviews.map((preview, index) => (
@@ -659,7 +666,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       <button
                         type="button"
                         onClick={() => removePhoto(index)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity border border-white/20"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -674,17 +681,28 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Video
               </label>
-              <input
-                ref={videoInputRef}
-                type="file"
-                accept="video/*"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setVideoFile(e.target.files[0]);
-                  }
-                }}
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
+              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setVideoFile(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-8 h-8 text-white/70 mb-2" />
+                  <p className="text-sm text-white/90 font-medium">
+                    Click to upload video
+                  </p>
+                  <p className="text-xs text-white/60 mt-1">
+                    MP4, AVI up to 100MB
+                  </p>
+                </div>
+              </label>
               {videoPreview && (
                 <div className="mt-2 relative">
                   <video
@@ -700,7 +718,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         videoInputRef.current.value = "";
                       }
                     }}
-                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full"
+                    className="absolute top-1 right-1 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -713,17 +731,26 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Documents (PDF)
               </label>
-              <input
-                ref={documentInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setDocumentFile(e.target.files[0]);
-                  }
-                }}
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
+              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
+                <input
+                  ref={documentInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setDocumentFile(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-8 h-8 text-white/70 mb-2" />
+                  <p className="text-sm text-white/90 font-medium">
+                    Click to upload document
+                  </p>
+                  <p className="text-xs text-white/60 mt-1">PDF file</p>
+                </div>
+              </label>
               {documentFile && (
                 <div className="mt-2 flex items-center justify-between p-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg">
                   <span className="text-sm text-white/90">
@@ -737,7 +764,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         documentInputRef.current.value = "";
                       }
                     }}
-                    className="p-1 bg-red-500 text-white rounded-full"
+                    className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -751,17 +778,16 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="px-6 py-2.5 text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
+              className="px-6 py-2.5 text-white/90 cursor-pointer hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-white text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 cursor-pointer bg-white text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
-              <span>{isLoading ? "Creating..." : "Create Property"}</span>
+              <span>{isLoading ? "Creating..." : "Create"}</span>
             </button>
           </div>
         </form>

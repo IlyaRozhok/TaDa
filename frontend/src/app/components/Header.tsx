@@ -19,7 +19,11 @@ interface HeaderProps {
   disabled?: boolean;
 }
 
-const Header = ({ children, landingType = "operators", disabled = false }: HeaderProps) => {
+const Header = ({
+  children,
+  landingType = "operators",
+  disabled = false,
+}: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const { language, setLanguage } = useI18n();
@@ -118,23 +122,25 @@ const Header = ({ children, landingType = "operators", disabled = false }: Heade
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 py-3 md:py-4 ${disabled ? 'pointer-events-none' : ''}`}>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 py-3 md:py-4 ${
+          disabled ? "pointer-events-none" : ""
+        }`}
+      >
         <div className="container mx-auto">
           <div className="rounded-full px-4 py-2 md:py-3">
-            <div className={`h-18 rounded-full px-4 flex items-center justify-between bg-black/50 backdrop-blur-[3px] ${disabled ? 'opacity-70' : ''}`}>
+            <div
+              className={`h-18 rounded-full px-4 flex items-center justify-between bg-black/50 backdrop-blur-[3px] ${
+                disabled ? "opacity-70" : ""
+              }`}
+            >
               {/* Logo */}
               <div className="flex items-center flex-shrink-0">
                 <button
                   onClick={() => scrollToSection("hero")}
                   disabled={disabled}
                   className="text-white text-sm sm:text-lg md:text-xl font-semibold disabled:cursor-default"
-                >
-                  <img
-                    src="/landing-logo.svg"
-                    alt="TADA Logo"
-                    className="h-6 pl-5 cursor-pointer"
-                  />
-                </button>
+                ></button>
               </div>
 
               {/* Desktop Navigation */}
@@ -159,7 +165,9 @@ const Header = ({ children, landingType = "operators", disabled = false }: Heade
                 {/* Language Dropdown */}
                 <div className="relative language-dropdown">
                   <button
-                    onClick={() => !disabled && setIsLanguageOpen(!isLanguageOpen)}
+                    onClick={() =>
+                      !disabled && setIsLanguageOpen(!isLanguageOpen)
+                    }
                     disabled={disabled}
                     className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-white hover:text-gray-300 transition-colors rounded-lg w-14 cursor-pointer disabled:cursor-default disabled:hover:text-white"
                   >

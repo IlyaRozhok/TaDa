@@ -202,14 +202,14 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => onView(property)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="View property"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => onEdit(property)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Edit property"
                         >
                           <Edit className="w-4 h-4" />
@@ -217,7 +217,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                         <button
                           type="button"
                           onClick={() => onDelete(property)}
-                          className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Delete property"
                         >
                           <Trash2 className="w-4 h-4" />

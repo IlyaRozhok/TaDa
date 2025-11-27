@@ -55,6 +55,14 @@ export class Property {
   price?: number;
 
   @ApiProperty({
+    description: "Security deposit",
+    example: 2500,
+    required: false,
+  })
+  @Column("decimal", { precision: 10, scale: 2, nullable: true })
+  deposit?: number;
+
+  @ApiProperty({
     description: "Number of bedrooms",
     example: 2,
     required: false,

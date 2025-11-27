@@ -209,9 +209,7 @@ function OperatorDashboardContent() {
           <Link href="/app/properties/create">
             <div className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 text-left">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                  <Plus className="w-6 h-6 text-emerald-600" />
-                </div>
+                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-100 transition-colors"></div>
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-1">
                     Add Property

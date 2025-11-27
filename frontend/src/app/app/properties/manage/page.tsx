@@ -255,7 +255,6 @@ export default function ManagePropertiesPage() {
                 onClick={() => router.push("/app/properties/create")}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
               >
-                <Plus className="w-5 h-5" />
                 Add Property
               </button>
             </div>
@@ -294,7 +293,6 @@ export default function ManagePropertiesPage() {
               onClick={() => router.push("/app/properties/create")}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto"
             >
-              <Plus className="w-5 h-5" />
               Add Your First Property
             </button>
           </div>
