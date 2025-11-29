@@ -6,7 +6,48 @@ import {
   IsNumber,
   IsArray,
   IsBoolean,
+  ValidateNested,
 } from "class-validator";
+import { Type } from "class-transformer";
+
+class MetroStationDto {
+  @IsString()
+  label: string;
+  @IsNumber()
+  destination: number;
+}
+
+class CommuteTimeDto {
+  @IsString()
+  label: string;
+  @IsNumber()
+  destination: number;
+}
+
+class LocalEssentialDto {
+  @IsString()
+  label: string;
+  @IsNumber()
+  destination: number;
+}
+
+class ConciergeHoursDto {
+  @IsNumber()
+  from: number;
+  @IsNumber()
+  to: number;
+}
+
+class PetDto {
+  @IsString()
+  type: "dog" | "cat" | "other";
+  @IsOptional()
+  @IsString()
+  customType?: string;
+  @IsOptional()
+  @IsString()
+  size?: "small" | "medium" | "large";
+}
 
 export class CreatePropertyDto {
   // REQUIRED FIELDS
@@ -21,10 +62,20 @@ export class CreatePropertyDto {
   @ApiProperty({
     description: "Building ID",
     example: "123e4567-e89b-12d3-a456-426614174000",
-    required: true,
+    required: false,
   })
+  @IsOptional()
   @IsUUID()
-  building_id: string;
+  building_id?: string;
+
+  @ApiProperty({
+    description: "Operator ID (required for private landlord properties)",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  operator_id?: string;
 
   // OPTIONAL FIELDS
   @ApiProperty({
@@ -102,6 +153,124 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsBoolean()
   luxury?: boolean;
+
+  // Inherited fields from building
+  @ApiProperty({
+    description: "Property address (inherited from building or custom)",
+    example: "123 Main St, London",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiProperty({
+    description: "Tenant types for this property (inherited from building or custom)",
+    example: ["family", "student"],
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tenant_types?: string[];
+
+  @ApiProperty({
+    description: "Property amenities (inherited from building or custom)",
+    example: ["Parking", "Garden", "Gym"],
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  amenities?: string[];
+
+  @ApiProperty({
+    description: "Whether property has concierge (inherited from building or custom)",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  is_concierge?: boolean;
+
+  @ApiProperty({
+    description: "Pet policy (inherited from building or custom)",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  pet_policy?: boolean;
+
+  @ApiProperty({
+    description: "Smoking area availability (inherited from building or custom)",
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  smoking_area?: boolean;
+
+  @ApiProperty({
+    description: "Metro stations with travel times (inherited from building or custom)",
+    example: [{ label: "Oxford Circus", destination: 5 }],
+    type: [MetroStationDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MetroStationDto)
+  metro_stations?: MetroStationDto[];
+
+  @ApiProperty({
+    description: "Commute times to popular destinations (inherited from building or custom)",
+    example: [{ label: "City Centre", destination: 15 }],
+    type: [CommuteTimeDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CommuteTimeDto)
+  commute_times?: CommuteTimeDto[];
+
+  @ApiProperty({
+    description: "Local essentials with distances (inherited from building or custom)",
+    example: [{ label: "Tesco Express", destination: 200 }],
+    type: [LocalEssentialDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LocalEssentialDto)
+  local_essentials?: LocalEssentialDto[];
+
+  @ApiProperty({
+    description: "Concierge operating hours (inherited from building or custom)",
+    example: { from: 8, to: 22 },
+    type: ConciergeHoursDto,
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ConciergeHoursDto)
+  concierge_hours?: ConciergeHoursDto;
+
+  @ApiProperty({
+    description: "Allowed pet types and sizes (inherited from building or custom)",
+    example: [{ type: "dog", size: "small" }],
+    type: [PetDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PetDto)
+  pets?: PetDto[];
 
   @ApiProperty({
     description: "Let duration",

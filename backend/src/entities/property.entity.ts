@@ -9,7 +9,7 @@ import {
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
-import { Building } from "./building.entity";
+import { Building, MetroStation, CommuteTime, LocalEssential, ConciergeHours, Pet } from "./building.entity";
 
 @Entity("properties")
 export class Property {
@@ -26,9 +26,9 @@ export class Property {
   @Column({ nullable: true })
   apartment_number?: string;
 
-  @ApiProperty({ description: "Building ID" })
-  @Column("uuid")
-  building_id: string;
+  @ApiProperty({ description: "Building ID", required: false })
+  @Column("uuid", { nullable: true })
+  building_id?: string;
 
   // BASIC FIELDS
   @ApiProperty({
@@ -97,6 +97,102 @@ export class Property {
   })
   @Column({ type: "boolean", default: false })
   luxury?: boolean;
+
+  // Inherited fields from building
+  @ApiProperty({
+    description: "Property address (inherited from building or custom)",
+    example: "123 Main St, London",
+    required: false,
+  })
+  @Column({ nullable: true })
+  address?: string;
+
+  @ApiProperty({
+    description: "Tenant types for this property (inherited from building or custom)",
+    example: ["family", "student"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  tenant_types?: string[];
+
+  @ApiProperty({
+    description: "Property amenities (inherited from building or custom)",
+    example: ["Parking", "Garden", "Gym"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  amenities?: string[];
+
+  @ApiProperty({
+    description: "Whether property has concierge (inherited from building or custom)",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", nullable: true })
+  is_concierge?: boolean;
+
+  @ApiProperty({
+    description: "Pet policy (inherited from building or custom)",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", nullable: true })
+  pet_policy?: boolean;
+
+  @ApiProperty({
+    description: "Smoking area availability (inherited from building or custom)",
+    example: false,
+    required: false,
+  })
+  @Column({ type: "boolean", nullable: true })
+  smoking_area?: boolean;
+
+  @ApiProperty({
+    description: "Metro stations with travel times (inherited from building or custom)",
+    example: [{ label: "Oxford Circus", destination: 5 }],
+    type: "json",
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  metro_stations?: MetroStation[];
+
+  @ApiProperty({
+    description: "Commute times to popular destinations (inherited from building or custom)",
+    example: [{ label: "City Centre", destination: 15 }],
+    type: "json",
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  commute_times?: CommuteTime[];
+
+  @ApiProperty({
+    description: "Local essentials with distances (inherited from building or custom)",
+    example: [{ label: "Tesco Express", destination: 200 }],
+    type: "json",
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  local_essentials?: LocalEssential[];
+
+  @ApiProperty({
+    description: "Concierge operating hours (inherited from building or custom)",
+    example: { from: 8, to: 22 },
+    type: "json",
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true })
+  concierge_hours?: ConciergeHours | null;
+
+  @ApiProperty({
+    description: "Allowed pet types and sizes (inherited from building or custom)",
+    example: [{ type: "dog", size: "small" }],
+    type: "json",
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true })
+  pets?: Pet[] | null;
 
   @ApiProperty({
     description: "Let duration",
@@ -187,8 +283,8 @@ export class Property {
   @Column("text", { array: true, nullable: true, default: [] })
   photos: string[];
 
-  @ApiProperty({ description: "Operator ID (from building)" })
-  @Column("uuid", { nullable: true })
+  @ApiProperty({ description: "Operator ID (from building or direct assignment)" })
+  @Column("uuid")
   operator_id: string;
 
   @ApiProperty({ description: "Property creation date" })

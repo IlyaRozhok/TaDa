@@ -69,6 +69,7 @@ function AdminPanelContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [operators, setOperators] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
@@ -138,6 +139,37 @@ function AdminPanelContent() {
           if (response.ok) {
             const data = await response.json();
             setProperties(data.data || data || []);
+          }
+          // Load operators for property creation/editing
+          console.log("🔄 Loading operators for properties section");
+          try {
+            // First try to load operators directly
+            const operatorsResponse = await fetch(`${apiUrl}/users?role=operator`, { headers });
+            if (operatorsResponse.ok) {
+              const operatorsData = await operatorsResponse.json();
+              console.log("✅ Operators loaded from /users?role=operator:", operatorsData);
+              const operatorsList = operatorsData.data || operatorsData || [];
+              setOperators(operatorsList);
+              console.log("✅ Operators set in state:", operatorsList.length, "operators");
+            } else {
+              console.log("⚠️ Failed to load operators with role filter, trying all users...");
+              // Fallback: load all users and filter on frontend
+              const usersResponse = await fetch(`${apiUrl}/users`, { headers });
+              if (usersResponse.ok) {
+                const usersData = await usersResponse.json();
+                console.log("✅ All users loaded:", usersData);
+                const allUsers = usersData.users || usersData.data || usersData || [];
+                const operatorsList = allUsers.filter((user: any) => user.role === 'operator' || user.role === 'Operator');
+                setOperators(operatorsList);
+                console.log("✅ Operators filtered from all users:", operatorsList.length, "operators");
+              } else {
+                console.error("❌ Failed to load users:", usersResponse.status, await usersResponse.text());
+                setOperators([]);
+              }
+            }
+          } catch (error) {
+            console.error("❌ Error loading operators:", error);
+            setOperators([]);
           }
         }
       } catch (error) {
@@ -1003,6 +1035,7 @@ function AdminPanelContent() {
         onClose={() => setShowModal(null)}
         onSubmit={handleCreateProperty}
         isLoading={isActionLoading}
+        operators={operators}
       />
 
       <EditUserModal
@@ -1027,6 +1060,7 @@ function AdminPanelContent() {
         property={selectedItem as Property}
         onSubmit={handleUpdateProperty}
         isLoading={isActionLoading}
+        operators={operators}
       />
 
       <DeleteModal />

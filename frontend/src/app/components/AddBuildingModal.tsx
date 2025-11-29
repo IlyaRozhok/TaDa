@@ -76,6 +76,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     operator_id: null as string | null,
   });
 
+  // Dropdown state
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
   // File states
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -191,33 +194,20 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const typeOfUnitDropdown = document.getElementById(
-        "add_type_of_unit_dropdown"
-      );
-      const tenantTypeDropdown = document.getElementById(
-        "add_tenant_type_dropdown"
-      );
-
-      if (
-        typeOfUnitDropdown &&
-        !typeOfUnitDropdown.contains(event.target as Node) &&
-        !event.target.closest('[onclick*="add_type_of_unit_dropdown"]')
-      ) {
-        typeOfUnitDropdown.classList.add("hidden");
-      }
-
-      if (
-        tenantTypeDropdown &&
-        !tenantTypeDropdown.contains(event.target as Node) &&
-        !event.target.closest('[onclick*="add_tenant_type_dropdown"]')
-      ) {
-        tenantTypeDropdown.classList.add("hidden");
+      const target = event.target as Element;
+      if (!target.closest("[data-dropdown]")) {
+        setOpenDropdown(null);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Toggle dropdown helper
+  const toggleDropdown = (name: string) => {
+    setOpenDropdown(openDropdown === name ? null : name);
+  };
 
   const uploadAllFiles = async () => {
     const uploadPromises = [];
@@ -395,20 +385,16 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     if (formData.amenities && formData.amenities.length > 0) {
       buildingData.amenities = formData.amenities;
     }
-    if (formData.is_concierge) {
-      buildingData.is_concierge = formData.is_concierge;
-    }
+    // Boolean fields - always include, even if false
+    buildingData.is_concierge = formData.is_concierge;
+    buildingData.pet_policy = formData.pet_policy;
+    buildingData.smoking_area = formData.smoking_area;
+
     if (formData.concierge_hours) {
       buildingData.concierge_hours = formData.concierge_hours;
     }
-    if (formData.pet_policy) {
-      buildingData.pet_policy = formData.pet_policy;
-    }
     if (formData.pets && formData.pets.length > 0) {
       buildingData.pets = formData.pets;
-    }
-    if (formData.smoking_area) {
-      buildingData.smoking_area = formData.smoking_area;
     }
     if (formData.tenant_type && formData.tenant_type.length > 0) {
       buildingData.tenant_type = formData.tenant_type;
@@ -676,15 +662,10 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <label className="block text-sm font-medium text-white/90 mb-2">
                   Type of Unit
                 </label>
-                <div className="relative">
+                <div className="relative" data-dropdown>
                   <div
                     className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
-                    onClick={() => {
-                      const dropdown = document.getElementById(
-                        "add_type_of_unit_dropdown"
-                      );
-                      dropdown?.classList.toggle("hidden");
-                    }}
+                    onClick={() => toggleDropdown("type_of_unit")}
                   >
                     <div className="flex flex-wrap gap-1 flex-1">
                       {formData.type_of_unit.length > 0 ? (
@@ -739,45 +720,45 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                       />
                     </svg>
                   </div>
-                  <div
-                    id="add_type_of_unit_dropdown"
-                    className="absolute z-10 w-full mt-1 bg-white/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"
-                  >
-                    {[
-                      { value: "studio", label: "Studio" },
-                      { value: "1-bed", label: "1-bed" },
-                      { value: "2-bed", label: "2-bed" },
-                      { value: "3-bed", label: "3-bed" },
-                      { value: "Duplex", label: "Duplex" },
-                      { value: "penthouse", label: "Penthouse" },
-                    ].map((option) => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-gray-800 flex items-center space-x-2"
-                        onClick={() => {
-                          const newTypeOfUnit = formData.type_of_unit.includes(
-                            option.value
-                          )
-                            ? formData.type_of_unit.filter(
-                                (t) => t !== option.value
-                              )
-                            : [...formData.type_of_unit, option.value];
-                          setFormData({
-                            ...formData,
-                            type_of_unit: newTypeOfUnit,
-                          });
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.type_of_unit.includes(option.value)}
-                          readOnly
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{option.label}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {openDropdown === "type_of_unit" && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {[
+                        { value: "studio", label: "Studio" },
+                        { value: "1-bed", label: "1-bed" },
+                        { value: "2-bed", label: "2-bed" },
+                        { value: "3-bed", label: "3-bed" },
+                        { value: "Duplex", label: "Duplex" },
+                        { value: "penthouse", label: "Penthouse" },
+                      ].map((option) => (
+                        <div
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                          onClick={() => {
+                            const newTypeOfUnit =
+                              formData.type_of_unit.includes(option.value)
+                                ? formData.type_of_unit.filter(
+                                    (t) => t !== option.value
+                                  )
+                                : [...formData.type_of_unit, option.value];
+                            setFormData({
+                              ...formData,
+                              type_of_unit: newTypeOfUnit,
+                            });
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.type_of_unit.includes(
+                              option.value
+                            )}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -785,15 +766,10 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <label className="block text-sm font-medium text-white/90 mb-2">
                   Tenant Type
                 </label>
-                <div className="relative">
+                <div className="relative" data-dropdown>
                   <div
                     className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
-                    onClick={() => {
-                      const dropdown = document.getElementById(
-                        "add_tenant_type_dropdown"
-                      );
-                      dropdown?.classList.toggle("hidden");
-                    }}
+                    onClick={() => toggleDropdown("tenant_type")}
                   >
                     <div className="flex flex-wrap gap-1 flex-1">
                       {formData.tenant_type.length > 0 ? (
@@ -847,44 +823,45 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                       />
                     </svg>
                   </div>
-                  <div
-                    id="add_tenant_type_dropdown"
-                    className="absolute z-10 w-full mt-1 bg-white/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"
-                  >
-                    {[
-                      { value: "corporateLets", label: "Corporate Lets" },
-                      { value: "sharers", label: "Sharers" },
-                      { value: "student", label: "Student" },
-                      { value: "family", label: "Family" },
-                      { value: "elder", label: "Elder" },
-                    ].map((option) => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-gray-800 flex items-center space-x-2"
-                        onClick={() => {
-                          const newTenantType = formData.tenant_type.includes(
-                            option.value
-                          )
-                            ? formData.tenant_type.filter(
-                                (t) => t !== option.value
-                              )
-                            : [...formData.tenant_type, option.value];
-                          setFormData({
-                            ...formData,
-                            tenant_type: newTenantType,
-                          });
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.tenant_type.includes(option.value)}
-                          readOnly
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{option.label}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {openDropdown === "tenant_type" && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {[
+                        { value: "corporateLets", label: "Corporate Lets" },
+                        { value: "sharers", label: "Sharers" },
+                        { value: "student", label: "Student" },
+                        { value: "family", label: "Family" },
+                        { value: "elder", label: "Elder" },
+                      ].map((option) => (
+                        <div
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                          onClick={() => {
+                            const newTenantType = formData.tenant_type.includes(
+                              option.value
+                            )
+                              ? formData.tenant_type.filter(
+                                  (t) => t !== option.value
+                                )
+                              : [...formData.tenant_type, option.value];
+                            setFormData({
+                              ...formData,
+                              tenant_type: newTenantType,
+                            });
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.tenant_type.includes(
+                              option.value
+                            )}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -892,40 +869,87 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <label className="block text-sm font-medium text-white/90 mb-2">
                   Operator *
                 </label>
-                <select
-                  value={formData.operator_id || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({
-                      ...formData,
-                      operator_id: value === "" ? null : value,
-                    });
-                  }}
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  required
-                  disabled={operatorsLoading}
-                >
-                  <option value="">
-                    {operatorsLoading
-                      ? "Loading operators..."
-                      : "Select an operator"}
-                  </option>
-                  {operators.map((operator) => {
-                    const displayName =
-                      operator.operatorProfile?.company_name ||
-                      operator.operatorProfile?.full_name ||
-                      operator.full_name ||
-                      operator.email;
-                    return (
-                      <option key={operator.id} value={operator.id}>
-                        {displayName}{" "}
-                        {operator.email && displayName !== operator.email
-                          ? `(${operator.email})`
-                          : ""}
-                      </option>
-                    );
-                  })}
-                </select>
+                <div className="relative" data-dropdown>
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                    onClick={() =>
+                      !operatorsLoading && toggleDropdown("operator")
+                    }
+                  >
+                    <span
+                      className={
+                        formData.operator_id ? "text-white" : "text-white/50"
+                      }
+                    >
+                      {operatorsLoading
+                        ? "Loading operators..."
+                        : formData.operator_id
+                        ? (() => {
+                            const op = operators.find(
+                              (o) => o.id === formData.operator_id
+                            );
+                            const displayName =
+                              op?.operatorProfile?.company_name ||
+                              op?.operatorProfile?.full_name ||
+                              op?.full_name ||
+                              op?.email;
+                            return (
+                              displayName +
+                              (op?.email && displayName !== op?.email
+                                ? ` (${op.email})`
+                                : "")
+                            );
+                          })()
+                        : "Select an operator"}
+                    </span>
+                    <svg
+                      className="w-5 h-5 text-white/70"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                  {!operatorsLoading && openDropdown === "operator" && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {operators.map((operator) => {
+                        const displayName =
+                          operator.operatorProfile?.company_name ||
+                          operator.operatorProfile?.full_name ||
+                          operator.full_name ||
+                          operator.email;
+                        return (
+                          <div
+                            key={operator.id}
+                            className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                              formData.operator_id === operator.id
+                                ? "bg-white/10"
+                                : ""
+                            }`}
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                operator_id: operator.id,
+                              });
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            {displayName}{" "}
+                            {operator.email && displayName !== operator.email
+                              ? `(${operator.email})`
+                              : ""}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 {!operatorsLoading && operators.length === 0 && (
                   <p className="text-sm text-gray-500 mt-1">
                     No operators available
@@ -1276,24 +1300,6 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 </div>
               ))}
             </div>
-
-            {formData.amenities.length > 0 && (
-              <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                <p className="text-sm font-medium text-white/90 mb-2">
-                  Selected amenities ({formData.amenities.length}):
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {formData.amenities.map((amenity) => (
-                    <span
-                      key={amenity}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                    >
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Concierge */}
@@ -1417,17 +1423,45 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                         <label className="block text-sm font-medium text-white/90 mb-2">
                           Type
                         </label>
-                        <select
-                          value={pet.type}
-                          onChange={(e) =>
-                            updatePet(index, "type", e.target.value)
-                          }
-                          className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                        >
-                          <option value="dog">Dog</option>
-                          <option value="cat">Cat</option>
-                          <option value="other">Other</option>
-                        </select>
+                        <div className="relative" data-dropdown>
+                          <div
+                            className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                            onClick={() => toggleDropdown(`pet_type_${index}`)}
+                          >
+                            <span className="capitalize">{pet.type}</span>
+                            <svg
+                              className="w-5 h-5 text-white/70"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                          {openDropdown === `pet_type_${index}` && (
+                            <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              {["dog", "cat", "other"].map((type) => (
+                                <div
+                                  key={type}
+                                  className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${
+                                    pet.type === type ? "bg-white/10" : ""
+                                  }`}
+                                  onClick={() => {
+                                    updatePet(index, "type", type);
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  {type}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {pet.type === "other" && (
@@ -1451,22 +1485,62 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                         <label className="block text-sm font-medium text-white/90 mb-2">
                           Size (Optional)
                         </label>
-                        <select
-                          value={pet.size || ""}
-                          onChange={(e) =>
-                            updatePet(
-                              index,
-                              "size",
-                              e.target.value || undefined
-                            )
-                          }
-                          className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                        >
-                          <option value="">Not specified</option>
-                          <option value="small">Small</option>
-                          <option value="medium">Medium</option>
-                          <option value="large">Large</option>
-                        </select>
+                        <div className="relative" data-dropdown>
+                          <div
+                            className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                            onClick={() => toggleDropdown(`pet_size_${index}`)}
+                          >
+                            <span
+                              className={
+                                pet.size ? "capitalize" : "text-white/50"
+                              }
+                            >
+                              {pet.size ? pet.size : "Not specified"}
+                            </span>
+                            <svg
+                              className="w-5 h-5 text-white/70"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                          {openDropdown === `pet_size_${index}` && (
+                            <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              {[
+                                { value: "", label: "Not specified" },
+                                { value: "small", label: "Small" },
+                                { value: "medium", label: "Medium" },
+                                { value: "large", label: "Large" },
+                              ].map((size) => (
+                                <div
+                                  key={size.value}
+                                  className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                                    (pet.size || "") === size.value
+                                      ? "bg-white/10"
+                                      : ""
+                                  }`}
+                                  onClick={() => {
+                                    updatePet(
+                                      index,
+                                      "size",
+                                      size.value || undefined
+                                    );
+                                    setOpenDropdown(null);
+                                  }}
+                                >
+                                  {size.label}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

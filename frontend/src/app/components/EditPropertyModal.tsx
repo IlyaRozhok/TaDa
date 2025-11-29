@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Save, Trash2, Upload } from "lucide-react";
-import { propertiesAPI, buildingsAPI } from "../lib/api";
+import { X, Save, Trash2, Upload, Plus, Minus } from "lucide-react";
+import { propertiesAPI, buildingsAPI, usersAPI } from "../lib/api";
 import {
   Property,
   PropertyType,
@@ -12,11 +12,47 @@ import {
   Bills,
 } from "../types/property";
 
+interface Pet {
+  type: "dog" | "cat" | "other";
+  customType?: string;
+  size?: "small" | "medium" | "large";
+}
+
+interface MetroStation {
+  label: string;
+  destination: number;
+}
+
+interface CommuteTime {
+  label: string;
+  destination: number;
+}
+
+interface LocalEssential {
+  label: string;
+  destination: number;
+}
+
+interface ConciergeHours {
+  from: number;
+  to: number;
+}
+
 interface Building {
   id: string;
   name: string;
   address: string;
   operator_id: string;
+  tenant_type?: string[];
+  amenities?: string[];
+  is_concierge?: boolean;
+  concierge_hours?: ConciergeHours | null;
+  pet_policy?: boolean;
+  pets?: Pet[] | null;
+  smoking_area?: boolean;
+  metro_stations?: MetroStation[];
+  commute_times?: CommuteTime[];
+  local_essentials?: LocalEssential[];
 }
 
 interface EditPropertyModalProps {
@@ -25,6 +61,7 @@ interface EditPropertyModalProps {
   onSubmit: (id: string, data: any) => Promise<void>;
   property: Property | null;
   isLoading?: boolean;
+  operators?: User[];
 }
 
 const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
@@ -33,6 +70,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   onSubmit,
   property,
   isLoading = false,
+  operators = [],
 }) => {
   const [formData, setFormData] = useState({
     apartment_number: "",
@@ -57,9 +95,28 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     video: "",
     documents: "",
     building_id: "",
+    // Inherited fields
+    address: "",
+    tenant_types: [] as string[],
+    amenities: [] as string[],
+    pets: null as Pet[] | null,
+    is_concierge: false,
+    concierge_hours: null as ConciergeHours | null,
+    pet_policy: false,
+    smoking_area_prop: false,
+    metro_stations: [] as MetroStation[],
+    commute_times: [] as CommuteTime[],
+    local_essentials: [] as LocalEssential[],
+    operator_id: "",
   });
 
   const [buildings, setBuildings] = useState<Building[]>([]);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  const [availableOperators, setAvailableOperators] = useState<User[]>([]);
+  const [operatorsLoading, setOperatorsLoading] = useState(false);
+
+  // Dropdown open states
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // File states for new uploads
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -84,6 +141,20 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   // Load property data when modal opens
   useEffect(() => {
     if (property && isOpen) {
+      // Ensure arrays are properly parsed
+      const parseArray = (value: any) => {
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
       setFormData({
         apartment_number: property.apartment_number || "",
         descriptions: property.descriptions || "",
@@ -109,6 +180,19 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         video: property.video || "",
         documents: property.documents || "",
         building_id: property.building_id || "",
+        // Inherited fields - parse arrays properly
+        address: property.address || "",
+        tenant_types: parseArray(property.tenant_types),
+        amenities: parseArray(property.amenities),
+        pets: property.pets ? (Array.isArray(property.pets) ? property.pets : []) : null,
+        is_concierge: property.is_concierge || false,
+        concierge_hours: property.concierge_hours || null,
+        pet_policy: property.pet_policy || false,
+        smoking_area_prop: property.smoking_area || false,
+        metro_stations: parseArray(property.metro_stations),
+        commute_times: parseArray(property.commute_times),
+        local_essentials: parseArray(property.local_essentials),
+        operator_id: property.operator_id || "",
       });
       // Reset removed media
       setRemovedPhotos([]);
@@ -120,12 +204,30 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     }
   }, [property, isOpen]);
 
-  // Load buildings
+  // Load buildings and operators when modal opens or building_type is private_landlord
   useEffect(() => {
     if (isOpen) {
       loadBuildings();
+      // Load operators if building_type is already private_landlord
+      if (formData.building_type === "private_landlord") {
+        loadOperators();
+      }
     }
   }, [isOpen]);
+
+  // Load operators when building_type changes to private_landlord
+  useEffect(() => {
+    if (formData.building_type === "private_landlord" && isOpen) {
+      loadOperators();
+    }
+  }, [formData.building_type]);
+
+  // Use operators from props
+  useEffect(() => {
+    if (operators && operators.length > 0) {
+      setAvailableOperators(operators);
+    }
+  }, [operators]);
 
   const loadBuildings = async () => {
     try {
@@ -135,6 +237,155 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     } catch (error) {
       console.error("Failed to load buildings:", error);
     }
+  };
+
+  const loadOperators = async () => {
+    try {
+      console.log("🔄 Loading operators in EditPropertyModal...");
+      console.log("🔍 Current formData.operator_id:", formData.operator_id);
+      setOperatorsLoading(true);
+
+      // Try to load operators with role filter first
+      try {
+        console.log("🔍 Trying usersAPI.getAll({ role: 'operator' })");
+        const operatorsResponse = await usersAPI.getAll({ role: 'operator' });
+        console.log("🔍 Operators API response:", operatorsResponse);
+        const operatorsData = operatorsResponse.data?.data || operatorsResponse.data || [];
+        console.log("✅ Operators loaded with role filter:", operatorsData.length, "operators");
+
+        if (operatorsData.length > 0) {
+          let finalOperators = operatorsData;
+
+          // If the current property's operator is not in the list, add it
+          if (formData.operator_id && !finalOperators.find(op => op.id === formData.operator_id)) {
+            console.log("⚠️ Current operator not found in list, adding it:", formData.operator_id);
+            console.log("🔍 Available operators IDs:", finalOperators.map(op => op.id));
+            finalOperators = [
+              { id: formData.operator_id, full_name: `Operator ${formData.operator_id}`, email: '', role: 'operator' },
+              ...finalOperators
+            ];
+          }
+
+          console.log("✅ Final operators set:", finalOperators.length, "operators");
+          setAvailableOperators(finalOperators);
+          return;
+        }
+      } catch (operatorsError) {
+        console.log("⚠️ Failed to load operators with role filter:", operatorsError);
+      }
+
+      // Fallback: load all users and filter
+      console.log("🔍 Falling back to usersAPI.getAll() without filter");
+      const response = await usersAPI.getAll();
+      console.log("🔍 All users API response:", response);
+      const usersData = response.data?.users || response.data?.data || response.data || [];
+      console.log("✅ All users loaded:", usersData.length, "users");
+      console.log("🔍 Users data sample:", usersData.slice(0, 3));
+
+      // Filter only operators
+      const operatorsData = usersData.filter((user: User) => {
+        const isOperator = user.role === 'operator' || user.role === 'Operator';
+        console.log("🔍 User", user.id, user.email, user.role, "-> isOperator:", isOperator);
+        return isOperator;
+      });
+      console.log("✅ Filtered operators:", operatorsData.length, "operators");
+
+      let finalOperators = operatorsData;
+
+      // If no real operators found, use mock data
+      if (operatorsData.length === 0) {
+        console.log("⚠️ No real operators found, using mock data");
+        finalOperators = [
+          { id: 'mock-op-1', full_name: 'Test Operator 1', email: 'operator1@test.com', role: 'operator' },
+          { id: 'mock-op-2', full_name: 'Test Operator 2', email: 'operator2@test.com', role: 'operator' },
+        ];
+      }
+
+      // If the current property's operator is not in the list, add it
+      if (formData.operator_id && !finalOperators.find(op => op.id === formData.operator_id)) {
+        console.log("⚠️ Current operator not found in list, adding it:", formData.operator_id);
+        console.log("🔍 Available operators IDs:", finalOperators.map(op => op.id));
+        finalOperators = [
+          { id: formData.operator_id, full_name: `Operator ${formData.operator_id}`, email: '', role: 'operator' },
+          ...finalOperators
+        ];
+      }
+
+      console.log("✅ Final operators set:", finalOperators.length, "operators");
+      console.log("✅ Final operators:", finalOperators);
+      setAvailableOperators(finalOperators);
+    } catch (error) {
+      console.error("❌ Failed to load operators:", error);
+      setAvailableOperators([]);
+    } finally {
+      setOperatorsLoading(false);
+    }
+  };
+
+
+  // Update selectedBuilding when building_id changes
+  useEffect(() => {
+    if (formData.building_id && formData.building_type !== "private_landlord") {
+      const building = buildings.find((b) => b.id === formData.building_id);
+      if (building) {
+        setSelectedBuilding(building);
+      }
+    } else {
+      setSelectedBuilding(null);
+    }
+  }, [formData.building_id, formData.building_type, buildings]);
+
+  // Load building details and prefill inherited fields if property fields are empty
+  useEffect(() => {
+    const loadBuildingDetails = async () => {
+      if (formData.building_id && formData.building_type !== "private_landlord" && buildings.length > 0) {
+        try {
+          const response = await buildingsAPI.getById(formData.building_id);
+          const building = response.data;
+          if (building) {
+            // Only prefill if the property doesn't have its own data
+            setFormData((prev) => ({
+              ...prev,
+              address: prev.address || building.address || "",
+              tenant_types: prev.tenant_types?.length > 0 ? prev.tenant_types : (building.tenant_type || []),
+              amenities: prev.amenities?.length > 0 ? prev.amenities : (building.amenities || []),
+              is_concierge: prev.is_concierge !== undefined ? prev.is_concierge : (building.is_concierge || false),
+              concierge_hours: prev.concierge_hours || building.concierge_hours || null,
+              pet_policy: prev.pet_policy !== undefined ? prev.pet_policy : (building.pet_policy || false),
+              pets: prev.pets || building.pets || null,
+              smoking_area_prop: prev.smoking_area_prop !== undefined ? prev.smoking_area_prop : (building.smoking_area || false),
+              metro_stations: prev.metro_stations?.length > 0 ? prev.metro_stations : (building.metro_stations || []),
+              commute_times: prev.commute_times?.length > 0 ? prev.commute_times : (building.commute_times || []),
+              local_essentials: prev.local_essentials?.length > 0 ? prev.local_essentials : (building.local_essentials || []),
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to load building details:", error);
+        }
+      }
+    };
+
+    if (isOpen && formData.building_id) {
+      loadBuildingDetails();
+    }
+  }, [isOpen, formData.building_id, buildings.length]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('[data-dropdown]')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Toggle dropdown helper
+  const toggleDropdown = (name: string) => {
+    setOpenDropdown(openDropdown === name ? null : name);
   };
 
   // Photo previews for new uploads
@@ -200,12 +451,157 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     setRemovedPhotos((prev) => [...prev, photoUrl]);
   };
 
+  // Helper to check if fields are readonly (not private_landlord and has building selected)
+  const isFieldReadonly = formData.building_type !== "private_landlord" && !!formData.building_id;
+
+  // Metro Stations helpers
+  const addMetroStation = () => {
+    setFormData((prev) => ({
+      ...prev,
+      metro_stations: [...prev.metro_stations, { label: "", destination: 0 }],
+    }));
+  };
+
+  const removeMetroStation = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      metro_stations: prev.metro_stations.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateMetroStation = (
+    index: number,
+    field: keyof MetroStation,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      metro_stations: prev.metro_stations.map((station, i) =>
+        i === index ? { ...station, [field]: value } : station
+      ),
+    }));
+  };
+
+  // Commute Times helpers
+  const addCommuteTime = () => {
+    setFormData((prev) => ({
+      ...prev,
+      commute_times: [...prev.commute_times, { label: "", destination: 0 }],
+    }));
+  };
+
+  const removeCommuteTime = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      commute_times: prev.commute_times.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateCommuteTime = (
+    index: number,
+    field: keyof CommuteTime,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      commute_times: prev.commute_times.map((time, i) =>
+        i === index ? { ...time, [field]: value } : time
+      ),
+    }));
+  };
+
+  // Local Essentials helpers
+  const addLocalEssential = () => {
+    setFormData((prev) => ({
+      ...prev,
+      local_essentials: [
+        ...prev.local_essentials,
+        { label: "", destination: 0 },
+      ],
+    }));
+  };
+
+  const removeLocalEssential = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      local_essentials: prev.local_essentials.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateLocalEssential = (
+    index: number,
+    field: keyof LocalEssential,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      local_essentials: prev.local_essentials.map((essential, i) =>
+        i === index ? { ...essential, [field]: value } : essential
+      ),
+    }));
+  };
+
+  // Available amenities list
+  const availableAmenities = [
+    "Gym",
+    "Co-working",
+    "Meeting rooms",
+    "Lounge",
+    "Cinema",
+    "Roof terrace",
+    "Courtyard",
+    "Parking",
+    "Bike storage",
+    "Parcel room",
+    "Maintenance",
+    "Events calendar",
+    "Pet areas",
+    "Kids' room",
+    "Garden",
+  ];
+
+  const toggleAmenity = (amenity: string) => {
+    if (isFieldReadonly) return;
+    setFormData((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter((a) => a !== amenity)
+        : [...prev.amenities, amenity],
+    }));
+  };
+
+  // Pet helpers
+  const addPet = () => {
+    setFormData((prev) => ({
+      ...prev,
+      pets: [...(prev.pets || []), { type: "dog" as "dog" }],
+    }));
+  };
+
+  const removePet = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      pets: prev.pets ? prev.pets.filter((_, i) => i !== index) : null,
+    }));
+  };
+
+  const updatePet = (index: number, field: keyof Pet, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      pets: prev.pets
+        ? prev.pets.map((pet, i) =>
+            i === index ? { ...pet, [field]: value } : pet
+          )
+        : null,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!property) return;
 
-    if (!formData.building_id) {
+    if (!formData.building_id && formData.building_type !== "private_landlord") {
       throw new Error("Please select a building");
     }
 
@@ -260,6 +656,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       };
 
       // Build the property data object, ensuring all numeric fields are properly converted
+      // Prepare property data - exclude operator_id for regular buildings (backend gets it from building)
+      const { operator_id, ...formDataWithoutOperator } = formData;
       const propertyData: any = {
         building_id: formData.building_id,
         apartment_number: formData.apartment_number?.trim() || null,
@@ -283,11 +681,32 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         balcony: formData.balcony,
         terrace: formData.terrace,
         luxury: formData.luxury,
+        // Inherited fields (for private landlord)
+        address: formData.address || null,
+        tenant_types: formData.tenant_types || [],
+        amenities: formData.amenities || [],
+        is_concierge: formData.is_concierge,
+        concierge_hours: formData.concierge_hours || null,
+        pet_policy: formData.pet_policy,
+        pets: formData.pets || null,
+        smoking_area: formData.smoking_area_prop,
+        metro_stations: formData.metro_stations || [],
+        commute_times: formData.commute_times || [],
+        local_essentials: formData.local_essentials || [],
         // Media
         photos: allPhotos,
         video: finalVideo || null,
         documents: finalDocuments || null,
       };
+
+      // For private landlord, operator_id must be provided
+      if (formData.building_type === "private_landlord") {
+        if (!formData.operator_id) {
+          throw new Error("Please select an operator for private landlord properties");
+        }
+        propertyData.operator_id = formData.operator_id;
+        propertyData.building_id = null; // Explicitly set to null for private landlord
+      }
 
       // Remove null values from optional fields (except for explicitly nullable fields like price, deposit)
       // But keep null for fields that backend expects to be nullable
@@ -358,26 +777,83 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Building *
-              </label>
-              <select
-                value={formData.building_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, building_id: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                required
-              >
-                <option value="">Select Building</option>
-                {buildings.map((building) => (
-                  <option key={building.id} value={building.id}>
-                    {building.name} - {building.address}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {formData.building_type !== "private_landlord" ? (
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Building *
+                </label>
+                <div className="relative" data-dropdown>
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                    onClick={() => toggleDropdown('building')}
+                  >
+                    <span className={formData.building_id ? 'text-white' : 'text-white/50'}>
+                      {formData.building_id
+                        ? buildings.find(b => b.id === formData.building_id)?.name + ' - ' + buildings.find(b => b.id === formData.building_id)?.address
+                        : 'Select Building'}
+                    </span>
+                    <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {openDropdown === 'building' && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {buildings.map((building) => (
+                        <div
+                          key={building.id}
+                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${formData.building_id === building.id ? 'bg-white/10' : ''}`}
+                          onClick={() => {
+                            setFormData({ ...formData, building_id: building.id });
+                            setOpenDropdown(null);
+                          }}
+                        >
+                          {building.name} - {building.address}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Operator *
+                </label>
+                <div className="relative" data-dropdown>
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                    onClick={() => toggleDropdown('operator')}
+                  >
+                    <span className={formData.operator_id ? 'text-white' : 'text-white/50'}>
+                      {operatorsLoading ? 'Loading operators...' : (
+                        formData.operator_id
+                          ? availableOperators.find(o => o.id === formData.operator_id)?.full_name || availableOperators.find(o => o.id === formData.operator_id)?.email
+                          : 'Select Operator'
+                      )}
+                    </span>
+                    <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {openDropdown === 'operator' && !operatorsLoading && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {availableOperators.map((operator) => (
+                        <div
+                          key={operator.id}
+                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${formData.operator_id === operator.id ? 'bg-white/10' : ''}`}
+                          onClick={() => {
+                            setFormData({ ...formData, operator_id: operator.id });
+                            setOpenDropdown(null);
+                          }}
+                        >
+                          {operator.full_name || operator.email}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
@@ -438,137 +914,293 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Property Type
               </label>
-              <select
-                value={formData.property_type}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    property_type: e.target.value as PropertyType,
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              >
-                <option value="">Select Type</option>
-                {Object.values(PropertyType).map((type) => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown('property_type')}
+                >
+                  <span className={formData.property_type ? 'text-white' : 'text-white/50'}>
+                    {formData.property_type
+                      ? formData.property_type.charAt(0).toUpperCase() + formData.property_type.slice(1)
+                      : 'Select Type'}
+                  </span>
+                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {openDropdown === 'property_type' && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {Object.values(PropertyType).map((type) => (
+                      <div
+                        key={type}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.property_type === type ? 'bg-white/10' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, property_type: type });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Building Type
               </label>
-              <select
-                value={formData.building_type}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    building_type: e.target.value as BuildingType,
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              >
-                <option value="">Select Type</option>
-                {Object.values(BuildingType)
-                  .filter(type => type !== "luxury") // Remove luxury from dropdown
-                  .map((type) => (
-                  <option key={type} value={type}>
-                    {type
-                      .replace(/_/g, " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown('building_type')}
+                >
+                  <span className={formData.building_type ? 'text-white' : 'text-white/50'}>
+                    {formData.building_type
+                      ? formData.building_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+                      : 'Select Type'}
+                  </span>
+                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {openDropdown === 'building_type' && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {Object.values(BuildingType)
+                      .filter(type => type !== "luxury")
+                      .map((type) => (
+                      <div
+                        key={type}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.building_type === type ? 'bg-white/10' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, building_type: type });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
+            {/* Address field - readonly if linked to building */}
             <div>
-              <label className="flex items-center space-x-2 text-white/90">
-                <input
-                  type="checkbox"
-                  checked={formData.luxury}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      luxury: e.target.checked,
-                    })
-                  }
-                  className="rounded border-white/20 bg-white/10 text-white focus:ring-white/50"
-                />
-                <span className="text-sm font-medium">Luxury Property</span>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Address {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
               </label>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
+                readOnly={isFieldReadonly}
+                className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+              />
+            </div>
+
+            {/* Tenant Type multi-select dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Tenant Types {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              </label>
+              <div className="relative" data-dropdown>
+                <div
+                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                  onClick={() => !isFieldReadonly && toggleDropdown('tenant_types')}
+                >
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {formData.tenant_types.length > 0 ? (
+                      formData.tenant_types.map((value) => {
+                        const option = [
+                          { value: "corporateLets", label: "Corporate Lets" },
+                          { value: "sharers", label: "Sharers" },
+                          { value: "student", label: "Student" },
+                          { value: "family", label: "Family" },
+                          { value: "elder", label: "Elder" },
+                        ].find((opt) => opt.value === value);
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                          >
+                            {option?.label || value}
+                            {!isFieldReadonly && (
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    tenant_types: formData.tenant_types.filter((t) => t !== value),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-white/50">Select types...</span>
+                    )}
+                  </div>
+                  {!isFieldReadonly && (
+                    <svg className="w-5 h-5 text-white/70 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </div>
+                {!isFieldReadonly && openDropdown === 'tenant_types' && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {[
+                      { value: "corporateLets", label: "Corporate Lets" },
+                      { value: "sharers", label: "Sharers" },
+                      { value: "student", label: "Student" },
+                      { value: "family", label: "Family" },
+                      { value: "elder", label: "Elder" },
+                    ].map((option) => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                        onClick={() => {
+                          const newTenantTypes = formData.tenant_types.includes(option.value)
+                            ? formData.tenant_types.filter((t) => t !== option.value)
+                            : [...formData.tenant_types, option.value];
+                          setFormData({
+                            ...formData,
+                            tenant_types: newTenantTypes,
+                          });
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.tenant_types.includes(option.value)}
+                          readOnly
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{option.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Furnishing
               </label>
-              <select
-                value={formData.furnishing}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    furnishing: e.target.value as Furnishing,
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              >
-                <option value="">Select Type</option>
-                {Object.values(Furnishing).map((type) => (
-                  <option key={type} value={type}>
-                    {type
-                      .replace(/_/g, " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown('furnishing')}
+                >
+                  <span className={formData.furnishing ? 'text-white' : 'text-white/50'}>
+                    {formData.furnishing
+                      ? formData.furnishing.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+                      : 'Select Type'}
+                  </span>
+                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {openDropdown === 'furnishing' && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {Object.values(Furnishing).map((type) => (
+                      <div
+                        key={type}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.furnishing === type ? 'bg-white/10' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, furnishing: type });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Let Duration
               </label>
-              <select
-                value={formData.let_duration}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    let_duration: e.target.value as LetDuration,
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              >
-                <option value="">Select Duration</option>
-                {Object.values(LetDuration).map((type) => (
-                  <option key={type} value={type}>
-                    {type
-                      .replace(/_/g, " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown('let_duration')}
+                >
+                  <span className={formData.let_duration ? 'text-white' : 'text-white/50'}>
+                    {formData.let_duration
+                      ? formData.let_duration.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+                      : 'Select Duration'}
+                  </span>
+                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {openDropdown === 'let_duration' && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {Object.values(LetDuration).map((type) => (
+                      <div
+                        key={type}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.let_duration === type ? 'bg-white/10' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, let_duration: type });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Bills
               </label>
-              <select
-                value={formData.bills}
-                onChange={(e) =>
-                  setFormData({ ...formData, bills: e.target.value as Bills })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              >
-                <option value="">Select Option</option>
-                {Object.values(Bills).map((type) => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown('bills')}
+                >
+                  <span className={formData.bills ? 'text-white' : 'text-white/50'}>
+                    {formData.bills
+                      ? formData.bills.charAt(0).toUpperCase() + formData.bills.slice(1)
+                      : 'Select Option'}
+                  </span>
+                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {openDropdown === 'bills' && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {Object.values(Bills).map((type) => (
+                      <div
+                        key={type}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.bills === type ? 'bg-white/10' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, bills: type });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -666,7 +1298,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           </div>
 
           {/* Checkboxes */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -702,6 +1334,457 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               />
               <span className="text-sm text-white/90">Terrace</span>
             </label>
+
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.luxury}
+                onChange={(e) =>
+                  setFormData({ ...formData, luxury: e.target.checked })
+                }
+                className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
+              />
+              <span className="text-sm text-white/90">Luxury</span>
+            </label>
+          </div>
+
+          {/* Property Features */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+              Amenities {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {availableAmenities.map((amenity) => (
+                <div key={amenity} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`edit-amenity-${amenity}`}
+                    checked={formData.amenities.includes(amenity)}
+                    onChange={() => toggleAmenity(amenity)}
+                    disabled={isFieldReadonly}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  />
+                  <label
+                    htmlFor={`edit-amenity-${amenity}`}
+                    className={`text-sm font-medium text-white/90 ${isFieldReadonly ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    {amenity}
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            {/* Concierge */}
+            <div className="space-y-4">
+              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+                Concierge {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              </h4>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_concierge_property_edit"
+                  checked={formData.is_concierge}
+                  onChange={(e) =>
+                    !isFieldReadonly && setFormData({ ...formData, is_concierge: e.target.checked })
+                  }
+                  disabled={isFieldReadonly}
+                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                />
+                <label
+                  htmlFor="is_concierge_property_edit"
+                  className="text-sm font-medium text-white/90"
+                >
+                  Has Concierge Service
+                </label>
+              </div>
+
+              {formData.is_concierge && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+                  <div>
+                    <label className="block text-sm font-medium text-white/90 mb-2">
+                      Opening Hour (0-23)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={formData.concierge_hours?.from || ""}
+                      onChange={(e) =>
+                        !isFieldReadonly && setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: parseInt(e.target.value) || 0,
+                            to: formData.concierge_hours?.to || 22,
+                          },
+                        })
+                      }
+                      readOnly={isFieldReadonly}
+                      className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/90 mb-2">
+                      Closing Hour (0-23)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={formData.concierge_hours?.to || ""}
+                      onChange={(e) =>
+                        !isFieldReadonly && setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: formData.concierge_hours?.from || 8,
+                            to: parseInt(e.target.value) || 22,
+                          },
+                        })
+                      }
+                      readOnly={isFieldReadonly}
+                      className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pets */}
+            <div className="space-y-4">
+              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+                Pet Policy {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              </h4>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="pet_policy_property_edit"
+                  checked={formData.pet_policy}
+                  onChange={(e) =>
+                    !isFieldReadonly && setFormData({ ...formData, pet_policy: e.target.checked })
+                  }
+                  disabled={isFieldReadonly}
+                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                />
+                <label
+                  htmlFor="pet_policy_property_edit"
+                  className="text-sm font-medium text-white/90"
+                >
+                  Pets Allowed
+                </label>
+              </div>
+
+              {formData.pet_policy && (
+                <div className="ml-6 space-y-4">
+                  {(formData.pets || []).map((pet, index) => (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-md p-4"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h5 className="font-medium text-white">
+                          Pet {index + 1}
+                        </h5>
+                        {!isFieldReadonly && (
+                          <button
+                            type="button"
+                            onClick={() => removePet(index)}
+                            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-white/90 mb-2">
+                            Type
+                          </label>
+                          <div className="relative" data-dropdown>
+                            <div
+                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                              onClick={() => !isFieldReadonly && toggleDropdown(`pet_type_${index}`)}
+                            >
+                              <span className="capitalize">{pet.type}</span>
+                              {!isFieldReadonly && (
+                                <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )}
+                            </div>
+                            {!isFieldReadonly && openDropdown === `pet_type_${index}` && (
+                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {['dog', 'cat', 'other'].map((type) => (
+                                  <div
+                                    key={type}
+                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${pet.type === type ? 'bg-white/10' : ''}`}
+                                    onClick={() => {
+                                      updatePet(index, "type", type);
+                                      setOpenDropdown(null);
+                                    }}
+                                  >
+                                    {type}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {pet.type === "other" && (
+                          <div>
+                            <label className="block text-sm font-medium text-white/90 mb-2">
+                              Custom Type
+                            </label>
+                            <input
+                              type="text"
+                              value={pet.customType || ""}
+                              onChange={(e) =>
+                                !isFieldReadonly && updatePet(index, "customType", e.target.value)
+                              }
+                              readOnly={isFieldReadonly}
+                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                              placeholder="e.g., Hamster"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-sm font-medium text-white/90 mb-2">
+                            Size (Optional)
+                          </label>
+                          <div className="relative" data-dropdown>
+                            <div
+                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                              onClick={() => !isFieldReadonly && toggleDropdown(`pet_size_${index}`)}
+                            >
+                              <span className={pet.size ? 'capitalize' : 'text-white/50'}>
+                                {pet.size ? pet.size : 'Not specified'}
+                              </span>
+                              {!isFieldReadonly && (
+                                <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )}
+                            </div>
+                            {!isFieldReadonly && openDropdown === `pet_size_${index}` && (
+                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {[{ value: '', label: 'Not specified' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }].map((size) => (
+                                  <div
+                                    key={size.value}
+                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${(pet.size || '') === size.value ? 'bg-white/10' : ''}`}
+                                    onClick={() => {
+                                      updatePet(index, "size", size.value || undefined);
+                                      setOpenDropdown(null);
+                                    }}
+                                  >
+                                    {size.label}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {!isFieldReadonly && (
+                    <button
+                      type="button"
+                      onClick={addPet}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-200"
+                    >
+                      Add Pet Type
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Smoking Area */}
+            <div className="space-y-4">
+              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+                Other {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              </h4>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="smoking_area_property_edit"
+                  checked={formData.smoking_area_prop}
+                  onChange={(e) =>
+                    !isFieldReadonly && setFormData({ ...formData, smoking_area_prop: e.target.checked })
+                  }
+                  disabled={isFieldReadonly}
+                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                />
+                <label
+                  htmlFor="smoking_area_property_edit"
+                  className="text-sm font-medium text-white/90"
+                >
+                  Has Smoking Area
+                </label>
+              </div>
+            </div>
+
+            {/* Metro Stations */}
+            <div className="space-y-4">
+              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+                Metro Stations {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              </h4>
+
+              {formData.metro_stations.map((station, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={station.label}
+                    onChange={(e) =>
+                      !isFieldReadonly && updateMetroStation(index, "label", e.target.value)
+                    }
+                    readOnly={isFieldReadonly}
+                    className={`flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    placeholder="Station name"
+                  />
+                  <input
+                    type="number"
+                    value={station.destination}
+                    onChange={(e) =>
+                      !isFieldReadonly && updateMetroStation(index, "destination", parseInt(e.target.value) || 0)
+                    }
+                    readOnly={isFieldReadonly}
+                    className={`w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    placeholder="min"
+                    min="0"
+                  />
+                  {!isFieldReadonly && (
+                    <button
+                      type="button"
+                      onClick={() => removeMetroStation(index)}
+                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {!isFieldReadonly && (
+                <button
+                  type="button"
+                  onClick={addMetroStation}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+                >
+                  Add Metro Station
+                </button>
+              )}
+            </div>
+
+            {/* Commute Times */}
+            <div className="space-y-4">
+              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+                Commute Times {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              </h4>
+
+              {formData.commute_times.map((time, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={time.label}
+                    onChange={(e) =>
+                      !isFieldReadonly && updateCommuteTime(index, "label", e.target.value)
+                    }
+                    readOnly={isFieldReadonly}
+                    className={`flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    placeholder="Destination"
+                  />
+                  <input
+                    type="number"
+                    value={time.destination}
+                    onChange={(e) =>
+                      !isFieldReadonly && updateCommuteTime(index, "destination", parseInt(e.target.value) || 0)
+                    }
+                    readOnly={isFieldReadonly}
+                    className={`w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    placeholder="min"
+                    min="0"
+                  />
+                  {!isFieldReadonly && (
+                    <button
+                      type="button"
+                      onClick={() => removeCommuteTime(index)}
+                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {!isFieldReadonly && (
+                <button
+                  type="button"
+                  onClick={addCommuteTime}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+                >
+                  Add Commute Time
+                </button>
+              )}
+            </div>
+
+            {/* Local Essentials */}
+            <div className="space-y-4">
+              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+                Local Essentials {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              </h4>
+
+              {formData.local_essentials.map((essential, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={essential.label}
+                    onChange={(e) =>
+                      !isFieldReadonly && updateLocalEssential(index, "label", e.target.value)
+                    }
+                    readOnly={isFieldReadonly}
+                    className={`flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    placeholder="Essential name"
+                  />
+                  <input
+                    type="number"
+                    value={essential.destination}
+                    onChange={(e) =>
+                      !isFieldReadonly && updateLocalEssential(index, "destination", parseInt(e.target.value) || 0)
+                    }
+                    readOnly={isFieldReadonly}
+                    className={`w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    placeholder="m"
+                    min="0"
+                  />
+                  {!isFieldReadonly && (
+                    <button
+                      type="button"
+                      onClick={() => removeLocalEssential(index)}
+                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {!isFieldReadonly && (
+                <button
+                  type="button"
+                  onClick={addLocalEssential}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+                >
+                  Add Local Essential
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Media Uploads */}

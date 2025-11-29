@@ -191,8 +191,30 @@ export class BuildingService {
         .set({ operator_id: operatorId })
         .where("building_id = :buildingId", { buildingId: building.id })
         .execute();
-      
+
       console.log(`✅ Updated operator_id for ${propertiesUpdateResult.affected} properties`);
+    }
+
+    // Cascade inherited fields updates to all related properties
+    const inheritedFieldsUpdates: Partial<Property> = {};
+
+    if (updateBuildingDto.address !== undefined) inheritedFieldsUpdates.address = updateBuildingDto.address;
+    if (updateBuildingDto.tenant_type !== undefined) inheritedFieldsUpdates.tenant_types = updateBuildingDto.tenant_type;
+    if (updateBuildingDto.amenities !== undefined) inheritedFieldsUpdates.amenities = updateBuildingDto.amenities;
+    if (updateBuildingDto.is_concierge !== undefined) inheritedFieldsUpdates.is_concierge = updateBuildingDto.is_concierge;
+    if (updateBuildingDto.pet_policy !== undefined) inheritedFieldsUpdates.pet_policy = updateBuildingDto.pet_policy;
+    if (updateBuildingDto.smoking_area !== undefined) inheritedFieldsUpdates.smoking_area = updateBuildingDto.smoking_area;
+
+    if (Object.keys(inheritedFieldsUpdates).length > 0) {
+      console.log("🔄 Cascading inherited fields update to related properties...", inheritedFieldsUpdates);
+      const inheritedFieldsUpdateResult = await this.propertyRepository
+        .createQueryBuilder()
+        .update(Property)
+        .set(inheritedFieldsUpdates)
+        .where("building_id = :buildingId", { buildingId: building.id })
+        .execute();
+
+      console.log(`✅ Updated inherited fields for ${inheritedFieldsUpdateResult.affected} properties`);
     }
     
     // Reload the building with relations to ensure we return the correct operator

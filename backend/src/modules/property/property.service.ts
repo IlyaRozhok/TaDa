@@ -16,24 +16,61 @@ export class PropertyService {
   ) {}
 
   async create(createPropertyDto: CreatePropertyDto): Promise<Property> {
-    // Verify that the building exists
-    const building = await this.buildingRepository.findOne({
-      where: { id: createPropertyDto.building_id },
-      relations: ["operator"],
-    });
+    let building: any = null;
 
-    if (!building) {
-      throw new NotFoundException("Building not found");
+    // For private landlord, building is not required
+    if (createPropertyDto.building_id) {
+      building = await this.buildingRepository.findOne({
+        where: { id: createPropertyDto.building_id },
+        relations: ["operator"],
+      });
+
+      if (!building) {
+        throw new NotFoundException("Building not found");
+      }
     }
 
     // Prepare data
     const propertyData: any = {
-      building_id: createPropertyDto.building_id,
-      operator_id: building.operator_id,
       title: createPropertyDto.title,
       photos: createPropertyDto.photos || [],
       luxury: createPropertyDto.luxury || false,
     };
+
+    // Handle building vs private landlord logic
+    if (createPropertyDto.building_type === "private_landlord") {
+      // For private landlord, link directly to operator
+      propertyData.building_id = null;
+      propertyData.operator_id = createPropertyDto.operator_id;
+      // Use provided values for inherited fields
+      propertyData.address = createPropertyDto.address;
+      propertyData.tenant_types = createPropertyDto.tenant_types || [];
+      propertyData.amenities = createPropertyDto.amenities || [];
+      propertyData.is_concierge = createPropertyDto.is_concierge;
+      propertyData.pet_policy = createPropertyDto.pet_policy;
+      propertyData.smoking_area = createPropertyDto.smoking_area;
+      propertyData.metro_stations = createPropertyDto.metro_stations || [];
+      propertyData.commute_times = createPropertyDto.commute_times || [];
+      propertyData.local_essentials = createPropertyDto.local_essentials || [];
+      propertyData.concierge_hours = createPropertyDto.concierge_hours || null;
+      propertyData.pets = createPropertyDto.pets || null;
+    } else {
+      // Normal case - link to building and inherit fields
+      propertyData.building_id = createPropertyDto.building_id;
+      propertyData.operator_id = building.operator_id;
+      // Inherit fields from building
+      propertyData.address = building.address;
+      propertyData.tenant_types = building.tenant_type || [];
+      propertyData.amenities = building.amenities || [];
+      propertyData.is_concierge = building.is_concierge;
+      propertyData.pet_policy = building.pet_policy;
+      propertyData.smoking_area = building.smoking_area;
+      propertyData.metro_stations = building.metro_stations || [];
+      propertyData.commute_times = building.commute_times || [];
+      propertyData.local_essentials = building.local_essentials || [];
+      propertyData.concierge_hours = building.concierge_hours || null;
+      propertyData.pets = building.pets || null;
+    }
 
     // Add optional fields if provided
     if (createPropertyDto.apartment_number !== undefined) {
@@ -117,13 +154,52 @@ export class PropertyService {
     const property = await this.findOne(id);
     const updateData: any = {};
 
-    // Update building if changed
-    if (
+    // Handle building type changes
+    if (updatePropertyDto.building_type !== undefined && updatePropertyDto.building_type !== property.building_type) {
+      if (updatePropertyDto.building_type === "private_landlord") {
+        // Unlink from building and link directly to operator
+        updateData.building_id = null;
+        if (updatePropertyDto.operator_id) {
+          updateData.operator_id = updatePropertyDto.operator_id;
+        }
+        // The inherited fields will be updated below
+      } else {
+        // Link back to building if changed from private_landlord
+        if (updatePropertyDto.building_id) {
+          const building = await this.buildingRepository.findOne({
+            where: { id: updatePropertyDto.building_id },
+            relations: ["operator"],
+          });
+
+          if (!building) {
+            throw new NotFoundException("Building not found");
+          }
+
+          updateData.building_id = updatePropertyDto.building_id;
+          updateData.operator_id = building.operator_id;
+          // Re-inherit fields from building
+          updateData.address = building.address;
+          updateData.tenant_types = building.tenant_type || [];
+          updateData.amenities = building.amenities || [];
+          updateData.is_concierge = building.is_concierge;
+          updateData.pet_policy = building.pet_policy;
+          updateData.smoking_area = building.smoking_area;
+          updateData.metro_stations = building.metro_stations || [];
+          updateData.commute_times = building.commute_times || [];
+          updateData.local_essentials = building.local_essentials || [];
+          updateData.concierge_hours = building.concierge_hours || null;
+          updateData.pets = building.pets || null;
+        }
+      }
+    }
+    // Update building if changed (normal case)
+    else if (
       updatePropertyDto.building_id &&
       updatePropertyDto.building_id !== property.building_id
     ) {
       const building = await this.buildingRepository.findOne({
         where: { id: updatePropertyDto.building_id },
+        relations: ["operator"],
       });
 
       if (!building) {
@@ -132,6 +208,19 @@ export class PropertyService {
 
       updateData.building_id = updatePropertyDto.building_id;
       updateData.operator_id = building.operator_id;
+
+      // Re-inherit fields from new building
+      updateData.address = building.address;
+      updateData.tenant_types = building.tenant_type || [];
+      updateData.amenities = building.amenities || [];
+      updateData.is_concierge = building.is_concierge;
+      updateData.pet_policy = building.pet_policy;
+      updateData.smoking_area = building.smoking_area;
+      updateData.metro_stations = building.metro_stations || [];
+      updateData.commute_times = building.commute_times || [];
+      updateData.local_essentials = building.local_essentials || [];
+      updateData.concierge_hours = building.concierge_hours || null;
+      updateData.pets = building.pets || null;
     }
 
     // Update fields
@@ -169,6 +258,51 @@ export class PropertyService {
 
     if (updatePropertyDto.luxury !== undefined) {
       updateData.luxury = updatePropertyDto.luxury;
+    }
+
+    // Inherited fields
+    if (updatePropertyDto.address !== undefined) {
+      updateData.address = updatePropertyDto.address;
+    }
+
+    if (updatePropertyDto.tenant_types !== undefined) {
+      updateData.tenant_types = updatePropertyDto.tenant_types;
+    }
+
+    if (updatePropertyDto.amenities !== undefined) {
+      updateData.amenities = updatePropertyDto.amenities;
+    }
+
+    if (updatePropertyDto.is_concierge !== undefined) {
+      updateData.is_concierge = updatePropertyDto.is_concierge;
+    }
+
+    if (updatePropertyDto.pet_policy !== undefined) {
+      updateData.pet_policy = updatePropertyDto.pet_policy;
+    }
+
+    if (updatePropertyDto.smoking_area !== undefined) {
+      updateData.smoking_area = updatePropertyDto.smoking_area;
+    }
+
+    if (updatePropertyDto.metro_stations !== undefined) {
+      updateData.metro_stations = updatePropertyDto.metro_stations;
+    }
+
+    if (updatePropertyDto.commute_times !== undefined) {
+      updateData.commute_times = updatePropertyDto.commute_times;
+    }
+
+    if (updatePropertyDto.local_essentials !== undefined) {
+      updateData.local_essentials = updatePropertyDto.local_essentials;
+    }
+
+    if (updatePropertyDto.concierge_hours !== undefined) {
+      updateData.concierge_hours = updatePropertyDto.concierge_hours;
+    }
+
+    if (updatePropertyDto.pets !== undefined) {
+      updateData.pets = updatePropertyDto.pets;
     }
 
     if (updatePropertyDto.let_duration !== undefined) {

@@ -36,9 +36,36 @@ export enum Bills {
   Excluded = "excluded",
 }
 
+export interface MetroStation {
+  label: string;
+  destination: number;
+}
+
+export interface CommuteTime {
+  label: string;
+  destination: number;
+}
+
+export interface LocalEssential {
+  label: string;
+  destination: number;
+}
+
+export interface ConciergeHours {
+  from: number;
+  to: number;
+}
+
+export interface Pet {
+  type: "dog" | "cat" | "other";
+  customType?: string;
+  size?: "small" | "medium" | "large";
+}
+
 export interface Property {
   id: string;
   apartment_number: string;
+  title?: string;
   descriptions: string;
   price: number;
   deposit: number;
@@ -48,6 +75,7 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   building_type: BuildingType;
+  luxury?: boolean;
   furnishing: Furnishing;
   let_duration: LetDuration;
   floor: number;
@@ -62,6 +90,18 @@ export interface Property {
   building_id: string;
   created_at: string;
   updated_at: string;
+  // Inherited fields from building
+  address?: string;
+  tenant_types?: string[];
+  amenities?: string[];
+  is_concierge?: boolean;
+  concierge_hours?: ConciergeHours | null;
+  pet_policy?: boolean;
+  pets?: Pet[] | null;
+  smoking_area?: boolean;
+  metro_stations?: MetroStation[];
+  commute_times?: CommuteTime[];
+  local_essentials?: LocalEssential[];
   building?: {
     id: string;
     name: string;
