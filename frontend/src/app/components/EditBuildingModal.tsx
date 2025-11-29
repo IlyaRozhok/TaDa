@@ -1119,7 +1119,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   {building.photos && building.photos.length > 0 && (
                     <div className="space-y-2 mt-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 font-medium">
+                        <span className="text-sm text-white font-medium">
                           Current photos:{" "}
                           {
                             building.photos.filter(
@@ -1285,7 +1285,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   {building.documents && !removedDocuments && (
                     <div className="space-y-2 mt-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 font-medium">
+                        <span className="text-sm text-white font-medium">
                           Current document:
                         </span>
                         <button
@@ -1362,24 +1362,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                 </div>
               ))}
             </div>
-
-            {formData.amenities.length > 0 && (
-              <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                <p className="text-sm font-medium text-white/90 mb-2">
-                  Selected amenities ({formData.amenities.length}):
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {formData.amenities.map((amenity) => (
-                    <span
-                      key={amenity}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                    >
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Concierge */}
@@ -1738,7 +1720,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             <button
               type="button"
               onClick={addLocalEssential}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-back rounded-md hover:bg-gray-200"
+              className="flex items-center text-black gap-2 px-4 py-2 bg-gray-100 text-back rounded-md hover:bg-gray-200"
             >
               Add Local Essential
             </button>

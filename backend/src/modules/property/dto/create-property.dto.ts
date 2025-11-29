@@ -5,6 +5,7 @@ import {
   IsUUID,
   IsNumber,
   IsArray,
+  IsBoolean,
 } from "class-validator";
 
 export class CreatePropertyDto {
@@ -36,13 +37,116 @@ export class CreatePropertyDto {
   apartment_number?: string;
 
   @ApiProperty({
-    description: "Property description",
+    description: "Property descriptions",
     example: "Beautiful modern apartment",
     required: false,
   })
   @IsOptional()
   @IsString()
-  description?: string;
+  descriptions?: string;
+
+  @ApiProperty({
+    description: "Property type",
+    example: "apartment",
+    enum: ["apartment", "house", "studio", "penthouse", "duplex"],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  property_type?: string;
+
+  @ApiProperty({
+    description: "Furnishing level",
+    example: "furnished",
+    enum: ["furnished", "unfurnished", "partially_furnished"],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  furnishing?: string;
+
+  @ApiProperty({
+    description: "Bills included",
+    example: "included",
+    enum: ["included", "excluded", "some_included"],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  bills?: string;
+
+  @ApiProperty({
+    description: "Available from date",
+    example: "2024-01-15",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  available_from?: string;
+
+  @ApiProperty({
+    description: "Building type",
+    example: "residential",
+    enum: ["residential", "commercial", "mixed"],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  building_type?: string;
+
+  @ApiProperty({
+    description: "Let duration",
+    example: "12 months",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  let_duration?: string;
+
+  @ApiProperty({
+    description: "Floor number",
+    example: 5,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  floor?: number;
+
+  @ApiProperty({
+    description: "Square meters",
+    example: 75.5,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  square_meters?: number;
+
+  @ApiProperty({
+    description: "Has outdoor space",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  outdoor_space?: boolean;
+
+  @ApiProperty({
+    description: "Has balcony",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  balcony?: boolean;
+
+  @ApiProperty({
+    description: "Has terrace",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  terrace?: boolean;
 
   @ApiProperty({
     description: "Monthly rent price (PCM)",

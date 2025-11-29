@@ -41,17 +41,28 @@ export class BuildingService {
 
     // Set default values for optional fields
     const buildingData = {
-      ...createBuildingDto,
+      // Required fields
+      name: createBuildingDto.name,
+      operator_id: createBuildingDto.operator_id,
+
+      // Optional fields with defaults
       address: createBuildingDto.address || null,
       number_of_units: createBuildingDto.number_of_units ?? null,
       type_of_unit: createBuildingDto.type_of_unit || null,
-      documents: createBuildingDto.documents || null,
+      logo: createBuildingDto.logo || null,
+      video: createBuildingDto.video || null,
       photos: createBuildingDto.photos || [],
-      tenant_type: createBuildingDto.tenant_type || null,
+      documents: createBuildingDto.documents || null,
+      metro_stations: createBuildingDto.metro_stations || [],
+      commute_times: createBuildingDto.commute_times || [],
+      local_essentials: createBuildingDto.local_essentials || [],
       amenities: createBuildingDto.amenities || [],
       is_concierge: createBuildingDto.is_concierge ?? false,
+      concierge_hours: createBuildingDto.concierge_hours || null,
       pet_policy: createBuildingDto.pet_policy ?? false,
+      pets: createBuildingDto.pets || null,
       smoking_area: createBuildingDto.smoking_area ?? false,
+      tenant_type: createBuildingDto.tenant_type || null,
     };
 
     const building = this.buildingRepository.create(buildingData);
@@ -131,11 +142,28 @@ export class BuildingService {
       }
     }
     
-    // Prepare update data
-    const updateData: Partial<Building> = {
-      ...updateBuildingDto,
-      amenities: updateBuildingDto.amenities !== undefined ? updateBuildingDto.amenities : building.amenities,
-    };
+    // Prepare update data - only include fields that are actually provided (not undefined)
+    const updateData: Partial<Building> = {};
+
+    // Handle each field individually to avoid overwriting with undefined
+    if (updateBuildingDto.name !== undefined) updateData.name = updateBuildingDto.name;
+    if (updateBuildingDto.address !== undefined) updateData.address = updateBuildingDto.address;
+    if (updateBuildingDto.number_of_units !== undefined) updateData.number_of_units = updateBuildingDto.number_of_units;
+    if (updateBuildingDto.type_of_unit !== undefined) updateData.type_of_unit = updateBuildingDto.type_of_unit;
+    if (updateBuildingDto.logo !== undefined) updateData.logo = updateBuildingDto.logo;
+    if (updateBuildingDto.video !== undefined) updateData.video = updateBuildingDto.video;
+    if (updateBuildingDto.photos !== undefined) updateData.photos = updateBuildingDto.photos;
+    if (updateBuildingDto.documents !== undefined) updateData.documents = updateBuildingDto.documents;
+    if (updateBuildingDto.metro_stations !== undefined) updateData.metro_stations = updateBuildingDto.metro_stations;
+    if (updateBuildingDto.commute_times !== undefined) updateData.commute_times = updateBuildingDto.commute_times;
+    if (updateBuildingDto.local_essentials !== undefined) updateData.local_essentials = updateBuildingDto.local_essentials;
+    if (updateBuildingDto.amenities !== undefined) updateData.amenities = updateBuildingDto.amenities;
+    if (updateBuildingDto.is_concierge !== undefined) updateData.is_concierge = updateBuildingDto.is_concierge;
+    if (updateBuildingDto.concierge_hours !== undefined) updateData.concierge_hours = updateBuildingDto.concierge_hours;
+    if (updateBuildingDto.pet_policy !== undefined) updateData.pet_policy = updateBuildingDto.pet_policy;
+    if (updateBuildingDto.pets !== undefined) updateData.pets = updateBuildingDto.pets;
+    if (updateBuildingDto.smoking_area !== undefined) updateData.smoking_area = updateBuildingDto.smoking_area;
+    if (updateBuildingDto.tenant_type !== undefined) updateData.tenant_type = updateBuildingDto.tenant_type;
     
     // Handle operator_id separately to ensure it's updated correctly
     if (operatorId !== undefined) {

@@ -35,12 +35,56 @@ export class PropertyService {
     };
 
     // Add optional fields if provided
-    if (createPropertyDto.apartment_number) {
+    if (createPropertyDto.apartment_number !== undefined) {
       propertyData.apartment_number = createPropertyDto.apartment_number;
     }
 
-    if (createPropertyDto.description) {
-      propertyData.description = createPropertyDto.description;
+    if (createPropertyDto.descriptions !== undefined) {
+      propertyData.descriptions = createPropertyDto.descriptions;
+    }
+
+    if (createPropertyDto.property_type !== undefined) {
+      propertyData.property_type = createPropertyDto.property_type;
+    }
+
+    if (createPropertyDto.furnishing !== undefined) {
+      propertyData.furnishing = createPropertyDto.furnishing;
+    }
+
+    if (createPropertyDto.bills !== undefined) {
+      propertyData.bills = createPropertyDto.bills;
+    }
+
+    if (createPropertyDto.available_from !== undefined) {
+      propertyData.available_from = createPropertyDto.available_from ? new Date(createPropertyDto.available_from) : null;
+    }
+
+    if (createPropertyDto.building_type !== undefined) {
+      propertyData.building_type = createPropertyDto.building_type;
+    }
+
+    if (createPropertyDto.let_duration !== undefined) {
+      propertyData.let_duration = createPropertyDto.let_duration;
+    }
+
+    if (createPropertyDto.floor != null) {
+      propertyData.floor = createPropertyDto.floor;
+    }
+
+    if (createPropertyDto.square_meters != null) {
+      propertyData.square_meters = createPropertyDto.square_meters;
+    }
+
+    if (createPropertyDto.outdoor_space != null) {
+      propertyData.outdoor_space = createPropertyDto.outdoor_space;
+    }
+
+    if (createPropertyDto.balcony != null) {
+      propertyData.balcony = createPropertyDto.balcony;
+    }
+
+    if (createPropertyDto.terrace != null) {
+      propertyData.terrace = createPropertyDto.terrace;
     }
 
     if (createPropertyDto.price != null) {
@@ -98,8 +142,52 @@ export class PropertyService {
       updateData.title = updatePropertyDto.title;
     }
 
-    if (updatePropertyDto.description !== undefined) {
-      updateData.description = updatePropertyDto.description;
+    if (updatePropertyDto.descriptions !== undefined) {
+      updateData.descriptions = updatePropertyDto.descriptions;
+    }
+
+    if (updatePropertyDto.property_type !== undefined) {
+      updateData.property_type = updatePropertyDto.property_type;
+    }
+
+    if (updatePropertyDto.furnishing !== undefined) {
+      updateData.furnishing = updatePropertyDto.furnishing;
+    }
+
+    if (updatePropertyDto.bills !== undefined) {
+      updateData.bills = updatePropertyDto.bills;
+    }
+
+    if (updatePropertyDto.available_from !== undefined) {
+      updateData.available_from = updatePropertyDto.available_from ? new Date(updatePropertyDto.available_from) : null;
+    }
+
+    if (updatePropertyDto.building_type !== undefined) {
+      updateData.building_type = updatePropertyDto.building_type;
+    }
+
+    if (updatePropertyDto.let_duration !== undefined) {
+      updateData.let_duration = updatePropertyDto.let_duration;
+    }
+
+    if (updatePropertyDto.floor !== undefined) {
+      updateData.floor = updatePropertyDto.floor;
+    }
+
+    if (updatePropertyDto.square_meters !== undefined) {
+      updateData.square_meters = updatePropertyDto.square_meters;
+    }
+
+    if (updatePropertyDto.outdoor_space !== undefined) {
+      updateData.outdoor_space = updatePropertyDto.outdoor_space;
+    }
+
+    if (updatePropertyDto.balcony !== undefined) {
+      updateData.balcony = updatePropertyDto.balcony;
+    }
+
+    if (updatePropertyDto.terrace !== undefined) {
+      updateData.terrace = updatePropertyDto.terrace;
     }
 
     if (updatePropertyDto.price !== undefined) {

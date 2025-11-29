@@ -39,12 +39,104 @@ export class Property {
   title: string;
 
   @ApiProperty({
-    description: "Property description",
+    description: "Property descriptions",
     example: "Beautiful modern apartment",
     required: false,
   })
   @Column("text", { nullable: true })
-  description?: string;
+  descriptions?: string;
+
+  @ApiProperty({
+    description: "Property type",
+    example: "apartment",
+    enum: ["apartment", "house", "studio", "penthouse", "duplex"],
+    required: false,
+  })
+  @Column({ nullable: true })
+  property_type?: string;
+
+  @ApiProperty({
+    description: "Furnishing level",
+    example: "furnished",
+    enum: ["furnished", "unfurnished", "partially_furnished"],
+    required: false,
+  })
+  @Column({ nullable: true })
+  furnishing?: string;
+
+  @ApiProperty({
+    description: "Bills included",
+    example: "included",
+    enum: ["included", "excluded", "some_included"],
+    required: false,
+  })
+  @Column({ default: "excluded", nullable: true })
+  bills?: string;
+
+  @ApiProperty({
+    description: "Available from date",
+    example: "2024-01-15",
+    required: false,
+  })
+  @Column({ type: "date", nullable: true })
+  available_from?: Date;
+
+  @ApiProperty({
+    description: "Building type",
+    example: "residential",
+    enum: ["residential", "commercial", "mixed"],
+    required: false,
+  })
+  @Column({ nullable: true })
+  building_type?: string;
+
+  @ApiProperty({
+    description: "Let duration",
+    example: "12 months",
+    required: false,
+  })
+  @Column({ nullable: true })
+  let_duration?: string;
+
+  @ApiProperty({
+    description: "Floor number",
+    example: 5,
+    required: false,
+  })
+  @Column({ type: "int", nullable: true })
+  floor?: number;
+
+  @ApiProperty({
+    description: "Square meters",
+    example: 75.5,
+    required: false,
+  })
+  @Column("decimal", { precision: 10, scale: 2, nullable: true })
+  square_meters?: number;
+
+  @ApiProperty({
+    description: "Has outdoor space",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", default: false })
+  outdoor_space?: boolean;
+
+  @ApiProperty({
+    description: "Has balcony",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", default: false })
+  balcony?: boolean;
+
+  @ApiProperty({
+    description: "Has terrace",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", default: false })
+  terrace?: boolean;
 
   @ApiProperty({
     description: "Monthly rent price (PCM)",
