@@ -48,7 +48,7 @@ export class BuildingService {
       // Optional fields with defaults
       address: createBuildingDto.address || null,
       number_of_units: createBuildingDto.number_of_units ?? null,
-      type_of_unit: createBuildingDto.type_of_unit || null,
+      type_of_unit: createBuildingDto.type_of_unit || [],
       logo: createBuildingDto.logo || null,
       video: createBuildingDto.video || null,
       photos: createBuildingDto.photos || [],
@@ -62,7 +62,7 @@ export class BuildingService {
       pet_policy: createBuildingDto.pet_policy ?? false,
       pets: createBuildingDto.pets || null,
       smoking_area: createBuildingDto.smoking_area ?? false,
-      tenant_type: createBuildingDto.tenant_type || null,
+      tenant_type: createBuildingDto.tenant_type || ["family"],
     };
 
     const building = this.buildingRepository.create(buildingData);

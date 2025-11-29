@@ -770,7 +770,7 @@ function AdminPanelContent() {
                   <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
                     <div className="text-sm text-white/70 mb-1">Unit Type</div>
                     <div className="text-lg font-semibold text-white">
-                      {building.type_of_unit || "-"}
+                      {Array.isArray(building.type_of_unit) ? building.type_of_unit.join(", ") : building.type_of_unit || "-"}
                     </div>
                   </div>
                 </div>
@@ -802,7 +802,7 @@ function AdminPanelContent() {
                     <div className="flex justify-between py-2">
                       <span className="text-white/70">Unit Type</span>
                       <span className="font-medium text-white">
-                        {building.type_of_unit || "-"}
+                        {Array.isArray(building.type_of_unit) ? building.type_of_unit.join(", ") : building.type_of_unit || "-"}
                       </span>
                     </div>
                   </div>

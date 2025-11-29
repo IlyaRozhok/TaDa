@@ -43,6 +43,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     bedrooms: null as number | null,
     bathrooms: null as number | null,
     building_type: "" as BuildingType | "",
+    luxury: false,
     furnishing: "" as Furnishing | "",
     let_duration: "" as LetDuration | "",
     floor: null as number | null,
@@ -217,6 +218,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       bedrooms: null as number | null,
       bathrooms: null as number | null,
       building_type: "" as BuildingType | "",
+      luxury: false,
       furnishing: "" as Furnishing | "",
       let_duration: "" as LetDuration | "",
       floor: null as number | null,
@@ -409,7 +411,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 <option value="" className="bg-black/80 text-white">
                   Select Type
                 </option>
-                {Object.values(BuildingType).map((type) => (
+                {Object.values(BuildingType)
+                  .filter(type => type !== "luxury") // Remove luxury from dropdown
+                  .map((type) => (
                   <option key={type} value={type}>
                     {type
                       .replace(/_/g, " ")
@@ -417,6 +421,23 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="flex items-center space-x-2 text-white/90">
+                <input
+                  type="checkbox"
+                  checked={formData.luxury}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      luxury: e.target.checked,
+                    })
+                  }
+                  className="rounded border-white/20 bg-white/10 text-white focus:ring-white/50"
+                />
+                <span className="text-sm font-medium">Luxury Property</span>
+              </label>
             </div>
 
             <div>

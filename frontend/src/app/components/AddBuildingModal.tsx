@@ -58,14 +58,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     name: "",
     address: "",
     number_of_units: null as number | null,
-    type_of_unit: "" as
-      | "studio"
-      | "1-bed"
-      | "2-bed"
-      | "3-bed"
-      | "Duplex"
-      | "penthouse"
-      | "",
+    type_of_unit: [] as string[],
     logo: "",
     video: "",
     photos: [] as string[],
@@ -79,13 +72,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     pet_policy: false,
     pets: null as Pet[] | null,
     smoking_area: false,
-    tenant_type: "" as
-      | "corporateLets"
-      | "sharers"
-      | "student"
-      | "family"
-      | "elder"
-      | "",
+    tenant_type: [] as string[],
     operator_id: null as string | null,
   });
 
@@ -200,6 +187,37 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [documentFiles]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const typeOfUnitDropdown = document.getElementById(
+        "add_type_of_unit_dropdown"
+      );
+      const tenantTypeDropdown = document.getElementById(
+        "add_tenant_type_dropdown"
+      );
+
+      if (
+        typeOfUnitDropdown &&
+        !typeOfUnitDropdown.contains(event.target as Node) &&
+        !event.target.closest('[onclick*="add_type_of_unit_dropdown"]')
+      ) {
+        typeOfUnitDropdown.classList.add("hidden");
+      }
+
+      if (
+        tenantTypeDropdown &&
+        !tenantTypeDropdown.contains(event.target as Node) &&
+        !event.target.closest('[onclick*="add_tenant_type_dropdown"]')
+      ) {
+        tenantTypeDropdown.classList.add("hidden");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const uploadAllFiles = async () => {
     const uploadPromises = [];
@@ -334,7 +352,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     if (formData.number_of_units != null) {
       buildingData.number_of_units = formData.number_of_units;
     }
-    if (formData.type_of_unit && formData.type_of_unit !== "") {
+    if (formData.type_of_unit && formData.type_of_unit.length > 0) {
       buildingData.type_of_unit = formData.type_of_unit;
     }
     if (
@@ -392,7 +410,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     if (formData.smoking_area) {
       buildingData.smoking_area = formData.smoking_area;
     }
-    if (formData.tenant_type && formData.tenant_type !== "") {
+    if (formData.tenant_type && formData.tenant_type.length > 0) {
       buildingData.tenant_type = formData.tenant_type;
     }
 
@@ -410,7 +428,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         name: "",
         address: "",
         number_of_units: 1,
-        type_of_unit: "studio",
+        type_of_unit: [] as string[],
         logo: "",
         video: "",
         photos: [],
@@ -424,7 +442,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         pet_policy: false,
         pets: null,
         smoking_area: false,
-        tenant_type: "family",
+        tenant_type: ["family"] as string[],
         operator_id: null,
       });
 
@@ -658,47 +676,216 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <label className="block text-sm font-medium text-white/90 mb-2">
                   Type of Unit
                 </label>
-                <select
-                  value={formData.type_of_unit}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      type_of_unit: e.target.value as any,
-                    })
-                  }
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                >
-                  <option value="">Select Type</option>
-                  <option value="studio">Studio</option>
-                  <option value="1-bed">1-bed</option>
-                  <option value="2-bed">2-bed</option>
-                  <option value="3-bed">3-bed</option>
-                  <option value="Duplex">Duplex</option>
-                  <option value="penthouse">Penthouse</option>
-                </select>
+                <div className="relative">
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
+                    onClick={() => {
+                      const dropdown = document.getElementById(
+                        "add_type_of_unit_dropdown"
+                      );
+                      dropdown?.classList.toggle("hidden");
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {formData.type_of_unit.length > 0 ? (
+                        formData.type_of_unit.map((value) => {
+                          const option = [
+                            { value: "studio", label: "Studio" },
+                            { value: "1-bed", label: "1-bed" },
+                            { value: "2-bed", label: "2-bed" },
+                            { value: "3-bed", label: "3-bed" },
+                            { value: "Duplex", label: "Duplex" },
+                            { value: "penthouse", label: "Penthouse" },
+                          ].find((opt) => opt.value === value);
+                          return (
+                            <span
+                              key={value}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                            >
+                              {option?.label}
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    type_of_unit: formData.type_of_unit.filter(
+                                      (t) => t !== value
+                                    ),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-white/50">Select types...</span>
+                      )}
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-white/70 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                  <div
+                    id="add_type_of_unit_dropdown"
+                    className="absolute z-10 w-full mt-1 bg-white/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"
+                  >
+                    {[
+                      { value: "studio", label: "Studio" },
+                      { value: "1-bed", label: "1-bed" },
+                      { value: "2-bed", label: "2-bed" },
+                      { value: "3-bed", label: "3-bed" },
+                      { value: "Duplex", label: "Duplex" },
+                      { value: "penthouse", label: "Penthouse" },
+                    ].map((option) => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-gray-800 flex items-center space-x-2"
+                        onClick={() => {
+                          const newTypeOfUnit = formData.type_of_unit.includes(
+                            option.value
+                          )
+                            ? formData.type_of_unit.filter(
+                                (t) => t !== option.value
+                              )
+                            : [...formData.type_of_unit, option.value];
+                          setFormData({
+                            ...formData,
+                            type_of_unit: newTypeOfUnit,
+                          });
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.type_of_unit.includes(option.value)}
+                          readOnly
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{option.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
                   Tenant Type
                 </label>
-                <select
-                  value={formData.tenant_type}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      tenant_type: e.target.value as any,
-                    })
-                  }
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                >
-                  <option value="">Select Type</option>
-                  <option value="corporateLets">Corporate Lets</option>
-                  <option value="sharers">Sharers</option>
-                  <option value="student">Student</option>
-                  <option value="family">Family</option>
-                  <option value="elder">Elder</option>
-                </select>
+                <div className="relative">
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
+                    onClick={() => {
+                      const dropdown = document.getElementById(
+                        "add_tenant_type_dropdown"
+                      );
+                      dropdown?.classList.toggle("hidden");
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {formData.tenant_type.length > 0 ? (
+                        formData.tenant_type.map((value) => {
+                          const option = [
+                            { value: "corporateLets", label: "Corporate Lets" },
+                            { value: "sharers", label: "Sharers" },
+                            { value: "student", label: "Student" },
+                            { value: "family", label: "Family" },
+                            { value: "elder", label: "Elder" },
+                          ].find((opt) => opt.value === value);
+                          return (
+                            <span
+                              key={value}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                            >
+                              {option?.label}
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    tenant_type: formData.tenant_type.filter(
+                                      (t) => t !== value
+                                    ),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-white/50">Select types...</span>
+                      )}
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-white/70 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                  <div
+                    id="add_tenant_type_dropdown"
+                    className="absolute z-10 w-full mt-1 bg-white/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"
+                  >
+                    {[
+                      { value: "corporateLets", label: "Corporate Lets" },
+                      { value: "sharers", label: "Sharers" },
+                      { value: "student", label: "Student" },
+                      { value: "family", label: "Family" },
+                      { value: "elder", label: "Elder" },
+                    ].map((option) => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-gray-800 flex items-center space-x-2"
+                        onClick={() => {
+                          const newTenantType = formData.tenant_type.includes(
+                            option.value
+                          )
+                            ? formData.tenant_type.filter(
+                                (t) => t !== option.value
+                              )
+                            : [...formData.tenant_type, option.value];
+                          setFormData({
+                            ...formData,
+                            tenant_type: newTenantType,
+                          });
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.tenant_type.includes(option.value)}
+                          readOnly
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{option.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div>

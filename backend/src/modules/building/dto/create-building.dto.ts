@@ -158,15 +158,16 @@ export class CreateBuildingDto {
   number_of_units?: number;
 
   @ApiProperty({
-    description: "Type of units in the building",
-    example: "2-bed",
+    description: "Types of units in the building",
+    example: ["2-bed", "3-bed"],
+    type: [String],
     enum: ["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"],
     required: false,
   })
   @IsOptional()
-  @ValidateIf((o) => o.type_of_unit !== "" && o.type_of_unit !== null && o.type_of_unit !== undefined)
-  @IsEnum(["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"])
-  type_of_unit?: UnitType;
+  @IsArray()
+  @IsEnum(["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"], { each: true })
+  type_of_unit?: UnitType[];
 
   @ApiProperty({
     description: "Logo URL (S3)",
@@ -303,13 +304,14 @@ export class CreateBuildingDto {
   smoking_area?: boolean;
 
   @ApiProperty({
-    description: "Type of tenants the building is designed for",
-    example: "family",
+    description: "Types of tenants the building is designed for",
+    example: ["family", "student"],
+    type: [String],
     enum: ["corporateLets", "sharers", "student", "family", "elder"],
     required: false,
   })
   @IsOptional()
-  @ValidateIf((o) => o.tenant_type !== "" && o.tenant_type !== null && o.tenant_type !== undefined)
-  @IsEnum(["corporateLets", "sharers", "student", "family", "elder"])
-  tenant_type?: TenantType;
+  @IsArray()
+  @IsEnum(["corporateLets", "sharers", "student", "family", "elder"], { each: true })
+  tenant_type?: TenantType[];
 }

@@ -32,6 +32,7 @@ export class PropertyService {
       operator_id: building.operator_id,
       title: createPropertyDto.title,
       photos: createPropertyDto.photos || [],
+      luxury: createPropertyDto.luxury || false,
     };
 
     // Add optional fields if provided
@@ -164,6 +165,10 @@ export class PropertyService {
 
     if (updatePropertyDto.building_type !== undefined) {
       updateData.building_type = updatePropertyDto.building_type;
+    }
+
+    if (updatePropertyDto.luxury !== undefined) {
+      updateData.luxury = updatePropertyDto.luxury;
     }
 
     if (updatePropertyDto.let_duration !== undefined) {

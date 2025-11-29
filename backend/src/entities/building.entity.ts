@@ -88,17 +88,14 @@ export class Building {
   number_of_units: number | null;
 
   @ApiProperty({
-    description: "Type of units in the building",
-    example: "2-bed",
+    description: "Types of units in the building",
+    example: ["2-bed", "3-bed"],
+    type: [String],
     enum: ["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"],
     required: false,
   })
-  @Column({
-    type: "enum",
-    enum: ["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"],
-    nullable: true,
-  })
-  type_of_unit: UnitType | null;
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  type_of_unit: UnitType[];
 
   @ApiProperty({
     description: "Logo URL (stored in S3)",
@@ -223,18 +220,14 @@ export class Building {
   smoking_area: boolean;
 
   @ApiProperty({
-    description: "Type of tenants the building is designed for",
-    example: "family",
+    description: "Types of tenants the building is designed for",
+    example: ["family", "student"],
+    type: [String],
     enum: ["corporateLets", "sharers", "student", "family", "elder"],
     required: false,
   })
-  @Column({
-    type: "enum",
-    enum: ["corporateLets", "sharers", "student", "family", "elder"],
-    nullable: true,
-    default: "family",
-  })
-  tenant_type: TenantType | null;
+  @Column({ type: "jsonb", nullable: true, default: ["family"] })
+  tenant_type: TenantType[];
 
   @ApiProperty({ description: "Building creation date" })
   @CreateDateColumn()

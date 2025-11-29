@@ -91,6 +91,14 @@ export class Property {
   building_type?: string;
 
   @ApiProperty({
+    description: "Whether the property is luxury",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", default: false })
+  luxury?: boolean;
+
+  @ApiProperty({
     description: "Let duration",
     example: "12 months",
     required: false,

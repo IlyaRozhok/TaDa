@@ -201,9 +201,19 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-black border border-gray-200">
-                        {building.type_of_unit || "-"}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {Array.isArray(building.type_of_unit) && building.type_of_unit.length > 0 ? (
+                          building.type_of_unit.map((unit) => (
+                            <span key={unit} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-black border border-gray-200">
+                              {unit}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                            -
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-1">

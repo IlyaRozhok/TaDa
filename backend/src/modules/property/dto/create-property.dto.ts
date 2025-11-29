@@ -95,6 +95,15 @@ export class CreatePropertyDto {
   building_type?: string;
 
   @ApiProperty({
+    description: "Whether the property is luxury",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  luxury?: boolean;
+
+  @ApiProperty({
     description: "Let duration",
     example: "12 months",
     required: false,
