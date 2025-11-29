@@ -169,6 +169,34 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     }
   };
 
+  // Track previous building_type to detect changes
+  const [prevBuildingType, setPrevBuildingType] = useState<string | null>(null);
+
+  // When building_type changes, clear inherited fields and building_id/operator_id
+  useEffect(() => {
+    if (prevBuildingType !== null && prevBuildingType !== formData.building_type) {
+      // Building type changed - clear inherited fields and selection
+      setFormData((prev) => ({
+        ...prev,
+        building_id: "",
+        operator_id: "",
+        address: "",
+        tenant_types: [],
+        amenities: [],
+        is_concierge: false,
+        concierge_hours: null,
+        pet_policy: false,
+        pets: null,
+        smoking_area: false,
+        metro_stations: [],
+        commute_times: [],
+        local_essentials: [],
+      }));
+      setSelectedBuilding(null);
+    }
+    setPrevBuildingType(formData.building_type);
+  }, [formData.building_type]);
+
   // Update selectedBuilding when building_id changes
   useEffect(() => {
     if (formData.building_id && formData.building_type !== "private_landlord") {
@@ -181,7 +209,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     }
   }, [formData.building_id, formData.building_type, buildings]);
 
-  // Load building details and prefill inherited fields
+  // Load building details and populate inherited fields when a building is selected
   useEffect(() => {
     const loadBuildingDetails = async () => {
       if (formData.building_id && formData.building_type !== "private_landlord") {
@@ -189,6 +217,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           const response = await buildingsAPI.getById(formData.building_id);
           const building = response.data;
           if (building) {
+            // Always populate from building when building is selected
             setFormData((prev) => ({
               ...prev,
               address: building.address || "",

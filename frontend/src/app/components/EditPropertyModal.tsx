@@ -323,6 +323,51 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   };
 
 
+  // Track previous building_type to detect changes
+  const [prevBuildingType, setPrevBuildingType] = useState<string | null>(null);
+
+  // When building_type changes from private_landlord to another type, clear inherited fields and building_id
+  useEffect(() => {
+    if (prevBuildingType === "private_landlord" && formData.building_type !== "private_landlord") {
+      // Switching away from private_landlord - clear inherited fields and building_id
+      setFormData((prev) => ({
+        ...prev,
+        building_id: "", // Clear building selection
+        address: "",
+        tenant_types: [],
+        amenities: [],
+        is_concierge: false,
+        concierge_hours: null,
+        pet_policy: false,
+        pets: null,
+        smoking_area_prop: false,
+        metro_stations: [],
+        commute_times: [],
+        local_essentials: [],
+      }));
+      setSelectedBuilding(null);
+    } else if (prevBuildingType !== "private_landlord" && formData.building_type === "private_landlord") {
+      // Switching to private_landlord - clear building_id and make fields editable (empty)
+      setFormData((prev) => ({
+        ...prev,
+        building_id: "",
+        address: "",
+        tenant_types: [],
+        amenities: [],
+        is_concierge: false,
+        concierge_hours: null,
+        pet_policy: false,
+        pets: null,
+        smoking_area_prop: false,
+        metro_stations: [],
+        commute_times: [],
+        local_essentials: [],
+      }));
+      setSelectedBuilding(null);
+    }
+    setPrevBuildingType(formData.building_type);
+  }, [formData.building_type]);
+
   // Update selectedBuilding when building_id changes
   useEffect(() => {
     if (formData.building_id && formData.building_type !== "private_landlord") {
@@ -335,7 +380,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     }
   }, [formData.building_id, formData.building_type, buildings]);
 
-  // Load building details and prefill inherited fields if property fields are empty
+  // Load building details and populate inherited fields when a building is selected
   useEffect(() => {
     const loadBuildingDetails = async () => {
       if (formData.building_id && formData.building_type !== "private_landlord" && buildings.length > 0) {
@@ -343,20 +388,20 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           const response = await buildingsAPI.getById(formData.building_id);
           const building = response.data;
           if (building) {
-            // Only prefill if the property doesn't have its own data
+            // Always populate from building when building is selected (for linked properties)
             setFormData((prev) => ({
               ...prev,
-              address: prev.address || building.address || "",
-              tenant_types: prev.tenant_types?.length > 0 ? prev.tenant_types : (building.tenant_type || []),
-              amenities: prev.amenities?.length > 0 ? prev.amenities : (building.amenities || []),
-              is_concierge: prev.is_concierge !== undefined ? prev.is_concierge : (building.is_concierge || false),
-              concierge_hours: prev.concierge_hours || building.concierge_hours || null,
-              pet_policy: prev.pet_policy !== undefined ? prev.pet_policy : (building.pet_policy || false),
-              pets: prev.pets || building.pets || null,
-              smoking_area_prop: prev.smoking_area_prop !== undefined ? prev.smoking_area_prop : (building.smoking_area || false),
-              metro_stations: prev.metro_stations?.length > 0 ? prev.metro_stations : (building.metro_stations || []),
-              commute_times: prev.commute_times?.length > 0 ? prev.commute_times : (building.commute_times || []),
-              local_essentials: prev.local_essentials?.length > 0 ? prev.local_essentials : (building.local_essentials || []),
+              address: building.address || "",
+              tenant_types: building.tenant_type || [],
+              amenities: building.amenities || [],
+              is_concierge: building.is_concierge || false,
+              concierge_hours: building.concierge_hours || null,
+              pet_policy: building.pet_policy || false,
+              pets: building.pets || null,
+              smoking_area_prop: building.smoking_area || false,
+              metro_stations: building.metro_stations || [],
+              commute_times: building.commute_times || [],
+              local_essentials: building.local_essentials || [],
             }));
           }
         } catch (error) {
