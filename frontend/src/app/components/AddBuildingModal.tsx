@@ -1776,7 +1776,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     }
                   }}
                   className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                  placeholder="m"
+                  placeholder="min"
                   min="0"
                   required
                 />

@@ -50,7 +50,7 @@ export default function HomePage() {
   useEffect(() => {
     if (isAuthenticated && user) {
       const role = user.role || "tenant";
-      router.replace(`/app/dashboard/${role}`);
+      router.replace(`/app/units/`);
     }
   }, [isAuthenticated, user, router]);
 

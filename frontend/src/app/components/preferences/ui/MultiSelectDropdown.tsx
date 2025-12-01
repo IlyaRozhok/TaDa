@@ -61,7 +61,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       <div className="relative">
         <div
           onClick={handleToggle}
-          className={`w-full bg-white px-6 pt-8 pb-4 pr-6 rounded-3xl cursor-pointer flex items-center justify-between border-0 shadow-sm} ${
+          className={`w-full bg-white px-6 pt-8 pb-4 pr-6 rounded-3xl cursor-pointer flex items-center justify-between border-0} ${
             isInitialized ? "transition-all duration-200" : ""
           }`}
         >

@@ -110,7 +110,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   });
 
   const [buildings, setBuildings] = useState<Building[]>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
+    null
+  );
   const [availableOperators, setAvailableOperators] = useState<User[]>([]);
 
   // Dropdown open states
@@ -149,7 +151,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   useEffect(() => {
     console.log("🔄 AddPropertyModal operators prop changed:", operators);
     if (operators && operators.length > 0) {
-      console.log("✅ Setting availableOperators from props:", operators.length, "operators");
+      console.log(
+        "✅ Setting availableOperators from props:",
+        operators.length,
+        "operators"
+      );
       setAvailableOperators(operators);
     } else {
       console.log("⚠️ No operators in props, trying to load them...");
@@ -175,7 +181,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   // When building_type changes, clear inherited fields and building_id/operator_id
   useEffect(() => {
-    if (prevBuildingType !== null && prevBuildingType !== formData.building_type) {
+    if (
+      prevBuildingType !== null &&
+      prevBuildingType !== formData.building_type
+    ) {
       // Building type changed - clear inherited fields and selection
       setFormData((prev) => ({
         ...prev,
@@ -213,7 +222,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   // Load building details and populate inherited fields when a building is selected
   useEffect(() => {
     const loadBuildingDetails = async () => {
-      if (formData.building_id && formData.building_type !== "private_landlord") {
+      if (
+        formData.building_id &&
+        formData.building_type !== "private_landlord"
+      ) {
         try {
           const response = await buildingsAPI.getById(formData.building_id);
           const building = response.data;
@@ -251,11 +263,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
       // Try to load all users and filter operators
       const response = await usersAPI.getAll();
-      const usersData = response.data?.users || response.data?.data || response.data || [];
+      const usersData =
+        response.data?.users || response.data?.data || response.data || [];
       console.log("✅ Users loaded:", usersData.length, "users");
 
       // Filter only operators
-      const operatorsData = usersData.filter((user: User) => user.role === 'operator' || user.role === 'Operator');
+      const operatorsData = usersData.filter(
+        (user: User) => user.role === "operator" || user.role === "Operator"
+      );
       console.log("✅ Filtered operators:", operatorsData.length, "operators");
 
       let finalOperators = operatorsData;
@@ -264,8 +279,18 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       if (operatorsData.length === 0) {
         console.log("⚠️ No real operators found, using mock data");
         finalOperators = [
-          { id: 'mock-op-1', full_name: 'Test Operator 1', email: 'operator1@test.com', role: 'operator' },
-          { id: 'mock-op-2', full_name: 'Test Operator 2', email: 'operator2@test.com', role: 'operator' },
+          {
+            id: "mock-op-1",
+            full_name: "Test Operator 1",
+            email: "operator1@test.com",
+            role: "operator",
+          },
+          {
+            id: "mock-op-2",
+            full_name: "Test Operator 2",
+            email: "operator2@test.com",
+            role: "operator",
+          },
         ];
       }
 
@@ -282,7 +307,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       setAvailableOperators([]);
     }
   };
-
 
   // Photo previews
   useEffect(() => {
@@ -334,7 +358,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       // Check if click is inside any dropdown trigger or menu
-      if (!target.closest('[data-dropdown]')) {
+      if (!target.closest("[data-dropdown]")) {
         setOpenDropdown(null);
       }
     };
@@ -363,13 +387,17 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   };
 
   // Helper to check if fields are readonly (not private_landlord and has building selected)
-  const isFieldReadonly = formData.building_type !== "private_landlord" && !!formData.building_id;
+  const isFieldReadonly =
+    formData.building_type !== "private_landlord" && !!formData.building_id;
 
   // Metro Stations helpers
   const addMetroStation = () => {
     setFormData((prev) => ({
       ...prev,
-      metro_stations: [...prev.metro_stations, { label: "", destination: undefined }],
+      metro_stations: [
+        ...prev.metro_stations,
+        { label: "", destination: undefined },
+      ],
     }));
   };
 
@@ -397,7 +425,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const addCommuteTime = () => {
     setFormData((prev) => ({
       ...prev,
-      commute_times: [...prev.commute_times, { label: "", destination: undefined }],
+      commute_times: [
+        ...prev.commute_times,
+        { label: "", destination: undefined },
+      ],
     }));
   };
 
@@ -567,7 +598,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       // For private landlord, operator_id must be provided
       if (formData.building_type === "private_landlord") {
         if (!formData.operator_id) {
-          throw new Error("Please select an operator for private landlord properties");
+          throw new Error(
+            "Please select an operator for private landlord properties"
+          );
         }
         propertyData.operator_id = formData.operator_id;
         propertyData.building_id = null; // Explicitly set to null for private landlord
@@ -664,7 +697,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         <form
           onSubmit={handleSubmit}
           className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto"
-          style={{ pointerEvents: isLoading || isSubmitting ? 'none' : 'auto', opacity: isLoading || isSubmitting ? 0.7 : 1 }}
+          style={{
+            pointerEvents: isLoading || isSubmitting ? "none" : "auto",
+            opacity: isLoading || isSubmitting ? 0.7 : 1,
+          }}
         >
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -706,25 +742,51 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 <div className="relative" data-dropdown>
                   <div
                     className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                    onClick={() => toggleDropdown('operator')}
+                    onClick={() => toggleDropdown("operator")}
                   >
-                    <span className={formData.operator_id ? 'text-white' : 'text-white/50'}>
+                    <span
+                      className={
+                        formData.operator_id ? "text-white" : "text-white/50"
+                      }
+                    >
                       {formData.operator_id
-                        ? availableOperators.find(o => o.id === formData.operator_id)?.full_name || availableOperators.find(o => o.id === formData.operator_id)?.email
-                        : 'Select Operator'}
+                        ? availableOperators.find(
+                            (o) => o.id === formData.operator_id
+                          )?.full_name ||
+                          availableOperators.find(
+                            (o) => o.id === formData.operator_id
+                          )?.email
+                        : "Select Operator"}
                     </span>
-                    <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-5 h-5 text-white/70"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
-                  {openDropdown === 'operator' && (
+                  {openDropdown === "operator" && (
                     <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {availableOperators.map((operator) => (
                         <div
                           key={operator.id}
-                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${formData.operator_id === operator.id ? 'bg-white/10' : ''}`}
+                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${
+                            formData.operator_id === operator.id
+                              ? "bg-white/10"
+                              : ""
+                          }`}
                           onClick={() => {
-                            setFormData({ ...formData, operator_id: operator.id });
+                            setFormData({
+                              ...formData,
+                              operator_id: operator.id,
+                            });
                             setOpenDropdown(null);
                           }}
                         >
@@ -743,25 +805,50 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 <div className="relative" data-dropdown>
                   <div
                     className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                    onClick={() => toggleDropdown('building')}
+                    onClick={() => toggleDropdown("building")}
                   >
-                    <span className={formData.building_id ? 'text-white' : 'text-white/50'}>
+                    <span
+                      className={
+                        formData.building_id ? "text-white" : "text-white/50"
+                      }
+                    >
                       {formData.building_id
-                        ? buildings.find(b => b.id === formData.building_id)?.name + ' - ' + buildings.find(b => b.id === formData.building_id)?.address
-                        : 'Select Building'}
+                        ? buildings.find((b) => b.id === formData.building_id)
+                            ?.name +
+                          " - " +
+                          buildings.find((b) => b.id === formData.building_id)
+                            ?.address
+                        : "Select Building"}
                     </span>
-                    <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-5 h-5 text-white/70"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
-                  {openDropdown === 'building' && (
+                  {openDropdown === "building" && (
                     <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {buildings.map((building) => (
                         <div
                           key={building.id}
-                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${formData.building_id === building.id ? 'bg-white/10' : ''}`}
+                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${
+                            formData.building_id === building.id
+                              ? "bg-white/10"
+                              : ""
+                          }`}
                           onClick={() => {
-                            setFormData({ ...formData, building_id: building.id });
+                            setFormData({
+                              ...formData,
+                              building_id: building.id,
+                            });
                             setOpenDropdown(null);
                           }}
                         >
@@ -777,7 +864,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             {/* Address field - readonly if linked to building */}
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
-                Address {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+                Address{" "}
+                {isFieldReadonly && (
+                  <span className="text-white/50 text-xs">(from building)</span>
+                )}
               </label>
               <input
                 type="text"
@@ -786,19 +876,30 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   setFormData({ ...formData, address: e.target.value })
                 }
                 readOnly={isFieldReadonly}
-                className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${
+                  isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
+                }`}
               />
             </div>
 
             {/* Tenant Type multi-select dropdown */}
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
-                Tenant Types {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+                Tenant Types{" "}
+                {isFieldReadonly && (
+                  <span className="text-white/50 text-xs">(from building)</span>
+                )}
               </label>
               <div className="relative" data-dropdown>
                 <div
-                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                  onClick={() => !isFieldReadonly && toggleDropdown('tenant_types')}
+                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center ${
+                    isFieldReadonly
+                      ? "opacity-60 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                  onClick={() =>
+                    !isFieldReadonly && toggleDropdown("tenant_types")
+                  }
                 >
                   <div className="flex flex-wrap gap-1 flex-1">
                     {formData.tenant_types.length > 0 ? (
@@ -824,7 +925,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                                   e.stopPropagation();
                                   setFormData({
                                     ...formData,
-                                    tenant_types: formData.tenant_types.filter((t) => t !== value),
+                                    tenant_types: formData.tenant_types.filter(
+                                      (t) => t !== value
+                                    ),
                                   });
                                 }}
                               >
@@ -839,12 +942,22 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     )}
                   </div>
                   {!isFieldReadonly && (
-                    <svg className="w-5 h-5 text-white/70 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-5 h-5 text-white/70 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   )}
                 </div>
-                {!isFieldReadonly && openDropdown === 'tenant_types' && (
+                {!isFieldReadonly && openDropdown === "tenant_types" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {[
                       { value: "corporateLets", label: "Corporate Lets" },
@@ -857,8 +970,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         key={option.value}
                         className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                         onClick={() => {
-                          const newTenantTypes = formData.tenant_types.includes(option.value)
-                            ? formData.tenant_types.filter((t) => t !== option.value)
+                          const newTenantTypes = formData.tenant_types.includes(
+                            option.value
+                          )
+                            ? formData.tenant_types.filter(
+                                (t) => t !== option.value
+                              )
                             : [...formData.tenant_types, option.value];
                           setFormData({
                             ...formData,
@@ -894,7 +1011,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 min="0"
               />
             </div>
@@ -939,23 +1056,40 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <div className="relative" data-dropdown>
                 <div
                   className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown('property_type')}
+                  onClick={() => toggleDropdown("property_type")}
                 >
-                  <span className={formData.property_type ? 'text-white' : 'text-white/50'}>
+                  <span
+                    className={
+                      formData.property_type ? "text-white" : "text-white/50"
+                    }
+                  >
                     {formData.property_type
-                      ? formData.property_type.charAt(0).toUpperCase() + formData.property_type.slice(1)
-                      : 'Select Type'}
+                      ? formData.property_type.charAt(0).toUpperCase() +
+                        formData.property_type.slice(1)
+                      : "Select Type"}
                   </span>
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
-                {openDropdown === 'property_type' && (
+                {openDropdown === "property_type" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {Object.values(PropertyType).map((type) => (
                       <div
                         key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.property_type === type ? 'bg-white/10' : ''}`}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          formData.property_type === type ? "bg-white/10" : ""
+                        }`}
                         onClick={() => {
                           setFormData({ ...formData, property_type: type });
                           setOpenDropdown(null);
@@ -976,33 +1110,53 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <div className="relative" data-dropdown>
                 <div
                   className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown('building_type')}
+                  onClick={() => toggleDropdown("building_type")}
                 >
-                  <span className={formData.building_type ? 'text-white' : 'text-white/50'}>
+                  <span
+                    className={
+                      formData.building_type ? "text-white" : "text-white/50"
+                    }
+                  >
                     {formData.building_type
-                      ? formData.building_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-                      : 'Select Type'}
+                      ? formData.building_type
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                      : "Select Type"}
                   </span>
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
-                {openDropdown === 'building_type' && (
+                {openDropdown === "building_type" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {Object.values(BuildingType)
-                      .filter(type => type !== "luxury")
+                      .filter((type) => type !== "luxury")
                       .map((type) => (
-                      <div
-                        key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.building_type === type ? 'bg-white/10' : ''}`}
-                        onClick={() => {
-                          setFormData({ ...formData, building_type: type });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </div>
-                    ))}
+                        <div
+                          key={type}
+                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                            formData.building_type === type ? "bg-white/10" : ""
+                          }`}
+                          onClick={() => {
+                            setFormData({ ...formData, building_type: type });
+                            setOpenDropdown(null);
+                          }}
+                        >
+                          {type
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
@@ -1015,29 +1169,49 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <div className="relative" data-dropdown>
                 <div
                   className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown('furnishing')}
+                  onClick={() => toggleDropdown("furnishing")}
                 >
-                  <span className={formData.furnishing ? 'text-white' : 'text-white/50'}>
+                  <span
+                    className={
+                      formData.furnishing ? "text-white" : "text-white/50"
+                    }
+                  >
                     {formData.furnishing
-                      ? formData.furnishing.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-                      : 'Select Type'}
+                      ? formData.furnishing
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                      : "Select Type"}
                   </span>
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
-                {openDropdown === 'furnishing' && (
+                {openDropdown === "furnishing" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {Object.values(Furnishing).map((type) => (
                       <div
                         key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.furnishing === type ? 'bg-white/10' : ''}`}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          formData.furnishing === type ? "bg-white/10" : ""
+                        }`}
                         onClick={() => {
                           setFormData({ ...formData, furnishing: type });
                           setOpenDropdown(null);
                         }}
                       >
-                        {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                        {type
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
                       </div>
                     ))}
                   </div>
@@ -1052,29 +1226,49 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <div className="relative" data-dropdown>
                 <div
                   className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown('let_duration')}
+                  onClick={() => toggleDropdown("let_duration")}
                 >
-                  <span className={formData.let_duration ? 'text-white' : 'text-white/50'}>
+                  <span
+                    className={
+                      formData.let_duration ? "text-white" : "text-white/50"
+                    }
+                  >
                     {formData.let_duration
-                      ? formData.let_duration.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-                      : 'Select Duration'}
+                      ? formData.let_duration
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                      : "Select Duration"}
                   </span>
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
-                {openDropdown === 'let_duration' && (
+                {openDropdown === "let_duration" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {Object.values(LetDuration).map((type) => (
                       <div
                         key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.let_duration === type ? 'bg-white/10' : ''}`}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          formData.let_duration === type ? "bg-white/10" : ""
+                        }`}
                         onClick={() => {
                           setFormData({ ...formData, let_duration: type });
                           setOpenDropdown(null);
                         }}
                       >
-                        {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                        {type
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
                       </div>
                     ))}
                   </div>
@@ -1089,23 +1283,38 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <div className="relative" data-dropdown>
                 <div
                   className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown('bills')}
+                  onClick={() => toggleDropdown("bills")}
                 >
-                  <span className={formData.bills ? 'text-white' : 'text-white/50'}>
+                  <span
+                    className={formData.bills ? "text-white" : "text-white/50"}
+                  >
                     {formData.bills
-                      ? formData.bills.charAt(0).toUpperCase() + formData.bills.slice(1)
-                      : 'Select Option'}
+                      ? formData.bills.charAt(0).toUpperCase() +
+                        formData.bills.slice(1)
+                      : "Select Option"}
                   </span>
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
-                {openDropdown === 'bills' && (
+                {openDropdown === "bills" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {Object.values(Bills).map((type) => (
                       <div
                         key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${formData.bills === type ? 'bg-white/10' : ''}`}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          formData.bills === type ? "bg-white/10" : ""
+                        }`}
                         onClick={() => {
                           setFormData({ ...formData, bills: type });
                           setOpenDropdown(null);
@@ -1123,38 +1332,126 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Bedrooms
               </label>
-              <input
-                type="number"
-                value={formData.bedrooms || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    bedrooms:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                min="0"
-              />
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown("bedrooms")}
+                >
+                  <span
+                    className={
+                      formData.bedrooms ? "text-white" : "text-white/50"
+                    }
+                  >
+                    {formData.bedrooms
+                      ? formData.bedrooms >= 5
+                        ? "5+"
+                        : formData.bedrooms
+                      : "Select Bedrooms"}
+                  </span>
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+                {openDropdown === "bedrooms" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <div
+                        key={value}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          (value === 5 &&
+                            formData.bedrooms &&
+                            formData.bedrooms >= 5) ||
+                          (value < 5 && formData.bedrooms === value)
+                            ? "bg-white/10"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            bedrooms: value,
+                          });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {value === 5 ? "5+" : value}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Bathrooms
               </label>
-              <input
-                type="number"
-                value={formData.bathrooms || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    bathrooms:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                min="0"
-              />
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown("bathrooms")}
+                >
+                  <span
+                    className={
+                      formData.bathrooms ? "text-white" : "text-white/50"
+                    }
+                  >
+                    {formData.bathrooms
+                      ? formData.bathrooms >= 4
+                        ? "4+"
+                        : formData.bathrooms
+                      : "Select Bathrooms"}
+                  </span>
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+                {openDropdown === "bathrooms" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {[1, 2, 3, 4].map((value) => (
+                      <div
+                        key={value}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          (value === 4 &&
+                            formData.bathrooms &&
+                            formData.bathrooms >= 4) ||
+                          (value < 4 && formData.bathrooms === value)
+                            ? "bg-white/10"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            bathrooms: value,
+                          });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {value === 4 ? "4+" : value}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -1171,7 +1468,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 min="0"
               />
             </div>
@@ -1190,7 +1487,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 min="0"
                 step="0.1"
               />
@@ -1267,7 +1564,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           {/* Property Features */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Amenities {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+              Amenities{" "}
+              {isFieldReadonly && (
+                <span className="text-white/50 text-xs">(from building)</span>
+              )}
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1279,11 +1579,15 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     checked={formData.amenities.includes(amenity)}
                     onChange={() => toggleAmenity(amenity)}
                     disabled={isFieldReadonly}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
+                      isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
+                    }`}
                   />
                   <label
                     htmlFor={`amenity-${amenity}`}
-                    className={`text-sm font-medium text-white/90 ${isFieldReadonly ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    className={`text-sm font-medium text-white/90 ${
+                      isFieldReadonly ? "cursor-not-allowed" : "cursor-pointer"
+                    }`}
                   >
                     {amenity}
                   </label>
@@ -1337,7 +1641,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                             },
                           });
                         } else {
-                          const val = Math.max(0, Math.min(23, parseInt(inputVal) || 0));
+                          const val = Math.max(
+                            0,
+                            Math.min(23, parseInt(inputVal) || 0)
+                          );
                           setFormData({
                             ...formData,
                             concierge_hours: {
@@ -1370,7 +1677,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                             },
                           });
                         } else {
-                          const val = Math.max(0, Math.min(23, parseInt(inputVal) || 0));
+                          const val = Math.max(
+                            0,
+                            Math.min(23, parseInt(inputVal) || 0)
+                          );
                           setFormData({
                             ...formData,
                             concierge_hours: {
@@ -1390,7 +1700,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             {/* Pets */}
             <div className="space-y-4">
               <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Pet Policy {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+                Pet Policy{" "}
+                {isFieldReadonly && (
+                  <span className="text-white/50 text-xs">(from building)</span>
+                )}
               </h4>
 
               <div className="flex items-center gap-2">
@@ -1399,10 +1712,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   id="pet_policy_property_add"
                   checked={formData.pet_policy}
                   onChange={(e) =>
-                    !isFieldReadonly && setFormData({ ...formData, pet_policy: e.target.checked })
+                    !isFieldReadonly &&
+                    setFormData({ ...formData, pet_policy: e.target.checked })
                   }
                   disabled={isFieldReadonly}
-                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
+                    isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
                 />
                 <label
                   htmlFor="pet_policy_property_add"
@@ -1441,32 +1757,52 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           </label>
                           <div className="relative" data-dropdown>
                             <div
-                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                              onClick={() => !isFieldReadonly && toggleDropdown(`pet_type_${index}`)}
+                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
+                                isFieldReadonly
+                                  ? "opacity-60 cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
+                              onClick={() =>
+                                !isFieldReadonly &&
+                                toggleDropdown(`pet_type_${index}`)
+                              }
                             >
                               <span className="capitalize">{pet.type}</span>
                               {!isFieldReadonly && (
-                                <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                <svg
+                                  className="w-5 h-5 text-white/70"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
                                 </svg>
                               )}
                             </div>
-                            {!isFieldReadonly && openDropdown === `pet_type_${index}` && (
-                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {['dog', 'cat', 'other'].map((type) => (
-                                  <div
-                                    key={type}
-                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${pet.type === type ? 'bg-white/10' : ''}`}
-                                    onClick={() => {
-                                      updatePet(index, "type", type);
-                                      setOpenDropdown(null);
-                                    }}
-                                  >
-                                    {type}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            {!isFieldReadonly &&
+                              openDropdown === `pet_type_${index}` && (
+                                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                  {["dog", "cat", "other"].map((type) => (
+                                    <div
+                                      key={type}
+                                      className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${
+                                        pet.type === type ? "bg-white/10" : ""
+                                      }`}
+                                      onClick={() => {
+                                        updatePet(index, "type", type);
+                                        setOpenDropdown(null);
+                                      }}
+                                    >
+                                      {type}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                           </div>
                         </div>
 
@@ -1479,10 +1815,15 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                               type="text"
                               value={pet.customType || ""}
                               onChange={(e) =>
-                                !isFieldReadonly && updatePet(index, "customType", e.target.value)
+                                !isFieldReadonly &&
+                                updatePet(index, "customType", e.target.value)
                               }
                               readOnly={isFieldReadonly}
-                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${
+                                isFieldReadonly
+                                  ? "opacity-60 cursor-not-allowed"
+                                  : ""
+                              }`}
                               placeholder="e.g., Hamster"
                             />
                           </div>
@@ -1494,34 +1835,69 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           </label>
                           <div className="relative" data-dropdown>
                             <div
-                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                              onClick={() => !isFieldReadonly && toggleDropdown(`pet_size_${index}`)}
+                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
+                                isFieldReadonly
+                                  ? "opacity-60 cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
+                              onClick={() =>
+                                !isFieldReadonly &&
+                                toggleDropdown(`pet_size_${index}`)
+                              }
                             >
-                              <span className={pet.size ? 'capitalize' : 'text-white/50'}>
-                                {pet.size ? pet.size : 'Not specified'}
+                              <span
+                                className={
+                                  pet.size ? "capitalize" : "text-white/50"
+                                }
+                              >
+                                {pet.size ? pet.size : "Not specified"}
                               </span>
                               {!isFieldReadonly && (
-                                <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                <svg
+                                  className="w-5 h-5 text-white/70"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
                                 </svg>
                               )}
                             </div>
-                            {!isFieldReadonly && openDropdown === `pet_size_${index}` && (
-                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {[{ value: '', label: 'Not specified' }, { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }].map((size) => (
-                                  <div
-                                    key={size.value}
-                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${(pet.size || '') === size.value ? 'bg-white/10' : ''}`}
-                                    onClick={() => {
-                                      updatePet(index, "size", size.value || undefined);
-                                      setOpenDropdown(null);
-                                    }}
-                                  >
-                                    {size.label}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            {!isFieldReadonly &&
+                              openDropdown === `pet_size_${index}` && (
+                                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                  {[
+                                    { value: "", label: "Not specified" },
+                                    { value: "small", label: "Small" },
+                                    { value: "medium", label: "Medium" },
+                                    { value: "large", label: "Large" },
+                                  ].map((size) => (
+                                    <div
+                                      key={size.value}
+                                      className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                                        (pet.size || "") === size.value
+                                          ? "bg-white/10"
+                                          : ""
+                                      }`}
+                                      onClick={() => {
+                                        updatePet(
+                                          index,
+                                          "size",
+                                          size.value || undefined
+                                        );
+                                        setOpenDropdown(null);
+                                      }}
+                                    >
+                                      {size.label}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                           </div>
                         </div>
                       </div>
@@ -1544,7 +1920,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             {/* Smoking Area */}
             <div className="space-y-4">
               <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Other {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+                Other{" "}
+                {isFieldReadonly && (
+                  <span className="text-white/50 text-xs">(from building)</span>
+                )}
               </h4>
 
               <div className="flex items-center gap-2">
@@ -1553,10 +1932,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   id="smoking_area_property_add"
                   checked={formData.smoking_area}
                   onChange={(e) =>
-                    !isFieldReadonly && setFormData({ ...formData, smoking_area: e.target.checked })
+                    !isFieldReadonly &&
+                    setFormData({ ...formData, smoking_area: e.target.checked })
                   }
                   disabled={isFieldReadonly}
-                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
+                    isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
                 />
                 <label
                   htmlFor="smoking_area_property_add"
@@ -1701,7 +2083,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       }
                     }}
                     className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    placeholder="m"
+                    placeholder="min"
                     min="0"
                   />
                   <button
