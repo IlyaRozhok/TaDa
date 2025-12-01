@@ -197,19 +197,13 @@ export default function ListedPropertiesSection({
 
       {/* Properties Grid */}
       <div className="relative">
-        {/* Loading Overlay */}
-        {loading && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border">
-              <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
-              <span className="text-sm text-gray-600">
-                Loading properties...
-              </span>
-            </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <PropertyCardSkeleton key={`skeleton-${index}`} />
+            ))}
           </div>
-        )}
-
-        {sortedProperties.length > 0 ? (
+        ) : sortedProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedProperties.map(({ property, matchScore }) => (
               <EnhancedPropertyCard
@@ -229,7 +223,7 @@ export default function ListedPropertiesSection({
               />
             ))}
           </div>
-        ) : !loading ? (
+        ) : (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
@@ -256,7 +250,7 @@ export default function ListedPropertiesSection({
               </p>
             </div>
           </div>
-        ) : null}
+        )}
       </div>
 
       {/* Pagination */}

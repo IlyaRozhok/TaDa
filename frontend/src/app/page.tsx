@@ -107,10 +107,32 @@ export default function HomePage() {
   // Show loading state while redirecting authenticated users
   if (isAuthenticated && user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4"></div>
-          <p className="text-slate-600">Redirecting to dashboard...</p>
+      <div className="min-h-screen bg-white">
+        {/* Header Skeleton */}
+        <div className="border-b border-gray-200 bg-white">
+          <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div className="flex-1 max-w-md mx-8 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="flex gap-4">
+                <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="max-w-[92%] mx-auto px-4 py-12">
+          <div className="mb-8">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-4 w-96 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <PropertyCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -148,12 +170,7 @@ export default function HomePage() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    {/* Search indicator */}
-                    {searchTerm && debouncedSearchTerm !== searchTerm && (
-                      <div className="absolute inset-y-0 right-3 flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
+                    {/* Search indicator - removed spinner, using debounce instead */}
                     {/* Clear search button */}
                     {searchTerm && (
                       <button

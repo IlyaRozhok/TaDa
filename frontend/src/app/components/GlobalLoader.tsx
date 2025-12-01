@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Home } from "lucide-react";
+import PageSkeleton from "./ui/PageSkeleton";
 
 interface GlobalLoaderProps {
   isLoading: boolean;
@@ -10,24 +10,10 @@ interface GlobalLoaderProps {
 
 export default function GlobalLoader({
   isLoading,
-  message = "Loading...",
+  message,
 }: GlobalLoaderProps) {
   if (!isLoading) return null;
 
-  return (
-    <div className="fixed inset-0 bg-white z-[9999] flex items-center justify-center">
-      <div className="text-center">
-        {/* Logo */}
-        <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm">
-          <Home className="w-8 h-8 text-white" />
-        </div>
-
-        {/* Loading Animation */}
-        <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-6"></div>
-
-        {/* Message */}
-        <p className="text-slate-600 font-medium">{message}</p>
-      </div>
-    </div>
-  );
+  // Use PageSkeleton instead of spinner
+  return <PageSkeleton />;
 }

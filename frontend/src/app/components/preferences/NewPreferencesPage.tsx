@@ -80,21 +80,41 @@ export default function NewPreferencesPage() {
     }
   }, [sessionReady, isAuthenticated, user, hasCheckedAccess]);
 
-  if (!sessionReady) {
+  if (!sessionReady || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+      <div className="min-h-screen bg-white">
+        {/* Header Skeleton */}
+        <div className="border-b border-gray-200 bg-white">
+          <div className="max-w-4xl mx-auto px-8 py-4">
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+          </div>
         </div>
-      </div>
-    );
-  }
 
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+        {/* Content Skeleton */}
+        <div className="max-w-4xl mx-auto px-8 py-10">
+          <div className="space-y-6">
+            {/* Title Skeleton */}
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-4"></div>
+            
+            {/* Form Fields Skeleton */}
+            <div className="space-y-4">
+              <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Navigation Skeleton */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+          <div className="w-full bg-gray-200 h-1"></div>
+          <div className="p-8">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-12 w-24 bg-gray-200 rounded-full animate-pulse"></div>
+            </div>
+          </div>
         </div>
       </div>
     );

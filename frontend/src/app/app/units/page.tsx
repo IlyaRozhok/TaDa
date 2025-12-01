@@ -8,7 +8,7 @@ import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import TenantPerfectMatchSection from "../../components/TenantPerfectMatchSection";
 import ListedPropertiesSection from "../../components/ListedPropertiesSection";
-import LoadingPage from "../../components/ui/LoadingSpinner";
+import PageSkeleton from "../../components/ui/PageSkeleton";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 
 function TenantDashboardContent() {
@@ -23,7 +23,7 @@ function TenantDashboardContent() {
 
   // Loading state
   if (!user || state.sessionLoading) {
-    return <LoadingPage text="Loading dashboard..." />;
+    return <PageSkeleton />;
   }
 
   // Error state
@@ -136,11 +136,11 @@ export default function TenantUnitsPage() {
   }, [sessionReady, user, router]);
 
   if (!sessionReady) {
-    return <LoadingPage text="Loading dashboard..." />;
+    return <PageSkeleton />;
   }
 
   if (!user) {
-    return <LoadingPage text="Redirecting..." />;
+    return <PageSkeleton />;
   }
 
   // Redirect non-tenants

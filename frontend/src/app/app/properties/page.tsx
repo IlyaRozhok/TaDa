@@ -100,12 +100,30 @@ export default function AllPropertiesPage() {
       <div className="min-h-screen bg-slate-50">
         <DashboardHeader />
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="w-12 h-12 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading properties...</p>
+          {/* Header Skeleton */}
+          <div className="mb-8">
+            <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6"></div>
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                <div>
+                  <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                <div className="h-12 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
             </div>
           </div>
+          
+          {/* Grid Skeleton */}
+          <PropertyGridWithLoader
+            properties={[]}
+            loading={true}
+            skeletonCount={6}
+          />
         </div>
       </div>
     );
