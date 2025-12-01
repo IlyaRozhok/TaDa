@@ -51,7 +51,7 @@ export default function UniversalHeader() {
               className="text-gray-900 text-sm sm:text-lg md:text-xl font-semibold transition-colors hover:text-gray-700"
             >
               <img
-                src="/landing-logo.svg"
+                src="/black-logo.svg"
                 alt="TADA Logo"
                 className="h-6 pl-5 cursor-pointer"
               />

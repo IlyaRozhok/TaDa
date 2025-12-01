@@ -161,15 +161,19 @@ export default function EnhancedPropertyCard({
         typeof property.price === "string"
           ? parseFloat(property.price)
           : property.price;
-      const isWithinBudget =
-        propertyPrice >= userPreferences.min_price &&
-        propertyPrice <= userPreferences.max_price;
-      reasons.push({
-        matches: isWithinBudget,
-        details: `Price ${propertyPrice.toFixed(0)} within budget ${
-          userPreferences.min_price
-        }-${userPreferences.max_price}`,
-      });
+      
+      // Check if propertyPrice is valid
+      if (propertyPrice !== null && propertyPrice !== undefined && !isNaN(propertyPrice)) {
+        const isWithinBudget =
+          propertyPrice >= userPreferences.min_price &&
+          propertyPrice <= userPreferences.max_price;
+        reasons.push({
+          matches: isWithinBudget,
+          details: `Price £${propertyPrice.toFixed(0)} within budget £${
+            userPreferences.min_price
+          }-£${userPreferences.max_price}`,
+        });
+      }
     }
 
     // Bedroom requirement
