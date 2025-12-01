@@ -2,7 +2,6 @@ import React from "react";
 import {
   Building2,
   Plus,
-  Eye,
   Edit,
   Trash2,
   Search,
@@ -166,7 +165,8 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                 buildings.map((building) => (
                   <tr
                     key={building.id}
-                    className="hover:bg-gray-50 transition-colors duration-150"
+                    onClick={() => onView(building)}
+                    className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -202,9 +202,13 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {Array.isArray(building.type_of_unit) && building.type_of_unit.length > 0 ? (
+                        {Array.isArray(building.type_of_unit) &&
+                        building.type_of_unit.length > 0 ? (
                           building.type_of_unit.map((unit) => (
-                            <span key={unit} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-black border border-gray-200">
+                            <span
+                              key={unit}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-black border border-gray-200"
+                            >
                               {unit}
                             </span>
                           ))
@@ -269,17 +273,16 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                           )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td
+                      className="px-6 py-4"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => onView(building)}
-                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
-                          title="View building"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onEdit(building)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(building);
+                          }}
                           className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Edit building"
                         >

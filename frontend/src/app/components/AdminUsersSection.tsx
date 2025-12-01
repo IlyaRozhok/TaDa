@@ -2,7 +2,6 @@ import React from "react";
 import {
   Users,
   Plus,
-  Eye,
   Edit,
   Trash2,
   Search,
@@ -162,7 +161,8 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 users.map((user) => (
                   <tr
                     key={user.id}
-                    className="hover:bg-gray-50 transition-colors duration-150"
+                    onClick={() => onView(user)}
+                    className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -212,24 +212,23 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                         {new Date(user.created_at).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => onView(user)}
-                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
-                          title="View user"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onEdit(user)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(user);
+                          }}
                           className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Edit user"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onDelete(user)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(user);
+                          }}
                           className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
                           title="Delete user"
                         >
