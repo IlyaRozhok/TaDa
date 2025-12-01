@@ -109,6 +109,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<BuildingFormData>({
     name: "",
     address: "",
@@ -419,10 +420,18 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent multiple submissions
+    if (isSubmitting || isLoading) {
+      return;
+    }
+
     if (!building) return;
 
-    // Upload files first
-    const uploadResult = await uploadAllFiles();
+    setIsSubmitting(true);
+    try {
+      // Upload files first
+      const uploadResult = await uploadAllFiles();
 
     // Prepare data with uploaded URLs
     // For photos: combine existing (minus removed) + new uploaded
@@ -540,7 +549,13 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       formData_operator_id_type: typeof formData.operator_id,
     });
 
-    await onSubmit(building.id, buildingData);
+      await onSubmit(building.id, buildingData);
+    } catch (error) {
+      console.error("Error updating building:", error);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen || !building) return null;
@@ -689,7 +704,8 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
           <h2 className="text-2xl font-bold text-white">Edit Building</h2>
           <button
             onClick={onClose}
-            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+            disabled={isLoading || isSubmitting}
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-5 h-5" />
           </button>
@@ -699,6 +715,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         <form
           onSubmit={handleSubmit}
           className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto"
+          style={{ pointerEvents: isLoading || isSubmitting ? 'none' : 'auto', opacity: isLoading || isSubmitting ? 0.7 : 1 }}
         >
           {/* Basic Information */}
           <div className="space-y-4">
@@ -2021,16 +2038,24 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 text-white/90 cursor-pointer hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
+              disabled={isLoading || isSubmitting}
+              className="px-6 py-2.5 text-white/90 cursor-pointer hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
               className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>{isLoading ? "Updating..." : "Update"}</span>
+              {isLoading || isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <span>Update</span>
+              )}
             </button>
           </div>
         </form>

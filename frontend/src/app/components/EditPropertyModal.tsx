@@ -20,22 +20,22 @@ interface Pet {
 
 interface MetroStation {
   label: string;
-  destination: number;
+  destination?: number;
 }
 
 interface CommuteTime {
   label: string;
-  destination: number;
+  destination?: number;
 }
 
 interface LocalEssential {
   label: string;
-  destination: number;
+  destination?: number;
 }
 
 interface ConciergeHours {
-  from: number;
-  to: number;
+  from?: number;
+  to?: number;
 }
 
 interface Building {
@@ -72,6 +72,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   isLoading = false,
   operators = [],
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     apartment_number: "",
     descriptions: "",
@@ -503,7 +504,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const addMetroStation = () => {
     setFormData((prev) => ({
       ...prev,
-      metro_stations: [...prev.metro_stations, { label: "", destination: 0 }],
+      metro_stations: [...prev.metro_stations, { label: "", destination: undefined }],
     }));
   };
 
@@ -517,7 +518,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const updateMetroStation = (
     index: number,
     field: keyof MetroStation,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -531,7 +532,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const addCommuteTime = () => {
     setFormData((prev) => ({
       ...prev,
-      commute_times: [...prev.commute_times, { label: "", destination: 0 }],
+      commute_times: [...prev.commute_times, { label: "", destination: undefined }],
     }));
   };
 
@@ -545,7 +546,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const updateCommuteTime = (
     index: number,
     field: keyof CommuteTime,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -561,7 +562,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       ...prev,
       local_essentials: [
         ...prev.local_essentials,
-        { label: "", destination: 0 },
+        { label: "", destination: undefined },
       ],
     }));
   };
@@ -576,7 +577,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const updateLocalEssential = (
     index: number,
     field: keyof LocalEssential,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -644,12 +645,18 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent multiple submissions
+    if (isSubmitting || isLoading) {
+      return;
+    }
+
     if (!property) return;
 
     if (!formData.building_id && formData.building_type !== "private_landlord") {
       throw new Error("Please select a building");
     }
 
+    setIsSubmitting(true);
     try {
       // Upload new media files
       let uploadedPhotos: string[] = [];
@@ -767,6 +774,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       console.error("Failed to update property:", error);
       // Re-throw error so parent component can handle it
       throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -795,7 +804,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           <h2 className="text-2xl font-bold text-white">Edit Property</h2>
           <button
             onClick={handleClose}
-            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+            disabled={isLoading || isSubmitting}
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-5 h-5" />
           </button>
@@ -805,6 +815,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         <form
           onSubmit={handleSubmit}
           className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto"
+          style={{ pointerEvents: isLoading || isSubmitting ? 'none' : 'auto', opacity: isLoading || isSubmitting ? 0.7 : 1 }}
         >
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -933,7 +944,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 min="0"
               />
             </div>
@@ -1432,10 +1443,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   id="is_concierge_property_edit"
                   checked={formData.is_concierge}
                   onChange={(e) =>
-                    !isFieldReadonly && setFormData({ ...formData, is_concierge: e.target.checked })
+                    setFormData({ ...formData, is_concierge: e.target.checked })
                   }
-                  disabled={isFieldReadonly}
-                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label
                   htmlFor="is_concierge_property_edit"
@@ -1455,18 +1465,29 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       type="number"
                       min="0"
                       max="23"
-                      value={formData.concierge_hours?.from || ""}
-                      onChange={(e) =>
-                        !isFieldReadonly && setFormData({
-                          ...formData,
-                          concierge_hours: {
-                            from: parseInt(e.target.value) || 0,
-                            to: formData.concierge_hours?.to || 22,
-                          },
-                        })
-                      }
-                      readOnly={isFieldReadonly}
-                      className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      value={formData.concierge_hours?.from ?? ""}
+                      onChange={(e) => {
+                        const inputVal = e.target.value;
+                        if (inputVal === "") {
+                          setFormData({
+                            ...formData,
+                            concierge_hours: {
+                              from: undefined,
+                              to: formData.concierge_hours?.to,
+                            },
+                          });
+                        } else {
+                          const val = Math.max(0, Math.min(23, parseInt(inputVal) || 0));
+                          setFormData({
+                            ...formData,
+                            concierge_hours: {
+                              from: val,
+                              to: formData.concierge_hours?.to,
+                            },
+                          });
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                     />
                   </div>
                   <div>
@@ -1477,18 +1498,29 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       type="number"
                       min="0"
                       max="23"
-                      value={formData.concierge_hours?.to || ""}
-                      onChange={(e) =>
-                        !isFieldReadonly && setFormData({
-                          ...formData,
-                          concierge_hours: {
-                            from: formData.concierge_hours?.from || 8,
-                            to: parseInt(e.target.value) || 22,
-                          },
-                        })
-                      }
-                      readOnly={isFieldReadonly}
-                      className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      value={formData.concierge_hours?.to ?? ""}
+                      onChange={(e) => {
+                        const inputVal = e.target.value;
+                        if (inputVal === "") {
+                          setFormData({
+                            ...formData,
+                            concierge_hours: {
+                              from: formData.concierge_hours?.from,
+                              to: undefined,
+                            },
+                          });
+                        } else {
+                          const val = Math.max(0, Math.min(23, parseInt(inputVal) || 0));
+                          setFormData({
+                            ...formData,
+                            concierge_hours: {
+                              from: formData.concierge_hours?.from,
+                              to: val,
+                            },
+                          });
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                     />
                   </div>
                 </div>
@@ -1678,7 +1710,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             {/* Metro Stations */}
             <div className="space-y-4">
               <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Metro Stations {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+                Metro Stations
               </h4>
 
               {formData.metro_stations.map((station, index) => (
@@ -1687,50 +1719,50 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     type="text"
                     value={station.label}
                     onChange={(e) =>
-                      !isFieldReadonly && updateMetroStation(index, "label", e.target.value)
+                      updateMetroStation(index, "label", e.target.value)
                     }
-                    readOnly={isFieldReadonly}
-                    className={`flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                     placeholder="Station name"
                   />
                   <input
                     type="number"
-                    value={station.destination}
-                    onChange={(e) =>
-                      !isFieldReadonly && updateMetroStation(index, "destination", parseInt(e.target.value) || 0)
-                    }
-                    readOnly={isFieldReadonly}
-                    className={`w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    value={station.destination ?? ""}
+                    onChange={(e) => {
+                      const inputVal = e.target.value;
+                      if (inputVal === "") {
+                        updateMetroStation(index, "destination", undefined);
+                      } else {
+                        const val = Math.max(0, parseInt(inputVal) || 0);
+                        updateMetroStation(index, "destination", val);
+                      }
+                    }}
+                    className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                     placeholder="min"
                     min="0"
                   />
-                  {!isFieldReadonly && (
-                    <button
-                      type="button"
-                      onClick={() => removeMetroStation(index)}
-                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeMetroStation(index)}
+                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
 
-              {!isFieldReadonly && (
-                <button
-                  type="button"
-                  onClick={addMetroStation}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-                >
-                  Add Metro Station
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={addMetroStation}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+              >
+                Add Metro Station
+              </button>
             </div>
 
             {/* Commute Times */}
             <div className="space-y-4">
               <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Commute Times {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+                Commute Times
               </h4>
 
               {formData.commute_times.map((time, index) => (
@@ -1739,50 +1771,50 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     type="text"
                     value={time.label}
                     onChange={(e) =>
-                      !isFieldReadonly && updateCommuteTime(index, "label", e.target.value)
+                      updateCommuteTime(index, "label", e.target.value)
                     }
-                    readOnly={isFieldReadonly}
-                    className={`flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                     placeholder="Destination"
                   />
                   <input
                     type="number"
-                    value={time.destination}
-                    onChange={(e) =>
-                      !isFieldReadonly && updateCommuteTime(index, "destination", parseInt(e.target.value) || 0)
-                    }
-                    readOnly={isFieldReadonly}
-                    className={`w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    value={time.destination ?? ""}
+                    onChange={(e) => {
+                      const inputVal = e.target.value;
+                      if (inputVal === "") {
+                        updateCommuteTime(index, "destination", undefined);
+                      } else {
+                        const val = Math.max(0, parseInt(inputVal) || 0);
+                        updateCommuteTime(index, "destination", val);
+                      }
+                    }}
+                    className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                     placeholder="min"
                     min="0"
                   />
-                  {!isFieldReadonly && (
-                    <button
-                      type="button"
-                      onClick={() => removeCommuteTime(index)}
-                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeCommuteTime(index)}
+                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
 
-              {!isFieldReadonly && (
-                <button
-                  type="button"
-                  onClick={addCommuteTime}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-                >
-                  Add Commute Time
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={addCommuteTime}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+              >
+                Add Commute Time
+              </button>
             </div>
 
             {/* Local Essentials */}
             <div className="space-y-4">
               <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Local Essentials {isFieldReadonly && <span className="text-white/50 text-xs">(from building)</span>}
+                Local Essentials
               </h4>
 
               {formData.local_essentials.map((essential, index) => (
@@ -1791,44 +1823,44 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     type="text"
                     value={essential.label}
                     onChange={(e) =>
-                      !isFieldReadonly && updateLocalEssential(index, "label", e.target.value)
+                      updateLocalEssential(index, "label", e.target.value)
                     }
-                    readOnly={isFieldReadonly}
-                    className={`flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
                     placeholder="Essential name"
                   />
                   <input
                     type="number"
-                    value={essential.destination}
-                    onChange={(e) =>
-                      !isFieldReadonly && updateLocalEssential(index, "destination", parseInt(e.target.value) || 0)
-                    }
-                    readOnly={isFieldReadonly}
-                    className={`w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${isFieldReadonly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    value={essential.destination ?? ""}
+                    onChange={(e) => {
+                      const inputVal = e.target.value;
+                      if (inputVal === "") {
+                        updateLocalEssential(index, "destination", undefined);
+                      } else {
+                        const val = Math.max(0, parseInt(inputVal) || 0);
+                        updateLocalEssential(index, "destination", val);
+                      }
+                    }}
+                    className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                     placeholder="m"
                     min="0"
                   />
-                  {!isFieldReadonly && (
-                    <button
-                      type="button"
-                      onClick={() => removeLocalEssential(index)}
-                      className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeLocalEssential(index)}
+                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
 
-              {!isFieldReadonly && (
-                <button
-                  type="button"
-                  onClick={addLocalEssential}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-                >
-                  Add Local Essential
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={addLocalEssential}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+              >
+                Add Local Essential
+              </button>
             </div>
           </div>
 
@@ -2058,16 +2090,24 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="px-6 py-2.5 text-white/90 cursor-pointer hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
+              disabled={isLoading || isSubmitting}
+              className="px-6 py-2.5 text-white/90 cursor-pointer hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
               className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>{isLoading ? "Updating..." : "Update"}</span>
+              {isLoading || isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <span>Update</span>
+              )}
             </button>
           </div>
         </form>

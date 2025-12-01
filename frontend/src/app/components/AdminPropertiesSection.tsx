@@ -185,8 +185,8 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-black">
-                        {property.bedrooms ?? "-"}🛏️ /{" "}
-                        {property.bathrooms ?? "-"}🚿
+                        {property.bedrooms ?? "-"} 🛏️ /{" "}
+                        {property.bathrooms ?? "-"} 🚿
                       </span>
                     </td>
                     <td className="px-6 py-4">

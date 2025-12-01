@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "./store/slices/authSlice";
 import { Property } from "./types";
-import { propertiesAPI } from "./lib/api";
 import HomepagePropertyCard from "./components/HomepagePropertyCard";
 import PropertyCardSkeleton from "./components/PropertyCardSkeleton";
 import AuthModal from "./components/AuthModal";
 import DualLandingWrapper from "./components/DualLandingWrapper";
 import { Search, ChevronDown, MapPin } from "lucide-react";
-import Image from "next/image";
 import { useDebounce } from "./hooks/useDebounce";
 
 // Mock match data for demonstration
@@ -38,7 +36,7 @@ export default function HomePage() {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,31 +53,6 @@ export default function HomePage() {
       router.replace(`/app/dashboard/${role}`);
     }
   }, [isAuthenticated, user, router]);
-
-  // Fetch properties
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        const response = await propertiesAPI.getPublic(1, 20); // Get up to 20 properties for homepage
-        const data = response.data || response;
-        const fetchedProperties = Array.isArray(data.data)
-          ? data.data
-          : Array.isArray(data)
-          ? data
-          : [];
-        setProperties(fetchedProperties);
-        setFilteredProperties(fetchedProperties);
-      } catch (err) {
-        console.error("Error fetching properties:", err);
-        setError("Failed to load properties");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, []);
 
   // Filter properties based on search term
   useEffect(() => {
@@ -210,7 +183,9 @@ export default function HomePage() {
                   {/* Language Dropdown */}
                   <div className="relative">
                     <button className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
-                      <span className="font-medium cursor-pointer">{language}</span>
+                      <span className="font-medium cursor-pointer">
+                        {language}
+                      </span>
                       <ChevronDown className="w-4 h-4" />
                     </button>
                   </div>

@@ -7,22 +7,22 @@ import { buildingsAPI, usersAPI } from "../lib/api";
 
 interface MetroStation {
   label: string;
-  destination: number;
+  destination?: number;
 }
 
 interface CommuteTime {
   label: string;
-  destination: number;
+  destination?: number;
 }
 
 interface LocalEssential {
   label: string;
-  destination: number;
+  destination?: number;
 }
 
 interface ConciergeHours {
-  from: number;
-  to: number;
+  from?: number;
+  to?: number;
 }
 
 interface Pet {
@@ -54,6 +54,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -303,153 +304,169 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Upload files first
-    const uploadResult = await uploadAllFiles();
+    // Prevent multiple submissions
+    if (isSubmitting || isLoading) {
+      return;
+    }
 
-    // Ensure operator_id is only the ID string, not an object
-    let operatorIdValue: string | null = null;
-    if (formData.operator_id) {
-      if (
-        typeof formData.operator_id === "string" &&
-        formData.operator_id.trim() !== ""
-      ) {
-        operatorIdValue = formData.operator_id.trim();
-      } else if (
-        typeof formData.operator_id === "object" &&
-        formData.operator_id !== null &&
-        "id" in formData.operator_id
-      ) {
-        // If somehow an object was passed, extract the ID
-        operatorIdValue = (formData.operator_id as any).id;
-        console.warn(
-          "⚠️ operator_id was an object, extracting ID:",
-          operatorIdValue
-        );
+    setIsSubmitting(true);
+    try {
+      // Upload files first
+      const uploadResult = await uploadAllFiles();
+
+      // Ensure operator_id is only the ID string, not an object
+      let operatorIdValue: string | null = null;
+      if (formData.operator_id) {
+        if (
+          typeof formData.operator_id === "string" &&
+          formData.operator_id.trim() !== ""
+        ) {
+          operatorIdValue = formData.operator_id.trim();
+        } else if (
+          typeof formData.operator_id === "object" &&
+          formData.operator_id !== null &&
+          "id" in formData.operator_id
+        ) {
+          // If somehow an object was passed, extract the ID
+          operatorIdValue = (formData.operator_id as any).id;
+          console.warn(
+            "⚠️ operator_id was an object, extracting ID:",
+            operatorIdValue
+          );
+        }
       }
-    }
 
-    // Prepare data with uploaded URLs
-    const buildingData: any = {
-      name: formData.name,
-      // Only send operator_id as string or null, never as object
-      operator_id: operatorIdValue,
-    };
+      // Prepare data with uploaded URLs
+      const buildingData: any = {
+        name: formData.name,
+        // Only send operator_id as string or null, never as object
+        operator_id: operatorIdValue,
+      };
 
-    // Add optional fields only if they have values
-    if (formData.address && formData.address.trim() !== "") {
-      buildingData.address = formData.address;
-    }
-    if (formData.number_of_units != null) {
-      buildingData.number_of_units = formData.number_of_units;
-    }
-    if (formData.type_of_unit && formData.type_of_unit.length > 0) {
-      buildingData.type_of_unit = formData.type_of_unit;
-    }
-    if (
-      uploadResult.uploadedUrls.logo ||
-      (formData.logo && formData.logo.trim() !== "")
-    ) {
-      buildingData.logo = uploadResult.uploadedUrls.logo || formData.logo;
-    }
-    if (
-      uploadResult.uploadedUrls.video ||
-      (formData.video && formData.video.trim() !== "")
-    ) {
-      buildingData.video = uploadResult.uploadedUrls.video || formData.video;
-    }
-    if (
-      uploadResult.uploadedUrls.photos.length > 0 ||
-      (formData.photos && formData.photos.length > 0)
-    ) {
-      buildingData.photos =
-        uploadResult.uploadedUrls.photos.length > 0
-          ? uploadResult.uploadedUrls.photos
-          : formData.photos;
-    }
-    if (
-      uploadResult.uploadedUrls.documents ||
-      (formData.documents && formData.documents.trim() !== "")
-    ) {
-      buildingData.documents =
-        uploadResult.uploadedUrls.documents || formData.documents;
-    }
-    if (formData.metro_stations && formData.metro_stations.length > 0) {
-      buildingData.metro_stations = formData.metro_stations;
-    }
-    if (formData.commute_times && formData.commute_times.length > 0) {
-      buildingData.commute_times = formData.commute_times;
-    }
-    if (formData.local_essentials && formData.local_essentials.length > 0) {
-      buildingData.local_essentials = formData.local_essentials;
-    }
-    if (formData.amenities && formData.amenities.length > 0) {
-      buildingData.amenities = formData.amenities;
-    }
-    // Boolean fields - always include, even if false
-    buildingData.is_concierge = formData.is_concierge;
-    buildingData.pet_policy = formData.pet_policy;
-    buildingData.smoking_area = formData.smoking_area;
+      // Add optional fields only if they have values
+      if (formData.address && formData.address.trim() !== "") {
+        buildingData.address = formData.address;
+      }
+      if (formData.number_of_units != null) {
+        buildingData.number_of_units = formData.number_of_units;
+      }
+      if (formData.type_of_unit && formData.type_of_unit.length > 0) {
+        buildingData.type_of_unit = formData.type_of_unit;
+      }
+      if (
+        uploadResult.uploadedUrls.logo ||
+        (formData.logo && formData.logo.trim() !== "")
+      ) {
+        buildingData.logo = uploadResult.uploadedUrls.logo || formData.logo;
+      }
+      if (
+        uploadResult.uploadedUrls.video ||
+        (formData.video && formData.video.trim() !== "")
+      ) {
+        buildingData.video = uploadResult.uploadedUrls.video || formData.video;
+      }
+      if (
+        uploadResult.uploadedUrls.photos.length > 0 ||
+        (formData.photos && formData.photos.length > 0)
+      ) {
+        buildingData.photos =
+          uploadResult.uploadedUrls.photos.length > 0
+            ? uploadResult.uploadedUrls.photos
+            : formData.photos;
+      }
+      if (
+        uploadResult.uploadedUrls.documents ||
+        (formData.documents && formData.documents.trim() !== "")
+      ) {
+        buildingData.documents =
+          uploadResult.uploadedUrls.documents || formData.documents;
+      }
+      if (formData.metro_stations && formData.metro_stations.length > 0) {
+        buildingData.metro_stations = formData.metro_stations;
+      }
+      if (formData.commute_times && formData.commute_times.length > 0) {
+        buildingData.commute_times = formData.commute_times;
+      }
+      if (formData.local_essentials && formData.local_essentials.length > 0) {
+        buildingData.local_essentials = formData.local_essentials;
+      }
+      if (formData.amenities && formData.amenities.length > 0) {
+        buildingData.amenities = formData.amenities;
+      }
+      // Boolean fields - always include, even if false
+      buildingData.is_concierge = formData.is_concierge;
+      buildingData.pet_policy = formData.pet_policy;
+      buildingData.smoking_area = formData.smoking_area;
 
-    if (formData.concierge_hours) {
-      buildingData.concierge_hours = formData.concierge_hours;
-    }
-    if (formData.pets && formData.pets.length > 0) {
-      buildingData.pets = formData.pets;
-    }
-    if (formData.tenant_type && formData.tenant_type.length > 0) {
-      buildingData.tenant_type = formData.tenant_type;
-    }
+      if (formData.concierge_hours) {
+        buildingData.concierge_hours = formData.concierge_hours;
+      }
+      if (formData.pets && formData.pets.length > 0) {
+        buildingData.pets = formData.pets;
+      }
+      if (formData.tenant_type && formData.tenant_type.length > 0) {
+        buildingData.tenant_type = formData.tenant_type;
+      }
 
-    console.log("📤 Submitting building data (Add):", {
-      operator_id: buildingData.operator_id,
-      operator_id_type: typeof buildingData.operator_id,
-      formData_operator_id: formData.operator_id,
-      formData_operator_id_type: typeof formData.operator_id,
-    });
-
-    await onSubmit(buildingData);
-    if (!isLoading) {
-      // Reset form
-      setFormData({
-        name: "",
-        address: "",
-        number_of_units: 1,
-        type_of_unit: [] as string[],
-        logo: "",
-        video: "",
-        photos: [],
-        documents: "",
-        metro_stations: [],
-        commute_times: [],
-        local_essentials: [],
-        amenities: [],
-        is_concierge: false,
-        concierge_hours: null,
-        pet_policy: false,
-        pets: null,
-        smoking_area: false,
-        tenant_type: ["family"] as string[],
-        operator_id: null,
+      console.log("📤 Submitting building data (Add):", {
+        operator_id: buildingData.operator_id,
+        operator_id_type: typeof buildingData.operator_id,
+        formData_operator_id: formData.operator_id,
+        formData_operator_id_type: typeof formData.operator_id,
       });
 
-      // Reset file states
-      setLogoFile(null);
-      setVideoFile(null);
-      setPhotoFiles([]);
-      setDocumentFiles([]);
+      await onSubmit(buildingData);
+      if (!isLoading) {
+        // Reset form
+        setFormData({
+          name: "",
+          address: "",
+          number_of_units: 1,
+          type_of_unit: [] as string[],
+          logo: "",
+          video: "",
+          photos: [],
+          documents: "",
+          metro_stations: [],
+          commute_times: [],
+          local_essentials: [],
+          amenities: [],
+          is_concierge: false,
+          concierge_hours: null,
+          pet_policy: false,
+          pets: null,
+          smoking_area: false,
+          tenant_type: ["family"] as string[],
+          operator_id: null,
+        });
 
-      // Reset preview states
-      setLogoPreview(null);
-      setVideoPreview(null);
-      setPhotoPreviews([]);
-      setDocumentPreviews([]);
+        // Reset file states
+        setLogoFile(null);
+        setVideoFile(null);
+        setPhotoFiles([]);
+        setDocumentFiles([]);
+
+        // Reset preview states
+        setLogoPreview(null);
+        setVideoPreview(null);
+        setPhotoPreviews([]);
+        setDocumentPreviews([]);
+      }
+    } catch (error) {
+      console.error("Error submitting building:", error);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const addMetroStation = () => {
     setFormData((prev) => ({
       ...prev,
-      metro_stations: [...prev.metro_stations, { label: "", destination: 0 }],
+      metro_stations: [
+        ...prev.metro_stations,
+        { label: "", destination: undefined },
+      ],
     }));
   };
 
@@ -463,7 +480,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const updateMetroStation = (
     index: number,
     field: keyof MetroStation,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -476,7 +493,10 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const addCommuteTime = () => {
     setFormData((prev) => ({
       ...prev,
-      commute_times: [...prev.commute_times, { label: "", destination: 0 }],
+      commute_times: [
+        ...prev.commute_times,
+        { label: "", destination: undefined },
+      ],
     }));
   };
 
@@ -490,7 +510,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const updateCommuteTime = (
     index: number,
     field: keyof CommuteTime,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -505,7 +525,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       ...prev,
       local_essentials: [
         ...prev.local_essentials,
-        { label: "", destination: 0 },
+        { label: "", destination: undefined },
       ],
     }));
   };
@@ -520,7 +540,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const updateLocalEssential = (
     index: number,
     field: keyof LocalEssential,
-    value: string | number
+    value: string | number | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -592,7 +612,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           <h2 className="text-2xl font-bold text-white">Add New Building</h2>
           <button
             onClick={onClose}
-            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+            disabled={isLoading || isSubmitting}
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-5 h-5" />
           </button>
@@ -602,6 +623,10 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         <form
           onSubmit={handleSubmit}
           className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto"
+          style={{
+            pointerEvents: isLoading || isSubmitting ? "none" : "auto",
+            opacity: isLoading || isSubmitting ? 0.7 : 1,
+          }}
         >
           {/* Basic Information */}
           <div className="space-y-4">
@@ -1336,17 +1361,32 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     type="number"
                     min="0"
                     max="23"
-                    value={formData.concierge_hours?.from || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        concierge_hours: {
-                          from: parseInt(e.target.value) || 0,
-                          to: formData.concierge_hours?.to || 22,
-                        },
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                    value={formData.concierge_hours?.from ?? ""}
+                    onChange={(e) => {
+                      const inputVal = e.target.value;
+                      if (inputVal === "") {
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: undefined,
+                            to: formData.concierge_hours?.to,
+                          },
+                        });
+                      } else {
+                        const val = Math.max(
+                          0,
+                          Math.min(23, parseInt(inputVal) || 0)
+                        );
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: val,
+                            to: formData.concierge_hours?.to,
+                          },
+                        });
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   />
                 </div>
                 <div>
@@ -1357,17 +1397,32 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     type="number"
                     min="0"
                     max="23"
-                    value={formData.concierge_hours?.to || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        concierge_hours: {
-                          from: formData.concierge_hours?.from || 8,
-                          to: parseInt(e.target.value) || 22,
-                        },
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                    value={formData.concierge_hours?.to ?? ""}
+                    onChange={(e) => {
+                      const inputVal = e.target.value;
+                      if (inputVal === "") {
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: formData.concierge_hours?.from,
+                            to: undefined,
+                          },
+                        });
+                      } else {
+                        const val = Math.max(
+                          0,
+                          Math.min(23, parseInt(inputVal) || 0)
+                        );
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: formData.concierge_hours?.from,
+                            to: val,
+                          },
+                        });
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   />
                 </div>
               </div>
@@ -1602,15 +1657,17 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 />
                 <input
                   type="number"
-                  value={station.destination}
-                  onChange={(e) =>
-                    updateMetroStation(
-                      index,
-                      "destination",
-                      parseInt(e.target.value) || 0
-                    )
-                  }
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  value={station.destination ?? ""}
+                  onChange={(e) => {
+                    const inputVal = e.target.value;
+                    if (inputVal === "") {
+                      updateMetroStation(index, "destination", undefined);
+                    } else {
+                      const val = Math.max(0, parseInt(inputVal) || 0);
+                      updateMetroStation(index, "destination", val);
+                    }
+                  }}
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   placeholder="min"
                   min="0"
                   required
@@ -1654,15 +1711,17 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 />
                 <input
                   type="number"
-                  value={time.destination}
-                  onChange={(e) =>
-                    updateCommuteTime(
-                      index,
-                      "destination",
-                      parseInt(e.target.value) || 0
-                    )
-                  }
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  value={time.destination ?? ""}
+                  onChange={(e) => {
+                    const inputVal = e.target.value;
+                    if (inputVal === "") {
+                      updateCommuteTime(index, "destination", undefined);
+                    } else {
+                      const val = Math.max(0, parseInt(inputVal) || 0);
+                      updateCommuteTime(index, "destination", val);
+                    }
+                  }}
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   placeholder="min"
                   min="0"
                   required
@@ -1706,15 +1765,17 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 />
                 <input
                   type="number"
-                  value={essential.destination}
-                  onChange={(e) =>
-                    updateLocalEssential(
-                      index,
-                      "destination",
-                      parseInt(e.target.value) || 0
-                    )
-                  }
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  value={essential.destination ?? ""}
+                  onChange={(e) => {
+                    const inputVal = e.target.value;
+                    if (inputVal === "") {
+                      updateLocalEssential(index, "destination", undefined);
+                    } else {
+                      const val = Math.max(0, parseInt(inputVal) || 0);
+                      updateLocalEssential(index, "destination", val);
+                    }
+                  }}
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   placeholder="m"
                   min="0"
                   required
@@ -1742,16 +1803,24 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 cursor-pointer text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20"
+              disabled={isLoading || isSubmitting}
+              className="px-6 py-2.5 cursor-pointer text-white/90 hover:bg-white/10 rounded-lg transition-colors font-medium border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
               className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>{isLoading ? "Creating..." : "Create"}</span>
+              {isLoading || isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <span>Create</span>
+              )}
             </button>
           </div>
         </form>
