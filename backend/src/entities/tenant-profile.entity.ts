@@ -121,7 +121,14 @@ export class TenantProfile {
 
   // Computed properties for backward compatibility - get from preferences
   get pets(): string | null {
-    return this.user?.preferences?.pets || null;
+    const petsArr = this.user?.preferences?.pets;
+    if (!petsArr || !Array.isArray(petsArr) || petsArr.length === 0) return null;
+    // Convert Pet[] to human-readable string
+    return petsArr.map(p => p.type + (p.size ? ` (${p.size})` : '')).join(', ');
+  }
+
+  get hasPets(): boolean {
+    return this.user?.preferences?.pet_policy || false;
   }
 
   get smoker(): boolean {

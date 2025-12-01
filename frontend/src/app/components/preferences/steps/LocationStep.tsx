@@ -1,13 +1,13 @@
 import React from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
-import { StepHeader } from "../step-components/StepHeader";
 import { InputField } from "../ui/InputField";
 import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
+import { PreferencesFormData } from "@/app/types/preferences";
 
 interface LocationStepProps {
-  formData: any;
-  onUpdate: (field: string, value: any) => void;
+  formData: PreferencesFormData;
+  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
 }
 
 // Mock data for dropdowns

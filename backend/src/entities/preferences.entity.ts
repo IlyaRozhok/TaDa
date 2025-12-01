@@ -9,6 +9,72 @@ import {
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
+import { Pet } from "./building.entity";
+
+// Reuse enums from Property for compatibility
+export enum PropertyType {
+  APARTMENT = "apartment",
+  HOUSE = "house",
+  STUDIO = "studio",
+  PENTHOUSE = "penthouse",
+  DUPLEX = "duplex",
+  FLAT = "flat",
+  ROOM = "room",
+}
+
+export enum Furnishing {
+  FURNISHED = "furnished",
+  UNFURNISHED = "unfurnished",
+  PARTIALLY_FURNISHED = "partially_furnished",
+  PART_FURNISHED = "part-furnished",
+}
+
+export enum Bills {
+  INCLUDED = "included",
+  EXCLUDED = "excluded",
+  SOME_INCLUDED = "some_included",
+}
+
+export enum BuildingType {
+  BTR = "btr",
+  CO_LIVING = "co-living",
+  PROFESSIONAL_MANAGEMENT = "professional_management",
+  RESIDENTIAL = "residential",
+  COMMERCIAL = "commercial",
+  MIXED = "mixed",
+}
+
+export enum LetDuration {
+  SHORT_TERM = "short_term",
+  LONG_TERM = "long_term",
+  FLEXIBLE = "flexible",
+  SIX_MONTHS = "6_months",
+  TWELVE_MONTHS = "12_months",
+}
+
+export enum TenantType {
+  CORPORATE_LETS = "corporateLets",
+  SHARERS = "sharers",
+  STUDENT = "student",
+  FAMILY = "family",
+  ELDER = "elder",
+}
+
+export enum SmokingPreference {
+  NO = "no",
+  YES = "yes",
+  NO_BUT_OKAY = "no-but-okay",
+  NO_PREFER_NON_SMOKING = "no-prefer-non-smoking",
+  NO_PREFERENCE = "no-preference",
+}
+
+export enum IdealLivingEnvironment {
+  QUIET_PROFESSIONAL = "quiet-professional",
+  SOCIAL_FRIENDLY = "social-friendly",
+  FAMILY_ORIENTED = "family-oriented",
+  STUDENT_LIFESTYLE = "student-lifestyle",
+  CREATIVE_ARTISTIC = "creative-artistic",
+}
 
 @Entity("preferences")
 export class Preferences {
@@ -20,270 +86,282 @@ export class Preferences {
   @Column("uuid")
   user_id: string;
 
+  // ==================== STEP 1: LOCATION ====================
+
   @ApiProperty({
-    description: "Primary postcode for location search",
-    example: "SW1A 1AA",
+    description: "Preferred address/area (free text)",
+    example: "Central London",
+    required: false,
   })
   @Column({ nullable: true })
-  primary_postcode: string;
+  preferred_address?: string;
 
   @ApiProperty({
-    description: "Secondary location preference",
-    example: "kings-cross-st-pancras",
-    enum: [
-      "kings-cross-st-pancras",
-      "oxford-circus",
-      "liverpool-street",
-      "paddington",
-      "waterloo",
-      "victoria",
-      "green-park",
-      "bond-street",
-      "baker-street",
-      "canary-wharf",
-      "london-bridge",
-      "tottenham-court-road",
-      "leicester-square",
-      "piccadilly-circus",
-      "euston",
-      "no-preference",
-    ],
+    description: "Preferred metro stations (labels)",
+    example: ["Central London", "King's Cross", "Oxford Circus"],
+    type: [String],
+    required: false,
   })
-  @Column({ nullable: true })
-  secondary_location: string;
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  preferred_metro_stations?: string[];
 
   @ApiProperty({
-    description: "Location to commute to",
-    example: "canary-wharf",
-    enum: [
-      "canary-wharf",
-      "city-of-london",
-      "westminster",
-      "shoreditch",
-      "kings-cross",
-      "paddington",
-      "south-bank",
-      "mayfair",
-      "holborn",
-      "clerkenwell",
-      "bermondsey",
-      "stratford",
-      "hammersmith",
-      "croydon",
-      "central-london",
-      "no-preference",
-    ],
+    description: "Preferred local essentials (labels)",
+    example: ["Grocery Store", "Gym", "Park"],
+    type: [String],
+    required: false,
   })
-  @Column({ nullable: true })
-  commute_location: string;
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  preferred_essentials?: string[];
 
   @ApiProperty({
-    description: "Maximum walking commute time in minutes",
-    example: 15,
+    description:
+      "Preferred commute times (labels like '15 minutes', '30 minutes')",
+    example: ["15 minutes", "30 minutes"],
+    type: [String],
+    required: false,
   })
-  @Column({ type: "int", nullable: true })
-  commute_time_walk: number;
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  preferred_commute_times?: string[];
+
+  // ==================== STEP 2: BUDGET & MOVE-IN ====================
 
   @ApiProperty({
-    description: "Maximum cycling commute time in minutes",
-    example: 20,
+    description: "Preferred move-in date",
+    example: "2024-03-01",
+    required: false,
   })
-  @Column({ type: "int", nullable: true })
-  commute_time_cycle: number;
-
-  @ApiProperty({
-    description: "Maximum tube commute time in minutes",
-    example: 30,
-  })
-  @Column({ type: "int", nullable: true })
-  commute_time_tube: number;
-
-  @ApiProperty({ description: "Preferred move-in date", example: "2024-03-01" })
   @Column({ type: "date", nullable: true })
-  move_in_date: Date;
+  move_in_date?: Date;
 
   @ApiProperty({
     description: "Preferred move-out date",
     example: "2024-09-01",
+    required: false,
   })
   @Column({ type: "date", nullable: true })
-  move_out_date: Date;
-
-  @ApiProperty({ description: "Minimum rent price per month", example: 1500 })
-  @Column({ type: "int", nullable: true })
-  min_price: number;
-
-  @ApiProperty({ description: "Maximum rent price per month", example: 3000 })
-  @Column({ type: "int", nullable: true })
-  max_price: number;
+  move_out_date?: Date;
 
   @ApiProperty({
-    description: "Minimum number of bedrooms required",
-    example: 2,
+    description: "Minimum rent price per month (matches Property.price)",
+    example: 1500,
+    required: false,
   })
   @Column({ type: "int", nullable: true })
-  min_bedrooms: number;
+  min_price?: number;
 
   @ApiProperty({
-    description: "Maximum number of bedrooms required",
-    example: 4,
+    description: "Maximum rent price per month (matches Property.price)",
+    example: 3000,
+    required: false,
   })
   @Column({ type: "int", nullable: true })
-  max_bedrooms: number;
+  max_price?: number;
 
   @ApiProperty({
-    description: "Minimum number of bathrooms required",
-    example: 1,
-  })
-  @Column({ type: "int", nullable: true })
-  min_bathrooms: number;
-
-  @ApiProperty({
-    description: "Maximum number of bathrooms required",
-    example: 3,
-  })
-  @Column({ type: "int", nullable: true })
-  max_bathrooms: number;
-
-  @ApiProperty({
-    description: "Furnishing preference",
-    example: "furnished",
-    enum: ["furnished", "unfurnished", "part-furnished", "no-preference"],
+    description: "Deposit preference - whether tenant accepts deposit",
+    example: "yes",
+    enum: ["yes", "no"],
+    required: false,
   })
   @Column({ nullable: true })
-  furnishing: string;
+  deposit_preference?: string;
+
+  // ==================== STEP 3: PROPERTY & ROOMS ====================
 
   @ApiProperty({
-    description: "Preferred let duration",
-    example: "12-months",
-    enum: ["6-months", "12-months", "18-months", "24-months", "flexible"],
-  })
-  @Column({ nullable: true })
-  let_duration: string;
-
-  @ApiProperty({
-    description: "Preferred property types",
-    example: ["flats", "houses"],
+    description: "Preferred property types (matches Property.property_type)",
+    example: ["apartment", "flat", "studio"],
     type: [String],
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  property_type: string[];
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  property_types?: string[];
 
   @ApiProperty({
-    description: "Building style preferences",
-    example: ["btr", "co-living", "new-builds"],
+    description: "Preferred number of bedrooms (matches Property.bedrooms)",
+    example: [1, 2, 3],
+    type: [Number],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  bedrooms?: number[];
+
+  @ApiProperty({
+    description: "Preferred number of bathrooms (matches Property.bathrooms)",
+    example: [1, 2],
+    type: [Number],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  bathrooms?: number[];
+
+  @ApiProperty({
+    description: "Preferred furnishing types (matches Property.furnishing)",
+    example: ["furnished", "part-furnished"],
     type: [String],
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  building_style: string[];
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  furnishing?: string[];
 
   @ApiProperty({
-    description: "Designer furniture preference",
+    description:
+      "Whether outdoor space is preferred (matches Property.outdoor_space)",
     example: true,
+    required: false,
   })
   @Column({ type: "boolean", nullable: true })
-  designer_furniture: boolean;
+  outdoor_space?: boolean;
 
   @ApiProperty({
-    description: "House shares preference",
-    example: "show-all",
-    enum: ["show-all", "only-house-shares", "no-house-shares"],
+    description: "Whether balcony is preferred (matches Property.balcony)",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", nullable: true })
+  balcony?: boolean;
+
+  @ApiProperty({
+    description: "Whether terrace is preferred (matches Property.terrace)",
+    example: true,
+    required: false,
+  })
+  @Column({ type: "boolean", nullable: true })
+  terrace?: boolean;
+
+  @ApiProperty({
+    description: "Minimum square meters (matches Property.square_meters)",
+    example: 15,
+    required: false,
+  })
+  @Column({ type: "int", nullable: true })
+  min_square_meters?: number;
+
+  @ApiProperty({
+    description: "Maximum square meters (matches Property.square_meters)",
+    example: 100,
+    required: false,
+  })
+  @Column({ type: "int", nullable: true })
+  max_square_meters?: number;
+
+  // ==================== STEP 4: BUILDING & DURATION ====================
+
+  @ApiProperty({
+    description: "Preferred building types (matches Property.building_type)",
+    example: ["btr", "co-living"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  building_types?: string[];
+
+  @ApiProperty({
+    description: "Preferred let duration (matches Property.let_duration)",
+    example: "long_term",
+    required: false,
   })
   @Column({ nullable: true })
-  house_shares: string;
+  let_duration?: string;
 
   @ApiProperty({
-    description: "Date property was added filter",
-    example: "last-7-days",
-    enum: [
-      "any",
-      "last-24-hours",
-      "last-3-days",
-      "last-14-days",
-      "last-21-days",
-    ],
+    description: "Bills preference (matches Property.bills)",
+    example: "included",
+    required: false,
   })
   @Column({ nullable: true })
-  date_property_added: string;
+  bills?: string;
+
+  // ==================== STEP 5: TENANT TYPE ====================
 
   @ApiProperty({
-    description: "Lifestyle features preferences",
-    example: ["gym", "pool", "garden"],
+    description: "Tenant types (matches Property.tenant_types)",
+    example: ["family", "sharers"],
     type: [String],
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  lifestyle_features: string[];
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  tenant_types?: string[];
+
+  // ==================== STEP 6: PETS ====================
 
   @ApiProperty({
-    description: "Social features preferences",
-    example: ["communal-space", "rooftop", "events"],
-    type: [String],
+    description:
+      "Whether tenant needs pet-friendly property (matches Property.pet_policy)",
+    example: true,
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  social_features: string[];
+  @Column({ type: "boolean", nullable: true })
+  pet_policy?: boolean;
 
   @ApiProperty({
-    description: "Work features preferences",
-    example: ["co-working", "meeting-rooms", "high-speed-wifi"],
-    type: [String],
+    description: "Tenant's pets (matches Property.pets structure)",
+    example: [{ type: "dog", size: "small" }],
+    type: "json",
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  work_features: string[];
+  @Column({ type: "jsonb", nullable: true })
+  pets?: Pet[];
 
   @ApiProperty({
-    description: "Convenience features preferences",
-    example: ["parking", "storage", "laundry"],
-    type: [String],
+    description: "Number of pets",
+    example: 1,
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  convenience_features: string[];
+  @Column({ type: "int", nullable: true })
+  number_of_pets?: number;
+
+  // ==================== STEP 7: AMENITIES ====================
 
   @ApiProperty({
-    description: "Pet-friendly features preferences",
-    example: ["pet-park", "pet-washing", "pet-sitting"],
+    description: "Preferred amenities (matches Property.amenities)",
+    example: ["Gym", "Co-working", "Parking"],
     type: [String],
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  pet_friendly_features: string[];
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  amenities?: string[];
 
   @ApiProperty({
-    description: "Luxury features preferences",
-    example: ["concierge", "spa", "cinema"],
-    type: [String],
+    description:
+      "Whether concierge is preferred (matches Property.is_concierge)",
+    example: true,
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  luxury_features: string[];
+  @Column({ type: "boolean", nullable: true })
+  is_concierge?: boolean;
+
+  @ApiProperty({
+    description:
+      "Whether smoking area is preferred (matches Property.smoking_area)",
+    example: false,
+    required: false,
+  })
+  @Column({ type: "boolean", nullable: true })
+  smoking_area?: boolean;
+
+  // ==================== STEP 8: HOBBIES ====================
 
   @ApiProperty({
     description: "User's hobbies and interests",
     example: ["Reading", "Cooking", "Fitness"],
     type: [String],
+    required: false,
   })
-  @Column("text", { array: true, nullable: true })
-  hobbies: string[];
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  hobbies?: string[];
+
+  // ==================== STEP 9: LIVING ENVIRONMENT ====================
 
   @ApiProperty({
-    description: "Ideal living environment preferences (array)",
+    description: "Ideal living environment preferences",
     example: ["quiet-professional", "social-friendly"],
     type: [String],
-    enum: [
-      "quiet-professional",
-      "social-friendly",
-      "family-oriented",
-      "student-lifestyle",
-      "creative-artistic",
-    ],
+    required: false,
   })
-  @Column({ type: "json", nullable: true })
-  ideal_living_environment: string[];
-
-  @ApiProperty({
-    description: "Pet ownership information",
-    example: "none",
-    enum: ["none", "dog", "cat", "small-pets", "planning-to-get"],
-  })
-  @Column({ nullable: true })
-  pets: string;
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  ideal_living_environment?: string[];
 
   @ApiProperty({
     description: "Smoking preference",
@@ -295,16 +373,88 @@ export class Preferences {
       "no-prefer-non-smoking",
       "no-preference",
     ],
+    required: false,
   })
   @Column({ nullable: true })
-  smoker: string;
+  smoker?: string;
+
+  // ==================== STEP 10: ABOUT YOU ====================
 
   @ApiProperty({
     description: "Additional information about the user",
     example: "I'm a quiet professional who enjoys cooking and reading.",
+    required: false,
   })
   @Column({ type: "text", nullable: true })
-  additional_info: string;
+  additional_info?: string;
+
+  // ==================== LEGACY FIELDS (for backward compatibility) ====================
+  // These will be deprecated but kept for migration purposes
+
+  @Column({ nullable: true })
+  primary_postcode?: string;
+
+  @Column({ nullable: true })
+  secondary_location?: string;
+
+  @Column({ nullable: true })
+  commute_location?: string;
+
+  @Column({ type: "int", nullable: true })
+  commute_time_walk?: number;
+
+  @Column({ type: "int", nullable: true })
+  commute_time_cycle?: number;
+
+  @Column({ type: "int", nullable: true })
+  commute_time_tube?: number;
+
+  @Column({ type: "int", nullable: true })
+  min_bedrooms?: number;
+
+  @Column({ type: "int", nullable: true })
+  max_bedrooms?: number;
+
+  @Column({ type: "int", nullable: true })
+  min_bathrooms?: number;
+
+  @Column({ type: "int", nullable: true })
+  max_bathrooms?: number;
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  property_type?: string[];
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  building_style?: string[];
+
+  @Column({ type: "boolean", nullable: true })
+  designer_furniture?: boolean;
+
+  @Column({ nullable: true })
+  house_shares?: string;
+
+  @Column({ nullable: true })
+  date_property_added?: string;
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  lifestyle_features?: string[];
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  social_features?: string[];
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  work_features?: string[];
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  convenience_features?: string[];
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  pet_friendly_features?: string[];
+
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  luxury_features?: string[];
+
+  // ==================== TIMESTAMPS ====================
 
   @ApiProperty({ description: "Preferences creation date" })
   @CreateDateColumn()
@@ -314,7 +464,8 @@ export class Preferences {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // Relations
+  // ==================== RELATIONS ====================
+
   @OneToOne(() => User, (user) => user.preferences)
   @JoinColumn({ name: "user_id" })
   user: User;

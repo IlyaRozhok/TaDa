@@ -5,10 +5,11 @@ import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { DateRangePicker } from "../ui/DateRangePicker";
 import { InputField } from "../ui/InputField";
+import { PreferencesFormData } from "@/app/types/preferences";
 
 interface CommuteTimeStepProps {
-  formData: any;
-  onUpdate: (field: string, value: any) => void;
+  formData: PreferencesFormData;
+  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
 }
 
 export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({

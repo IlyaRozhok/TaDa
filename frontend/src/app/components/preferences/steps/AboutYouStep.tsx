@@ -1,10 +1,11 @@
 import React from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { TextAreaField } from "../step-components/TextAreaField";
+import { PreferencesFormData } from "@/app/types/preferences";
 
 interface AboutYouStepProps {
-  formData: any;
-  onUpdate: (field: string, value: any) => void;
+  formData: PreferencesFormData;
+  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
 }
 
 export const AboutYouStep: React.FC<AboutYouStepProps> = ({

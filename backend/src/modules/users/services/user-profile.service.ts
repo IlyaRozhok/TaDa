@@ -95,7 +95,16 @@ export class UserProfileService {
 
     const preferences = user.preferences;
 
-    if (updateUserDto.pets !== undefined) preferences.pets = updateUserDto.pets;
+    if (updateUserDto.pets !== undefined) {
+      // Convert string pet type to Pet[] format
+      if (updateUserDto.pets === "none" || updateUserDto.pets === "") {
+        preferences.pets = [];
+        preferences.pet_policy = false;
+      } else {
+        preferences.pets = [{ type: updateUserDto.pets as "dog" | "cat" | "other" }];
+        preferences.pet_policy = true;
+      }
+    }
     if (updateUserDto.smoker !== undefined) {
       preferences.smoker = updateUserDto.smoker ? "yes" : "no";
     }

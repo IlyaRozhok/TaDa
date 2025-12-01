@@ -3,10 +3,11 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
+import { PreferencesFormData } from "@/app/types/preferences";
 
 interface AmenitiesStepProps {
-  formData: any;
-  onToggle: (category: string, value: string) => void;
+  formData: PreferencesFormData;
+  onToggle: (category: keyof PreferencesFormData, value: string) => void;
 }
 
 // Amenities from admin panel buildings

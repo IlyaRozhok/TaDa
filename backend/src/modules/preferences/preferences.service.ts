@@ -20,6 +20,43 @@ export class PreferencesService {
     private userRepository: Repository<User>
   ) {}
 
+  /**
+   * Transform DTO to entity format
+   * Handles date conversions and field normalization
+   */
+  private transformDtoToEntity(dto: CreatePreferencesDto | UpdatePreferencesDto): Partial<Preferences> {
+    // Create a copy without date fields first
+    const { move_in_date, move_out_date, ...rest } = dto;
+    const data: Partial<Preferences> = { ...rest };
+
+    // Handle move_in_date conversion
+    if (move_in_date) {
+      data.move_in_date = new Date(move_in_date);
+    } else if (dto.hasOwnProperty("move_in_date") && move_in_date === null) {
+      data.move_in_date = null;
+    }
+
+    // Handle move_out_date conversion
+    if (move_out_date) {
+      data.move_out_date = new Date(move_out_date);
+    } else if (dto.hasOwnProperty("move_out_date") && move_out_date === null) {
+      data.move_out_date = null;
+    }
+
+    // If move_out_date equals move_in_date, set it to null (single date selection)
+    if (
+      data.move_in_date &&
+      data.move_out_date &&
+      data.move_in_date instanceof Date &&
+      data.move_out_date instanceof Date &&
+      data.move_in_date.getTime() === data.move_out_date.getTime()
+    ) {
+      data.move_out_date = null;
+    }
+
+    return data;
+  }
+
   async upsert(
     userId: string,
     preferencesDto: CreatePreferencesDto
@@ -41,43 +78,15 @@ export class PreferencesService {
       where: { user: { id: userId } },
     });
 
-    const moveInDate = preferencesDto.move_in_date
-      ? new Date(preferencesDto.move_in_date)
-      : undefined;
-
-    let moveOutDate = preferencesDto.move_out_date
-      ? new Date(preferencesDto.move_out_date)
-      : preferencesDto.hasOwnProperty("move_out_date") &&
-        preferencesDto.move_out_date === null
-      ? null
-      : undefined;
-
-    // If move_out_date is the same as move_in_date, set it to null (single date selection)
-    // Only compare if both dates are valid Date objects
-    if (
-      moveInDate &&
-      moveOutDate &&
-      moveInDate instanceof Date &&
-      moveOutDate instanceof Date &&
-      moveInDate.getTime() === moveOutDate.getTime()
-    ) {
-      moveOutDate = null;
-    }
-
-    const preferencesData = {
-      ...preferencesDto,
-      move_in_date: moveInDate,
-      move_out_date: moveOutDate,
-    };
+    const preferencesData = this.transformDtoToEntity(preferencesDto);
 
     if (existingPreferences) {
       Object.assign(existingPreferences, preferencesData);
       try {
-        const result = await this.preferencesRepository.save(
-          existingPreferences
-        );
+        const result = await this.preferencesRepository.save(existingPreferences);
         return result;
       } catch (error) {
+        console.error("❌ Error updating preferences:", error);
         throw error;
       }
     } else {
@@ -87,9 +96,7 @@ export class PreferencesService {
       });
 
       try {
-        const savedPreferences = await this.preferencesRepository.save(
-          preferences
-        );
+        const savedPreferences = await this.preferencesRepository.save(preferences);
 
         // Update user's preferences relation
         user.preferences = savedPreferences;
@@ -129,10 +136,8 @@ export class PreferencesService {
     totalPages: number;
   }> {
     const validPage = Math.max(1, Math.floor(Number(page)) || 1);
-    const validLimit = Math.max(
-      1,
-      Math.min(100, Math.floor(Number(limit)) || 10)
-    );
+    const validLimit = Math.max(1, Math.min(100, Math.floor(Number(limit)) || 10));
+    
     const queryBuilder = this.preferencesRepository
       .createQueryBuilder("preferences")
       .leftJoinAndSelect("preferences.user", "user")
@@ -142,7 +147,11 @@ export class PreferencesService {
 
     if (search) {
       queryBuilder.where(
-        "tenantProfile.full_name ILIKE :search OR operatorProfile.full_name ILIKE :search OR user.email ILIKE :search OR preferences.primary_postcode ILIKE :search OR preferences.secondary_location ILIKE :search OR preferences.commute_location ILIKE :search",
+        `tenantProfile.full_name ILIKE :search 
+         OR operatorProfile.full_name ILIKE :search 
+         OR user.email ILIKE :search 
+         OR preferences.preferred_address ILIKE :search
+         OR preferences.primary_postcode ILIKE :search`,
         { search: `%${search}%` }
       );
     }
@@ -171,34 +180,15 @@ export class PreferencesService {
       throw new NotFoundException("Preferences not found");
     }
 
-    const moveInDate = updatePreferencesDto.move_in_date
-      ? new Date(updatePreferencesDto.move_in_date)
-      : preferences.move_in_date;
+    const updateData = this.transformDtoToEntity(updatePreferencesDto);
 
-    let moveOutDate = updatePreferencesDto.move_out_date
-      ? new Date(updatePreferencesDto.move_out_date)
-      : updatePreferencesDto.hasOwnProperty("move_out_date") &&
-        updatePreferencesDto.move_out_date === null
-      ? null
-      : preferences.move_out_date;
-
-    // If move_out_date is the same as move_in_date, set it to null (single date selection)
-    // Only compare if both dates are valid Date objects
-    if (
-      moveInDate &&
-      moveOutDate &&
-      moveInDate instanceof Date &&
-      moveOutDate instanceof Date &&
-      moveInDate.getTime() === moveOutDate.getTime()
-    ) {
-      moveOutDate = null;
+    // Preserve existing dates if not provided in update
+    if (!updatePreferencesDto.hasOwnProperty("move_in_date")) {
+      updateData.move_in_date = preferences.move_in_date;
     }
-
-    const updateData = {
-      ...updatePreferencesDto,
-      move_in_date: moveInDate,
-      move_out_date: moveOutDate,
-    };
+    if (!updatePreferencesDto.hasOwnProperty("move_out_date")) {
+      updateData.move_out_date = preferences.move_out_date;
+    }
 
     Object.assign(preferences, updateData);
 
@@ -228,41 +218,65 @@ export class PreferencesService {
       throw new NotFoundException("Preferences not found");
     }
 
-    const clearedPreferences = {
-      ...preferences,
+    const clearedPreferences: Partial<Preferences> = {
+      // New fields
+      preferred_address: null,
+      preferred_metro_stations: [],
+      preferred_essentials: [],
+      preferred_commute_times: [],
+      move_in_date: null,
+      move_out_date: null,
+      min_price: null,
+      max_price: null,
+      deposit_preference: null,
+      property_types: [],
+      bedrooms: [],
+      bathrooms: [],
+      furnishing: [],
+      outdoor_space: null,
+      balcony: null,
+      terrace: null,
+      min_square_meters: null,
+      max_square_meters: null,
+      building_types: [],
+      let_duration: null,
+      bills: null,
+      tenant_types: [],
+      pet_policy: null,
+      pets: null,
+      number_of_pets: null,
+      amenities: [],
+      is_concierge: null,
+      smoking_area: null,
+      hobbies: [],
+      ideal_living_environment: [],
+      smoker: null,
+      additional_info: null,
+      // Legacy fields
       primary_postcode: null,
       secondary_location: null,
       commute_location: null,
       commute_time_walk: null,
       commute_time_cycle: null,
       commute_time_tube: null,
-      move_in_date: null,
-      min_price: null,
-      max_price: null,
       min_bedrooms: null,
       max_bedrooms: null,
       min_bathrooms: null,
       max_bathrooms: null,
-      furnishing: null,
-      let_duration: null,
-      property_type: null,
-      building_style: null,
+      property_type: [],
+      building_style: [],
       designer_furniture: null,
       house_shares: null,
       date_property_added: null,
-      lifestyle_features: null,
-      social_features: null,
-      work_features: null,
-      convenience_features: null,
-      pet_friendly_features: null,
-      luxury_features: null,
-      hobbies: null,
-      ideal_living_environment: null,
-      pets: null,
-      smoker: null,
-      additional_info: null,
+      lifestyle_features: [],
+      social_features: [],
+      work_features: [],
+      convenience_features: [],
+      pet_friendly_features: [],
+      luxury_features: [],
     };
 
-    await this.preferencesRepository.save(clearedPreferences);
+    Object.assign(preferences, clearedPreferences);
+    await this.preferencesRepository.save(preferences);
   }
 }

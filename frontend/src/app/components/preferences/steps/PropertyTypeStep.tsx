@@ -3,11 +3,12 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
+import { PreferencesFormData } from "@/app/types/preferences";
 
 interface PropertyTypeStepProps {
-  formData: any;
-  onUpdate: (field: string, value: any) => void;
-  onToggle: (category: string, value: string) => void;
+  formData: PreferencesFormData;
+  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
+  onToggle: (category: keyof PreferencesFormData, value: string) => void;
 }
 
 // Building style preferences options

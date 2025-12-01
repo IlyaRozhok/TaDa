@@ -9,140 +9,70 @@ import {
   IsIn,
   IsArray,
   IsBoolean,
+  IsNumber,
+  ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
+import { Pet, PetType, PetSize } from "../../../entities/building.entity";
+
+// Pet DTO matching Property.pets structure
+class PetDto implements Pet {
+  @IsString()
+  @IsIn(["dog", "cat", "other"])
+  type: PetType;
+
+  @IsOptional()
+  @IsString()
+  customType?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(["small", "medium", "large"])
+  size?: PetSize;
+}
 
 export class CreatePreferencesDto {
+  // ==================== STEP 1: LOCATION ====================
+
   @ApiPropertyOptional({
-    description: "Primary postcode for location search",
-    example: "SW1A 1AA",
+    description: "Preferred address/area (free text)",
+    example: "Central London",
   })
   @IsOptional()
   @IsString()
-  primary_postcode?: string;
+  preferred_address?: string;
 
   @ApiPropertyOptional({
-    description: "Secondary location preference",
-    example: "kings-cross-st-pancras",
-    enum: [
-      "kings-cross-st-pancras",
-      "oxford-circus",
-      "liverpool-street",
-      "paddington",
-      "waterloo",
-      "victoria",
-      "green-park",
-      "bond-street",
-      "baker-street",
-      "canary-wharf",
-      "london-bridge",
-      "tottenham-court-road",
-      "leicester-square",
-      "piccadilly-circus",
-      "euston",
-      "no-preference",
-    ],
+    description: "Preferred metro stations (labels)",
+    example: ["Central London", "King's Cross", "Oxford Circus"],
+    type: [String],
   })
   @IsOptional()
-  @IsIn([
-    "kings-cross-st-pancras",
-    "oxford-circus",
-    "liverpool-street",
-    "paddington",
-    "waterloo",
-    "victoria",
-    "green-park",
-    "bond-street",
-    "baker-street",
-    "canary-wharf",
-    "london-bridge",
-    "tottenham-court-road",
-    "leicester-square",
-    "piccadilly-circus",
-    "euston",
-    "no-preference",
-    "",
-    null,
-  ])
-  secondary_location?: string;
+  @IsArray()
+  @IsString({ each: true })
+  preferred_metro_stations?: string[];
 
   @ApiPropertyOptional({
-    description: "Location to commute to",
-    example: "canary-wharf",
-    enum: [
-      "canary-wharf",
-      "city-of-london",
-      "westminster",
-      "shoreditch",
-      "kings-cross",
-      "paddington",
-      "south-bank",
-      "mayfair",
-      "holborn",
-      "clerkenwell",
-      "bermondsey",
-      "stratford",
-      "hammersmith",
-      "croydon",
-      "central-london",
-      "no-preference",
-    ],
+    description: "Preferred local essentials (labels)",
+    example: ["Grocery Store", "Gym", "Park"],
+    type: [String],
   })
   @IsOptional()
-  @IsIn([
-    "canary-wharf",
-    "city-of-london",
-    "westminster",
-    "shoreditch",
-    "kings-cross",
-    "paddington",
-    "south-bank",
-    "mayfair",
-    "holborn",
-    "clerkenwell",
-    "bermondsey",
-    "stratford",
-    "hammersmith",
-    "croydon",
-    "central-london",
-    "no-preference",
-    "",
-    null,
-  ])
-  commute_location?: string;
+  @IsArray()
+  @IsString({ each: true })
+  preferred_essentials?: string[];
 
   @ApiPropertyOptional({
-    description: "Maximum walking commute time in minutes",
-    example: 15,
+    description: "Preferred commute times (labels)",
+    example: ["15 minutes", "30 minutes"],
+    type: [String],
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(120)
-  commute_time_walk?: number;
+  @IsArray()
+  @IsString({ each: true })
+  preferred_commute_times?: string[];
 
-  @ApiPropertyOptional({
-    description: "Maximum cycling commute time in minutes",
-    example: 20,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(120)
-  commute_time_cycle?: number;
-
-  @ApiPropertyOptional({
-    description: "Maximum tube commute time in minutes",
-    example: 30,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(120)
-  commute_time_tube?: number;
+  // ==================== STEP 2: BUDGET & MOVE-IN ====================
 
   @ApiPropertyOptional({
     description: "Preferred move-in date",
@@ -181,201 +111,199 @@ export class CreatePreferencesDto {
   max_price?: number;
 
   @ApiPropertyOptional({
-    description: "Minimum number of bedrooms required",
-    example: 2,
+    description: "Deposit preference",
+    example: "yes",
+    enum: ["yes", "no"],
+  })
+  @IsOptional()
+  @IsIn(["yes", "no", "", null])
+  deposit_preference?: string;
+
+  // ==================== STEP 3: PROPERTY & ROOMS ====================
+
+  @ApiPropertyOptional({
+    description: "Preferred property types (matches Property.property_type)",
+    example: ["apartment", "flat", "studio"],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  property_types?: string[];
+
+  @ApiPropertyOptional({
+    description: "Preferred number of bedrooms",
+    example: [1, 2, 3],
+    type: [Number],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  bedrooms?: number[];
+
+  @ApiPropertyOptional({
+    description: "Preferred number of bathrooms",
+    example: [1, 2],
+    type: [Number],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  bathrooms?: number[];
+
+  @ApiPropertyOptional({
+    description: "Preferred furnishing types",
+    example: ["furnished", "part-furnished"],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  furnishing?: string[];
+
+  @ApiPropertyOptional({
+    description: "Whether outdoor space is preferred",
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  outdoor_space?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Whether balcony is preferred",
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  balcony?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Whether terrace is preferred",
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  terrace?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Minimum square meters",
+    example: 15,
   })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(10)
-  min_bedrooms?: number;
+  min_square_meters?: number;
 
   @ApiPropertyOptional({
-    description: "Maximum number of bedrooms required",
-    example: 4,
+    description: "Maximum square meters",
+    example: 500,
   })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(10)
-  max_bedrooms?: number;
+  max_square_meters?: number;
+
+  // ==================== STEP 4: BUILDING & DURATION ====================
 
   @ApiPropertyOptional({
-    description: "Minimum number of bathrooms required",
+    description: "Preferred building types",
+    example: ["btr", "co-living"],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  building_types?: string[];
+
+  @ApiPropertyOptional({
+    description: "Preferred let duration",
+    example: "long_term",
+  })
+  @IsOptional()
+  @IsString()
+  let_duration?: string;
+
+  @ApiPropertyOptional({
+    description: "Bills preference",
+    example: "included",
+  })
+  @IsOptional()
+  @IsString()
+  bills?: string;
+
+  // ==================== STEP 5: TENANT TYPE ====================
+
+  @ApiPropertyOptional({
+    description: "Tenant types",
+    example: ["family", "sharers"],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tenant_types?: string[];
+
+  // ==================== STEP 6: PETS ====================
+
+  @ApiPropertyOptional({
+    description: "Whether tenant needs pet-friendly property",
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  pet_policy?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Tenant's pets (matches Property.pets structure)",
+    example: [{ type: "dog", size: "small" }],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PetDto)
+  pets?: PetDto[];
+
+  @ApiPropertyOptional({
+    description: "Number of pets",
     example: 1,
   })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(10)
-  min_bathrooms?: number;
+  number_of_pets?: number;
+
+  // ==================== STEP 7: AMENITIES ====================
 
   @ApiPropertyOptional({
-    description: "Maximum number of bathrooms required",
-    example: 3,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(10)
-  max_bathrooms?: number;
-
-  @ApiPropertyOptional({
-    description: "Furnishing preference",
-    example: "furnished",
-    enum: ["furnished", "unfurnished", "part-furnished", "no-preference"],
-  })
-  @IsOptional()
-  @IsIn([
-    "furnished",
-    "unfurnished",
-    "part-furnished",
-    "no-preference",
-    "",
-    null,
-  ])
-  furnishing?: string;
-
-  @ApiPropertyOptional({
-    description: "Preferred let duration",
-    example: "12-months",
-    enum: ["6-months", "12-months", "18-months", "24-months", "flexible"],
-  })
-  @IsOptional()
-  @IsIn([
-    "6-months",
-    "12-months",
-    "18-months",
-    "24-months",
-    "flexible",
-    "",
-    null,
-  ])
-  let_duration?: string;
-
-  @ApiPropertyOptional({
-    description: "Preferred property types",
-    example: ["flats", "houses"],
+    description: "Preferred amenities",
+    example: ["Gym", "Co-working", "Parking"],
     type: [String],
   })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  property_type?: string[];
+  amenities?: string[];
 
   @ApiPropertyOptional({
-    description: "Building style preferences",
-    example: ["btr", "co-living", "new-builds"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  building_style?: string[];
-
-  @ApiPropertyOptional({
-    description: "Designer furniture preference",
+    description: "Whether concierge is preferred",
     example: true,
   })
   @IsOptional()
   @IsBoolean()
-  designer_furniture?: boolean;
+  is_concierge?: boolean;
 
   @ApiPropertyOptional({
-    description: "House shares preference",
-    example: "show-all",
-    enum: ["show-all", "only-house-shares", "no-house-shares"],
+    description: "Whether smoking area is preferred",
+    example: false,
   })
   @IsOptional()
-  @IsIn(["show-all", "only-house-shares", "no-house-shares", "", null])
-  house_shares?: string;
+  @IsBoolean()
+  smoking_area?: boolean;
 
-  @ApiPropertyOptional({
-    description: "Date property was added filter",
-    example: "any",
-    enum: [
-      "any",
-      "last-24-hours",
-      "last-3-days",
-      "last-14-days",
-      "last-21-days",
-    ],
-  })
-  @IsOptional()
-  @IsIn([
-    "any",
-    "last-24-hours",
-    "last-3-days",
-    "last-14-days",
-    "last-21-days",
-    "",
-    null,
-  ])
-  date_property_added?: string;
-
-  @ApiPropertyOptional({
-    description: "Lifestyle features preferences",
-    example: ["gym", "pool", "garden"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  lifestyle_features?: string[];
-
-  @ApiPropertyOptional({
-    description: "Social features preferences",
-    example: ["communal-space", "rooftop", "events"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  social_features?: string[];
-
-  @ApiPropertyOptional({
-    description: "Work features preferences",
-    example: ["co-working", "meeting-rooms", "high-speed-wifi"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  work_features?: string[];
-
-  @ApiPropertyOptional({
-    description: "Convenience features preferences",
-    example: ["parking", "storage", "laundry"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  convenience_features?: string[];
-
-  @ApiPropertyOptional({
-    description: "Pet-friendly features preferences",
-    example: ["pet-park", "pet-washing", "pet-sitting"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  pet_friendly_features?: string[];
-
-  @ApiPropertyOptional({
-    description: "Luxury features preferences",
-    example: ["concierge", "spa", "cinema"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  luxury_features?: string[];
+  // ==================== STEP 8: HOBBIES ====================
 
   @ApiPropertyOptional({
     description: "User's hobbies and interests",
@@ -387,64 +315,28 @@ export class CreatePreferencesDto {
   @IsString({ each: true })
   hobbies?: string[];
 
+  // ==================== STEP 9: LIVING ENVIRONMENT ====================
+
   @ApiPropertyOptional({
-    description: "Ideal living environment preferences (array)",
+    description: "Ideal living environment preferences",
     example: ["quiet-professional", "social-friendly"],
     type: [String],
-    enum: [
-      "quiet-professional",
-      "social-friendly",
-      "family-oriented",
-      "student-lifestyle",
-      "creative-artistic",
-    ],
   })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsIn(
-    [
-      "quiet-professional",
-      "social-friendly",
-      "family-oriented",
-      "student-lifestyle",
-      "creative-artistic",
-    ],
-    { each: true }
-  )
   ideal_living_environment?: string[];
-
-  @ApiPropertyOptional({
-    description: "Pet ownership information",
-    example: "none",
-    enum: ["none", "dog", "cat", "small-pets", "planning-to-get"],
-  })
-  @IsOptional()
-  @IsIn(["none", "dog", "cat", "small-pets", "planning-to-get", "", null])
-  pets?: string;
 
   @ApiPropertyOptional({
     description: "Smoking preference",
     example: "no",
-    enum: [
-      "no",
-      "yes",
-      "no-but-okay",
-      "no-prefer-non-smoking",
-      "no-preference",
-    ],
+    enum: ["no", "yes", "no-but-okay", "no-prefer-non-smoking", "no-preference"],
   })
   @IsOptional()
-  @IsIn([
-    "no",
-    "yes",
-    "no-but-okay",
-    "no-prefer-non-smoking",
-    "no-preference",
-    "",
-    null,
-  ])
+  @IsIn(["no", "yes", "no-but-okay", "no-prefer-non-smoking", "no-preference", "", null])
   smoker?: string;
+
+  // ==================== STEP 10: ABOUT YOU ====================
 
   @ApiPropertyOptional({
     description: "Additional information about the user",
@@ -453,4 +345,140 @@ export class CreatePreferencesDto {
   @IsOptional()
   @IsString()
   additional_info?: string;
+
+  // ==================== LEGACY FIELDS (for backward compatibility) ====================
+
+  @ApiPropertyOptional({ description: "Primary postcode (legacy)" })
+  @IsOptional()
+  @IsString()
+  primary_postcode?: string;
+
+  @ApiPropertyOptional({ description: "Secondary location (legacy)" })
+  @IsOptional()
+  @IsString()
+  secondary_location?: string;
+
+  @ApiPropertyOptional({ description: "Commute location (legacy)" })
+  @IsOptional()
+  @IsString()
+  commute_location?: string;
+
+  @ApiPropertyOptional({ description: "Commute time walk (legacy)" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  commute_time_walk?: number;
+
+  @ApiPropertyOptional({ description: "Commute time cycle (legacy)" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  commute_time_cycle?: number;
+
+  @ApiPropertyOptional({ description: "Commute time tube (legacy)" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  commute_time_tube?: number;
+
+  @ApiPropertyOptional({ description: "Min bedrooms (legacy)" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  min_bedrooms?: number;
+
+  @ApiPropertyOptional({ description: "Max bedrooms (legacy)" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  max_bedrooms?: number;
+
+  @ApiPropertyOptional({ description: "Min bathrooms (legacy)" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  min_bathrooms?: number;
+
+  @ApiPropertyOptional({ description: "Max bathrooms (legacy)" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  max_bathrooms?: number;
+
+  @ApiPropertyOptional({ description: "Property type array (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  property_type?: string[];
+
+  @ApiPropertyOptional({ description: "Building style (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  building_style?: string[];
+
+  @ApiPropertyOptional({ description: "Designer furniture (legacy)" })
+  @IsOptional()
+  @IsBoolean()
+  designer_furniture?: boolean;
+
+  @ApiPropertyOptional({ description: "House shares (legacy)" })
+  @IsOptional()
+  @IsString()
+  house_shares?: string;
+
+  @ApiPropertyOptional({ description: "Date property added (legacy)" })
+  @IsOptional()
+  @IsString()
+  date_property_added?: string;
+
+  @ApiPropertyOptional({ description: "Lifestyle features (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  lifestyle_features?: string[];
+
+  @ApiPropertyOptional({ description: "Social features (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  social_features?: string[];
+
+  @ApiPropertyOptional({ description: "Work features (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  work_features?: string[];
+
+  @ApiPropertyOptional({ description: "Convenience features (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  convenience_features?: string[];
+
+  @ApiPropertyOptional({ description: "Pet friendly features (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  pet_friendly_features?: string[];
+
+  @ApiPropertyOptional({ description: "Luxury features (legacy)" })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  luxury_features?: string[];
 }

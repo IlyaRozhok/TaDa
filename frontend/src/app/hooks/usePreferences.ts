@@ -8,6 +8,8 @@ import {
   PreferencesFormData,
   FormFieldErrors,
   PreferencesState,
+  transformFormDataForApi,
+  transformApiDataForForm,
 } from "@/app/types/preferences";
 import { TOTAL_STEPS_NEW } from "@/app/constants/preferences";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
@@ -58,60 +60,84 @@ export const usePreferences = () => {
     formState: { errors },
   } = useForm<PreferencesFormData>({
     defaultValues: {
-      primary_postcode: "",
-      secondary_location: "no-preference",
-      commute_location: "no-preference",
-      commute_time_walk: 15,
-      commute_time_cycle: 20,
-      commute_time_tube: 30,
+      // Step 1 - Location
+      preferred_address: "",
+      preferred_metro_stations: [],
+      preferred_essentials: [],
+      preferred_commute_times: [],
+      // Step 2 - Budget & Move-in
       move_in_date: "",
-      min_price: 1000,
-      max_price: 5000,
-      min_bedrooms: 1,
-      max_bedrooms: 3,
-      min_bathrooms: 1,
-      max_bathrooms: 2,
-      furnishing: "no-preference",
+      move_out_date: "",
+      min_price: undefined,
+      max_price: undefined,
+      deposit_preference: "",
+      deposit_preferences: "", // UI alias
+      // Step 3 - Property & Rooms
+      property_types: [],
+      property_type_preferences: [], // UI alias
+      bedrooms: [],
+      rooms_preferences: [], // UI alias
+      bathrooms: [],
+      bathrooms_preferences: [], // UI alias
+      furnishing: [],
+      furnishing_preferences: [], // UI alias
+      outdoor_space: false,
+      balcony: false,
+      terrace: false,
+      outdoor_space_preferences: [], // UI alias
+      min_square_meters: 15,
+      max_square_meters: 45,
+      // Step 4 - Building & Duration
+      building_types: [],
+      building_style_preferences: [], // UI alias
       let_duration: "",
+      selected_duration: "", // UI alias
+      bills: "",
+      selected_bills: "", // UI alias
+      // Step 5 - Tenant Type
+      tenant_types: [],
+      tenant_type_preferences: [], // UI alias
+      // Step 6 - Pets
+      pet_policy: false,
+      pets: [],
+      pet_type_preferences: [], // UI alias
+      number_of_pets: undefined,
+      dog_size: "", // UI alias
+      // Step 7 - Amenities
+      amenities: [],
+      amenities_preferences: [], // UI alias
+      is_concierge: false,
+      smoking_area: false,
+      additional_preferences: [], // UI alias
+      // Step 8 - Hobbies
+      hobbies: [],
+      // Step 9 - Living Environment
+      ideal_living_environment: [],
+      smoker: "",
+      // Step 10 - About You
+      additional_info: "",
+      // Legacy fields (for backward compatibility)
+      primary_postcode: "",
+      secondary_location: "",
+      commute_location: "",
+      commute_time_walk: undefined,
+      commute_time_cycle: undefined,
+      commute_time_tube: undefined,
+      min_bedrooms: undefined,
+      max_bedrooms: undefined,
+      min_bathrooms: undefined,
+      max_bathrooms: undefined,
       property_type: [],
       building_style: [],
       designer_furniture: false,
-      house_shares: "show-all",
-      date_property_added: "any",
+      house_shares: "",
+      date_property_added: "",
       lifestyle_features: [],
       social_features: [],
       work_features: [],
       convenience_features: [],
       pet_friendly_features: [],
       luxury_features: [],
-      hobbies: [],
-      ideal_living_environment: [],
-      pets: "",
-      smoker: "no-preference",
-      additional_info: "",
-      // Step 2 - New fields
-      deposit_preferences: [],
-      // Step 3 - New fields (all multi-select)
-      property_type_preferences: [],
-      rooms_preferences: [],
-      bathrooms_preferences: [],
-      furnishing_preferences: [],
-      outdoor_space_preferences: [],
-      min_square_meters: 15,
-      max_square_meters: 45,
-      // Step 4 - New fields
-      building_style_preferences: [],
-      selected_duration: "",
-      selected_bills: "",
-      // Step 5 - New fields
-      tenant_type_preferences: [],
-      // Step 6 - New fields
-      pet_type_preferences: [],
-      number_of_pets: "",
-      dog_size: "",
-      // Step 7 - New fields
-      amenities_preferences: [],
-      additional_preferences: [],
     },
   });
 
@@ -207,9 +233,12 @@ export const usePreferences = () => {
       if (response.data) {
         setState((prev) => ({ ...prev, existingPreferences: response.data }));
 
-        // Populate form with existing data
-        Object.keys(response.data).forEach((key) => {
-          const value = response.data[key];
+        // Transform API data to form format
+        const formData = transformApiDataForForm(response.data);
+
+        // Populate form with transformed data
+        Object.keys(formData).forEach((key) => {
+          const value = formData[key as keyof PreferencesFormData];
 
           // Skip null/undefined values and special fields
           if (
@@ -225,66 +254,21 @@ export const usePreferences = () => {
           }
 
           // Handle date fields
-          if (key === "move_in_date" && value) {
-            // Convert date to YYYY-MM-DD format for DateRangePicker
-            const dateValue = value.split("T")[0];
+          if ((key === "move_in_date" || key === "move_out_date") && value) {
+            const dateValue = typeof value === "string" && value.includes("T") 
+              ? value.split("T")[0] 
+              : value;
             setValue(key as keyof PreferencesFormData, dateValue);
             return;
           }
 
-          if (key === "move_out_date" && value) {
-            // Convert date to YYYY-MM-DD format for DateRangePicker
-            const dateValue = value.split("T")[0];
-
-            // Only set move_out_date if it's different from move_in_date
-            const moveInDate = response.data.move_in_date;
-            if (moveInDate && moveInDate.split("T")[0] === dateValue) {
-              // Same date as move_in_date, don't set move_out_date (single date selection)
-              setValue("move_out_date", undefined);
-            } else {
-              // Different date, set as range
-              setValue(key as keyof PreferencesFormData, dateValue);
-            }
-            return;
-          }
-
-          // Handle array fields
-          const arrayFields = [
-            "property_type",
-            "building_style",
-            "lifestyle_features",
-            "social_features",
-            "work_features",
-            "convenience_features",
-            "pet_friendly_features",
-            "luxury_features",
-            "hobbies",
-          ];
-
-          if (arrayFields.includes(key)) {
-            if (typeof value === "string") {
-              // Handle old string format or comma-separated values
-              const arrayValue = value.includes(",")
-                ? value.split(",").map((v) => v.trim())
-                : [value];
-
-              setValue(key as keyof PreferencesFormData, arrayValue);
-            } else if (Array.isArray(value)) {
-              setValue(key as keyof PreferencesFormData, value);
-            }
-            return;
-          }
-
           // Handle boolean fields
-          if (key === "designer_furniture") {
-            const boolValue = value === true || value === "true" || value === 1;
-
-            setValue(key as keyof PreferencesFormData, boolValue);
+          if (typeof value === "boolean") {
+            setValue(key as keyof PreferencesFormData, value);
             return;
           }
 
           // Handle all other fields
-
           setValue(key as keyof PreferencesFormData, value);
         });
       }
@@ -356,19 +340,16 @@ export const usePreferences = () => {
     }));
 
     try {
+      // Transform form data to API format
+      const transformedData = transformFormDataForApi(data);
+
       // Convert "no-preference" values to null and handle empty arrays
-      // Exception: keep "no-preference" for furnishing field
-      const processedData = Object.keys(data).reduce((acc, key) => {
-        const value = data[key as keyof PreferencesFormData];
+      const processedData = Object.keys(transformedData).reduce((acc, key) => {
+        const value = transformedData[key as keyof typeof transformedData];
         if (value === "no-preference") {
-          // Keep "no-preference" for furnishing and secondary_location, convert to null for other fields
+          // Keep "no-preference" for smoker, convert to null for other fields
           (acc as Record<string, unknown>)[key] =
-            key === "furnishing" ||
-            key === "secondary_location" ||
-            key === "commute_location" ||
-            key === "smoker"
-              ? "no-preference"
-              : null;
+            key === "smoker" ? "no-preference" : null;
         } else if (value === "") {
           (acc as Record<string, unknown>)[key] = null;
         } else if (Array.isArray(value) && value.length === 0) {
@@ -378,7 +359,7 @@ export const usePreferences = () => {
           (acc as Record<string, unknown>)[key] = value;
         }
         return acc;
-      }, {} as PreferencesFormData);
+      }, {} as Partial<PreferencesFormData>);
 
       // For updates, only send changed data
       let dataToSend = processedData;
@@ -394,8 +375,8 @@ export const usePreferences = () => {
           // Compare values, handling arrays and dates specially
           const hasChanged =
             Array.isArray(currentValue) && Array.isArray(existingValue)
-              ? JSON.stringify(currentValue.sort()) !==
-                JSON.stringify(existingValue.sort())
+              ? JSON.stringify([...currentValue].sort()) !==
+                JSON.stringify([...existingValue].sort())
               : currentValue !== existingValue;
 
           if (hasChanged) {
@@ -410,7 +391,7 @@ export const usePreferences = () => {
         }
 
         console.log("🔄 Changed data to send:", changedData);
-        dataToSend = changedData as PreferencesFormData;
+        dataToSend = changedData;
       }
 
       // Use update if preferences exist, create if not

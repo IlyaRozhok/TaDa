@@ -5,11 +5,11 @@ import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { InputField } from "../ui/InputField";
 import { ChevronDown } from "lucide-react";
+import { PreferencesFormData } from "@/app/types/preferences";
 
 interface PetsStepProps {
-  formData: any;
-  onUpdate: (field: string, value: any) => void;
-  onToggle: (category: string, value: string) => void;
+  formData: PreferencesFormData;
+  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
 }
 
 // Pet type options

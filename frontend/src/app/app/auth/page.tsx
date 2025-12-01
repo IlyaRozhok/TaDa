@@ -44,26 +44,31 @@ export default function AuthPage() {
       localStorage.setItem("accessToken", token);
 
       // Get user data
-      authAPI.getMe().then((response) => {
-        const user = response.data.user;
-        dispatch(setAuth({
-          user,
-          accessToken: token,
-        }));
-        localStorage.setItem("user", JSON.stringify(user));
+      authAPI
+        .getMe()
+        .then((response) => {
+          const user = response.data.user;
+          dispatch(
+            setAuth({
+              user,
+              accessToken: token,
+            })
+          );
+          localStorage.setItem("user", JSON.stringify(user));
 
-        // Load shortlist for tenant users
-        if (user?.role === "tenant") {
-          dispatch(fetchShortlist());
-        }
+          // Load shortlist for tenant users
+          if (user?.role === "tenant") {
+            dispatch(fetchShortlist());
+          }
 
-        // Redirect based on role
-        redirectAfterLogin(user, router);
-      }).catch((err) => {
-        console.error("Failed to get user data:", err);
-        setError("Failed to complete authentication");
-        localStorage.removeItem("accessToken");
-      });
+          // Redirect based on role
+          redirectAfterLogin(user, router);
+        })
+        .catch((err) => {
+          console.error("Failed to get user data:", err);
+          setError("Failed to complete authentication");
+          localStorage.removeItem("accessToken");
+        });
 
       // Clean up URL
       router.replace("/app/auth", undefined);
@@ -71,7 +76,8 @@ export default function AuthPage() {
   }, [router, dispatch]);
 
   const handleGoogleAuth = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
     window.location.href = `${apiUrl}/auth/google`;
   };
 
@@ -79,7 +85,7 @@ export default function AuthPage() {
     <div className="relative min-h-screen overflow-hidden">
       {/* Background color fallback */}
       <div className="absolute inset-0 bg-black"></div>
-      
+
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
@@ -123,9 +129,7 @@ export default function AuthPage() {
 
             {/* Header */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-white">
-                Sign In to Tada
-              </h1>
+              <h1 className="text-2xl font-bold text-white">Sign In to Tada</h1>
             </div>
 
             {/* Error */}
@@ -139,7 +143,7 @@ export default function AuthPage() {
             <div className="w-full">
               <button
                 onClick={handleGoogleAuth}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg hover:bg-white/20 transition-colors font-medium text-white"
+                className="w-full cursor-pointer flex items-center justify-center gap-3 py-3 px-4 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg hover:bg-white/20 transition-colors font-medium text-white"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -167,17 +171,24 @@ export default function AuthPage() {
             <div className="mt-6 text-center">
               <p className="text-xs text-white/80">
                 By clicking Continue with Google, you agree to Tada{" "}
-                <Link href="/terms" className="underline hover:text-white transition-colors">
+                <Link
+                  href="/terms"
+                  className="underline hover:text-white transition-colors"
+                >
                   Terms of Use
                 </Link>{" "}
                 and{" "}
-                <Link href="/privacy" className="underline hover:text-white transition-colors">
+                <Link
+                  href="/privacy"
+                  className="underline hover:text-white transition-colors"
+                >
                   Privacy Policy
                 </Link>
               </p>
               <p className="text-xs text-white/80 mt-2">
-                Tada may send you communications; you may change your preferences
-                in your account settings. We'll never post without your permission
+                Tada may send you communications; you may change your
+                preferences in your account settings. We'll never post without
+                your permission
               </p>
             </div>
           </div>
