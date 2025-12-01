@@ -17,6 +17,8 @@ import {
   MultiSelectStep,
   PersonalPreferencesStep,
   AboutYouStep,
+  PetsStep,
+  AmenitiesStep,
 } from "./steps";
 import {
   BUILDING_STYLE_OPTIONS,
@@ -162,17 +164,10 @@ export default function NewPreferencesPage() {
       case 5:
         return <ApartmentSpecStep {...stepProps} />;
       case 6:
-        return (
-          <MultiSelectStep
-            title="Building style preferences"
-            description="Choose your preferred building types"
-            stepTitle="Building style preferences"
-            options={BUILDING_STYLE_OPTIONS}
-            category="building_style"
-            {...stepProps}
-          />
-        );
+        return <PetsStep {...stepProps} />;
       case 7:
+        return <AmenitiesStep {...stepProps} />;
+      case 8:
         return (
           <MultiSelectStep
             title="Lifestyle & Wellness"

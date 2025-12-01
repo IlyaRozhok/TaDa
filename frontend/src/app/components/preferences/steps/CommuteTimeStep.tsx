@@ -2,7 +2,9 @@ import React from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
-import { InputField } from "../step-components/InputField";
+import { SelectionButton } from "../step-components/SelectionButton";
+import { DateRangePicker } from "../ui/DateRangePicker";
+import { InputField } from "../ui/InputField";
 
 interface CommuteTimeStepProps {
   formData: any;
@@ -15,38 +17,77 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="Maximum Commute Time"
-      description="How long are you willing to commute using different transport methods?"
+      title="Step 2"
+      description="Step 2"
     >
       <StepContainer>
-        <StepHeader title="Commute preferences" />
-
-        <div className="space-y-6">
-          <InputField
-            label="Walking (minutes)"
-            value={formData.commute_time_walk || ""}
-            onChange={(value) => onUpdate("commute_time_walk", value)}
-            type="number"
-            min={1}
-            max={120}
+        {/* Move-in Date */}
+        <StepHeader title="Move-in Date" />
+        <div className="space-y-6 mb-8">
+          <DateRangePicker
+            label="Move-in Date"
+            value={{
+              start: formData.move_in_date || null,
+              end: formData.move_out_date || null,
+            }}
+            onChange={(range) => {
+              onUpdate("move_in_date", range.start);
+              onUpdate(
+                "move_out_date",
+                range.start === range.end ? null : range.end
+              );
+            }}
+            placeholder="Select date range"
           />
+        </div>
 
+        {/* Budget */}
+        <StepHeader title="Budget" />
+        <div className="space-y-4 mb-8">
           <InputField
-            label="Cycling (minutes)"
-            value={formData.commute_time_cycle || ""}
-            onChange={(value) => onUpdate("commute_time_cycle", value)}
+            label="Price from"
+            value={formData.min_price || ""}
+            onChange={(e) => onUpdate("min_price", e.target.value ? parseInt(e.target.value) : 0)}
             type="number"
-            min={1}
-            max={120}
+            min={0}
           />
-
           <InputField
-            label="Tube/Public Transport (minutes)"
-            value={formData.commute_time_tube || ""}
-            onChange={(value) => onUpdate("commute_time_tube", value)}
+            label="Price to"
+            value={formData.max_price || ""}
+            onChange={(e) => onUpdate("max_price", e.target.value ? parseInt(e.target.value) : 0)}
             type="number"
-            min={1}
-            max={120}
+            min={0}
+          />
+        </div>
+
+        {/* Deposit - Multi-select */}
+        <StepHeader title="Deposit" />
+        <div className="space-y-4">
+          <SelectionButton
+            label="Yes"
+            value="yes"
+            isSelected={formData.deposit_preferences?.includes("yes") || false}
+            onClick={() => {
+              const current = formData.deposit_preferences || [];
+              if (current.includes("yes")) {
+                onUpdate("deposit_preferences", current.filter((v: string) => v !== "yes"));
+              } else {
+                onUpdate("deposit_preferences", [...current, "yes"]);
+              }
+            }}
+          />
+          <SelectionButton
+            label="No"
+            value="no"
+            isSelected={formData.deposit_preferences?.includes("no") || false}
+            onClick={() => {
+              const current = formData.deposit_preferences || [];
+              if (current.includes("no")) {
+                onUpdate("deposit_preferences", current.filter((v: string) => v !== "no"));
+              } else {
+                onUpdate("deposit_preferences", [...current, "no"]);
+              }
+            }}
           />
         </div>
       </StepContainer>

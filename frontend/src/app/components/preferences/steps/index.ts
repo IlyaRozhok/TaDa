@@ -6,3 +6,5 @@ export { ApartmentSpecStep } from "./ApartmentSpecStep";
 export { MultiSelectStep } from "./MultiSelectStep";
 export { PersonalPreferencesStep } from "./PersonalPreferencesStep";
 export { AboutYouStep } from "./AboutYouStep";
+export { PetsStep } from "./PetsStep";
+export { AmenitiesStep } from "./AmenitiesStep";

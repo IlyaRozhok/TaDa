@@ -2,52 +2,38 @@ import React from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
-import { BedroomsDropdown, FurnishingDropdown } from "../ui";
+import { SelectionButton } from "../step-components/SelectionButton";
 
 interface ApartmentSpecStepProps {
   formData: any;
-  onUpdate: (field: string, value: any) => void;
+  onToggle: (category: string, value: string) => void;
 }
+
+// Tenant type options
+const TENANT_TYPE_OPTIONS = ["Corporate Lets", "Sharers", "Student", "Family", "Elder"];
 
 export const ApartmentSpecStep: React.FC<ApartmentSpecStepProps> = ({
   formData,
-  onUpdate,
+  onToggle,
 }) => {
   return (
     <StepWrapper
-      title="Specify your apartment"
-      description="Select how you'll be using platform. For now one account - one role"
+      title="Step 5"
+      description="Step 5"
     >
       <StepContainer>
-        <StepHeader title="Bedrooms and furnishing" />
-
-        <div className="space-y-8">
-          <BedroomsDropdown
-            label="Bedrooms (min)"
-            value={formData.min_bedrooms || ""}
-            onChange={(value) =>
-              onUpdate("min_bedrooms", value === "" ? undefined : value)
-            }
-            placeholder="No Preference"
-            min={true}
-          />
-
-          <BedroomsDropdown
-            label="Bedrooms (max)"
-            value={formData.max_bedrooms || ""}
-            onChange={(value) =>
-              onUpdate("max_bedrooms", value === "" ? undefined : value)
-            }
-            placeholder="No Preference"
-            min={false}
-          />
-
-          <FurnishingDropdown
-            label="Furnishing"
-            value={formData.furnishing || "no-preference"}
-            onChange={(value) => onUpdate("furnishing", value)}
-            placeholder="No Preference"
-          />
+        {/* Tenant Type - Multi Select */}
+        <StepHeader title="Tenant Type" />
+        <div className="space-y-4">
+          {TENANT_TYPE_OPTIONS.map((type) => (
+            <SelectionButton
+              key={type}
+              label={type}
+              value={type}
+              isSelected={formData.tenant_type_preferences?.includes(type) || false}
+              onClick={() => onToggle("tenant_type_preferences", type)}
+            />
+          ))}
         </div>
       </StepContainer>
     </StepWrapper>

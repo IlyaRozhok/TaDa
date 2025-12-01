@@ -31,6 +31,29 @@ export interface PreferencesFormData {
   pets?: string;
   smoker?: string;
   additional_info?: string;
+  // Step 2 - New fields
+  deposit_preferences?: string[];
+  // Step 3 - New fields (all multi-select)
+  property_type_preferences?: string[];
+  rooms_preferences?: string[];
+  bathrooms_preferences?: string[];
+  furnishing_preferences?: string[];
+  outdoor_space_preferences?: string[];
+  min_square_meters?: number;
+  max_square_meters?: number;
+  // Step 4 - New fields
+  building_style_preferences?: string[];
+  selected_duration?: string;
+  selected_bills?: string;
+  // Step 5 - New fields
+  tenant_type_preferences?: string[];
+  // Step 6 - New fields
+  pet_type_preferences?: string[];
+  number_of_pets?: string;
+  dog_size?: string;
+  // Step 7 - New fields
+  amenities_preferences?: string[];
+  additional_preferences?: string[];
 }
 
 export interface FormFieldErrors {

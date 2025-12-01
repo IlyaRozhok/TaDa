@@ -3,33 +3,71 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
-import { PROPERTY_TYPE_OPTIONS } from "@/app/constants/preferences";
 
 interface PropertyTypeStepProps {
   formData: any;
+  onUpdate: (field: string, value: any) => void;
   onToggle: (category: string, value: string) => void;
 }
 
+// Building style preferences options
+const BUILDING_STYLE_OPTIONS = ["Professional Management", "BTR", "Co-living"];
+
+// Duration options
+const DURATION_OPTIONS = ["Any", "Long term 6+ m", "Short term 1+ m"];
+
+// Bills options
+const BILLS_OPTIONS = ["Include", "Exclude"];
+
 export const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
   formData,
+  onUpdate,
   onToggle,
 }) => {
   return (
     <StepWrapper
-      title="Property type"
-      description="Select all property types you're interested in"
+      title="Step 4"
+      description="Step 4"
     >
       <StepContainer>
-        <StepHeader title="Select property types" />
-
-        <div className="space-y-4">
-          {PROPERTY_TYPE_OPTIONS.map((type) => (
+        {/* Building style preferences - Multi Select */}
+        <StepHeader title="Building style preferences" />
+        <div className="space-y-4 mb-8">
+          {BUILDING_STYLE_OPTIONS.map((style) => (
             <SelectionButton
-              key={type}
-              label={type}
-              value={type}
-              isSelected={formData.property_type?.includes(type) || false}
-              onClick={(value) => onToggle("property_type", value)}
+              key={style}
+              label={style}
+              value={style}
+              isSelected={formData.building_style_preferences?.includes(style) || false}
+              onClick={() => onToggle("building_style_preferences", style)}
+            />
+          ))}
+        </div>
+
+        {/* Duration - Single Select */}
+        <StepHeader title="Duration" />
+        <div className="space-y-4 mb-8">
+          {DURATION_OPTIONS.map((duration) => (
+            <SelectionButton
+              key={duration}
+              label={duration}
+              value={duration}
+              isSelected={formData.selected_duration === duration}
+              onClick={() => onUpdate("selected_duration", duration)}
+            />
+          ))}
+        </div>
+
+        {/* Bills - Single Select */}
+        <StepHeader title="Bills" />
+        <div className="space-y-4">
+          {BILLS_OPTIONS.map((bill) => (
+            <SelectionButton
+              key={bill}
+              label={bill}
+              value={bill}
+              isSelected={formData.selected_bills === bill}
+              onClick={() => onUpdate("selected_bills", bill)}
             />
           ))}
         </div>

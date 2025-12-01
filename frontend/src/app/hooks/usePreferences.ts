@@ -89,6 +89,29 @@ export const usePreferences = () => {
       pets: "",
       smoker: "no-preference",
       additional_info: "",
+      // Step 2 - New fields
+      deposit_preferences: [],
+      // Step 3 - New fields (all multi-select)
+      property_type_preferences: [],
+      rooms_preferences: [],
+      bathrooms_preferences: [],
+      furnishing_preferences: [],
+      outdoor_space_preferences: [],
+      min_square_meters: 15,
+      max_square_meters: 45,
+      // Step 4 - New fields
+      building_style_preferences: [],
+      selected_duration: "",
+      selected_bills: "",
+      // Step 5 - New fields
+      tenant_type_preferences: [],
+      // Step 6 - New fields
+      pet_type_preferences: [],
+      number_of_pets: "",
+      dog_size: "",
+      // Step 7 - New fields
+      amenities_preferences: [],
+      additional_preferences: [],
     },
   });
 
