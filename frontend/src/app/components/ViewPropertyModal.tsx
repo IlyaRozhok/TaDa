@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, MapPin, Bed, Bath, DoorClosed } from "lucide-react";
+import { X, MapPin, Bed, Bath, DoorClosed, Star, Users, Shield, Clock, Train, Car, ShoppingBag, Dog, Cigarette } from "lucide-react";
 import { Property } from "../types/property";
 
 interface ViewPropertyModalProps {
@@ -257,27 +257,220 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
             </div>
           )}
 
-          {/* Operator Info */}
+          {/* Amenities */}
+          {property.amenities && property.amenities.length > 0 && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Amenities
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {property.amenities.map((amenity, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1.5 bg-white/10 backdrop-blur-[5px] border border-white/20 text-white rounded-lg text-sm"
+                  >
+                    {amenity}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tenant Types */}
+          {property.tenant_types && property.tenant_types.length > 0 && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Tenant Types
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {property.tenant_types.map((type, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1.5 bg-white/10 backdrop-blur-[5px] border border-white/20 text-white rounded-lg text-sm"
+                  >
+                    {type}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Concierge Information */}
+          {property.is_concierge && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Concierge Service
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/70">Available:</span>
+                  <span className="font-medium text-white">Yes</span>
+                </div>
+                {property.concierge_hours && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/70">Hours:</span>
+                    <span className="font-medium text-white">
+                      {property.concierge_hours.from != null && property.concierge_hours.to != null
+                        ? `${property.concierge_hours.from}:00 - ${property.concierge_hours.to}:00`
+                        : "N/A"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Pet Policy */}
+          {property.pet_policy !== undefined && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Dog className="w-5 h-5" />
+                Pet Policy
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/70">Pets Allowed:</span>
+                  <span className="font-medium text-white">
+                    {property.pet_policy ? "Yes" : "No"}
+                  </span>
+                </div>
+                {property.pets && property.pets.length > 0 && (
+                  <div className="mt-3">
+                    <span className="text-white/70 block mb-2">Allowed Pet Types:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {property.pets.map((pet, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1.5 bg-white/10 backdrop-blur-[5px] border border-white/20 text-white rounded-lg text-sm"
+                        >
+                          {pet.type === "other" && pet.customType
+                            ? pet.customType
+                            : pet.type.charAt(0).toUpperCase() + pet.type.slice(1)}
+                          {pet.size && ` (${pet.size})`}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Smoking Area */}
+          {property.smoking_area !== undefined && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Cigarette className="w-5 h-5" />
+                Smoking Area
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-white/70">Available:</span>
+                <span className="font-medium text-white">
+                  {property.smoking_area ? "Yes" : "No"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Metro Stations */}
+          {property.metro_stations && property.metro_stations.length > 0 && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Train className="w-5 h-5" />
+                Metro Stations
+              </h3>
+              <div className="space-y-2">
+                {property.metro_stations.map((station, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center py-2 border-b border-white/10 last:border-0"
+                  >
+                    <span className="text-white/90">{station.label}</span>
+                    {station.destination != null && (
+                      <span className="text-white/70 text-sm">
+                        {station.destination} min
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Commute Times */}
+          {property.commute_times && property.commute_times.length > 0 && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Car className="w-5 h-5" />
+                Commute Times
+              </h3>
+              <div className="space-y-2">
+                {property.commute_times.map((commute, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center py-2 border-b border-white/10 last:border-0"
+                  >
+                    <span className="text-white/90">{commute.label}</span>
+                    {commute.destination != null && (
+                      <span className="text-white/70 text-sm">
+                        {commute.destination} min
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Local Essentials */}
+          {property.local_essentials && property.local_essentials.length > 0 && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5" />
+                Local Essentials
+              </h3>
+              <div className="space-y-2">
+                {property.local_essentials.map((essential, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center py-2 border-b border-white/10 last:border-0"
+                  >
+                    <span className="text-white/90">{essential.label}</span>
+                    {essential.destination != null && (
+                      <span className="text-white/70 text-sm">
+                        {essential.destination} min
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Luxury Flag */}
+          {property.luxury !== undefined && (
+            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-yellow-400" />
+                <span className="text-lg font-semibold text-white">
+                  {property.luxury ? "Luxury Property" : "Standard Property"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Operator Info as JSON */}
           {property.operator && (
             <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
               <h3 className="text-lg font-semibold text-white mb-3">
-                Property Operator
+                Property Operator (JSON)
               </h3>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-full flex items-center justify-center">
-                  <span className="text-xl font-bold text-white">
-                    {property.operator.email.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-medium text-white">
-                    {property.operator.full_name || property.operator.email}
-                  </div>
-                  <div className="text-sm text-white/70">
-                    {property.operator.email}
-                  </div>
-                </div>
-              </div>
+              <pre className="bg-black/30 backdrop-blur-[5px] border border-white/20 p-4 rounded-lg overflow-x-auto text-sm text-white/90 font-mono">
+                {JSON.stringify(property.operator, null, 2)}
+              </pre>
             </div>
           )}
         </div>
