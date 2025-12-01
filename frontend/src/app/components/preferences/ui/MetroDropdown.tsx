@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import styles from "./CustomDropdown.module.scss";
 
 interface MetroOption {
   value: string;
@@ -66,62 +65,61 @@ export const MetroDropdown: React.FC<MetroDropdownProps> = ({
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
-      {/* Input Field */}
-      <div
-        className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white cursor-pointer border-0 shadow-sm ${
-          hasValue ? "text-gray-900" : "text-gray-400"
-        } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
-        onClick={handleToggle}
-      >
-        {displayValue}
-      </div>
+      <div className="relative">
+        {/* Input Field */}
+        <div
+          className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 cursor-pointer border-0 shadow-sm ${
+            hasValue ? "bg-black text-white" : "bg-white text-gray-400"
+          } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
+          onClick={handleToggle}
+        >
+          <span className={hasValue ? "text-white font-medium" : "text-transparent"}>
+            {displayValue}
+          </span>
+        </div>
 
-      {/* Floating label */}
-      {hasValue && (
+        {/* Floating label */}
         <label
           className={`absolute left-6 pointer-events-none ${
             isInitialized ? "transition-all duration-200" : ""
-          } top-3 text-xs text-gray-500`}
+          } ${
+            hasValue || isOpen
+              ? "top-3 text-xs text-gray-500"
+              : "top-1/2 -translate-y-1/2 text-base text-gray-400"
+          }`}
         >
           {label}
         </label>
-      )}
 
-      {/* Dropdown Arrow */}
-      <ChevronDown
-        className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none transition-transform duration-200 ${
-          isOpen ? "rotate-180" : ""
-        }`}
-      />
+        {/* Dropdown Arrow */}
+        <ChevronDown
+          className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none transition-transform duration-200 ${
+            hasValue ? "text-white" : "text-gray-400"
+          } ${isOpen ? "rotate-180" : ""}`}
+        />
+      </div>
 
       {/* Dropdown List */}
       {isOpen && (
-        <div
-          className={`absolute top-full left-0 right-0 mt-2 z-50 ${styles.dropdownCard}`}
-        >
-          <div className={styles.scrollContainer}>
-            {options.map((option) => (
-              <div
-                key={option.value}
-                className={`${styles.dropdownItem} ${
-                  value === option.value ? styles.selected : ""
-                }`}
-                onClick={() => handleOptionClick(option.value)}
-              >
-                {/* Metro Icon */}
-                <div className={styles.postcodeIcon}>
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    M
-                  </div>
-                </div>
-
-                {/* Station Name */}
-                <div className={styles.optionContent}>
-                  <div className={styles.postcode}>{option.label}</div>
-                </div>
+        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-3xl shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              onClick={() => handleOptionClick(option.value)}
+              className={`px-6 py-4 cursor-pointer first:rounded-t-3xl last:rounded-b-3xl transition-colors flex items-center gap-3 ${
+                value === option.value
+                  ? "bg-black text-white hover:bg-gray-900"
+                  : "text-black hover:bg-gray-200"
+              }`}
+            >
+              {/* Metro Icon */}
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gray-600">
+                M
               </div>
-            ))}
-          </div>
+              {/* Station Name */}
+              <span className="font-medium">{option.label}</span>
+            </div>
+          ))}
         </div>
       )}
 

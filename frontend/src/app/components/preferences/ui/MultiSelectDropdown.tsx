@@ -14,7 +14,6 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   value = [],
   onChange,
   options,
-  placeholder = "Select options",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -62,18 +61,18 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       <div className="relative">
         <div
           onClick={handleToggle}
-          className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl cursor-pointer flex items-center justify-between border-0 shadow-sm ${
-            hasValue ? "bg-black text-white" : "bg-white"
-          } ${
+          className={`w-full bg-white px-6 pt-8 pb-4 pr-6 rounded-3xl cursor-pointer flex items-center justify-between border-0 shadow-sm} ${
             isInitialized ? "transition-all duration-200" : ""
           }`}
         >
-          <span className={hasValue ? "text-white font-medium" : "text-transparent"}>
+          <span
+            className={hasValue ? "text-black font-medium" : "text-transparent"}
+          >
             {displayValue}
           </span>
           <ChevronDown
             className={`w-5 h-5 transition-transform ${
-              hasValue ? "text-white" : "text-gray-400"
+              hasValue ? "text-gray-500" : "text-gray-400"
             } ${isOpen ? "rotate-180" : ""}`}
           />
         </div>
@@ -109,4 +108,3 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     </div>
   );
 };
-
