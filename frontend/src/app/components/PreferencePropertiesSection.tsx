@@ -80,7 +80,7 @@ const PreferencePropertiesSection: React.FC<
         </h2>
         <button
           className="text-black text-sm underline hover:text-gray-600 font-medium"
-          onClick={() => (window.location.href = "/app/dashboard/tenant")}
+          onClick={() => (window.location.href = "/app/units")}
         >
           See more
         </button>

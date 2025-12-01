@@ -24,7 +24,7 @@ export default function AuthPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/app/dashboard/tenant");
+      router.push("/app/units");
     }
   }, [isAuthenticated, router]);
 

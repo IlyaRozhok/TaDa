@@ -16,7 +16,6 @@ import {
   SelectField,
 } from "../../../../components/ui/FormField";
 import { LoadingPage } from "../../../../components/ui/LoadingSpinner";
-import ErrorBoundary from "../../../../components/ErrorBoundary";
 import { Button } from "../../../../components/ui/Button";
 import { ArrowLeft, Save, AlertCircle, CheckCircle } from "lucide-react";
 
@@ -85,14 +84,14 @@ export default function EditPropertyPage() {
   // Check user permissions
   useEffect(() => {
     if (!isAuthenticated || !user) {
-      router.push("/app/dashboard/tenant");
+      router.push("/app/units");
       return;
     }
 
     // Check if user is operator using the proper role system
     const userRole = getUserRole(user);
     if (userRole !== "operator" && userRole !== "admin") {
-      router.push("/app/dashboard/tenant");
+      router.push("/app/units");
       return;
     }
 
@@ -236,8 +235,7 @@ export default function EditPropertyPage() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         <DashboardHeader />
 
         <div className="max-w-6xl mx-auto px-4 py-8">
@@ -529,6 +527,6 @@ export default function EditPropertyPage() {
           </form>
         </div>
       </div>
-    </ErrorBoundary>
+    </div>
   );
 }

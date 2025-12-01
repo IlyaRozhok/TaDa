@@ -60,7 +60,7 @@ export function getRedirectPath(user: any): string {
     case "operator":
       return "/app/dashboard/operator";
     case "tenant":
-      return "/app/dashboard/tenant";
+      return "/app/units";
     default:
       console.warn(
         `⚠️ Unknown role "${user.role}", redirecting to role selection`

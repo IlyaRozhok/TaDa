@@ -291,10 +291,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
           
           {/* Range slider */}
           <div className="px-2">
-            <div className="flex justify-between text-sm text-gray-500 mb-2">
-              <span>от {formData.min_square_meters ?? 15}</span>
-              <span>до 500</span>
-            </div>
+
             <div 
               ref={rangeRef}
               className="relative"

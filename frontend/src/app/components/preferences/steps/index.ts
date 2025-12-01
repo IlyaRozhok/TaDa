@@ -8,3 +8,5 @@ export { PersonalPreferencesStep } from "./PersonalPreferencesStep";
 export { AboutYouStep } from "./AboutYouStep";
 export { PetsStep } from "./PetsStep";
 export { AmenitiesStep } from "./AmenitiesStep";
+export { CompleteProfileStep } from "./CompleteProfileStep";
+export { LivingEnvironmentStep } from "./LivingEnvironmentStep";

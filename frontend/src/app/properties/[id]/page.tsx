@@ -11,7 +11,6 @@ import PropertyLocation from "../../components/property/PropertyLocation";
 import PropertyCTA from "../../components/property/PropertyCTA";
 import AuthModal from "../../components/AuthModal";
 import { LoadingPage } from "../../components/ui/LoadingSpinner";
-import ErrorBoundary from "../../components/ErrorBoundary";
 
 export default function PublicPropertyDetailPage() {
   const router = useRouter();
@@ -46,8 +45,7 @@ export default function PublicPropertyDetailPage() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
         <PropertyHeader
           property={state.property}
           publishDate={publishDate}
@@ -124,6 +122,6 @@ export default function PublicPropertyDetailPage() {
           onClose={() => setAuthModalOpen(false)}
         />
       </div>
-    </ErrorBoundary>
+    </div>
   );
 }

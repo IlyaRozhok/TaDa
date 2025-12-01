@@ -60,32 +60,30 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
           />
         </div>
 
-        {/* Deposit - Multi-select */}
+        {/* Deposit - Single-select */}
         <StepHeader title="Deposit" />
         <div className="space-y-4">
           <SelectionButton
             label="Yes"
             value="yes"
-            isSelected={formData.deposit_preferences?.includes("yes") || false}
+            isSelected={formData.deposit_preferences === "yes"}
             onClick={() => {
-              const current = formData.deposit_preferences || [];
-              if (current.includes("yes")) {
-                onUpdate("deposit_preferences", current.filter((v: string) => v !== "yes"));
+              if (formData.deposit_preferences === "yes") {
+                onUpdate("deposit_preferences", null);
               } else {
-                onUpdate("deposit_preferences", [...current, "yes"]);
+                onUpdate("deposit_preferences", "yes");
               }
             }}
           />
           <SelectionButton
             label="No"
             value="no"
-            isSelected={formData.deposit_preferences?.includes("no") || false}
+            isSelected={formData.deposit_preferences === "no"}
             onClick={() => {
-              const current = formData.deposit_preferences || [];
-              if (current.includes("no")) {
-                onUpdate("deposit_preferences", current.filter((v: string) => v !== "no"));
+              if (formData.deposit_preferences === "no") {
+                onUpdate("deposit_preferences", null);
               } else {
-                onUpdate("deposit_preferences", [...current, "no"]);
+                onUpdate("deposit_preferences", "no");
               }
             }}
           />

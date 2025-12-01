@@ -146,7 +146,7 @@ export default function AllPropertiesPage() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push("/app/dashboard/tenant")}
+            onClick={() => router.push("/app/units")}
             className="flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-6 font-medium group"
           >
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />

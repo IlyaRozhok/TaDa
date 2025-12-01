@@ -32,7 +32,7 @@ export interface PreferencesFormData {
   smoker?: string;
   additional_info?: string;
   // Step 2 - New fields
-  deposit_preferences?: string[];
+  deposit_preferences?: string;
   // Step 3 - New fields (all multi-select)
   property_type_preferences?: string[];
   rooms_preferences?: string[];

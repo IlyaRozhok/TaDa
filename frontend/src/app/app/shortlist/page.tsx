@@ -184,7 +184,7 @@ export default function ShortlistPage() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push("/app/dashboard/tenant")}
+            onClick={() => router.push("/app/units")}
             className="flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-6 font-medium group"
           >
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
@@ -258,7 +258,7 @@ export default function ShortlistPage() {
                 Browse All Properties
               </button>
               <button
-                onClick={() => router.push("/app/dashboard/tenant")}
+                onClick={() => router.push("/app/units")}
                 className="bg-white border border-slate-300 text-slate-700 px-8 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
               >
                 Back to Dashboard

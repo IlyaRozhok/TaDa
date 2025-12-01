@@ -92,7 +92,7 @@ export default function ManagePropertiesPage() {
     // Check if user is operator using the proper role system
     const userRole = getUserRole(user);
     if (userRole !== "operator" && userRole !== "admin") {
-      router.push("/app/dashboard/tenant");
+      router.push("/app/units");
       return;
     }
 

@@ -37,7 +37,7 @@ export default function DashboardPage() {
         break;
       case "tenant":
       default:
-        router.replace("/app/dashboard/tenant");
+        router.replace("/app/units");
         break;
     }
   }, [isAuthenticated, user, router]);

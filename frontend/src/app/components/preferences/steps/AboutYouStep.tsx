@@ -13,8 +13,8 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="About you"
-      description="Tell potential landlords and housemates about yourself (optional)"
+      title="Step 10"
+      description="Step 10"
     >
       <TextAreaField
         label="Tell about yourself"

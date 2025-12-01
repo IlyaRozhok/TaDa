@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
@@ -31,6 +31,13 @@ export const PetsStep: React.FC<PetsStepProps> = ({
   const selectedPetType = formData.pet_type_preferences?.[0] || "";
   const numberOfPets = formData.number_of_pets || "";
   const dogSize = formData.dog_size || "";
+
+  // Set default dog size to "Small" when Dog is selected
+  useEffect(() => {
+    if (selectedPetType === "Dog" && !dogSize) {
+      onUpdate("dog_size", "Small (<10kg)");
+    }
+  }, [selectedPetType, dogSize, onUpdate]);
 
   return (
     <StepWrapper

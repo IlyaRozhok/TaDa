@@ -19,6 +19,8 @@ import {
   AboutYouStep,
   PetsStep,
   AmenitiesStep,
+  CompleteProfileStep,
+  LivingEnvironmentStep,
 } from "./steps";
 import {
   BUILDING_STYLE_OPTIONS,
@@ -150,6 +152,8 @@ export default function NewPreferencesPage() {
       formData: watchedData,
       onUpdate: updateField,
       onToggle: toggleFeature,
+      onNext: nextStep,
+      onPrevious: prevStep,
     };
 
     switch (step) {
@@ -168,96 +172,10 @@ export default function NewPreferencesPage() {
       case 7:
         return <AmenitiesStep {...stepProps} />;
       case 8:
-        return (
-          <MultiSelectStep
-            title="Lifestyle & Wellness"
-            description="Select wellness and fitness amenities that matter to you"
-            stepTitle="Lifestyle & Wellness"
-            options={LIFESTYLE_OPTIONS}
-            category="lifestyle_features"
-            {...stepProps}
-          />
-        );
-      case 8:
-        return (
-          <MultiSelectStep
-            title="Social & Community"
-            description="Choose social spaces and community features you'd enjoy"
-            stepTitle="Social & Community"
-            options={SOCIAL_OPTIONS}
-            category="social_features"
-            {...stepProps}
-          />
-        );
+        return <CompleteProfileStep {...stepProps} />;
       case 9:
-        return (
-          <MultiSelectStep
-            title="Work & Study"
-            description="Select work and study facilities you need for productivity"
-            stepTitle="Work & Study"
-            options={WORK_STUDY_OPTIONS}
-            category="work_features"
-            {...stepProps}
-          />
-        );
+        return <LivingEnvironmentStep {...stepProps} />;
       case 10:
-        return (
-          <MultiSelectStep
-            title="Convenience"
-            description="Choose convenience features that make daily life easier"
-            stepTitle="Convenience"
-            options={CONVENIENCE_FEATURES_OPTIONS}
-            category="convenience_features"
-            {...stepProps}
-          />
-        );
-      case 11:
-        return (
-          <MultiSelectStep
-            title="Pet-Friendly"
-            description="Select pet-friendly amenities if you have or plan to get pets"
-            stepTitle="Pet-Friendly"
-            options={PET_FRIENDLY_OPTIONS}
-            category="pet_friendly_features"
-            {...stepProps}
-          />
-        );
-      case 12:
-        return (
-          <MultiSelectStep
-            title="Luxury & Premium"
-            description="Choose luxury amenities and premium services you value"
-            stepTitle="Luxury & Premium"
-            options={LUXURY_PREMIUM_OPTIONS}
-            category="luxury_features"
-            {...stepProps}
-          />
-        );
-      case 13:
-        return (
-          <MultiSelectStep
-            title="Ideal Living Environment"
-            description="The type of household atmosphere you prefer (select multiple)"
-            stepTitle="Ideal Living Environment"
-            options={IDEAL_LIVING_OPTIONS}
-            category="ideal_living_environment"
-            {...stepProps}
-          />
-        );
-      case 14:
-        return (
-          <MultiSelectStep
-            title="Smoking"
-            description="Important for matching with smoke-friendly accommodations"
-            stepTitle="Do you smoke?"
-            options={SMOKING_OPTIONS}
-            category="smoker"
-            {...stepProps}
-          />
-        );
-      case 15:
-        return <PersonalPreferencesStep {...stepProps} />;
-      case 16:
         return <AboutYouStep {...stepProps} />;
       default:
         return <LocationStep {...stepProps} />;

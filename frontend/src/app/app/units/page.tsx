@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { selectUser } from "../../../store/slices/authSlice";
-import { useTenantDashboard } from "../../../hooks/useTenantDashboard";
-import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
-import TenantPerfectMatchSection from "../../../components/TenantPerfectMatchSection";
-import ListedPropertiesSection from "../../../components/ListedPropertiesSection";
-import LoadingPage from "../../../components/ui/LoadingSpinner";
-import ErrorBoundary from "../../../components/ErrorBoundary";
-import { waitForSessionManager } from "../../../components/providers/SessionManager";
+import { selectUser } from "../../store/slices/authSlice";
+import { useTenantDashboard } from "../../hooks/useTenantDashboard";
+import TenantUniversalHeader from "../../components/TenantUniversalHeader";
+import TenantPerfectMatchSection from "../../components/TenantPerfectMatchSection";
+import ListedPropertiesSection from "../../components/ListedPropertiesSection";
+import LoadingPage from "../../components/ui/LoadingSpinner";
+import { waitForSessionManager } from "../../components/providers/SessionManager";
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
@@ -63,45 +62,43 @@ function TenantDashboardContent() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-white">
-        {/* Header */}
-        <TenantUniversalHeader
-          searchTerm={state.searchTerm}
-          onSearchChange={handleSearchChange}
-          preferencesCount={state.preferencesCount}
-        />
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <TenantUniversalHeader
+        searchTerm={state.searchTerm}
+        onSearchChange={handleSearchChange}
+        preferencesCount={state.preferencesCount}
+      />
 
-        {/* Main Content */}
-        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Perfect Match Section - only show if preferences are NOT complete */}
-          {!state.hasCompletePreferences && (
-            <TenantPerfectMatchSection
-              hasPreferences={
-                !!state.userPreferences && state.preferencesCount > 0
-              }
-              preferencesCount={state.preferencesCount}
-            />
-          )}
-
-          {/* Listed Properties Section */}
-          <ListedPropertiesSection
-            properties={state.properties}
-            matchedProperties={state.matchedProperties}
-            loading={state.loading}
-            userPreferences={state.userPreferences}
-            totalCount={state.totalCount}
-            currentPage={state.currentPage}
-            totalPages={state.totalPages}
-            onPageChange={(page) => loadProperties(state.searchTerm, page)}
+      {/* Main Content */}
+      <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Perfect Match Section - only show if preferences are NOT complete */}
+        {!state.hasCompletePreferences && (
+          <TenantPerfectMatchSection
+            hasPreferences={
+              !!state.userPreferences && state.preferencesCount > 0
+            }
+            preferencesCount={state.preferencesCount}
           />
-        </main>
-      </div>
-    </ErrorBoundary>
+        )}
+
+        {/* Listed Properties Section */}
+        <ListedPropertiesSection
+          properties={state.properties}
+          matchedProperties={state.matchedProperties}
+          loading={state.loading}
+          userPreferences={state.userPreferences}
+          totalCount={state.totalCount}
+          currentPage={state.currentPage}
+          totalPages={state.totalPages}
+          onPageChange={(page) => loadProperties(state.searchTerm, page)}
+        />
+      </main>
+    </div>
   );
 }
 
-export default function TenantDashboardPage() {
+export default function TenantUnitsPage() {
   const user = useSelector(selectUser);
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
@@ -164,3 +161,4 @@ export default function TenantDashboardPage() {
 
   return <TenantDashboardContent />;
 }
+

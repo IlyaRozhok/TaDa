@@ -38,7 +38,7 @@ export function useAuth() {
       // Redirect based on user role
       const userRole = response.data.user?.role;
       if (userRole === "tenant") {
-        router.push("/app/dashboard/tenant");
+        router.push("/app/units");
       } else if (userRole === "operator") {
         router.push("/app/dashboard/operator");
       } else {
@@ -72,7 +72,7 @@ export function useAuth() {
       // Redirect based on user role
       const userRole = response.data.user?.role;
       if (userRole === "tenant") {
-        router.push("/app/dashboard/tenant");
+        router.push("/app/units");
       } else if (userRole === "operator") {
         router.push("/app/dashboard/operator");
       } else {
@@ -105,8 +105,8 @@ export function useAuth() {
       localStorage.setItem("accessToken", response.data.access_token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // All new users are tenants, redirect to tenant dashboard
-      router.push("/app/dashboard/tenant");
+      // All new users are tenants, redirect to units page
+      router.push("/app/units");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed");
       throw err;

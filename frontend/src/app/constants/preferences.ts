@@ -303,4 +303,4 @@ export const HOBBY_ICON_OPTIONS = [
 ] as const;
 
 export const TOTAL_STEPS = 12; // For PreferencesPage (old version)
-export const TOTAL_STEPS_NEW = 16; // For NewPreferencesPage
+export const TOTAL_STEPS_NEW = 10; // For NewPreferencesPage
