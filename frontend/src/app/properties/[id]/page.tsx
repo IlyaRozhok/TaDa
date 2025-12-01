@@ -10,7 +10,7 @@ import PropertyAmenities from "../../components/property/PropertyAmenities";
 import PropertyLocation from "../../components/property/PropertyLocation";
 import PropertyCTA from "../../components/property/PropertyCTA";
 import AuthModal from "../../components/AuthModal";
-import { LoadingPage } from "../../components/ui/LoadingSpinner";
+import PropertyDetailSkeleton from "../../components/ui/PropertyDetailSkeleton";
 
 export default function PublicPropertyDetailPage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function PublicPropertyDetailPage() {
     usePropertyDetail();
 
   if (state.loading) {
-    return <LoadingPage text="Loading property details..." />;
+    return <PropertyDetailSkeleton />;
   }
 
   if (state.error || !state.property) {
