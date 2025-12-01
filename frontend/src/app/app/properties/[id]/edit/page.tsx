@@ -4,9 +4,8 @@ import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppSelector } from "@/app/store/hooks";
 import { usePropertyForm } from "@/app/hooks/usePropertyForm";
-import { propertiesAPI } from "@/app/lib/api";
 import { getUserRole } from "@/app/utils/simpleRedirect";
-import { PropertyMedia, FormErrors } from "@/app/types";
+import { PropertyMedia } from "@/app/types";
 import DashboardHeader from "../../../../components/DashboardHeader";
 import MediaManager from "../../../../components/MediaManager";
 import LifestyleFeaturesSelector from "../../../../components/LifestyleFeaturesSelector";
@@ -41,45 +40,6 @@ export default function EditPropertyPage() {
     clearSuccess,
   } = usePropertyForm();
 
-  // Load property data on component mount
-  useEffect(() => {
-    const loadProperty = async () => {
-      if (!id) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const propertyData = await propertiesAPI.getById(id as string);
-        setProperty(propertyData);
-        setMedia(propertyData.media || []);
-
-        // Populate form with property data
-        setFormData({
-          title: propertyData.title || "",
-          description: propertyData.description || "",
-          address: propertyData.address || "",
-          price: Number(propertyData.price) || 0,
-          bedrooms: propertyData.bedrooms || 1,
-          bathrooms: propertyData.bathrooms || 1,
-          property_type: propertyData.property_type || "apartment",
-          furnishing: propertyData.furnishing || "furnished",
-          lifestyle_features: propertyData.lifestyle_features || [],
-          available_from: propertyData.available_from
-            ? propertyData.available_from.split("T")[0]
-            : "",
-          is_btr: propertyData.is_btr || false,
-        });
-      } catch (err: any) {
-        console.error("Error loading property:", err);
-        setError("Failed to load property details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProperty();
-  }, [id]);
 
   // Check user permissions
   useEffect(() => {
@@ -101,104 +61,20 @@ export default function EditPropertyPage() {
     }
   }, [isAuthenticated, user, property, router]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-    // Clear field error
-    if (formErrors[name]) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+  // Redirect on success
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        router.push("/app/properties/manage");
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  };
-
-  const handleLifestyleFeatureToggle = (featureId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      lifestyle_features: prev.lifestyle_features?.includes(featureId)
-        ? prev.lifestyle_features.filter((id) => id !== featureId)
-        : [...(prev.lifestyle_features || []), featureId],
-    }));
-  };
+  }, [success, router]);
 
   const handleMediaUpdate = (updatedMedia: PropertyMedia[]) => {
     setMedia(updatedMedia);
-    // Also update the property media to keep it in sync
-    if (property) {
-      setProperty({ ...property, media: updatedMedia });
-    }
   };
 
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {};
-
-    if (!formData.title.trim()) {
-      errors.title = "Title is required";
-    }
-
-    if (!formData.description.trim()) {
-      errors.description = "Description is required";
-    }
-
-    if (!formData.address.trim()) {
-      errors.address = "Address is required";
-    }
-
-    if (!formData.price || formData.price <= 0) {
-      errors.price = "Price must be greater than 0";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm() || !property) return;
-
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      await propertiesAPI.update(property.id, formData);
-      setSuccess("Property updated successfully!");
-
-      // Redirect after success
-      setTimeout(() => {
-        router.push("/app/properties/manage");
-      }, 2000);
-    } catch (err: any) {
-      console.error("Error updating property:", err);
-      if (err.response?.data?.errors) {
-        const backendErrors = err.response.data.errors;
-        const fieldErrors: FormErrors = {};
-        Object.keys(backendErrors).forEach((field) => {
-          fieldErrors[field] = Array.isArray(backendErrors[field])
-            ? backendErrors[field][0]
-            : backendErrors[field];
-        });
-        setFormErrors(fieldErrors);
-      } else {
-        setError(err.message || "Failed to update property");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Check user permissions
   if (!user || !isAuthenticated) {
@@ -278,9 +154,9 @@ export default function EditPropertyPage() {
           )}
 
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              handleSave();
+              await handleSave();
             }}
             className="space-y-8"
           >
@@ -491,7 +367,7 @@ export default function EditPropertyPage() {
                   <MediaManager
                     propertyId={property?.id || ""}
                     media={media}
-                    onMediaUpdate={setMedia}
+                    onMediaUpdate={handleMediaUpdate}
                     disabled={saving}
                     maxFiles={10}
                   />
@@ -527,6 +403,5 @@ export default function EditPropertyPage() {
           </form>
         </div>
       </div>
-    </div>
   );
 }
