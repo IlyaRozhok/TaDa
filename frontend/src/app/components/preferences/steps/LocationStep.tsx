@@ -60,7 +60,6 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             value={formData.preferred_address || ""}
             onChange={(e) => onUpdate("preferred_address", e.target.value)}
             type="text"
-            placeholder="Enter your desired address"
           />
         </div>
 

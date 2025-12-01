@@ -59,7 +59,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           <input
             ref={ref}
             {...props}
-            className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 shadow-sm ${
+            className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
               error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
             } ${
               props.type === "number"
@@ -76,7 +76,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             } ${
               isFocused || hasValue
                 ? "top-3 text-xs text-gray-500"
-                : "top-1/2 translate-y-1 text-base text-gray-400"
+                : "top-1/3 translate-y-1 text-base text-gray-400"
             }`}
           >
             {label}
