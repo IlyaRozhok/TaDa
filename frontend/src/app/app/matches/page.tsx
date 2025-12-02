@@ -558,27 +558,69 @@ export default function MatchesPage() {
                           </div>
                         </div>
 
-                        {/* Match Reasons */}
+                        {/* Match Categories */}
                         <div>
                           <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-yellow-500" />
-                            Why this matches
+                            Match breakdown
                           </h4>
-                          <ul className="space-y-2">
-                            {matchResult.matchReasons.map(
-                              (reason, reasonIndex) => (
-                                <li
-                                  key={reasonIndex}
-                                  className="flex items-start gap-2 text-sm text-gray-700"
-                                >
-                                  <span className="text-green-500 mt-0.5 flex-shrink-0">
-                                    ✓
-                                  </span>
-                                  <span>{reason}</span>
-                                </li>
-                              )
-                            )}
-                          </ul>
+                          
+                          {/* Show categories if available */}
+                          {matchResult.categories && matchResult.categories.length > 0 ? (
+                            <div className="space-y-2">
+                              {matchResult.categories
+                                .filter(cat => cat.maxScore > 0)
+                                .slice(0, 6)
+                                .map((cat, catIndex) => (
+                                  <div
+                                    key={catIndex}
+                                    className="flex items-center gap-2 text-sm"
+                                  >
+                                    <div className="flex-shrink-0">
+                                      {cat.match ? (
+                                        <span className="text-green-500">✓</span>
+                                      ) : cat.score > 0 ? (
+                                        <span className="text-yellow-500">◐</span>
+                                      ) : (
+                                        <span className="text-red-400">✗</span>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-gray-700 truncate">
+                                          {cat.reason}
+                                        </span>
+                                        <span className="text-xs text-gray-400 ml-2">
+                                          {cat.score}/{cat.maxScore}
+                                        </span>
+                                      </div>
+                                      {cat.details && (
+                                        <p className="text-xs text-gray-500 truncate">
+                                          {cat.details}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            /* Fallback to old matchReasons */
+                            <ul className="space-y-2">
+                              {matchResult.matchReasons.map(
+                                (reason, reasonIndex) => (
+                                  <li
+                                    key={reasonIndex}
+                                    className="flex items-start gap-2 text-sm text-gray-700"
+                                  >
+                                    <span className="text-green-500 mt-0.5 flex-shrink-0">
+                                      ✓
+                                    </span>
+                                    <span>{reason}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          )}
                         </div>
                       </div>
                     </div>

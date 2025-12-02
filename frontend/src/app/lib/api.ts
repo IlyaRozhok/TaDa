@@ -359,12 +359,46 @@ export interface MatchingResult {
   totalPages: number;
 }
 
+// Category match result from backend
+export interface CategoryMatchResult {
+  category: string;
+  match: boolean;
+  score: number;
+  maxScore: number;
+  reason: string;
+  details?: string;
+}
+
 // Detailed matching result from backend
 export interface DetailedMatchingResult {
   property: Property;
   matchScore: number;
   matchReasons: string[];
   perfectMatch: boolean;
+  categories?: CategoryMatchResult[];
+}
+
+// Full matching response from backend
+export interface MatchingResponse {
+  results: {
+    property: Property;
+    totalScore: number;
+    maxPossibleScore: number;
+    matchPercentage: number;
+    isPerfectMatch: boolean;
+    categories: CategoryMatchResult[];
+    summary: {
+      matched: number;
+      partial: number;
+      notMatched: number;
+    };
+  }[];
+  total: number;
+  preferences: {
+    id: string;
+    summary: string;
+  };
+  appliedWeights: Record<string, number>;
 }
 
 export default api;

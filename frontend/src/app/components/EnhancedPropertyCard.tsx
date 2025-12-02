@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { Property } from "../types";
+import { CategoryMatchResult } from "../lib/api";
 import { selectUser } from "../store/slices/authSlice";
 import {
   addToShortlist,
@@ -23,6 +24,7 @@ interface EnhancedPropertyCardProps {
   onImageLoad?: () => void;
   matchScore?: number;
   userPreferences?: any;
+  matchCategories?: CategoryMatchResult[]; // New: category breakdown from backend
 }
 
 export default function EnhancedPropertyCard({
@@ -33,6 +35,7 @@ export default function EnhancedPropertyCard({
   onImageLoad,
   matchScore,
   userPreferences,
+  matchCategories,
 }: EnhancedPropertyCardProps) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -152,8 +155,22 @@ export default function EnhancedPropertyCard({
     return tags;
   };
 
-  const getMatchReasons = () => {
-    const reasons = [];
+  const getMatchReasons = (): { matches: boolean; details: string; category?: string }[] => {
+    // If we have categories from backend, use them
+    if (matchCategories && matchCategories.length > 0) {
+      return matchCategories
+        .filter(cat => cat.maxScore > 0) // Only show categories that were evaluated
+        .sort((a, b) => b.maxScore - a.maxScore) // Sort by importance
+        .slice(0, 6) // Show top 6 categories
+        .map(cat => ({
+          matches: cat.match,
+          details: cat.details || cat.reason,
+          category: cat.category,
+        }));
+    }
+
+    // Fallback: calculate locally if no backend data
+    const reasons: { matches: boolean; details: string; category?: string }[] = [];
 
     // Price matching
     if (userPreferences?.min_price && userPreferences?.max_price) {
@@ -162,42 +179,64 @@ export default function EnhancedPropertyCard({
           ? parseFloat(property.price)
           : property.price;
       
-      // Check if propertyPrice is valid
       if (propertyPrice !== null && propertyPrice !== undefined && !isNaN(propertyPrice)) {
         const isWithinBudget =
           propertyPrice >= userPreferences.min_price &&
           propertyPrice <= userPreferences.max_price;
         reasons.push({
           matches: isWithinBudget,
-          details: `Price £${propertyPrice.toFixed(0)} within budget £${
+          details: `Price £${propertyPrice.toFixed(0)} ${isWithinBudget ? "within" : "outside"} budget £${
             userPreferences.min_price
           }-£${userPreferences.max_price}`,
+          category: "budget",
         });
       }
     }
 
     // Bedroom requirement
-    if (userPreferences?.min_bedrooms) {
+    if (userPreferences?.bedrooms && userPreferences.bedrooms.length > 0) {
+      const meetsBedroomReq = userPreferences.bedrooms.includes(property.bedrooms);
+      reasons.push({
+        matches: meetsBedroomReq,
+        details: `${property.bedrooms} bedroom${property.bedrooms !== 1 ? "s" : ""} ${meetsBedroomReq ? "matches" : "doesn't match"} preference`,
+        category: "bedrooms",
+      });
+    } else if (userPreferences?.min_bedrooms) {
       const meetsBedroomReq = property.bedrooms >= userPreferences.min_bedrooms;
       reasons.push({
         matches: meetsBedroomReq,
-        details: `${property.bedrooms} bedrooms meets requirements (${userPreferences.min_bedrooms}+needed)`,
+        details: `${property.bedrooms} bedrooms ${meetsBedroomReq ? "meets" : "below"} requirement (${userPreferences.min_bedrooms}+)`,
+        category: "bedrooms",
       });
     }
 
     // Property type matching
-    if (
-      userPreferences?.property_type &&
-      userPreferences.property_type.length > 0
-    ) {
-      const matchesType = userPreferences.property_type.includes(
-        property.property_type
-      );
+    if (userPreferences?.property_types && userPreferences.property_types.length > 0) {
+      const matchesType = userPreferences.property_types.includes(property.property_type);
       reasons.push({
         matches: matchesType,
-        details: `${property.property_type} ${
-          matchesType ? "matches" : "doesn't match"
-        } preferences`,
+        details: `${property.property_type || "Unknown"} ${matchesType ? "matches" : "doesn't match"} preferences`,
+        category: "propertyType",
+      });
+    }
+
+    // Pet policy
+    if (userPreferences?.pet_policy === true) {
+      const allowsPets = property.pet_policy === true;
+      reasons.push({
+        matches: allowsPets,
+        details: allowsPets ? "Pet-friendly property" : "Pets not allowed",
+        category: "pets",
+      });
+    }
+
+    // Bills
+    if (userPreferences?.bills) {
+      const billsMatch = property.bills === userPreferences.bills;
+      reasons.push({
+        matches: billsMatch,
+        details: `Bills ${property.bills || "excluded"}`,
+        category: "bills",
       });
     }
 

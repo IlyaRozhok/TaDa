@@ -219,7 +219,7 @@ export default function PropertyPublicPage() {
       <UniversalHeader />
 
       {/* Header with title and actions */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-25">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">

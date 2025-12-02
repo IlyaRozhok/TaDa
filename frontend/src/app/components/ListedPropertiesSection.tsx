@@ -4,13 +4,20 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Map, ChevronLeft, ChevronRight } from "lucide-react";
 import { Property } from "../types";
+import { CategoryMatchResult } from "../lib/api";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 import styles from "./ui/DropdownStyles.module.scss";
 
+interface MatchedProperty {
+  property: Property;
+  matchScore: number;
+  categories?: CategoryMatchResult[];
+}
+
 interface ListedPropertiesSectionProps {
   properties: Property[];
-  matchedProperties: Array<{ property: Property; matchScore: number }>;
+  matchedProperties: MatchedProperty[];
   loading: boolean;
   userPreferences?: {
     min_price?: number;
@@ -119,15 +126,19 @@ export default function ListedPropertiesSection({
     }
 
     // Create a lookup of matched properties for easy access
-    const matchedLookup: Record<string, number> = {};
+    const matchedLookup: Record<string, { matchScore: number; categories?: CategoryMatchResult[] }> = {};
     matchedProperties.forEach((mp) => {
-      matchedLookup[mp.property.id] = mp.matchScore;
+      matchedLookup[mp.property.id] = { 
+        matchScore: mp.matchScore,
+        categories: mp.categories,
+      };
     });
 
-    // Combine all properties with their match scores
+    // Combine all properties with their match scores and categories
     const allProps = actualProperties.map((property) => ({
       property,
-      matchScore: matchedLookup[property.id] || 0,
+      matchScore: matchedLookup[property.id]?.matchScore || 0,
+      categories: matchedLookup[property.id]?.categories,
     }));
 
 
@@ -205,7 +216,7 @@ export default function ListedPropertiesSection({
           </div>
         ) : sortedProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedProperties.map(({ property, matchScore }) => (
+            {sortedProperties.map(({ property, matchScore, categories }) => (
               <EnhancedPropertyCard
                 key={property.id}
                 property={property}
@@ -218,6 +229,7 @@ export default function ListedPropertiesSection({
                       30)
                 } // Always ensure there's a match score
                 userPreferences={userPreferences}
+                matchCategories={categories}
                 onClick={() => handlePropertyClick(property.id)}
                 showShortlist={true}
               />
