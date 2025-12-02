@@ -62,6 +62,7 @@ export class MatchingService {
       minScore = 0,
       limit = 50,
       includePartialMatches = true,
+      minVisibleScore = 0, // Default: show all properties
     } = options;
 
     // Merge custom weights with defaults
@@ -77,6 +78,14 @@ export class MatchingService {
 
     // Filter by minimum score
     let filteredResults = results.filter((r) => r.matchPercentage >= minScore);
+
+    // Filter by minimum visible score threshold
+    // Properties below this threshold are hidden from results
+    if (minVisibleScore > 0) {
+      filteredResults = filteredResults.filter(
+        (r) => r.matchPercentage >= minVisibleScore
+      );
+    }
 
     // Optionally filter out partial matches
     if (!includePartialMatches) {

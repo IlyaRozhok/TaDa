@@ -56,6 +56,11 @@ export interface CategoryMatchResult {
   maxScore: number;
   reason: string;
   details?: string;
+  /**
+   * Indicates if user has set a preference for this category.
+   * If false, this category is excluded from total score calculation.
+   */
+  hasPreference: boolean;
 }
 
 /**
@@ -72,6 +77,7 @@ export interface PropertyMatchResult {
     matched: number;
     partial: number;
     notMatched: number;
+    skipped: number; // Categories with no preference set
   };
 }
 
@@ -83,6 +89,12 @@ export interface MatchingOptions {
   minScore?: number;
   limit?: number;
   includePartialMatches?: boolean;
+  /**
+   * Minimum match percentage for a property to be visible.
+   * Properties below this threshold will be filtered out.
+   * Default: 0 (show all)
+   */
+  minVisibleScore?: number;
 }
 
 /**
