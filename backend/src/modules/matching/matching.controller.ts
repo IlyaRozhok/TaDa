@@ -13,7 +13,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from "@nestjs/swagger";
-import { JwtAuthGuard } from "../auth/strategies/jwt.strategy";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { MatchingService } from "./matching.service";
 
 @ApiTags("Matching")
@@ -28,8 +28,18 @@ export class MatchingController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get matched properties for current user" })
-  @ApiQuery({ name: "limit", required: false, type: Number, description: "Max results" })
-  @ApiQuery({ name: "minScore", required: false, type: Number, description: "Minimum match score (0-100)" })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+    type: Number,
+    description: "Max results",
+  })
+  @ApiQuery({
+    name: "minScore",
+    required: false,
+    type: Number,
+    description: "Minimum match score (0-100)",
+  })
   @ApiResponse({
     status: 200,
     description: "List of matched properties with scores",
@@ -58,12 +68,12 @@ export class MatchingController {
     status: 200,
     description: "List of top matched properties",
   })
-  async getTopMatches(
-    @Request() req: any,
-    @Query("limit") limit?: number
-  ) {
+  async getTopMatches(@Request() req: any, @Query("limit") limit?: number) {
     const userId = req.user.id;
-    return this.matchingService.getTopMatches(userId, limit ? Number(limit) : 20);
+    return this.matchingService.getTopMatches(
+      userId,
+      limit ? Number(limit) : 20
+    );
   }
 
   /**
@@ -73,7 +83,9 @@ export class MatchingController {
   @Get("detailed-matches")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Get detailed matched properties with category breakdown" })
+  @ApiOperation({
+    summary: "Get detailed matched properties with category breakdown",
+  })
   @ApiQuery({ name: "limit", required: false, type: Number })
   @ApiResponse({
     status: 200,
@@ -84,7 +96,10 @@ export class MatchingController {
     @Query("limit") limit?: number
   ) {
     const userId = req.user.id;
-    return this.matchingService.getDetailedMatches(userId, limit ? Number(limit) : 20);
+    return this.matchingService.getDetailedMatches(
+      userId,
+      limit ? Number(limit) : 20
+    );
   }
 
   /**
@@ -131,4 +146,3 @@ export class MatchingController {
     });
   }
 }
-
