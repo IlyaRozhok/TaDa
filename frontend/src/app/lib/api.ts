@@ -159,6 +159,9 @@ export const matchingAPI = {
     api.get("/matching/matched-properties", {
       params: { page, limit, search },
     }),
+
+  getPropertyMatch: (propertyId: string) =>
+    api.get(`/matching/property/${propertyId}`),
 };
 
 export const operatorsAPI = {

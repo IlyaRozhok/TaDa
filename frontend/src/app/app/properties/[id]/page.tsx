@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
-import { propertiesAPI, Property } from "../../../lib/api";
+import { propertiesAPI, Property, matchingAPI } from "../../../lib/api";
 import { PropertyMedia } from "../../../types";
 import {
   addToShortlist,
@@ -40,6 +40,8 @@ export default function PropertyPublicPage() {
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showAllOffers, setShowAllOffers] = useState(false);
+  const [matchScore, setMatchScore] = useState<number | null>(null);
+  const [matchLoading, setMatchLoading] = useState(false);
 
   // Check if description needs truncation
   const needsTruncation = (text: string) => {
@@ -80,6 +82,39 @@ export default function PropertyPublicPage() {
     };
     fetchProperty();
   }, [id]);
+
+  // Load match score for authenticated users
+  useEffect(() => {
+    const fetchMatchScore = async () => {
+      if (!id || !isAuthenticated || !user || user.role !== "tenant") {
+        setMatchScore(null);
+        return;
+      }
+
+      try {
+        setMatchLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          return;
+        }
+
+        const response = await matchingAPI.getPropertyMatch(id as string);
+        const matchData = response.data || response;
+        
+        // Extract match percentage from response
+        const score = matchData.matchPercentage || matchData.matchScore || null;
+        setMatchScore(score);
+      } catch (err: unknown) {
+        // Silently fail - match score is optional
+        console.warn("Failed to load match score:", err);
+        setMatchScore(null);
+      } finally {
+        setMatchLoading(false);
+      }
+    };
+
+    fetchMatchScore();
+  }, [id, isAuthenticated, user]);
 
   // Check if property is in shortlist using Redux state (avoid API calls to prevent cycling)
   useEffect(() => {
@@ -271,14 +306,24 @@ export default function PropertyPublicPage() {
                   />
 
                   {/* Match indicator */}
-                  <div className="absolute top-4 left-4 bg-black/80 text-white px-3 py-2 rounded-lg border border-white/20">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border border-white/30 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                  {isAuthenticated && user?.role === "tenant" && (
+                    <div className="absolute top-4 left-4 bg-black/80 text-white px-3 py-2 rounded-lg border border-white/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border border-white/30 rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                        {matchLoading ? (
+                          <span className="text-sm font-medium">Loading...</span>
+                        ) : matchScore !== null ? (
+                          <span className="text-sm font-medium">
+                            {matchScore}% Match
+                          </span>
+                        ) : (
+                          <span className="text-sm font-medium">Match</span>
+                        )}
                       </div>
-                      <span className="text-sm font-medium">90% Match</span>
                     </div>
-                  </div>
+                  )}
 
                   {/* Photo counter */}
                   <div className="absolute top-4 right-4 bg-black/80 text-white px-3 py-1 rounded-lg text-sm font-medium">
