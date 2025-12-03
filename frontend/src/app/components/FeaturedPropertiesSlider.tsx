@@ -38,6 +38,11 @@ const getFirstImage = (property: Property) => {
     return property.images[0];
   }
 
+  // Fallback to photos array
+  if (property.photos && property.photos.length > 0) {
+    return property.photos[0];
+  }
+
   return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCAwIDQwMCAyNDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjQwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTAwTDIwMCAxMjVMMjI1IDEwMEwyNTAgMTI1VjE2MEgxNTBWMTI1TDE3NSAxMDBaIiBmaWxsPSIjOUIxMDRGIi8+PGNpcmNsZSBjeD0iMTgwIiBjeT0iMTEwIiByPSI4IiBmaWxsPSIjOUIxMDRGIi8+PC9zdmc+";
 };
 

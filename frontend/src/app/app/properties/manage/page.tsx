@@ -326,6 +326,8 @@ export default function ManagePropertiesPage() {
                       }
                     } else if (property.images && property.images.length > 0) {
                       imageUrl = property.images[0];
+                    } else if (property.photos && property.photos.length > 0) {
+                      imageUrl = property.photos[0];
                     }
 
                     if (imageUrl) {

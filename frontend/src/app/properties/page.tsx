@@ -36,14 +36,14 @@ export default function PublicPropertiesPage() {
         console.log("🔍 Loading properties with search:", debouncedSearchTerm);
         const result = await fetchPublicProperties(
           page,
-          6,
+          12,
           debouncedSearchTerm
         );
         setTotalPages(1); // Simple pagination for public view
         setTotalProperties(result.length);
 
         // Show registration prompt if user tries to go beyond first page
-        if (page > 1 || result.length >= 6) {
+        if (page > 1 || result.length >= 12) {
           setShowRegistrationPrompt(true);
         }
       } catch (err: unknown) {

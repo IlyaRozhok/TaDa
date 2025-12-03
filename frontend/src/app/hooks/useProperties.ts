@@ -305,7 +305,7 @@ export const useProperties = (): UsePropertiesReturn => {
   // Debounced search for properties
   const { debouncedCall: debouncedSearchCall, loading: searchLoading } =
     useDebouncedApiCall(
-      async (search: string, page: number = 1, limit: number = 6) => {
+      async (search: string, page: number = 1, limit: number = 12) => {
         const response = await propertiesAPI.getPublic(page, limit, search);
         return response.data || [];
       },
@@ -334,7 +334,7 @@ export const useProperties = (): UsePropertiesReturn => {
   }, []);
 
   const fetchPublicProperties = useCallback(
-    async (page = 1, limit = 6, search?: string) => {
+    async (page = 1, limit = 12, search?: string) => {
       try {
         setLoading(true);
         setError(null);
@@ -382,7 +382,7 @@ export const useProperties = (): UsePropertiesReturn => {
   );
 
   const debouncedSearchProperties = useCallback(
-    async (search: string, page = 1, limit = 6) => {
+    async (search: string, page = 1, limit = 12) => {
       try {
         setError(null);
         const result = await debouncedSearchCall(search, page, limit);

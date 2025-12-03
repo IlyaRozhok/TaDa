@@ -108,7 +108,8 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
         {properties.map((property, index) => {
           const primaryImage =
             property.media?.[0]?.url ||
-            property.media?.[0]?.url ||
+            property.images?.[0] ||
+            property.photos?.[0] ||
             "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop";
 
           return (

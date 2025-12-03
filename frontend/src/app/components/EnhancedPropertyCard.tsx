@@ -46,6 +46,8 @@ export default function EnhancedPropertyCard({
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [imageSuccessfullyLoaded, setImageSuccessfullyLoaded] = useState(false);
+  const [currentImageSrc, setCurrentImageSrc] = useState<string | null>(null);
 
   // Check if property is in shortlist
   useEffect(() => {
@@ -126,8 +128,17 @@ export default function EnhancedPropertyCard({
     if (property.images && property.images.length > 0) {
       return property.images[0];
     }
+    if (property.photos && property.photos.length > 0) {
+      return property.photos[0];
+    }
     return PROPERTY_PLACEHOLDER;
   };
+
+  // Reset image state when property changes
+  useEffect(() => {
+    setImageSuccessfullyLoaded(false);
+    setCurrentImageSrc(null);
+  }, [property.id]);
 
   const getScoreColor = (score: number) => {
     return "bg-gray-800 text-white";
@@ -252,18 +263,48 @@ export default function EnhancedPropertyCard({
       {/* Image Section */}
       <div className="relative h-64 bg-gray-100 overflow-hidden rounded-t-2xl">
         <img
-          src={getMainImage()}
+          src={imageSuccessfullyLoaded && currentImageSrc ? currentImageSrc : getMainImage()}
           alt={property.title}
           className={`w-full h-full object-cover transition-opacity duration-500 ${
-            imageLoaded ? "opacity-100" : "opacity-0"
+            imageLoaded || imageSuccessfullyLoaded ? "opacity-100" : "opacity-0"
           }`}
-          onLoad={() => {
-            if (onImageLoad) {
-              onImageLoad();
+          loading="lazy"
+          onLoad={(e) => {
+            const target = e.currentTarget;
+            const currentSrc = target.src;
+            
+            // Only mark as successfully loaded if it's not a placeholder
+            if (currentSrc !== PROPERTY_PLACEHOLDER && 
+                !currentSrc.includes('data:image/svg+xml') &&
+                !currentSrc.includes('Property Image')) {
+              setImageSuccessfullyLoaded(true);
+              setCurrentImageSrc(currentSrc);
+              if (onImageLoad) {
+                onImageLoad();
+              }
             }
           }}
           onError={(e) => {
-            e.currentTarget.src = PROPERTY_PLACEHOLDER;
+            const target = e.currentTarget;
+            const currentSrc = target.src;
+            
+            // Never replace image if it was successfully loaded before
+            if (imageSuccessfullyLoaded && currentImageSrc) {
+              // If we have a successfully loaded image, restore it
+              target.src = currentImageSrc;
+              return;
+            }
+            
+            // Only show placeholder if image hasn't been successfully loaded before
+            // and current source is not already placeholder
+            if (!imageSuccessfullyLoaded && 
+                currentSrc !== PROPERTY_PLACEHOLDER && 
+                !currentSrc.includes('data:image/svg+xml') &&
+                !currentSrc.includes('Property Image')) {
+              // Set placeholder only once
+              target.src = PROPERTY_PLACEHOLDER;
+            }
+            // Still call onImageLoad to hide skeleton even on error
             if (onImageLoad) {
               onImageLoad();
             }

@@ -60,6 +60,12 @@ export default function HomepagePropertyCard({
       const featuredImage = property.media?.[0];
       return featuredImage ? featuredImage.url : property.media[0].url;
     }
+    if (property.images && property.images.length > 0) {
+      return property.images[0];
+    }
+    if (property.photos && property.photos.length > 0) {
+      return property.photos[0];
+    }
     return PROPERTY_PLACEHOLDER;
   };
 

@@ -111,8 +111,9 @@ export default function PropertyPublicPage() {
       .filter(Boolean);
 
     const legacy = property.images || [];
+    const photos = property.photos || [];
 
-    const allUrls = [...mediaUrls, ...legacy];
+    const allUrls = [...mediaUrls, ...legacy, ...photos];
 
     // Only return real property images, no fallbacks
     return allUrls;
@@ -265,7 +266,7 @@ export default function PropertyPublicPage() {
                 <div className="relative rounded-2xl overflow-hidden mb-4">
                   <ImageGallery
                     media={property.media || []}
-                    images={property.images || []}
+                    images={[...(property.images || []), ...(property.photos || [])]}
                     alt={property.title || "Property"}
                   />
 

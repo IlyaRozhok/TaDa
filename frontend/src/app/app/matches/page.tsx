@@ -461,6 +461,11 @@ export default function MatchesPage() {
                               matchResult.property.images.length > 0
                             ) {
                               imageUrl = matchResult.property.images[0];
+                            } else if (
+                              matchResult.property.photos &&
+                              matchResult.property.photos.length > 0
+                            ) {
+                              imageUrl = matchResult.property.photos[0];
                             }
 
                             if (imageUrl) {
