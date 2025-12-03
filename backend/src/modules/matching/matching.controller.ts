@@ -145,4 +145,35 @@ export class MatchingController {
       minScore: 60, // Only show properties with 60%+ match
     });
   }
+
+  /**
+   * Get matched properties with pagination and search
+   * Returns properties with calculated matching scores, sorted by match score
+   */
+  @Get("matched-properties")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get matched properties with pagination and search (sorted by match score)",
+  })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
+  @ApiQuery({ name: "search", required: false, type: String })
+  @ApiResponse({
+    status: 200,
+    description: "Paginated list of matched properties sorted by match score",
+  })
+  async getMatchedPropertiesWithPagination(
+    @Request() req: any,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string
+  ) {
+    const userId = req.user.id;
+    return this.matchingService.getMatchedPropertiesWithPagination(userId, {
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 12,
+      search,
+    });
+  }
 }

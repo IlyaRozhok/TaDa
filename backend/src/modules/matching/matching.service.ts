@@ -196,6 +196,93 @@ export class MatchingService {
   }
 
   /**
+   * Get matched properties with pagination and search
+   * This method calculates matching scores for all properties, then applies pagination
+   */
+  async getMatchedPropertiesWithPagination(
+    userId: string,
+    options: {
+      page?: number;
+      limit?: number;
+      search?: string;
+    } = {}
+  ): Promise<{
+    data: Array<{
+      property: Property;
+      matchScore: number;
+      categories: Array<{
+        category: string;
+        match: boolean;
+        score: number;
+        maxScore: number;
+        reason: string;
+        details?: string;
+        hasPreference: boolean;
+      }>;
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const page = options.page || 1;
+    const limit = options.limit || 12;
+    const search = options.search?.trim();
+
+    // Get user preferences
+    const preferences = await this.preferencesRepository.findOne({
+      where: { user_id: userId },
+    });
+
+    if (!preferences) {
+      throw new NotFoundException("User preferences not found");
+    }
+
+    // Build query for properties with search
+    const queryBuilder = this.propertyRepository
+      .createQueryBuilder("property")
+      .leftJoinAndSelect("property.building", "building")
+      .leftJoinAndSelect("property.operator", "operator");
+
+    if (search) {
+      const searchPattern = `%${search}%`;
+      queryBuilder.andWhere(
+        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search)",
+        { search: searchPattern }
+      );
+    }
+
+    // Get all properties matching search (before pagination)
+    const allProperties = await queryBuilder.getMany();
+
+    // Calculate matches for all properties
+    const matchResults: PropertyMatchResult[] = allProperties.map((property) =>
+      this.calculationService.calculateMatch(property, preferences, DEFAULT_WEIGHTS)
+    );
+
+    // Sort by match percentage (descending)
+    matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
+
+    // Apply pagination after sorting
+    const total = matchResults.length;
+    const skip = (page - 1) * limit;
+    const paginatedResults = matchResults.slice(skip, skip + limit);
+
+    // Transform to response format
+    const data = paginatedResults.map((result) => ({
+      property: result.property,
+      matchScore: result.matchPercentage,
+      categories: result.categories,
+    }));
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
    * Generate a human-readable summary of preferences
    */
   private generatePreferencesSummary(preferences: Preferences): string {

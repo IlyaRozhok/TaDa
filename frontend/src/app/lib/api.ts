@@ -150,6 +150,15 @@ export const matchingAPI = {
 
   getRecommendations: (limit?: number) =>
     api.get("/matching/recommendations", { params: { limit } }),
+
+  getMatchedPropertiesWithPagination: (
+    page?: number,
+    limit?: number,
+    search?: string
+  ) =>
+    api.get("/matching/matched-properties", {
+      params: { page, limit, search },
+    }),
 };
 
 export const operatorsAPI = {
