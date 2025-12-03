@@ -240,16 +240,19 @@ export const usePreferences = () => {
         Object.keys(formData).forEach((key) => {
           const value = formData[key as keyof PreferencesFormData];
 
-          // Skip null/undefined values and special fields
+          // Skip special fields (but allow empty arrays, false booleans, etc.)
           if (
-            value === null ||
-            value === undefined ||
             key === "id" ||
             key === "user_id" ||
             key === "user" ||
             key === "created_at" ||
             key === "updated_at"
           ) {
+            return;
+          }
+
+          // Skip only null/undefined (but not empty arrays or false booleans)
+          if (value === null || value === undefined) {
             return;
           }
 
@@ -262,13 +265,13 @@ export const usePreferences = () => {
             return;
           }
 
-          // Handle boolean fields
+          // Handle boolean fields (including false)
           if (typeof value === "boolean") {
             setValue(key as keyof PreferencesFormData, value);
             return;
           }
 
-          // Handle all other fields
+          // Handle all other fields (including empty arrays)
           setValue(key as keyof PreferencesFormData, value);
         });
       }
@@ -373,11 +376,17 @@ export const usePreferences = () => {
           )?.[key];
 
           // Compare values, handling arrays and dates specially
-          const hasChanged =
-            Array.isArray(currentValue) && Array.isArray(existingValue)
-              ? JSON.stringify([...currentValue].sort()) !==
-                JSON.stringify([...existingValue].sort())
-              : currentValue !== existingValue;
+          let hasChanged = false;
+          
+          if (Array.isArray(currentValue)) {
+            // Handle array comparison
+            const existingArray = Array.isArray(existingValue) ? existingValue : [];
+            hasChanged =
+              JSON.stringify([...currentValue].sort()) !==
+              JSON.stringify([...existingArray].sort());
+          } else {
+            hasChanged = currentValue !== existingValue;
+          }
 
           if (hasChanged) {
             (changedData as Record<string, unknown>)[key] = currentValue;

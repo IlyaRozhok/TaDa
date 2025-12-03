@@ -28,8 +28,12 @@ const ROOM_OPTIONS = ["1", "2", "3", "4", "5+"];
 // Bathroom options
 const BATHROOM_OPTIONS = ["1", "2", "3", "4+"];
 
-// Furnishing options
-const FURNISHING_OPTIONS = ["Furnishing", "Furnished", "Part-furnished"];
+// Furnishing options - using same values as in database
+const FURNISHING_OPTIONS = [
+  { value: "furnished", label: "Furnished" },
+  { value: "unfurnished", label: "Unfurnished" },
+  { value: "partially_furnished", label: "Part-furnished" },
+];
 
 // Outdoor space options (multi-select)
 const OUTDOOR_SPACE_OPTIONS = ["Balcony", "Teracce", "Outdoor Space"];
@@ -268,13 +272,13 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         <div className="space-y-4 mb-8">
           {FURNISHING_OPTIONS.map((option) => (
             <SelectionButton
-              key={option}
-              label={option}
-              value={option}
+              key={option.value}
+              label={option.label}
+              value={option.value}
               isSelected={
-                formData.furnishing_preferences?.includes(option) || false
+                formData.furnishing_preferences?.includes(option.value) || false
               }
-              onClick={() => onToggle("furnishing_preferences", option)}
+              onClick={() => onToggle("furnishing_preferences", option.value)}
             />
           ))}
         </div>

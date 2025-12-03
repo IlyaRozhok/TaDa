@@ -283,7 +283,6 @@ export const SMOKING_OPTIONS = [
     label: "I don't smoke and prefer non-smoking environments",
     icon: Home,
   },
-  { value: "no-preference", label: "No Preference", icon: Home },
 ] as const;
 
 // Hobby options with icons

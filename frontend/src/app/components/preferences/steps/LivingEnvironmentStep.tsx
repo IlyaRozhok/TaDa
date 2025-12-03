@@ -20,6 +20,34 @@ export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
   onToggle,
   onUpdate,
 }) => {
+  const handleIdealLivingToggle = (value: string) => {
+    const current = formData.ideal_living_environment || [];
+    const isSelected = current.includes(value);
+
+    if (value === "no-preference") {
+      // If "no-preference" is clicked, toggle it and clear all other options
+      if (isSelected) {
+        // Deselect "no-preference"
+        onUpdate("ideal_living_environment", []);
+      } else {
+        // Select only "no-preference"
+        onUpdate("ideal_living_environment", ["no-preference"]);
+      }
+    } else {
+      // If any other option is clicked
+      if (isSelected) {
+        // Deselect this option
+        const updated = current.filter((v) => v !== value);
+        onUpdate("ideal_living_environment", updated);
+      } else {
+        // Select this option and remove "no-preference" if present
+        const updated = current.filter((v) => v !== "no-preference");
+        updated.push(value);
+        onUpdate("ideal_living_environment", updated);
+      }
+    }
+  };
+
   return (
     <StepWrapper title="Step 9" description="Step 9">
       <StepContainer>
@@ -36,7 +64,7 @@ export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
                   formData.ideal_living_environment?.includes(option.value) ||
                   false
                 }
-                onClick={() => onToggle("ideal_living_environment", option.value)}
+                onClick={() => handleIdealLivingToggle(option.value)}
               />
             ))}
           </div>
