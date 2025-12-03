@@ -247,6 +247,7 @@ export default function EnhancedPropertyCard({
     <div
       onClick={handleCardClick}
       className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 cursor-pointer group relative"
+      onMouseLeave={() => setShowTooltip(false)}
     >
       {/* Image Section */}
       <div className="relative h-64 bg-gray-100 overflow-hidden rounded-t-2xl">
@@ -272,12 +273,13 @@ export default function EnhancedPropertyCard({
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-        {/* Match Score Badge with Tooltip */}
+        {/* Match Score Badge */}
         {matchScore !== undefined && matchScore !== null && (
           <div
-            className="absolute top-4 left-4 z-20"
+            className="absolute top-4 left-4 z-30"
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
               <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
@@ -285,45 +287,6 @@ export default function EnhancedPropertyCard({
               </div>
               {Math.round(matchScore)}% Match
             </div>
-
-            {/* Tooltip */}
-            {showTooltip && (
-              <div className="absolute top-full left-0 mt-7 w-80 bg-black/60 backdrop-blur-[3px] text-white rounded-lg p-4 shadow-xl z-40">
-                {/* Arrow */}
-                <div className="absolute -top-2 left-6">
-                  <div className="w-4 h-4 bg-gray-800 rotate-45"></div>
-                </div>
-
-                <h3 className="text-base font-semibold text-white mb-3">
-                  Why this matches?
-                </h3>
-
-                <div className="space-y-2">
-                  {getMatchReasons().map((reason, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <div className="flex-shrink-0 mt-0.5">
-                        {reason.matches ? (
-                          <Check className="w-4 h-4 text-green-400" />
-                        ) : (
-                          <X className="w-4 h-4 text-red-400" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-white text-xs leading-relaxed">
-                          {reason.details}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {getMatchReasons().length === 0 && (
-                  <p className="text-gray-300 text-sm">
-                    No specific matching criteria available
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -344,6 +307,45 @@ export default function EnhancedPropertyCard({
           </button>
         )}
       </div>
+
+      {/* Tooltip - positioned outside overflow-hidden container */}
+      {matchScore !== undefined && matchScore !== null && showTooltip && (
+        <div className="absolute top-[72px] left-4 w-80 bg-black/60 backdrop-blur-[3px] text-white rounded-lg p-4 shadow-xl z-[9999] pointer-events-none">
+          {/* Arrow */}
+          <div className="absolute -top-2 left-6">
+            <div className="w-4 h-4 bg-black/60 rotate-45"></div>
+          </div>
+
+          <h3 className="text-base font-semibold text-white mb-3">
+            Why this matches?
+          </h3>
+
+          <div className="space-y-2">
+            {getMatchReasons().map((reason, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <div className="flex-shrink-0 mt-0.5">
+                  {reason.matches ? (
+                    <Check className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <X className="w-4 h-4 text-red-400" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-white text-xs leading-relaxed">
+                    {reason.details}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {getMatchReasons().length === 0 && (
+            <p className="text-gray-300 text-sm">
+              No specific matching criteria available
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Content Section */}
       <div className="p-4">
