@@ -69,7 +69,6 @@ export const authAPI = {
 
   googleAuth: (token: string) => api.post("/auth/google", { token }),
 
-
   updateProfile: (data: any) => api.put("/users/profile", data),
 
   updateUserRole: (userId: string, data: { role: string }) =>
@@ -81,10 +80,8 @@ export const authAPI = {
 
   logout: () => api.post("/auth/logout"),
 
-
   getTempTokenInfo: (tempToken: string) =>
     api.get(`/auth/temp-token/${tempToken}`),
-
 };
 
 export const usersAPI = {
@@ -92,8 +89,12 @@ export const usersAPI = {
 
   update: (id: string, data: any) => api.patch(`/users/${id}`, data),
 
-  getAll: (params?: { role?: string; limit?: number; page?: number; search?: string }) => 
-    api.get("/users", { params }),
+  getAll: (params?: {
+    role?: string;
+    limit?: number;
+    page?: number;
+    search?: string;
+  }) => api.get("/users", { params }),
 
   getById: (id: string) => api.get(`/users/${id}`),
 };
@@ -159,7 +160,8 @@ export const residentialComplexesAPI = {
   getAll: (params?: any) => api.get("/residential-complexes", { params }),
   getById: (id: string) => api.get(`/residential-complexes/${id}`),
   create: (data: any) => api.post("/residential-complexes", data),
-  update: (id: string, data: any) => api.patch(`/residential-complexes/${id}`, data),
+  update: (id: string, data: any) =>
+    api.patch(`/residential-complexes/${id}`, data),
   delete: (id: string) => api.delete(`/residential-complexes/${id}`),
 };
 
@@ -239,14 +241,14 @@ export const propertiesAPI = {
   create: (data: any) => api.post("/properties", data),
   update: (id: string, data: any) => api.patch(`/properties/${id}`, data),
   delete: (id: string) => api.delete(`/properties/${id}`),
-  
+
   // Public endpoints
   getAllPublic: (params?: any) => api.get("/properties/public/all", { params }),
   getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
   getPublic: (page: number = 1, limit: number = 12, search?: string) =>
     api.get("/properties/public", { params: { page, limit, search } }),
   getMatched: () => api.get("/matching/matches"),
-  
+
   // Media upload endpoints
   uploadPhotos: async (files: File[]) => {
     const formData = new FormData();
@@ -282,11 +284,15 @@ export const propertiesAPI = {
     const formData = new FormData();
     formData.append("documents", file);
     try {
-      const response = await api.post("/properties/upload/documents", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await api.post(
+        "/properties/upload/documents",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       return response.data;
     } catch (error: any) {
       throw error;
@@ -346,11 +352,34 @@ export type { Property, PropertyMedia } from "../types";
 export interface PropertyFilters {
   search?: string;
   location?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  propertyType?: string;
+  min_price?: number;
+  max_price?: number;
+  property_type?: string;
   bedrooms?: number;
+  bathrooms?: number;
+  furnishing?: string;
+  tenant_types?: string[];
+  amenities?: string[];
+  min_square_meters?: number;
+  max_square_meters?: number;
 }
+
+// Sorting and pagination options
+export interface SortOptions {
+  sortBy: "price" | "date" | "bedrooms" | "square_meters" | "relevance";
+  sortDirection: "asc" | "desc";
+}
+
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+}
+
+// Combined filtering options
+export interface PropertyQueryOptions
+  extends PropertyFilters,
+    SortOptions,
+    PaginationOptions {}
 
 export interface MatchingResult {
   properties: Property[];
@@ -369,30 +398,42 @@ export interface CategoryMatchResult {
   details?: string;
 }
 
-// Detailed matching result from backend
+// Category match result from backend
+export interface CategoryMatchResult {
+  category: string;
+  match: boolean;
+  score: number;
+  maxScore: number;
+  reason: string;
+  details?: string;
+  hasPreference: boolean; // New field - indicates if user has set preference
+}
+
+// Detailed matching result from backend (updated structure)
 export interface DetailedMatchingResult {
   property: Property;
-  matchScore: number;
-  matchReasons: string[];
-  perfectMatch: boolean;
-  categories?: CategoryMatchResult[];
+  totalScore: number;
+  maxPossibleScore: number;
+  matchPercentage: number; // This is the new matchScore
+  isPerfectMatch: boolean;
+  categories: CategoryMatchResult[];
+  summary: {
+    matched: number;
+    partial: number;
+    notMatched: number;
+    skipped: number; // New field - categories without preference
+  };
+}
+
+// Legacy compatibility - computed fields for backward compatibility
+export interface DetailedMatchingResultLegacy extends DetailedMatchingResult {
+  matchScore: number; // Alias for matchPercentage
+  matchReasons: string[]; // Computed from categories
 }
 
 // Full matching response from backend
 export interface MatchingResponse {
-  results: {
-    property: Property;
-    totalScore: number;
-    maxPossibleScore: number;
-    matchPercentage: number;
-    isPerfectMatch: boolean;
-    categories: CategoryMatchResult[];
-    summary: {
-      matched: number;
-      partial: number;
-      notMatched: number;
-    };
-  }[];
+  results: DetailedMatchingResult[];
   total: number;
   preferences: {
     id: string;

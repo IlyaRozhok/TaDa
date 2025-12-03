@@ -30,7 +30,10 @@ export default function MatchesPage() {
   const router = useRouter();
   const user = useSelector(selectUser);
   const [detailedMatches, setDetailedMatches] = useState<
-    DetailedMatchingResult[]
+    (DetailedMatchingResult & {
+      matchScore: number;
+      matchReasons: string[];
+    })[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -84,9 +87,21 @@ export default function MatchesPage() {
           matchesCount: Array.isArray(matches) ? matches.length : 0,
         });
 
-        // Ensure matches is always an array
+        // Ensure matches is always an array and transform to legacy format
         const matchesArray = Array.isArray(matches) ? matches : [];
-        setDetailedMatches(matchesArray);
+
+        // Transform new API format to legacy format for backward compatibility
+        const transformedMatches = matchesArray.map((match) => ({
+          ...match,
+          matchScore: match.matchPercentage || 0, // New field alias
+          matchReasons: match.categories
+            ? match.categories
+                .filter((cat) => cat.hasPreference && cat.score > 0) // Only categories with preferences that matched
+                .map((cat) => cat.reason)
+            : [],
+        }));
+
+        setDetailedMatches(transformedMatches);
         console.log(
           "✅ Matches: Detailed matches loaded:",
           matchesArray.length
@@ -564,12 +579,13 @@ export default function MatchesPage() {
                             <Sparkles className="w-4 h-4 text-yellow-500" />
                             Match breakdown
                           </h4>
-                          
+
                           {/* Show categories if available */}
-                          {matchResult.categories && matchResult.categories.length > 0 ? (
+                          {matchResult.categories &&
+                          matchResult.categories.length > 0 ? (
                             <div className="space-y-2">
                               {matchResult.categories
-                                .filter(cat => cat.maxScore > 0)
+                                .filter((cat) => cat.hasPreference) // Only show categories where user has preferences
                                 .slice(0, 6)
                                 .map((cat, catIndex) => (
                                   <div
@@ -578,9 +594,13 @@ export default function MatchesPage() {
                                   >
                                     <div className="flex-shrink-0">
                                       {cat.match ? (
-                                        <span className="text-green-500">✓</span>
+                                        <span className="text-green-500">
+                                          ✓
+                                        </span>
                                       ) : cat.score > 0 ? (
-                                        <span className="text-yellow-500">◐</span>
+                                        <span className="text-yellow-500">
+                                          ◐
+                                        </span>
                                       ) : (
                                         <span className="text-red-400">✗</span>
                                       )}
@@ -602,6 +622,12 @@ export default function MatchesPage() {
                                     </div>
                                   </div>
                                 ))}
+                              {matchResult.summary?.skipped > 0 && (
+                                <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                                  {matchResult.summary.skipped} categories
+                                  without preferences
+                                </div>
+                              )}
                             </div>
                           ) : (
                             /* Fallback to old matchReasons */

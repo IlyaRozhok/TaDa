@@ -109,45 +109,65 @@ export default function ListedPropertiesSection({
 
   // Combine and sort properties
   const getAllProperties = () => {
-    // Safety check - ensure properties is an array
+    // If we have matched properties, prioritize them
+    // Otherwise, use regular properties and try to match them
+    let allProps: Array<{
+      property: Property;
+      matchScore: number;
+      categories?: CategoryMatchResult[];
+    }> = [];
 
-    // Handle case where properties might be an object with data key
-    let actualProperties = properties;
-    if (
-      properties &&
-      typeof properties === "object" &&
-      !Array.isArray(properties) &&
-      "data" in properties
-    ) {
-      const propertiesWithData = properties as { data: Property[] };
-      if (Array.isArray(propertiesWithData.data)) {
-        actualProperties = propertiesWithData.data;
-      }
-    }
-
-    // Create a lookup of matched properties for easy access
-    const matchedLookup: Record<string, { matchScore: number; categories?: CategoryMatchResult[] }> = {};
-    matchedProperties.forEach((mp) => {
-      matchedLookup[mp.property.id] = { 
-        matchScore: mp.matchScore,
+    if (matchedProperties.length > 0) {
+      // Use matched properties as primary source
+      allProps = matchedProperties.map((mp) => ({
+        property: mp.property,
+        matchScore: mp.matchScore || 0,
         categories: mp.categories,
-      };
-    });
+      }));
 
-    // Combine all properties with their match scores and categories
-    const allProps = actualProperties.map((property) => ({
-      property,
-      matchScore: matchedLookup[property.id]?.matchScore || 0,
-      categories: matchedLookup[property.id]?.categories,
-    }));
+      // Add any properties from regular API that aren't in matched list
+      const matchedIds = new Set(matchedProperties.map((mp) => mp.property.id));
+      const regularProperties = Array.isArray(properties) ? properties : [];
 
+      regularProperties.forEach((property) => {
+        if (!matchedIds.has(property.id)) {
+          allProps.push({
+            property,
+            matchScore: 0, // No match data available
+            categories: undefined,
+          });
+        }
+      });
+    } else {
+      // Fallback: use regular properties if no matched properties available
+      let actualProperties = properties;
+      if (
+        properties &&
+        typeof properties === "object" &&
+        !Array.isArray(properties) &&
+        "data" in properties
+      ) {
+        const propertiesWithData = properties as { data: Property[] };
+        if (Array.isArray(propertiesWithData.data)) {
+          actualProperties = propertiesWithData.data;
+        }
+      }
+
+      allProps = (Array.isArray(actualProperties) ? actualProperties : []).map(
+        (property) => ({
+          property,
+          matchScore: 0,
+          categories: undefined,
+        })
+      );
+    }
 
     // Sort based on selected option
     return allProps.sort((a, b) => {
       switch (sortBy) {
         case "bestMatch":
-          // If no match scores, fall back to date added
-          if (a.matchScore === 0 && b.matchScore === 0) {
+          // Sort by match score (descending), then by date if scores are equal
+          if (a.matchScore === b.matchScore) {
             return (
               new Date(b.property.created_at).getTime() -
               new Date(a.property.created_at).getTime()
@@ -155,13 +175,13 @@ export default function ListedPropertiesSection({
           }
           return b.matchScore - a.matchScore;
         case "lowPrice":
-          return a.property.price - b.property.price;
+          return (a.property.price || 0) - (b.property.price || 0);
         case "highPrice":
-          return b.property.price - a.property.price;
+          return (b.property.price || 0) - (a.property.price || 0);
         case "dateAdded":
           return (
-            new Date(b.property.created_at).getTime() -
-            new Date(a.property.created_at).getTime()
+            new Date(b.property.created_at || 0).getTime() -
+            new Date(a.property.created_at || 0).getTime()
           );
         default:
           return 0;
@@ -220,14 +240,7 @@ export default function ListedPropertiesSection({
               <EnhancedPropertyCard
                 key={property.id}
                 property={property}
-                matchScore={
-                  matchScore ||
-                  70 +
-                    (Math.abs(
-                      property.id ? property.id.toString().charCodeAt(0) : 1
-                    ) %
-                      30)
-                } // Always ensure there's a match score
+                matchScore={matchScore || 0} // Use actual match score from API
                 userPreferences={userPreferences}
                 matchCategories={categories}
                 onClick={() => handlePropertyClick(property.id)}

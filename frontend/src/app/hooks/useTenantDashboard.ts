@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { Property } from "../types";
-import { propertiesAPI, preferencesAPI } from "../lib/api";
+import {
+  propertiesAPI,
+  preferencesAPI,
+  matchingAPI,
+  PropertyMatchResult,
+  CategoryMatchResult,
+} from "../lib/api";
 import { selectUser } from "../store/slices/authSlice";
 import { useDebounce } from "./useDebounce";
 import { waitForSessionManager } from "../components/providers/SessionManager";
@@ -9,6 +15,7 @@ import { waitForSessionManager } from "../components/providers/SessionManager";
 interface MatchedProperty {
   property: Property;
   matchScore: number;
+  categories?: CategoryMatchResult[];
 }
 
 interface DashboardState {
@@ -173,6 +180,135 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
     }
   }, []);
 
+  // Load matched properties from matching API
+  const loadMatchedProperties = useCallback(async (limit: number = 50) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        console.warn("⚠️ No token found, skipping matched properties load");
+        return;
+      }
+
+      console.log("🔍 Fetching matched properties with limit:", limit);
+      const response = await matchingAPI.getDetailedMatches(limit);
+
+      console.log("📡 Raw API response:", {
+        hasResponse: !!response,
+        hasData: !!response?.data,
+        dataType: typeof response?.data,
+        isArray: Array.isArray(response?.data),
+        dataLength: Array.isArray(response?.data)
+          ? response.data.length
+          : "N/A",
+      });
+
+      // Extract data from axios response
+      // Backend returns array directly, axios wraps it in response.data
+      let matchesArray: any[] = [];
+
+      if (response?.data) {
+        if (Array.isArray(response.data)) {
+          matchesArray = response.data;
+        } else if (
+          response.data.results &&
+          Array.isArray(response.data.results)
+        ) {
+          // Handle case where backend returns { results: [...] }
+          matchesArray = response.data.results;
+        }
+      } else if (Array.isArray(response)) {
+        matchesArray = response;
+      }
+
+      console.log("✅ Matched properties loaded:", matchesArray.length);
+
+      if (matchesArray.length > 0) {
+        const firstMatch = matchesArray[0];
+        console.log("📊 First match sample:", {
+          keys: Object.keys(firstMatch),
+          hasProperty: !!firstMatch.property,
+          hasMatchScore: "matchScore" in firstMatch,
+          matchScore: firstMatch.matchScore,
+          hasMatchPercentage: "matchPercentage" in firstMatch,
+          matchPercentage: firstMatch.matchPercentage,
+          hasCategories: !!firstMatch.categories,
+          categoriesLength: firstMatch.categories?.length || 0,
+        });
+      }
+
+      // Transform to MatchedProperty format
+      // Backend getDetailedMatches returns: { property, matchScore, categories, matchReasons, perfectMatch }
+      const matchedProperties: MatchedProperty[] = matchesArray.map(
+        (match: any) => {
+          // Backend returns matchScore (mapped from matchPercentage)
+          // Handle both possible field names for safety
+          const score = match.matchScore ?? match.matchPercentage ?? 0;
+
+          // Ensure score is a valid number
+          const finalScore =
+            typeof score === "number" && !isNaN(score) && score >= 0
+              ? score
+              : 0;
+
+          if (matchesArray.indexOf(match) < 3) {
+            console.log(`🏠 Property ${match.property?.id || "unknown"}:`, {
+              matchScore: match.matchScore,
+              matchPercentage: match.matchPercentage,
+              finalScore,
+              hasCategories: !!match.categories,
+              categoriesCount: match.categories?.length || 0,
+            });
+          }
+
+          return {
+            property: match.property,
+            matchScore: finalScore,
+            categories: match.categories || [],
+          };
+        }
+      );
+
+      console.log(
+        `✅ Transformed ${matchedProperties.length} matched properties`
+      );
+      if (matchedProperties.length > 0) {
+        const scores = matchedProperties
+          .map((mp) => mp.matchScore)
+          .filter((s) => s > 0);
+        if (scores.length > 0) {
+          console.log(
+            `📊 Match scores: min=${Math.min(...scores)}, max=${Math.max(
+              ...scores
+            )}, avg=${(
+              scores.reduce((a, b) => a + b, 0) / scores.length
+            ).toFixed(1)}`
+          );
+        } else {
+          console.warn(
+            "⚠️ All match scores are 0! This might indicate a problem with preferences or matching calculation."
+          );
+        }
+      }
+
+      setState((prev) => ({
+        ...prev,
+        matchedProperties,
+      }));
+    } catch (error: any) {
+      console.error("❌ Failed to load matched properties:", error);
+      console.error("❌ Error details:", {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+      });
+      // Don't set error state - just log it, as properties can still be shown without matches
+      setState((prev) => ({
+        ...prev,
+        matchedProperties: [],
+      }));
+    }
+  }, []);
+
   // Initialize dashboard
   useEffect(() => {
     let isMounted = true;
@@ -204,7 +340,11 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
 
         if (!isMounted) return;
 
-        if (!isMounted) return;
+        // Load matched properties (in parallel with regular properties)
+        // Use a high limit to get all matched properties
+        loadMatchedProperties(100).catch((err) => {
+          console.error("❌ Failed to load matched properties:", err);
+        });
 
         // Load initial properties
         await loadProperties("", 1);
@@ -249,10 +389,12 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
     await Promise.all([
       loadUserPreferences(),
       loadProperties(state.searchTerm, state.currentPage),
+      loadMatchedProperties(100),
     ]);
   }, [
     loadUserPreferences,
     loadProperties,
+    loadMatchedProperties,
     state.searchTerm,
     state.currentPage,
   ]);
