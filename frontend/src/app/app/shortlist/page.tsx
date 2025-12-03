@@ -20,6 +20,7 @@ import { AppDispatch } from "../../store/store";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import UniversalHeader from "../../components/UniversalHeader";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import ShortlistPageSkeleton from "../../components/ui/ShortlistPageSkeleton";
 import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 
@@ -114,14 +115,7 @@ export default function ShortlistPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <UniversalHeader />
-        <div className="max-w-[92%] mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="w-12 h-12 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading your shortlist...</p>
-            </div>
-          </div>
-        </div>
+        <ShortlistPageSkeleton />
       </div>
     );
   }
@@ -252,14 +246,8 @@ export default function ShortlistPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => router.push("/app/properties")}
-                className="bg-slate-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
-              >
-                Browse All Properties
-              </button>
-              <button
                 onClick={() => router.push("/app/units")}
-                className="bg-white border border-slate-300 text-slate-700 px-8 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                className="bg-white border cursor-pointer border-slate-300 text-slate-700 px-8 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
               >
                 Back to Dashboard
               </button>
