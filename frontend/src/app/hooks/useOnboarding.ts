@@ -59,7 +59,7 @@ export const useOnboarding = (
         );
 
         // Redirect to tenant dashboard
-        redirectAfterLogin(state.registeredUser, router);
+        await redirectAfterLogin(state.registeredUser, router);
       } else {
         // Regular flow completion
         onComplete();
@@ -75,10 +75,10 @@ export const useOnboarding = (
     }
   }, [state.registeredUser, state.registeredToken, onComplete, router]);
 
-  const handleSkip = useCallback(() => {
+  const handleSkip = useCallback(async () => {
     // Skip onboarding and go directly to dashboard
     if (state.registeredUser && state.registeredToken) {
-      redirectAfterLogin(state.registeredUser, router);
+      await redirectAfterLogin(state.registeredUser, router);
     } else {
       onComplete();
     }

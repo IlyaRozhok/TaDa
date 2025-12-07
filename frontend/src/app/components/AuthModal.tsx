@@ -113,7 +113,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
 
         handleClose();
-        redirectAfterLogin(loginResponse.data.user, router);
+        await redirectAfterLogin(loginResponse.data.user, router);
       } else {
         // User doesn't exist - show error
         throw new Error("Account not found. Please check your email or create a new account.");

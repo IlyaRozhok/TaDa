@@ -4,7 +4,7 @@ interface InputFieldProps {
   label: string;
   value: string | number;
   onChange: (value: string | number) => void;
-  type?: "text" | "number" | "email" | "password";
+  type?: "text" | "number" | "email" | "password" | "tel" | "date";
   placeholder?: string;
   min?: number;
   max?: number;

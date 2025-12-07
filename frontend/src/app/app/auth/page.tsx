@@ -62,7 +62,7 @@ export default function AuthPage() {
           }
 
           // Redirect based on role
-          redirectAfterLogin(user, router);
+          await redirectAfterLogin(user, router);
         })
         .catch((err) => {
           console.error("Failed to get user data:", err);

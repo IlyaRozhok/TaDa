@@ -70,8 +70,6 @@ export const usePreferences = () => {
       move_out_date: "",
       min_price: undefined,
       max_price: undefined,
-      deposit_preference: "",
-      deposit_preferences: "", // UI alias
       // Step 3 - Property & Rooms
       property_types: [],
       property_type_preferences: [], // UI alias

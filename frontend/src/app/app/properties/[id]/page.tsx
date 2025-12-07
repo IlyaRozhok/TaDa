@@ -100,7 +100,7 @@ export default function PropertyPublicPage() {
 
         const response = await matchingAPI.getPropertyMatch(id as string);
         const matchData = response.data || response;
-        
+
         // Extract match percentage from response
         const score = matchData.matchPercentage || matchData.matchScore || null;
         setMatchScore(score);
@@ -301,7 +301,10 @@ export default function PropertyPublicPage() {
                 <div className="relative rounded-2xl overflow-hidden mb-4">
                   <ImageGallery
                     media={property.media || []}
-                    images={[...(property.images || []), ...(property.photos || [])]}
+                    images={[
+                      ...(property.images || []),
+                      ...(property.photos || []),
+                    ]}
                     alt={property.title || "Property"}
                   />
 
@@ -313,7 +316,9 @@ export default function PropertyPublicPage() {
                           <div className="w-2 h-2 bg-white rounded-full"></div>
                         </div>
                         {matchLoading ? (
-                          <span className="text-sm font-medium">Loading...</span>
+                          <span className="text-sm font-medium">
+                            Loading...
+                          </span>
                         ) : matchScore !== null ? (
                           <span className="text-sm font-medium">
                             {matchScore}% Match

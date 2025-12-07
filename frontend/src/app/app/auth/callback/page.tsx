@@ -151,8 +151,8 @@ function AuthCallbackContent() {
         });
 
         // Add small delay to ensure Redux state is updated
-        setTimeout(() => {
-          redirectAfterLogin(user, router);
+        setTimeout(async () => {
+          await redirectAfterLogin(user, router);
         }, 100);
       } catch (error: any) {
         console.error("❌ OAuth callback error:", error);

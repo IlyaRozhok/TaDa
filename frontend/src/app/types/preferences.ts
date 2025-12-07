@@ -17,7 +17,6 @@ export interface PreferencesFormData {
   move_out_date?: string;
   min_price?: number;
   max_price?: number;
-  deposit_preference?: string; // "yes" | "no"
 
   // ==================== STEP 3: PROPERTY & ROOMS ====================
   property_types?: string[]; // matches Property.property_type
@@ -97,7 +96,6 @@ export interface PreferencesFormData {
   dog_size?: string; // UI field, used in pets[] transformation
   amenities_preferences?: string[]; // UI alias for amenities
   additional_preferences?: string[]; // UI field for smoking_area and is_concierge
-  deposit_preferences?: string; // UI alias for deposit_preference
 }
 
 export interface FormFieldErrors {
@@ -192,64 +190,75 @@ export interface PropertyMatchCriteria {
  * Transform UI form data to API format before sending
  * This normalizes UI-specific fields to the backend format
  */
-export function transformFormDataForApi(formData: PreferencesFormData): Partial<PreferencesFormData> {
+export function transformFormDataForApi(
+  formData: PreferencesFormData
+): Partial<PreferencesFormData> {
   const apiData: Partial<PreferencesFormData> = { ...formData };
 
   // Transform rooms_preferences to bedrooms array (always set, even if empty)
   // Check if field exists in formData (including empty arrays)
   if (formData.rooms_preferences !== undefined) {
-    apiData.bedrooms = formData.rooms_preferences.length > 0
-      ? formData.rooms_preferences.map((room) => {
-          if (room === "5+") return 5;
-          return parseInt(room, 10);
-        })
-      : [];
+    apiData.bedrooms =
+      formData.rooms_preferences.length > 0
+        ? formData.rooms_preferences.map((room) => {
+            if (room === "5+") return 5;
+            return parseInt(room, 10);
+          })
+        : [];
   }
 
   // Transform bathrooms_preferences to bathrooms array (always set, even if empty)
   // Check if field exists in formData (including empty arrays)
   if (formData.bathrooms_preferences !== undefined) {
-    apiData.bathrooms = formData.bathrooms_preferences.length > 0
-      ? formData.bathrooms_preferences.map((bath) => {
-          if (bath === "4+") return 4;
-          return parseInt(bath, 10);
-        })
-      : [];
+    apiData.bathrooms =
+      formData.bathrooms_preferences.length > 0
+        ? formData.bathrooms_preferences.map((bath) => {
+            if (bath === "4+") return 4;
+            return parseInt(bath, 10);
+          })
+        : [];
   }
 
   // Transform property_type_preferences to property_types (always set, even if empty)
   if (formData.property_type_preferences !== undefined) {
-    apiData.property_types = formData.property_type_preferences.length > 0
-      ? formData.property_type_preferences.map((type) =>
-          type.toLowerCase().replace(/\s+/g, "_")
-        )
-      : [];
+    apiData.property_types =
+      formData.property_type_preferences.length > 0
+        ? formData.property_type_preferences.map((type) =>
+            type.toLowerCase().replace(/\s+/g, "_")
+          )
+        : [];
   }
 
   // Transform furnishing_preferences to furnishing (always set, even if empty)
   if (formData.furnishing_preferences !== undefined) {
-    apiData.furnishing = formData.furnishing_preferences.length > 0
-      ? formData.furnishing_preferences
-      : [];
+    apiData.furnishing =
+      formData.furnishing_preferences.length > 0
+        ? formData.furnishing_preferences
+        : [];
   }
 
   // Transform outdoor_space_preferences to booleans (always set all three)
   if (formData.outdoor_space_preferences !== undefined) {
-    apiData.outdoor_space = formData.outdoor_space_preferences.includes("Outdoor Space");
+    apiData.outdoor_space =
+      formData.outdoor_space_preferences.includes("Outdoor Space");
     apiData.balcony = formData.outdoor_space_preferences.includes("Balcony");
-    apiData.terrace = formData.outdoor_space_preferences.includes("Terrace") || 
-                      formData.outdoor_space_preferences.includes("Teracce");
+    apiData.terrace =
+      formData.outdoor_space_preferences.includes("Terrace") ||
+      formData.outdoor_space_preferences.includes("Teracce");
   }
 
   // Transform building_style_preferences to building_types
   if (formData.building_style_preferences?.length) {
-    apiData.building_types = formData.building_style_preferences.map((style) => {
-      const normalized = style.toLowerCase().replace(/\s+/g, "_");
-      if (normalized === "professional_management") return "professional_management";
-      if (normalized === "btr") return "btr";
-      if (normalized === "co-living") return "co-living";
-      return normalized;
-    });
+    apiData.building_types = formData.building_style_preferences.map(
+      (style) => {
+        const normalized = style.toLowerCase().replace(/\s+/g, "_");
+        if (normalized === "professional_management")
+          return "professional_management";
+        if (normalized === "btr") return "btr";
+        if (normalized === "co-living") return "co-living";
+        return normalized;
+      }
+    );
   }
 
   // Transform selected_duration to let_duration
@@ -266,7 +275,10 @@ export function transformFormDataForApi(formData: PreferencesFormData): Partial<
 
   // Transform selected_bills to bills
   if (formData.selected_bills) {
-    apiData.bills = formData.selected_bills.toLowerCase() === "include" ? "included" : "excluded";
+    apiData.bills =
+      formData.selected_bills.toLowerCase() === "include"
+        ? "included"
+        : "excluded";
   }
 
   // Transform tenant_type_preferences to tenant_types
@@ -291,10 +303,17 @@ export function transformFormDataForApi(formData: PreferencesFormData): Partial<
     } else if (petType) {
       apiData.pet_policy = true;
       const pet: Pet = {
-        type: petType.toLowerCase() === "dog" ? "dog" : 
-              petType.toLowerCase() === "cat" ? "cat" : "other",
+        type:
+          petType.toLowerCase() === "dog"
+            ? "dog"
+            : petType.toLowerCase() === "cat"
+            ? "cat"
+            : "other",
       };
-      if (petType.toLowerCase() === "other" || petType === "Planning to get a pet") {
+      if (
+        petType.toLowerCase() === "other" ||
+        petType === "Planning to get a pet"
+      ) {
         pet.customType = petType;
       }
       if (formData.dog_size && petType.toLowerCase() === "dog") {
@@ -308,9 +327,10 @@ export function transformFormDataForApi(formData: PreferencesFormData): Partial<
 
   // Transform number_of_pets from string to number
   if (formData.number_of_pets !== undefined) {
-    apiData.number_of_pets = typeof formData.number_of_pets === "string" 
-      ? parseInt(formData.number_of_pets, 10) || undefined
-      : formData.number_of_pets;
+    apiData.number_of_pets =
+      typeof formData.number_of_pets === "string"
+        ? parseInt(formData.number_of_pets, 10) || undefined
+        : formData.number_of_pets;
   }
 
   // Transform amenities_preferences to amenities
@@ -320,13 +340,10 @@ export function transformFormDataForApi(formData: PreferencesFormData): Partial<
 
   // Transform additional_preferences to is_concierge and smoking_area (always set, even if empty)
   if (formData.additional_preferences !== undefined) {
-    apiData.is_concierge = formData.additional_preferences.includes("Concierge");
-    apiData.smoking_area = formData.additional_preferences.includes("Smoking Area");
-  }
-
-  // Transform deposit_preferences to deposit_preference
-  if (formData.deposit_preferences) {
-    apiData.deposit_preference = formData.deposit_preferences;
+    apiData.is_concierge =
+      formData.additional_preferences.includes("Concierge");
+    apiData.smoking_area =
+      formData.additional_preferences.includes("Smoking Area");
   }
 
   // Clean up UI-only fields before sending
@@ -343,7 +360,6 @@ export function transformFormDataForApi(formData: PreferencesFormData): Partial<
   delete apiData.dog_size;
   delete apiData.amenities_preferences;
   delete apiData.additional_preferences;
-  delete apiData.deposit_preferences;
 
   return apiData;
 }
@@ -352,37 +368,42 @@ export function transformFormDataForApi(formData: PreferencesFormData): Partial<
  * Transform API data to UI form format
  * This converts backend format to UI-friendly format
  */
-export function transformApiDataForForm(apiData: Partial<PreferencesFormData>): PreferencesFormData {
+export function transformApiDataForForm(
+  apiData: Partial<PreferencesFormData>
+): PreferencesFormData {
   const formData: PreferencesFormData = { ...apiData };
 
   // Transform bedrooms to rooms_preferences (always set, even if empty)
   if (apiData.bedrooms !== undefined) {
-    formData.rooms_preferences = apiData.bedrooms.length > 0
-      ? apiData.bedrooms.map((b) => (b >= 5 ? "5+" : b.toString()))
-      : [];
+    formData.rooms_preferences =
+      apiData.bedrooms.length > 0
+        ? apiData.bedrooms.map((b) => (b >= 5 ? "5+" : b.toString()))
+        : [];
   }
 
   // Transform bathrooms to bathrooms_preferences (always set, even if empty)
   if (apiData.bathrooms !== undefined) {
-    formData.bathrooms_preferences = apiData.bathrooms.length > 0
-      ? apiData.bathrooms.map((b) => (b >= 4 ? "4+" : b.toString()))
-      : [];
+    formData.bathrooms_preferences =
+      apiData.bathrooms.length > 0
+        ? apiData.bathrooms.map((b) => (b >= 4 ? "4+" : b.toString()))
+        : [];
   }
 
   // Transform property_types to property_type_preferences (always set, even if empty)
   if (apiData.property_types !== undefined) {
-    formData.property_type_preferences = apiData.property_types.length > 0
-      ? apiData.property_types.map((type) =>
-          type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")
-        )
-      : [];
+    formData.property_type_preferences =
+      apiData.property_types.length > 0
+        ? apiData.property_types.map(
+            (type) =>
+              type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")
+          )
+        : [];
   }
 
   // Transform furnishing to furnishing_preferences (always set, even if empty)
   if (apiData.furnishing !== undefined) {
-    formData.furnishing_preferences = apiData.furnishing.length > 0
-      ? apiData.furnishing
-      : [];
+    formData.furnishing_preferences =
+      apiData.furnishing.length > 0 ? apiData.furnishing : [];
   }
 
   // Transform booleans to outdoor_space_preferences (always set, even if empty)
@@ -406,14 +427,17 @@ export function transformApiDataForForm(apiData: Partial<PreferencesFormData>): 
 
   // Transform let_duration to selected_duration
   if (apiData.let_duration) {
-    if (apiData.let_duration === "long_term") formData.selected_duration = "Long term 6+ m";
-    else if (apiData.let_duration === "short_term") formData.selected_duration = "Short term 1+ m";
+    if (apiData.let_duration === "long_term")
+      formData.selected_duration = "Long term 6+ m";
+    else if (apiData.let_duration === "short_term")
+      formData.selected_duration = "Short term 1+ m";
     else formData.selected_duration = "Any";
   }
 
   // Transform bills to selected_bills
   if (apiData.bills) {
-    formData.selected_bills = apiData.bills === "included" ? "Include" : "Exclude";
+    formData.selected_bills =
+      apiData.bills === "included" ? "Include" : "Exclude";
   }
 
   // Transform tenant_types to tenant_type_preferences
@@ -460,11 +484,6 @@ export function transformApiDataForForm(apiData: Partial<PreferencesFormData>): 
   if (apiData.smoking_area) additionalPrefs.push("Smoking Area");
   // Always set the array, even if empty (when both booleans are false)
   formData.additional_preferences = additionalPrefs;
-
-  // Transform deposit_preference to deposit_preferences
-  if (apiData.deposit_preference) {
-    formData.deposit_preferences = apiData.deposit_preference;
-  }
 
   return formData;
 }

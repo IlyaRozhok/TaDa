@@ -19,7 +19,9 @@ export default function LandingPage() {
       typeof window !== "undefined" ? window.location.pathname : null;
     // Redirect только если реально на главной ("/")
     if (pathname === "/" && isAuthenticated && user) {
-      redirectAfterLogin(user, router);
+      redirectAfterLogin(user, router).catch((err) => {
+        console.error("Error redirecting after login:", err);
+      });
     }
   }, [isAuthenticated, user, router]);
 

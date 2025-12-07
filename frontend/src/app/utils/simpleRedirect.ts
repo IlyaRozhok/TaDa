@@ -2,6 +2,7 @@
 // Никакого оверинжиниринга, только необходимый минимум
 
 import { isNavigationBlocked } from "./navigationGuard";
+import { preferencesAPI } from "../lib/api";
 
 // Простая функция для определения роли пользователя
 export function getUserRole(user: any): string {
@@ -69,11 +70,37 @@ export function getRedirectPath(user: any): string {
   }
 }
 
-export function redirectAfterLogin(user: any, router: any) {
+export async function redirectAfterLogin(user: any, router: any) {
   // Check if navigation is blocked
   if (isNavigationBlocked()) {
     console.log(`⛔ Redirect blocked for ${user?.email}`);
     return;
+  }
+
+  // For tenant users, check if they have preferences
+  // If not, redirect to onboarding
+  if (user?.role === "tenant") {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        const response = await preferencesAPI.get();
+        if (!response.data || !response.data.id) {
+          // No preferences found - redirect to onboarding
+          console.log(`🔄 New tenant user, redirecting to onboarding`);
+          router.replace("/app/onboarding");
+          return;
+        }
+      }
+    } catch (error: any) {
+      // 404 means no preferences - redirect to onboarding
+      if (error.response?.status === 404) {
+        console.log(`🔄 New tenant user (no preferences), redirecting to onboarding`);
+        router.replace("/app/onboarding");
+        return;
+      }
+      // Other errors - continue with normal redirect
+      console.warn("⚠️ Error checking preferences:", error);
+    }
   }
 
   const path = getRedirectPath(user);

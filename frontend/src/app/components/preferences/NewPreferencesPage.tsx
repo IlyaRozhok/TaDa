@@ -35,7 +35,13 @@ import {
   TOTAL_STEPS_NEW as TOTAL_STEPS,
 } from "@/app/constants/preferences";
 
-export default function NewPreferencesPage() {
+interface NewPreferencesPageProps {
+  onComplete?: () => void;
+}
+
+export default function NewPreferencesPage({
+  onComplete,
+}: NewPreferencesPageProps = {}) {
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -158,9 +164,16 @@ export default function NewPreferencesPage() {
     try {
       await savePreferences();
       console.log("✅ Preferences saved successfully");
-      // toast.success("Preferences saved successfully!");
-      // Optionally redirect to dashboard after successful save
-      // router.push("/app/dashboard");
+      toast.success("Preferences saved successfully!");
+      
+      // Call onComplete callback if provided (for onboarding flow)
+      if (onComplete) {
+        onComplete();
+      } else {
+        // Default behavior: redirect to dashboard
+        const path = getRedirectPath(user);
+        router.replace(path);
+      }
     } catch (error) {
       console.error("❌ Failed to save preferences:", error);
       toast.error("Failed to save preferences");

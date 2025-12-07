@@ -33,7 +33,7 @@ interface ListedPropertiesSectionProps {
   onPageChange?: (page: number) => void;
 }
 
-type SortOption = "bestMatch" | "lowPrice" | "highPrice" | "dateAdded";
+type SortOption = "bestMatch" | "lowPrice" | "highPrice" | "lowDeposit" | "highDeposit" | "dateAdded";
 
 interface SortDropdownProps {
   sortBy: SortOption;
@@ -47,6 +47,8 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
     { value: "bestMatch" as const, label: "Best Match Score" },
     { value: "lowPrice" as const, label: "Low price" },
     { value: "highPrice" as const, label: "High Price" },
+    { value: "lowDeposit" as const, label: "Low Deposit" },
+    { value: "highDeposit" as const, label: "High Deposit" },
     { value: "dateAdded" as const, label: "Date Added" },
   ];
 
@@ -178,6 +180,10 @@ export default function ListedPropertiesSection({
           return (a.property.price || 0) - (b.property.price || 0);
         case "highPrice":
           return (b.property.price || 0) - (a.property.price || 0);
+        case "lowDeposit":
+          return (a.property.deposit || 0) - (b.property.deposit || 0);
+        case "highDeposit":
+          return (b.property.deposit || 0) - (a.property.deposit || 0);
         case "dateAdded":
           return (
             new Date(b.property.created_at || 0).getTime() -
