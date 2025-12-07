@@ -21,6 +21,30 @@ export class UpdateUserDto {
   full_name?: string;
 
   @ApiPropertyOptional({
+    description: "First name of the user",
+    example: "John",
+  })
+  @IsOptional()
+  @IsString()
+  first_name?: string;
+
+  @ApiPropertyOptional({
+    description: "Last name of the user",
+    example: "Doe",
+  })
+  @IsOptional()
+  @IsString()
+  last_name?: string;
+
+  @ApiPropertyOptional({
+    description: "Address of the user",
+    example: "123 Main St, London",
+  })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiPropertyOptional({
     description: "User email address",
     example: "user@example.com",
   })

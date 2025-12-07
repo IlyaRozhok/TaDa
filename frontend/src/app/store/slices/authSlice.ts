@@ -20,8 +20,13 @@ interface User {
   tenantProfile?: {
     id: string;
     full_name: string;
+    first_name?: string;
+    last_name?: string;
+    address?: string;
     age_range?: string;
     phone?: string;
+    date_of_birth?: string | Date;
+    nationality?: string;
     occupation?: string;
     industry?: string;
     work_style?: string;

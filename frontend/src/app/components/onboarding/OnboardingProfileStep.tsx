@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectUser,
@@ -12,10 +12,11 @@ import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
 import { InputField } from "../preferences/ui/InputField";
 import { GlassmorphismDatePicker } from "../preferences/ui/GlassmorphismDatePicker";
-import toast from "react-hot-toast";
 
 interface UpdateUserData {
-  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  address?: string;
   phone?: string;
   date_of_birth?: string;
   nationality?: string;
@@ -39,9 +40,14 @@ export default function OnboardingProfileStep({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const pendingFieldRef = useRef<{ field: keyof UpdateUserData; value: unknown } | null>(null);
+  const initialFormDataRef = useRef<UpdateUserData | null>(null);
 
   const [formData, setFormData] = useState<UpdateUserData>({
-    full_name: "",
+    first_name: "",
+    last_name: "",
+    address: "",
     phone: "",
     date_of_birth: "",
     nationality: "",
@@ -67,17 +73,80 @@ export default function OnboardingProfileStep({
         }
       }
 
-      setFormData({
-        full_name: user.full_name || "",
+      const initialData = {
+        first_name: (profile as any)?.first_name || "",
+        last_name: (profile as any)?.last_name || "",
+        address: (profile as any)?.address || "",
         phone: profile?.phone || "",
         date_of_birth: formattedDateOfBirth,
         nationality: (profile as any)?.nationality || "",
         occupation: (profile as any)?.occupation || "",
-      });
+      };
+      setFormData(initialData);
+      initialFormDataRef.current = initialData;
     }
   }, [user]);
 
-  const handleInputChange = (
+  // Save single field to API
+  const saveSingleField = useCallback(async (
+    field: keyof UpdateUserData,
+    value: unknown
+  ) => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      // Get current value from user/profile
+      const profile = user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+      let currentValue: unknown;
+
+      if (field === "date_of_birth") {
+        const currentDate = (profile as any)?.date_of_birth;
+        if (currentDate) {
+          try {
+            const date = new Date(currentDate);
+            currentValue = !isNaN(date.getTime())
+              ? date.toISOString().split("T")[0]
+              : "";
+          } catch {
+            currentValue = "";
+          }
+        } else {
+          currentValue = "";
+        }
+      } else {
+        currentValue = (profile as any)?.[field];
+      }
+
+      // Check if value actually changed
+      const hasChanged = value !== currentValue;
+
+      if (!hasChanged) {
+        return; // No change, skip save
+      }
+
+      // Prepare update data
+      const updateData: UpdateUserData = { [field]: value } as UpdateUserData;
+
+      // Update profile via API
+      await authAPI.updateProfile(updateData);
+      dispatch(updateUser(updateData));
+
+      // Update initial form data reference
+      if (initialFormDataRef.current) {
+        initialFormDataRef.current = {
+          ...initialFormDataRef.current,
+          [field]: value,
+        };
+      }
+    } catch (error) {
+      console.error(`Failed to save field ${field as string}:`, error);
+      // Silent fail - don't show toast
+    }
+  }, [user, dispatch]);
+
+  const handleInputChange = useCallback((
     field: keyof UpdateUserData,
     value: string | number
   ) => {
@@ -85,97 +154,48 @@ export default function OnboardingProfileStep({
       ...prev,
       [field]: value,
     }));
-  };
+
+    // Auto-save the field after debounce
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    pendingFieldRef.current = { field, value };
+
+    saveTimeoutRef.current = setTimeout(() => {
+      if (pendingFieldRef.current) {
+        saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+        pendingFieldRef.current = null;
+      }
+    }, 500); // 500ms debounce
+  }, [saveSingleField]);
 
   const handleSubmit = async () => {
-    setError(null);
-    setSuccess(null);
-    setIsLoading(true);
-
-    try {
-      const updateData: UpdateUserData = {};
-
-      if (!user) {
-        setError("User not found");
-        return;
-      }
-
-      // Get profile data for comparison
-      const profile =
-        user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
-
-      // Only include fields that have changed
-      Object.keys(formData).forEach((key) => {
-        const fieldKey = key as keyof UpdateUserData;
-        let currentValue;
-
-        if (fieldKey === "full_name") {
-          currentValue = user[fieldKey];
-        } else if (fieldKey === "date_of_birth") {
-          const currentDate = (profile as any)?.date_of_birth;
-          if (currentDate) {
-            try {
-              const date = new Date(currentDate);
-              currentValue = !isNaN(date.getTime())
-                ? date.toISOString().split("T")[0]
-                : "";
-            } catch {
-              currentValue = "";
-            }
-          } else {
-            currentValue = "";
-          }
-        } else if (fieldKey === "nationality") {
-          currentValue = (profile as any)?.[fieldKey];
-        } else {
-          currentValue = profile?.[fieldKey as keyof typeof profile];
-        }
-
-        if (formData[fieldKey] !== currentValue) {
-          if (
-            fieldKey === "date_of_birth" &&
-            (!formData[fieldKey] || formData[fieldKey].trim() === "")
-          ) {
-            // Skip empty date
-          } else {
-            updateData[fieldKey] = formData[fieldKey];
-          }
-        }
-      });
-
-      // Update profile via API
-      if (Object.keys(updateData).length > 0) {
-        await authAPI.updateProfile(updateData);
-        dispatch(updateUser(updateData));
-        toast.success("Profile updated successfully");
-      }
-
-      // Move to next step
-      onComplete();
-    } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to update profile";
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+    // Flush any pending saves before moving to next step
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+    if (pendingFieldRef.current) {
+      await saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+      pendingFieldRef.current = null;
+    }
+
+    // Move to next step
+    onComplete();
   };
 
   if (!isAuthenticated || !user) {
     return null;
   }
 
-  // Expose submit handler to parent via onNext prop
+  // Cleanup timeout on unmount
   useEffect(() => {
-    if (onNext) {
-      // Replace onNext with our submit handler
-      const originalOnNext = onNext;
-      (onNext as any) = () => {
-        handleSubmit();
-      };
-    }
-  }, [formData, user, onNext]);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <StepWrapper
@@ -183,15 +203,42 @@ export default function OnboardingProfileStep({
       description="Let's start by setting up your profile. This information helps us personalize your experience."
     >
       <StepContainer>
-        {/* Full Name */}
+        {/* First Name */}
         <div className="mb-6">
           <InputField
-            label="Full Name"
-            value={formData.full_name}
+            label="First Name"
+            value={formData.first_name}
             onChange={(e) =>
-              handleInputChange("full_name", e.target.value)
+              handleInputChange("first_name", e.target.value)
             }
             type="text"
+            required
+          />
+        </div>
+
+        {/* Last Name */}
+        <div className="mb-6">
+          <InputField
+            label="Last Name"
+            value={formData.last_name}
+            onChange={(e) =>
+              handleInputChange("last_name", e.target.value)
+            }
+            type="text"
+            required
+          />
+        </div>
+
+        {/* Address */}
+        <div className="mb-6">
+          <InputField
+            label="Address"
+            value={formData.address}
+            onChange={(e) =>
+              handleInputChange("address", e.target.value)
+            }
+            type="text"
+            required
           />
         </div>
 

@@ -20,6 +20,18 @@ export class TenantProfile {
   @Column({ nullable: true })
   full_name: string;
 
+  @ApiProperty({ description: "First name of the tenant", example: "John" })
+  @Column({ nullable: true })
+  first_name: string;
+
+  @ApiProperty({ description: "Last name of the tenant", example: "Doe" })
+  @Column({ nullable: true })
+  last_name: string;
+
+  @ApiProperty({ description: "Address of the tenant", example: "123 Main St, London" })
+  @Column({ nullable: true })
+  address: string;
+
   @ApiProperty({
     description: "Age range of the tenant",
     example: "25-34",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -13,9 +13,12 @@ import { GlassmorphismDatePicker } from "../../components/preferences/ui/Glassmo
 import { GlassmorphismDropdown } from "../../components/preferences/ui/GlassmorphismDropdown";
 import { ErrorMessage } from "../../components/preferences/ui/ErrorMessage";
 import { User as UserIcon, AlertCircle, CheckCircle2 } from "lucide-react";
+import { authAPI } from "../../lib/api";
 
 interface UpdateUserData {
-  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  address?: string;
   email?: string;
   phone?: string;
   date_of_birth?: string;
@@ -24,7 +27,9 @@ interface UpdateUserData {
 }
 
 interface FormErrors {
-  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  address?: string;
   email?: string;
   phone?: string;
   date_of_birth?: string;
@@ -119,9 +124,14 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isEditing, setIsEditing] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const pendingFieldRef = useRef<{ field: keyof UpdateUserData; value: unknown } | null>(null);
+  const initialFormDataRef = useRef<UpdateUserData | null>(null);
 
   const [formData, setFormData] = useState<UpdateUserData>({
-    full_name: "",
+    first_name: "",
+    last_name: "",
+    address: "",
     email: "",
     phone: "",
     date_of_birth: "",
@@ -165,20 +175,85 @@ export default function ProfilePage() {
         }
       }
 
-      setFormData({
-        full_name: user.full_name || "",
+      const initialData = {
+        first_name: (profile as any)?.first_name || "",
+        last_name: (profile as any)?.last_name || "",
+        address: (profile as any)?.address || "",
         email: user.email || "",
         phone: profile?.phone || "",
         date_of_birth: formattedDateOfBirth,
         nationality: profile?.nationality || "",
         occupation: profile?.occupation || "",
-      });
+      };
+      setFormData(initialData);
+      if (!isEditing) {
+        initialFormDataRef.current = initialData;
+      }
     }
   }, [user, isEditing]);
 
-  // Validation functions
+  // Save single field to API
+  const saveSingleField = useCallback(async (
+    field: keyof UpdateUserData,
+    value: unknown
+  ) => {
+    if (!user) {
+      return;
+    }
 
-  const handleInputChange = (
+    try {
+      // Get current value from user/profile
+      const profile = user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+      let currentValue: unknown;
+
+      if (field === "email") {
+        currentValue = user[field];
+      } else if (field === "date_of_birth") {
+        const currentDate = (profile as any)?.date_of_birth;
+        if (currentDate) {
+          try {
+            const date = new Date(currentDate);
+            currentValue = !isNaN(date.getTime())
+              ? date.toISOString().split("T")[0]
+              : "";
+          } catch {
+            currentValue = "";
+          }
+        } else {
+          currentValue = "";
+        }
+      } else {
+        currentValue = (profile as any)?.[field];
+      }
+
+      // Check if value actually changed
+      const hasChanged = value !== currentValue;
+
+      if (!hasChanged) {
+        return; // No change, skip save
+      }
+
+      // Prepare update data
+      const updateData: UpdateUserData = { [field]: value } as UpdateUserData;
+
+      // Update profile via API
+      await authAPI.updateProfile(updateData);
+      dispatch(updateUser(updateData));
+
+      // Update initial form data reference
+      if (initialFormDataRef.current) {
+        initialFormDataRef.current = {
+          ...initialFormDataRef.current,
+          [field]: value,
+        };
+      }
+    } catch (error) {
+      console.error(`Failed to save field ${field as string}:`, error);
+      // Silent fail - don't show toast
+    }
+  }, [user, dispatch]);
+
+  const handleInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
@@ -194,190 +269,48 @@ export default function ProfilePage() {
         [name]: undefined,
       }));
     }
-  };
+
+    // Auto-save the field after debounce (only when editing)
+    if (isEditing) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      pendingFieldRef.current = { field: name as keyof UpdateUserData, value };
+
+      saveTimeoutRef.current = setTimeout(() => {
+        if (pendingFieldRef.current) {
+          saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+          pendingFieldRef.current = null;
+        }
+      }, 500); // 500ms debounce
+    }
+  }, [errors, isEditing, saveSingleField]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Clear previous messages
-    setError(null);
-    setSuccess(null);
-
-    // Clear any previous errors
-    setErrors({});
-
-    setIsLoading(true);
-
-    try {
-      const updateData: UpdateUserData = {};
-
-      // Get profile data based on user role for comparison
-      const profile =
-        user?.role === "tenant" ? user.tenantProfile : user.operatorProfile;
-
-      // Only include fields that have changed
-      Object.keys(formData).forEach((key) => {
-        const fieldKey = key as keyof UpdateUserData;
-        let currentValue;
-
-        // Get current value from appropriate source
-        if (fieldKey === "full_name" || fieldKey === "email") {
-          currentValue = user?.[fieldKey];
-        } else if (fieldKey === "date_of_birth") {
-          // Format current date for comparison
-          const currentDate = profile?.date_of_birth;
-          if (currentDate) {
-            try {
-              const date = new Date(currentDate);
-              currentValue = !isNaN(date.getTime())
-                ? date.toISOString().split("T")[0]
-                : "";
-            } catch {
-              currentValue = "";
-            }
-          } else {
-            currentValue = "";
-          }
-        } else {
-          // phone, nationality, occupation come from profile
-          currentValue = profile?.[fieldKey as keyof typeof profile];
-        }
-
-        if (formData[fieldKey] !== currentValue) {
-          // Don't send empty date_of_birth
-          if (
-            fieldKey === "date_of_birth" &&
-            (!formData[fieldKey] || formData[fieldKey].trim() === "")
-          ) {
-            // Skip empty date
-          } else {
-            updateData[fieldKey] = formData[fieldKey];
-          }
-        }
-      });
-
-      if (Object.keys(updateData).length === 0) {
-        setError("No changes detected");
-        setIsLoading(false);
-        return;
-      }
-
-      // Update Redux state with new user data
-      dispatch(updateUser(updateData));
-
-      setSuccess("Profile updated successfully!");
-      console.log("✅ Profile updated successfully!");
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-    } catch (err: unknown) {
-      setSuccess(null); // Ensure success message is cleared on error
-      console.error("❌ Profile update error:", err);
-
-      // Type guard for axios error
-      const isAxiosError = (
-        error: unknown
-      ): error is {
-        response?: {
-          status?: number;
-          data?: {
-            message?: string;
-            errors?: Array<{ field?: string; message?: string }>;
-          };
-        };
-      } => {
-        return (
-          typeof error === "object" && error !== null && "response" in error
-        );
-      };
-
-      // Handle different error types
-      if (isAxiosError(err) && err.response?.status === 400) {
-        const errorData = err.response?.data;
-        const errorMessage = errorData?.message;
-
-        // Handle NestJS validation errors where message is an array of strings
-        if (Array.isArray(errorMessage)) {
-          // Display the first validation error message
-          setError(errorMessage[0]);
-          console.error("❌ Validation error:", errorMessage);
-        } else if (errorMessage && typeof errorMessage === "string") {
-          setError(errorMessage);
-          console.error("❌ Error message:", errorMessage);
-        } else if (errorData?.errors) {
-          // Handle validation errors from backend with field-specific format
-          const backendErrors = errorData.errors;
-          const newErrors: FormErrors = {};
-
-          backendErrors.forEach(
-            (error: { field?: string; message?: string }) => {
-              if (error.field && error.message) {
-                newErrors[error.field as keyof FormErrors] = error.message;
-              }
-            }
-          );
-
-          setErrors(newErrors);
-          setError("Please fix the validation errors below");
-        } else {
-          setError("Invalid data provided. Please check your inputs.");
-          console.error("❌ Unknown 400 error format:", errorData);
-        }
-      } else if (isAxiosError(err) && err.response?.status === 401) {
-        setError("Authentication failed. Please log in again.");
-        setTimeout(() => {
-          router.push("/");
-        }, 2000);
-      } else if (isAxiosError(err) && err.response?.status === 409) {
-        setError("Email already exists. Please use a different email.");
-      } else {
-        setError("Failed to update profile. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
+    // Flush any pending saves before submitting
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+    if (pendingFieldRef.current) {
+      await saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+      pendingFieldRef.current = null;
+    }
+
+    // Exit edit mode
+    setIsEditing(false);
   };
 
-  // Check if form has changes to enable/disable submit button
-  const hasChanges = useMemo(() => {
-    if (!user) return false;
-
-    // Get profile data based on user role for comparison
-    const profile =
-      user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
-
-    return Object.keys(formData).some((key) => {
-      const fieldKey = key as keyof UpdateUserData;
-      let currentValue;
-
-      // Get current value from appropriate source
-      if (fieldKey === "full_name" || fieldKey === "email") {
-        currentValue = user[fieldKey];
-      } else if (fieldKey === "date_of_birth") {
-        // Format current date for comparison
-        const currentDate = profile?.date_of_birth;
-        if (currentDate) {
-          try {
-            const date = new Date(currentDate);
-            currentValue = !isNaN(date.getTime())
-              ? date.toISOString().split("T")[0]
-              : "";
-          } catch {
-            currentValue = "";
-          }
-        } else {
-          currentValue = "";
-        }
-      } else {
-        // phone, nationality, occupation come from profile
-        currentValue = profile?.[fieldKey as keyof typeof profile];
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-
-      return formData[fieldKey] !== currentValue;
-    });
-  }, [formData, user]);
+    };
+  }, []);
 
   // If not authenticated or no token, don't render anything (redirect will happen)
   const token =
@@ -507,48 +440,37 @@ export default function ProfilePage() {
 
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Full Name */}
+              {/* First Name */}
               <LocalInputField
-                label="Full name"
+                label="First Name"
                 type="text"
-                name="full_name"
-                value={formData.full_name}
+                name="first_name"
+                value={formData.first_name}
                 onChange={handleInputChange}
                 required
-                error={errors.full_name}
+                error={errors.first_name}
               />
 
-              {/* Email */}
+              {/* Last Name */}
               <LocalInputField
-                label="Email"
-                type="email"
-                name="email"
-                value={formData.email}
+                label="Last Name"
+                type="text"
+                name="last_name"
+                value={formData.last_name}
                 onChange={handleInputChange}
                 required
-                error={errors.email}
+                error={errors.last_name}
               />
 
-              {/* Phone Number */}
+              {/* Address */}
               <LocalInputField
-                label="Phone number (option)"
-                type="tel"
-                name="phone"
-                value={formData.phone}
+                label="Address"
+                type="text"
+                name="address"
+                value={formData.address}
                 onChange={handleInputChange}
-                error={errors.phone}
-              />
-
-              {/* Date of Birth */}
-              <GlassmorphismDatePicker
-                label="Date of Birth"
-                value={formData.date_of_birth}
-                onChange={(date) =>
-                  setFormData((prev) => ({ ...prev, date_of_birth: date }))
-                }
-                error={errors.date_of_birth}
-                maxDate={new Date()}
-                minDate={new Date("1900-01-01")}
+                required
+                error={errors.address}
               />
 
               {/* Nationality */}
@@ -561,17 +483,65 @@ export default function ProfilePage() {
                 error={errors.nationality}
               />
 
+              {/* Phone Number */}
+              <LocalInputField
+                label="Phone number"
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                error={errors.phone}
+              />
+
+              {/* Date of Birth */}
+              <GlassmorphismDatePicker
+                label="Date of Birth"
+                value={formData.date_of_birth || null}
+                onChange={(date) => {
+                  setFormData((prev) => ({ ...prev, date_of_birth: date }));
+                  // Auto-save date of birth
+                  if (isEditing) {
+                    if (saveTimeoutRef.current) {
+                      clearTimeout(saveTimeoutRef.current);
+                    }
+                    pendingFieldRef.current = { field: "date_of_birth", value: date };
+                    saveTimeoutRef.current = setTimeout(() => {
+                      if (pendingFieldRef.current) {
+                        saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+                        pendingFieldRef.current = null;
+                      }
+                    }, 500);
+                  }
+                }}
+                error={errors.date_of_birth}
+                maxDate={new Date()}
+                minDate={new Date("1900-01-01")}
+              />
+
               {/* Occupation */}
               <GlassmorphismDropdown
                 label="Occupation"
                 value={formData.occupation}
                 options={OCCUPATION_OPTIONS}
-                onChange={(value) =>
+                onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,
                     occupation: value as string,
-                  }))
-                }
+                  }));
+                  // Auto-save occupation
+                  if (isEditing) {
+                    if (saveTimeoutRef.current) {
+                      clearTimeout(saveTimeoutRef.current);
+                    }
+                    pendingFieldRef.current = { field: "occupation", value: value as string };
+                    saveTimeoutRef.current = setTimeout(() => {
+                      if (pendingFieldRef.current) {
+                        saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+                        pendingFieldRef.current = null;
+                      }
+                    }, 500);
+                  }
+                }}
                 error={errors.occupation}
                 placeholder="Select occupation"
               />
@@ -587,43 +557,49 @@ export default function ProfilePage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading || !hasChanges}
-                  className="flex-1 bg-black text-white px-6 py-4 rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-black text-white px-6 py-4 rounded-full font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    "Save info"
-                  )}
+                  Done
                 </button>
               </div>
             </form>
           ) : (
             <div className="space-y-6">
-              {/* Full Name */}
+              {/* First Name */}
               <div>
-                <div className="text-sm text-gray-600 mb-1">Full name</div>
+                <div className="text-sm text-gray-600 mb-1">First Name</div>
                 <div className="text-black font-medium">
-                  {formData.full_name || "Not provided"}
+                  {formData.first_name || "Not provided"}
                 </div>
               </div>
 
-              {/* Email */}
+              {/* Last Name */}
               <div>
-                <div className="text-sm text-gray-600 mb-1">Email</div>
+                <div className="text-sm text-gray-600 mb-1">Last Name</div>
                 <div className="text-black font-medium">
-                  {formData.email || "Not provided"}
+                  {formData.last_name || "Not provided"}
+                </div>
+              </div>
+
+              {/* Address */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Address</div>
+                <div className="text-black font-medium">
+                  {formData.address || "Not provided"}
+                </div>
+              </div>
+
+              {/* Nationality */}
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Nationality</div>
+                <div className="text-black font-medium">
+                  {formData.nationality || "Not provided"}
                 </div>
               </div>
 
               {/* Phone Number */}
               <div>
-                <div className="text-sm text-gray-600 mb-1">
-                  Phone number <span className="text-gray-400">(option)</span>
-                </div>
+                <div className="text-sm text-gray-600 mb-1">Phone number</div>
                 <div className="text-black font-medium">
                   {formData.phone || "Not provided"}
                 </div>
@@ -634,14 +610,6 @@ export default function ProfilePage() {
                 <div className="text-sm text-gray-600 mb-1">Date of Birth</div>
                 <div className="text-black font-medium">
                   {formatDate(formData.date_of_birth) || "Not provided"}
-                </div>
-              </div>
-
-              {/* Nationality */}
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Nationality</div>
-                <div className="text-black font-medium">
-                  {formData.nationality || "Not provided"}
                 </div>
               </div>
 
