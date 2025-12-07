@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import TenantUniversalHeader from "../TenantUniversalHeader";
 import { usePreferences } from "@/app/hooks/usePreferences";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
@@ -145,16 +144,6 @@ export default function NewPreferencesPage({
     );
   }
 
-  const handleSave = async () => {
-    try {
-      await savePreferences();
-      console.log("✅ Preferences saved successfully");
-    } catch (error) {
-      console.error("❌ Failed to save preferences:", error);
-      toast.error("Failed to save preferences");
-    }
-  };
-
   const handleGoBack = () => {
     const path = getRedirectPath(user);
     router.replace(path);
@@ -164,7 +153,6 @@ export default function NewPreferencesPage({
     try {
       await savePreferences();
       console.log("✅ Preferences saved successfully");
-      toast.success("Preferences saved successfully!");
       
       // Call onComplete callback if provided (for onboarding flow)
       if (onComplete) {
@@ -176,7 +164,7 @@ export default function NewPreferencesPage({
       }
     } catch (error) {
       console.error("❌ Failed to save preferences:", error);
-      toast.error("Failed to save preferences");
+      // Silent error - no toast
     }
   };
 
@@ -225,8 +213,7 @@ export default function NewPreferencesPage({
         showBackButton={false}
         showSearchInput={false}
         showPreferencesButton={false}
-        showSaveButton={true}
-        onSaveClick={handleSave}
+        showSaveButton={false}
       />
 
       {/* Main Content */}
@@ -265,11 +252,16 @@ export default function NewPreferencesPage({
 
             <button
               type="button"
-              onClick={isLastStep ? handleFinish : nextStep}
-              disabled={loading}
-              className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+              onClick={async () => {
+                if (isLastStep) {
+                  await handleFinish();
+                } else {
+                  await nextStep();
+                }
+              }}
+              className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
             >
-              {loading ? "Saving..." : isLastStep ? "Finish" : "Next"}
+              {isLastStep ? "Finish" : "Next"}
             </button>
           </div>
         </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import { useAppSelector } from "@/app/store/hooks";
 import { preferencesAPI } from "@/app/lib/api";
 import {
@@ -24,6 +23,8 @@ export const usePreferences = () => {
   const scrollPositionRef = useRef<number>(0);
   const hasCheckedAuthRef = useRef<boolean>(false);
   const [sessionInitialized, setSessionInitialized] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const pendingFieldRef = useRef<{ field: keyof PreferencesFormData; value: unknown } | null>(null);
 
   const [state, setState] = useState<PreferencesState>(() => {
     // Initialize step from localStorage if available
@@ -165,6 +166,15 @@ export const usePreferences = () => {
     }
   }, [state.step]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Wait for session initialization
   useEffect(() => {
     const initSession = async () => {
@@ -279,14 +289,99 @@ export const usePreferences = () => {
     }
   };
 
+  // Save single field to API - defined before updateField and toggleFeature
+  const saveSingleField = useCallback(async (
+    field: keyof PreferencesFormData,
+    value: unknown
+  ) => {
+    try {
+      // Transform the field value to API format
+      const formData: Partial<PreferencesFormData> = { [field]: value } as Partial<PreferencesFormData>;
+      const transformedData = transformFormDataForApi(formData);
+      
+      // Get only the transformed value for this field
+      const fieldKey = Object.keys(transformedData)[0] as keyof PreferencesFormData;
+      const transformedValue = transformedData[fieldKey];
+
+      // Process the value (handle empty arrays, nulls, etc.)
+      let processedValue = transformedValue;
+      if (transformedValue === "no-preference" && fieldKey !== "smoker") {
+        processedValue = null;
+      } else if (transformedValue === "") {
+        processedValue = null;
+      } else if (Array.isArray(transformedValue) && transformedValue.length === 0) {
+        processedValue = [];
+      }
+
+      // Create update object with only this field
+      const updateData: Partial<PreferencesFormData> = { [fieldKey]: processedValue } as Partial<PreferencesFormData>;
+
+      // If no preferences exist, create new with this field
+      if (!state.existingPreferences) {
+        const response = await preferencesAPI.create(updateData);
+        setState((prev) => ({
+          ...prev,
+          existingPreferences: response.data,
+        }));
+        return;
+      }
+
+      // Check if value actually changed
+      const existingValue = (state.existingPreferences as Record<string, unknown>)?.[fieldKey];
+      let hasChanged = false;
+
+      if (Array.isArray(processedValue)) {
+        const existingArray = Array.isArray(existingValue) ? existingValue : [];
+        hasChanged =
+          JSON.stringify([...processedValue].sort()) !==
+          JSON.stringify([...existingArray].sort());
+      } else {
+        hasChanged = processedValue !== existingValue;
+      }
+
+      if (!hasChanged) {
+        return; // No change, skip save
+      }
+
+      // Update preferences
+      await preferencesAPI.update(updateData);
+
+      // Update existingPreferences in state
+      setState((prev) => ({
+        ...prev,
+        existingPreferences: {
+          ...(prev.existingPreferences as Record<string, unknown>),
+          [fieldKey]: processedValue,
+        },
+      }));
+    } catch (error) {
+      console.error(`Failed to save field ${field as string}:`, error);
+      // Silent fail - don't show toast
+    }
+  }, [state.existingPreferences]);
+
   const updateField = useCallback(
     (
       field: keyof PreferencesFormData,
       value: string | number | boolean | string[] | undefined
     ) => {
       setValue(field, value, { shouldValidate: false, shouldDirty: true });
+      
+      // Auto-save the field after debounce
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      pendingFieldRef.current = { field, value };
+      
+      saveTimeoutRef.current = setTimeout(() => {
+        if (pendingFieldRef.current) {
+          saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+          pendingFieldRef.current = null;
+        }
+      }, 500); // 500ms debounce
     },
-    [setValue]
+    [setValue, saveSingleField]
   );
 
   const toggleFeature = useCallback(
@@ -300,6 +395,20 @@ export const usePreferences = () => {
 
       setValue(category, updated, { shouldValidate: false, shouldDirty: true });
 
+      // Auto-save the field after debounce
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      pendingFieldRef.current = { field: category, value: updated };
+      
+      saveTimeoutRef.current = setTimeout(() => {
+        if (pendingFieldRef.current) {
+          saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+          pendingFieldRef.current = null;
+        }
+      }, 500); // 500ms debounce
+
       // Restore scroll position
       const restoreScroll = () => {
         window.scrollTo(0, scrollPositionRef.current);
@@ -309,14 +418,8 @@ export const usePreferences = () => {
       requestAnimationFrame(restoreScroll);
       setTimeout(restoreScroll, 0);
     },
-    [watchedData, setValue]
+    [watchedData, setValue, saveSingleField]
   );
-
-  const nextStep = useCallback(() => {
-    if (state.step < TOTAL_STEPS) {
-      setState((prev) => ({ ...prev, step: prev.step + 1 }));
-    }
-  }, [state.step]);
 
   const prevStep = useCallback(() => {
     if (state.step > 1) {
@@ -415,9 +518,6 @@ export const usePreferences = () => {
           existingPreferences: response.data,
         }));
 
-        // Show success toast
-        toast.success("Preferences saved successfully!");
-
         // Clear saved step from localStorage on successful save
         if (typeof window !== "undefined") {
           localStorage.removeItem("preferencesStep");
@@ -464,7 +564,7 @@ export const usePreferences = () => {
         ...prev,
         generalError: errorMessage,
       }));
-      toast.error(errorMessage);
+      // Silent error - no toast
     }
   };
 
@@ -479,6 +579,23 @@ export const usePreferences = () => {
       throw error;
     }
   };
+
+  // Define nextStep - no longer saves, just moves to next step
+  const nextStep = useCallback(() => {
+    if (state.step < TOTAL_STEPS) {
+      // Flush any pending saves before moving to next step
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (pendingFieldRef.current) {
+        saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+        pendingFieldRef.current = null;
+      }
+      
+      // Move to next step
+      setState((prev) => ({ ...prev, step: prev.step + 1 }));
+    }
+  }, [state.step, saveSingleField]);
 
   return {
     // State
