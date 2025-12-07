@@ -83,14 +83,25 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
   }, []);
 
   // Update CSS variables when values change
+  // Only update slider if values are actually set (not null/undefined)
   useEffect(() => {
-    const minValue = formData.min_square_meters ?? 15;
-    const maxValue = formData.max_square_meters ?? 45;
-    const minPercent = valueToPercentage(minValue);
-    const maxPercent = valueToPercentage(maxValue);
-
-    setThumbPosition("min", minPercent);
-    setThumbPosition("max", maxPercent);
+    if (formData.min_square_meters !== null && formData.min_square_meters !== undefined) {
+      const minValue = formData.min_square_meters;
+      const minPercent = valueToPercentage(minValue);
+      setThumbPosition("min", minPercent);
+      if (minSliderRef.current) {
+        minSliderRef.current.value = minPercent.toString();
+      }
+    }
+    
+    if (formData.max_square_meters !== null && formData.max_square_meters !== undefined) {
+      const maxValue = formData.max_square_meters;
+      const maxPercent = valueToPercentage(maxValue);
+      setThumbPosition("max", maxPercent);
+      if (maxSliderRef.current) {
+        maxSliderRef.current.value = maxPercent.toString();
+      }
+    }
   }, [
     formData.min_square_meters,
     formData.max_square_meters,
@@ -104,17 +115,23 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       const inputValue = e.target.value.replace(/[^0-9]/g, "");
 
       if (inputValue === "") {
-        // Allow empty input temporarily
+        // Allow empty input temporarily (will be set to null on blur)
+        onUpdate("min_square_meters", null);
         return;
       }
 
       const maxValue = formData.max_square_meters ?? MAX_VALUE;
-      let value = parseInt(inputValue) || MIN_VALUE;
+      let value = parseInt(inputValue);
+      
+      if (isNaN(value)) {
+        onUpdate("min_square_meters", null);
+        return;
+      }
 
       // Validate range
       if (value < MIN_VALUE) value = MIN_VALUE;
       if (value > MAX_VALUE) value = MAX_VALUE;
-      if (value >= maxValue) value = maxValue - 1;
+      if (maxValue !== null && value >= maxValue) value = maxValue - 1;
 
       const percentage = valueToPercentage(value);
       if (minSliderRef.current) {
@@ -129,12 +146,25 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
   // Handle min input blur - validate on blur
   const handleMinInputBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
-      let value = parseInt(e.target.value) || MIN_VALUE;
+      const inputValue = e.target.value.trim();
+      
+      // If empty, set to null (no value)
+      if (inputValue === "") {
+        onUpdate("min_square_meters", null);
+        return;
+      }
+
+      let value = parseInt(inputValue);
+      if (isNaN(value)) {
+        onUpdate("min_square_meters", null);
+        return;
+      }
+
       const maxValue = formData.max_square_meters ?? MAX_VALUE;
 
       if (value < MIN_VALUE) value = MIN_VALUE;
       if (value > MAX_VALUE) value = MAX_VALUE;
-      if (value >= maxValue) value = maxValue - 1;
+      if (maxValue !== null && value >= maxValue) value = maxValue - 1;
 
       onUpdate("min_square_meters", value);
     },
@@ -147,15 +177,21 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       const inputValue = e.target.value.replace(/[^0-9]/g, "");
 
       if (inputValue === "") {
-        // Allow empty input temporarily
+        // Allow empty input temporarily (will be set to null on blur)
+        onUpdate("max_square_meters", null);
         return;
       }
 
       const minValue = formData.min_square_meters ?? MIN_VALUE;
-      let value = parseInt(inputValue) || MAX_VALUE;
+      let value = parseInt(inputValue);
+      
+      if (isNaN(value)) {
+        onUpdate("max_square_meters", null);
+        return;
+      }
 
       // Validate range
-      if (value < minValue + 1) value = minValue + 1;
+      if (minValue !== null && value < minValue + 1) value = minValue + 1;
       if (value > MAX_VALUE) value = MAX_VALUE;
 
       const percentage = valueToPercentage(value);
@@ -171,10 +207,23 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
   // Handle max input blur - validate on blur
   const handleMaxInputBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
-      let value = parseInt(e.target.value) || MAX_VALUE;
+      const inputValue = e.target.value.trim();
+      
+      // If empty, set to null (no value)
+      if (inputValue === "") {
+        onUpdate("max_square_meters", null);
+        return;
+      }
+
+      let value = parseInt(inputValue);
+      if (isNaN(value)) {
+        onUpdate("max_square_meters", null);
+        return;
+      }
+
       const minValue = formData.min_square_meters ?? MIN_VALUE;
 
-      if (value < minValue + 1) value = minValue + 1;
+      if (minValue !== null && value < minValue + 1) value = minValue + 1;
       if (value > MAX_VALUE) value = MAX_VALUE;
 
       onUpdate("max_square_meters", value);
@@ -311,11 +360,11 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={formData.min_square_meters?.toString() ?? "15"}
+                value={formData.min_square_meters?.toString() ?? ""}
                 onChange={handleMinInputChange}
                 onBlur={handleMinInputBlur}
                 className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                placeholder="15"
+                placeholder=""
               />
             </div>
             <div className="flex-1">
@@ -325,16 +374,16 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={formData.max_square_meters?.toString() ?? "45"}
+                value={formData.max_square_meters?.toString() ?? ""}
                 onChange={handleMaxInputChange}
                 onBlur={handleMaxInputBlur}
                 className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                placeholder="500"
+                placeholder=""
               />
             </div>
           </div>
 
-          {/* Range slider */}
+          {/* Range slider - always show, but values are only saved when user interacts */}
           <div className="px-2">
             <div
               ref={rangeRef}
@@ -343,10 +392,10 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 {
                   "--range-track-top": "10px",
                   "--min-thumb-percent": valueToPercentage(
-                    formData.min_square_meters ?? 15
+                    formData.min_square_meters ?? MIN_VALUE
                   ),
                   "--max-thumb-percent": valueToPercentage(
-                    formData.max_square_meters ?? 45
+                    formData.max_square_meters ?? MAX_VALUE
                   ),
                   "--range-progress-w": `calc((var(--max-thumb-percent) - var(--min-thumb-percent)) * 1%)`,
                   "--range-progress-left": `calc(var(--min-thumb-percent) * 1%)`,
@@ -383,7 +432,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                   min="0"
                   max="100"
                   step="1"
-                  value={valueToPercentage(formData.min_square_meters ?? 15)}
+                  value={formData.min_square_meters !== null && formData.min_square_meters !== undefined 
+                    ? valueToPercentage(formData.min_square_meters) 
+                    : valueToPercentage(MIN_VALUE)}
                   onChange={handleMinRangeChange}
                   className="w-full h-[30px] col-start-1 row-start-1 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:relative [&::-webkit-slider-track]:pointer-events-none [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-track]:pointer-events-none"
                 />
@@ -395,7 +446,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                   min="0"
                   max="100"
                   step="1"
-                  value={valueToPercentage(formData.max_square_meters ?? 45)}
+                  value={formData.max_square_meters !== null && formData.max_square_meters !== undefined 
+                    ? valueToPercentage(formData.max_square_meters) 
+                    : valueToPercentage(MAX_VALUE)}
                   onChange={handleMaxRangeChange}
                   className="w-full h-[30px] col-start-1 row-start-1 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:relative [&::-webkit-slider-track]:pointer-events-none [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-track]:pointer-events-none"
                 />

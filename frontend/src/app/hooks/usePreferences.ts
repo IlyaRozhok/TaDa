@@ -84,8 +84,8 @@ export const usePreferences = () => {
       balcony: false,
       terrace: false,
       outdoor_space_preferences: [], // UI alias
-      min_square_meters: 15,
-      max_square_meters: 45,
+      min_square_meters: undefined,
+      max_square_meters: undefined,
       // Step 4 - Building & Duration
       building_types: [],
       building_style_preferences: [], // UI alias
