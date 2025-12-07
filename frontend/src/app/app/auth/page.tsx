@@ -46,7 +46,7 @@ export default function AuthPage() {
       // Get user data
       authAPI
         .getMe()
-        .then((response) => {
+        .then(async (response) => {
           const user = response.data.user;
           dispatch(
             setAuth({
