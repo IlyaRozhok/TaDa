@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import TenantUniversalHeader from "../TenantUniversalHeader";
 import { usePreferences } from "@/app/hooks/usePreferences";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { getRedirectPath } from "@/app/utils/simpleRedirect";
@@ -205,17 +204,6 @@ export default function NewPreferencesPage({
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <TenantUniversalHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        preferencesCount={0}
-        showBackButton={false}
-        showSearchInput={false}
-        showPreferencesButton={false}
-        showSaveButton={false}
-      />
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
         <form onSubmit={(e) => e.preventDefault()}>{renderStep()}</form>

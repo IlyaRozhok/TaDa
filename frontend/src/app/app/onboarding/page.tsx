@@ -3,22 +3,24 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { selectUser, selectIsAuthenticated } from "../../store/slices/authSlice";
+import {
+  selectUser,
+  selectIsAuthenticated,
+} from "../../store/slices/authSlice";
 import { preferencesAPI } from "../../lib/api";
 import OnboardingProfileStep from "../../components/onboarding/OnboardingProfileStep";
+import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
 import NewPreferencesPage from "../../components/preferences/NewPreferencesPage";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
-import { User, Target, ArrowRight } from "lucide-react";
 
-type OnboardingStep = "profile" | "preferences";
+type OnboardingStep = "intro" | "profile" | "preferences";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>("profile");
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>("intro");
   const [loading, setLoading] = useState(true);
-  const [hasPreferences, setHasPreferences] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
 
   // Check if user is authenticated and has preferences
@@ -40,15 +42,13 @@ export default function OnboardingPage() {
         const response = await preferencesAPI.get();
         if (response.data && response.data.id) {
           // User has preferences, redirect to dashboard
-          setHasPreferences(true);
           router.push("/app/units");
           return;
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 404 means no preferences - user needs onboarding
-        if (error.response?.status === 404) {
-          setHasPreferences(false);
-        } else {
+        const errorResponse = error as { response?: { status?: number } };
+        if (errorResponse.response?.status !== 404) {
           console.error("Error checking preferences:", error);
         }
       } finally {
@@ -62,6 +62,10 @@ export default function OnboardingPage() {
   const handleProfileNext = async () => {
     // This will be called by OnboardingProfileStep's handleSubmit
     // The component will handle the submission and call onComplete
+  };
+
+  const handleIntroComplete = () => {
+    setCurrentStep("profile");
   };
 
   const handleProfileComplete = async () => {
@@ -91,6 +95,11 @@ export default function OnboardingPage() {
 
   if (!isAuthenticated || !user) {
     return null;
+  }
+
+  // Show intro screens without header
+  if (currentStep === "intro") {
+    return <OnboardingIntroScreens onComplete={handleIntroComplete} />;
   }
 
   return (
@@ -134,7 +143,7 @@ export default function OnboardingPage() {
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <div className="w-20"></div>
 
-              <div className="text-sm text-gray-500">Step 1 of 2</div>
+              <div className="text-sm text-gray-500">Step 2 of 3</div>
 
               <button
                 type="button"
@@ -151,4 +160,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-

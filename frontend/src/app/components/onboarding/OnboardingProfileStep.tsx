@@ -10,7 +10,8 @@ import {
 import { authAPI } from "../../lib/api";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
-import { InputField } from "../preferences/step-components/InputField";
+import { InputField } from "../preferences/ui/InputField";
+import { GlassmorphismDatePicker } from "../preferences/ui/GlassmorphismDatePicker";
 import toast from "react-hot-toast";
 
 interface UpdateUserData {
@@ -187,8 +188,8 @@ export default function OnboardingProfileStep({
           <InputField
             label="Full Name"
             value={formData.full_name}
-            onChange={(value) =>
-              handleInputChange("full_name", value as string)
+            onChange={(e) =>
+              handleInputChange("full_name", e.target.value)
             }
             type="text"
           />
@@ -199,20 +200,22 @@ export default function OnboardingProfileStep({
           <InputField
             label="Phone Number"
             value={formData.phone}
-            onChange={(value) => handleInputChange("phone", value as string)}
+            onChange={(e) => handleInputChange("phone", e.target.value)}
             type="tel"
           />
         </div>
 
         {/* Date of Birth */}
         <div className="mb-6">
-          <InputField
+          <GlassmorphismDatePicker
             label="Date of Birth"
-            value={formData.date_of_birth}
-            onChange={(value) =>
-              handleInputChange("date_of_birth", value as string)
+            value={formData.date_of_birth || null}
+            onChange={(date) =>
+              handleInputChange("date_of_birth", date)
             }
-            type="date"
+            placeholder="dd.mm.yyyy"
+            maxDate={new Date()}
+            minDate={new Date("1900-01-01")}
           />
         </div>
 
@@ -221,8 +224,8 @@ export default function OnboardingProfileStep({
           <InputField
             label="Nationality"
             value={formData.nationality}
-            onChange={(value) =>
-              handleInputChange("nationality", value as string)
+            onChange={(e) =>
+              handleInputChange("nationality", e.target.value)
             }
             type="text"
           />
@@ -233,8 +236,8 @@ export default function OnboardingProfileStep({
           <InputField
             label="Occupation"
             value={formData.occupation}
-            onChange={(value) =>
-              handleInputChange("occupation", value as string)
+            onChange={(e) =>
+              handleInputChange("occupation", e.target.value)
             }
             type="text"
           />
