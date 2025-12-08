@@ -4,8 +4,8 @@
 
 /* SF Pro Font Family */
 @font-face {
-  font-family: 'SF Pro Display';
-  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  font-family: "SF Pro Display";
+  src: url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 }
 
 /* Property Card Skeleton Animations */
@@ -62,7 +62,6 @@
 
 /* Mobile-first optimizations */
 @media (max-width: 640px) {
-  /* Better touch targets for mobile */
   button,
   a[role="button"],
   .btn {
