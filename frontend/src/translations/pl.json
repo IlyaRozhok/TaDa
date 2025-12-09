@@ -145,5 +145,12 @@
   "landing.tenant.web.rs.card6.title": "Płynne wprowadzenie się –",
   "landing.tenant.web.rs.description": "Przeprowadzka do Londynu może być ekscytująca, ale też przytłaczająca. Dlatego TA-DA łączy nasze inteligentne narzędzia platformowe z prawdziwym, lokalnym wsparciem, aby Twoja przeprowadzka przebiegła bezproblemowo. Będziemy Ci towarzyszyć – od dopasowania odpowiedniej nieruchomości i okolicy, po towarzyszenie Ci podczas oglądania nieruchomości, załatwianie formalności i negocjowanie najlepszych ofert.",
   "landing.tenant.web.rs.title": "Wsparcie w przeprowadzce – dzięki ludziom i technologii",
-  "landing.tenant.web.sm.text2": "Wskazówki od znawców i porady dotyczące wynajmu, które pozwolą Ci cieszyć się bezstresowym życiem w Londynie"
+  "landing.tenant.web.sm.text2": "Wskazówki od znawców i porady dotyczące wynajmu, które pozwolą Ci cieszyć się bezstresowym życiem w Londynie",
+  "tenantCv.title": "Tenant CV",
+  "tenantCv.loading": "Loading CV...",
+  "tenantCv.public.loading": "Loading profile...",
+  "tenantCv.error.load": "Failed to load CV",
+  "tenantCv.public.error": "Profile not available",
+  "tenantCv.share.copied": "Share link copied to clipboard",
+  "tenantCv.share.failed": "Unable to generate share link"
 }

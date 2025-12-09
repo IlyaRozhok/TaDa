@@ -28,7 +28,7 @@ const INTRO_STEPS = [
     title: "Personalized Experience",
     description:
       "Save your favorites properties, track your search history and get personalized recommendations based on your activity.",
-    image: "/onboarding-step-2.png",
+    image: "/onboarding-step-3.png",
   },
   {
     id: "ready",

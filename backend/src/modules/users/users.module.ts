@@ -31,6 +31,6 @@ import { AuthModule } from "../auth/auth.module";
     UserQueryService,
     UserAdminService,
   ],
-  exports: [UsersService],
+  exports: [UsersService, UserQueryService],
 })
 export class UsersModule {}

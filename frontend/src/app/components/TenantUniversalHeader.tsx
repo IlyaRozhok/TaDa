@@ -132,13 +132,16 @@ export default function TenantUniversalHeader({
         {/* Right: Icons */}
         <div className="flex items-center space-x-4">
           <button
+            onClick={() => router.push("/app/tenant-cv")}
+            className="text-black hover:text-gray-600 transition-colors font-medium"
+          >
+            Tenant CV
+          </button>
+          <button
             onClick={handleFavouritesClick}
             className="text-black hover:text-gray-600 transition-colors"
           >
             <Heart className="h-6 w-6" />
-          </button>
-          <button className="text-black hover:text-gray-600 transition-colors">
-            <Bell className="h-6 w-6" />
           </button>
 
           {/* Language Dropdown */}

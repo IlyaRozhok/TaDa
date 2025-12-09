@@ -30,6 +30,12 @@ export class UserProfileService {
 
     // Update basic profile fields
     if (updateUserDto.full_name) profile.full_name = updateUserDto.full_name;
+    if (updateUserDto.first_name !== undefined)
+      profile.first_name = updateUserDto.first_name;
+    if (updateUserDto.last_name !== undefined)
+      profile.last_name = updateUserDto.last_name;
+    if (updateUserDto.address !== undefined)
+      profile.address = updateUserDto.address;
     if (updateUserDto.phone) profile.phone = updateUserDto.phone;
     if (
       updateUserDto.date_of_birth &&
@@ -101,7 +107,9 @@ export class UserProfileService {
         preferences.pets = [];
         preferences.pet_policy = false;
       } else {
-        preferences.pets = [{ type: updateUserDto.pets as "dog" | "cat" | "other" }];
+        preferences.pets = [
+          { type: updateUserDto.pets as "dog" | "cat" | "other" },
+        ];
         preferences.pet_policy = true;
       }
     }
@@ -159,4 +167,3 @@ export class UserProfileService {
     }
   }
 }
-

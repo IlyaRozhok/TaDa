@@ -109,6 +109,13 @@ export const preferencesAPI = {
   update: (data: any) => api.put("/preferences", data),
 };
 
+export const tenantCvAPI = {
+  getMine: () => api.get("/tenant-cv/me"),
+  getPublic: (uuid: string) => api.get(`/tenant-cv/${uuid}`),
+  update: (data: any) => api.put("/tenant-cv", data),
+  createShare: () => api.post("/tenant-cv/share"),
+};
+
 // Removed duplicate - see propertiesAPI definition below
 
 export const shortlistAPI = {

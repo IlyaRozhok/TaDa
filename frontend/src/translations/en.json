@@ -145,5 +145,12 @@
   "landing.tenant.web.rs.card6.title": "Seamless move-in –",
   "landing.tenant.web.rs.description": "Moving to London can be exciting - but also overwhelming. That's why TA-DA combines our smart platform tools with real, local support to make your move seamless. We'll be there for you - from matching the right property and neighbourhood to joining you on viewings, handling paperwork and negotiating the best deals.",
   "landing.tenant.web.rs.title": "Relocation Support - Powered by People & Tech",
-  "landing.tenant.web.sm.text2": "Insider tips and rental know-how for stress-free London Living"
+  "landing.tenant.web.sm.text2": "Insider tips and rental know-how for stress-free London Living",
+  "tenantCv.title": "Tenant CV",
+  "tenantCv.loading": "Loading CV...",
+  "tenantCv.public.loading": "Loading profile...",
+  "tenantCv.error.load": "Failed to load CV",
+  "tenantCv.public.error": "Profile not available",
+  "tenantCv.share.copied": "Share link copied to clipboard",
+  "tenantCv.share.failed": "Unable to generate share link"
 }

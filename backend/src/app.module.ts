@@ -13,6 +13,7 @@ import { PropertyMediaModule } from "./modules/property-media/property-media.mod
 import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { OperatorModule } from "./modules/operator/operator.module";
 import { BuildingModule } from "./modules/building/building.module";
+import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { S3Module } from "./common/services/s3.module";
 import { typeOrmConfig } from "./database/typeorm.config";
 
@@ -37,6 +38,7 @@ import { typeOrmConfig } from "./database/typeorm.config";
     ShortlistModule,
     OperatorModule,
     BuildingModule,
+    TenantCvModule,
   ],
   controllers: [AppController],
   providers: [],

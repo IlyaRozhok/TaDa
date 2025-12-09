@@ -40,8 +40,11 @@ export default function OnboardingProfileStep({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const pendingFieldRef = useRef<{ field: keyof UpdateUserData; value: unknown } | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingFieldRef = useRef<{
+    field: keyof UpdateUserData;
+    value: unknown;
+  } | null>(null);
   const initialFormDataRef = useRef<UpdateUserData | null>(null);
 
   const [formData, setFormData] = useState<UpdateUserData>({
@@ -59,6 +62,18 @@ export default function OnboardingProfileStep({
       const profile =
         user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
 
+      const splitFullName = (full?: string | null) => {
+        if (!full) return { first: "", last: "" };
+        const parts = full.trim().split(" ");
+        if (parts.length === 1) return { first: parts[0], last: "" };
+        const [first, ...rest] = parts;
+        return { first, last: rest.join(" ") };
+      };
+
+      const nameFallback = splitFullName(
+        (profile as any)?.full_name || user.full_name
+      );
+
       let formattedDateOfBirth = "";
       // Check if profile has date_of_birth (for tenant profile)
       const dateOfBirth = (profile as any)?.date_of_birth;
@@ -74,8 +89,8 @@ export default function OnboardingProfileStep({
       }
 
       const initialData = {
-        first_name: (profile as any)?.first_name || "",
-        last_name: (profile as any)?.last_name || "",
+        first_name: (profile as any)?.first_name || nameFallback.first || "",
+        last_name: (profile as any)?.last_name || nameFallback.last || "",
         address: (profile as any)?.address || "",
         phone: profile?.phone || "",
         date_of_birth: formattedDateOfBirth,
@@ -88,87 +103,91 @@ export default function OnboardingProfileStep({
   }, [user]);
 
   // Save single field to API
-  const saveSingleField = useCallback(async (
-    field: keyof UpdateUserData,
-    value: unknown
-  ) => {
-    if (!user) {
-      return;
-    }
+  const saveSingleField = useCallback(
+    async (field: keyof UpdateUserData, value: unknown) => {
+      if (!user) {
+        return;
+      }
 
-    try {
-      // Get current value from user/profile
-      const profile = user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
-      let currentValue: unknown;
+      try {
+        // Get current value from user/profile
+        const profile =
+          user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+        let currentValue: unknown;
 
-      if (field === "date_of_birth") {
-        const currentDate = (profile as any)?.date_of_birth;
-        if (currentDate) {
-          try {
-            const date = new Date(currentDate);
-            currentValue = !isNaN(date.getTime())
-              ? date.toISOString().split("T")[0]
-              : "";
-          } catch {
+        if (field === "date_of_birth") {
+          const currentDate = (profile as any)?.date_of_birth;
+          if (currentDate) {
+            try {
+              const date = new Date(currentDate);
+              currentValue = !isNaN(date.getTime())
+                ? date.toISOString().split("T")[0]
+                : "";
+            } catch {
+              currentValue = "";
+            }
+          } else {
             currentValue = "";
           }
         } else {
-          currentValue = "";
+          currentValue = (profile as any)?.[field];
         }
-      } else {
-        currentValue = (profile as any)?.[field];
+
+        // Check if value actually changed
+        const hasChanged = value !== currentValue;
+
+        if (!hasChanged) {
+          return; // No change, skip save
+        }
+
+        // Prepare update data
+        const updateData: UpdateUserData = { [field]: value } as UpdateUserData;
+
+        // Update profile via API
+        await authAPI.updateProfile(updateData);
+        dispatch(updateUser(updateData as any));
+
+        // Update initial form data reference
+        if (initialFormDataRef.current) {
+          initialFormDataRef.current = {
+            ...initialFormDataRef.current,
+            [field]: value,
+          };
+        }
+      } catch (error) {
+        console.error(`Failed to save field ${field as string}:`, error);
+        // Silent fail - don't show toast
+      }
+    },
+    [user, dispatch]
+  );
+
+  const handleInputChange = useCallback(
+    (field: keyof UpdateUserData, value: string | number) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+
+      // Auto-save the field after debounce
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
 
-      // Check if value actually changed
-      const hasChanged = value !== currentValue;
+      pendingFieldRef.current = { field, value };
 
-      if (!hasChanged) {
-        return; // No change, skip save
-      }
-
-      // Prepare update data
-      const updateData: UpdateUserData = { [field]: value } as UpdateUserData;
-
-      // Update profile via API
-      await authAPI.updateProfile(updateData);
-      dispatch(updateUser(updateData));
-
-      // Update initial form data reference
-      if (initialFormDataRef.current) {
-        initialFormDataRef.current = {
-          ...initialFormDataRef.current,
-          [field]: value,
-        };
-      }
-    } catch (error) {
-      console.error(`Failed to save field ${field as string}:`, error);
-      // Silent fail - don't show toast
-    }
-  }, [user, dispatch]);
-
-  const handleInputChange = useCallback((
-    field: keyof UpdateUserData,
-    value: string | number
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Auto-save the field after debounce
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    pendingFieldRef.current = { field, value };
-
-    saveTimeoutRef.current = setTimeout(() => {
-      if (pendingFieldRef.current) {
-        saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
-        pendingFieldRef.current = null;
-      }
-    }, 500); // 500ms debounce
-  }, [saveSingleField]);
+      saveTimeoutRef.current = setTimeout(() => {
+        if (pendingFieldRef.current) {
+          saveSingleField(
+            pendingFieldRef.current.field,
+            pendingFieldRef.current.value
+          );
+          pendingFieldRef.current = null;
+        }
+      }, 500); // 500ms debounce
+    },
+    [saveSingleField]
+  );
 
   const handleSubmit = async () => {
     // Flush any pending saves before moving to next step
@@ -176,7 +195,10 @@ export default function OnboardingProfileStep({
       clearTimeout(saveTimeoutRef.current);
     }
     if (pendingFieldRef.current) {
-      await saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+      await saveSingleField(
+        pendingFieldRef.current.field,
+        pendingFieldRef.current.value
+      );
       pendingFieldRef.current = null;
     }
 
@@ -208,9 +230,7 @@ export default function OnboardingProfileStep({
           <InputField
             label="First Name"
             value={formData.first_name}
-            onChange={(e) =>
-              handleInputChange("first_name", e.target.value)
-            }
+            onChange={(e) => handleInputChange("first_name", e.target.value)}
             type="text"
             required
           />
@@ -221,9 +241,7 @@ export default function OnboardingProfileStep({
           <InputField
             label="Last Name"
             value={formData.last_name}
-            onChange={(e) =>
-              handleInputChange("last_name", e.target.value)
-            }
+            onChange={(e) => handleInputChange("last_name", e.target.value)}
             type="text"
             required
           />
@@ -234,9 +252,7 @@ export default function OnboardingProfileStep({
           <InputField
             label="Address"
             value={formData.address}
-            onChange={(e) =>
-              handleInputChange("address", e.target.value)
-            }
+            onChange={(e) => handleInputChange("address", e.target.value)}
             type="text"
             required
           />
@@ -257,9 +273,7 @@ export default function OnboardingProfileStep({
           <GlassmorphismDatePicker
             label="Date of Birth"
             value={formData.date_of_birth || null}
-            onChange={(date) =>
-              handleInputChange("date_of_birth", date)
-            }
+            onChange={(date) => handleInputChange("date_of_birth", date)}
             placeholder="dd.mm.yyyy"
             maxDate={new Date()}
             minDate={new Date("1900-01-01")}
@@ -271,9 +285,7 @@ export default function OnboardingProfileStep({
           <InputField
             label="Nationality"
             value={formData.nationality}
-            onChange={(e) =>
-              handleInputChange("nationality", e.target.value)
-            }
+            onChange={(e) => handleInputChange("nationality", e.target.value)}
             type="text"
           />
         </div>
@@ -283,9 +295,7 @@ export default function OnboardingProfileStep({
           <InputField
             label="Occupation"
             value={formData.occupation}
-            onChange={(e) =>
-              handleInputChange("occupation", e.target.value)
-            }
+            onChange={(e) => handleInputChange("occupation", e.target.value)}
             type="text"
           />
         </div>

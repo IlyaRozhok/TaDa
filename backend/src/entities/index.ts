@@ -9,3 +9,4 @@ export { Property } from "./property.entity";
 export { PropertyMedia } from "./property-media.entity";
 export { Shortlist } from "./shortlist.entity";
 export { Building } from "./building.entity";
+export { TenantCv } from "./tenant-cv.entity";
