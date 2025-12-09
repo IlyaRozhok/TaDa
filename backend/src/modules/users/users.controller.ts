@@ -11,6 +11,8 @@ import {
   Req,
   Query,
   Param,
+  UploadedFile,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -27,6 +29,7 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { IsEmail, IsOptional, IsString } from "class-validator";
 import { CreateUserDto } from "./dto/create-user.dto";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 class AdminUpdateUserDto {
   @IsOptional()
@@ -83,6 +86,26 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto
   ): Promise<User> {
     return this.usersService.updateProfile(req.user.id, updateUserDto);
+  }
+
+  @Post("avatar")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("access-token")
+  @ApiOperation({ summary: "Upload avatar for current user" })
+  @ApiResponse({
+    status: 200,
+    description: "Avatar uploaded successfully",
+    type: User,
+  })
+  @UseInterceptors(FileInterceptor("file"))
+  async uploadAvatar(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File
+  ): Promise<User> {
+    if (!file) {
+      throw new BadRequestException("No file uploaded");
+    }
+    return this.usersService.uploadAvatar(req.user.id, file);
   }
 
   @Delete("account")

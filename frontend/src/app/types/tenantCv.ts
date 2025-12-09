@@ -18,6 +18,8 @@ export interface RentHistoryEntry {
 
 export interface TenantCvProfile {
   full_name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   avatar_url?: string | null;
   email?: string | null;
   phone?: string | null;
@@ -50,4 +52,3 @@ export interface TenantCvResponse {
   hobbies?: string[];
   rent_history?: RentHistoryEntry[];
 }
-

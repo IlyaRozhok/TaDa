@@ -76,6 +76,15 @@ export const authAPI = {
 
   getProfile: () => api.get("/users/profile"),
 
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/users/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
   getMe: () => api.get("/auth/me"),
 
   logout: () => api.post("/auth/logout"),

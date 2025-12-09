@@ -10,7 +10,6 @@ import {
   Info,
   Share,
   BookOpen,
-  Settings,
 } from "lucide-react";
 import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
 
@@ -22,7 +21,7 @@ interface TenantCvViewProps {
 }
 
 const SectionTitle = ({ title }: { title: string }) => (
-  <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+  <h3 className="text-lg font-semibold text-gray-900 mb-2 mt-4">{title}</h3>
 );
 
 const Pill = ({ children }: { children: React.ReactNode }) => (
@@ -110,12 +109,18 @@ export function TenantCvView({
   const moveIn = dateToDisplay(meta.move_in_date);
   const onPlatform = dateToDisplay(meta.created_at);
   const displayName =
+    [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+    null ||
     profile.full_name ||
     meta.headline ||
     profile.email ||
     meta.tenant_type_labels?.[0] ||
     "Tenant";
-  const avatarUrl = profile.avatar_url || (meta as any)?.avatar_url || null;
+  const avatarUrl =
+    profile.avatar_url ||
+    data.profile?.avatar_url ||
+    (meta as any)?.avatar_url ||
+    null;
 
   const badges = [
     meta.kyc_status ? { label: "KYC", value: meta.kyc_status } : null,
@@ -294,14 +299,6 @@ export function TenantCvView({
                 {shareLoading ? "Generating link..." : "Share profile"}
               </button>
             )}
-
-            <button
-              onClick={() => (window.location.href = "/app/preferences")}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-gray-900 hover:bg-gray-100 transition-colors text-sm font-medium"
-            >
-              <Settings className="w-4 h-4" />
-              Your preferences
-            </button>
           </div>
         </div>
 
@@ -408,7 +405,7 @@ export function TenantCvView({
 
             {/* Amenities */}
             {hasAmenities && (
-              <div className="bg-white">
+              <div className="bg-white pt-1">
                 <SectionTitle title="Amenities" />
                 <div className="flex flex-wrap gap-2">
                   {amenityTags.map((a) => (

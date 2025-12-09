@@ -92,12 +92,16 @@ export class TenantCvService {
         : null;
 
     const profile = {
+      first_name: tenantProfile?.first_name || null,
+      last_name: tenantProfile?.last_name || null,
       full_name:
+        (tenantProfile?.first_name || tenantProfile?.last_name
+          ? [tenantProfile?.first_name, tenantProfile?.last_name]
+              .filter(Boolean)
+              .join(" ")
+          : null) ||
         tenantProfile?.full_name ||
         user.full_name ||
-        [tenantProfile?.first_name, tenantProfile?.last_name]
-          .filter(Boolean)
-          .join(" ") ||
         null,
       avatar_url: user.avatar_url || null,
       email: user.email || null,
@@ -157,4 +161,3 @@ export class TenantCvService {
     return Math.abs(ageDate.getUTCFullYear() - 1970);
   }
 }
-

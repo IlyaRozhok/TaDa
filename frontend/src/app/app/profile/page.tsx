@@ -15,7 +15,7 @@ import { StepContainer } from "../../components/preferences/step-components/Step
 import { InputField } from "../../components/preferences/ui/InputField";
 import { GlassmorphismDatePicker } from "../../components/preferences/ui/GlassmorphismDatePicker";
 import { GlassmorphismDropdown } from "../../components/preferences/ui/GlassmorphismDropdown";
-import { authAPI, propertiesAPI } from "../../lib/api";
+import { authAPI } from "../../lib/api";
 
 interface UpdateUserData {
   first_name?: string;
@@ -44,7 +44,7 @@ export default function ProfilePage() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingFieldRef = useRef<{
     field: keyof UpdateUserData;
     value: unknown;
@@ -238,14 +238,9 @@ export default function ProfilePage() {
 
   const handleAvatarUpload = async (file: File) => {
     try {
-      const res = await propertiesAPI.uploadPhotos([file]);
-      const url =
-        (Array.isArray(res) && res[0]?.url) ||
-        (res?.photos && res.photos[0]?.url) ||
-        res?.url;
-      if (url) {
-        handleInputChange("avatar_url", url);
-      }
+      const res = await authAPI.uploadAvatar(file);
+      const url = res?.avatar_url || res?.user?.avatar_url || res?.url;
+      if (url) handleInputChange("avatar_url", url);
     } catch (error) {
       console.error("Avatar upload failed:", error);
     }
@@ -291,7 +286,7 @@ export default function ProfilePage() {
                 <label className="block text-sm font-medium text-black mb-2">
                   Avatar
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center gap-4">
                   <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center text-black">
                     {formData.avatar_url ? (
                       <img
@@ -346,9 +341,7 @@ export default function ProfilePage() {
                 <InputField
                   label="Address"
                   value={formData.address}
-                  onChange={(e) =>
-                    handleInputChange("address", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("address", e.target.value)}
                   type="text"
                   required
                 />
@@ -359,9 +352,7 @@ export default function ProfilePage() {
                 <InputField
                   label="Phone Number"
                   value={formData.phone}
-                  onChange={(e) =>
-                    handleInputChange("phone", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
                   type="tel"
                 />
               </div>
