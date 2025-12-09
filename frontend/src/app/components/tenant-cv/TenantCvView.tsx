@@ -54,7 +54,7 @@ const dateToDisplay = (value?: string | null) => {
 };
 
 const RentHistoryCard = ({ entry }: { entry: RentHistoryEntry }) => (
-  <div className="rounded-3xl border border-gray-200 p-4 sm:p-6 shadow-sm bg-white">
+  <div className="border border-gray-200 rounded-none p-4 sm:p-6 shadow-none bg-white">
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
       <div>
         <div className="text-sm text-gray-600 mb-1">
@@ -246,125 +246,144 @@ export function TenantCvView({
           )}
         </div>
 
+        {/* Divider bar under header */}
+        <div className="mt-6 h-2 bg-gray-200/70 w-full" />
+
         {/* Preferences overview */}
         {hasPreferences && (
-          <div className="mt-10 grid md:grid-cols-[2fr,1fr] gap-6">
-            <div className="rounded-3xl border border-gray-200 p-6 bg-white shadow-sm">
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                {readyLabel ? (
-                  <Pill className="border border-green-600 text-green-700">
-                    <CalendarDays className="w-4 h-4" />
-                    {readyLabel}
-                  </Pill>
-                ) : null}
-                {(preferences?.building_types?.length ||
-                  preferences?.property_types?.length) && (
-                  <Pill>
-                    <Home className="w-4 h-4" />
-                    {preferences?.building_types?.join(", ") ||
-                      preferences?.property_types?.join(", ")}
-                  </Pill>
-                )}
-                {preferences?.let_duration ? (
-                  <Pill>{preferences.let_duration}</Pill>
-                ) : null}
-                {moveIn ? <Pill>Move-in {moveIn}</Pill> : null}
+          <div className="mt-10 space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
+            <div className="grid md:grid-cols-[2fr,1fr] gap-6">
+              <div className="border border-gray-200 rounded-none p-6 bg-white shadow-none">
+                <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+                  {readyLabel ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
+                      <CalendarDays className="w-4 h-4" />
+                      {readyLabel}
+                    </span>
+                  ) : null}
+                  {(preferences?.building_types?.length ||
+                    preferences?.property_types?.length) && (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
+                      <Home className="w-4 h-4" />
+                      {preferences?.building_types?.join(", ") ||
+                        preferences?.property_types?.join(", ")}
+                    </span>
+                  )}
+                  {preferences?.let_duration ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
+                      {preferences.let_duration}
+                    </span>
+                  ) : null}
+                  {moveIn ? (
+                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
+                      Move-in {moveIn}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-800">
+                  <div>
+                    <div className="text-gray-500">Price per month</div>
+                    <div className="font-semibold text-gray-900">
+                      {priceRange}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Area</div>
+                    <div className="font-semibold text-gray-900">
+                      {locationAreas || "Not specified"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Property type</div>
+                    <div className="font-semibold text-gray-900">
+                      {preferences?.property_types?.join(", ") || "Not set"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Rooms</div>
+                    <div className="font-semibold text-gray-900">
+                      {preferences?.bedrooms?.join(", ") || "Not set"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Bathrooms</div>
+                    <div className="font-semibold text-gray-900">
+                      {preferences?.bathrooms?.join(", ") || "Not set"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Outdoor space</div>
+                    <div className="font-semibold text-gray-900">
+                      {preferences?.balcony ||
+                      preferences?.terrace ||
+                      preferences?.outdoor_space
+                        ? ["Balcony", "Terrace", "Outdoor space"]
+                            .filter(
+                              (label, idx) =>
+                                [
+                                  preferences?.balcony,
+                                  preferences?.terrace,
+                                  preferences?.outdoor_space,
+                                ][idx]
+                            )
+                            .join(", ")
+                        : "No preference"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Meters</div>
+                    <div className="font-semibold text-gray-900">
+                      {preferences?.min_square_meters ||
+                      preferences?.max_square_meters
+                        ? `${preferences?.min_square_meters || "?"} msq - ${
+                            preferences?.max_square_meters || "?"
+                          } msq`
+                        : "Not set"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Bills</div>
+                    <div className="font-semibold text-gray-900">
+                      {preferences?.bills || "Not set"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Tenant Type</div>
+                    <div className="font-semibold text-gray-900">
+                      {meta.tenant_type_labels?.join(", ") ||
+                        preferences?.tenant_types?.join(", ") ||
+                        "Not set"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Furnishing</div>
+                    <div className="font-semibold text-gray-900">
+                      {preferences?.furnishing?.join(", ") || "Not set"}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-800">
-                <div>
-                  <div className="text-gray-500">Price per month</div>
-                  <div className="font-semibold text-gray-900">
-                    {priceRange}
+              {hasAmenities && (
+                <div className="border border-gray-200 rounded-none p-6 bg-white shadow-none flex flex-col gap-3">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Amenities
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {amenityTags.map((item) => (
+                      <span
+                        key={item}
+                        className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-800"
+                      >
+                        {item}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <div>
-                  <div className="text-gray-500">Area</div>
-                  <div className="font-semibold text-gray-900">
-                    {locationAreas || "Not specified"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Property type</div>
-                  <div className="font-semibold text-gray-900">
-                    {preferences?.property_types?.join(", ") || "Not set"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Rooms</div>
-                  <div className="font-semibold text-gray-900">
-                    {preferences?.bedrooms?.join(", ") || "Not set"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Bathrooms</div>
-                  <div className="font-semibold text-gray-900">
-                    {preferences?.bathrooms?.join(", ") || "Not set"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Meters</div>
-                  <div className="font-semibold text-gray-900">
-                    {preferences?.min_square_meters ||
-                    preferences?.max_square_meters
-                      ? `${preferences?.min_square_meters || "?"} msq - ${
-                          preferences?.max_square_meters || "?"
-                        } msq`
-                      : "Not set"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Outdoor space</div>
-                  <div className="font-semibold text-gray-900">
-                    {preferences?.balcony ||
-                    preferences?.terrace ||
-                    preferences?.outdoor_space
-                      ? ["Balcony", "Terrace", "Outdoor space"]
-                          .filter(
-                            (label, idx) =>
-                              [
-                                preferences?.balcony,
-                                preferences?.terrace,
-                                preferences?.outdoor_space,
-                              ][idx]
-                          )
-                          .join(", ")
-                      : "No preference"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Bills</div>
-                  <div className="font-semibold text-gray-900">
-                    {preferences?.bills || "Not set"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Tenant Type</div>
-                  <div className="font-semibold text-gray-900">
-                    {meta.tenant_type_labels?.join(", ") ||
-                      preferences?.tenant_types?.join(", ") ||
-                      "Not set"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Furnishing</div>
-                  <div className="font-semibold text-gray-900">
-                    {preferences?.furnishing?.join(", ") || "Not set"}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
-
-            {hasAmenities && (
-              <div className="rounded-3xl border border-gray-200 p-6 bg-white shadow-sm flex flex-col gap-3">
-                <SectionTitle title="Amenities" />
-                <div className="flex flex-wrap gap-2">
-                  {amenityTags.map((item) => (
-                    <Pill key={item}>{item}</Pill>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 

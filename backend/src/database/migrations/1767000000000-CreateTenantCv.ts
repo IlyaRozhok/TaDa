@@ -51,3 +51,4 @@ export class CreateTenantCv1767000000000 implements MigrationInterface {
     console.log("✅ tenant_cvs table dropped");
   }
 }
+

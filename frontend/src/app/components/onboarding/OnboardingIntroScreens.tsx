@@ -142,7 +142,9 @@ export default function OnboardingIntroScreens({
                   : "text-black hover:text-gray-600"
               }`}
             >
-              {currentStep > 0 && <ChevronLeft className="inline-block w-4 h-4 mr-1" />}
+              {currentStep > 0 && (
+                <ChevronLeft className="inline-block w-4 h-4 mr-1" />
+              )}
               Previous
             </button>
 
@@ -168,4 +170,3 @@ export default function OnboardingIntroScreens({
     </div>
   );
 }
-

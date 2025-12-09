@@ -88,3 +88,4 @@ export class TenantCvResponseDto {
   @ApiProperty({ type: [Object], description: "Rent history entries" })
   rent_history?: RentHistoryEntry[];
 }
+

@@ -166,3 +166,4 @@ export class UpdateTenantCvDto {
   @IsUUID()
   share_uuid?: string;
 }
+

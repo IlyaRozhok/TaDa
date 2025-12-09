@@ -50,3 +50,4 @@ export interface TenantCvResponse {
   hobbies?: string[];
   rent_history?: RentHistoryEntry[];
 }
+

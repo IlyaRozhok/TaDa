@@ -103,3 +103,4 @@ export class TenantCv {
   @JoinColumn({ name: "user_id" })
   user: User;
 }
+
