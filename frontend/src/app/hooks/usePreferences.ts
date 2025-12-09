@@ -24,7 +24,10 @@ export const usePreferences = () => {
   const hasCheckedAuthRef = useRef<boolean>(false);
   const [sessionInitialized, setSessionInitialized] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const pendingFieldRef = useRef<{ field: keyof PreferencesFormData; value: unknown } | null>(null);
+  const pendingFieldRef = useRef<{
+    field: keyof PreferencesFormData;
+    value: unknown;
+  } | null>(null);
 
   const [state, setState] = useState<PreferencesState>(() => {
     // Initialize step from localStorage if available
@@ -62,10 +65,10 @@ export const usePreferences = () => {
   } = useForm<PreferencesFormData>({
     defaultValues: {
       // Step 1 - Location
+      preferred_areas: [],
+      preferred_districts: [],
       preferred_address: "",
       preferred_metro_stations: [],
-      preferred_essentials: [],
-      preferred_commute_times: [],
       // Step 2 - Budget & Move-in
       move_in_date: "",
       move_out_date: "",
@@ -266,9 +269,10 @@ export const usePreferences = () => {
 
           // Handle date fields
           if ((key === "move_in_date" || key === "move_out_date") && value) {
-            const dateValue = typeof value === "string" && value.includes("T") 
-              ? value.split("T")[0] 
-              : value;
+            const dateValue =
+              typeof value === "string" && value.includes("T")
+                ? value.split("T")[0]
+                : value;
             setValue(key as keyof PreferencesFormData, dateValue);
             return;
           }
@@ -290,75 +294,88 @@ export const usePreferences = () => {
   };
 
   // Save single field to API - defined before updateField and toggleFeature
-  const saveSingleField = useCallback(async (
-    field: keyof PreferencesFormData,
-    value: unknown
-  ) => {
-    try {
-      // Transform the field value to API format
-      const formData: Partial<PreferencesFormData> = { [field]: value } as Partial<PreferencesFormData>;
-      const transformedData = transformFormDataForApi(formData);
-      
-      // Get only the transformed value for this field
-      const fieldKey = Object.keys(transformedData)[0] as keyof PreferencesFormData;
-      const transformedValue = transformedData[fieldKey];
+  const saveSingleField = useCallback(
+    async (field: keyof PreferencesFormData, value: unknown) => {
+      try {
+        // Transform the field value to API format
+        const formData: Partial<PreferencesFormData> = {
+          [field]: value,
+        } as Partial<PreferencesFormData>;
+        const transformedData = transformFormDataForApi(formData);
 
-      // Process the value (handle empty arrays, nulls, etc.)
-      let processedValue = transformedValue;
-      if (transformedValue === "no-preference" && fieldKey !== "smoker") {
-        processedValue = null;
-      } else if (transformedValue === "") {
-        processedValue = null;
-      } else if (Array.isArray(transformedValue) && transformedValue.length === 0) {
-        processedValue = [];
-      }
+        // Get only the transformed value for this field
+        const fieldKey = Object.keys(
+          transformedData
+        )[0] as keyof PreferencesFormData;
+        const transformedValue = transformedData[fieldKey];
 
-      // Create update object with only this field
-      const updateData: Partial<PreferencesFormData> = { [fieldKey]: processedValue } as Partial<PreferencesFormData>;
+        // Process the value (handle empty arrays, nulls, etc.)
+        let processedValue = transformedValue;
+        if (transformedValue === "no-preference" && fieldKey !== "smoker") {
+          processedValue = null;
+        } else if (transformedValue === "") {
+          processedValue = null;
+        } else if (
+          Array.isArray(transformedValue) &&
+          transformedValue.length === 0
+        ) {
+          processedValue = [];
+        }
 
-      // If no preferences exist, create new with this field
-      if (!state.existingPreferences) {
-        const response = await preferencesAPI.create(updateData);
+        // Create update object with only this field
+        const updateData: Partial<PreferencesFormData> = {
+          [fieldKey]: processedValue,
+        } as Partial<PreferencesFormData>;
+
+        // If no preferences exist, create new with this field
+        if (!state.existingPreferences) {
+          const response = await preferencesAPI.create(updateData);
+          setState((prev) => ({
+            ...prev,
+            existingPreferences: response.data,
+          }));
+          return;
+        }
+
+        // Check if value actually changed
+        const existingValue = (
+          state.existingPreferences as Record<string, unknown>
+        )?.[fieldKey];
+        let hasChanged = false;
+
+        if (Array.isArray(processedValue)) {
+          const existingArray = Array.isArray(existingValue)
+            ? existingValue
+            : [];
+          hasChanged =
+            JSON.stringify([...processedValue].sort()) !==
+            JSON.stringify([...existingArray].sort());
+        } else {
+          hasChanged = processedValue !== existingValue;
+        }
+
+        if (!hasChanged) {
+          return; // No change, skip save
+        }
+
+        // Update preferences
+        await preferencesAPI.update(updateData);
+
+        // Update existingPreferences in state
         setState((prev) => ({
           ...prev,
-          existingPreferences: response.data,
+          existingPreferences: {
+            ...(prev.existingPreferences as Record<string, unknown>),
+            [fieldKey]: processedValue,
+          },
         }));
-        return;
+      } catch (error) {
+        console.error(`Failed to save field ${field as string}:`, error);
+        // Silent fail - don't show toast
       }
-
-      // Check if value actually changed
-      const existingValue = (state.existingPreferences as Record<string, unknown>)?.[fieldKey];
-      let hasChanged = false;
-
-      if (Array.isArray(processedValue)) {
-        const existingArray = Array.isArray(existingValue) ? existingValue : [];
-        hasChanged =
-          JSON.stringify([...processedValue].sort()) !==
-          JSON.stringify([...existingArray].sort());
-      } else {
-        hasChanged = processedValue !== existingValue;
-      }
-
-      if (!hasChanged) {
-        return; // No change, skip save
-      }
-
-      // Update preferences
-      await preferencesAPI.update(updateData);
-
-      // Update existingPreferences in state
-      setState((prev) => ({
-        ...prev,
-        existingPreferences: {
-          ...(prev.existingPreferences as Record<string, unknown>),
-          [fieldKey]: processedValue,
-        },
-      }));
-    } catch (error) {
-      console.error(`Failed to save field ${field as string}:`, error);
-      // Silent fail - don't show toast
-    }
-  }, [state.existingPreferences]);
+    },
+    [state.existingPreferences]
+  );
 
   const updateField = useCallback(
     (
@@ -366,17 +383,20 @@ export const usePreferences = () => {
       value: string | number | boolean | string[] | undefined
     ) => {
       setValue(field, value, { shouldValidate: false, shouldDirty: true });
-      
+
       // Auto-save the field after debounce
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      
+
       pendingFieldRef.current = { field, value };
-      
+
       saveTimeoutRef.current = setTimeout(() => {
         if (pendingFieldRef.current) {
-          saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+          saveSingleField(
+            pendingFieldRef.current.field,
+            pendingFieldRef.current.value
+          );
           pendingFieldRef.current = null;
         }
       }, 500); // 500ms debounce
@@ -399,12 +419,15 @@ export const usePreferences = () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      
+
       pendingFieldRef.current = { field: category, value: updated };
-      
+
       saveTimeoutRef.current = setTimeout(() => {
         if (pendingFieldRef.current) {
-          saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+          saveSingleField(
+            pendingFieldRef.current.field,
+            pendingFieldRef.current.value
+          );
           pendingFieldRef.current = null;
         }
       }, 500); // 500ms debounce
@@ -478,10 +501,12 @@ export const usePreferences = () => {
 
           // Compare values, handling arrays and dates specially
           let hasChanged = false;
-          
+
           if (Array.isArray(currentValue)) {
             // Handle array comparison
-            const existingArray = Array.isArray(existingValue) ? existingValue : [];
+            const existingArray = Array.isArray(existingValue)
+              ? existingValue
+              : [];
             hasChanged =
               JSON.stringify([...currentValue].sort()) !==
               JSON.stringify([...existingArray].sort());
@@ -588,10 +613,13 @@ export const usePreferences = () => {
         clearTimeout(saveTimeoutRef.current);
       }
       if (pendingFieldRef.current) {
-        saveSingleField(pendingFieldRef.current.field, pendingFieldRef.current.value);
+        saveSingleField(
+          pendingFieldRef.current.field,
+          pendingFieldRef.current.value
+        );
         pendingFieldRef.current = null;
       }
-      
+
       // Move to next step
       setState((prev) => ({ ...prev, step: prev.step + 1 }));
     }

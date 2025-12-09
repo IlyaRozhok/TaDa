@@ -146,26 +146,22 @@ export class Building {
   metro_stations: MetroStation[];
 
   @ApiProperty({
-    description: "Commute times to popular destinations",
-    example: [
-      { label: "City Centre", destination: 15 },
-      { label: "Canary Wharf", destination: 25 },
-    ],
-    type: "json",
+    description: "Areas the building belongs to",
+    example: ["West", "Center"],
+    type: [String],
+    required: false,
   })
-  @Column({ type: "jsonb" })
-  commute_times: CommuteTime[];
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  areas: string[];
 
   @ApiProperty({
-    description: "Local essentials with distances",
-    example: [
-      { label: "Tesco Express", destination: 200 },
-      { label: "Gym", destination: 150 },
-    ],
-    type: "json",
+    description: "Districts/boroughs for the building",
+    example: ["Camden", "Westminster"],
+    type: [String],
+    required: false,
   })
-  @Column({ type: "jsonb" })
-  local_essentials: LocalEssential[];
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  districts: string[];
 
   @ApiProperty({
     description: "Building amenities",

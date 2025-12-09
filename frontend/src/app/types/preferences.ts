@@ -7,10 +7,10 @@ export interface Pet {
 
 export interface PreferencesFormData {
   // ==================== STEP 1: LOCATION ====================
+  preferred_areas?: string[];
+  preferred_districts?: string[];
   preferred_address?: string;
   preferred_metro_stations?: string[];
-  preferred_essentials?: string[];
-  preferred_commute_times?: string[];
 
   // ==================== STEP 2: BUDGET & MOVE-IN ====================
   move_in_date?: string;

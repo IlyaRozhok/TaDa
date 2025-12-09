@@ -33,7 +33,10 @@ export class BuildingService {
       throw new NotFoundException("Operator not found");
     }
 
-    if (operator.role !== UserRole.Operator && operator.role !== UserRole.Admin) {
+    if (
+      operator.role !== UserRole.Operator &&
+      operator.role !== UserRole.Admin
+    ) {
       throw new BadRequestException(
         "User must have operator or admin role to manage buildings"
       );
@@ -54,8 +57,8 @@ export class BuildingService {
       photos: createBuildingDto.photos || [],
       documents: createBuildingDto.documents || null,
       metro_stations: createBuildingDto.metro_stations || [],
-      commute_times: createBuildingDto.commute_times || [],
-      local_essentials: createBuildingDto.local_essentials || [],
+      areas: createBuildingDto.areas || [],
+      districts: createBuildingDto.districts || [],
       amenities: createBuildingDto.amenities || [],
       is_concierge: createBuildingDto.is_concierge ?? false,
       concierge_hours: createBuildingDto.concierge_hours || null,
@@ -67,17 +70,17 @@ export class BuildingService {
 
     const building = this.buildingRepository.create(buildingData);
     const savedBuilding = await this.buildingRepository.save(building);
-    
+
     // Reload the building with relations to ensure we return the correct operator
     const reloadedBuilding = await this.buildingRepository.findOne({
       where: { id: savedBuilding.id },
       relations: ["operator", "operator.operatorProfile", "properties"],
     });
-    
+
     if (!reloadedBuilding) {
       throw new NotFoundException("Building not found after creation");
     }
-    
+
     return reloadedBuilding;
   }
 
@@ -118,12 +121,14 @@ export class BuildingService {
     // If operator_id is being updated, verify the new operator exists and has operator role
     // Handle both null and empty string as null
     let operatorId: string | null | undefined = undefined;
-    
+
     if (updateBuildingDto.operator_id !== undefined) {
-      operatorId = updateBuildingDto.operator_id === "" || updateBuildingDto.operator_id === null 
-        ? null 
-        : updateBuildingDto.operator_id;
-      
+      operatorId =
+        updateBuildingDto.operator_id === "" ||
+        updateBuildingDto.operator_id === null
+          ? null
+          : updateBuildingDto.operator_id;
+
       if (operatorId) {
         const operator = await this.userRepository.findOne({
           where: { id: operatorId },
@@ -134,54 +139,78 @@ export class BuildingService {
           throw new NotFoundException("Operator not found");
         }
 
-        if (operator.role !== UserRole.Operator && operator.role !== UserRole.Admin) {
+        if (
+          operator.role !== UserRole.Operator &&
+          operator.role !== UserRole.Admin
+        ) {
           throw new BadRequestException(
             "User must have operator or admin role to manage buildings"
           );
         }
       }
     }
-    
+
     // Prepare update data - only include fields that are actually provided (not undefined)
     const updateData: Partial<Building> = {};
 
     // Handle each field individually to avoid overwriting with undefined
-    if (updateBuildingDto.name !== undefined) updateData.name = updateBuildingDto.name;
-    if (updateBuildingDto.address !== undefined) updateData.address = updateBuildingDto.address;
-    if (updateBuildingDto.number_of_units !== undefined) updateData.number_of_units = updateBuildingDto.number_of_units;
-    if (updateBuildingDto.type_of_unit !== undefined) updateData.type_of_unit = updateBuildingDto.type_of_unit;
-    if (updateBuildingDto.logo !== undefined) updateData.logo = updateBuildingDto.logo;
-    if (updateBuildingDto.video !== undefined) updateData.video = updateBuildingDto.video;
-    if (updateBuildingDto.photos !== undefined) updateData.photos = updateBuildingDto.photos;
-    if (updateBuildingDto.documents !== undefined) updateData.documents = updateBuildingDto.documents;
-    if (updateBuildingDto.metro_stations !== undefined) updateData.metro_stations = updateBuildingDto.metro_stations;
-    if (updateBuildingDto.commute_times !== undefined) updateData.commute_times = updateBuildingDto.commute_times;
-    if (updateBuildingDto.local_essentials !== undefined) updateData.local_essentials = updateBuildingDto.local_essentials;
-    if (updateBuildingDto.amenities !== undefined) updateData.amenities = updateBuildingDto.amenities;
-    if (updateBuildingDto.is_concierge !== undefined) updateData.is_concierge = updateBuildingDto.is_concierge;
-    if (updateBuildingDto.concierge_hours !== undefined) updateData.concierge_hours = updateBuildingDto.concierge_hours;
-    if (updateBuildingDto.pet_policy !== undefined) updateData.pet_policy = updateBuildingDto.pet_policy;
-    if (updateBuildingDto.pets !== undefined) updateData.pets = updateBuildingDto.pets;
-    if (updateBuildingDto.smoking_area !== undefined) updateData.smoking_area = updateBuildingDto.smoking_area;
-    if (updateBuildingDto.tenant_type !== undefined) updateData.tenant_type = updateBuildingDto.tenant_type;
-    
+    if (updateBuildingDto.name !== undefined)
+      updateData.name = updateBuildingDto.name;
+    if (updateBuildingDto.address !== undefined)
+      updateData.address = updateBuildingDto.address;
+    if (updateBuildingDto.number_of_units !== undefined)
+      updateData.number_of_units = updateBuildingDto.number_of_units;
+    if (updateBuildingDto.type_of_unit !== undefined)
+      updateData.type_of_unit = updateBuildingDto.type_of_unit;
+    if (updateBuildingDto.logo !== undefined)
+      updateData.logo = updateBuildingDto.logo;
+    if (updateBuildingDto.video !== undefined)
+      updateData.video = updateBuildingDto.video;
+    if (updateBuildingDto.photos !== undefined)
+      updateData.photos = updateBuildingDto.photos;
+    if (updateBuildingDto.documents !== undefined)
+      updateData.documents = updateBuildingDto.documents;
+    if (updateBuildingDto.metro_stations !== undefined)
+      updateData.metro_stations = updateBuildingDto.metro_stations;
+    if (updateBuildingDto.areas !== undefined)
+      updateData.areas = updateBuildingDto.areas;
+    if (updateBuildingDto.districts !== undefined)
+      updateData.districts = updateBuildingDto.districts;
+    if (updateBuildingDto.amenities !== undefined)
+      updateData.amenities = updateBuildingDto.amenities;
+    if (updateBuildingDto.is_concierge !== undefined)
+      updateData.is_concierge = updateBuildingDto.is_concierge;
+    if (updateBuildingDto.concierge_hours !== undefined)
+      updateData.concierge_hours = updateBuildingDto.concierge_hours;
+    if (updateBuildingDto.pet_policy !== undefined)
+      updateData.pet_policy = updateBuildingDto.pet_policy;
+    if (updateBuildingDto.pets !== undefined)
+      updateData.pets = updateBuildingDto.pets;
+    if (updateBuildingDto.smoking_area !== undefined)
+      updateData.smoking_area = updateBuildingDto.smoking_area;
+    if (updateBuildingDto.tenant_type !== undefined)
+      updateData.tenant_type = updateBuildingDto.tenant_type;
+
     // Handle operator_id separately to ensure it's updated correctly
     if (operatorId !== undefined) {
       updateData.operator_id = operatorId;
       console.log("🔄 Will update operator_id to:", operatorId);
     }
-    
+
     // Use QueryBuilder for direct update to avoid any caching issues
     const updateQueryBuilder = this.buildingRepository
       .createQueryBuilder()
       .update(Building)
       .set(updateData)
       .where("id = :id", { id: building.id });
-    
-    console.log("💾 Executing direct UPDATE query with operator_id:", updateData.operator_id);
+
+    console.log(
+      "💾 Executing direct UPDATE query with operator_id:",
+      updateData.operator_id
+    );
     const updateResult = await updateQueryBuilder.execute();
     console.log("✅ Update result - affected rows:", updateResult.affected);
-    
+
     // If operator_id was changed, cascade update to all related properties
     if (operatorId !== undefined) {
       console.log("🔄 Cascading operator_id update to related properties...");
@@ -192,21 +221,32 @@ export class BuildingService {
         .where("building_id = :buildingId", { buildingId: building.id })
         .execute();
 
-      console.log(`✅ Updated operator_id for ${propertiesUpdateResult.affected} properties`);
+      console.log(
+        `✅ Updated operator_id for ${propertiesUpdateResult.affected} properties`
+      );
     }
 
     // Cascade inherited fields updates to all related properties
     const inheritedFieldsUpdates: Partial<Property> = {};
 
-    if (updateBuildingDto.address !== undefined) inheritedFieldsUpdates.address = updateBuildingDto.address;
-    if (updateBuildingDto.tenant_type !== undefined) inheritedFieldsUpdates.tenant_types = updateBuildingDto.tenant_type;
-    if (updateBuildingDto.amenities !== undefined) inheritedFieldsUpdates.amenities = updateBuildingDto.amenities;
-    if (updateBuildingDto.is_concierge !== undefined) inheritedFieldsUpdates.is_concierge = updateBuildingDto.is_concierge;
-    if (updateBuildingDto.pet_policy !== undefined) inheritedFieldsUpdates.pet_policy = updateBuildingDto.pet_policy;
-    if (updateBuildingDto.smoking_area !== undefined) inheritedFieldsUpdates.smoking_area = updateBuildingDto.smoking_area;
+    if (updateBuildingDto.address !== undefined)
+      inheritedFieldsUpdates.address = updateBuildingDto.address;
+    if (updateBuildingDto.tenant_type !== undefined)
+      inheritedFieldsUpdates.tenant_types = updateBuildingDto.tenant_type;
+    if (updateBuildingDto.amenities !== undefined)
+      inheritedFieldsUpdates.amenities = updateBuildingDto.amenities;
+    if (updateBuildingDto.is_concierge !== undefined)
+      inheritedFieldsUpdates.is_concierge = updateBuildingDto.is_concierge;
+    if (updateBuildingDto.pet_policy !== undefined)
+      inheritedFieldsUpdates.pet_policy = updateBuildingDto.pet_policy;
+    if (updateBuildingDto.smoking_area !== undefined)
+      inheritedFieldsUpdates.smoking_area = updateBuildingDto.smoking_area;
 
     if (Object.keys(inheritedFieldsUpdates).length > 0) {
-      console.log("🔄 Cascading inherited fields update to related properties...", inheritedFieldsUpdates);
+      console.log(
+        "🔄 Cascading inherited fields update to related properties...",
+        inheritedFieldsUpdates
+      );
       const inheritedFieldsUpdateResult = await this.propertyRepository
         .createQueryBuilder()
         .update(Property)
@@ -214,63 +254,78 @@ export class BuildingService {
         .where("building_id = :buildingId", { buildingId: building.id })
         .execute();
 
-      console.log(`✅ Updated inherited fields for ${inheritedFieldsUpdateResult.affected} properties`);
+      console.log(
+        `✅ Updated inherited fields for ${inheritedFieldsUpdateResult.affected} properties`
+      );
     }
-    
+
     // Reload the building with relations to ensure we return the correct operator
     const reloadedBuilding = await this.buildingRepository.findOne({
       where: { id: building.id },
       relations: ["operator", "operator.operatorProfile", "properties"],
     });
-    
+
     if (!reloadedBuilding) {
       throw new NotFoundException("Building not found after update");
     }
-    
-    console.log("🔄 Reloaded building with operator_id:", reloadedBuilding.operator_id);
-    console.log("🔄 Reloaded building operator:", reloadedBuilding.operator?.id, reloadedBuilding.operator?.email);
-    
+
+    console.log(
+      "🔄 Reloaded building with operator_id:",
+      reloadedBuilding.operator_id
+    );
+    console.log(
+      "🔄 Reloaded building operator:",
+      reloadedBuilding.operator?.id,
+      reloadedBuilding.operator?.email
+    );
+
     return reloadedBuilding;
   }
 
-  async remove(id: string): Promise<{ success: boolean; message: string; id: string }> {
+  async remove(
+    id: string
+  ): Promise<{ success: boolean; message: string; id: string }> {
     try {
       // First, check if building exists
       const building = await this.buildingRepository.findOne({
         where: { id },
         relations: ["properties"],
       });
-      
+
       if (!building) {
         throw new NotFoundException(`Building with ID ${id} not found`);
       }
-      
+
       // Check if building has associated properties
       if (building.properties && building.properties.length > 0) {
         throw new BadRequestException(
           `Cannot delete building. It has ${building.properties.length} associated properties. Please delete or reassign the properties first.`
         );
       }
-      
+
       // Delete the building using delete method (more reliable than remove)
       const deleteResult = await this.buildingRepository.delete(id);
-      
+
       // Verify deletion was successful
       if (!deleteResult || deleteResult.affected === 0) {
-        throw new NotFoundException(`Building with ID ${id} could not be deleted. No rows affected.`);
+        throw new NotFoundException(
+          `Building with ID ${id} could not be deleted. No rows affected.`
+        );
       }
-      
+
       // Double-check: verify building is actually deleted
       const verifyDeleted = await this.buildingRepository.findOne({
         where: { id },
       });
-      
+
       if (verifyDeleted) {
         throw new Error(`Building ${id} still exists after deletion attempt`);
       }
-      
-      console.log(`✅ Building ${id} deleted successfully. Affected rows: ${deleteResult.affected}`);
-      
+
+      console.log(
+        `✅ Building ${id} deleted successfully. Affected rows: ${deleteResult.affected}`
+      );
+
       return {
         success: true,
         message: "Building deleted successfully",
@@ -290,4 +345,3 @@ export class BuildingService {
     });
   }
 }
-

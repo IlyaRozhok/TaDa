@@ -35,6 +35,26 @@ export class CreatePreferencesDto {
   // ==================== STEP 1: LOCATION ====================
 
   @ApiPropertyOptional({
+    description: "Preferred areas (London regions)",
+    example: ["West", "East"],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferred_areas?: string[];
+
+  @ApiPropertyOptional({
+    description: "Preferred districts/boroughs",
+    example: ["Camden", "Westminster"],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferred_districts?: string[];
+
+  @ApiPropertyOptional({
     description: "Preferred address/area (free text)",
     example: "Central London",
   })
@@ -51,26 +71,6 @@ export class CreatePreferencesDto {
   @IsArray()
   @IsString({ each: true })
   preferred_metro_stations?: string[];
-
-  @ApiPropertyOptional({
-    description: "Preferred local essentials (labels)",
-    example: ["Grocery Store", "Gym", "Park"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  preferred_essentials?: string[];
-
-  @ApiPropertyOptional({
-    description: "Preferred commute times (labels)",
-    example: ["15 minutes", "30 minutes"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  preferred_commute_times?: string[];
 
   // ==================== STEP 2: BUDGET & MOVE-IN ====================
 
@@ -330,10 +330,24 @@ export class CreatePreferencesDto {
   @ApiPropertyOptional({
     description: "Smoking preference",
     example: "no",
-    enum: ["no", "yes", "no-but-okay", "no-prefer-non-smoking", "no-preference"],
+    enum: [
+      "no",
+      "yes",
+      "no-but-okay",
+      "no-prefer-non-smoking",
+      "no-preference",
+    ],
   })
   @IsOptional()
-  @IsIn(["no", "yes", "no-but-okay", "no-prefer-non-smoking", "no-preference", "", null])
+  @IsIn([
+    "no",
+    "yes",
+    "no-but-okay",
+    "no-prefer-non-smoking",
+    "no-preference",
+    "",
+    null,
+  ])
   smoker?: string;
 
   // ==================== STEP 10: ABOUT YOU ====================

@@ -10,7 +10,44 @@ interface LocationStepProps {
   onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
 }
 
-// Mock data for dropdowns
+const AREAS = ["West", "East", "North", "South", "Center"];
+
+const LONDON_DISTRICTS = [
+  "Barking and Dagenham",
+  "Barnet",
+  "Bexley",
+  "Brent",
+  "Bromley",
+  "Camden",
+  "City of London",
+  "Croydon",
+  "Ealing",
+  "Enfield",
+  "Greenwich",
+  "Hackney",
+  "Hammersmith and Fulham",
+  "Haringey",
+  "Harrow",
+  "Havering",
+  "Hillingdon",
+  "Hounslow",
+  "Islington",
+  "Kensington and Chelsea",
+  "Kingston upon Thames",
+  "Lambeth",
+  "Lewisham",
+  "Merton",
+  "Newham",
+  "Redbridge",
+  "Richmond upon Thames",
+  "Southwark",
+  "Sutton",
+  "Tower Hamlets",
+  "Waltham Forest",
+  "Wandsworth",
+  "Westminster",
+];
+
 const MOCK_METRO_STATIONS = [
   "Central London",
   "King's Cross",
@@ -24,28 +61,6 @@ const MOCK_METRO_STATIONS = [
   "Euston",
 ];
 
-const MOCK_ESSENTIALS = [
-  "Central London",
-  "Grocery Store",
-  "Pharmacy",
-  "Bank",
-  "Restaurant",
-  "Cafe",
-  "Gym",
-  "Park",
-  "School",
-  "Hospital",
-];
-
-const MOCK_COMMUTE_TIMES = [
-  "15 minutes",
-  "30 minutes",
-  "45 minutes",
-  "1 hour",
-  "1.5 hours",
-  "2 hours",
-];
-
 export const LocationStep: React.FC<LocationStepProps> = ({
   formData,
   onUpdate,
@@ -53,13 +68,35 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   return (
     <StepWrapper title="Step 1" description="Step 1">
       <StepContainer>
-        {/* Address Input */}
+        {/* Desired Address Input */}
         <div className="mb-6">
           <InputField
-            label="Address"
+            label="Desired Address"
             value={formData.preferred_address || ""}
             onChange={(e) => onUpdate("preferred_address", e.target.value)}
             type="text"
+          />
+        </div>
+
+        {/* Areas - Multi Select */}
+        <div className="mb-6">
+          <MultiSelectDropdown
+            label="Areas"
+            value={formData.preferred_areas || []}
+            onChange={(value) => onUpdate("preferred_areas", value)}
+            options={AREAS}
+            placeholder="Select areas"
+          />
+        </div>
+
+        {/* Districts - Multi Select */}
+        <div className="mb-6">
+          <MultiSelectDropdown
+            label="Districts"
+            value={formData.preferred_districts || []}
+            onChange={(value) => onUpdate("preferred_districts", value)}
+            options={LONDON_DISTRICTS}
+            placeholder="Select London districts"
           />
         </div>
 
@@ -71,28 +108,6 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             onChange={(value) => onUpdate("preferred_metro_stations", value)}
             options={MOCK_METRO_STATIONS}
             placeholder="Select metro stations"
-          />
-        </div>
-
-        {/* Essentials - Multi Select */}
-        <div className="mb-6">
-          <MultiSelectDropdown
-            label="Essentials"
-            value={formData.preferred_essentials || []}
-            onChange={(value) => onUpdate("preferred_essentials", value)}
-            options={MOCK_ESSENTIALS}
-            placeholder="Select essentials"
-          />
-        </div>
-
-        {/* Commute Time - Multi Select */}
-        <div>
-          <MultiSelectDropdown
-            label="Commute time"
-            value={formData.preferred_commute_times || []}
-            onChange={(value) => onUpdate("preferred_commute_times", value)}
-            options={MOCK_COMMUTE_TIMES}
-            placeholder="Select commute times"
           />
         </div>
       </StepContainer>

@@ -1323,13 +1323,16 @@ export class MatchingCalculationService {
     preferences: Preferences,
     maxScore: number
   ): CategoryMatchResult {
+    const prefAreas = preferences.preferred_areas || [];
+    const prefDistricts = preferences.preferred_districts || [];
     const prefMetro = preferences.preferred_metro_stations || [];
-    const prefCommute = preferences.preferred_commute_times || [];
     const propertyMetro = property.metro_stations || [];
-    const propertyCommute = property.commute_times || [];
+
+    const hasAnyPreference =
+      prefAreas.length > 0 || prefDistricts.length > 0 || prefMetro.length > 0;
 
     // No preference set - exclude from calculation
-    if (!prefMetro.length && !prefCommute.length) {
+    if (!hasAnyPreference) {
       return {
         category: "location",
         match: false,
@@ -1373,24 +1376,6 @@ export class MatchingCalculationService {
       };
     }
 
-    // If no metro match but property has good commute times
-    if (propertyCommute.length > 0) {
-      const avgCommute =
-        propertyCommute.reduce((sum, c) => sum + (c.destination || 0), 0) /
-        propertyCommute.length;
-      if (avgCommute <= 30) {
-        return {
-          category: "location",
-          match: true,
-          score: Math.round(maxScore * 0.7),
-          maxScore,
-          reason: "Good commute times",
-          details: `Average commute: ${Math.round(avgCommute)} minutes`,
-          hasPreference: true,
-        };
-      }
-    }
-
     return {
       category: "location",
       match: false,
@@ -1398,7 +1383,7 @@ export class MatchingCalculationService {
       maxScore,
       reason: "Location not ideal",
       details: "Not near preferred locations",
-      hasPreference: true,
+      hasPreference: hasAnyPreference,
     };
   }
 }

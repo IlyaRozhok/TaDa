@@ -97,6 +97,24 @@ export class Preferences {
   preferred_address?: string;
 
   @ApiProperty({
+    description: "Preferred areas (London regions)",
+    example: ["West", "East"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  preferred_areas?: string[];
+
+  @ApiProperty({
+    description: "Preferred districts/boroughs",
+    example: ["Camden", "Westminster"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  preferred_districts?: string[];
+
+  @ApiProperty({
     description: "Preferred metro stations (labels)",
     example: ["Central London", "King's Cross", "Oxford Circus"],
     type: [String],
@@ -104,25 +122,6 @@ export class Preferences {
   })
   @Column({ type: "jsonb", nullable: true, default: [] })
   preferred_metro_stations?: string[];
-
-  @ApiProperty({
-    description: "Preferred local essentials (labels)",
-    example: ["Grocery Store", "Gym", "Park"],
-    type: [String],
-    required: false,
-  })
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  preferred_essentials?: string[];
-
-  @ApiProperty({
-    description:
-      "Preferred commute times (labels like '15 minutes', '30 minutes')",
-    example: ["15 minutes", "30 minutes"],
-    type: [String],
-    required: false,
-  })
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  preferred_commute_times?: string[];
 
   // ==================== STEP 2: BUDGET & MOVE-IN ====================
 

@@ -50,8 +50,6 @@ export class PropertyService {
       propertyData.pet_policy = createPropertyDto.pet_policy;
       propertyData.smoking_area = createPropertyDto.smoking_area;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
-      propertyData.commute_times = createPropertyDto.commute_times || [];
-      propertyData.local_essentials = createPropertyDto.local_essentials || [];
       propertyData.concierge_hours = createPropertyDto.concierge_hours || null;
       propertyData.pets = createPropertyDto.pets || null;
     } else {
@@ -66,8 +64,6 @@ export class PropertyService {
       propertyData.pet_policy = building.pet_policy;
       propertyData.smoking_area = building.smoking_area;
       propertyData.metro_stations = building.metro_stations || [];
-      propertyData.commute_times = building.commute_times || [];
-      propertyData.local_essentials = building.local_essentials || [];
       propertyData.concierge_hours = building.concierge_hours || null;
       propertyData.pets = building.pets || null;
     }
@@ -94,7 +90,9 @@ export class PropertyService {
     }
 
     if (createPropertyDto.available_from !== undefined) {
-      propertyData.available_from = createPropertyDto.available_from ? new Date(createPropertyDto.available_from) : null;
+      propertyData.available_from = createPropertyDto.available_from
+        ? new Date(createPropertyDto.available_from)
+        : null;
     }
 
     if (createPropertyDto.building_type !== undefined) {
@@ -155,7 +153,10 @@ export class PropertyService {
     const updateData: any = {};
 
     // Handle building type changes
-    if (updatePropertyDto.building_type !== undefined && updatePropertyDto.building_type !== property.building_type) {
+    if (
+      updatePropertyDto.building_type !== undefined &&
+      updatePropertyDto.building_type !== property.building_type
+    ) {
       if (updatePropertyDto.building_type === "private_landlord") {
         // Unlink from building and link directly to operator
         updateData.building_id = null;
@@ -185,8 +186,6 @@ export class PropertyService {
           updateData.pet_policy = building.pet_policy;
           updateData.smoking_area = building.smoking_area;
           updateData.metro_stations = building.metro_stations || [];
-          updateData.commute_times = building.commute_times || [];
-          updateData.local_essentials = building.local_essentials || [];
           updateData.concierge_hours = building.concierge_hours || null;
           updateData.pets = building.pets || null;
         }
@@ -217,8 +216,6 @@ export class PropertyService {
       updateData.pet_policy = building.pet_policy;
       updateData.smoking_area = building.smoking_area;
       updateData.metro_stations = building.metro_stations || [];
-      updateData.commute_times = building.commute_times || [];
-      updateData.local_essentials = building.local_essentials || [];
       updateData.concierge_hours = building.concierge_hours || null;
       updateData.pets = building.pets || null;
     }
@@ -249,7 +246,9 @@ export class PropertyService {
     }
 
     if (updatePropertyDto.available_from !== undefined) {
-      updateData.available_from = updatePropertyDto.available_from ? new Date(updatePropertyDto.available_from) : null;
+      updateData.available_from = updatePropertyDto.available_from
+        ? new Date(updatePropertyDto.available_from)
+        : null;
     }
 
     if (updatePropertyDto.building_type !== undefined) {

@@ -48,31 +48,6 @@ export class MetroStationDto {
   destination: number;
 }
 
-export class CommuteTimeDto {
-  @ApiProperty({ description: "Destination name", example: "City Centre" })
-  @IsString()
-  label: string;
-
-  @ApiProperty({ description: "Commute time in minutes", example: 15 })
-  @IsInt()
-  @Min(0)
-  destination: number;
-}
-
-export class LocalEssentialDto {
-  @ApiProperty({
-    description: "Local essential name",
-    example: "Tesco Express",
-  })
-  @IsString()
-  label: string;
-
-  @ApiProperty({ description: "Distance in meters", example: 200 })
-  @IsInt()
-  @Min(0)
-  destination: number;
-}
-
 export class ConciergeHoursDto {
   @ApiProperty({ description: "Opening hour (0-23)", example: 8 })
   @IsInt()
@@ -103,11 +78,14 @@ export class PetDto {
   })
   @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: "Custom pet type name is required when type is 'other'" })
+  @IsNotEmpty({
+    message: "Custom pet type name is required when type is 'other'",
+  })
   customType?: string;
 
   @ApiProperty({
-    description: "Pet size (optional for all types, recommended for dogs and cats)",
+    description:
+      "Pet size (optional for all types, recommended for dogs and cats)",
     example: "small",
     enum: ["small", "medium", "large"],
     required: false,
@@ -166,7 +144,9 @@ export class CreateBuildingDto {
   })
   @IsOptional()
   @IsArray()
-  @IsEnum(["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"], { each: true })
+  @IsEnum(["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"], {
+    each: true,
+  })
   type_of_unit?: UnitType[];
 
   @ApiProperty({
@@ -223,26 +203,26 @@ export class CreateBuildingDto {
   metro_stations?: MetroStationDto[];
 
   @ApiProperty({
-    description: "Commute times to popular destinations",
-    type: [CommuteTimeDto],
+    description: "Areas the building belongs to",
+    example: ["West", "Center"],
+    type: [String],
     required: false,
   })
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CommuteTimeDto)
-  commute_times?: CommuteTimeDto[];
+  @IsString({ each: true })
+  areas?: string[];
 
   @ApiProperty({
-    description: "Local essentials with distances",
-    type: [LocalEssentialDto],
+    description: "Districts/boroughs for the building",
+    example: ["Camden", "Westminster"],
+    type: [String],
     required: false,
   })
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => LocalEssentialDto)
-  local_essentials?: LocalEssentialDto[];
+  @IsString({ each: true })
+  districts?: string[];
 
   @ApiProperty({
     description: "Building amenities",
@@ -312,6 +292,8 @@ export class CreateBuildingDto {
   })
   @IsOptional()
   @IsArray()
-  @IsEnum(["corporateLets", "sharers", "student", "family", "elder"], { each: true })
+  @IsEnum(["corporateLets", "sharers", "student", "family", "elder"], {
+    each: true,
+  })
   tenant_type?: TenantType[];
 }

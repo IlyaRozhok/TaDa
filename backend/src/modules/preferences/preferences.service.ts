@@ -24,7 +24,9 @@ export class PreferencesService {
    * Transform DTO to entity format
    * Handles date conversions and field normalization
    */
-  private transformDtoToEntity(dto: CreatePreferencesDto | UpdatePreferencesDto): Partial<Preferences> {
+  private transformDtoToEntity(
+    dto: CreatePreferencesDto | UpdatePreferencesDto
+  ): Partial<Preferences> {
     // Create a copy without date fields first
     const { move_in_date, move_out_date, ...rest } = dto;
     const data: Partial<Preferences> = { ...rest };
@@ -83,7 +85,9 @@ export class PreferencesService {
     if (existingPreferences) {
       Object.assign(existingPreferences, preferencesData);
       try {
-        const result = await this.preferencesRepository.save(existingPreferences);
+        const result = await this.preferencesRepository.save(
+          existingPreferences
+        );
         return result;
       } catch (error) {
         console.error("❌ Error updating preferences:", error);
@@ -96,7 +100,9 @@ export class PreferencesService {
       });
 
       try {
-        const savedPreferences = await this.preferencesRepository.save(preferences);
+        const savedPreferences = await this.preferencesRepository.save(
+          preferences
+        );
 
         // Update user's preferences relation
         user.preferences = savedPreferences;
@@ -136,8 +142,11 @@ export class PreferencesService {
     totalPages: number;
   }> {
     const validPage = Math.max(1, Math.floor(Number(page)) || 1);
-    const validLimit = Math.max(1, Math.min(100, Math.floor(Number(limit)) || 10));
-    
+    const validLimit = Math.max(
+      1,
+      Math.min(100, Math.floor(Number(limit)) || 10)
+    );
+
     const queryBuilder = this.preferencesRepository
       .createQueryBuilder("preferences")
       .leftJoinAndSelect("preferences.user", "user")
@@ -221,9 +230,9 @@ export class PreferencesService {
     const clearedPreferences: Partial<Preferences> = {
       // New fields
       preferred_address: null,
+      preferred_areas: [],
+      preferred_districts: [],
       preferred_metro_stations: [],
-      preferred_essentials: [],
-      preferred_commute_times: [],
       move_in_date: null,
       move_out_date: null,
       min_price: null,
