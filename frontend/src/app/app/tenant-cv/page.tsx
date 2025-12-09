@@ -71,7 +71,7 @@ export default function TenantCvPage() {
         {data && !loading ? (
           <>
             {shareMessage && (
-              <div className="mb-4 rounded-xl bg-green-50 text-green-700 px-4 py-3 text-sm">
+              <div className="mb-4 rounded-xl bg-black text-white px-4 py-3 text-sm">
                 {shareMessage}
               </div>
             )}
@@ -87,4 +87,3 @@ export default function TenantCvPage() {
     </div>
   );
 }
-

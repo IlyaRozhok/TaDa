@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, BadRequestException } from "@nestjs/common";
 import { User, UserRole } from "../../entities/user.entity";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -6,14 +6,20 @@ import { UserProfileService } from "./services/user-profile.service";
 import { UserRoleService } from "./services/user-role.service";
 import { UserQueryService } from "./services/user-query.service";
 import { UserAdminService } from "./services/user-admin.service";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
 export class UsersService {
   constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private userProfileService: UserProfileService,
     private userRoleService: UserRoleService,
     private userQueryService: UserQueryService,
-    private userAdminService: UserAdminService
+    private userAdminService: UserAdminService,
+    private readonly s3Service: S3Service
   ) {}
 
   /**
@@ -122,5 +128,46 @@ export class UsersService {
     newRole: UserRole | string
   ): Promise<User> {
     return this.userAdminService.changeUserRole(userId, newRole);
+  }
+
+  /**
+   * Upload and set user avatar
+   */
+  async uploadAvatar(
+    userId: string,
+    file: Express.Multer.File
+  ): Promise<User> {
+    if (!file) {
+      throw new BadRequestException("No file uploaded");
+    }
+
+    if (!this.s3Service.isValidFileType(file.mimetype)) {
+      throw new BadRequestException(
+        "Invalid file type. Only images are allowed."
+      );
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new BadRequestException("File too large. Maximum size is 5MB.");
+    }
+
+    const fileKey = this.s3Service.generateFileKey(
+      file.originalname,
+      "avatars"
+    );
+
+    const s3Result = await this.s3Service.uploadFile(
+      file.buffer,
+      fileKey,
+      file.mimetype,
+      file.originalname
+    );
+
+    await this.userRepository.update(userId, {
+      avatar_url: s3Result.url,
+    });
+
+    return this.userQueryService.findOneWithProfiles(userId);
   }
 }

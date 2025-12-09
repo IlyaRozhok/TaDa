@@ -88,7 +88,7 @@ export default function TenantUniversalHeader({
           )}
           <button
             onClick={handleLogoClick}
-            className="text-2xl font-bold text-black hover:text-gray-700 transition-colors"
+            className="text-2xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer"
           >
             :: TADA
           </button>
@@ -115,7 +115,7 @@ export default function TenantUniversalHeader({
             {showPreferencesButton && (
               <button
                 onClick={() => router.push("/app/preferences")}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium"
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium"
               >
                 <Settings className="w-4 h-4" />
                 <span>Your preferences</span>
@@ -130,7 +130,7 @@ export default function TenantUniversalHeader({
         )}
 
         {/* Right: Icons */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 cursor-pointer">
           <button
             onClick={() => router.push("/app/tenant-cv")}
             className="text-black hover:text-gray-600 transition-colors font-medium"

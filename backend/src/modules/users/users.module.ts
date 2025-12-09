@@ -12,6 +12,7 @@ import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { AuthModule } from "../auth/auth.module";
+import { S3Service } from "../../common/services/s3.service";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuthModule } from "../auth/auth.module";
     UserRoleService,
     UserQueryService,
     UserAdminService,
+    S3Service,
   ],
   exports: [UsersService, UserQueryService],
 })

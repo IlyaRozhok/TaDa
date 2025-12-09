@@ -10,6 +10,7 @@ import {
   Info,
   Share,
   BookOpen,
+  Settings,
 } from "lucide-react";
 import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
 
@@ -108,6 +109,13 @@ export function TenantCvView({
   const { profile, meta, preferences } = data;
   const moveIn = dateToDisplay(meta.move_in_date);
   const onPlatform = dateToDisplay(meta.created_at);
+  const displayName =
+    profile.full_name ||
+    meta.headline ||
+    profile.email ||
+    meta.tenant_type_labels?.[0] ||
+    "Tenant";
+  const avatarUrl = profile.avatar_url || (meta as any)?.avatar_url || null;
 
   const badges = [
     meta.kyc_status ? { label: "KYC", value: meta.kyc_status } : null,
@@ -134,12 +142,10 @@ export function TenantCvView({
     preferences?.max_price
   );
 
-  const locationAreas = [
-    preferences?.preferred_address,
-    preferences?.preferred_metro_stations?.join(", "),
-  ]
-    .filter(Boolean)
-    .join(" • ");
+  const preferredAreas = preferences?.preferred_areas?.join(", ");
+  const preferredDistricts = preferences?.preferred_districts?.join(", ");
+  const preferredMetro = preferences?.preferred_metro_stations?.join(", ");
+  const preferredAddress = preferences?.preferred_address;
 
   const amenityTags = [
     ...(preferences?.amenities || []),
@@ -156,6 +162,9 @@ export function TenantCvView({
       preferences.min_price,
       preferences.max_price,
       preferences.preferred_address,
+      preferences.preferred_areas?.length,
+      preferences.preferred_districts?.length,
+      preferences.preferred_metro_stations?.length,
       preferences.property_types?.length,
       preferences.building_types?.length,
       preferences.let_duration,
@@ -165,22 +174,62 @@ export function TenantCvView({
     ].some(Boolean);
 
   const hasAmenities = amenityTags.length > 0;
+  const aboutText = data.about || preferences?.additional_info || "";
 
+  const normalizeHobbies = (input: unknown): string[] => {
+    if (!input) return [];
+    if (Array.isArray(input)) {
+      return input
+        .map((h) => {
+          if (typeof h === "string") return h.trim();
+          if (h && typeof h === "object") {
+            const obj = h as Record<string, unknown>;
+            return (
+              (typeof obj.label === "string" && obj.label) ||
+              (typeof obj.name === "string" && obj.name) ||
+              (typeof obj.value === "string" && obj.value) ||
+              ""
+            ).trim();
+          }
+          return "";
+        })
+        .filter(Boolean);
+    }
+    if (typeof input === "string") {
+      return input
+        .split(/[,;]+/)
+        .map((h) => h.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
+  const hobbiesSource =
+    (Array.isArray(data.hobbies) && data.hobbies.length > 0
+      ? data.hobbies
+      : null) || preferences?.hobbies;
+  const hobbiesList = normalizeHobbies(hobbiesSource);
+  const hasAbout = Boolean(aboutText);
+  const hasHobbies = hobbiesList.length > 0;
+  const hasRentHistory = data.rent_history && data.rent_history.length > 0;
+
+  console.log("here");
+  console.log(profile);
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col items-start gap-4">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-xl font-semibold text-gray-700">
-              {profile.avatar_url ? (
+              {avatarUrl ? (
                 <img
-                  src={profile.avatar_url}
-                  alt={profile.full_name || "Tenant avatar"}
+                  src={avatarUrl}
+                  alt={displayName || "Tenant avatar"}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                (profile.full_name || "User")
+                displayName
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
@@ -190,11 +239,11 @@ export function TenantCvView({
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {profile.full_name || "Tenant"}
+                {displayName}
               </h1>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-700">
-                {meta.age_years ? (
-                  <span>{meta.age_years} Years old</span>
+                {profile.age_years ? (
+                  <span>{profile.age_years} Years old</span>
                 ) : null}
                 {onPlatform ? (
                   <>
@@ -230,197 +279,185 @@ export function TenantCvView({
             </div>
           </div>
 
-          {shareUrl && (
+          <div className="flex flex-col items-end gap-3">
+            {onShareClick && (
+              <button
+                onClick={onShareClick}
+                disabled={shareLoading}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+              >
+                {shareLoading ? (
+                  <Info className="w-4 h-4 animate-pulse" />
+                ) : (
+                  <Share className="w-4 h-4" />
+                )}
+                {shareLoading ? "Generating link..." : "Share profile"}
+              </button>
+            )}
+
             <button
-              onClick={onShareClick}
-              disabled={shareLoading}
-              className="self-start inline-flex items-center gap-2 px-5 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+              onClick={() => (window.location.href = "/app/preferences")}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-gray-900 hover:bg-gray-100 transition-colors text-sm font-medium"
             >
-              {shareLoading ? (
-                <Info className="w-4 h-4 animate-pulse" />
-              ) : (
-                <Share className="w-4 h-4" />
-              )}
-              {shareLoading ? "Generating link..." : "Share profile"}
+              <Settings className="w-4 h-4" />
+              Your preferences
             </button>
-          )}
+          </div>
         </div>
 
         {/* Divider bar under header */}
-        <div className="mt-6 h-2 bg-gray-200/70 w-full" />
+        <div className="mt-6 h-[1px] bg-gray-200/70 w-full" />
 
         {/* Preferences overview */}
         {hasPreferences && (
           <div className="mt-10 space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
-            <div className="grid md:grid-cols-[2fr,1fr] gap-6">
-              <div className="border border-gray-200 rounded-none p-6 bg-white shadow-none">
-                <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
-                  {readyLabel ? (
-                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
-                      <CalendarDays className="w-4 h-4" />
-                      {readyLabel}
-                    </span>
-                  ) : null}
-                  {(preferences?.building_types?.length ||
-                    preferences?.property_types?.length) && (
-                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
-                      <Home className="w-4 h-4" />
-                      {preferences?.building_types?.join(", ") ||
-                        preferences?.property_types?.join(", ")}
-                    </span>
-                  )}
-                  {preferences?.let_duration ? (
-                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
-                      {preferences.let_duration}
-                    </span>
-                  ) : null}
-                  {moveIn ? (
-                    <span className="inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-full text-gray-800">
-                      Move-in {moveIn}
-                    </span>
-                  ) : null}
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
+              {readyLabel ? (
+                <Pill>
+                  <CalendarDays className="w-4 h-4" />
+                  {readyLabel}
+                </Pill>
+              ) : null}
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Column 1 */}
+              <div className="bg-white space-y-4">
+                <div>
+                  <div className="text-sm uppercase text-gray-500">
+                    Price per month
+                  </div>
+                  <div className="text-3xl font-bold text-gray-900 mt-1">
+                    {priceRange}
+                  </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-800">
-                  <div>
-                    <div className="text-gray-500">Price per month</div>
-                    <div className="font-semibold text-gray-900">
-                      {priceRange}
+                <div className="space-y-3 text-gray-800">
+                  {preferredAreas ? (
+                    <div className="flex items-start gap-2">
+                      <Home className="w-4 h-4 mt-1" />
+                      <div>
+                        <div className="text-sm text-gray-500">Area</div>
+                        <div className="font-medium">{preferredAreas}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Area</div>
-                    <div className="font-semibold text-gray-900">
-                      {locationAreas || "Not specified"}
+                  ) : null}
+                  {preferredDistricts ? (
+                    <div className="flex items-start gap-2">
+                      <Home className="w-4 h-4 mt-1" />
+                      <div>
+                        <div className="text-sm text-gray-500">District</div>
+                        <div className="font-medium">{preferredDistricts}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Property type</div>
-                    <div className="font-semibold text-gray-900">
-                      {preferences?.property_types?.join(", ") || "Not set"}
+                  ) : null}
+                  {preferredMetro ? (
+                    <div className="flex items-start gap-2">
+                      <Home className="w-4 h-4 mt-1" />
+                      <div>
+                        <div className="text-sm text-gray-500">
+                          Metro Station
+                        </div>
+                        <div className="font-medium">{preferredMetro}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Rooms</div>
-                    <div className="font-semibold text-gray-900">
-                      {preferences?.bedrooms?.join(", ") || "Not set"}
+                  ) : null}
+                  {preferredAddress ? (
+                    <div className="flex items-start gap-2">
+                      <Home className="w-4 h-4 mt-1" />
+                      <div>
+                        <div className="text-sm text-gray-500">
+                          Desired Address
+                        </div>
+                        <div className="font-medium">{preferredAddress}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Bathrooms</div>
-                    <div className="font-semibold text-gray-900">
-                      {preferences?.bathrooms?.join(", ") || "Not set"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Outdoor space</div>
-                    <div className="font-semibold text-gray-900">
-                      {preferences?.balcony ||
-                      preferences?.terrace ||
-                      preferences?.outdoor_space
-                        ? ["Balcony", "Terrace", "Outdoor space"]
-                            .filter(
-                              (label, idx) =>
-                                [
-                                  preferences?.balcony,
-                                  preferences?.terrace,
-                                  preferences?.outdoor_space,
-                                ][idx]
-                            )
-                            .join(", ")
-                        : "No preference"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Meters</div>
-                    <div className="font-semibold text-gray-900">
-                      {preferences?.min_square_meters ||
-                      preferences?.max_square_meters
-                        ? `${preferences?.min_square_meters || "?"} msq - ${
-                            preferences?.max_square_meters || "?"
-                          } msq`
-                        : "Not set"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Bills</div>
-                    <div className="font-semibold text-gray-900">
-                      {preferences?.bills || "Not set"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Tenant Type</div>
-                    <div className="font-semibold text-gray-900">
-                      {meta.tenant_type_labels?.join(", ") ||
-                        preferences?.tenant_types?.join(", ") ||
-                        "Not set"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Furnishing</div>
-                    <div className="font-semibold text-gray-900">
-                      {preferences?.furnishing?.join(", ") || "Not set"}
-                    </div>
-                  </div>
+                  ) : null}
                 </div>
               </div>
 
-              {hasAmenities && (
-                <div className="border border-gray-200 rounded-none p-6 bg-white shadow-none flex flex-col gap-3">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Amenities
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {amenityTags.map((item) => (
-                      <span
-                        key={item}
-                        className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-800"
-                      >
-                        {item}
-                      </span>
-                    ))}
+              {/* Column 2 */}
+              <div className="bg-white space-y-4 md:pt-6">
+                <div className="space-y-2 text-gray-800">
+                  <div className="text-sm text-gray-500">Property type</div>
+                  <div className="font-medium">
+                    {preferences?.property_types?.join(", ") || "Not set"}
                   </div>
                 </div>
-              )}
+                <div className="space-y-2 text-gray-800">
+                  <div className="text-sm text-gray-500">Rooms</div>
+                  <div className="font-medium">
+                    {preferences?.bedrooms?.join(", ") || "Not set"}
+                  </div>
+                </div>
+                <div className="space-y-2 text-gray-800">
+                  <div className="text-sm text-gray-500">Bathrooms</div>
+                  <div className="font-medium">
+                    {preferences?.bathrooms?.join(", ") || "Not set"}
+                  </div>
+                </div>
+                <div className="space-y-2 text-gray-800">
+                  <div className="text-sm text-gray-500">Furnishing</div>
+                  <div className="font-medium">
+                    {preferences?.furnishing?.join(", ") || "Not set"}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Amenities */}
+            {hasAmenities && (
+              <div className="bg-white">
+                <SectionTitle title="Amenities" />
+                <div className="flex flex-wrap gap-2">
+                  {amenityTags.map((a) => (
+                    <Pill key={a}>{a}</Pill>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* About */}
-        <div className="mt-10 grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 rounded-3xl border border-gray-200 p-6 bg-white shadow-sm">
-            <SectionTitle title="About me" />
-            <p className="text-gray-800 leading-relaxed">
-              {data.about || "Not provided"}
-            </p>
-          </div>
-          <div className="rounded-3xl border border-gray-200 p-6 bg-white shadow-sm">
-            <SectionTitle title="Hobbies and Interests" />
-            <div className="flex flex-wrap gap-2">
-              {data.hobbies?.length ? (
-                data.hobbies.map((hobby) => (
-                  <Pill key={hobby}>
-                    <BookOpen className="w-4 h-4" /> {hobby}
-                  </Pill>
-                ))
-              ) : (
-                <span className="text-sm text-gray-500">Not provided</span>
-              )}
+        {/* About / Hobbies / Rent history */}
+        <div className="mt-10 space-y-8">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="md:col-span-2 bg-white">
+              <SectionTitle title="About me" />
+              <p className="text-gray-800 leading-relaxed">
+                {hasAbout ? aboutText : "Not provided"}
+              </p>
+            </div>
+            <div className="bg-white">
+              <SectionTitle title="Hobbies and Interests" />
+              <div className="flex flex-wrap gap-2">
+                {hasHobbies ? (
+                  hobbiesList.map((hobby: string) => (
+                    <Pill key={hobby}>{hobby}</Pill>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-500">Not provided</span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Rent history */}
-        <div className="mt-10">
-          <SectionTitle title="Rent History" />
-          <div className="space-y-4">
-            {data.rent_history?.length ? (
-              data.rent_history.map((entry, idx) => (
-                <RentHistoryCard entry={entry} key={idx} />
-              ))
+          <div className="bg-white">
+            <div className="flex items-center gap-2 mb-3">
+              <BookOpen className="w-5 h-5 text-gray-700" />
+              <h2 className="text-2xl font-bold text-gray-900">Rent History</h2>
+            </div>
+            {hasRentHistory ? (
+              <div className="space-y-4">
+                {data.rent_history!.map((entry, idx) => (
+                  <RentHistoryCard entry={entry} key={idx} />
+                ))}
+              </div>
             ) : (
-              <div className="text-sm text-gray-500">No rent history yet.</div>
+              <div className="text-sm text-gray-500">
+                No rent history for now on our platform.
+              </div>
             )}
           </div>
         </div>

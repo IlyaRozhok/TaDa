@@ -7,6 +7,7 @@ import {
   selectUser,
   selectIsAuthenticated,
   updateUser,
+  setAuth,
 } from "../../store/slices/authSlice";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { StepWrapper } from "../../components/preferences/step-components/StepWrapper";
@@ -14,7 +15,7 @@ import { StepContainer } from "../../components/preferences/step-components/Step
 import { InputField } from "../../components/preferences/ui/InputField";
 import { GlassmorphismDatePicker } from "../../components/preferences/ui/GlassmorphismDatePicker";
 import { GlassmorphismDropdown } from "../../components/preferences/ui/GlassmorphismDropdown";
-import { authAPI } from "../../lib/api";
+import { authAPI, propertiesAPI } from "../../lib/api";
 
 interface UpdateUserData {
   first_name?: string;
@@ -25,6 +26,7 @@ interface UpdateUserData {
   date_of_birth?: string;
   nationality?: string;
   occupation?: string;
+  avatar_url?: string;
 }
 
 const OCCUPATION_OPTIONS = [
@@ -58,25 +60,40 @@ export default function ProfilePage() {
     date_of_birth: "",
     nationality: "",
     occupation: "",
+    avatar_url: "",
   });
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
-  // Check authentication and redirect if not authenticated
+  // Check auth token; only redirect if no token. If token exists but user not loaded, fetch profile.
   useEffect(() => {
-    // Check if token exists in localStorage
     const token =
       typeof window !== "undefined"
         ? localStorage.getItem("accessToken")
         : null;
 
-    // If no token or not authenticated, redirect to landing page
-    if (!token || !isAuthenticated) {
+    if (!token) {
       router.replace("/app/auth/login");
       return;
     }
-  }, [isAuthenticated, router]);
 
-  useEffect(() => {
-    if (user) {
+    if (!user && !loadingProfile) {
+      setLoadingProfile(true);
+      authAPI
+        .getProfile()
+        .then((res) => {
+          const fetchedUser = res.data;
+          dispatch(setAuth({ user: fetchedUser, accessToken: token }));
+        })
+        .catch((err) => {
+          console.error("Failed to fetch profile:", err);
+          router.replace("/app/auth/login");
+        })
+        .finally(() => setLoadingProfile(false));
+    }
+  }, [user, router, dispatch, loadingProfile]);
+
+  const buildFormDataFromUser = useCallback(
+    (currentUser: any): UpdateUserData => {
       const splitFullName = (full?: string | null) => {
         if (!full) return { first: "", last: "" };
         const parts = full.trim().split(" ");
@@ -85,15 +102,15 @@ export default function ProfilePage() {
         return { first, last: rest.join(" ") };
       };
 
-      // Get profile data based on user role
       const profile =
-        user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+        currentUser?.role === "tenant"
+          ? currentUser.tenantProfile
+          : currentUser.operatorProfile;
 
       const nameFallback = splitFullName(
-        (profile as any)?.full_name || user.full_name
+        (profile as any)?.full_name || currentUser.full_name
       );
 
-      // Format date_of_birth for HTML date input (YYYY-MM-DD)
       let formattedDateOfBirth = "";
       const dateOfBirth = (profile as any)?.date_of_birth;
       if (dateOfBirth) {
@@ -107,20 +124,32 @@ export default function ProfilePage() {
         }
       }
 
-      const initialData = {
+      return {
         first_name: (profile as any)?.first_name || nameFallback.first || "",
         last_name: (profile as any)?.last_name || nameFallback.last || "",
         address: (profile as any)?.address || "",
-        email: user.email || "",
+        email: currentUser.email || "",
         phone: profile?.phone || "",
         date_of_birth: formattedDateOfBirth,
         nationality: (profile as any)?.nationality || "",
         occupation: (profile as any)?.occupation || "",
+        avatar_url:
+          (profile as any)?.avatar_url ||
+          currentUser.avatar_url ||
+          (profile as any)?.photo_url ||
+          "",
       };
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (user) {
+      const initialData = buildFormDataFromUser(user);
       setFormData(initialData);
       initialFormDataRef.current = initialData;
     }
-  }, [user]);
+  }, [user, buildFormDataFromUser]);
 
   // Save single field to API
   const saveSingleField = useCallback(
@@ -162,26 +191,22 @@ export default function ProfilePage() {
           return; // No change, skip save
         }
 
-        // Prepare update data
         const updateData: UpdateUserData = { [field]: value } as UpdateUserData;
 
-        // Update profile via API
-        await authAPI.updateProfile(updateData);
-        dispatch(updateUser(updateData));
+        // Update profile via API and refresh state with returned user
+        const response = await authAPI.updateProfile(updateData);
+        const updatedUser = response.data;
+        dispatch(updateUser(updatedUser));
 
-        // Update initial form data reference
-        if (initialFormDataRef.current) {
-          initialFormDataRef.current = {
-            ...initialFormDataRef.current,
-            [field]: value,
-          };
-        }
+        const refreshedData = buildFormDataFromUser(updatedUser);
+        setFormData((prev) => ({ ...prev, ...refreshedData }));
+        initialFormDataRef.current = refreshedData;
       } catch (error) {
         console.error(`Failed to save field ${field as string}:`, error);
         // Silent fail - don't show toast
       }
     },
-    [user, dispatch]
+    [user, dispatch, buildFormDataFromUser]
   );
 
   const handleInputChange = useCallback(
@@ -211,6 +236,21 @@ export default function ProfilePage() {
     [saveSingleField]
   );
 
+  const handleAvatarUpload = async (file: File) => {
+    try {
+      const res = await propertiesAPI.uploadPhotos([file]);
+      const url =
+        (Array.isArray(res) && res[0]?.url) ||
+        (res?.photos && res.photos[0]?.url) ||
+        res?.url;
+      if (url) {
+        handleInputChange("avatar_url", url);
+      }
+    } catch (error) {
+      console.error("Avatar upload failed:", error);
+    }
+  };
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -223,20 +263,8 @@ export default function ProfilePage() {
   // If not authenticated or no token, don't render anything (redirect will happen)
   const token =
     typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-  if (!token || !isAuthenticated) {
-    return null;
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
+  const showLoading =
+    loadingProfile || !token || !user || typeof window === "undefined";
 
   return (
     <div className="min-h-screen bg-white">
@@ -248,94 +276,135 @@ export default function ProfilePage() {
       />
 
       <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
-        <StepWrapper
-          title="Profile Settings"
-          description="Update your profile information. Changes are saved automatically as you type."
-        >
-          <StepContainer>
-            {/* First Name */}
-            <div className="mb-6">
-              <InputField
-                label="First Name"
-                value={formData.first_name}
-                onChange={(e) =>
-                  handleInputChange("first_name", e.target.value)
-                }
-                type="text"
-                required
-              />
-            </div>
+        {showLoading ? (
+          <div className="py-16 text-center text-gray-600">
+            Loading profile...
+          </div>
+        ) : (
+          <StepWrapper
+            title="Profile Settings"
+            description="Update your profile information. Changes are saved automatically as you type."
+          >
+            <StepContainer>
+              {/* Avatar */}
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-black mb-2">
+                  Avatar
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center text-black">
+                    {formData.avatar_url ? (
+                      <img
+                        src={formData.avatar_url}
+                        alt="avatar preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      "No avatar"
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleAvatarUpload(file);
+                    }}
+                    className="text-sm text-black"
+                  />
+                </div>
+              </div>
 
-            {/* Last Name */}
-            <div className="mb-6">
-              <InputField
-                label="Last Name"
-                value={formData.last_name}
-                onChange={(e) => handleInputChange("last_name", e.target.value)}
-                type="text"
-                required
-              />
-            </div>
+              {/* First Name */}
+              <div className="mb-6">
+                <InputField
+                  label="First Name"
+                  value={formData.first_name}
+                  onChange={(e) =>
+                    handleInputChange("first_name", e.target.value)
+                  }
+                  type="text"
+                  required
+                />
+              </div>
 
-            {/* Address */}
-            <div className="mb-6">
-              <InputField
-                label="Address"
-                value={formData.address}
-                onChange={(e) => handleInputChange("address", e.target.value)}
-                type="text"
-                required
-              />
-            </div>
+              {/* Last Name */}
+              <div className="mb-6">
+                <InputField
+                  label="Last Name"
+                  value={formData.last_name}
+                  onChange={(e) =>
+                    handleInputChange("last_name", e.target.value)
+                  }
+                  type="text"
+                  required
+                />
+              </div>
 
-            {/* Phone */}
-            <div className="mb-6">
-              <InputField
-                label="Phone Number"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                type="tel"
-              />
-            </div>
+              {/* Address */}
+              <div className="mb-6">
+                <InputField
+                  label="Address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    handleInputChange("address", e.target.value)
+                  }
+                  type="text"
+                  required
+                />
+              </div>
 
-            {/* Date of Birth */}
-            <div className="mb-6">
-              <GlassmorphismDatePicker
-                label="Date of Birth"
-                value={formData.date_of_birth || null}
-                onChange={(date) => handleInputChange("date_of_birth", date)}
-                placeholder="dd.mm.yyyy"
-                maxDate={new Date()}
-                minDate={new Date("1900-01-01")}
-              />
-            </div>
+              {/* Phone */}
+              <div className="mb-6">
+                <InputField
+                  label="Phone Number"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    handleInputChange("phone", e.target.value)
+                  }
+                  type="tel"
+                />
+              </div>
 
-            {/* Nationality */}
-            <div className="mb-6">
-              <InputField
-                label="Nationality"
-                value={formData.nationality}
-                onChange={(e) =>
-                  handleInputChange("nationality", e.target.value)
-                }
-                type="text"
-              />
-            </div>
+              {/* Date of Birth */}
+              <div className="mb-6">
+                <GlassmorphismDatePicker
+                  label="Date of Birth"
+                  value={formData.date_of_birth || null}
+                  onChange={(date) => handleInputChange("date_of_birth", date)}
+                  placeholder="dd.mm.yyyy"
+                  maxDate={new Date()}
+                  minDate={new Date("1900-01-01")}
+                />
+              </div>
 
-            {/* Occupation */}
-            <div>
-              <GlassmorphismDropdown
-                label="Occupation"
-                value={formData.occupation}
-                options={OCCUPATION_OPTIONS}
-                onChange={(value) =>
-                  handleInputChange("occupation", value as string)
-                }
-                placeholder="Select occupation"
-              />
-            </div>
-          </StepContainer>
-        </StepWrapper>
+              {/* Nationality */}
+              <div className="mb-6">
+                <InputField
+                  label="Nationality"
+                  value={formData.nationality}
+                  onChange={(e) =>
+                    handleInputChange("nationality", e.target.value)
+                  }
+                  type="text"
+                />
+              </div>
+
+              {/* Occupation */}
+              <div>
+                <GlassmorphismDropdown
+                  label="Occupation"
+                  value={formData.occupation ?? ""}
+                  options={OCCUPATION_OPTIONS}
+                  onChange={(value) =>
+                    handleInputChange("occupation", value as string)
+                  }
+                  placeholder="Select occupation"
+                />
+              </div>
+            </StepContainer>
+          </StepWrapper>
+        )}
       </div>
     </div>
   );

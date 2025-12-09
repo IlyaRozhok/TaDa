@@ -5,17 +5,45 @@ import { X, Save, Plus, Minus, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 import { buildingsAPI, usersAPI } from "../lib/api";
 
+const AREAS = ["West", "East", "North", "South", "Center"];
+
+const LONDON_DISTRICTS = [
+  "Barking and Dagenham",
+  "Barnet",
+  "Bexley",
+  "Brent",
+  "Bromley",
+  "Camden",
+  "City of London",
+  "Croydon",
+  "Ealing",
+  "Enfield",
+  "Greenwich",
+  "Hackney",
+  "Hammersmith and Fulham",
+  "Haringey",
+  "Harrow",
+  "Havering",
+  "Hillingdon",
+  "Hounslow",
+  "Islington",
+  "Kensington and Chelsea",
+  "Kingston upon Thames",
+  "Lambeth",
+  "Lewisham",
+  "Merton",
+  "Newham",
+  "Redbridge",
+  "Richmond upon Thames",
+  "Southwark",
+  "Sutton",
+  "Tower Hamlets",
+  "Waltham Forest",
+  "Wandsworth",
+  "Westminster",
+];
+
 interface MetroStation {
-  label: string;
-  destination?: number;
-}
-
-interface CommuteTime {
-  label: string;
-  destination?: number;
-}
-
-interface LocalEssential {
   label: string;
   destination?: number;
 }
@@ -65,8 +93,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     photos: [] as string[],
     documents: "",
     metro_stations: [] as MetroStation[],
-    commute_times: [] as CommuteTime[],
-    local_essentials: [] as LocalEssential[],
+    areas: [] as string[],
+    districts: [] as string[],
     amenities: [] as string[],
     is_concierge: false,
     concierge_hours: null as ConciergeHours | null,
@@ -384,11 +412,11 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       if (formData.metro_stations && formData.metro_stations.length > 0) {
         buildingData.metro_stations = formData.metro_stations;
       }
-      if (formData.commute_times && formData.commute_times.length > 0) {
-        buildingData.commute_times = formData.commute_times;
+      if (formData.areas && formData.areas.length > 0) {
+        buildingData.areas = formData.areas;
       }
-      if (formData.local_essentials && formData.local_essentials.length > 0) {
-        buildingData.local_essentials = formData.local_essentials;
+      if (formData.districts && formData.districts.length > 0) {
+        buildingData.districts = formData.districts;
       }
       if (formData.amenities && formData.amenities.length > 0) {
         buildingData.amenities = formData.amenities;
@@ -428,8 +456,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           photos: [],
           documents: "",
           metro_stations: [],
-          commute_times: [],
-          local_essentials: [],
+          areas: [],
+          districts: [],
           amenities: [],
           is_concierge: false,
           concierge_hours: null,
@@ -490,64 +518,17 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     }));
   };
 
-  const addCommuteTime = () => {
-    setFormData((prev) => ({
-      ...prev,
-      commute_times: [
-        ...prev.commute_times,
-        { label: "", destination: undefined },
-      ],
-    }));
-  };
-
-  const removeCommuteTime = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      commute_times: prev.commute_times.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateCommuteTime = (
-    index: number,
-    field: keyof CommuteTime,
-    value: string | number | undefined
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      commute_times: prev.commute_times.map((time, i) =>
-        i === index ? { ...time, [field]: value } : time
-      ),
-    }));
-  };
-
-  const addLocalEssential = () => {
-    setFormData((prev) => ({
-      ...prev,
-      local_essentials: [
-        ...prev.local_essentials,
-        { label: "", destination: undefined },
-      ],
-    }));
-  };
-
-  const removeLocalEssential = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      local_essentials: prev.local_essentials.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateLocalEssential = (
-    index: number,
-    field: keyof LocalEssential,
-    value: string | number | undefined
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      local_essentials: prev.local_essentials.map((essential, i) =>
-        i === index ? { ...essential, [field]: value } : essential
-      ),
-    }));
+  const toggleListValue = (field: "areas" | "districts", value: string) => {
+    setFormData((prev) => {
+      const current = prev[field] as string[];
+      const exists = current.includes(value);
+      return {
+        ...prev,
+        [field]: exists
+          ? current.filter((item) => item !== value)
+          : [...current, value],
+      };
+    });
   };
 
   const availableAmenities = [
@@ -1691,112 +1672,58 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
             </button>
           </div>
 
-          {/* Commute Times */}
+          {/* Areas */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Commute Times
+              Areas
             </h4>
 
-            {formData.commute_times.map((time, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={time.label}
-                  onChange={(e) =>
-                    updateCommuteTime(index, "label", e.target.value)
-                  }
-                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  placeholder="Destination"
-                  required
-                />
-                <input
-                  type="number"
-                  value={time.destination ?? ""}
-                  onChange={(e) => {
-                    const inputVal = e.target.value;
-                    if (inputVal === "") {
-                      updateCommuteTime(index, "destination", undefined);
-                    } else {
-                      const val = Math.max(0, parseInt(inputVal) || 0);
-                      updateCommuteTime(index, "destination", val);
-                    }
-                  }}
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                  placeholder="min"
-                  min="0"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => removeCommuteTime(index)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addCommuteTime}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-            >
-              Add Commute Time
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {AREAS.map((area) => {
+                const selected = formData.areas.includes(area);
+                return (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => toggleListValue("areas", area)}
+                    className={`px-3 py-2 rounded-md border transition-colors ${
+                      selected
+                        ? "bg-white text-black border-white"
+                        : "bg-white/10 text-white border-white/30 hover:bg-white/20"
+                    }`}
+                  >
+                    {area}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Local Essentials */}
+          {/* Districts */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Local Essentials
+              Districts
             </h4>
 
-            {formData.local_essentials.map((essential, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={essential.label}
-                  onChange={(e) =>
-                    updateLocalEssential(index, "label", e.target.value)
-                  }
-                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  placeholder="Essential name"
-                  required
-                />
-                <input
-                  type="number"
-                  value={essential.destination ?? ""}
-                  onChange={(e) => {
-                    const inputVal = e.target.value;
-                    if (inputVal === "") {
-                      updateLocalEssential(index, "destination", undefined);
-                    } else {
-                      const val = Math.max(0, parseInt(inputVal) || 0);
-                      updateLocalEssential(index, "destination", val);
-                    }
-                  }}
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                  placeholder="min"
-                  min="0"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => removeLocalEssential(index)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addLocalEssential}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-            >
-              Add Local Essential
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {LONDON_DISTRICTS.map((district) => {
+                const selected = formData.districts.includes(district);
+                return (
+                  <button
+                    key={district}
+                    type="button"
+                    onClick={() => toggleListValue("districts", district)}
+                    className={`text-left px-3 py-2 rounded-md border transition-colors ${
+                      selected
+                        ? "bg-white text-black border-white"
+                        : "bg-white/10 text-white border-white/30 hover:bg-white/20"
+                    }`}
+                  >
+                    {district}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">

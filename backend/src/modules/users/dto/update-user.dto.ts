@@ -94,6 +94,14 @@ export class UpdateUserDto {
   occupation?: string;
 
   @ApiPropertyOptional({
+    description: "Avatar URL",
+    example: "https://example.com/avatar.jpg",
+  })
+  @IsOptional()
+  @IsString()
+  avatar_url?: string;
+
+  @ApiPropertyOptional({
     description: "Industry the user works in",
     example: "Technology",
   })
