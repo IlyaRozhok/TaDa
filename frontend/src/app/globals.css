@@ -60,7 +60,6 @@
   -webkit-line-clamp: 3;
 }
 
-/* Mobile-first optimizations */
 @media (max-width: 640px) {
   button,
   a[role="button"],
