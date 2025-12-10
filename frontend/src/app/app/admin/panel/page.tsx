@@ -13,6 +13,7 @@ import AdminNotifications from "../../../components/AdminNotifications";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
 import AdminPropertiesSection from "../../../components/AdminPropertiesSection";
+import AdminRequestsSection from "../../../components/AdminRequestsSection";
 import AddUserModal from "../../../components/AddUserModal";
 import AddBuildingModal from "../../../components/AddBuildingModal";
 import AddPropertyModal from "../../../components/AddPropertyModal";
@@ -20,12 +21,21 @@ import EditUserModal from "../../../components/EditUserModal";
 import EditBuildingModal from "../../../components/EditBuildingModal";
 import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
-import { buildingsAPI, propertiesAPI } from "../../../lib/api";
+import {
+  bookingRequestsAPI,
+  buildingsAPI,
+  propertiesAPI,
+} from "../../../lib/api";
 import { Property } from "../../../types/property";
+import {
+  BookingRequest,
+  BookingRequestStatus,
+} from "../../../types/bookingRequest";
 import {
   Users,
   Building2,
   Home,
+  Calendar,
   Eye,
   Edit3,
   Trash2,
@@ -34,7 +44,7 @@ import {
   Save,
 } from "lucide-react";
 
-type AdminSection = "users" | "buildings" | "properties";
+type AdminSection = "users" | "buildings" | "properties" | "requests";
 
 interface SortState {
   field: string;
@@ -69,6 +79,7 @@ function AdminPanelContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
@@ -88,6 +99,10 @@ function AdminPanelContent() {
       message: string;
     }>
   >([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(
+    null
+  );
 
   // Debounced search term
   const debouncedSearchTerm = useDebounce(searchTerm, 150);
@@ -139,10 +154,19 @@ function AdminPanelContent() {
             const data = await response.json();
             setProperties(data.data || data || []);
           }
+        } else if (activeSection === "requests") {
+          setIsLoadingRequests(true);
+          const data = await bookingRequestsAPI.list();
+          setRequests(data || []);
+          setIsLoadingRequests(false);
         }
       } catch (error) {
         console.error("Error loading data:", error);
         addNotification("error", "Failed to load data");
+      } finally {
+        if (activeSection === "requests") {
+          setIsLoadingRequests(false);
+        }
       }
     };
 
@@ -595,6 +619,30 @@ function AdminPanelContent() {
     }
   };
 
+  const handleUpdateBookingStatus = async (
+    id: string,
+    status: BookingRequestStatus
+  ) => {
+    try {
+      setUpdatingRequestId(id);
+      const updated = await bookingRequestsAPI.updateStatus(id, status);
+      setRequests((prev) =>
+        prev.map((request) =>
+          request.id === id ? { ...request, ...updated } : request
+        )
+      );
+      addNotification("success", "Booking status updated");
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update booking status";
+      addNotification("error", message);
+    } finally {
+      setUpdatingRequestId(null);
+    }
+  };
+
   // Sidebar
   const renderSidebar = () => (
     <div className="w-64 min-h-screen bg-white border-r border-gray-200">
@@ -644,6 +692,17 @@ function AdminPanelContent() {
         >
           <Home className="w-5 h-5" />
           <span className="font-medium">Properties</span>
+        </button>
+        <button
+          onClick={() => setActiveSection("requests")}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+            activeSection === "requests"
+              ? "bg-gray-100 text-black"
+              : "text-black hover:bg-gray-50"
+          }`}
+        >
+          <Calendar className="w-5 h-5" />
+          <span className="font-medium">Requests</span>
         </button>
       </nav>
     </div>
@@ -715,6 +774,31 @@ function AdminPanelContent() {
             onAdd={handleAdd}
           />
         );
+      case "requests":
+        return (
+          <AdminRequestsSection
+            requests={requests}
+            isLoading={isLoadingRequests}
+            updatingId={updatingRequestId}
+            onUpdateStatus={handleUpdateBookingStatus}
+            onRefresh={async () => {
+              setIsLoadingRequests(true);
+              try {
+                const data = await bookingRequestsAPI.list();
+                setRequests(data || []);
+              } catch (error: any) {
+                addNotification(
+                  "error",
+                  error?.response?.data?.message ||
+                    error?.message ||
+                    "Failed to refresh requests"
+                );
+              } finally {
+                setIsLoadingRequests(false);
+              }
+            }}
+          />
+        );
       default:
         return null;
     }
@@ -770,7 +854,9 @@ function AdminPanelContent() {
                   <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
                     <div className="text-sm text-white/70 mb-1">Unit Type</div>
                     <div className="text-lg font-semibold text-white">
-                      {Array.isArray(building.type_of_unit) ? building.type_of_unit.join(", ") : building.type_of_unit || "-"}
+                      {Array.isArray(building.type_of_unit)
+                        ? building.type_of_unit.join(", ")
+                        : building.type_of_unit || "-"}
                     </div>
                   </div>
                 </div>
@@ -802,7 +888,9 @@ function AdminPanelContent() {
                     <div className="flex justify-between py-2">
                       <span className="text-white/70">Unit Type</span>
                       <span className="font-medium text-white">
-                        {Array.isArray(building.type_of_unit) ? building.type_of_unit.join(", ") : building.type_of_unit || "-"}
+                        {Array.isArray(building.type_of_unit)
+                          ? building.type_of_unit.join(", ")
+                          : building.type_of_unit || "-"}
                       </span>
                     </div>
                   </div>

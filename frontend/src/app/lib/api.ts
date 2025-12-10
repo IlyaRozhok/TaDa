@@ -193,6 +193,29 @@ export const residentialComplexesAPI = {
   delete: (id: string) => api.delete(`/residential-complexes/${id}`),
 };
 
+export const bookingRequestsAPI = {
+  create: (propertyId: string) =>
+    api
+      .post("/booking-requests", { property_id: propertyId })
+      .then((res) => res.data ?? res),
+  list: (status?: string) =>
+    api
+      .get("/booking-requests", {
+        params: status ? { status } : undefined,
+      })
+      .then((res) => res.data ?? res),
+  updateStatus: (id: string, status: string) =>
+    api
+      .patch(`/booking-requests/${id}/status`, { status })
+      .then((res) => res.data ?? res),
+  mine: (propertyId?: string) =>
+    api
+      .get("/booking-requests/me", {
+        params: propertyId ? { property_id: propertyId } : undefined,
+      })
+      .then((res) => res.data ?? res),
+};
+
 export const buildingsAPI = {
   getAll: (params?: any) => api.get("/buildings", { params }),
   getById: (id: string) => api.get(`/buildings/${id}`),

@@ -3,7 +3,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
-import { propertiesAPI, Property, matchingAPI } from "../../../lib/api";
+import {
+  propertiesAPI,
+  Property,
+  matchingAPI,
+  bookingRequestsAPI,
+} from "../../../lib/api";
 import { PropertyMedia } from "../../../types";
 import {
   addToShortlist,
@@ -25,6 +30,8 @@ import PreferencePropertiesSection from "../../../components/PreferencePropertie
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import toast from "react-hot-toast";
 
+type PropertyWithMedia = Property & { photos?: string[] };
+
 export default function PropertyPublicPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -33,7 +40,7 @@ export default function PropertyPublicPage() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const shortlistProperties = useSelector(selectShortlistProperties);
 
-  const [property, setProperty] = useState<Property | null>(null);
+  const [property, setProperty] = useState<PropertyWithMedia | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInShortlist, setIsInShortlist] = useState(false);
@@ -42,6 +49,8 @@ export default function PropertyPublicPage() {
   const [showAllOffers, setShowAllOffers] = useState(false);
   const [matchScore, setMatchScore] = useState<number | null>(null);
   const [matchLoading, setMatchLoading] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [hasBookingRequest, setHasBookingRequest] = useState(false);
 
   // Check if description needs truncation
   const needsTruncation = (text: string) => {
@@ -82,6 +91,29 @@ export default function PropertyPublicPage() {
     };
     fetchProperty();
   }, [id]);
+
+  // Load existing booking request for this tenant/property
+  useEffect(() => {
+    const loadBookingRequest = async () => {
+      if (!isAuthenticated || !user || user.role !== "tenant" || !id) {
+        setHasBookingRequest(false);
+        return;
+      }
+      try {
+        const data = await bookingRequestsAPI.mine(id as string);
+        if (Array.isArray(data) && data.length > 0) {
+          setHasBookingRequest(true);
+        } else {
+          setHasBookingRequest(false);
+        }
+      } catch (err) {
+        // silently ignore to not block page
+        setHasBookingRequest(false);
+      }
+    };
+
+    loadBookingRequest();
+  }, [id, isAuthenticated, user]);
 
   // Load match score for authenticated users
   useEffect(() => {
@@ -190,6 +222,38 @@ export default function PropertyPublicPage() {
       toast.error((error as Error)?.message || "Failed to update shortlist");
     } finally {
       setShortlistLoading(false);
+    }
+  };
+
+  const handleBookApartment = async () => {
+    if (!property) {
+      return;
+    }
+
+    if (!isAuthenticated || !user) {
+      toast.error("Please login as a tenant to book");
+      router.push("/auth/login");
+      return;
+    }
+
+    if (user.role !== "tenant") {
+      toast.error("Only tenant accounts can book apartments");
+      return;
+    }
+
+    try {
+      setBookingLoading(true);
+      await bookingRequestsAPI.create(property.id);
+      toast.success("Request sent. Our team will contact you shortly.");
+      setHasBookingRequest(true);
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to send booking request";
+      toast.error(message);
+    } finally {
+      setBookingLoading(false);
     }
   };
 
@@ -499,8 +563,16 @@ export default function PropertyPublicPage() {
                   </div>
                 </div>
 
-                <Button className="w-full bg-black hover:bg-gray-800 cursor-pointer text-white py-4 rounded-full text-base font-semibold my-2">
-                  Book this apartment
+                <Button
+                  className="w-full bg-black hover:bg-gray-800 cursor-pointer text-white py-4 rounded-full text-base font-semibold my-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleBookApartment}
+                  disabled={bookingLoading || hasBookingRequest}
+                >
+                  {hasBookingRequest
+                    ? "Book requested"
+                    : bookingLoading
+                    ? "Sending..."
+                    : "Book this apartment"}
                 </Button>
 
                 <p className="text-xs text-gray-500 mb-6 text-center">

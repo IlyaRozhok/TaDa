@@ -8,6 +8,7 @@ import { Property } from "../entities/property.entity";
 import { PropertyMedia } from "../entities/property-media.entity";
 import { Shortlist } from "../entities/shortlist.entity";
 import { Building } from "../entities/building.entity";
+import { BookingRequest } from "../entities/booking-request.entity";
 import * as path from "path";
 
 // Load environment variables
@@ -29,6 +30,7 @@ export const dataSourceOptions: DataSourceOptions = {
     PropertyMedia,
     Shortlist,
     Building,
+    BookingRequest,
   ],
   migrations: [path.join(__dirname, "migrations/*{.ts,.js}")],
   synchronize: process.env.NODE_ENV === "development",

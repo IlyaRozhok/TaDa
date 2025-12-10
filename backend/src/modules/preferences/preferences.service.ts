@@ -10,6 +10,7 @@ import { Preferences } from "../../entities/preferences.entity";
 import { User, UserRole } from "../../entities/user.entity";
 import { CreatePreferencesDto } from "./dto/create-preferences.dto";
 import { UpdatePreferencesDto } from "./dto/update-preferences.dto";
+import { TenantCvService } from "../tenant-cv/tenant-cv.service";
 
 @Injectable()
 export class PreferencesService {
@@ -17,7 +18,8 @@ export class PreferencesService {
     @InjectRepository(Preferences)
     private preferencesRepository: Repository<Preferences>,
     @InjectRepository(User)
-    private userRepository: Repository<User>
+    private userRepository: Repository<User>,
+    private tenantCvService: TenantCvService
   ) {}
 
   /**
@@ -88,6 +90,7 @@ export class PreferencesService {
         const result = await this.preferencesRepository.save(
           existingPreferences
         );
+        await this.tenantCvService.ensureShareUuid(userId);
         return result;
       } catch (error) {
         console.error("❌ Error updating preferences:", error);
@@ -107,6 +110,8 @@ export class PreferencesService {
         // Update user's preferences relation
         user.preferences = savedPreferences;
         await this.userRepository.save(user);
+
+        await this.tenantCvService.ensureShareUuid(userId);
 
         return savedPreferences;
       } catch (error) {
@@ -203,6 +208,7 @@ export class PreferencesService {
 
     try {
       const result = await this.preferencesRepository.save(preferences);
+      await this.tenantCvService.ensureShareUuid(userId);
       return result;
     } catch (error) {
       console.error("❌ Error saving preferences:", error);

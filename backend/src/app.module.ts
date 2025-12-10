@@ -14,6 +14,7 @@ import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { OperatorModule } from "./modules/operator/operator.module";
 import { BuildingModule } from "./modules/building/building.module";
 import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
+import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
 import { S3Module } from "./common/services/s3.module";
 import { typeOrmConfig } from "./database/typeorm.config";
 
@@ -39,6 +40,7 @@ import { typeOrmConfig } from "./database/typeorm.config";
     OperatorModule,
     BuildingModule,
     TenantCvModule,
+    BookingRequestModule,
   ],
   controllers: [AppController],
   providers: [],

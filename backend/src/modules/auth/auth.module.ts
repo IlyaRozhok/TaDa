@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -14,6 +14,7 @@ import { User } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
+import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { Preferences } from "../../entities/preferences.entity";
       inject: [ConfigService],
     }),
     ConfigModule,
+    forwardRef(() => TenantCvModule),
   ],
   controllers: [AuthController],
   providers: [

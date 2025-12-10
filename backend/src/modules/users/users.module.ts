@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { UsersService } from "./users.service";
@@ -22,7 +22,7 @@ import { S3Service } from "../../common/services/s3.service";
       OperatorProfile,
       Preferences,
     ]),
-    AuthModule,
+    forwardRef(() => AuthModule),
   ],
   controllers: [UsersController],
   providers: [

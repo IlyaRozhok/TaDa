@@ -14,6 +14,7 @@ import { LoginDto } from "./dto/login.dto";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
+import { TenantCvService } from "../tenant-cv/tenant-cv.service";
 import { AuthValidationService } from "./services/auth-validation.service";
 import { AuthTokenService } from "./services/auth-token.service";
 import { USER_CONSTANTS } from "../../common/constants/user.constants";
@@ -30,7 +31,8 @@ export class AuthService {
     @InjectRepository(Preferences)
     private preferencesRepository: Repository<Preferences>,
     private authValidationService: AuthValidationService,
-    private authTokenService: AuthTokenService
+    private authTokenService: AuthTokenService,
+    private tenantCvService: TenantCvService
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -60,6 +62,8 @@ export class AuthService {
 
       // Create tenant profile for all users
       await this.createTenantProfile(savedUser);
+      // Ensure tenant CV share link exists
+      await this.tenantCvService.ensureShareUuid(savedUser.id);
 
       // Generate tokens
       const accessToken = this.authTokenService.generateAccessToken(savedUser);
@@ -197,6 +201,7 @@ export class AuthService {
 
       // Create tenant profile for all Google users
       await this.createTenantProfile(user);
+      await this.tenantCvService.ensureShareUuid(user.id);
     } else {
       // Update existing user with latest Google data
       user.full_name = googleUser.full_name;
@@ -230,6 +235,7 @@ export class AuthService {
 
     // Create tenant profile for all users
     await this.createTenantProfile(savedUser);
+    await this.tenantCvService.ensureShareUuid(savedUser.id);
 
     return savedUser;
   }

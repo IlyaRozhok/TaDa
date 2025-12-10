@@ -16,6 +16,7 @@ import { TenantProfile } from "./tenant-profile.entity";
 import { OperatorProfile } from "./operator-profile.entity";
 import { Shortlist } from "./shortlist.entity";
 import { Building } from "./building.entity";
+import { TenantCv } from "./tenant-cv.entity";
 
 export enum UserRole {
   Admin = "admin",
@@ -125,6 +126,11 @@ export class User {
     cascade: true,
   })
   tenantProfile: TenantProfile;
+
+  @OneToOne(() => TenantCv, (tenantCv) => tenantCv.user, {
+    cascade: true,
+  })
+  tenantCv: TenantCv;
 
   @OneToOne(() => OperatorProfile, (operatorProfile) => operatorProfile.user, {
     cascade: true,
