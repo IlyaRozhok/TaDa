@@ -11,6 +11,7 @@ import { User, UserRole } from "../../entities/user.entity";
 import { CreatePreferencesDto } from "./dto/create-preferences.dto";
 import { UpdatePreferencesDto } from "./dto/update-preferences.dto";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
+import { toPreferencesEntityPartial } from "./preferences.mapper";
 
 @Injectable()
 export class PreferencesService {
@@ -21,45 +22,6 @@ export class PreferencesService {
     private userRepository: Repository<User>,
     private tenantCvService: TenantCvService
   ) {}
-
-  /**
-   * Transform DTO to entity format
-   * Handles date conversions and field normalization
-   */
-  private transformDtoToEntity(
-    dto: CreatePreferencesDto | UpdatePreferencesDto
-  ): Partial<Preferences> {
-    // Create a copy without date fields first
-    const { move_in_date, move_out_date, ...rest } = dto;
-    const data: Partial<Preferences> = { ...rest };
-
-    // Handle move_in_date conversion
-    if (move_in_date) {
-      data.move_in_date = new Date(move_in_date);
-    } else if (dto.hasOwnProperty("move_in_date") && move_in_date === null) {
-      data.move_in_date = null;
-    }
-
-    // Handle move_out_date conversion
-    if (move_out_date) {
-      data.move_out_date = new Date(move_out_date);
-    } else if (dto.hasOwnProperty("move_out_date") && move_out_date === null) {
-      data.move_out_date = null;
-    }
-
-    // If move_out_date equals move_in_date, set it to null (single date selection)
-    if (
-      data.move_in_date &&
-      data.move_out_date &&
-      data.move_in_date instanceof Date &&
-      data.move_out_date instanceof Date &&
-      data.move_in_date.getTime() === data.move_out_date.getTime()
-    ) {
-      data.move_out_date = null;
-    }
-
-    return data;
-  }
 
   async upsert(
     userId: string,
@@ -82,42 +44,29 @@ export class PreferencesService {
       where: { user: { id: userId } },
     });
 
-    const preferencesData = this.transformDtoToEntity(preferencesDto);
+    const preferencesData = toPreferencesEntityPartial(preferencesDto);
 
     if (existingPreferences) {
       Object.assign(existingPreferences, preferencesData);
-      try {
-        const result = await this.preferencesRepository.save(
-          existingPreferences
-        );
-        await this.tenantCvService.ensureShareUuid(userId);
-        return result;
-      } catch (error) {
-        console.error("❌ Error updating preferences:", error);
-        throw error;
-      }
+      const result = await this.preferencesRepository.save(existingPreferences);
+      await this.tenantCvService.ensureShareUuid(userId);
+      return result;
     } else {
       const preferences = this.preferencesRepository.create({
         ...preferencesData,
         user,
       });
 
-      try {
-        const savedPreferences = await this.preferencesRepository.save(
-          preferences
-        );
+      const savedPreferences = await this.preferencesRepository.save(
+        preferences
+      );
 
-        // Update user's preferences relation
-        user.preferences = savedPreferences;
-        await this.userRepository.save(user);
+      user.preferences = savedPreferences;
+      await this.userRepository.save(user);
 
-        await this.tenantCvService.ensureShareUuid(userId);
+      await this.tenantCvService.ensureShareUuid(userId);
 
-        return savedPreferences;
-      } catch (error) {
-        console.error("❌ Error creating new preferences:", error);
-        throw error;
-      }
+      return savedPreferences;
     }
   }
 
@@ -194,7 +143,7 @@ export class PreferencesService {
       throw new NotFoundException("Preferences not found");
     }
 
-    const updateData = this.transformDtoToEntity(updatePreferencesDto);
+    const updateData = toPreferencesEntityPartial(updatePreferencesDto);
 
     // Preserve existing dates if not provided in update
     if (!updatePreferencesDto.hasOwnProperty("move_in_date")) {
@@ -206,14 +155,9 @@ export class PreferencesService {
 
     Object.assign(preferences, updateData);
 
-    try {
-      const result = await this.preferencesRepository.save(preferences);
-      await this.tenantCvService.ensureShareUuid(userId);
-      return result;
-    } catch (error) {
-      console.error("❌ Error saving preferences:", error);
-      throw error;
-    }
+    const result = await this.preferencesRepository.save(preferences);
+    await this.tenantCvService.ensureShareUuid(userId);
+    return result;
   }
 
   async delete(userId: string): Promise<void> {
