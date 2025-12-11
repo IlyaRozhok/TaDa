@@ -24,6 +24,7 @@ import {
 import { PropertyService } from "./property.service";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
+import { FindPropertiesDto } from "./dto/find-properties.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -41,19 +42,15 @@ export class PropertyController {
   // Public endpoints - MUST be before protected routes
   @Get("public/all")
   @ApiOperation({ summary: "Get all public properties (no auth required)" })
-  @ApiResponse({ status: 200, description: "Public properties retrieved successfully" })
-  async findAllPublic(
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-    @Query("search") search?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 12;
-    
+  @ApiResponse({
+    status: 200,
+    description: "Public properties retrieved successfully",
+  })
+  async findAllPublic(@Query() query: FindPropertiesDto) {
     return this.propertyService.findAllPublic({
-      page: pageNum,
-      limit: limitNum,
-      search,
+      page: query.page ? parseInt(query.page, 10) : undefined,
+      limit: query.limit ? parseInt(query.limit, 10) : undefined,
+      search: query.search,
     });
   }
 
@@ -66,20 +63,18 @@ export class PropertyController {
   }
 
   @Get("public")
-  @ApiOperation({ summary: "Get paginated public properties (no auth required)" })
-  @ApiResponse({ status: 200, description: "Public properties retrieved successfully" })
-  async getPublicProperties(
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-    @Query("search") search?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 12;
-    
+  @ApiOperation({
+    summary: "Get paginated public properties (no auth required)",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Public properties retrieved successfully",
+  })
+  async getPublicProperties(@Query() query: FindPropertiesDto) {
     return this.propertyService.findAllPublic({
-      page: pageNum,
-      limit: limitNum,
-      search,
+      page: query.page ? parseInt(query.page, 10) : undefined,
+      limit: query.limit ? parseInt(query.limit, 10) : undefined,
+      search: query.search,
     });
   }
 
@@ -127,15 +122,20 @@ export class PropertyController {
     const uploadPromises = files.map(async (file) => {
       try {
         if (!file.mimetype.startsWith("image/")) {
-          throw new Error(`Invalid file type for ${file.originalname}. Only images are allowed.`);
+          throw new Error(
+            `Invalid file type for ${file.originalname}. Only images are allowed.`
+          );
         }
 
-        const fileKey = this.s3Service.generateFileKey(file.originalname, "property-photo");
+        const fileKey = this.s3Service.generateFileKey(
+          file.originalname,
+          "property-photo"
+        );
         const uploadResult = await this.s3Service.uploadFile(
           file.buffer,
           fileKey,
           file.mimetype,
-          file.originalname,
+          file.originalname
         );
 
         return {
@@ -144,7 +144,9 @@ export class PropertyController {
         };
       } catch (error) {
         console.error(`Error uploading photo ${file.originalname}:`, error);
-        throw new Error(`Failed to upload ${file.originalname}: ${error.message}`);
+        throw new Error(
+          `Failed to upload ${file.originalname}: ${error.message}`
+        );
       }
     });
 
@@ -194,12 +196,15 @@ export class PropertyController {
         throw new Error("Invalid file type. Only videos are allowed.");
       }
 
-      const fileKey = this.s3Service.generateFileKey(file.originalname, "property-video");
+      const fileKey = this.s3Service.generateFileKey(
+        file.originalname,
+        "property-video"
+      );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname,
+        file.originalname
       );
 
       return {
@@ -249,12 +254,15 @@ export class PropertyController {
         throw new Error(`Invalid file type. Only PDF files are allowed.`);
       }
 
-      const fileKey = this.s3Service.generateFileKey(file.originalname, "property-documents");
+      const fileKey = this.s3Service.generateFileKey(
+        file.originalname,
+        "property-documents"
+      );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname,
+        file.originalname
       );
 
       return {
@@ -285,7 +293,10 @@ export class PropertyController {
   @Get()
   @Roles(UserRole.Admin, UserRole.Operator)
   @ApiOperation({ summary: "Get all properties" })
-  @ApiResponse({ status: 200, description: "Properties retrieved successfully" })
+  @ApiResponse({
+    status: 200,
+    description: "Properties retrieved successfully",
+  })
   findAll(
     @Query("building_id") building_id?: string,
     @Query("operator_id") operator_id?: string
@@ -312,7 +323,10 @@ export class PropertyController {
   @ApiResponse({ status: 200, description: "Property updated successfully" })
   @ApiResponse({ status: 400, description: "Bad request" })
   @ApiResponse({ status: 404, description: "Property not found" })
-  update(@Param("id") id: string, @Body() updatePropertyDto: UpdatePropertyDto) {
+  update(
+    @Param("id") id: string,
+    @Body() updatePropertyDto: UpdatePropertyDto
+  ) {
     return this.propertyService.update(id, updatePropertyDto);
   }
 
@@ -327,4 +341,3 @@ export class PropertyController {
     return this.propertyService.remove(id);
   }
 }
-
