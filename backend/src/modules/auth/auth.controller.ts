@@ -25,10 +25,6 @@ export class AuthController {
 
   @Post("register")
   async register(@Body() registerDto: RegisterDto) {
-    console.log(
-      "🔍 Register endpoint called with email:",
-      registerDto.email
-    );
     const result = await this.authService.register(registerDto);
     return result;
   }
@@ -123,7 +119,6 @@ export class AuthController {
   @Get("test-token")
   @UseGuards(JwtAuthGuard)
   async testToken(@CurrentUser() user: User) {
-    console.log("🧪 Test token endpoint called for user:", user.id);
     return {
       message: "Token is valid",
       user: {
@@ -138,7 +133,6 @@ export class AuthController {
   @Get("google")
   @UseGuards(AuthGuard("google"))
   async googleAuth() {
-    console.log("🔍 Google OAuth endpoint called - redirecting to Google");
     // This endpoint will be handled by Passport Google Strategy
     // The actual logic is in the GoogleStrategy.validate method
     // Passport will automatically redirect to Google OAuth
@@ -148,17 +142,8 @@ export class AuthController {
   @UseGuards(AuthGuard("google"))
   async googleCallback(@Req() req: Request, @Res() res: Response) {
     try {
-      console.log("🔍 Google OAuth callback received");
-      console.log("  - User data:", req.user ? "present" : "missing");
-      console.log("  - Query params:", JSON.stringify(req.query));
-      console.log("  - Error in query:", req.query.error || "none");
-
       // Check for OAuth errors in query params
       if (req.query.error) {
-        console.error("❌ Google OAuth error:", {
-          error: req.query.error,
-          error_description: req.query.error_description,
-        });
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
         const errorUrl = `${frontendUrl}/app/auth/callback?error=oauth_error&details=${req.query.error}`;
         res.redirect(errorUrl);
@@ -166,7 +151,6 @@ export class AuthController {
       }
 
       if (!req.user) {
-        console.error("❌ No user data from Google");
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
         const errorUrl = `${frontendUrl}/app/auth/callback?error=no_user_data`;
         res.redirect(errorUrl);
@@ -178,12 +162,8 @@ export class AuthController {
 
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
       const callbackUrl = `${frontendUrl}/app/auth/callback?token=${tokens.accessToken}&success=true`;
-      console.log("✅ Google OAuth successful, redirecting to:", callbackUrl);
       res.redirect(callbackUrl);
     } catch (error) {
-      console.error("❌ Google callback error:", error);
-      console.error("  - Error message:", error?.message);
-      console.error("  - Error stack:", error?.stack);
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
       const errorUrl = `${frontendUrl}/app/auth/callback?error=auth_failed`;
       res.redirect(errorUrl);

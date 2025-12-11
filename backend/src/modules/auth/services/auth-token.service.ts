@@ -41,14 +41,9 @@ export class AuthTokenService {
       role: user.role,
       status: user.status,
     };
-
-    console.log("🔑 Generating access token for user:", user.id, "payload:", payload);
-
     const token = this.jwtService.sign(payload, {
       expiresIn: "24h",
     });
-
-    console.log("🔑 Generated token:", token);
     return token;
   }
 

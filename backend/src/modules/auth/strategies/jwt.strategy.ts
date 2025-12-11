@@ -14,8 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly userRepository: Repository<User>
   ) {
     const jwtSecret = configService.get("JWT_SECRET", "your-secret-key");
-    console.log("🔑 JWT Strategy initialized with secret:", jwtSecret ? "SET" : "NOT SET");
-    
+
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -28,11 +27,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    console.log("🔍 JWT payload received:", payload);
     const { sub: userId } = payload;
 
     if (!userId) {
-      console.error("❌ JWT validation failed: no user ID in payload");
       throw new UnauthorizedException("Invalid token: no user ID");
     }
 
