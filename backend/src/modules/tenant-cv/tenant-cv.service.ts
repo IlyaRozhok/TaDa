@@ -91,15 +91,35 @@ export class TenantCvService {
         ? this.calculateAge(new Date(dateOfBirth))
         : null;
 
+    const splitName = (
+      full?: string | null
+    ): { first: string | null; last: string | null } => {
+      if (!full) return { first: null, last: null };
+      const parts = full.trim().split(" ").filter(Boolean);
+      if (parts.length === 0) return { first: null, last: null };
+      const [first, ...rest] = parts;
+      return { first: first || null, last: rest.join(" ") || null };
+    };
+
+    const nameFromTp = splitName(tenantProfile?.full_name);
+    const nameFromUser = splitName(user.full_name || null);
+
+    const first_name =
+      tenantProfile?.first_name ||
+      nameFromTp.first ||
+      nameFromUser.first ||
+      null;
+    const last_name =
+      tenantProfile?.last_name ||
+      nameFromTp.last ||
+      nameFromUser.last ||
+      null;
+
     const profile = {
-      first_name: tenantProfile?.first_name || null,
-      last_name: tenantProfile?.last_name || null,
+      first_name,
+      last_name,
       full_name:
-        (tenantProfile?.first_name || tenantProfile?.last_name
-          ? [tenantProfile?.first_name, tenantProfile?.last_name]
-              .filter(Boolean)
-              .join(" ")
-          : null) ||
+        [first_name, last_name].filter(Boolean).join(" ") ||
         tenantProfile?.full_name ||
         user.full_name ||
         null,

@@ -148,9 +148,65 @@ const authSlice = createSlice({
       }
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
-      if (state.user) {
-        state.user = { ...state.user, ...action.payload };
-      }
+      if (!state.user) return;
+
+      const payload = action.payload;
+      const currentTenant = state.user.tenantProfile || {};
+      const currentOperator = state.user.operatorProfile || {};
+
+      const tenantProfileFields: (keyof typeof currentTenant)[] = [
+        "first_name",
+        "last_name",
+        "full_name",
+        "address",
+        "phone",
+        "date_of_birth",
+        "nationality",
+        "occupation",
+      ];
+
+      const operatorProfileFields: (keyof typeof currentOperator)[] = [
+        "full_name",
+        "phone",
+        "business_address",
+      ];
+
+      const nextTenant =
+        payload.tenantProfile || payload.operatorProfile
+          ? {
+              ...currentTenant,
+              ...(payload.tenantProfile ?? {}),
+            }
+          : { ...currentTenant };
+
+      tenantProfileFields.forEach((key) => {
+        if (key in payload) {
+          // @ts-expect-error indexed assignment
+          nextTenant[key] = payload[key as keyof User] as any;
+        }
+      });
+
+      const nextOperator =
+        payload.operatorProfile || payload.tenantProfile
+          ? {
+              ...currentOperator,
+              ...(payload.operatorProfile ?? {}),
+            }
+          : { ...currentOperator };
+
+      operatorProfileFields.forEach((key) => {
+        if (key in payload) {
+          // @ts-expect-error indexed assignment
+          nextOperator[key] = payload[key as keyof User] as any;
+        }
+      });
+
+      state.user = {
+        ...state.user,
+        ...payload,
+        tenantProfile: nextTenant,
+        operatorProfile: nextOperator,
+      };
     },
   },
 });

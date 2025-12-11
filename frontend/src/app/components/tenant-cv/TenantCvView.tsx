@@ -12,6 +12,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
+import { buildDisplayName, buildInitials } from "../../utils/displayName";
 
 interface TenantCvViewProps {
   data: TenantCvResponse;
@@ -108,14 +109,16 @@ export function TenantCvView({
   const { profile, meta, preferences } = data;
   const moveIn = dateToDisplay(meta.move_in_date);
   const onPlatform = dateToDisplay(meta.created_at);
-  const displayName =
-    [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
-    null ||
-    profile.full_name ||
-    meta.headline ||
-    profile.email ||
-    meta.tenant_type_labels?.[0] ||
-    "Tenant";
+  const displayName = buildDisplayName({
+    tenantProfile: {
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      full_name: profile.full_name,
+    },
+    full_name: profile.full_name || undefined,
+    email: profile.email || undefined,
+  });
+  const initials = buildInitials(displayName, profile.email || undefined);
   const avatarUrl =
     profile.avatar_url ||
     data.profile?.avatar_url ||
@@ -234,12 +237,7 @@ export function TenantCvView({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                displayName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)
+                initials
               )}
             </div>
             <div>

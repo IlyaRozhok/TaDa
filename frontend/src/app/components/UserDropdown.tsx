@@ -7,6 +7,7 @@ import { logout, selectUser } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { Settings, LogOut, Mail, Sliders } from "lucide-react";
 import styles from "./ui/DropdownStyles.module.scss";
+import { buildDisplayName, buildInitials } from "../utils/displayName";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -99,6 +100,9 @@ export default function UserDropdown() {
 
   if (!user) return null;
 
+  const displayName = buildDisplayName(user);
+  const initials = buildInitials(displayName, user.email);
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* User Avatar/Icon */}
@@ -113,14 +117,13 @@ export default function UserDropdown() {
               alt="Profile"
               className="w-full h-full object-cover rounded-full"
               onError={(e) => {
-                // Fallback to initials if image fails to load
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
                 const parent = target.parentElement;
                 if (parent) {
-                  const initials = parent.querySelector(".fallback-initials");
-                  if (initials) {
-                    (initials as HTMLElement).style.display = "flex";
+                  const initialsEl = parent.querySelector(".fallback-initials");
+                  if (initialsEl) {
+                    (initialsEl as HTMLElement).style.display = "flex";
                   }
                 }
               }}
@@ -131,18 +134,11 @@ export default function UserDropdown() {
               user.avatar_url ? "hidden" : ""
             }`}
           >
-            {user.full_name
-              ? user.full_name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)
-              : user.email?.[0].toUpperCase() || "U"}
+            {initials}
           </div>
         </div>
         <span className="text-sm text-gray-700 hidden sm:block">
-          {user.full_name || user.email?.split("@")[0] || "User"}
+          {displayName}
         </span>
       </button>
 
@@ -179,18 +175,11 @@ export default function UserDropdown() {
                     user.avatar_url ? "hidden" : ""
                   }`}
                 >
-                  {user.full_name
-                    ? user.full_name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase()
-                        .slice(0, 2)
-                    : user.email?.[0].toUpperCase() || "U"}
+                  {initials}
                 </div>
               </div>
               <div className={styles.userInfo}>
-                <p className={styles.userName}>{user.full_name || "User"}</p>
+                <p className={styles.userName}>{displayName}</p>
                 <p className={styles.userEmail}>{user.email}</p>
                 <p className={styles.userRole}>
                   {user.roles?.includes("operator") ? "Operator" : "Tenant"}
