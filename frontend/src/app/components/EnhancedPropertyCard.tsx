@@ -166,14 +166,18 @@ export default function EnhancedPropertyCard({
     return tags;
   };
 
-  const getMatchReasons = (): { matches: boolean; details: string; category?: string }[] => {
+  const getMatchReasons = (): {
+    matches: boolean;
+    details: string;
+    category?: string;
+  }[] => {
     // If we have categories from backend, use them
     if (matchCategories && matchCategories.length > 0) {
       return matchCategories
-        .filter(cat => cat.maxScore > 0) // Only show categories that were evaluated
+        .filter((cat) => cat.maxScore > 0) // Only show categories that were evaluated
         .sort((a, b) => b.maxScore - a.maxScore) // Sort by importance
         .slice(0, 6) // Show top 6 categories
-        .map(cat => ({
+        .map((cat) => ({
           matches: cat.match,
           details: cat.details || cat.reason,
           category: cat.category,
@@ -181,7 +185,8 @@ export default function EnhancedPropertyCard({
     }
 
     // Fallback: calculate locally if no backend data
-    const reasons: { matches: boolean; details: string; category?: string }[] = [];
+    const reasons: { matches: boolean; details: string; category?: string }[] =
+      [];
 
     // Price matching
     if (userPreferences?.min_price && userPreferences?.max_price) {
@@ -189,16 +194,20 @@ export default function EnhancedPropertyCard({
         typeof property.price === "string"
           ? parseFloat(property.price)
           : property.price;
-      
-      if (propertyPrice !== null && propertyPrice !== undefined && !isNaN(propertyPrice)) {
+
+      if (
+        propertyPrice !== null &&
+        propertyPrice !== undefined &&
+        !isNaN(propertyPrice)
+      ) {
         const isWithinBudget =
           propertyPrice >= userPreferences.min_price &&
           propertyPrice <= userPreferences.max_price;
         reasons.push({
           matches: isWithinBudget,
-          details: `Price £${propertyPrice.toFixed(0)} ${isWithinBudget ? "within" : "outside"} budget £${
-            userPreferences.min_price
-          }-£${userPreferences.max_price}`,
+          details: `Price £${propertyPrice.toFixed(0)} ${
+            isWithinBudget ? "within" : "outside"
+          } budget £${userPreferences.min_price}-£${userPreferences.max_price}`,
           category: "budget",
         });
       }
@@ -206,27 +215,40 @@ export default function EnhancedPropertyCard({
 
     // Bedroom requirement
     if (userPreferences?.bedrooms && userPreferences.bedrooms.length > 0) {
-      const meetsBedroomReq = userPreferences.bedrooms.includes(property.bedrooms);
+      const meetsBedroomReq = userPreferences.bedrooms.includes(
+        property.bedrooms
+      );
       reasons.push({
         matches: meetsBedroomReq,
-        details: `${property.bedrooms} bedroom${property.bedrooms !== 1 ? "s" : ""} ${meetsBedroomReq ? "matches" : "doesn't match"} preference`,
+        details: `${property.bedrooms} bedroom${
+          property.bedrooms !== 1 ? "s" : ""
+        } ${meetsBedroomReq ? "matches" : "doesn't match"} preference`,
         category: "bedrooms",
       });
     } else if (userPreferences?.min_bedrooms) {
       const meetsBedroomReq = property.bedrooms >= userPreferences.min_bedrooms;
       reasons.push({
         matches: meetsBedroomReq,
-        details: `${property.bedrooms} bedrooms ${meetsBedroomReq ? "meets" : "below"} requirement (${userPreferences.min_bedrooms}+)`,
+        details: `${property.bedrooms} bedrooms ${
+          meetsBedroomReq ? "meets" : "below"
+        } requirement (${userPreferences.min_bedrooms}+)`,
         category: "bedrooms",
       });
     }
 
     // Property type matching
-    if (userPreferences?.property_types && userPreferences.property_types.length > 0) {
-      const matchesType = userPreferences.property_types.includes(property.property_type);
+    if (
+      userPreferences?.property_types &&
+      userPreferences.property_types.length > 0
+    ) {
+      const matchesType = userPreferences.property_types.includes(
+        property.property_type
+      );
       reasons.push({
         matches: matchesType,
-        details: `${property.property_type || "Unknown"} ${matchesType ? "matches" : "doesn't match"} preferences`,
+        details: `${property.property_type || "Unknown"} ${
+          matchesType ? "matches" : "doesn't match"
+        } preferences`,
         category: "propertyType",
       });
     }
@@ -263,7 +285,11 @@ export default function EnhancedPropertyCard({
       {/* Image Section */}
       <div className="relative h-64 bg-gray-100 overflow-hidden rounded-t-2xl">
         <img
-          src={imageSuccessfullyLoaded && currentImageSrc ? currentImageSrc : getMainImage()}
+          src={
+            imageSuccessfullyLoaded && currentImageSrc
+              ? currentImageSrc
+              : getMainImage()
+          }
           alt={property.title}
           className={`w-full h-full object-cover transition-opacity duration-500 ${
             imageLoaded || imageSuccessfullyLoaded ? "opacity-100" : "opacity-0"
@@ -272,11 +298,13 @@ export default function EnhancedPropertyCard({
           onLoad={(e) => {
             const target = e.currentTarget;
             const currentSrc = target.src;
-            
+
             // Only mark as successfully loaded if it's not a placeholder
-            if (currentSrc !== PROPERTY_PLACEHOLDER && 
-                !currentSrc.includes('data:image/svg+xml') &&
-                !currentSrc.includes('Property Image')) {
+            if (
+              currentSrc !== PROPERTY_PLACEHOLDER &&
+              !currentSrc.includes("data:image/svg+xml") &&
+              !currentSrc.includes("Property Image")
+            ) {
               setImageSuccessfullyLoaded(true);
               setCurrentImageSrc(currentSrc);
               if (onImageLoad) {
@@ -287,20 +315,22 @@ export default function EnhancedPropertyCard({
           onError={(e) => {
             const target = e.currentTarget;
             const currentSrc = target.src;
-            
+
             // Never replace image if it was successfully loaded before
             if (imageSuccessfullyLoaded && currentImageSrc) {
               // If we have a successfully loaded image, restore it
               target.src = currentImageSrc;
               return;
             }
-            
+
             // Only show placeholder if image hasn't been successfully loaded before
             // and current source is not already placeholder
-            if (!imageSuccessfullyLoaded && 
-                currentSrc !== PROPERTY_PLACEHOLDER && 
-                !currentSrc.includes('data:image/svg+xml') &&
-                !currentSrc.includes('Property Image')) {
+            if (
+              !imageSuccessfullyLoaded &&
+              currentSrc !== PROPERTY_PLACEHOLDER &&
+              !currentSrc.includes("data:image/svg+xml") &&
+              !currentSrc.includes("Property Image")
+            ) {
               // Set placeholder only once
               target.src = PROPERTY_PLACEHOLDER;
             }
@@ -336,7 +366,7 @@ export default function EnhancedPropertyCard({
           <button
             onClick={handleShortlistToggle}
             disabled={shortlistLoading}
-            className={`absolute bg-black/60 backdrop-blur-[3px] top-4 right-4 w-12 h-12 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center z-10 ${
+            className={`absolute bg-black/60 backdrop-blur-[3px] cursor-pointer top-4 right-4 w-12 h-12 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center z-10 ${
               shortlistLoading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
