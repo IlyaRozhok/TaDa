@@ -185,12 +185,9 @@ export default function ShortlistPage() {
             Back to Dashboard
           </button>
 
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 mt-15">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-rose-600" />
-                </div>
                 <div>
                   <h1 className="text-3xl font-bold text-slate-900">
                     Your Shortlist
@@ -256,33 +253,6 @@ export default function ShortlistPage() {
         )}
 
         {/* Tips Section */}
-        {properties.length > 0 && (
-          <div className="mt-12 bg-slate-100 rounded-xl p-8">
-            <h3 className="text-lg font-semibold text-slate-900 mb-6">
-              Helpful Tips
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-700">
-              <div className="bg-white rounded-lg p-4">
-                <p className="font-semibold text-slate-900 mb-2">
-                  Compare Properties
-                </p>
-                <p>
-                  Click on any property to view detailed information and
-                  features.
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-4">
-                <p className="font-semibold text-slate-900 mb-2">
-                  Remove Properties
-                </p>
-                <p>
-                  Visit a property's detail page to remove it from your
-                  shortlist.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Clear Shortlist Confirmation Modal */}
         <ConfirmModal
