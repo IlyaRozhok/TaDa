@@ -1,0 +1,15 @@
+export {
+  default as shortlistReducer,
+  clearError,
+  resetShortlist,
+  fetchShortlist,
+  addToShortlist,
+  removeFromShortlist,
+  clearShortlist,
+  fetchShortlistCount,
+  selectShortlist,
+  selectShortlistProperties,
+  selectShortlistLoading,
+  selectShortlistError,
+  selectShortlistCount,
+} from "./shortlistSlice";
