@@ -185,7 +185,7 @@ export default function ShortlistPage() {
             Back to Dashboard
           </button>
 
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 mt-15">
+          <div className="bg-white rounded-2xl p-8 border-[0.7px] border-slate-200 mt-15">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div>
@@ -202,18 +202,16 @@ export default function ShortlistPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleRefresh}
-                  className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-slate-600 cursor-pointer hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  <RefreshCw className="w-4 h-4" />
                   Refresh
                 </button>
 
                 {properties.length > 0 && (
                   <button
                     onClick={handleClearShortlist}
-                    className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-slate-600 border cursor-pointer hover:border-red-400 hover:text-red-400 rounded-lg transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
                     Clear All
                   </button>
                 )}

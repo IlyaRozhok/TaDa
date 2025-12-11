@@ -232,7 +232,6 @@ export default function ListedPropertiesSection({
             onClick={() => router.push("/app/properties/map")}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
           >
-            <Map className="w-4 h-4 text-slate-900" />
             <span className="font-medium text-slate-900">Show map</span>
           </button>
         </div>

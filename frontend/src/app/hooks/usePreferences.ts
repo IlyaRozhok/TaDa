@@ -303,29 +303,26 @@ export const usePreferences = () => {
         } as Partial<PreferencesFormData>;
         const transformedData = transformFormDataForApi(formData);
 
-        // Get only the transformed value for this field
-        const fieldKey = Object.keys(
-          transformedData
-        )[0] as keyof PreferencesFormData;
-        const transformedValue = transformedData[fieldKey];
+        // Process all transformed keys (handle empty arrays, nulls, etc.)
+        const updateData = Object.keys(transformedData).reduce((acc, key) => {
+          const fieldKey = key as keyof PreferencesFormData;
+          const transformedValue = transformedData[fieldKey];
 
-        // Process the value (handle empty arrays, nulls, etc.)
-        let processedValue = transformedValue;
-        if (transformedValue === "no-preference" && fieldKey !== "smoker") {
-          processedValue = null;
-        } else if (transformedValue === "") {
-          processedValue = null;
-        } else if (
-          Array.isArray(transformedValue) &&
-          transformedValue.length === 0
-        ) {
-          processedValue = [];
-        }
+          let processedValue = transformedValue;
+          if (transformedValue === "no-preference" && fieldKey !== "smoker") {
+            processedValue = null;
+          } else if (transformedValue === "") {
+            processedValue = null;
+          } else if (
+            Array.isArray(transformedValue) &&
+            transformedValue.length === 0
+          ) {
+            processedValue = [];
+          }
 
-        // Create update object with only this field
-        const updateData: Partial<PreferencesFormData> = {
-          [fieldKey]: processedValue,
-        } as Partial<PreferencesFormData>;
+          (acc as Record<string, unknown>)[fieldKey] = processedValue;
+          return acc;
+        }, {} as Partial<PreferencesFormData>);
 
         // If no preferences exist, create new with this field
         if (!state.existingPreferences) {
@@ -337,22 +334,24 @@ export const usePreferences = () => {
           return;
         }
 
-        // Check if value actually changed
-        const existingValue = (
-          state.existingPreferences as Record<string, unknown>
-        )?.[fieldKey];
-        let hasChanged = false;
-
-        if (Array.isArray(processedValue)) {
-          const existingArray = Array.isArray(existingValue)
-            ? existingValue
-            : [];
-          hasChanged =
-            JSON.stringify([...processedValue].sort()) !==
-            JSON.stringify([...existingArray].sort());
-        } else {
-          hasChanged = processedValue !== existingValue;
-        }
+        // Check if any value actually changed
+        const existingPreferences =
+          (state.existingPreferences as Record<string, unknown>) || {};
+        const hasChanged = Object.entries(updateData).some(
+          ([key, processedValue]) => {
+            const existingValue = existingPreferences[key];
+            if (Array.isArray(processedValue)) {
+              const existingArray = Array.isArray(existingValue)
+                ? existingValue
+                : [];
+              return (
+                JSON.stringify([...processedValue].sort()) !==
+                JSON.stringify([...existingArray].sort())
+              );
+            }
+            return processedValue !== existingValue;
+          }
+        );
 
         if (!hasChanged) {
           return; // No change, skip save
@@ -366,7 +365,7 @@ export const usePreferences = () => {
           ...prev,
           existingPreferences: {
             ...(prev.existingPreferences as Record<string, unknown>),
-            [fieldKey]: processedValue,
+            ...updateData,
           },
         }));
       } catch (error) {
