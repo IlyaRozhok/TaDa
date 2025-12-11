@@ -11,6 +11,7 @@ import { TenantProfile } from "../../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../../entities/operator-profile.entity";
 import { Preferences } from "../../../entities/preferences.entity";
 import { CreateUserDto } from "../dto/create-user.dto";
+import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
 import { USER_CONSTANTS } from "../../../common/constants/user.constants";
 
 @Injectable()
@@ -70,7 +71,7 @@ export class UserAdminService {
   /**
    * Обновить пользователя администратором
    */
-  async updateUser(id: string, dto: any): Promise<User> {
+  async updateUser(id: string, dto: AdminUpdateUserDto): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ["preferences", "tenantProfile", "operatorProfile"],

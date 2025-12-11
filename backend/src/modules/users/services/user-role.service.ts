@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { QueryRunner, Repository } from "typeorm";
 import { User, UserRole } from "../../../entities/user.entity";
 import { TenantProfile } from "../../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../../entities/operator-profile.entity";
@@ -39,8 +39,7 @@ export class UserRoleService {
 
     const oldRole = user.role;
 
-    // Use transaction to ensure data consistency
-    const queryRunner =
+    const queryRunner: QueryRunner =
       this.userRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -61,7 +60,6 @@ export class UserRoleService {
       });
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error("Error updating user role:", error);
       throw error;
     } finally {
       await queryRunner.release();
@@ -69,7 +67,7 @@ export class UserRoleService {
   }
 
   private async handleRoleTransition(
-    queryRunner: any,
+    queryRunner: QueryRunner,
     user: User,
     oldRole: UserRole,
     newRole: UserRole
@@ -97,7 +95,7 @@ export class UserRoleService {
   }
 
   private async transitionTenantToOperator(
-    queryRunner: any,
+    queryRunner: QueryRunner,
     user: User
   ): Promise<void> {
     // Remove tenant profile and preferences
@@ -119,7 +117,7 @@ export class UserRoleService {
   }
 
   private async transitionOperatorToTenant(
-    queryRunner: any,
+    queryRunner: QueryRunner,
     user: User
   ): Promise<void> {
     // Remove operator profile
@@ -145,7 +143,10 @@ export class UserRoleService {
     }
   }
 
-  private async transitionToAdmin(queryRunner: any, user: User): Promise<void> {
+  private async transitionToAdmin(
+    queryRunner: QueryRunner,
+    user: User
+  ): Promise<void> {
     // Remove all profiles and preferences for admin
     if (user.tenantProfile) {
       await queryRunner.manager.delete(TenantProfile, { userId: user.id });
@@ -159,7 +160,7 @@ export class UserRoleService {
   }
 
   private async transitionAdminToTenant(
-    queryRunner: any,
+    queryRunner: QueryRunner,
     user: User
   ): Promise<void> {
     // Create tenant profile and preferences for admin becoming tenant
@@ -176,7 +177,7 @@ export class UserRoleService {
   }
 
   private async transitionAdminToOperator(
-    queryRunner: any,
+    queryRunner: QueryRunner,
     user: User
   ): Promise<void> {
     // Create operator profile for admin becoming operator
@@ -187,4 +188,3 @@ export class UserRoleService {
     await queryRunner.manager.save(OperatorProfile, operatorProfile);
   }
 }
-

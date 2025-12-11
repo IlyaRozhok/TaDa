@@ -18,6 +18,7 @@ import { TenantCvService } from "../tenant-cv/tenant-cv.service";
 import { AuthValidationService } from "./services/auth-validation.service";
 import { AuthTokenService } from "./services/auth-token.service";
 import { USER_CONSTANTS } from "../../common/constants/user.constants";
+import { toUserResponse } from "../users/user.mapper";
 
 @Injectable()
 export class AuthService {
@@ -38,7 +39,6 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { email, password } = registerDto;
     const role = UserRole.Tenant; // All new users are tenants by default
-    console.log("🔍 Registering user with email:", email, "as tenant");
 
     // Validate registration data
     await this.authValidationService.validateRegistration(registerDto);
@@ -70,28 +70,12 @@ export class AuthService {
       const refreshToken =
         this.authTokenService.generateRefreshToken(savedUser);
 
-      console.log("🔑 Generated tokens for user:", savedUser.id);
-      console.log("🔑 Access token:", accessToken);
-
       return {
-        user: {
-          id: savedUser.id,
-          email: savedUser.email,
-          role: savedUser.role,
-          status: savedUser.status,
-          full_name: savedUser.full_name,
-          avatar_url: savedUser.avatar_url,
-          provider: savedUser.provider,
-          google_id: savedUser.google_id,
-          email_verified: savedUser.email_verified,
-          created_at: savedUser.created_at,
-          updated_at: savedUser.updated_at,
-        },
+        user: toUserResponse(savedUser),
         access_token: accessToken,
         refresh_token: refreshToken,
       };
     } catch (error) {
-      console.error("Error during registration:", error);
       throw new InternalServerErrorException("Registration failed");
     }
   }
@@ -107,19 +91,7 @@ export class AuthService {
     const refreshToken = this.authTokenService.generateRefreshToken(user);
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        full_name: user.full_name,
-        avatar_url: user.avatar_url,
-        provider: user.provider,
-        google_id: user.google_id,
-        email_verified: user.email_verified,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-      },
+      user: toUserResponse(user),
       access_token: accessToken,
       refresh_token: refreshToken,
     };

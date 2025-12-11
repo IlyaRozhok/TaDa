@@ -9,6 +9,8 @@ import { UserAdminService } from "./services/user-admin.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { S3Service } from "../../common/services/s3.service";
+import { toUserResponse } from "./user.mapper";
+import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 
 @Injectable()
 export class UsersService {
@@ -47,7 +49,11 @@ export class UsersService {
     search?: string;
     role?: string;
   }) {
-    return this.userQueryService.findAllPaginated(params);
+    const result = await this.userQueryService.findAllPaginated(params);
+    return {
+      ...result,
+      users: result.users.map(toUserResponse),
+    };
   }
 
   /**
@@ -55,6 +61,17 @@ export class UsersService {
    */
   async updateProfile(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.userQueryService.findOneWithProfiles(id);
+
+    const baseUpdates: Partial<User> = {};
+    if (updateUserDto.email) {
+      baseUpdates.email = updateUserDto.email.toLowerCase();
+    }
+    if (updateUserDto.status) {
+      baseUpdates.status = updateUserDto.status;
+    }
+    if (Object.keys(baseUpdates).length > 0) {
+      await this.userRepository.update(id, baseUpdates);
+    }
 
     // Обновить базовую информацию пользователя
     if (updateUserDto.email) user.email = updateUserDto.email;
@@ -103,13 +120,14 @@ export class UsersService {
    * Создать пользователя (админ)
    */
   async adminCreateUser(dto: CreateUserDto): Promise<User> {
-    return this.userAdminService.createUser(dto);
+    const created = await this.userAdminService.createUser(dto);
+    return created;
   }
 
   /**
    * Обновить пользователя (админ)
    */
-  async adminUpdateUser(id: string, dto: any): Promise<User> {
+  async adminUpdateUser(id: string, dto: AdminUpdateUserDto): Promise<User> {
     return this.userAdminService.updateUser(id, dto);
   }
 
@@ -133,10 +151,7 @@ export class UsersService {
   /**
    * Upload and set user avatar
    */
-  async uploadAvatar(
-    userId: string,
-    file: Express.Multer.File
-  ): Promise<User> {
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<User> {
     if (!file) {
       throw new BadRequestException("No file uploaded");
     }

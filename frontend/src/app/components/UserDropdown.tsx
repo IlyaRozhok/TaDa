@@ -183,9 +183,6 @@ export default function UserDropdown() {
                 <p className={styles.userEmail}>{user.email}</p>
                 <p className={styles.userRole}>
                   {user.roles?.includes("operator") ? "Operator" : "Tenant"}
-                  {user.provider === "google" && (
-                    <span className="ml-2 text-xs text-gray-500">(Google)</span>
-                  )}
                 </p>
               </div>
             </div>

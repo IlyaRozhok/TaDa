@@ -13,6 +13,11 @@ import {
 } from "lucide-react";
 import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
 import { buildDisplayName, buildInitials } from "../../utils/displayName";
+import {
+  dateToDisplay,
+  formatCurrencyRange,
+  normalizeHobbies,
+} from "./tenantCv.utils";
 
 interface TenantCvViewProps {
   data: TenantCvResponse;
@@ -30,29 +35,6 @@ const Pill = ({ children }: { children: React.ReactNode }) => (
     {children}
   </span>
 );
-
-const formatCurrencyRange = (min?: number | null, max?: number | null) => {
-  if (!min && !max) return "Not set";
-  const fmt = (v: number) =>
-    new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: "GBP",
-      maximumFractionDigits: 0,
-    }).format(v);
-  if (min && max) return `${fmt(min)}-${fmt(max)}`;
-  return min ? `from ${fmt(min)}` : `up to ${fmt(max!)}`;
-};
-
-const dateToDisplay = (value?: string | null) => {
-  if (!value) return null;
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-};
 
 const RentHistoryCard = ({ entry }: { entry: RentHistoryEntry }) => (
   <div className="border border-gray-200 rounded-none p-4 sm:p-6 shadow-none bg-white">
@@ -184,34 +166,6 @@ export function TenantCvView({
   const hasAmenities = amenityTags.length > 0;
   const aboutText = data.about || preferences?.additional_info || "";
 
-  const normalizeHobbies = (input: unknown): string[] => {
-    if (!input) return [];
-    if (Array.isArray(input)) {
-      return input
-        .map((h) => {
-          if (typeof h === "string") return h.trim();
-          if (h && typeof h === "object") {
-            const obj = h as Record<string, unknown>;
-            return (
-              (typeof obj.label === "string" && obj.label) ||
-              (typeof obj.name === "string" && obj.name) ||
-              (typeof obj.value === "string" && obj.value) ||
-              ""
-            ).trim();
-          }
-          return "";
-        })
-        .filter(Boolean);
-    }
-    if (typeof input === "string") {
-      return input
-        .split(/[,;]+/)
-        .map((h) => h.trim())
-        .filter(Boolean);
-    }
-    return [];
-  };
-
   const hobbiesSource =
     (Array.isArray(data.hobbies) && data.hobbies.length > 0
       ? data.hobbies
@@ -221,8 +175,6 @@ export function TenantCvView({
   const hasHobbies = hobbiesList.length > 0;
   const hasRentHistory = data.rent_history && data.rent_history.length > 0;
 
-  console.log("here");
-  console.log(profile);
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

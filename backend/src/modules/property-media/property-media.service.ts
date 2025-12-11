@@ -9,8 +9,6 @@ import { Repository } from "typeorm";
 import { PropertyMedia } from "../../entities/property-media.entity";
 import { Property } from "../../entities/property.entity";
 import { S3Service } from "../../common/services/s3.service";
-import * as fs from "fs";
-import * as path from "path";
 
 @Injectable()
 export class PropertyMediaService {
@@ -34,14 +32,7 @@ export class PropertyMediaService {
       throw new NotFoundException("Media not found");
     }
 
-    // Generate fresh presigned URL for viewing
-    try {
-      media.url = await this.s3Service.getPresignedUrl(media.s3_key);
-    } catch (error) {
-      console.error("Error generating presigned URL:", error);
-      // Fallback to S3 direct URL if presigned URL fails
-      media.url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${media.s3_key}`;
-    }
+    media.url = await this.s3Service.getPresignedUrl(media.s3_key);
 
     return media;
   }
@@ -55,20 +46,11 @@ export class PropertyMediaService {
       order: { order_index: "ASC" },
     });
 
-    // Generate fresh presigned URLs for all media
-    for (const item of media) {
-      try {
+    await Promise.all(
+      media.map(async (item) => {
         item.url = await this.s3Service.getPresignedUrl(item.s3_key);
-      } catch (error) {
-        console.error(
-          "Error generating presigned URL for media:",
-          item.id,
-          error
-        );
-        // Fallback to S3 direct URL
-        item.url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${item.s3_key}`;
-      }
-    }
+      })
+    );
 
     return media;
   }
@@ -83,123 +65,71 @@ export class PropertyMediaService {
     orderIndex?: number,
     userRole?: string
   ): Promise<PropertyMedia> {
-    console.log("🔧 PropertyMediaService.uploadFile started");
-    console.log("- propertyId:", propertyId);
-    console.log("- userId:", userId);
-    console.log("- file.originalname:", file.originalname);
-    console.log("- file.size:", file.size);
-    console.log("- file.mimetype:", file.mimetype);
+    const property = await this.propertyRepository.findOne({
+      where: { id: propertyId },
+    });
 
-    try {
-      // Verify property exists and user owns it
-      console.log("🔍 Verifying property ownership...");
-      const property = await this.propertyRepository.findOne({
-        where: { id: propertyId },
-      });
-
-      if (!property) {
-        console.log("❌ Property not found");
-        throw new NotFoundException("Property not found");
-      }
-
-      // Allow admins to manage any property, otherwise check ownership
-      if (userRole !== "admin" && property.operator_id !== userId) {
-        console.log(
-          "❌ Access denied - user does not own property and is not admin"
-        );
-        console.log("- User role:", userRole);
-        console.log("- Property operator_id:", property.operator_id);
-        console.log("- User id:", userId);
-        throw new ForbiddenException(
-          "You can only upload media for your own properties"
-        );
-      }
-      console.log("✅ Property access verified (admin or owner)");
-
-      // Validate file type
-      console.log("🔍 Validating file type...");
-      if (!this.s3Service.isValidFileType(file.mimetype)) {
-        console.log("❌ Invalid file type:", file.mimetype);
-        throw new BadRequestException(
-          "Invalid file type. Only images and videos are allowed."
-        );
-      }
-      console.log("✅ File type valid");
-
-      // Check file size (10MB limit)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        console.log("❌ File too large:", file.size);
-        throw new BadRequestException("File too large. Maximum size is 10MB.");
-      }
-      console.log("✅ File size OK");
-
-      // Check media count limit (10 files per property)
-      console.log("🔍 Checking media count...");
-      const existingMediaCount = await this.propertyMediaRepository.count({
-        where: { property_id: propertyId },
-      });
-
-      if (existingMediaCount >= 10) {
-        console.log("❌ Too many media files:", existingMediaCount);
-        throw new BadRequestException(
-          "Maximum 10 media files per property allowed."
-        );
-      }
-      console.log("✅ Media count OK:", existingMediaCount);
-
-      // Generate unique file key
-      console.log("🔧 Generating file key...");
-      const fileKey = this.s3Service.generateFileKey(
-        file.originalname,
-        "property-media"
-      );
-      console.log("✅ File key generated:", fileKey);
-
-      // Upload to S3
-      console.log("🔧 Uploading to S3...");
-      const s3Result = await this.s3Service.uploadFile(
-        file.buffer,
-        fileKey,
-        file.mimetype,
-        file.originalname
-      );
-      console.log("✅ S3 upload successful:", s3Result);
-
-      // Get next order index if not provided
-      if (orderIndex === undefined) {
-        console.log("🔧 Getting next order index...");
-        const maxOrderIndex = await this.propertyMediaRepository
-          .createQueryBuilder("media")
-          .select("MAX(media.order_index)", "maxOrder")
-          .where("media.property_id = :propertyId", { propertyId })
-          .getRawOne();
-
-        orderIndex = (maxOrderIndex?.maxOrder || -1) + 1;
-        console.log("✅ Order index set to:", orderIndex);
-      }
-
-      // Create media record
-      console.log("🔧 Creating media record...");
-      const media = this.propertyMediaRepository.create({
-        property_id: propertyId,
-        url: s3Result.url,
-        s3_key: s3Result.key,
-        type: this.s3Service.getFileType(file.mimetype),
-        mime_type: file.mimetype,
-        original_filename: file.originalname,
-        file_size: file.size,
-        order_index: orderIndex,
-      });
-
-      const savedMedia = await this.propertyMediaRepository.save(media);
-      console.log("✅ Media record saved:", savedMedia.id);
-
-      return savedMedia;
-    } catch (error) {
-      console.error("❌ Error in PropertyMediaService.uploadFile:", error);
-      throw error;
+    if (!property) {
+      throw new NotFoundException("Property not found");
     }
+
+    this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
+
+    if (!this.s3Service.isValidFileType(file.mimetype)) {
+      throw new BadRequestException(
+        "Invalid file type. Only images and videos are allowed."
+      );
+    }
+
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new BadRequestException("File too large. Maximum size is 10MB.");
+    }
+
+    const existingMediaCount = await this.propertyMediaRepository.count({
+      where: { property_id: propertyId },
+    });
+
+    if (existingMediaCount >= 10) {
+      throw new BadRequestException(
+        "Maximum 10 media files per property allowed."
+      );
+    }
+
+    const fileKey = this.s3Service.generateFileKey(
+      file.originalname,
+      "property-media"
+    );
+
+    const s3Result = await this.s3Service.uploadFile(
+      file.buffer,
+      fileKey,
+      file.mimetype,
+      file.originalname
+    );
+
+    if (orderIndex === undefined) {
+      const maxOrderIndex = await this.propertyMediaRepository
+        .createQueryBuilder("media")
+        .select("MAX(media.order_index)", "maxOrder")
+        .where("media.property_id = :propertyId", { propertyId })
+        .getRawOne();
+
+      orderIndex = (maxOrderIndex?.maxOrder || -1) + 1;
+    }
+
+    const media = this.propertyMediaRepository.create({
+      property_id: propertyId,
+      url: s3Result.url,
+      s3_key: s3Result.key,
+      type: this.s3Service.getFileType(file.mimetype),
+      mime_type: file.mimetype,
+      original_filename: file.originalname,
+      file_size: file.size,
+      order_index: orderIndex,
+    });
+
+    return this.propertyMediaRepository.save(media);
   }
 
   /**
@@ -229,20 +159,7 @@ export class PropertyMediaService {
       throw new NotFoundException("Media not found");
     }
 
-    // Allow admins to delete any media, otherwise check ownership
-    if (userRole !== "admin" && media.property.operator_id !== userId) {
-      console.log(
-        "❌ Delete access denied - user does not own property and is not admin"
-      );
-      console.log("- User role:", userRole);
-      console.log("- Property operator_id:", media.property.operator_id);
-      console.log("- User id:", userId);
-      throw new ForbiddenException(
-        "You can only delete media from your own properties"
-      );
-    }
-
-    console.log("✅ Delete access verified (admin or owner)");
+    this.ensureOwnerOrAdmin(media.property.operator_id, userId, userRole);
 
     // Delete from S3
     await this.s3Service.deleteFile(media.s3_key);
@@ -269,20 +186,7 @@ export class PropertyMediaService {
       throw new NotFoundException("Property not found");
     }
 
-    // Allow admins to update any property, otherwise check ownership
-    if (userRole !== "admin" && property.operator_id !== userId) {
-      console.log(
-        "❌ Update order access denied - user does not own property and is not admin"
-      );
-      console.log("- User role:", userRole);
-      console.log("- Property operator_id:", property.operator_id);
-      console.log("- User id:", userId);
-      throw new ForbiddenException(
-        "You can only update media for your own properties"
-      );
-    }
-
-    console.log("✅ Update order access verified (admin or owner)");
+    this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
 
     // Update order for each media
     for (const mediaOrder of mediaOrders) {
@@ -293,5 +197,18 @@ export class PropertyMediaService {
     }
 
     return await this.getPropertyMedia(propertyId);
+  }
+
+  private ensureOwnerOrAdmin(
+    operatorId: string,
+    userId: string,
+    userRole?: string
+  ) {
+    if (userRole === "admin") return;
+    if (operatorId !== userId) {
+      throw new ForbiddenException(
+        "You can only manage media for your own properties"
+      );
+    }
   }
 }

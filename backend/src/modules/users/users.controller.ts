@@ -13,7 +13,9 @@ import {
   Param,
   UploadedFile,
   BadRequestException,
+  ForbiddenException,
 } from "@nestjs/common";
+import { Request } from "express";
 import {
   ApiTags,
   ApiOperation,
@@ -27,31 +29,10 @@ import { User, UserRole } from "../../entities/user.entity";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
-import { IsEmail, IsOptional, IsString } from "class-validator";
+import { toUserResponse } from "./user.mapper";
+import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-
-class AdminUpdateUserDto {
-  @IsOptional()
-  @IsString()
-  full_name?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  role?: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  status?: string;
-}
 
 @ApiTags("Users")
 @Controller("users")
@@ -69,7 +50,8 @@ export class UsersController {
     type: User,
   })
   async getProfile(@Req() req: any): Promise<User> {
-    return this.usersService.findOne(req.user.id);
+    const user = await this.usersService.findOne(req.user.id);
+    return toUserResponse(user) as any;
   }
 
   @Put("profile")
@@ -82,10 +64,14 @@ export class UsersController {
     type: User,
   })
   async updateProfile(
-    @Req() req: any,
+    @Req() req: Request & { user: User },
     @Body() updateUserDto: UpdateUserDto
   ): Promise<User> {
-    return this.usersService.updateProfile(req.user.id, updateUserDto);
+    const user = await this.usersService.updateProfile(
+      req.user.id,
+      updateUserDto
+    );
+    return toUserResponse(user) as any;
   }
 
   @Post("avatar")
@@ -99,13 +85,14 @@ export class UsersController {
   })
   @UseInterceptors(FileInterceptor("file"))
   async uploadAvatar(
-    @Req() req: any,
+    @Req() req: Request & { user: User },
     @UploadedFile() file: Express.Multer.File
   ): Promise<User> {
     if (!file) {
       throw new BadRequestException("No file uploaded");
     }
-    return this.usersService.uploadAvatar(req.user.id, file);
+    const user = await this.usersService.uploadAvatar(req.user.id, file);
+    return toUserResponse(user) as any;
   }
 
   @Delete("account")
@@ -135,7 +122,7 @@ export class UsersController {
     @Query("sortBy") sortBy: string = "created_at",
     @Query("order") order: "ASC" | "DESC" = "DESC"
   ) {
-    return this.usersService.findAllPaginated({
+    const result = await this.usersService.findAllPaginated({
       page: parseInt(page),
       limit: parseInt(limit),
       search,
@@ -143,6 +130,11 @@ export class UsersController {
       sortBy,
       sortOrder: order,
     });
+
+    return {
+      ...result,
+      users: result.users.map(toUserResponse),
+    };
   }
 
   @Post("")
@@ -152,7 +144,8 @@ export class UsersController {
   @ApiOperation({ summary: "Create user (admin only)" })
   @ApiResponse({ status: 201, description: "User created", type: User })
   async adminCreateUser(@Body() dto: CreateUserDto): Promise<User> {
-    return this.usersService.adminCreateUser(dto);
+    const user = await this.usersService.adminCreateUser(dto);
+    return toUserResponse(user) as any;
   }
 
   @Put(":id")
@@ -165,7 +158,8 @@ export class UsersController {
     @Param("id") id: string,
     @Body() dto: AdminUpdateUserDto
   ): Promise<User> {
-    return this.usersService.adminUpdateUser(id, dto);
+    const user = await this.usersService.adminUpdateUser(id, dto);
+    return toUserResponse(user) as any;
   }
 
   @Delete(":id")
@@ -187,14 +181,13 @@ export class UsersController {
   async updateUserRole(
     @Param("id") id: string,
     @Body() updateData: { role: string },
-    @Req() req: any
+    @Req() req: Request & { user: User }
   ): Promise<{ user: User; access_token?: string }> {
-    // Only allow users to update their own role or admins to update any role
     if (req.user.id !== id && req.user.role !== UserRole.Admin) {
-      throw new Error("Unauthorized");
+      throw new ForbiddenException("Unauthorized to update this role");
     }
 
     const user = await this.usersService.updateUserRole(id, updateData.role);
-    return { user };
+    return { user: toUserResponse(user) as any };
   }
 }
