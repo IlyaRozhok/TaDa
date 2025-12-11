@@ -10,6 +10,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { S3Service } from "../../common/services/s3.service";
 import { toUserResponse } from "./user.mapper";
+import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 
 @Injectable()
 export class UsersService {
@@ -126,7 +127,7 @@ export class UsersService {
   /**
    * Обновить пользователя (админ)
    */
-  async adminUpdateUser(id: string, dto: any): Promise<User> {
+  async adminUpdateUser(id: string, dto: AdminUpdateUserDto): Promise<User> {
     return this.userAdminService.updateUser(id, dto);
   }
 

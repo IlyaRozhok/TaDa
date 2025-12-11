@@ -30,31 +30,9 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { toUserResponse } from "./user.mapper";
-import { IsEmail, IsOptional, IsString } from "class-validator";
+import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-
-class AdminUpdateUserDto {
-  @IsOptional()
-  @IsString()
-  full_name?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  role?: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  status?: string;
-}
 
 @ApiTags("Users")
 @Controller("users")
