@@ -19,9 +19,7 @@ export class BookingRequestService {
     @InjectRepository(BookingRequest)
     private readonly bookingRequestRepository: Repository<BookingRequest>,
     @InjectRepository(Property)
-    private readonly propertyRepository: Repository<Property>,
-    @InjectRepository(TenantCv)
-    private readonly tenantCvRepository: Repository<TenantCv>
+    private readonly propertyRepository: Repository<Property>
   ) {}
 
   async create(

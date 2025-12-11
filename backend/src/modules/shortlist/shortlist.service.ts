@@ -8,7 +8,6 @@ import { Repository, In } from "typeorm";
 import { Property } from "../../entities/property.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { User, UserRole } from "../../entities/user.entity";
-import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
 export class ShortlistService {
@@ -18,8 +17,7 @@ export class ShortlistService {
     @InjectRepository(TenantProfile)
     private tenantProfileRepository: Repository<TenantProfile>,
     @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private readonly s3Service: S3Service
+    private userRepository: Repository<User>
   ) {}
 
   /**
@@ -185,5 +183,3 @@ export class ShortlistService {
     };
   }
 }
-
-
