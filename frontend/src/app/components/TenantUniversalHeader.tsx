@@ -136,14 +136,14 @@ export default function TenantUniversalHeader({
           {showTenantCvLink && (
             <button
               onClick={() => router.push("/app/tenant-cv")}
-              className="text-black hover:text-gray-600 transition-colors font-medium"
+              className="text-black hover:text-gray-600 transition-colors font-medium cursor-pointer"
             >
               Tenant CV
             </button>
           )}
           <button
             onClick={handleFavouritesClick}
-            className="text-black hover:text-gray-600 transition-colors"
+            className="text-black hover:text-gray-600 transition-colors cursor-pointer"
           >
             <Heart className="h-6 w-6" />
           </button>
@@ -152,7 +152,7 @@ export default function TenantUniversalHeader({
           <div className="relative language-dropdown">
             <button
               onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
             >
               <span>{selectedLanguage}</span>
               <ChevronDown className="w-3 h-3" />

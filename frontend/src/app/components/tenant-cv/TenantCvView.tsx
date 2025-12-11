@@ -287,7 +287,7 @@ export function TenantCvView({
               <button
                 onClick={onShareClick}
                 disabled={shareLoading}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+                className="inline-flex cursor-pointer items-center gap-2 px-5 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
               >
                 {shareLoading ? (
                   <Info className="w-4 h-4 animate-pulse" />

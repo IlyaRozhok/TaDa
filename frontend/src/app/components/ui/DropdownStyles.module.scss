@@ -114,6 +114,7 @@
   padding: 0.5rem; // p-2
   border-radius: 0.5rem; // rounded-lg
   transition: background-color 0.2s;
+  cursor: pointer;
 
   &:hover {
     background-color: rgb(243 244 246); // hover:bg-gray-100
