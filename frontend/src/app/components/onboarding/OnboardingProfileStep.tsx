@@ -202,6 +202,14 @@ export default function OnboardingProfileStep({
       pendingFieldRef.current = null;
     }
 
+    // Persist current form data even if fields were unchanged (ensures defaults stick)
+    try {
+      await authAPI.updateProfile(formData);
+      dispatch(updateUser(formData as any));
+    } catch (error) {
+      console.error("Failed to persist profile before next step:", error);
+    }
+
     // Move to next step
     onComplete();
   };

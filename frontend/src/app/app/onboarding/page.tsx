@@ -113,6 +113,7 @@ export default function OnboardingPage() {
         showSearchInput={false}
         showPreferencesButton={false}
         showSaveButton={false}
+        showTenantCvLink={false}
       />
 
       {/* Main Content */}

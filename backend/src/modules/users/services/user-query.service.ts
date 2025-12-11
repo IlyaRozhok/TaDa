@@ -26,7 +26,16 @@ export class UserQueryService {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ["preferences", "tenantProfile", "operatorProfile"],
-      select: ["id", "email", "role", "status", "created_at", "updated_at"],
+      select: [
+        "id",
+        "email",
+        "role",
+        "status",
+        "created_at",
+        "updated_at",
+        "full_name",
+        "avatar_url",
+      ],
     });
 
     if (!user) {
@@ -44,7 +53,16 @@ export class UserQueryService {
     const user = await this.userRepository.findOne({
       where: { email },
       relations: ["preferences", "tenantProfile", "operatorProfile"],
-      select: ["id", "email", "role", "status", "created_at", "updated_at"],
+      select: [
+        "id",
+        "email",
+        "role",
+        "status",
+        "created_at",
+        "updated_at",
+        "full_name",
+        "avatar_url",
+      ],
     });
 
     if (user) {
@@ -93,14 +111,19 @@ export class UserQueryService {
 
     // Сортировка с валидацией полей
     const validSortFields = [
-      'id', 'email', 'role', 'status', 'created_at', 'updated_at'
+      "id",
+      "email",
+      "role",
+      "status",
+      "created_at",
+      "updated_at",
     ];
-    
+
     if (validSortFields.includes(sortBy)) {
       queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
     } else {
       // Fallback на created_at если поле невалидно
-      queryBuilder.orderBy('user.created_at', sortOrder);
+      queryBuilder.orderBy("user.created_at", sortOrder);
     }
 
     // Пагинация

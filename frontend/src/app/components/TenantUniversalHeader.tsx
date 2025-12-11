@@ -26,6 +26,7 @@ interface TenantUniversalHeaderProps {
   onSaveClick?: () => void;
   showSearchInput?: boolean;
   showPreferencesButton?: boolean;
+  showTenantCvLink?: boolean;
 }
 
 export default function TenantUniversalHeader({
@@ -38,6 +39,7 @@ export default function TenantUniversalHeader({
   onSaveClick,
   showSearchInput = true,
   showPreferencesButton = true,
+  showTenantCvLink = true,
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
   const user = useSelector(selectUser);
@@ -131,12 +133,14 @@ export default function TenantUniversalHeader({
 
         {/* Right: Icons */}
         <div className="flex items-center space-x-4 cursor-pointer">
-          <button
-            onClick={() => router.push("/app/tenant-cv")}
-            className="text-black hover:text-gray-600 transition-colors font-medium"
-          >
-            Tenant CV
-          </button>
+          {showTenantCvLink && (
+            <button
+              onClick={() => router.push("/app/tenant-cv")}
+              className="text-black hover:text-gray-600 transition-colors font-medium"
+            >
+              Tenant CV
+            </button>
+          )}
           <button
             onClick={handleFavouritesClick}
             className="text-black hover:text-gray-600 transition-colors"
