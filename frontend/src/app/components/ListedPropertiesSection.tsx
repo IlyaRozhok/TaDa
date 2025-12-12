@@ -33,7 +33,13 @@ interface ListedPropertiesSectionProps {
   onPageChange?: (page: number) => void;
 }
 
-type SortOption = "bestMatch" | "lowPrice" | "highPrice" | "lowDeposit" | "highDeposit" | "dateAdded";
+type SortOption =
+  | "bestMatch"
+  | "lowPrice"
+  | "highPrice"
+  | "lowDeposit"
+  | "highDeposit"
+  | "dateAdded";
 
 interface SortDropdownProps {
   sortBy: SortOption;
@@ -226,7 +232,6 @@ export default function ListedPropertiesSection({
             onClick={() => router.push("/app/properties/map")}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
           >
-            <Map className="w-4 h-4 text-slate-900" />
             <span className="font-medium text-slate-900">Show map</span>
           </button>
         </div>
@@ -291,7 +296,7 @@ export default function ListedPropertiesSection({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
               currentPage === 1
                 ? "border-gray-200 text-gray-400 cursor-not-allowed"
                 : "border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -319,7 +324,7 @@ export default function ListedPropertiesSection({
                 <button
                   key={pageNum}
                   onClick={() => onPageChange(pageNum)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                     currentPage === pageNum
                       ? "bg-gray-900 text-white"
                       : "text-gray-700 hover:bg-gray-100"
@@ -335,7 +340,7 @@ export default function ListedPropertiesSection({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
               currentPage === totalPages
                 ? "border-gray-200 text-gray-400 cursor-not-allowed"
                 : "border-gray-300 text-gray-700 hover:bg-gray-50"

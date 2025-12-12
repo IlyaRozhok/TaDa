@@ -250,12 +250,6 @@ export default function HomePage() {
                       <ChevronDown className="w-4 h-4" />
                     </button>
                   </div>
-
-                  {/* Show Map Button */}
-                  <button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50">
-                    <MapPin className="w-4 h-4" />
-                    <span>Show map</span>
-                  </button>
                 </div>
               </div>
 

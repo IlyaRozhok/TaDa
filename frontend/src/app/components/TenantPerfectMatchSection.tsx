@@ -15,7 +15,7 @@ export default function TenantPerfectMatchSection({
   const router = useRouter();
 
   return (
-    <section className="bg-gray-50 rounded-3xl px- py-12 mb-8">
+    <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
