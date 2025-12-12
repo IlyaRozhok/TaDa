@@ -200,6 +200,11 @@ export function transformFormDataForApi(
   if (formData.rooms_preferences !== undefined) {
     apiData.bedrooms = formData.rooms_preferences
       .map((room) => {
+        const trimmed = room?.toString().trim();
+        if (trimmed?.endsWith("+")) {
+          const parsedPlus = parseInt(trimmed, 10);
+          return isNaN(parsedPlus) ? undefined : parsedPlus;
+        }
         const parsed = parseInt(room, 10);
         return isNaN(parsed) ? undefined : parsed;
       })
@@ -210,6 +215,11 @@ export function transformFormDataForApi(
   if (formData.bathrooms_preferences !== undefined) {
     apiData.bathrooms = formData.bathrooms_preferences
       .map((bath) => {
+        const trimmed = bath?.toString().trim();
+        if (trimmed?.endsWith("+")) {
+          const parsedPlus = parseInt(trimmed, 10);
+          return isNaN(parsedPlus) ? undefined : parsedPlus;
+        }
         const parsed = parseInt(bath, 10);
         return isNaN(parsed) ? undefined : parsed;
       })
@@ -226,13 +236,16 @@ export function transformFormDataForApi(
     apiData.property_types = formData.property_type_preferences;
   }
 
-  // Outdoor space transformation
+  // Outdoor space transformation (always set booleans)
   if (formData.outdoor_space_preferences !== undefined) {
     apiData.outdoor_space =
       formData.outdoor_space_preferences.includes("outdoor_space");
     apiData.balcony = formData.outdoor_space_preferences.includes("balcony");
     apiData.terrace = formData.outdoor_space_preferences.includes("terrace");
   }
+  apiData.outdoor_space ??= false;
+  apiData.balcony ??= false;
+  apiData.terrace ??= false;
 
   // Building style transformation
   if (formData.building_style_preferences !== undefined) {
@@ -254,17 +267,34 @@ export function transformFormDataForApi(
     apiData.tenant_types = formData.tenant_type_preferences;
   }
 
-  // Pets transformation
+  // Pets transformation (normalize to dog | cat | other; ignore unknowns)
+  const normalizePet = (pet: string) => {
+    const p = pet?.toString().toLowerCase();
+    if (p === "dog" || p === "cat" || p === "other") return p as Pet["type"];
+    return null;
+  };
+
   if (formData.pet_type_preferences !== undefined) {
-    apiData.pets = formData.pet_type_preferences.map((petType) => {
-      const pet: Pet = {
-        type: petType === "other" ? "other" : (petType as Pet["type"]),
-      };
-      if (petType === "dog" && formData.dog_size) {
-        pet.size = formData.dog_size as Pet["size"];
-      }
-      return pet;
-    });
+    const normalizedPets =
+      formData.pet_type_preferences
+        ?.map(normalizePet)
+        .filter((v): v is Pet["type"] => Boolean(v)) || [];
+
+    if (normalizedPets.length > 0) {
+      apiData.pets = normalizedPets.map((petType) => {
+        const pet: Pet = { type: petType };
+        if (petType === "dog" && formData.dog_size) {
+          pet.size = formData.dog_size as Pet["size"];
+        }
+        return pet;
+      });
+    }
+  }
+
+  // number_of_pets passthrough
+  if (formData.number_of_pets !== undefined) {
+    apiData.number_of_pets =
+      formData.number_of_pets === "" ? null : formData.number_of_pets;
   }
 
   // Amenities transformation
@@ -272,12 +302,22 @@ export function transformFormDataForApi(
     apiData.amenities = formData.amenities_preferences;
   }
 
-  // Additional preferences transformation (smoking area, concierge)
+  // Additional preferences transformation (smoking area, concierge) with normalization
+  const normalizeAdditional = (s: string) => {
+    const lower = s?.toString().toLowerCase();
+    if (lower.includes("smoking")) return "smoking_area";
+    if (lower.includes("concierge")) return "is_concierge";
+    return null;
+  };
+
   if (formData.additional_preferences !== undefined) {
-    apiData.smoking_area =
-      formData.additional_preferences.includes("smoking_area");
-    apiData.is_concierge =
-      formData.additional_preferences.includes("is_concierge");
+    const normalizedAdditional =
+      formData.additional_preferences
+        ?.map(normalizeAdditional)
+        .filter((v): v is "smoking_area" | "is_concierge" => Boolean(v)) || [];
+
+    apiData.smoking_area = normalizedAdditional.includes("smoking_area");
+    apiData.is_concierge = normalizedAdditional.includes("is_concierge");
   }
 
   // Normalize commute times: ensure numbers or undefined
@@ -296,6 +336,17 @@ export function transformFormDataForApi(
       }
     }
   });
+
+  // Smoker normalization (string -> boolean | null)
+  if (formData.smoker !== undefined) {
+    if (formData.smoker === "smoker") {
+      apiData.smoker = true as unknown as PreferencesFormData["smoker"];
+    } else if (formData.smoker === "non-smoker") {
+      apiData.smoker = false as unknown as PreferencesFormData["smoker"];
+    } else if (formData.smoker === "no-preference") {
+      apiData.smoker = null as unknown as PreferencesFormData["smoker"];
+    }
+  }
 
   // Normalize numeric fields: min/max price, min/max square meters
   const numericFields: Array<keyof PreferencesFormData> = [
@@ -335,10 +386,8 @@ export function transformApiDataForForm(
     ...apiData,
     // Ensure arrays are initialized to avoid uncontrolled inputs
     property_type_preferences: apiData.property_types || [],
-    rooms_preferences:
-      apiData.bedrooms?.map((bedroom) => bedroom.toString()) || [],
-    bathrooms_preferences:
-      apiData.bathrooms?.map((bathroom) => bathroom.toString()) || [],
+    rooms_preferences: [],
+    bathrooms_preferences: [],
     furnishing_preferences: apiData.furnishing || [],
     outdoor_space_preferences: [],
     building_style_preferences: apiData.building_types || [],
@@ -368,23 +417,37 @@ export function transformApiDataForForm(
     });
   }
 
+  // number_of_pets roundtrip
+  if (apiData.number_of_pets !== undefined) {
+    formData.number_of_pets = apiData.number_of_pets as number | undefined;
+  }
+
   // Additional preferences (smoking area, concierge)
   if (apiData.smoking_area)
     formData.additional_preferences.push("smoking_area");
   if (apiData.is_concierge)
     formData.additional_preferences.push("is_concierge");
 
-  // Normalize number arrays to strings for UI
+  // Normalize number arrays to strings for UI (with "+" thresholds)
   if (apiData.bedrooms) {
-    formData.rooms_preferences = apiData.bedrooms.map((bedroom) =>
-      bedroom.toString()
-    );
+    formData.rooms_preferences = apiData.bedrooms.map((bedroom) => {
+      if (bedroom >= 5) return "5+";
+      return bedroom.toString();
+    });
   }
 
   if (apiData.bathrooms) {
-    formData.bathrooms_preferences = apiData.bathrooms.map((bathroom) =>
-      bathroom.toString()
-    );
+    formData.bathrooms_preferences = apiData.bathrooms.map((bathroom) => {
+      if (bathroom >= 4) return "4+";
+      return bathroom.toString();
+    });
+  }
+
+  // Smoker mapping back to UI strings
+  if (apiData.smoker !== undefined) {
+    if (apiData.smoker === true) formData.smoker = "smoker";
+    else if (apiData.smoker === false) formData.smoker = "non-smoker";
+    else formData.smoker = "no-preference";
   }
 
   return formData;
