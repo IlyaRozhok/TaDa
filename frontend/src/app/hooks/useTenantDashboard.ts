@@ -28,6 +28,7 @@ interface DashboardState {
   totalCount: number;
   preferencesCount: number;
   sessionLoading: boolean;
+  preferencesLoading: boolean;
   hasCompletePreferences: boolean;
   currentPage: number;
   totalPages: number;
@@ -56,6 +57,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
     totalCount: 0,
     preferencesCount: 0,
     sessionLoading: true,
+    preferencesLoading: true,
     hasCompletePreferences: false,
     currentPage: 1,
     totalPages: 1,
@@ -276,6 +278,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
         ...prev,
         userPreferences: loadedPreferences,
         preferencesCount: preferencesPercentage, // Now returns percentage
+        preferencesLoading: false,
         hasCompletePreferences: isComplete,
       }));
     } catch (error: any) {

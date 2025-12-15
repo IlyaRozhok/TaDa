@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PropertyFilters, SortOptions, PaginationOptions } from "../../lib/api";
 import { Property } from "../../types";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
-import DashboardHeader from "../../components/DashboardHeader";
+import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { useFilteredProperties } from "../../hooks/useProperties";
 import { useDebounce } from "../../hooks/useDebounce";
 import {
@@ -171,7 +171,11 @@ export default function AllPropertiesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
+        <TenantUniversalHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          showPreferencesButton={true}
+        />
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Header Skeleton */}
           <div className="mb-8">
@@ -205,7 +209,11 @@ export default function AllPropertiesPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <DashboardHeader />
+        <TenantUniversalHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          showPreferencesButton={true}
+        />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -231,7 +239,10 @@ export default function AllPropertiesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader />
+      <TenantUniversalHeader
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}

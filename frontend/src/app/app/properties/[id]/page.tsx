@@ -24,7 +24,7 @@ import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "../../../components/ui/Button";
 import { Heart, Share } from "lucide-react";
 import TaDaMap from "../../../components/TaDaMap";
-import UniversalHeader from "../../../components/UniversalHeader";
+import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import OwnerPropertiesSection from "../../../components/OwnerPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
@@ -260,7 +260,12 @@ export default function PropertyPublicPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <PropertyDetailSkeleton />
       </div>
     );
@@ -269,7 +274,12 @@ export default function PropertyPublicPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-red-800 mb-4">
@@ -291,7 +301,12 @@ export default function PropertyPublicPage() {
   if (!property) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-yellow-800 mb-4">
@@ -316,7 +331,12 @@ export default function PropertyPublicPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <UniversalHeader />
+      <TenantUniversalHeader
+        searchTerm=""
+        onSearchChange={() => {}}
+        showSearchInput={false}
+        showPreferencesButton={true}
+      />
 
       {/* Header with title and actions */}
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-25">

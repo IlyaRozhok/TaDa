@@ -8,7 +8,6 @@ import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import TenantPerfectMatchSection from "../../components/TenantPerfectMatchSection";
 import ListedPropertiesSection from "../../components/ListedPropertiesSection";
-import PageSkeleton from "../../components/ui/PageSkeleton";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 
 function TenantDashboardContent() {
@@ -23,7 +22,62 @@ function TenantDashboardContent() {
 
   // Loading state
   if (!user || state.sessionLoading) {
-    return <PageSkeleton />;
+    return (
+      <div className="min-h-screen bg-white">
+        <TenantUniversalHeader
+          searchTerm={state.searchTerm || ""}
+          onSearchChange={handleSearchChange}
+          showSearchInput={true}
+        />
+
+        {/* Main Content */}
+        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Perfect Match Section - show skeleton while loading preferences */}
+          {state.preferencesLoading ? (
+            <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="animate-pulse">
+                    <div className="h-10 w-96 bg-gray-200 rounded mb-4"></div>
+                    <div className="h-5 w-full max-w-2xl bg-gray-200 rounded mb-2"></div>
+                    <div className="h-5 w-3/4 max-w-xl bg-gray-200 rounded mb-8"></div>
+                    <div className="h-12 w-48 bg-gray-200 rounded-3xl"></div>
+                  </div>
+                </div>
+
+                {/* Illustration Skeleton */}
+                <div className="hidden lg:block">
+                  <div className="animate-pulse">
+                    <div className="w-64 h-48 bg-gray-200 rounded-lg"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : (
+            !state.hasCompletePreferences && (
+              <TenantPerfectMatchSection
+                hasPreferences={
+                  !!state.userPreferences && state.preferencesCount > 0
+                }
+                preferencesCount={state.preferencesCount}
+              />
+            )
+          )}
+
+          {/* Listed Properties Section */}
+          <ListedPropertiesSection
+            properties={[]}
+            matchedProperties={[]}
+            loading={true}
+            userPreferences={state.userPreferences}
+            totalCount={0}
+            currentPage={1}
+            totalPages={1}
+            onPageChange={() => {}}
+          />
+        </main>
+      </div>
+    );
   }
 
   // Error state
@@ -67,13 +121,12 @@ function TenantDashboardContent() {
       <TenantUniversalHeader
         searchTerm={state.searchTerm}
         onSearchChange={handleSearchChange}
-        preferencesCount={state.preferencesCount}
       />
 
       {/* Main Content */}
       <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Perfect Match Section - only show if preferences are NOT complete */}
-        {!state.hasCompletePreferences && (
+        {/* Perfect Match Section - only show if preferences are NOT complete and loaded */}
+        {!state.preferencesLoading && !state.hasCompletePreferences && (
           <TenantPerfectMatchSection
             hasPreferences={
               !!state.userPreferences && state.preferencesCount > 0
@@ -136,11 +189,99 @@ export default function TenantUnitsPage() {
   }, [sessionReady, user, router]);
 
   if (!sessionReady) {
-    return <PageSkeleton />;
+    return (
+      <div className="min-h-screen bg-white">
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={true}
+        />
+
+        {/* Main Content */}
+        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Perfect Match Section Skeleton */}
+          <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="animate-pulse">
+                  <div className="h-10 w-96 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-5 w-full max-w-2xl bg-gray-200 rounded mb-2"></div>
+                  <div className="h-5 w-3/4 max-w-xl bg-gray-200 rounded mb-8"></div>
+                  <div className="h-12 w-48 bg-gray-200 rounded-3xl"></div>
+                </div>
+              </div>
+
+              {/* Illustration Skeleton */}
+              <div className="hidden lg:block">
+                <div className="animate-pulse">
+                  <div className="w-64 h-48 bg-gray-200 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Listed Properties Section */}
+          <ListedPropertiesSection
+            properties={[]}
+            matchedProperties={[]}
+            loading={true}
+            userPreferences={undefined}
+            totalCount={0}
+            currentPage={1}
+            totalPages={1}
+            onPageChange={() => {}}
+          />
+        </main>
+      </div>
+    );
   }
 
   if (!user) {
-    return <PageSkeleton />;
+    return (
+      <div className="min-h-screen bg-white">
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={true}
+        />
+
+        {/* Main Content */}
+        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Perfect Match Section Skeleton */}
+          <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="animate-pulse">
+                  <div className="h-10 w-96 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-5 w-full max-w-2xl bg-gray-200 rounded mb-2"></div>
+                  <div className="h-5 w-3/4 max-w-xl bg-gray-200 rounded mb-8"></div>
+                  <div className="h-12 w-48 bg-gray-200 rounded-3xl"></div>
+                </div>
+              </div>
+
+              {/* Illustration Skeleton */}
+              <div className="hidden lg:block">
+                <div className="animate-pulse">
+                  <div className="w-64 h-48 bg-gray-200 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Listed Properties Section */}
+          <ListedPropertiesSection
+            properties={[]}
+            matchedProperties={[]}
+            loading={true}
+            userPreferences={undefined}
+            totalCount={0}
+            currentPage={1}
+            totalPages={1}
+            onPageChange={() => {}}
+          />
+        </main>
+      </div>
+    );
   }
 
   // Redirect non-tenants
