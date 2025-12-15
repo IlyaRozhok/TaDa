@@ -236,16 +236,18 @@ export function transformFormDataForApi(
     apiData.property_types = formData.property_type_preferences;
   }
 
-  // Outdoor space transformation (always set booleans)
+  // Outdoor space transformation (case-insensitive)
   if (formData.outdoor_space_preferences !== undefined) {
-    apiData.outdoor_space =
-      formData.outdoor_space_preferences.includes("outdoor_space");
-    apiData.balcony = formData.outdoor_space_preferences.includes("balcony");
-    apiData.terrace = formData.outdoor_space_preferences.includes("terrace");
+    apiData.outdoor_space = formData.outdoor_space_preferences.some((p) =>
+      p.toLowerCase().includes("outdoor space")
+    );
+    apiData.balcony = formData.outdoor_space_preferences.some(
+      (p) => p.toLowerCase() === "balcony"
+    );
+    apiData.terrace = formData.outdoor_space_preferences.some(
+      (p) => p.toLowerCase() === "terrace"
+    );
   }
-  apiData.outdoor_space ??= false;
-  apiData.balcony ??= false;
-  apiData.terrace ??= false;
 
   // Building style transformation
   if (formData.building_style_preferences !== undefined) {

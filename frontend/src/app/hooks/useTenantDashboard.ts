@@ -185,24 +185,89 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       const preferencesResponse = await preferencesAPI.get();
       const loadedPreferences = preferencesResponse.data;
 
-      // Count filled preferences (rough estimate)
-      let count = 0;
+      // Enhanced preference completion calculation with weighted scoring
+      let totalScore = 0;
+      let maxPossibleScore = 0;
       let requiredFieldsCount = 0;
 
-      if (loadedPreferences?.min_price && loadedPreferences?.max_price) {
-        count++;
-        requiredFieldsCount++;
-      }
-      if (loadedPreferences?.min_bedrooms) {
-        count++;
-        requiredFieldsCount++;
-      }
-      if (loadedPreferences?.property_type?.length > 0) count++;
-      if (loadedPreferences?.lifestyle_features?.length > 0) count++;
+      // Essential preferences (weight: 3) - Core requirements for basic matching
+      maxPossibleScore += 3; // primary_postcode
       if (loadedPreferences?.primary_postcode) {
-        count++;
+        totalScore += 3;
         requiredFieldsCount++;
       }
+
+      maxPossibleScore += 3; // complete price range
+      if (loadedPreferences?.min_price && loadedPreferences?.max_price) {
+        totalScore += 3; // Both prices set
+        requiredFieldsCount++;
+      } else if (loadedPreferences?.min_price || loadedPreferences?.max_price) {
+        totalScore += 1.5; // Partial price range
+      }
+
+      maxPossibleScore += 3; // min_bedrooms
+      if (loadedPreferences?.min_bedrooms) {
+        totalScore += 3;
+        requiredFieldsCount++;
+      }
+
+      // Important preferences (weight: 2) - Key property details
+      maxPossibleScore += 2; // furnishing
+      if (loadedPreferences?.furnishing) totalScore += 2;
+
+      maxPossibleScore += 2; // let_duration
+      if (loadedPreferences?.let_duration) totalScore += 2;
+
+      maxPossibleScore += 2; // designer_furniture
+      if (loadedPreferences?.designer_furniture !== undefined && loadedPreferences?.designer_furniture !== null) totalScore += 2;
+
+      maxPossibleScore += 2; // house_shares
+      if (loadedPreferences?.house_shares) totalScore += 2;
+
+      // Useful preferences (weight: 1.5) - Lifestyle and feature preferences
+      maxPossibleScore += 1.5; // convenience_features (array)
+      const convenienceCount = loadedPreferences?.convenience_features?.length || 0;
+      if (convenienceCount > 0) {
+        totalScore += Math.min(convenienceCount * 0.5, 1.5); // Up to 1.5 based on selections
+      }
+
+      maxPossibleScore += 1.5; // ideal_living_environment
+      if (loadedPreferences?.ideal_living_environment) totalScore += 1.5;
+
+      maxPossibleScore += 1.5; // pets
+      if (loadedPreferences?.pets) totalScore += 1.5;
+
+      maxPossibleScore += 1.5; // smoker
+      if (loadedPreferences?.smoker !== undefined && loadedPreferences?.smoker !== null) totalScore += 1.5;
+
+      // Optional preferences (weight: 1) - Nice-to-have details
+      maxPossibleScore += 1; // move_in_date
+      if (loadedPreferences?.move_in_date) totalScore += 1;
+
+      maxPossibleScore += 1; // complete bedroom range (beyond min)
+      if (loadedPreferences?.max_bedrooms) totalScore += 1;
+
+      maxPossibleScore += 1; // complete bathroom range
+      if (loadedPreferences?.min_bathrooms && loadedPreferences?.max_bathrooms) {
+        totalScore += 1; // Both bathroom limits set
+      } else if (loadedPreferences?.min_bathrooms || loadedPreferences?.max_bathrooms) {
+        totalScore += 0.5; // Partial bathroom range
+      }
+
+      maxPossibleScore += 1; // hobbies (array)
+      const hobbiesCount = loadedPreferences?.hobbies?.length || 0;
+      if (hobbiesCount > 0) {
+        totalScore += Math.min(hobbiesCount * 0.3, 1); // Up to 1 based on selections
+      }
+
+      maxPossibleScore += 1; // additional_info
+      if (loadedPreferences?.additional_info) totalScore += 1;
+
+      maxPossibleScore += 1; // date_property_added
+      if (loadedPreferences?.date_property_added) totalScore += 1;
+
+      // Calculate percentage based on weighted score
+      const preferencesPercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
 
       // Check if all required fields are filled (min 3 required fields)
       const isComplete = requiredFieldsCount >= 3;
@@ -210,7 +275,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       setState((prev) => ({
         ...prev,
         userPreferences: loadedPreferences,
-        preferencesCount: count,
+        preferencesCount: preferencesPercentage, // Now returns percentage
         hasCompletePreferences: isComplete,
       }));
     } catch (error: any) {

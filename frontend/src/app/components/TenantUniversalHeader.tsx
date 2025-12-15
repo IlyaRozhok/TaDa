@@ -123,7 +123,7 @@ export default function TenantUniversalHeader({
                 <span>Your preferences</span>
                 {preferencesCount > 0 && (
                   <span className="bg-slate-800 text-white text-xs px-2 py-0.5 rounded-full min-w-[1.25rem] text-center">
-                    {preferencesCount}
+                    {preferencesCount}%
                   </span>
                 )}
               </button>
