@@ -27,12 +27,16 @@ interface OnboardingProfileStepProps {
   onComplete: () => void;
   isLoading?: boolean;
   onNext?: () => void;
+  currentStep?: number;
+  totalSteps?: number;
 }
 
 export default function OnboardingProfileStep({
   onComplete,
   isLoading: externalLoading,
   onNext,
+  currentStep,
+  totalSteps,
 }: OnboardingProfileStepProps) {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
@@ -228,10 +232,11 @@ export default function OnboardingProfileStep({
   }, []);
 
   return (
-    <StepWrapper
-      title="Complete Your Profile"
-      description="Let's start by setting up your profile. This information helps us personalize your experience."
-    >
+    <div>
+      <StepWrapper
+        title="Complete Your Profile"
+        description="Let's start by setting up your profile. This information helps us personalize your experience."
+      >
       <StepContainer>
         {/* First Name */}
         <div className="mb-6">
@@ -309,5 +314,6 @@ export default function OnboardingProfileStep({
         </div>
       </StepContainer>
     </StepWrapper>
+    </div>
   );
 }

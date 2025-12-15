@@ -90,7 +90,7 @@ export default function TenantUniversalHeader({
           )}
           <button
             onClick={handleLogoClick}
-            className="text-2xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer"
+            className="text-xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer"
           >
             :: TADA
           </button>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 import {
   selectUser,
   selectIsAuthenticated,
@@ -11,17 +12,125 @@ import { preferencesAPI } from "../../lib/api";
 import OnboardingProfileStep from "../../components/onboarding/OnboardingProfileStep";
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
 import NewPreferencesPage from "../../components/preferences/NewPreferencesPage";
-import TenantUniversalHeader from "../../components/TenantUniversalHeader";
+import UserDropdown from "../../components/UserDropdown";
+import { useOnboarding, TOTAL_ONBOARDING_STEPS, PROFILE_STEP, PREFERENCES_START_STEP } from "../../hooks/useOnboarding";
+import { usePreferences } from "../../hooks/usePreferences";
 
-type OnboardingStep = "intro" | "profile" | "preferences";
+// Onboarding Header Component
+function OnboardingHeader() {
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("EN");
+
+  // Close language dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".language-dropdown")) {
+        setIsLanguageOpen(false);
+      }
+    };
+
+    if (isLanguageOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isLanguageOpen]);
+
+  return (
+    <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-[95%] mx-auto flex items-center justify-between">
+        {/* Left: Logo */}
+        <div className="flex items-center">
+          <button className="text-2xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer">
+            :: TADA
+          </button>
+        </div>
+
+        {/* Right: Language + Profile */}
+        <div className="flex items-center space-x-4">
+          {/* Language Dropdown */}
+          <div className="relative language-dropdown">
+            <button
+              onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <span>{selectedLanguage}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+
+            {isLanguageOpen && (
+              <div className="absolute right-0 top-full mt-2 rounded-xl shadow-lg bg-white border border-gray-200 min-w-[150px] z-50">
+                <div className="max-h-80 overflow-y-auto rounded-xl">
+                  {[
+                    { code: "EN", name: "English" },
+                    { code: "FR", name: "Français" },
+                    { code: "ES", name: "Español" },
+                    { code: "IT", name: "Italiano" },
+                    { code: "PT", name: "Português" },
+                    { code: "RU", name: "Русский" },
+                  ].map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setSelectedLanguage(lang.code);
+                        setIsLanguageOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-gray-100 ${
+                        selectedLanguage === lang.code ? "bg-gray-50 font-semibold text-black" : "text-gray-700"
+                      }`}
+                    >
+                      {lang.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* User Dropdown - Simplified */}
+          <UserDropdown simplified={true} />
+        </div>
+      </div>
+    </nav>
+  );
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>("intro");
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
+
+  const { state, setCurrentStep, handleIntroComplete, handleProfileComplete, handlePreferencesComplete } = useOnboarding(
+    user,
+    () => router.push("/app/units")
+  );
+
+  // Only use preferences hook in preferences phase to avoid conflicts
+  const preferencesHook = usePreferences(PREFERENCES_START_STEP - 1);
+
+  const handlePreferencesNext = async () => {
+    if (preferencesHook.isLastStep) {
+      await handlePreferencesComplete();
+    } else {
+      await preferencesHook.nextStep();
+      // Update main onboarding step
+      if (state.currentStep < TOTAL_ONBOARDING_STEPS) {
+        setCurrentStep(state.currentStep + 1);
+      }
+    }
+  };
+
+  const handlePreferencesPrevious = async () => {
+    if (!preferencesHook.isFirstStep) {
+      await preferencesHook.prevStep();
+      // Update main onboarding step
+      if (state.currentStep > PREFERENCES_START_STEP) {
+        setCurrentStep(state.currentStep - 1);
+      }
+    }
+  };
 
   // Check if user is authenticated and has preferences
   useEffect(() => {
@@ -30,6 +139,9 @@ export default function OnboardingPage() {
         router.push("/app/auth/login");
         return;
       }
+
+      // Reset preferences step for new onboarding
+      localStorage.removeItem("preferencesStep");
 
       // Check if user already has preferences
       try {
@@ -64,24 +176,6 @@ export default function OnboardingPage() {
     // The component will handle the submission and call onComplete
   };
 
-  const handleIntroComplete = () => {
-    setCurrentStep("profile");
-  };
-
-  const handleProfileComplete = async () => {
-    setProfileLoading(true);
-    // Small delay for smooth transition
-    setTimeout(() => {
-      setCurrentStep("preferences");
-      setProfileLoading(false);
-    }, 300);
-  };
-
-  const handlePreferencesComplete = () => {
-    // Redirect to dashboard after preferences are saved
-    router.push("/app/units");
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -98,66 +192,162 @@ export default function OnboardingPage() {
   }
 
   // Show intro screens without header
-  if (currentStep === "intro") {
-    return <OnboardingIntroScreens onComplete={handleIntroComplete} />;
-  }
+  if (state.currentPhase === "intro") {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        <OnboardingIntroScreens
+          onComplete={handleIntroComplete}
+          currentStep={state.currentStep}
+          totalSteps={TOTAL_ONBOARDING_STEPS}
+        />
 
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <TenantUniversalHeader
-        searchTerm=""
-        onSearchChange={() => {}}
-        preferencesCount={0}
-        showBackButton={false}
-        showSearchInput={false}
-        showPreferencesButton={false}
-        showSaveButton={false}
-        showTenantCvLink={false}
-      />
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
-        {currentStep === "profile" ? (
-          <OnboardingProfileStep
-            onComplete={handleProfileComplete}
-            isLoading={profileLoading}
-            onNext={handleProfileNext}
-          />
-        ) : (
-          <NewPreferencesPage onComplete={handlePreferencesComplete} />
-        )}
-      </div>
-
-      {/* Bottom Navigation - Only for profile step */}
-      {currentStep === "profile" && (
+        {/* Unified Bottom Navigation for intro phase */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 h-1">
+          <div className="w-full bg-gray-200 h-px">
             <div
-              className="bg-black h-1 transition-all duration-300"
-              style={{ width: "50%" }}
+              className="bg-black h-px transition-all duration-300"
+              style={{ width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%` }}
             />
           </div>
 
-          <div className="p-8">
+          <div className="py-4 px-8">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
-              <div className="w-20"></div>
-
-              <div className="text-sm text-gray-500">Step 2 of 3</div>
-
+              {/* Previous Button */}
               <button
                 type="button"
-                onClick={handleProfileComplete}
-                disabled={profileLoading}
-                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+                onClick={() => {
+                  if (state.currentStep > 1) {
+                    setCurrentStep(state.currentStep - 1);
+                  }
+                }}
+                disabled={state.currentStep <= 1}
+                className={`text-base font-medium transition-colors ${
+                  state.currentStep <= 1
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-black hover:text-gray-600"
+                }`}
               >
-                {profileLoading ? "Loading..." : "Next"}
+                {state.currentStep > 1 && (
+                  <ChevronLeft className="inline-block w-4 h-4 mr-1" />
+                )}
+                Previous
+              </button>
+
+              <div className="text-sm text-gray-500">Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}</div>
+
+              {/* Next Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (state.currentStep < 3) {
+                    setCurrentStep(state.currentStep + 1);
+                  } else {
+                    handleIntroComplete();
+                  }
+                }}
+                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+              >
+                Next
               </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Onboarding Header */}
+      <OnboardingHeader />
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
+        {state.currentPhase === "profile" ? (
+          <OnboardingProfileStep
+            onComplete={handleProfileComplete}
+            isLoading={state.isLoading}
+            onNext={handleProfileNext}
+            currentStep={state.currentStep}
+            totalSteps={TOTAL_ONBOARDING_STEPS}
+          />
+        ) : (
+          <NewPreferencesPage
+            onComplete={handlePreferencesComplete}
+            currentStepOffset={PREFERENCES_START_STEP - 1}
+            totalSteps={TOTAL_ONBOARDING_STEPS}
+            externalStep={preferencesHook.step}
+            externalNext={handlePreferencesNext}
+            externalPrevious={handlePreferencesPrevious}
+            showNavigation={false}
+          />
+        )}
+      </div>
+
+      {/* Unified Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 h-px">
+          <div
+            className="bg-black h-px transition-all duration-300"
+            style={{ width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%` }}
+          />
+        </div>
+
+        <div className="py-4 px-8">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            {/* Previous Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (state.currentPhase === "profile") {
+                  // Go back to intro step 3
+                  setCurrentStep(3);
+                } else if (state.currentPhase === "preferences") {
+                  handlePreferencesPrevious();
+                }
+              }}
+              disabled={state.currentPhase === "intro" || (state.currentPhase === "preferences" && preferencesHook.isFirstStep)}
+              className={`text-base font-medium transition-colors ${
+                (state.currentPhase === "intro" || (state.currentPhase === "preferences" && preferencesHook.isFirstStep))
+                  ? "text-gray-300 cursor-not-allowed"
+                  : "text-black hover:text-gray-600"
+              }`}
+            >
+              {(state.currentPhase === "profile" || state.currentPhase === "preferences") && (
+                <ChevronLeft className="inline-block w-4 h-4 mr-1" />
+              )}
+              Previous
+            </button>
+
+            <div className="text-sm text-gray-500">Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}</div>
+
+            {/* Next Button */}
+            {state.currentPhase === "profile" && (
+              <button
+                type="button"
+                onClick={handleProfileComplete}
+                disabled={state.isLoading}
+                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                {state.isLoading ? "Loading..." : "Next"}
+              </button>
+            )}
+
+            {state.currentPhase === "preferences" && (
+              <button
+                type="button"
+                onClick={handlePreferencesNext}
+                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+              >
+                {preferencesHook.isLastStep ? "Finish" : "Next"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

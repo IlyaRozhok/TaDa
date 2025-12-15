@@ -16,7 +16,7 @@ import { TOTAL_STEPS_NEW as TOTAL_STEPS } from "@/entities/preferences/model/con
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { blockNavigation } from "@/app/utils/navigationGuard";
 
-export default function usePreferences() {
+export default function usePreferences(currentStepOffset: number = 0) {
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const router = useRouter();
@@ -37,9 +37,12 @@ export default function usePreferences() {
         : null;
     let initialStep = 1;
 
-    if (savedStep) {
+    // For onboarding (when there's an offset), always start from step 1
+    if (currentStepOffset > 0) {
+      initialStep = 1;
+    } else if (savedStep) {
       const parsedStep = parseInt(savedStep, 10);
-      // Validate step is within bounds
+      // Direct access - saved step is already internal step
       if (parsedStep >= 1 && parsedStep <= TOTAL_STEPS) {
         initialStep = parsedStep;
       }
@@ -164,12 +167,13 @@ export default function usePreferences() {
     }
   });
 
-  // Save current step to localStorage
+  // Save current step to localStorage (save display step when there's offset)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("preferencesStep", state.step.toString());
+      const stepToSave = currentStepOffset > 0 ? Math.min(14, state.step + currentStepOffset) : state.step;
+      localStorage.setItem("preferencesStep", stepToSave.toString());
     }
-  }, [state.step]);
+  }, [state.step, currentStepOffset]);
 
   // Cleanup timeout on unmount
   useEffect(() => {

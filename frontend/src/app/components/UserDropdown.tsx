@@ -9,7 +9,11 @@ import { Settings, LogOut, Mail, Sliders } from "lucide-react";
 import styles from "./ui/DropdownStyles.module.scss";
 import { buildDisplayName, buildInitials } from "../utils/displayName";
 
-export default function UserDropdown() {
+interface UserDropdownProps {
+  simplified?: boolean;
+}
+
+export default function UserDropdown({ simplified = false }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -190,22 +194,26 @@ export default function UserDropdown() {
 
           {/* Menu Items */}
           <div className={styles.dropdownBody}>
-            <button onClick={handleSettings} className={styles.dropdownItem}>
-              <Settings className={styles.dropdownIcon} />
-              <span className={styles.dropdownText}>Profile Settings</span>
-            </button>
+            {!simplified && (
+              <>
+                <button onClick={handleSettings} className={styles.dropdownItem}>
+                  <Settings className={styles.dropdownIcon} />
+                  <span className={styles.dropdownText}>Profile Settings</span>
+                </button>
 
-            <button onClick={handlePreferences} className={styles.dropdownItem}>
-              <Sliders className={styles.dropdownIcon} />
-              <span className={styles.dropdownText}>Change Preferences</span>
-            </button>
+                <button onClick={handlePreferences} className={styles.dropdownItem}>
+                  <Sliders className={styles.dropdownIcon} />
+                  <span className={styles.dropdownText}>Change Preferences</span>
+                </button>
 
-            <button onClick={handleSupport} className={styles.dropdownItem}>
-              <Mail className={styles.dropdownIcon} />
-              <span className={styles.dropdownText}>Support</span>
-            </button>
+                <button onClick={handleSupport} className={styles.dropdownItem}>
+                  <Mail className={styles.dropdownIcon} />
+                  <span className={styles.dropdownText}>Support</span>
+                </button>
 
-            <hr className={styles.dropdownDivider} />
+                <hr className={styles.dropdownDivider} />
+              </>
+            )}
 
             <button onClick={handleLogout} className={styles.dropdownItem}>
               <LogOut className={styles.dropdownIcon} />
