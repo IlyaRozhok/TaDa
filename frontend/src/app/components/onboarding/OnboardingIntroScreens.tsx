@@ -1,93 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { ChevronLeft } from "lucide-react";
-import UserDropdown from "../../components/UserDropdown";
 
-// Onboarding Header Component
-function OnboardingHeader() {
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("EN");
-
-  // Close language dropdown when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".language-dropdown")) {
-        setIsLanguageOpen(false);
-      }
-    };
-
-    if (isLanguageOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isLanguageOpen]);
-
-  return (
-    <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-      <div className="max-w-[95%] mx-auto flex items-center justify-between">
-        {/* Left: Logo */}
-        <div className="flex items-center">
-          <button className="text-2xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer">
-            :: TADA
-          </button>
-        </div>
-
-        {/* Right: Language + Profile */}
-        <div className="flex items-center space-x-4">
-          {/* Language Dropdown - Glassmorphism Style */}
-          <div className="relative language-dropdown">
-            <button
-              onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="relative flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-full transition-all duration-200 cursor-pointer backdrop-blur-md bg-black/20 border border-white/10 hover:bg-black/30 hover:border-white/20"
-            >
-              <span className="min-w-[1.5rem] text-center">
-                {selectedLanguage}
-              </span>
-              <ChevronLeft className="w-3 h-3 rotate-[-90deg]" />
-            </button>
-
-            {isLanguageOpen && (
-              <div className="absolute right-0 top-full mt-2 min-w-[180px] z-50 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
-                <div className="max-h-80 overflow-y-auto py-2">
-                  {[
-                    { code: "EN", name: "English" },
-                    { code: "FR", name: "Français" },
-                    { code: "ES", name: "Español" },
-                    { code: "IT", name: "Italiano" },
-                    { code: "PT", name: "Português" },
-                    { code: "RU", name: "Русский" },
-                  ].map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setSelectedLanguage(lang.code);
-                        setIsLanguageOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 ${
-                        selectedLanguage === lang.code
-                          ? "bg-white/20 text-white font-semibold"
-                          : "text-white/80 hover:bg-white/10 hover:text-white"
-                      }`}
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* User Dropdown - Simplified */}
-          <UserDropdown simplified={true} />
-        </div>
-      </div>
-    </nav>
-  );
-}
 
 interface OnboardingIntroScreensProps {
   onComplete: () => void;
@@ -133,9 +48,6 @@ export default function OnboardingIntroScreens({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
-      <OnboardingHeader />
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 py-16">
         {/* Illustration/Image */}

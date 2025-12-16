@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { ChevronDown, ChevronLeft } from "lucide-react";
+import styles from "../../components/ui/DropdownStyles.module.scss";
 import {
   selectUser,
   selectIsAuthenticated,
@@ -60,8 +61,10 @@ function OnboardingHeader() {
             </button>
 
             {isLanguageOpen && (
-              <div className="absolute right-0 top-full mt-2 rounded-xl shadow-lg bg-white border border-gray-200 min-w-[150px] z-50">
-                <div className="max-h-80 overflow-y-auto rounded-xl">
+              <div
+                className={`absolute right-0 top-full ${styles.dropdownContainer}`}
+              >
+                <div className="max-h-80 overflow-y">
                   {[
                     { code: "EN", name: "English" },
                     { code: "FR", name: "Français" },
@@ -76,11 +79,11 @@ function OnboardingHeader() {
                         setSelectedLanguage(lang.code);
                         setIsLanguageOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-gray-100 ${
-                        selectedLanguage === lang.code ? "bg-gray-50 font-semibold text-black" : "text-gray-700"
+                      className={`${styles.dropdownItem} ${
+                        selectedLanguage === lang.code ? "bg-white/20" : ""
                       }`}
                     >
-                      {lang.name}
+                      <span className={styles.dropdownText}>{lang.name}</span>
                     </button>
                   ))}
                 </div>
@@ -191,15 +194,21 @@ export default function OnboardingPage() {
     return null;
   }
 
-  // Show intro screens without header
+  // Show intro screens with header
   if (state.currentPhase === "intro") {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <OnboardingIntroScreens
-          onComplete={handleIntroComplete}
-          currentStep={state.currentStep}
-          totalSteps={TOTAL_ONBOARDING_STEPS}
-        />
+      <div className="min-h-screen bg-white">
+        {/* Onboarding Header */}
+        <OnboardingHeader />
+
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
+          <OnboardingIntroScreens
+            onComplete={handleIntroComplete}
+            currentStep={state.currentStep}
+            totalSteps={TOTAL_ONBOARDING_STEPS}
+          />
+        </div>
 
         {/* Unified Bottom Navigation for intro phase */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
@@ -305,12 +314,18 @@ export default function OnboardingPage() {
                   // Go back to intro step 3
                   setCurrentStep(3);
                 } else if (state.currentPhase === "preferences") {
-                  handlePreferencesPrevious();
+                  if (preferencesHook.step === 1) {
+                    // Go back to profile step
+                    setCurrentStep(4);
+                  } else {
+                    // Go to previous preferences step
+                    handlePreferencesPrevious();
+                  }
                 }
               }}
-              disabled={state.currentPhase === "intro" || (state.currentPhase === "preferences" && preferencesHook.isFirstStep)}
+              disabled={state.currentPhase === "intro"}
               className={`text-base font-medium transition-colors ${
-                (state.currentPhase === "intro" || (state.currentPhase === "preferences" && preferencesHook.isFirstStep))
+                state.currentPhase === "intro"
                   ? "text-gray-300 cursor-not-allowed"
                   : "text-black hover:text-gray-600"
               }`}

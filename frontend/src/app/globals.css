@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Ensure pages always start at top */
+html {
+  scroll-behavior: auto !important;
+}
+
 /* Google Maps styles */
 
 /* SF Pro Font Family */
