@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Ensure pages always start at top */
+html {
+  scroll-behavior: auto !important;
+  background: #ffffff;
+}
+
 /* Google Maps styles */
 
 /* SF Pro Font Family */
@@ -95,6 +101,35 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+/* Ensure all elements have white background */
+* {
+  box-sizing: border-box;
+}
+
+/* Force white background for html and body */
+html, body {
+  background-color: #ffffff !important;
+}
+
+/* Ensure no black backgrounds from any containers */
+#root, #__next {
+  background-color: #ffffff;
+}
+
+/* Ensure white background for all scrollable areas */
+html, body, #__next {
+  background-color: #ffffff !important;
+  min-height: 100vh;
+}
+
+/* Override any dark theme backgrounds */
+[data-theme="dark"] html,
+[data-theme="dark"] body,
+[data-theme="dark"] #__next {
+  background-color: #ffffff !important;
 }
 
 /* Smooth scrolling for anchor links */

@@ -380,6 +380,22 @@ export class Preferences {
   // ==================== STEP 10: ABOUT YOU ====================
 
   @ApiProperty({
+    description: "User occupation",
+    example: "Software Engineer",
+    enum: [
+      "full-time-employed",
+      "part-time-employed", 
+      "freelancer",
+      "student",
+      "self-employed",
+      "retired",
+    ],
+    required: false,
+  })
+  @Column({ nullable: true })
+  occupation?: string;
+
+  @ApiProperty({
     description: "Additional information about the user",
     example: "I'm a quiet professional who enjoys cooking and reading.",
     required: false,

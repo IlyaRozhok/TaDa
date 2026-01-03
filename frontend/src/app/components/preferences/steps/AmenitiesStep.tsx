@@ -57,7 +57,7 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
       <StepContainer>
         {/* Amenities - Multi Select in Grid */}
         <StepHeader title="Ameinities" />
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4">
           {AMENITIES_OPTIONS.map((amenity) => (
             <SelectionButton
               key={amenity}
@@ -67,10 +67,7 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
               onClick={() => onToggle("amenities_preferences", amenity)}
             />
           ))}
-        </div>
-
-        {/* Additional Options */}
-        <div className="space-y-4">
+          {/* Additional Options - now in the same grid */}
           {ADDITIONAL_OPTIONS.map((option) => (
             <SelectionButton
               key={option}

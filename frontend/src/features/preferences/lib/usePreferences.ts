@@ -16,7 +16,7 @@ import { TOTAL_STEPS_NEW as TOTAL_STEPS } from "@/entities/preferences/model/con
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { blockNavigation } from "@/app/utils/navigationGuard";
 
-export default function usePreferences() {
+export default function usePreferences(currentStepOffset: number = 0) {
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const router = useRouter();
@@ -37,9 +37,12 @@ export default function usePreferences() {
         : null;
     let initialStep = 1;
 
-    if (savedStep) {
+    // For onboarding (when there's an offset), always start from step 1
+    if (currentStepOffset > 0) {
+      initialStep = 1;
+    } else if (savedStep) {
       const parsedStep = parseInt(savedStep, 10);
-      // Validate step is within bounds
+      // Direct access - saved step is already internal step
       if (parsedStep >= 1 && parsedStep <= TOTAL_STEPS) {
         initialStep = parsedStep;
       }
@@ -67,7 +70,6 @@ export default function usePreferences() {
       // Step 1 - Location
       preferred_areas: [],
       preferred_districts: [],
-      preferred_address: "",
       preferred_metro_stations: [],
       // Step 2 - Budget & Move-in
       move_in_date: "",
@@ -117,6 +119,8 @@ export default function usePreferences() {
       ideal_living_environment: [],
       smoker: "",
       // Step 10 - About You
+      preferred_address: "",
+      occupation: "",
       additional_info: "",
       // Legacy fields (for backward compatibility)
       primary_postcode: "",
@@ -164,12 +168,13 @@ export default function usePreferences() {
     }
   });
 
-  // Save current step to localStorage
+  // Save current step to localStorage (save display step when there's offset)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("preferencesStep", state.step.toString());
+      const stepToSave = currentStepOffset > 0 ? Math.min(14, state.step + currentStepOffset) : state.step;
+      localStorage.setItem("preferencesStep", stepToSave.toString());
     }
-  }, [state.step]);
+  }, [state.step, currentStepOffset]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -311,9 +316,7 @@ export default function usePreferences() {
           const transformedValue = transformedData[fieldKey];
 
           let processedValue = transformedValue;
-          if (transformedValue === "no-preference" && fieldKey !== "smoker") {
-            processedValue = null;
-          } else if (transformedValue === "") {
+          if (transformedValue === "") {
             processedValue = null;
           } else if (
             Array.isArray(transformedValue) &&
@@ -471,14 +474,10 @@ export default function usePreferences() {
       // Transform form data to API format
       const transformedData = transformFormDataForApi(data);
 
-      // Convert "no-preference" values to null and handle empty arrays
+      // Handle empty values and arrays
       const processedData = Object.keys(transformedData).reduce((acc, key) => {
         const value = transformedData[key as keyof typeof transformedData];
-        if (value === "no-preference") {
-          // Keep "no-preference" for smoker, convert to null for other fields
-          (acc as Record<string, unknown>)[key] =
-            key === "smoker" ? "no-preference" : null;
-        } else if (value === "") {
+        if (value === "") {
           (acc as Record<string, unknown>)[key] = null;
         } else if (Array.isArray(value) && value.length === 0) {
           // Keep empty arrays as they are (user explicitly cleared selection)

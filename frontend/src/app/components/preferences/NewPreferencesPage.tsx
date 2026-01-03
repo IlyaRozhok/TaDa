@@ -35,31 +35,64 @@ import {
 
 interface NewPreferencesPageProps {
   onComplete?: () => void;
+  currentStepOffset?: number; // Offset to add to the internal step count for unified progress
+  totalSteps?: number; // Total steps in unified flow
+  onNext?: () => void; // External next handler (deprecated)
+  onPrevious?: () => void; // External previous handler (deprecated)
+  externalStep?: number; // External step control for onboarding
+  externalNext?: () => void; // External next handler for onboarding
+  externalPrevious?: () => void; // External previous handler for onboarding
+  showNavigation?: boolean; // Whether to show internal navigation
+  onValidationChange?: (isValid: boolean) => void; // Validation state callback
 }
 
 export default function NewPreferencesPage({
   onComplete,
+  currentStepOffset = 0,
+  totalSteps,
+  onNext,
+  onPrevious,
+  externalStep,
+  externalNext,
+  externalPrevious,
+  showNavigation = true,
+  onValidationChange,
 }: NewPreferencesPageProps = {}) {
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCurrentStepValid, setIsCurrentStepValid] = useState(true);
 
   const {
     loading,
-    step,
+    step: internalStep,
     watchedData,
     updateField,
     toggleFeature,
-    nextStep,
-    prevStep,
+    nextStep: internalNextStep,
+    prevStep: internalPrevStep,
     savePreferences,
-    isLastStep,
-    isFirstStep,
+    isLastStep: internalIsLastStep,
+    isFirstStep: internalIsFirstStep,
     user,
     isAuthenticated,
-  } = usePreferences();
+  } = usePreferences(currentStepOffset);
+
+  // Use external step control if provided (for onboarding), otherwise use internal
+  const step = externalStep || internalStep;
+  const nextStep = externalNext || internalNextStep;
+  const prevStep = externalPrevious || internalPrevStep;
+  const isLastStep = externalStep ? (step === 10) : internalIsLastStep; // For external control, last step is 10
+  const isFirstStep = externalStep ? (step === 1) : internalIsFirstStep;
+
+  // Pass validation state to parent when step 10 validation changes
+  useEffect(() => {
+    if (onValidationChange && step === 10) {
+      onValidationChange(isCurrentStepValid);
+    }
+  }, [isCurrentStepValid, onValidationChange, step]);
 
   // Wait for session manager to initialize
   useEffect(() => {
@@ -111,7 +144,7 @@ export default function NewPreferencesPage({
 
         {/* Bottom Navigation Skeleton */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-          <div className="w-full bg-gray-200 h-1"></div>
+          <div className="w-full bg-gray-200 h-px"></div>
           <div className="p-8">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
@@ -196,7 +229,7 @@ export default function NewPreferencesPage({
       case 9:
         return <LivingEnvironmentStep {...stepProps} />;
       case 10:
-        return <AboutYouStep {...stepProps} />;
+        return <AboutYouStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
       default:
         return <LocationStep {...stepProps} />;
     }
@@ -210,50 +243,49 @@ export default function NewPreferencesPage({
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 h-1">
-          <div
-            className="bg-black h-1 transition-all duration-300"
-            style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
-          />
-        </div>
+      {showNavigation && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+          <div className="py-4 px-8">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <button
+                type="button"
+                onClick={prevStep}
+                disabled={isFirstStep}
+                className={`font-medium ${
+                  isFirstStep
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-black hover:text-gray-600 cursor-pointer"
+                } transition-colors`}
+              >
+                Back
+              </button>
 
-        <div className="p-8">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={isFirstStep}
-              className={`font-medium ${
-                isFirstStep
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-black hover:text-gray-600"
-              } transition-colors`}
-            >
-              Back
-            </button>
+              <div className="text-sm text-gray-500">
+                Step {step + currentStepOffset} of {totalSteps || TOTAL_STEPS}
+              </div>
 
-            <div className="text-sm text-gray-500">
-              Step {step} of {TOTAL_STEPS}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (isLastStep) {
+                    await handleFinish();
+                  } else {
+                    await nextStep();
+                  }
+                }}
+                disabled={step === 10 && !isCurrentStepValid}
+                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
+                  step === 10 && !isCurrentStepValid
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                {isLastStep ? "Finish" : "Next"}
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={async () => {
-                if (isLastStep) {
-                  await handleFinish();
-                } else {
-                  await nextStep();
-                }
-              }}
-              className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
-            >
-              {isLastStep ? "Finish" : "Next"}
-            </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

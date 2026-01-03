@@ -7,6 +7,7 @@ interface TextAreaFieldProps {
   placeholder?: string;
   rows?: number;
   className?: string;
+  required?: boolean;
 }
 
 export const TextAreaField: React.FC<TextAreaFieldProps> = ({
@@ -16,12 +17,14 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
   placeholder = "",
   rows = 4,
   className = "",
+  required = false,
 }) => {
   return (
     <div className={`text-left ${className}`}>
       <div className="bg-gray-50 rounded-lg p-8">
         <h2 className="text-2xl font-semibold text-black mb-8 text-left">
           {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </h2>
         <textarea
           value={value || ""}

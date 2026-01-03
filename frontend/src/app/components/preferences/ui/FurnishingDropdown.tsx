@@ -14,11 +14,10 @@ export const FurnishingDropdown: React.FC<FurnishingDropdownProps> = ({
   label,
   value,
   onChange,
-  placeholder = "No Preference",
+  placeholder = "Select furnishing",
   error,
 }) => {
   const options: DropdownOption[] = [
-    { value: "no-preference", label: "No Preference" },
     { value: "furnished", label: "Furnished" },
     { value: "unfurnished", label: "Unfurnished" },
     { value: "part-furnished", label: "Part Furnished" },
@@ -33,7 +32,7 @@ export const FurnishingDropdown: React.FC<FurnishingDropdownProps> = ({
       placeholder={placeholder}
       error={error}
       icon={<Sofa className="w-5 h-5 text-white" />}
-      noPreferenceValue="no-preference"
+      noPreferenceValue=""
     />
   );
 };

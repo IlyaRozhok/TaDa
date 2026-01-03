@@ -353,6 +353,31 @@ export class CreatePreferencesDto {
   // ==================== STEP 10: ABOUT YOU ====================
 
   @ApiPropertyOptional({
+    description: "User occupation",
+    example: "full-time-employed",
+    enum: [
+      "full-time-employed",
+      "part-time-employed",
+      "freelancer", 
+      "student",
+      "self-employed",
+      "retired",
+    ],
+  })
+  @IsOptional()
+  @IsIn([
+    "full-time-employed",
+    "part-time-employed",
+    "freelancer",
+    "student", 
+    "self-employed",
+    "retired",
+    "",
+    null,
+  ])
+  occupation?: string;
+
+  @ApiPropertyOptional({
     description: "Additional information about the user",
     example: "I'm a quiet professional who enjoys cooking and reading.",
   })

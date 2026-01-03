@@ -1,4 +1,6 @@
 import React, { forwardRef, useState, useEffect } from "react";
+import { IMaskInput } from "react-imask";
+import SmartPhoneInput from "../../ui/SmartPhoneInput";
 import { ErrorMessage } from "./ErrorMessage";
 
 interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -10,7 +12,7 @@ interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
   (
-    { label, required = false, tooltip, error, className = "", ...props },
+    { label, required = false, tooltip, error, className = "", onChange, onFocus, onBlur, ...props },
     ref
   ) => {
     const [isFocused, setIsFocused] = useState(false);
@@ -23,20 +25,24 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
       );
     });
 
+    const shouldUseSmartPhone = props.type === "tel";
+    const phoneMask = "9999 999999"; // Simple phone number mask
+    const shouldUseMask = false; // Disable old mask logic
+
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
-      props.onFocus?.(e);
+      onFocus?.(e);
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(false);
       setHasValue(!!e.target.value);
-      props.onBlur?.(e);
+      onBlur?.(e);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setHasValue(!!e.target.value);
-      props.onChange?.(e);
+      onChange?.(e);
     };
 
     // Initialize component and update hasValue when props.value changes
@@ -53,23 +59,75 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
       }
     }, [props.value, isInitialized]);
 
+    const inputElement = (
+      <input
+        ref={ref}
+        {...props}
+        className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
+          error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+        } ${
+          props.type === "number"
+            ? "[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+            : ""
+        } ${className}`}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onChange={handleChange}
+      />
+    );
+
     return (
       <div className="relative">
         <div className="relative">
-          <input
-            ref={ref}
-            {...props}
-            className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
-              error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
-            } ${
-              props.type === "number"
-                ? "[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                : ""
-            } ${className}`}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onChange={handleChange}
-          />
+          {shouldUseSmartPhone ? (
+            <SmartPhoneInput
+              ref={ref}
+              label={label}
+              required={required}
+              tooltip={tooltip}
+              error={error}
+              className={className}
+              value={props.value || ""}
+              onChange={(value) => {
+                const event = {
+                  target: { value }
+                } as React.ChangeEvent<HTMLInputElement>;
+                handleChange(event);
+              }}
+              {...props}
+            />
+          ) : shouldUseMask ? (
+            <IMaskInput
+              ref={ref}
+              mask={phoneMask}
+              value={props.value || ""}
+              onAccept={(value: string) => {
+                const event = {
+                  target: { value }
+                } as React.ChangeEvent<HTMLInputElement>;
+                handleChange(event);
+              }}
+              className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
+                error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+              } ${className}`}
+              placeholder=""
+            />
+          ) : (
+            <input
+              ref={ref}
+              {...props}
+              className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
+                error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+              } ${
+                props.type === "number"
+                  ? "[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  : ""
+              } ${className}`}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onChange={handleChange}
+            />
+          )}
           <label
             className={`absolute left-6 pointer-events-none ${
               isInitialized ? "transition-all duration-200" : ""

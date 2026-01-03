@@ -18,7 +18,7 @@ import {
 } from "../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../store/store";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
-import UniversalHeader from "../../components/UniversalHeader";
+import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import ShortlistPageSkeleton from "../../components/ui/ShortlistPageSkeleton";
 import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
@@ -114,7 +114,12 @@ export default function ShortlistPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <ShortlistPageSkeleton />
       </div>
     );
@@ -124,7 +129,12 @@ export default function ShortlistPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <div className="max-w-[92%] mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -172,7 +182,11 @@ export default function ShortlistPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <UniversalHeader />
+      <TenantUniversalHeader
+        searchTerm=""
+        onSearchChange={() => {}}
+        showSearchInput={false}
+      />
 
       <div className="max-w-[92%] mx-auto px-4 py-8">
         {/* Header */}

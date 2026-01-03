@@ -5,12 +5,20 @@ import { setAuth } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
 
+// Total steps in unified onboarding flow:
+// Intro: 3 steps, Profile: 1 step, Preferences: 10 steps = 14 total
+export const TOTAL_ONBOARDING_STEPS = 14;
+export const INTRO_STEPS = 3;
+export const PROFILE_STEP = 4; // After intro steps
+export const PREFERENCES_START_STEP = 5; // After profile step
+
 interface OnboardingState {
   currentStep: number;
   isLoading: boolean;
   error: string;
   registeredUser: any;
   registeredToken: string | null;
+  currentPhase: 'intro' | 'profile' | 'preferences';
 }
 
 interface UseOnboardingReturn {
@@ -19,6 +27,9 @@ interface UseOnboardingReturn {
   handleComplete: () => Promise<void>;
   handleSkip: () => void;
   clearError: () => void;
+  handleIntroComplete: () => void;
+  handleProfileComplete: () => void;
+  handlePreferencesComplete: () => void;
 }
 
 export const useOnboarding = (
@@ -35,6 +46,7 @@ export const useOnboarding = (
     error: "",
     registeredUser: null,
     registeredToken: null,
+    currentPhase: 'intro',
   });
 
   const setCurrentStep = useCallback((step: number) => {
@@ -84,11 +96,60 @@ export const useOnboarding = (
     }
   }, [state.registeredUser, state.registeredToken, onComplete, router]);
 
+  const handleIntroComplete = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      currentStep: PROFILE_STEP,
+      currentPhase: 'profile'
+    }));
+  }, []);
+
+  const handleProfileComplete = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      currentStep: PREFERENCES_START_STEP,
+      currentPhase: 'preferences'
+    }));
+  }, []);
+
+  const handlePreferencesComplete = useCallback(async () => {
+    try {
+      setState((prev) => ({ ...prev, isLoading: true, error: "" }));
+
+      // If we have a registered user from Google auth, complete the flow
+      if (state.registeredUser && state.registeredToken) {
+        // Store the token
+        localStorage.setItem("accessToken", state.registeredToken);
+        localStorage.setItem(
+          "sessionExpiry",
+          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        );
+
+        // Redirect to tenant dashboard
+        await redirectAfterLogin(state.registeredUser, router);
+      } else {
+        // Regular flow completion
+        onComplete();
+      }
+    } catch (error: any) {
+      console.error("Error completing onboarding:", error);
+      setState((prev) => ({
+        ...prev,
+        error: error.response?.data?.message || "Failed to complete onboarding",
+      }));
+    } finally {
+      setState((prev) => ({ ...prev, isLoading: false }));
+    }
+  }, [state.registeredUser, state.registeredToken, onComplete, router]);
+
   return {
     state,
     setCurrentStep,
     handleComplete,
     handleSkip,
     clearError,
+    handleIntroComplete,
+    handleProfileComplete,
+    handlePreferencesComplete,
   };
 };

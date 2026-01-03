@@ -10,6 +10,7 @@ import { User, UserRole, UserStatus } from "../../../entities/user.entity";
 import { TenantProfile } from "../../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../../entities/operator-profile.entity";
 import { Preferences } from "../../../entities/preferences.entity";
+import { TenantCv } from "../../../entities/tenant-cv.entity";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
 import { USER_CONSTANTS } from "../../../common/constants/user.constants";
@@ -24,7 +25,9 @@ export class UserAdminService {
     @InjectRepository(OperatorProfile)
     private operatorProfileRepository: Repository<OperatorProfile>,
     @InjectRepository(Preferences)
-    private preferencesRepository: Repository<Preferences>
+    private preferencesRepository: Repository<Preferences>,
+    @InjectRepository(TenantCv)
+    private tenantCvRepository: Repository<TenantCv>
   ) {}
 
   /**
@@ -99,6 +102,7 @@ export class UserAdminService {
 
   /**
    * Удалить пользователя администратором
+   * Fixed: Added TenantCv deletion to handle FK constraint
    */
   async deleteUser(id: string): Promise<void> {
     const user = await this.userRepository.findOne({
@@ -107,6 +111,7 @@ export class UserAdminService {
         "preferences",
         "tenantProfile",
         "operatorProfile",
+        "tenantCv",
         "shortlists",
       ],
     });
@@ -126,6 +131,10 @@ export class UserAdminService {
 
     if (user.operatorProfile) {
       await this.operatorProfileRepository.remove(user.operatorProfile);
+    }
+
+    if (user.tenantCv) {
+      await this.tenantCvRepository.remove(user.tenantCv);
     }
 
     // Удалить пользователя

@@ -87,6 +87,7 @@ GLOBAL RULES
    - Look for obvious issues (heavy computations in render, unnecessary re-renders, inline anonymous callbacks in large lists) and propose safe micro-optimizations.
    - Prefer memoization only when there is a clear benefit (large lists, expensive calculations).
    - Do not introduce premature optimizations that complicate the code without clear value.
+   - Do not create a MD files
 
 7. Error handling & UX
 

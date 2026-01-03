@@ -135,12 +135,18 @@ const Header = ({
               }`}
             >
               {/* Logo */}
-              <div className="flex items-center flex-shrink-0">
+              <div className="flex items-center flex-shrink-0 pl-5">
                 <button
                   onClick={() => scrollToSection("hero")}
                   disabled={disabled}
-                  className="text-white text-sm sm:text-lg md:text-xl font-semibold disabled:cursor-default"
-                ></button>
+                  className="disabled:cursor-default"
+                >
+                  <img
+                    src="/landing-logo.svg"
+                    alt="TADA Logo"
+                    className="w-[75px] cursor-pointer p"
+                  />
+                </button>
               </div>
 
               {/* Desktop Navigation */}

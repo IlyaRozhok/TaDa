@@ -3,7 +3,7 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
-import { DateRangePicker } from "../ui/DateRangePicker";
+import { DateInput } from "@/shared/ui/DateInput";
 import { InputField } from "../ui/InputField";
 import { PreferencesFormData } from "@/app/types/preferences";
 
@@ -25,20 +25,19 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
         {/* Move-in Date */}
         <StepHeader title="Move-in Date" />
         <div className="space-y-6 mb-8">
-          <DateRangePicker
-            label="Move-in Date"
-            value={{
-              start: formData.move_in_date || null,
-              end: formData.move_out_date || null,
-            }}
-            onChange={(range) => {
-              onUpdate("move_in_date", range.start);
-              onUpdate(
-                "move_out_date",
-                range.start === range.end ? null : range.end
-              );
-            }}
-            placeholder="Select date range"
+          <DateInput
+            label="Move in date from"
+            name="move_in_date"
+            value={formData.move_in_date || null}
+            onChange={(date) => onUpdate("move_in_date", date)}
+            minDate={new Date().toISOString().split("T")[0]}
+          />
+          <DateInput
+            label="Move in date to"
+            name="move_out_date"
+            value={formData.move_out_date || null}
+            onChange={(date) => onUpdate("move_out_date", date)}
+            minDate={formData.move_in_date || new Date().toISOString().split("T")[0]}
           />
         </div>
 

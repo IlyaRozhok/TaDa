@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { ChevronLeft } from "lucide-react";
+
 
 interface OnboardingIntroScreensProps {
   onComplete: () => void;
+  currentStep?: number;
+  totalSteps?: number;
 }
 
 const INTRO_STEPS = [
@@ -30,47 +32,18 @@ const INTRO_STEPS = [
       "Save your favorites properties, track your search history and get personalized recommendations based on your activity.",
     image: "/onboarding-step-3.png",
   },
-  {
-    id: "ready",
-    title: "Ready to dive in — or finish setting up first?",
-    description:
-      "Make the most of your search by completing your profile now. A complete profile means verified info, better matches, and more trust from landlords. Or, skip for now and explore — you can always come back later.",
-    image: "/onboarding-last.png",
-  },
 ];
 
 export default function OnboardingIntroScreens({
   onComplete,
+  currentStep: externalCurrentStep,
+  totalSteps,
 }: OnboardingIntroScreensProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  // Calculate internal step (0-2) from external step (1-3)
+  const currentStep = externalCurrentStep ? externalCurrentStep - 1 : 0;
 
-  const handleNext = () => {
-    if (currentStep < INTRO_STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onComplete();
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleCompletePreferences = () => {
-    onComplete();
-  };
-
-  const handleBrowseWithoutProfile = () => {
-    // Navigate to properties page
-    if (typeof window !== "undefined") {
-      window.location.href = "/app/units";
-    }
-  };
 
   const currentScreen = INTRO_STEPS[currentStep];
-  const progress = ((currentStep + 1) / INTRO_STEPS.length) * 100;
   const isLastStep = currentStep === INTRO_STEPS.length - 1;
 
   return (
@@ -100,73 +73,8 @@ export default function OnboardingIntroScreens({
           {currentScreen.description}
         </p>
 
-        {/* Action Buttons for Last Step */}
-        {isLastStep && (
-          <div className="flex gap-4 mt-4">
-            <button
-              onClick={handleCompletePreferences}
-              className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
-            >
-              Complete My Preferences
-            </button>
-            <button
-              onClick={handleBrowseWithoutProfile}
-              className="bg-white text-black border border-gray-300 px-8 py-3 rounded-full font-medium hover:bg-gray-50 transition-colors"
-            >
-              Browse Without Profile
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="border-t border-gray-200">
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 h-1">
-          <div
-            className="bg-black h-1 transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        <div className="p-8">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            {/* Previous Button */}
-            <button
-              type="button"
-              onClick={handlePrevious}
-              disabled={currentStep === 0}
-              className={`text-base font-medium transition-colors ${
-                currentStep === 0
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-black hover:text-gray-600"
-              }`}
-            >
-              {currentStep > 0 && (
-                <ChevronLeft className="inline-block w-4 h-4 mr-1" />
-              )}
-              Previous
-            </button>
-
-            {/* Step Indicator */}
-            <div className="text-sm text-gray-500">
-              Step {currentStep + 1} of {INTRO_STEPS.length}
-            </div>
-
-            {/* Next Button - Hide on last step since we have action buttons */}
-            {!isLastStep && (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
-              >
-                Next
-              </button>
-            )}
-            {isLastStep && <div></div>}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

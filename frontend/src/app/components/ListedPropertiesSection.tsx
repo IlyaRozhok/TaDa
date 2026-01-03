@@ -227,13 +227,6 @@ export default function ListedPropertiesSection({
         {/* Controls */}
         <div className="flex items-center gap-4">
           <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
-
-          <button
-            onClick={() => router.push("/app/properties/map")}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
-          >
-            <span className="font-medium text-slate-900">Show map</span>
-          </button>
         </div>
       </div>
 

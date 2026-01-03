@@ -23,7 +23,7 @@ export default function TenantPerfectMatchSection({
           </h1>
           <p className="text-lg text-gray-600 mb-8 max-w-2xl">
             {hasPreferences
-              ? `Great! You have ${preferencesCount} preferences set. We're finding the best matches for you.`
+              ? `Great! You have ${preferencesCount}% of your preferences filled. We're finding the best matches for you.`
               : "To get the most accurate matches for your rental search, we need to know more about your preferences. Complete your profile to unlock full access."}
           </p>
 

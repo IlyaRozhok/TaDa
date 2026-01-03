@@ -68,16 +68,6 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   return (
     <StepWrapper title="Step 1" description="Step 1">
       <StepContainer>
-        {/* Desired Address Input */}
-        <div className="mb-6">
-          <InputField
-            label="Desired Address"
-            value={formData.preferred_address || ""}
-            onChange={(e) => onUpdate("preferred_address", e.target.value)}
-            type="text"
-          />
-        </div>
-
         {/* Areas - Multi Select */}
         <div className="mb-6">
           <MultiSelectDropdown

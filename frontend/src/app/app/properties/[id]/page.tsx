@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -23,8 +23,7 @@ import {
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "../../../components/ui/Button";
 import { Heart, Share } from "lucide-react";
-import TaDaMap from "../../../components/TaDaMap";
-import UniversalHeader from "../../../components/UniversalHeader";
+import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import OwnerPropertiesSection from "../../../components/OwnerPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
@@ -62,6 +61,53 @@ export default function PropertyPublicPage() {
   const formatAmenityName = (name: string) => {
     return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
+
+  // Scroll to top when component mounts - aggressive approach
+  useLayoutEffect(() => {
+    const scrollToTop = () => {
+      // Force immediate scroll to top
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+      // Disable smooth scrolling temporarily
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+
+      // Multiple scroll attempts for reliability
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    // Scroll immediately
+    scrollToTop();
+
+    // Handle page restoration from bfcache
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from bfcache
+        scrollToTop();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
+    // Force scroll on next tick
+    const timer1 = setTimeout(scrollToTop, 0);
+
+    // Additional scroll after a short delay
+    const timer2 = setTimeout(() => {
+      scrollToTop();
+      // Restore original scroll behavior
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = originalScrollBehavior || '';
+    }, 50);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -260,7 +306,12 @@ export default function PropertyPublicPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <PropertyDetailSkeleton />
       </div>
     );
@@ -269,7 +320,12 @@ export default function PropertyPublicPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-red-800 mb-4">
@@ -291,7 +347,12 @@ export default function PropertyPublicPage() {
   if (!property) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <UniversalHeader />
+        <TenantUniversalHeader
+          searchTerm=""
+          onSearchChange={() => {}}
+          showSearchInput={false}
+          showPreferencesButton={true}
+        />
         <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-yellow-800 mb-4">
@@ -315,8 +376,13 @@ export default function PropertyPublicPage() {
   const publishDate = new Date(property.created_at || Date.now());
 
   return (
-    <div className="min-h-screen bg-white">
-      <UniversalHeader />
+    <div className="min-h-screen bg-white" style={{ scrollBehavior: 'auto' }}>
+      <TenantUniversalHeader
+        searchTerm=""
+        onSearchChange={() => {}}
+        showSearchInput={false}
+        showPreferencesButton={true}
+      />
 
       {/* Header with title and actions */}
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-25">
@@ -726,39 +792,6 @@ export default function PropertyPublicPage() {
             )
           );
         })()}
-      </div>
-
-      {/* Location */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-          Appart location
-        </h2>
-        <p className="text-gray-600 mb-6">
-          {property.address || "Address not available"}
-        </p>
-        <div className="rounded-2xl overflow-hidden border">
-          <TaDaMap
-            properties={[property]}
-            center={
-              property.lat && property.lng
-                ? {
-                    lat:
-                      typeof property.lat === "string"
-                        ? parseFloat(property.lat)
-                        : property.lat,
-                    lng:
-                      typeof property.lng === "string"
-                        ? parseFloat(property.lng)
-                        : property.lng,
-                  }
-                : { lat: 51.5074, lng: -0.1278 }
-            }
-            zoom={15}
-            height="400px"
-            className="w-full"
-            showLoadingOverlay={false}
-          />
-        </div>
       </div>
 
       {/* Accommodation Terms */}

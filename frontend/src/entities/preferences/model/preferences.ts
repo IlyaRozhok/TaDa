@@ -9,7 +9,6 @@ export interface PreferencesFormData {
   // ==================== STEP 1: LOCATION ====================
   preferred_areas?: string[];
   preferred_districts?: string[];
-  preferred_address?: string;
   preferred_metro_stations?: string[];
 
   // ==================== STEP 2: BUDGET & MOVE-IN ====================
@@ -55,6 +54,8 @@ export interface PreferencesFormData {
   smoker?: string;
 
   // ==================== STEP 10: ABOUT YOU ====================
+  preferred_address?: string;
+  occupation?: string;
   additional_info?: string;
 
   // ==================== LEGACY FIELDS (for backward compatibility) ====================
@@ -236,16 +237,18 @@ export function transformFormDataForApi(
     apiData.property_types = formData.property_type_preferences;
   }
 
-  // Outdoor space transformation (always set booleans)
+  // Outdoor space transformation (case-insensitive)
   if (formData.outdoor_space_preferences !== undefined) {
-    apiData.outdoor_space =
-      formData.outdoor_space_preferences.includes("outdoor_space");
-    apiData.balcony = formData.outdoor_space_preferences.includes("balcony");
-    apiData.terrace = formData.outdoor_space_preferences.includes("terrace");
+    apiData.outdoor_space = formData.outdoor_space_preferences.some((p) =>
+      p.toLowerCase().includes("outdoor space")
+    );
+    apiData.balcony = formData.outdoor_space_preferences.some(
+      (p) => p.toLowerCase() === "balcony"
+    );
+    apiData.terrace = formData.outdoor_space_preferences.some(
+      (p) => p.toLowerCase() === "terrace"
+    );
   }
-  apiData.outdoor_space ??= false;
-  apiData.balcony ??= false;
-  apiData.terrace ??= false;
 
   // Building style transformation
   if (formData.building_style_preferences !== undefined) {
@@ -343,7 +346,7 @@ export function transformFormDataForApi(
       apiData.smoker = true as unknown as PreferencesFormData["smoker"];
     } else if (formData.smoker === "non-smoker") {
       apiData.smoker = false as unknown as PreferencesFormData["smoker"];
-    } else if (formData.smoker === "no-preference") {
+    } else {
       apiData.smoker = null as unknown as PreferencesFormData["smoker"];
     }
   }
@@ -447,7 +450,7 @@ export function transformApiDataForForm(
   if (apiData.smoker !== undefined) {
     if (apiData.smoker === true) formData.smoker = "smoker";
     else if (apiData.smoker === false) formData.smoker = "non-smoker";
-    else formData.smoker = "no-preference";
+    else formData.smoker = "";
   }
 
   return formData;
