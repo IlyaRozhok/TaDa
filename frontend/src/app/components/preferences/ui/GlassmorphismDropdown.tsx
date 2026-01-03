@@ -26,10 +26,10 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
   value,
   options,
   onChange,
-  placeholder = "No Preference",
+  placeholder = "Select option",
   error,
   icon,
-  noPreferenceValue = "no-preference",
+  noPreferenceValue = "",
   required = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -135,7 +135,14 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
         } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
         onClick={handleToggle}
       >
-        {displayValue}
+        {hasValue ? (
+          displayValue
+        ) : (
+          <span>
+            {placeholder}
+            {required && <span className="text-red-500 ml-1">*</span>}
+          </span>
+        )}
       </div>
 
       {/* Floating label */}

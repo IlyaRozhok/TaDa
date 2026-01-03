@@ -15,12 +15,11 @@ export const BedroomsDropdown: React.FC<BedroomsDropdownProps> = ({
   label,
   value,
   onChange,
-  placeholder = "No Preference",
+  placeholder = "Select bedrooms",
   error,
   min = true,
 }) => {
   const options: DropdownOption[] = [
-    { value: "", label: "No Preference" },
     ...Array.from({ length: 5 }, (_, i) => i + 1).map((num) => ({
       value: num,
       label: `${num} bedroom${num > 1 ? "s" : ""}`,

@@ -52,7 +52,7 @@ export const MetroDropdown: React.FC<MetroDropdownProps> = ({
 
   const selectedOption = options.find((option) => option.value === value);
   const displayValue = selectedOption?.label || placeholder;
-  const hasValue = value && value !== "no-preference";
+  const hasValue = value && value !== "";
 
   const handleOptionClick = (optionValue: string) => {
     onChange(optionValue);

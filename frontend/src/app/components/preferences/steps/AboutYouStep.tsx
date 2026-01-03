@@ -14,7 +14,6 @@ interface AboutYouStepProps {
 }
 
 const OCCUPATION_OPTIONS = [
-  { value: "", label: "No Preference" },
   { value: "full-time-employed", label: "Full-time employed" },
   { value: "part-time-employed", label: "Part-time employed" },
   { value: "freelancer", label: "Freelancer" },
@@ -28,19 +27,11 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
   onUpdate,
   onValidationChange,
 }) => {
-  // Validation logic
+  // Validation logic - all fields are optional, so always valid
   const isValid = (): boolean => {
-    const hasAdditionalInfo = Boolean(
-      formData.additional_info && formData.additional_info.trim().length > 0
-    );
-    const hasOccupation = Boolean(
-      formData.occupation && formData.occupation !== ""
-    );
-    const hasPreferredAddress = Boolean(
-      formData.preferred_address && formData.preferred_address.trim().length > 0
-    );
-
-    return hasAdditionalInfo && hasOccupation && hasPreferredAddress;
+    // Since most preferences are optional, the step is always valid
+    // Users can complete onboarding without filling all fields
+    return true;
   };
 
   // Notify parent of validation state changes
@@ -61,35 +52,32 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
         <div className="space-y-6">
           {/* About You */}
           <TextAreaField
-            label="Tell about yourself"
+            label="Tell about yourself (optional)"
             value={formData.additional_info || ""}
             onChange={(value) => onUpdate("additional_info", value)}
             placeholder="e.g., I'm a quiet professional who enjoys cooking and reading. I keep a clean living space and am always respectful of neighbors. I'm looking for a peaceful home environment where I can relax after work..."
             rows={8}
-            required
           />
 
           {/* Container for Occupation and Desired Address */}
           <div className="px-8 space-y-6">
             {/* Occupation */}
             <GlassmorphismDropdown
-              label="Occupation"
+              label="Occupation (optional)"
               value={formData.occupation || ""}
               options={OCCUPATION_OPTIONS}
               onChange={(value) => onUpdate("occupation", value as string)}
               placeholder="What do you do for work?"
               icon={<Briefcase className="w-5 h-5 text-white" />}
               noPreferenceValue=""
-              required
             />
 
             {/* Desired Address Input */}
             <InputField
-              label="Desired Address"
+              label="Desired Address (optional)"
               value={formData.preferred_address || ""}
               onChange={(e) => onUpdate("preferred_address", e.target.value)}
               type="text"
-              required
             />
           </div>
         </div>

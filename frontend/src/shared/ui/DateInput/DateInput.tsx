@@ -79,6 +79,10 @@ export const DateInput: React.FC<DateInputProps> = ({
 
   const formattedValue = formatDateValue(value);
   const hasValue = !!formattedValue;
+  
+  // For date inputs, always keep label in "focused" position since date inputs 
+  // always show their placeholder format (dd.mm.yyyy, mm/dd/yyyy, etc.)
+  const shouldShowFocusedLabel = true;
 
   return (
     <div className={cn("relative", className)}>
@@ -111,7 +115,7 @@ export const DateInput: React.FC<DateInputProps> = ({
           className={cn(
             "absolute left-6 pointer-events-none",
             isInitialized ? "transition-all duration-200" : "",
-            isFocused || hasValue
+            shouldShowFocusedLabel
               ? "top-3 text-xs text-gray-500"
               : "top-1/3 translate-y-1 text-base text-gray-400"
           )}

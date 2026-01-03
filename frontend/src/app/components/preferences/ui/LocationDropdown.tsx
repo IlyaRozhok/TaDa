@@ -37,7 +37,7 @@ export const LocationDropdown: React.FC<LocationDropdownProps> = ({
       placeholder={placeholder}
       error={error}
       // No icon for location dropdown
-      noPreferenceValue="no-preference"
+      noPreferenceValue=""
     />
   );
 };

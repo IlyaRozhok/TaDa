@@ -11,6 +11,7 @@ import { User } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
+import { TenantCv } from "../../entities/tenant-cv.entity";
 import { AuthModule } from "../auth/auth.module";
 import { S3Service } from "../../common/services/s3.service";
 
@@ -21,6 +22,7 @@ import { S3Service } from "../../common/services/s3.service";
       TenantProfile,
       OperatorProfile,
       Preferences,
+      TenantCv,
     ]),
     forwardRef(() => AuthModule),
   ],

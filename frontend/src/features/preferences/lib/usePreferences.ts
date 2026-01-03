@@ -316,9 +316,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
           const transformedValue = transformedData[fieldKey];
 
           let processedValue = transformedValue;
-          if (transformedValue === "no-preference" && fieldKey !== "smoker") {
-            processedValue = null;
-          } else if (transformedValue === "") {
+          if (transformedValue === "") {
             processedValue = null;
           } else if (
             Array.isArray(transformedValue) &&
@@ -476,14 +474,10 @@ export default function usePreferences(currentStepOffset: number = 0) {
       // Transform form data to API format
       const transformedData = transformFormDataForApi(data);
 
-      // Convert "no-preference" values to null and handle empty arrays
+      // Handle empty values and arrays
       const processedData = Object.keys(transformedData).reduce((acc, key) => {
         const value = transformedData[key as keyof typeof transformedData];
-        if (value === "no-preference") {
-          // Keep "no-preference" for smoker, convert to null for other fields
-          (acc as Record<string, unknown>)[key] =
-            key === "smoker" ? "no-preference" : null;
-        } else if (value === "") {
+        if (value === "") {
           (acc as Record<string, unknown>)[key] = null;
         } else if (Array.isArray(value) && value.length === 0) {
           // Keep empty arrays as they are (user explicitly cleared selection)

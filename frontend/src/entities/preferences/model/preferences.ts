@@ -346,7 +346,7 @@ export function transformFormDataForApi(
       apiData.smoker = true as unknown as PreferencesFormData["smoker"];
     } else if (formData.smoker === "non-smoker") {
       apiData.smoker = false as unknown as PreferencesFormData["smoker"];
-    } else if (formData.smoker === "no-preference") {
+    } else {
       apiData.smoker = null as unknown as PreferencesFormData["smoker"];
     }
   }
@@ -450,7 +450,7 @@ export function transformApiDataForForm(
   if (apiData.smoker !== undefined) {
     if (apiData.smoker === true) formData.smoker = "smoker";
     else if (apiData.smoker === false) formData.smoker = "non-smoker";
-    else formData.smoker = "no-preference";
+    else formData.smoker = "";
   }
 
   return formData;

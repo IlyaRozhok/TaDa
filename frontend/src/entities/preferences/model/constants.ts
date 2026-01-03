@@ -178,7 +178,6 @@ export const FURNISHING_OPTIONS = [
   { value: "furnished", label: "Furnished" },
   { value: "unfurnished", label: "Unfurnished" },
   { value: "part-furnished", label: "Part Furnished" },
-  { value: "no-preference", label: "No Preference" },
 ] as const;
 
 // Secondary location options (Metro stations)
@@ -198,7 +197,6 @@ export const SECONDARY_LOCATION_OPTIONS = [
   { value: "leicester-square", label: "Leicester Square" },
   { value: "piccadilly-circus", label: "Piccadilly Circus" },
   { value: "euston", label: "Euston" },
-  { value: "no-preference", label: "No Preference" },
 ] as const;
 
 // Commute location options (Business districts and areas)
@@ -216,7 +214,6 @@ export const COMMUTE_LOCATION_OPTIONS = [
   { value: "waterloo", label: "Waterloo" },
   { value: "victoria", label: "Victoria" },
   { value: "green-park", label: "Green Park" },
-  { value: "no-preference", label: "No Preference" },
 ] as const;
 
 // Commute time options
@@ -228,7 +225,6 @@ export const COMMUTE_TIME_OPTIONS = [
   "45",
   "60",
   "90",
-  "no-preference",
 ] as const;
 
 // Move-in date options
@@ -277,13 +273,11 @@ export const IDEAL_LIVING_OPTIONS = [
   { value: "social", label: "Vibrant & social" },
   { value: "green", label: "Close to parks/greenery" },
   { value: "family-friendly", label: "Family-friendly" },
-  { value: "no-preference", label: "No preference" },
 ] as const;
 
 export const SMOKING_OPTIONS = [
   { value: "non-smoker", label: "Non-smoker" },
   { value: "smoker", label: "Smoker" },
-  { value: "no-preference", label: "No preference" },
 ] as const;
 
 export const TOTAL_STEPS_NEW = 10;
