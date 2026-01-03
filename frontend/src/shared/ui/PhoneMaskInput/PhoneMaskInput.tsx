@@ -74,8 +74,8 @@ export default function PhoneMaskInput({
   // Get mask for the current country code
   const mask = getPhoneMask(selectedCountry.code);
 
-  // Use mask as placeholder if no custom placeholder provided
-  const displayPlaceholder = placeholder || mask;
+  // Use custom placeholder or empty string (no mask placeholder)
+  const displayPlaceholder = placeholder || "";
 
   const handleChange = (e: InputMaskChangeEvent) => {
     const newValue = e.value;

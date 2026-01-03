@@ -29,11 +29,17 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
   onValidationChange,
 }) => {
   // Validation logic
-  const isValid = () => {
-    const hasAdditionalInfo = formData.additional_info && formData.additional_info.trim().length > 0;
-    const hasOccupation = formData.occupation && formData.occupation !== "";
-    const hasPreferredAddress = formData.preferred_address && formData.preferred_address.trim().length > 0;
-    
+  const isValid = (): boolean => {
+    const hasAdditionalInfo = Boolean(
+      formData.additional_info && formData.additional_info.trim().length > 0
+    );
+    const hasOccupation = Boolean(
+      formData.occupation && formData.occupation !== ""
+    );
+    const hasPreferredAddress = Boolean(
+      formData.preferred_address && formData.preferred_address.trim().length > 0
+    );
+
     return hasAdditionalInfo && hasOccupation && hasPreferredAddress;
   };
 
@@ -42,7 +48,13 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
     if (onValidationChange) {
       onValidationChange(isValid());
     }
-  }, [formData.additional_info, formData.occupation, formData.preferred_address, onValidationChange]);
+  }, [
+    formData.additional_info,
+    formData.occupation,
+    formData.preferred_address,
+    onValidationChange,
+    isValid,
+  ]);
   return (
     <StepWrapper title="Step 10" description="Step 10">
       <StepContainer>

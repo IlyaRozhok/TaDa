@@ -104,11 +104,30 @@ export default function OnboardingPage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [loading, setLoading] = useState(true);
+  const [isProfileValid, setIsProfileValid] = useState(false);
+  const [isPreferencesValid, setIsPreferencesValid] = useState(true);
 
   const { state, setCurrentStep, handleIntroComplete, handleProfileComplete, handlePreferencesComplete } = useOnboarding(
     user,
     () => router.push("/app/units")
   );
+
+  // Handle profile completion with save
+  const handleProfileNext = async () => {
+    if (!isProfileValid) {
+      return;
+    }
+    
+    // Call the save function from the profile component
+    if ((window as any).onboardingProfileSave) {
+      const success = await (window as any).onboardingProfileSave();
+      if (success) {
+        handleProfileComplete();
+      }
+    } else {
+      handleProfileComplete();
+    }
+  };
 
   // Only use preferences hook in preferences phase to avoid conflicts
   const preferencesHook = usePreferences(PREFERENCES_START_STEP - 1);
@@ -173,11 +192,6 @@ export default function OnboardingPage() {
 
     checkUserStatus();
   }, [isAuthenticated, user, router]);
-
-  const handleProfileNext = async () => {
-    // This will be called by OnboardingProfileStep's handleSubmit
-    // The component will handle the submission and call onComplete
-  };
 
   if (loading) {
     return (
@@ -280,6 +294,7 @@ export default function OnboardingPage() {
             onNext={handleProfileNext}
             currentStep={state.currentStep}
             totalSteps={TOTAL_ONBOARDING_STEPS}
+            onValidationChange={setIsProfileValid}
           />
         ) : (
           <NewPreferencesPage
@@ -290,6 +305,7 @@ export default function OnboardingPage() {
             externalNext={handlePreferencesNext}
             externalPrevious={handlePreferencesPrevious}
             showNavigation={false}
+            onValidationChange={setIsPreferencesValid}
           />
         )}
       </div>
@@ -327,7 +343,7 @@ export default function OnboardingPage() {
               className={`text-base font-medium transition-colors ${
                 state.currentPhase === "intro"
                   ? "text-gray-300 cursor-not-allowed"
-                  : "text-black hover:text-gray-600"
+                  : "text-black hover:text-gray-600 cursor-pointer"
               }`}
             >
               {(state.currentPhase === "profile" || state.currentPhase === "preferences") && (
@@ -342,9 +358,13 @@ export default function OnboardingPage() {
             {state.currentPhase === "profile" && (
               <button
                 type="button"
-                onClick={handleProfileComplete}
-                disabled={state.isLoading}
-                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+                onClick={handleProfileNext}
+                disabled={state.isLoading || !isProfileValid}
+                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
+                  state.isLoading || !isProfileValid
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
               >
                 {state.isLoading ? "Loading..." : "Next"}
               </button>
@@ -354,7 +374,12 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handlePreferencesNext}
-                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+                disabled={preferencesHook.step === 10 && !isPreferencesValid}
+                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
+                  preferencesHook.step === 10 && !isPreferencesValid
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
               >
                 {preferencesHook.isLastStep ? "Finish" : "Next"}
               </button>

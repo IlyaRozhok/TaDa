@@ -33,6 +33,7 @@ interface OnboardingProfileStepProps {
   currentStep?: number;
   totalSteps?: number;
   onValidationChange?: (isValid: boolean) => void;
+  onSave?: () => Promise<boolean>;
 }
 
 export default function OnboardingProfileStep({
@@ -41,6 +42,8 @@ export default function OnboardingProfileStep({
   onNext,
   currentStep,
   totalSteps,
+  onValidationChange,
+  onSave,
 }: OnboardingProfileStepProps) {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
@@ -132,6 +135,13 @@ export default function OnboardingProfileStep({
 
   const isFormValid = validateForm();
 
+  // Notify parent of validation state changes
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(isFormValid);
+    }
+  }, [isFormValid, onValidationChange]);
+
   const handleInputChange = useCallback(
     (field: keyof UpdateUserData, value: string | number) => {
       setFormData((prev) => ({
@@ -145,7 +155,7 @@ export default function OnboardingProfileStep({
   const handleSave = async () => {
     if (!isFormValid) {
       setError("Please fill in all required fields");
-      return;
+      return false;
     }
 
     setIsSaving(true);
@@ -155,12 +165,7 @@ export default function OnboardingProfileStep({
       await authAPI.updateProfile(formData);
       dispatch(updateUser(formData as any));
       setSuccess("Profile saved successfully!");
-      
-      // Clear success message after 2 seconds and proceed to next step
-      setTimeout(() => {
-        setSuccess(null);
-        onComplete();
-      }, 1500);
+      return true;
     } catch (error: any) {
       console.error("Failed to save profile:", error);
       setError(
@@ -168,10 +173,19 @@ export default function OnboardingProfileStep({
           error?.message ||
           "Failed to save profile. Please try again."
       );
+      return false;
     } finally {
       setIsSaving(false);
     }
   };
+
+  // Expose the save function to parent component
+  useEffect(() => {
+    (window as any).onboardingProfileSave = handleSave;
+    return () => {
+      delete (window as any).onboardingProfileSave;
+    };
+  }, [handleSave]);
 
   if (!isAuthenticated || !user) {
     return null;
@@ -275,6 +289,7 @@ export default function OnboardingProfileStep({
               options={NATIONALITY_OPTIONS}
               onChange={(value) => handleInputChange("nationality", value as string)}
               placeholder="Select nationality"
+              required
             />
           </div>
 
@@ -292,17 +307,6 @@ export default function OnboardingProfileStep({
             </div>
           )}
 
-          {/* Save Button */}
-          <div className="flex justify-center mt-8">
-            <Button
-              onClick={handleSave}
-              disabled={!isFormValid || isSaving}
-              className="px-8 py-3 text-base font-medium"
-              variant="primary"
-            >
-              {isSaving ? "Saving..." : "Save & Continue"}
-            </Button>
-          </div>
 
         </StepContainer>
       </StepWrapper>

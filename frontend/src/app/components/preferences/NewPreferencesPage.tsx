@@ -43,6 +43,7 @@ interface NewPreferencesPageProps {
   externalNext?: () => void; // External next handler for onboarding
   externalPrevious?: () => void; // External previous handler for onboarding
   showNavigation?: boolean; // Whether to show internal navigation
+  onValidationChange?: (isValid: boolean) => void; // Validation state callback
 }
 
 export default function NewPreferencesPage({
@@ -55,6 +56,7 @@ export default function NewPreferencesPage({
   externalNext,
   externalPrevious,
   showNavigation = true,
+  onValidationChange,
 }: NewPreferencesPageProps = {}) {
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
@@ -84,6 +86,13 @@ export default function NewPreferencesPage({
   const prevStep = externalPrevious || internalPrevStep;
   const isLastStep = externalStep ? (step === 10) : internalIsLastStep; // For external control, last step is 10
   const isFirstStep = externalStep ? (step === 1) : internalIsFirstStep;
+
+  // Pass validation state to parent when step 10 validation changes
+  useEffect(() => {
+    if (onValidationChange && step === 10) {
+      onValidationChange(isCurrentStepValid);
+    }
+  }, [isCurrentStepValid, onValidationChange, step]);
 
   // Wait for session manager to initialize
   useEffect(() => {

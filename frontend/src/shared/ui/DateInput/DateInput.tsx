@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/app/lib/utils";
 
 interface DateInputProps {
@@ -32,8 +32,27 @@ export const DateInput: React.FC<DateInputProps> = ({
   disabled = false,
   placeholder,
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize component to enable animations after first render
+  useEffect(() => {
+    if (!isInitialized) {
+      const timer = setTimeout(() => setIsInitialized(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
   };
 
   // Format date value for input (ensure it's in YYYY-MM-DD format)
@@ -59,41 +78,54 @@ export const DateInput: React.FC<DateInputProps> = ({
   };
 
   const formattedValue = formatDateValue(value);
+  const hasValue = !!formattedValue;
 
   return (
-    <div className={cn("space-y-2", className)}>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-
-      {description && <p className="text-sm text-gray-500">{description}</p>}
-
-      <input
-        id={name}
-        name={name}
-        type="date"
-        value={formattedValue}
-        onChange={handleChange}
-        min={minDate}
-        max={maxDate}
-        disabled={disabled}
-        placeholder={placeholder}
-        className={cn(
-          "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm",
-          "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
-          "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-          "text-gray-900 placeholder-gray-400",
-          // Hide calendar icon across browsers
-          "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0",
-          "[&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden",
-          "appearance-none",
-          error && "border-red-300 focus:ring-red-500 focus:border-red-500"
-        )}
-      />
-
+    <div className={cn("relative", className)}>
+      <div className="relative">
+        <input
+          id={name}
+          name={name}
+          type="date"
+          value={formattedValue}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          min={minDate}
+          max={maxDate}
+          disabled={disabled}
+          className={cn(
+            "w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0",
+            // Hide calendar icon across browsers
+            "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0",
+            "[&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden",
+            "appearance-none",
+            "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
+            error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+          )}
+        />
+        
+        {/* Floating Label */}
+        <label
+          htmlFor={name}
+          className={cn(
+            "absolute left-6 pointer-events-none",
+            isInitialized ? "transition-all duration-200" : "",
+            isFocused || hasValue
+              ? "top-3 text-xs text-gray-500"
+              : "top-1/3 translate-y-1 text-base text-gray-400"
+          )}
+        >
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      </div>
+      
+      {description && <p className="text-xs text-gray-500 mt-1 px-6">{description}</p>}
+      
+      {/* Error Message */}
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-red-600 mt-1 px-6" role="alert">
           {error}
         </p>
       )}
