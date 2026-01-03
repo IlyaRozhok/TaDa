@@ -9,7 +9,6 @@ export interface PreferencesFormData {
   // ==================== STEP 1: LOCATION ====================
   preferred_areas?: string[];
   preferred_districts?: string[];
-  preferred_address?: string;
   preferred_metro_stations?: string[];
 
   // ==================== STEP 2: BUDGET & MOVE-IN ====================
@@ -55,6 +54,8 @@ export interface PreferencesFormData {
   smoker?: string;
 
   // ==================== STEP 10: ABOUT YOU ====================
+  preferred_address?: string;
+  occupation?: string;
   additional_info?: string;
 
   // ==================== LEGACY FIELDS (for backward compatibility) ====================

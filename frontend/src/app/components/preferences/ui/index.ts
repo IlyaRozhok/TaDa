@@ -2,7 +2,6 @@ export { RequiredLabel } from "./RequiredLabel";
 export { ErrorMessage } from "./ErrorMessage";
 export { SelectField } from "./SelectField";
 export { InputField } from "./InputField";
-export { DatePicker } from "./DatePicker";
 export { DateRangePicker } from "./DateRangePicker";
 export { MetroDropdown } from "./MetroDropdown";
 export { LocationDropdown } from "./LocationDropdown";

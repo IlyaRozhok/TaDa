@@ -18,6 +18,7 @@ interface GlassmorphismDropdownProps {
   error?: string;
   icon?: ReactNode;
   noPreferenceValue?: string | number | "";
+  required?: boolean;
 }
 
 export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
@@ -29,6 +30,7 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
   error,
   icon,
   noPreferenceValue = "no-preference",
+  required = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -144,6 +146,7 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
           } top-3 text-xs text-gray-500`}
         >
           {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
 

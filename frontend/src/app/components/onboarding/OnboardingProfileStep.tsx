@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectUser,
@@ -11,7 +11,11 @@ import { authAPI } from "../../lib/api";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
 import { InputField } from "../preferences/ui/InputField";
-import { GlassmorphismDatePicker } from "../preferences/ui/GlassmorphismDatePicker";
+import { GlassmorphismDropdown } from "../preferences/ui/GlassmorphismDropdown";
+import { StyledDateInput } from "../../../shared/ui/DateInput/StyledDateInput";
+import { PhoneMaskInput, Button } from "../../../shared/ui";
+import { getCountryByDialCode, getCountryByCode, getDefaultCountry } from "../../../shared/lib/countries";
+import { NATIONALITY_OPTIONS } from "../../../shared/lib/nationalities";
 
 interface UpdateUserData {
   first_name?: string;
@@ -20,7 +24,6 @@ interface UpdateUserData {
   phone?: string;
   date_of_birth?: string;
   nationality?: string;
-  occupation?: string;
 }
 
 interface OnboardingProfileStepProps {
@@ -29,6 +32,7 @@ interface OnboardingProfileStepProps {
   onNext?: () => void;
   currentStep?: number;
   totalSteps?: number;
+  onValidationChange?: (isValid: boolean) => void;
 }
 
 export default function OnboardingProfileStep({
@@ -42,14 +46,11 @@ export default function OnboardingProfileStep({
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingFieldRef = useRef<{
-    field: keyof UpdateUserData;
-    value: unknown;
-  } | null>(null);
-  const initialFormDataRef = useRef<UpdateUserData | null>(null);
+  const [phoneCountryCode, setPhoneCountryCode] = useState("GB"); // Default to GB
+  const [phoneNumberOnly, setPhoneNumberOnly] = useState(""); // Store phone number without country code
 
   const [formData, setFormData] = useState<UpdateUserData>({
     first_name: "",
@@ -58,7 +59,6 @@ export default function OnboardingProfileStep({
     phone: "",
     date_of_birth: "",
     nationality: "",
-    occupation: "",
   });
 
   useEffect(() => {
@@ -102,69 +102,35 @@ export default function OnboardingProfileStep({
         occupation: (profile as any)?.occupation || "",
       };
       setFormData(initialData);
-      initialFormDataRef.current = initialData;
+
+      // Parse existing phone number to extract country code and number
+      if (initialData.phone) {
+        // Try to find country by dial code from the phone number
+        const country = getCountryByDialCode(initialData.phone.substring(0, 4)) || 
+                       getCountryByDialCode(initialData.phone.substring(0, 3)) || 
+                       getCountryByDialCode(initialData.phone.substring(0, 2)) ||
+                       getDefaultCountry();
+        
+        setPhoneCountryCode(country.code);
+        setPhoneNumberOnly(initialData.phone.slice(country.dialCode.length));
+      }
     }
   }, [user]);
 
-  // Save single field to API
-  const saveSingleField = useCallback(
-    async (field: keyof UpdateUserData, value: unknown) => {
-      if (!user) {
-        return;
+  // Form validation
+  const validateForm = (): boolean => {
+    const requiredFields = ['first_name', 'last_name', 'address', 'phone', 'date_of_birth', 'nationality'] as const;
+    
+    for (const field of requiredFields) {
+      if (!formData[field] || String(formData[field]).trim() === '') {
+        return false;
       }
+    }
+    
+    return true;
+  };
 
-      try {
-        // Get current value from user/profile
-        const profile =
-          user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
-        let currentValue: unknown;
-
-        if (field === "date_of_birth") {
-          const currentDate = (profile as any)?.date_of_birth;
-          if (currentDate) {
-            try {
-              const date = new Date(currentDate);
-              currentValue = !isNaN(date.getTime())
-                ? date.toISOString().split("T")[0]
-                : "";
-            } catch {
-              currentValue = "";
-            }
-          } else {
-            currentValue = "";
-          }
-        } else {
-          currentValue = (profile as any)?.[field];
-        }
-
-        // Check if value actually changed
-        const hasChanged = value !== currentValue;
-
-        if (!hasChanged) {
-          return; // No change, skip save
-        }
-
-        // Prepare update data
-        const updateData: UpdateUserData = { [field]: value } as UpdateUserData;
-
-        // Update profile via API
-        await authAPI.updateProfile(updateData);
-        dispatch(updateUser(updateData as any));
-
-        // Update initial form data reference
-        if (initialFormDataRef.current) {
-          initialFormDataRef.current = {
-            ...initialFormDataRef.current,
-            [field]: value,
-          };
-        }
-      } catch (error) {
-        console.error(`Failed to save field ${field as string}:`, error);
-        // Silent fail - don't show toast
-      }
-    },
-    [user, dispatch]
-  );
+  const isFormValid = validateForm();
 
   const handleInputChange = useCallback(
     (field: keyof UpdateUserData, value: string | number) => {
@@ -172,64 +138,52 @@ export default function OnboardingProfileStep({
         ...prev,
         [field]: value,
       }));
-
-      // Auto-save the field after debounce
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      pendingFieldRef.current = { field, value };
-
-      saveTimeoutRef.current = setTimeout(() => {
-        if (pendingFieldRef.current) {
-          saveSingleField(
-            pendingFieldRef.current.field,
-            pendingFieldRef.current.value
-          );
-          pendingFieldRef.current = null;
-        }
-      }, 500); // 500ms debounce
     },
-    [saveSingleField]
+    []
   );
 
-  const handleSubmit = async () => {
-    // Flush any pending saves before moving to next step
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    if (pendingFieldRef.current) {
-      await saveSingleField(
-        pendingFieldRef.current.field,
-        pendingFieldRef.current.value
-      );
-      pendingFieldRef.current = null;
+  const handleSave = async () => {
+    if (!isFormValid) {
+      setError("Please fill in all required fields");
+      return;
     }
 
-    // Persist current form data even if fields were unchanged (ensures defaults stick)
+    setIsSaving(true);
+    setError(null);
+
     try {
       await authAPI.updateProfile(formData);
       dispatch(updateUser(formData as any));
-    } catch (error) {
-      console.error("Failed to persist profile before next step:", error);
+      setSuccess("Profile saved successfully!");
+      
+      // Clear success message after 2 seconds and proceed to next step
+      setTimeout(() => {
+        setSuccess(null);
+        onComplete();
+      }, 1500);
+    } catch (error: any) {
+      console.error("Failed to save profile:", error);
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to save profile. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
     }
-
-    // Move to next step
-    onComplete();
   };
 
   if (!isAuthenticated || !user) {
     return null;
   }
 
-  // Cleanup timeout on unmount
+  // Clear error/success messages after some time
   useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   return (
     <div>
@@ -237,83 +191,121 @@ export default function OnboardingProfileStep({
         title="Complete Your Profile"
         description="Let's start by setting up your profile. This information helps us personalize your experience."
       >
-      <StepContainer>
-        {/* First Name */}
-        <div className="mb-6">
-          <InputField
-            label="First Name"
-            value={formData.first_name}
-            onChange={(e) => handleInputChange("first_name", e.target.value)}
-            type="text"
-            required
-          />
-        </div>
+        <StepContainer>
+          {/* First Name */}
+          <div className="mb-6">
+            <InputField
+              label="First Name"
+              value={formData.first_name}
+              onChange={(e) => handleInputChange("first_name", e.target.value)}
+              type="text"
+              required
+            />
+          </div>
 
-        {/* Last Name */}
-        <div className="mb-6">
-          <InputField
-            label="Last Name"
-            value={formData.last_name}
-            onChange={(e) => handleInputChange("last_name", e.target.value)}
-            type="text"
-            required
-          />
-        </div>
+          {/* Last Name */}
+          <div className="mb-6">
+            <InputField
+              label="Last Name"
+              value={formData.last_name}
+              onChange={(e) => handleInputChange("last_name", e.target.value)}
+              type="text"
+              required
+            />
+          </div>
 
-        {/* Address */}
-        <div className="mb-6">
-          <InputField
-            label="Address"
-            value={formData.address}
-            onChange={(e) => handleInputChange("address", e.target.value)}
-            type="text"
-            required
-          />
-        </div>
+          {/* Address */}
+          <div className="mb-6">
+            <InputField
+              label="Address"
+              value={formData.address}
+              onChange={(e) => handleInputChange("address", e.target.value)}
+              type="text"
+              required
+            />
+          </div>
 
-        {/* Phone */}
-        <div className="mb-6">
-          <InputField
-            label="Phone Number"
-            value={formData.phone}
-            onChange={(e) => handleInputChange("phone", e.target.value)}
-            type="tel"
-          />
-        </div>
+          {/* Phone */}
+          <div className="mb-6">
+            <PhoneMaskInput
+              countryCode={phoneCountryCode}
+              label="Phone Number"
+              value={phoneNumberOnly}
+              onChange={(value) => {
+                setPhoneNumberOnly(value || "");
+                // Combine country code with phone number for storage
+                // Don't strip formatting here - let InputMask handle it internally
+                const country = getCountryByCode(phoneCountryCode) || getDefaultCountry();
+                if (value) {
+                  // Only extract digits when we need to store the final value
+                  const digitsOnly = value.replace(/\D/g, '');
+                  const fullPhoneNumber = `${country.dialCode}${digitsOnly}`;
+                  handleInputChange("phone", fullPhoneNumber);
+                } else {
+                  handleInputChange("phone", "");
+                }
+              }}
+              onCountryChange={(countryCode) => {
+                setPhoneCountryCode(countryCode);
+                // Clear the phone input when country changes
+                setPhoneNumberOnly("");
+                handleInputChange("phone", "");
+              }}
+              required
+            />
+          </div>
 
-        {/* Date of Birth */}
-        <div className="mb-6">
-          <GlassmorphismDatePicker
-            label="Date of Birth"
-            value={formData.date_of_birth || null}
-            onChange={(date) => handleInputChange("date_of_birth", date)}
-            placeholder="dd.mm.yyyy"
-            maxDate={new Date()}
-            minDate={new Date("1900-01-01")}
-          />
-        </div>
+          {/* Date of Birth */}
+          <div className="mb-6">
+            <StyledDateInput
+              label="Date of Birth"
+              value={formData.date_of_birth || null}
+              onChange={(date) => handleInputChange("date_of_birth", date)}
+              maxDate={new Date().toISOString().split("T")[0]} // Today's date in YYYY-MM-DD format
+              minDate="1900-01-01"
+              required
+            />
+          </div>
 
-        {/* Nationality */}
-        <div className="mb-6">
-          <InputField
-            label="Nationality"
-            value={formData.nationality}
-            onChange={(e) => handleInputChange("nationality", e.target.value)}
-            type="text"
-          />
-        </div>
+          {/* Nationality */}
+          <div className="mb-6">
+            <GlassmorphismDropdown
+              label="Nationality"
+              value={formData.nationality ?? ""}
+              options={NATIONALITY_OPTIONS}
+              onChange={(value) => handleInputChange("nationality", value as string)}
+              placeholder="Select nationality"
+            />
+          </div>
 
-        {/* Occupation */}
-        <div>
-          <InputField
-            label="Occupation"
-            value={formData.occupation}
-            onChange={(e) => handleInputChange("occupation", e.target.value)}
-            type="text"
-          />
-        </div>
-      </StepContainer>
-    </StepWrapper>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-600">{success}</p>
+            </div>
+          )}
+
+          {/* Save Button */}
+          <div className="flex justify-center mt-8">
+            <Button
+              onClick={handleSave}
+              disabled={!isFormValid || isSaving}
+              className="px-8 py-3 text-base font-medium"
+              variant="primary"
+            >
+              {isSaving ? "Saving..." : "Save & Continue"}
+            </Button>
+          </div>
+
+        </StepContainer>
+      </StepWrapper>
     </div>
   );
 }

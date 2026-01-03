@@ -61,6 +61,7 @@ export default function NewPreferencesPage({
   const [accessDenied, setAccessDenied] = useState(false);
   const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCurrentStepValid, setIsCurrentStepValid] = useState(true);
 
   const {
     loading,
@@ -219,7 +220,7 @@ export default function NewPreferencesPage({
       case 9:
         return <LivingEnvironmentStep {...stepProps} />;
       case 10:
-        return <AboutYouStep {...stepProps} />;
+        return <AboutYouStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
       default:
         return <LocationStep {...stepProps} />;
     }
@@ -244,7 +245,7 @@ export default function NewPreferencesPage({
                 className={`font-medium ${
                   isFirstStep
                     ? "text-gray-400 cursor-not-allowed"
-                    : "text-black hover:text-gray-600"
+                    : "text-black hover:text-gray-600 cursor-pointer"
                 } transition-colors`}
               >
                 Back
@@ -263,7 +264,12 @@ export default function NewPreferencesPage({
                     await nextStep();
                   }
                 }}
-                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+                disabled={step === 10 && !isCurrentStepValid}
+                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
+                  step === 10 && !isCurrentStepValid
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
               >
                 {isLastStep ? "Finish" : "Next"}
               </button>

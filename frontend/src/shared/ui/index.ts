@@ -16,3 +16,8 @@ export {
 } from "./FormField/FormField";
 
 export { default as FeaturedBadge } from "./Badge/FeaturedBadge";
+
+export { PhoneMaskInput } from "./PhoneMaskInput";
+export type { PhoneMaskInputProps } from "./PhoneMaskInput";
+
+export { DateInput, StyledDateInput } from "./DateInput";

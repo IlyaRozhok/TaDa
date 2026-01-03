@@ -70,7 +70,6 @@ export default function usePreferences(currentStepOffset: number = 0) {
       // Step 1 - Location
       preferred_areas: [],
       preferred_districts: [],
-      preferred_address: "",
       preferred_metro_stations: [],
       // Step 2 - Budget & Move-in
       move_in_date: "",
@@ -120,6 +119,8 @@ export default function usePreferences(currentStepOffset: number = 0) {
       ideal_living_environment: [],
       smoker: "",
       // Step 10 - About You
+      preferred_address: "",
+      occupation: "",
       additional_info: "",
       // Legacy fields (for backward compatibility)
       primary_postcode: "",
