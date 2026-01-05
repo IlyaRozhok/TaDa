@@ -28,6 +28,7 @@ export class S3Service {
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
     const region = this.configService.get<string>("AWS_REGION") || "eu-north-1";
     const bucketName =
+      this.configService.get<string>("AWS_S3_BUCKET") ||
       this.configService.get<string>("AWS_S3_BUCKET_NAME") ||
       "tada-media-bucket-local";
 
@@ -132,12 +133,16 @@ export class S3Service {
         key: fullKey,
       };
     } catch (error) {
-      console.error(`❌ Error uploading ${originalFilename}:`, error);
+      console.error(`❌ S3 Upload Error for ${originalFilename}:`, error);
       console.error(`❌ Error details:`, {
         message: error.message,
         stack: error.stack,
         name: error.name,
-        code: error.code
+        code: error.code,
+        bucket: this.bucketName,
+        region: this.configService.get<string>("AWS_REGION"),
+        keyPrefix: this.keyPrefix,
+        bucketFromEnv: this.configService.get<string>("AWS_S3_BUCKET")
       });
 
       // For PDF files, use fallback URL instead of throwing error
@@ -195,11 +200,14 @@ export class S3Service {
       const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
       return signedUrl;
     } catch (error) {
-      console.error(`❌ Error generating presigned URL for ${key}:`, error);
+      console.error(`❌ Presigned URL Error for ${key}:`, error);
       console.error(`❌ Presigned URL error details:`, {
         message: error.message,
         code: error.code,
-        name: error.name
+        name: error.name,
+        bucket: this.bucketName,
+        region: this.configService.get<string>("AWS_REGION"),
+        bucketFromEnv: this.configService.get<string>("AWS_S3_BUCKET")
       });
       // Return fallback URL
       return `https://fallback-s3.example.com/${key}`;

@@ -6,19 +6,28 @@ import { ConfigService } from "@nestjs/config";
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
   constructor(private readonly configService: ConfigService) {
-    const clientID = configService.get("GOOGLE_CLIENT_ID");
-    const clientSecret = configService.get("GOOGLE_CLIENT_SECRET");
-    const callbackURL = configService.get("GOOGLE_CALLBACK_URL");
+    const clientID = configService.get("GOOGLE_CLIENT_ID") || "dummy-client-id";
+    const clientSecret =
+      configService.get("GOOGLE_CLIENT_SECRET") || "dummy-client-secret";
+    const callbackURL =
+      configService.get("GOOGLE_CALLBACK_URL") ||
+      "http://localhost:5001/auth/google/callback";
 
     // Validate environment variables
-    if (!clientID) {
-      throw new Error("GOOGLE_CLIENT_ID is not configured");
+    if (!configService.get("GOOGLE_CLIENT_ID")) {
+      console.warn(
+        "⚠️ GOOGLE_CLIENT_ID is not configured - Google OAuth will be disabled"
+      );
     }
-    if (!clientSecret) {
-      throw new Error("GOOGLE_CLIENT_SECRET is not configured");
+    if (!configService.get("GOOGLE_CLIENT_SECRET")) {
+      console.warn(
+        "⚠️ GOOGLE_CLIENT_SECRET is not configured - Google OAuth will be disabled"
+      );
     }
-    if (!callbackURL) {
-      throw new Error("GOOGLE_CALLBACK_URL is not configured");
+    if (!configService.get("GOOGLE_CALLBACK_URL")) {
+      console.warn(
+        "⚠️ GOOGLE_CALLBACK_URL is not configured - Google OAuth will be disabled"
+      );
     }
 
     super({
