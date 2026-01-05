@@ -38,7 +38,7 @@ export const PetsStep: React.FC<PetsStepProps> = ({
 
   return (
     <StepWrapper
-      title="Step 6"
+      title="Step 7"
       description="Step 6"
     >
       <StepContainer>

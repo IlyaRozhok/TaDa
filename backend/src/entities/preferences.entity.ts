@@ -377,23 +377,54 @@ export class Preferences {
   @Column({ nullable: true })
   smoker?: string;
 
-  // ==================== STEP 10: ABOUT YOU ====================
+  // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
 
   @ApiProperty({
-    description: "User occupation",
-    example: "Software Engineer",
+    description: "User occupation/professional status",
+    example: "young-professional",
     enum: [
-      "full-time-employed",
-      "part-time-employed", 
-      "freelancer",
       "student",
-      "self-employed",
-      "retired",
+      "young-professional",
+      "freelancer-remote-worker",
+      "business-owner",
+      "family-professional",
+      "other",
     ],
     required: false,
   })
   @Column({ nullable: true })
   occupation?: string;
+
+  @ApiProperty({
+    description: "Family status - who will live in the property",
+    example: "couple",
+    enum: [
+      "just-me",
+      "couple",
+      "couple-with-children",
+      "single-parent",
+      "friends-flatmates",
+    ],
+    required: false,
+  })
+  @Column({ nullable: true })
+  family_status?: string;
+
+  @ApiProperty({
+    description: "Number of children",
+    example: "no",
+    enum: [
+      "no",
+      "yes-1-child",
+      "yes-2-children",
+      "yes-3-plus-children",
+    ],
+    required: false,
+  })
+  @Column({ nullable: true })
+  children_count?: string;
+
+  // ==================== STEP 10: ABOUT YOU ====================
 
   @ApiProperty({
     description: "Additional information about the user",

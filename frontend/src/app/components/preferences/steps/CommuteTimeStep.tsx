@@ -18,7 +18,7 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="Step 2"
+      title="Step 3"
       description="Step 2"
     >
       <StepContainer>

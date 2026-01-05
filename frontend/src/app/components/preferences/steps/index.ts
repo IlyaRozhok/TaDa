@@ -1,3 +1,4 @@
+export { LifestylePreferencesStep } from "./LifestylePreferencesStep";
 export { LocationStep } from "./LocationStep";
 export { CommuteTimeStep } from "./CommuteTimeStep";
 export { BudgetStep } from "./BudgetStep";

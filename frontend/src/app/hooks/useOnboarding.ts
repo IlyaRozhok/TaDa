@@ -6,8 +6,8 @@ import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
 
 // Total steps in unified onboarding flow:
-// Intro: 3 steps, Profile: 1 step, Preferences: 10 steps = 14 total
-export const TOTAL_ONBOARDING_STEPS = 14;
+// Intro: 3 steps, Profile: 1 step, Preferences: 11 steps = 15 total
+export const TOTAL_ONBOARDING_STEPS = 15;
 export const INTRO_STEPS = 3;
 export const PROFILE_STEP = 4; // After intro steps
 export const PREFERENCES_START_STEP = 5; // After profile step

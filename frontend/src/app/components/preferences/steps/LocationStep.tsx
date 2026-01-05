@@ -1,6 +1,7 @@
 import React from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
+import { StepHeader } from "../step-components/StepHeader";
 import { InputField } from "../ui/InputField";
 import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
 import { PreferencesFormData } from "@/app/types/preferences";
@@ -66,8 +67,10 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   onUpdate,
 }) => {
   return (
-    <StepWrapper title="Step 1" description="Step 1">
+    <StepWrapper title="Step 2" description="Locations">
       <StepContainer>
+        <StepHeader title="Where would you like to live?" />
+
         {/* Areas - Multi Select */}
         <div className="mb-6">
           <MultiSelectDropdown

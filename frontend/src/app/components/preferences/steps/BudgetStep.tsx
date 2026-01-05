@@ -268,7 +268,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
   );
 
   return (
-    <StepWrapper title="Step 3" description="Step 3">
+    <StepWrapper title="Step 4" description="Step 4">
       <StepContainer>
         {/* Property Type - Multi Select */}
         <StepHeader title="Select property type" />

@@ -7,6 +7,7 @@ import { usePreferences } from "@/app/hooks/usePreferences";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { getRedirectPath } from "@/app/utils/simpleRedirect";
 import {
+  LifestylePreferencesStep,
   LocationStep,
   CommuteTimeStep,
   BudgetStep,
@@ -211,27 +212,29 @@ export default function NewPreferencesPage({
 
     switch (step) {
       case 1:
-        return <LocationStep {...stepProps} />;
+        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
       case 2:
-        return <CommuteTimeStep {...stepProps} />;
+        return <LocationStep {...stepProps} />;
       case 3:
-        return <BudgetStep {...stepProps} />;
+        return <CommuteTimeStep {...stepProps} />;
       case 4:
-        return <PropertyTypeStep {...stepProps} />;
+        return <BudgetStep {...stepProps} />;
       case 5:
-        return <ApartmentSpecStep {...stepProps} />;
+        return <PropertyTypeStep {...stepProps} />;
       case 6:
-        return <PetsStep {...stepProps} />;
+        return <ApartmentSpecStep {...stepProps} />;
       case 7:
-        return <AmenitiesStep {...stepProps} />;
+        return <PetsStep {...stepProps} />;
       case 8:
-        return <CompleteProfileStep {...stepProps} />;
+        return <AmenitiesStep {...stepProps} />;
       case 9:
-        return <LivingEnvironmentStep {...stepProps} />;
+        return <CompleteProfileStep {...stepProps} />;
       case 10:
+        return <LivingEnvironmentStep {...stepProps} />;
+      case 11:
         return <AboutYouStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
       default:
-        return <LocationStep {...stepProps} />;
+        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
     }
   };
 

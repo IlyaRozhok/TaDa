@@ -67,16 +67,20 @@ export default function usePreferences(currentStepOffset: number = 0) {
     formState: { errors },
   } = useForm<PreferencesFormData>({
     defaultValues: {
-      // Step 1 - Location
+      // Step 1 - Lifestyle Preferences
+      occupation: "",
+      family_status: "",
+      children_count: "",
+      // Step 2 - Location
       preferred_areas: [],
       preferred_districts: [],
       preferred_metro_stations: [],
-      // Step 2 - Budget & Move-in
+      // Step 3 - Budget & Move-in
       move_in_date: "",
       move_out_date: "",
       min_price: undefined,
       max_price: undefined,
-      // Step 3 - Property & Rooms
+      // Step 4 - Property & Rooms
       property_types: [],
       property_type_preferences: [], // UI alias
       bedrooms: [],
@@ -91,36 +95,35 @@ export default function usePreferences(currentStepOffset: number = 0) {
       outdoor_space_preferences: [], // UI alias
       min_square_meters: undefined,
       max_square_meters: undefined,
-      // Step 4 - Building & Duration
+      // Step 5 - Building & Duration
       building_types: [],
       building_style_preferences: [], // UI alias
       let_duration: "",
       selected_duration: "", // UI alias
       bills: "",
       selected_bills: "", // UI alias
-      // Step 5 - Tenant Type
+      // Step 6 - Tenant Type
       tenant_types: [],
       tenant_type_preferences: [], // UI alias
-      // Step 6 - Pets
+      // Step 7 - Pets
       pet_policy: false,
       pets: [],
       pet_type_preferences: [], // UI alias
       number_of_pets: undefined,
       dog_size: "", // UI alias
-      // Step 7 - Amenities
+      // Step 8 - Amenities
       amenities: [],
       amenities_preferences: [], // UI alias
       is_concierge: false,
       smoking_area: false,
       additional_preferences: [], // UI alias
-      // Step 8 - Hobbies
+      // Step 9 - Hobbies
       hobbies: [],
-      // Step 9 - Living Environment
+      // Step 10 - Living Environment
       ideal_living_environment: [],
       smoker: "",
-      // Step 10 - About You
+      // Step 11 - About You
       preferred_address: "",
-      occupation: "",
       additional_info: "",
       // Legacy fields (for backward compatibility)
       primary_postcode: "",

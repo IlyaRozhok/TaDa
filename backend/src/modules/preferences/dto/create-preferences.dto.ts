@@ -32,6 +32,77 @@ class PetDto implements Pet {
 }
 
 export class CreatePreferencesDto {
+  // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
+
+  @ApiPropertyOptional({
+    description: "User occupation/professional status",
+    example: "young-professional",
+    enum: [
+      "student",
+      "young-professional",
+      "freelancer-remote-worker",
+      "business-owner",
+      "family-professional",
+      "other",
+    ],
+  })
+  @IsOptional()
+  @IsIn([
+    "student",
+    "young-professional",
+    "freelancer-remote-worker",
+    "business-owner",
+    "family-professional",
+    "other",
+    "",
+    null,
+  ])
+  occupation?: string;
+
+  @ApiPropertyOptional({
+    description: "Family status - who will live in the property",
+    example: "couple",
+    enum: [
+      "just-me",
+      "couple",
+      "couple-with-children",
+      "single-parent",
+      "friends-flatmates",
+    ],
+  })
+  @IsOptional()
+  @IsIn([
+    "just-me",
+    "couple",
+    "couple-with-children",
+    "single-parent",
+    "friends-flatmates",
+    "",
+    null,
+  ])
+  family_status?: string;
+
+  @ApiPropertyOptional({
+    description: "Number of children",
+    example: "no",
+    enum: [
+      "no",
+      "yes-1-child",
+      "yes-2-children",
+      "yes-3-plus-children",
+    ],
+  })
+  @IsOptional()
+  @IsIn([
+    "no",
+    "yes-1-child",
+    "yes-2-children",
+    "yes-3-plus-children",
+    "",
+    null,
+  ])
+  children_count?: string;
+
   // ==================== STEP 1: LOCATION ====================
 
   @ApiPropertyOptional({
@@ -351,31 +422,6 @@ export class CreatePreferencesDto {
   smoker?: string;
 
   // ==================== STEP 10: ABOUT YOU ====================
-
-  @ApiPropertyOptional({
-    description: "User occupation",
-    example: "full-time-employed",
-    enum: [
-      "full-time-employed",
-      "part-time-employed",
-      "freelancer", 
-      "student",
-      "self-employed",
-      "retired",
-    ],
-  })
-  @IsOptional()
-  @IsIn([
-    "full-time-employed",
-    "part-time-employed",
-    "freelancer",
-    "student", 
-    "self-employed",
-    "retired",
-    "",
-    null,
-  ])
-  occupation?: string;
 
   @ApiPropertyOptional({
     description: "Additional information about the user",

@@ -36,7 +36,7 @@ export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
   };
 
   return (
-    <StepWrapper title="Step 9" description="Step 9">
+    <StepWrapper title="Step 10" description="Step 10">
       <StepContainer>
         {/* Ideal Living Environment - Multi Select */}
         <div className="mb-8">

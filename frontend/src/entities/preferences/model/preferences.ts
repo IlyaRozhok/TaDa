@@ -6,6 +6,11 @@ export interface Pet {
 }
 
 export interface PreferencesFormData {
+  // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
+  occupation?: string;
+  family_status?: string;
+  children_count?: string;
+
   // ==================== STEP 1: LOCATION ====================
   preferred_areas?: string[];
   preferred_districts?: string[];

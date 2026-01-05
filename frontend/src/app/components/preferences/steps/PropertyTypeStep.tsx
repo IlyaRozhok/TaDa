@@ -27,7 +27,7 @@ export const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="Step 4"
+      title="Step 5"
       description="Step 4"
     >
       <StepContainer>

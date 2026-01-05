@@ -280,4 +280,4 @@ export const SMOKING_OPTIONS = [
   { value: "smoker", label: "Smoker" },
 ] as const;
 
-export const TOTAL_STEPS_NEW = 10;
+export const TOTAL_STEPS_NEW = 11;

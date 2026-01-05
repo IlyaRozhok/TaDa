@@ -3,9 +3,7 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { TextAreaField } from "../step-components/TextAreaField";
 import { InputField } from "../ui/InputField";
-import { GlassmorphismDropdown } from "../ui/GlassmorphismDropdown";
 import { PreferencesFormData } from "@/app/types/preferences";
-import { Briefcase } from "lucide-react";
 
 interface AboutYouStepProps {
   formData: PreferencesFormData;
@@ -13,14 +11,6 @@ interface AboutYouStepProps {
   onValidationChange?: (isValid: boolean) => void;
 }
 
-const OCCUPATION_OPTIONS = [
-  { value: "full-time-employed", label: "Full-time employed" },
-  { value: "part-time-employed", label: "Part-time employed" },
-  { value: "freelancer", label: "Freelancer" },
-  { value: "student", label: "Student" },
-  { value: "self-employed", label: "Self-employed" },
-  { value: "retired", label: "Retired" },
-];
 
 export const AboutYouStep: React.FC<AboutYouStepProps> = ({
   formData,
@@ -41,13 +31,12 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
     }
   }, [
     formData.additional_info,
-    formData.occupation,
     formData.preferred_address,
     onValidationChange,
     isValid,
   ]);
   return (
-    <StepWrapper title="Step 10" description="Step 10">
+    <StepWrapper title="Step 11" description="Step 11">
       <StepContainer>
         <div className="space-y-6">
           {/* About You */}
@@ -59,19 +48,8 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
             rows={8}
           />
 
-          {/* Container for Occupation and Desired Address */}
+          {/* Container for Desired Address */}
           <div className="px-8 space-y-6">
-            {/* Occupation */}
-            <GlassmorphismDropdown
-              label="Occupation (optional)"
-              value={formData.occupation || ""}
-              options={OCCUPATION_OPTIONS}
-              onChange={(value) => onUpdate("occupation", value as string)}
-              placeholder="What do you do for work?"
-              icon={<Briefcase className="w-5 h-5 text-white" />}
-              noPreferenceValue=""
-            />
-
             {/* Desired Address Input */}
             <InputField
               label="Desired Address (optional)"

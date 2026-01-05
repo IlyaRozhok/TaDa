@@ -51,7 +51,7 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="Step 7"
+      title="Step 8"
       description="Step 7"
     >
       <StepContainer>

@@ -19,7 +19,7 @@ export const CompleteProfileStep: React.FC<CompleteProfileStepProps> = ({
   onToggle,
 }) => {
   return (
-    <StepWrapper title="Step 8" description="Step 8">
+    <StepWrapper title="Step 9" description="Step 9">
       <StepContainer>
         {/* Header */}
         <StepHeader title="Hobbies & Interests" />
