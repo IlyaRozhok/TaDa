@@ -24,16 +24,8 @@ export class S3Service {
   private uploadsDir: string;
 
   constructor(private configService: ConfigService) {
-    console.log(`🔧 Initializing S3Service. NODE_ENV: ${process.env.NODE_ENV}`);
-
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-
-    console.log(`🔑 AWS_ACCESS_KEY_ID present: ${!!accessKeyId} (first 4 chars: ${accessKeyId ? accessKeyId.substring(0, 4) : 'none'})`);
-    console.log(`🔑 AWS_SECRET_ACCESS_KEY present: ${!!secretAccessKey} (first 4 chars: ${secretAccessKey ? secretAccessKey.substring(0, 4) : 'none'})`);
-    console.log(`🔧 AWS_REGION: ${this.configService.get<string>("AWS_REGION")}`);
-    console.log(`🔧 AWS_S3_BUCKET_NAME: ${this.configService.get<string>("AWS_S3_BUCKET_NAME")}`);
-
     const region = this.configService.get<string>("AWS_REGION") || "eu-north-1";
     const bucketName =
       this.configService.get<string>("AWS_S3_BUCKET_NAME") ||
@@ -41,14 +33,10 @@ export class S3Service {
 
     this.isDevMode = !accessKeyId || !secretAccessKey || accessKeyId.trim() === '' || secretAccessKey.trim() === '';
     this.uploadsDir = path.join(process.cwd(), 'uploads');
-    console.log(`📁 Uploads directory will be: ${this.uploadsDir}`);
-    console.log(`🔧 Final isDevMode determination: ${this.isDevMode}`);
 
     if (this.isDevMode) {
       if (process.env.NODE_ENV !== "production") {
-        console.warn(
-          "⚠️ Missing AWS credentials, S3Service will use local file storage (dev mode)"
-        );
+        // Dev mode: use local file storage
         this.s3Client = null as any;
         this.bucketName = bucketName;
         this.keyPrefix = "tada-media/";
@@ -56,34 +44,25 @@ export class S3Service {
         // Create uploads directory if it doesn't exist
         if (!fs.existsSync(this.uploadsDir)) {
           fs.mkdirSync(this.uploadsDir, { recursive: true });
-          console.log(`📁 Created uploads directory: ${this.uploadsDir}`);
         }
-
-        console.log("✅ S3Service initialized in DEV mode (local file storage)");
         return;
       } else {
-        console.error("❌ Missing AWS credentials from ConfigService");
-        throw new Error("AWS credentials not configured in ConfigService");
+        throw new Error("AWS credentials not configured in production");
       }
     }
 
-    // Принудительно создаем S3Client с кредами из ConfigService
+    // Production mode: use real S3
     this.s3Client = new S3Client({
       region: region,
       credentials: {
         accessKeyId: accessKeyId,
         secretAccessKey: secretAccessKey,
       },
-      // Принудительно отключаем поиск credentials в других местах
       forcePathStyle: false,
     });
 
     this.bucketName = bucketName;
     this.keyPrefix = "tada-media/";
-
-    console.log(
-      `🔧 S3Service initialized with ConfigService credentials: bucket=${this.bucketName}, region=${region}, prefix=${this.keyPrefix}`
-    );
   }
 
   /**
@@ -95,12 +74,10 @@ export class S3Service {
     mimeType: string,
     originalFilename: string
   ): Promise<S3UploadResult> {
-    console.log(`🔄 Starting upload for file: ${originalFilename}, key: ${key}, size: ${buffer.length} bytes, mimeType: ${mimeType}, isDevMode: ${this.isDevMode}`);
 
     try {
       // Check if in dev mode - use local file storage
       if (this.isDevMode) {
-        console.log(`📁 Saving file locally for dev mode: ${originalFilename}`);
 
         // Ensure uploads directory exists
         if (!fs.existsSync(this.uploadsDir)) {
@@ -116,13 +93,10 @@ export class S3Service {
         }
 
         fs.writeFileSync(filePath, buffer);
-        console.log(`✅ File saved locally: ${filePath}`);
-        console.log(`📊 File size written: ${fs.statSync(filePath).size} bytes`);
 
         // Return local URL for development
         const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
         const localUrl = `${backendUrl}/uploads/${key}`;
-        console.log(`🔗 Local URL generated: ${localUrl} (using BACKEND_URL: ${backendUrl})`);
 
         return {
           url: localUrl,
@@ -132,7 +106,6 @@ export class S3Service {
 
       // Add prefix to key
       const fullKey = `${this.keyPrefix}${key}`;
-      console.log(`📤 Uploading to S3: ${fullKey}`);
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -149,16 +122,10 @@ export class S3Service {
       });
 
       await this.s3Client.send(command);
-      console.log(`✅ S3 upload successful for ${originalFilename} (${mimeType}, ${buffer.length} bytes)`);
 
-      // Special logging for PDF files
-      if (mimeType === 'application/pdf') {
-        console.log(`📄 PDF file uploaded successfully: ${fullKey}`);
-      }
 
       // Generate presigned URL for secure access
       const url = await this.getPresignedUrl(fullKey);
-      console.log(`🔗 Presigned URL generated for ${originalFilename}: ${url}`);
 
       return {
         url,
@@ -175,7 +142,6 @@ export class S3Service {
 
       // For PDF files, use fallback URL instead of throwing error
       if (mimeType === 'application/pdf') {
-        console.warn(`⚠️ PDF upload to S3 failed for ${originalFilename}, using fallback URL`);
         const fallbackUrl = `https://fallback-s3.example.com/${this.keyPrefix}${key}`;
         return {
           url: fallbackUrl,
@@ -184,7 +150,6 @@ export class S3Service {
       }
 
       // Fallback: return mock URL if S3 fails (for images/videos)
-      console.warn(`⚠️ S3 upload failed, using fallback URL for ${originalFilename}`);
       const fallbackUrl = `https://fallback-s3.example.com/${this.keyPrefix}${key}`;
       return {
         url: fallbackUrl,
@@ -216,22 +181,18 @@ export class S3Service {
   ): Promise<string> {
     // Check if in dev mode - return local URL
     if (this.isDevMode) {
-      console.log(`🔗 Returning local URL for dev mode: ${key} (isDevMode: ${this.isDevMode})`);
       const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
       const localUrl = `${backendUrl}/uploads/${key}`;
-      console.log(`🔗 Local URL: ${localUrl}`);
       return localUrl;
     }
 
     try {
-      console.log(`🔗 Generating presigned URL for key: ${key}, bucket: ${this.bucketName}`);
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: key,
       });
 
       const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-      console.log(`🔗 Presigned URL generated successfully: ${signedUrl.substring(0, 100)}...`);
       return signedUrl;
     } catch (error) {
       console.error(`❌ Error generating presigned URL for ${key}:`, error);

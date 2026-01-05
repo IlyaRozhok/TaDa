@@ -11,7 +11,6 @@ import { MatchingModule } from "./modules/matching/matching.module";
 import { PropertiesModule } from "./modules/properties/properties.module";
 import { PropertyMediaModule } from "./modules/property-media/property-media.module";
 import { ShortlistModule } from "./modules/shortlist/shortlist.module";
-import { OperatorModule } from "./modules/operator/operator.module";
 import { BuildingModule } from "./modules/building/building.module";
 import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
@@ -37,7 +36,6 @@ import { typeOrmConfig } from "./database/typeorm.config";
     PropertiesModule,
     PropertyMediaModule,
     ShortlistModule,
-    OperatorModule,
     BuildingModule,
     TenantCvModule,
     BookingRequestModule,

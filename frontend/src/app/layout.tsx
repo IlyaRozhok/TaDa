@@ -8,7 +8,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { I18nProvider } from "./contexts/I18nContext";
 import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
-import SilenceConsole from "./components/SilenceConsole";
 
 
 const geistSans = Geist({
@@ -83,7 +82,6 @@ export default function RootLayout({
             <ReduxProvider>
               <AuthProvider>
                 <SessionManager />
-                <SilenceConsole />
                 <EmailJSInitializer />
                 {children}
                 <Toaster
