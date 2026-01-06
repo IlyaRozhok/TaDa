@@ -36,7 +36,7 @@ import { S3Service } from "../../common/services/s3.service";
 export class BuildingController {
   constructor(
     private readonly buildingService: BuildingService,
-    private readonly s3Service: S3Service,
+    private readonly s3Service: S3Service
   ) {}
 
   @Post()
@@ -53,11 +53,13 @@ export class BuildingController {
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get all buildings" })
   @ApiResponse({ status: 200, description: "List of buildings" })
-  findAll(@Query("operator_id") operatorId?: string) {
+  async findAll(@Query("operator_id") operatorId?: string) {
     if (operatorId) {
-      return this.buildingService.findByOperator(operatorId);
+      return await this.buildingService.findAllWithFreshUrls({
+        operator_id: operatorId,
+      });
     }
-    return this.buildingService.findAll();
+    return await this.buildingService.findAllWithFreshUrls();
   }
 
   @Get("operators")
@@ -73,8 +75,8 @@ export class BuildingController {
   @ApiOperation({ summary: "Get a building by ID" })
   @ApiResponse({ status: 200, description: "Building found" })
   @ApiResponse({ status: 404, description: "Building not found" })
-  findOne(@Param("id") id: string) {
-    return this.buildingService.findOne(id);
+  async findOne(@Param("id") id: string) {
+    return await this.buildingService.findOneWithFreshUrls(id);
   }
 
   @Patch(":id")
@@ -95,7 +97,10 @@ export class BuildingController {
   @ApiOperation({ summary: "Delete a building" })
   @ApiResponse({ status: 200, description: "Building deleted successfully" })
   @ApiResponse({ status: 404, description: "Building not found" })
-  @ApiResponse({ status: 400, description: "Cannot delete building with associated properties" })
+  @ApiResponse({
+    status: 400,
+    description: "Cannot delete building with associated properties",
+  })
   async remove(@Param("id") id: string) {
     return await this.buildingService.remove(id);
   }
@@ -116,12 +121,15 @@ export class BuildingController {
         throw new Error("Invalid file type. Only images are allowed.");
       }
 
-      const fileKey = this.s3Service.generateFileKey(file.originalname, "building-logo");
+      const fileKey = this.s3Service.generateFileKey(
+        file.originalname,
+        "building-logo"
+      );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname,
+        file.originalname
       );
 
       return {
@@ -150,12 +158,15 @@ export class BuildingController {
         throw new Error("Invalid file type. Only videos are allowed.");
       }
 
-      const fileKey = this.s3Service.generateFileKey(file.originalname, "building-video");
+      const fileKey = this.s3Service.generateFileKey(
+        file.originalname,
+        "building-video"
+      );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname,
+        file.originalname
       );
 
       return {
@@ -182,15 +193,20 @@ export class BuildingController {
     const uploadPromises = files.map(async (file) => {
       try {
         if (!file.mimetype.startsWith("image/")) {
-          throw new Error(`Invalid file type for ${file.originalname}. Only images are allowed.`);
+          throw new Error(
+            `Invalid file type for ${file.originalname}. Only images are allowed.`
+          );
         }
 
-        const fileKey = this.s3Service.generateFileKey(file.originalname, "building-photo");
+        const fileKey = this.s3Service.generateFileKey(
+          file.originalname,
+          "building-photo"
+        );
         const uploadResult = await this.s3Service.uploadFile(
           file.buffer,
           fileKey,
           file.mimetype,
-          file.originalname,
+          file.originalname
         );
 
         return {
@@ -199,7 +215,9 @@ export class BuildingController {
         };
       } catch (error) {
         console.error(`Error uploading photo ${file.originalname}:`, error);
-        throw new Error(`Failed to upload ${file.originalname}: ${error.message}`);
+        throw new Error(
+          `Failed to upload ${file.originalname}: ${error.message}`
+        );
       }
     });
 
@@ -226,15 +244,20 @@ export class BuildingController {
     const uploadPromises = files.map(async (file) => {
       try {
         if (file.mimetype !== "application/pdf") {
-          throw new Error(`Invalid file type for ${file.originalname}. Only PDF files are allowed.`);
+          throw new Error(
+            `Invalid file type for ${file.originalname}. Only PDF files are allowed.`
+          );
         }
 
-        const fileKey = this.s3Service.generateFileKey(file.originalname, "building-document");
+        const fileKey = this.s3Service.generateFileKey(
+          file.originalname,
+          "building-document"
+        );
         const uploadResult = await this.s3Service.uploadFile(
           file.buffer,
           fileKey,
           file.mimetype,
-          file.originalname,
+          file.originalname
         );
 
         return {
@@ -243,7 +266,9 @@ export class BuildingController {
         };
       } catch (error) {
         console.error(`Error uploading document ${file.originalname}:`, error);
-        throw new Error(`Failed to upload ${file.originalname}: ${error.message}`);
+        throw new Error(
+          `Failed to upload ${file.originalname}: ${error.message}`
+        );
       }
     });
 
@@ -256,4 +281,3 @@ export class BuildingController {
     }
   }
 }
-

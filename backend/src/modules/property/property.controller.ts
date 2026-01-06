@@ -297,11 +297,11 @@ export class PropertyController {
     status: 200,
     description: "Properties retrieved successfully",
   })
-  findAll(
+  async findAll(
     @Query("building_id") building_id?: string,
     @Query("operator_id") operator_id?: string
   ) {
-    return this.propertyService.findAll({ building_id, operator_id });
+    return await this.propertyService.findAllWithFreshUrls({ building_id, operator_id });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -311,8 +311,8 @@ export class PropertyController {
   @ApiOperation({ summary: "Get a property by ID" })
   @ApiResponse({ status: 200, description: "Property found" })
   @ApiResponse({ status: 404, description: "Property not found" })
-  findOne(@Param("id") id: string) {
-    return this.propertyService.findOne(id);
+  async findOne(@Param("id") id: string) {
+    return await this.propertyService.findOneWithFreshUrls(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

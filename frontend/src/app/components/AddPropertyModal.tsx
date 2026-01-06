@@ -114,6 +114,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     null
   );
   const [availableOperators, setAvailableOperators] = useState<User[]>([]);
+  const [operatorsLoading, setOperatorsLoading] = useState(false);
+  const [operatorsLoaded, setOperatorsLoaded] = useState(false);
 
   // Dropdown open states
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -142,10 +144,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   // Load operators when building_type changes to private_landlord
   useEffect(() => {
-    if (formData.building_type === "private_landlord") {
+    if (formData.building_type === "private_landlord" && isOpen) {
       loadOperators();
     }
-  }, [formData.building_type]);
+  }, [formData.building_type, isOpen]);
 
   // Use operators from props or load them if not available
   useEffect(() => {
@@ -157,12 +159,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         "operators"
       );
       setAvailableOperators(operators);
-    } else {
+      setOperatorsLoaded(true);
+    } else if (isOpen && !operatorsLoading && !operatorsLoaded) {
       console.log("⚠️ No operators in props, trying to load them...");
-      // If no operators from props, try to load them when modal opens
-      if (isOpen) {
-        loadOperators();
-      }
+      // Only load operators once when modal opens and not already loading/loaded
+      loadOperators();
     }
   }, [operators, isOpen]);
 
@@ -258,11 +259,17 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   }, [isOpen, formData.building_id]);
 
   const loadOperators = async () => {
+    if (operatorsLoading) {
+      console.log("🔄 Operators already loading, skipping...");
+      return;
+    }
+
     try {
       console.log("🔄 Loading operators in AddPropertyModal...");
+      setOperatorsLoading(true);
 
-      // Try to load all users and filter operators
-      const response = await usersAPI.getAll();
+      // Try to load operators with role filter first
+      const response = await usersAPI.getAll({ role: "operator" });
       const usersData =
         response.data?.users || response.data?.data || response.data || [];
       console.log("✅ Users loaded:", usersData.length, "users");
@@ -295,6 +302,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       }
 
       setAvailableOperators(finalOperators);
+      setOperatorsLoaded(true);
     } catch (error: any) {
       console.error("❌ Failed to load operators:", error);
 
@@ -305,6 +313,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       }
 
       setAvailableOperators([]);
+    } finally {
+      setOperatorsLoading(false);
     }
   };
 
@@ -669,6 +679,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       local_essentials: [] as LocalEssential[],
       operator_id: "",
     });
+
+    // Reset operators state
+    setOperatorsLoaded(false);
+    setOperatorsLoading(false);
+    if (!operators || operators.length === 0) {
+      setAvailableOperators([]);
+    }
     setPhotoFiles([]);
     setVideoFile(null);
     setDocumentFile(null);

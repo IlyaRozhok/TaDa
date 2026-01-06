@@ -11,6 +11,7 @@ import { User, UserRole } from "../../entities/user.entity";
 import { CreateBuildingDto } from "./dto/create-building.dto";
 import { UpdateBuildingDto } from "./dto/update-building.dto";
 import { BuildingResponse, toBuildingResponse } from "./building.mapper";
+import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
 export class BuildingService {
@@ -20,7 +21,8 @@ export class BuildingService {
     @InjectRepository(Property)
     private propertyRepository: Repository<Property>,
     @InjectRepository(User)
-    private userRepository: Repository<User>
+    private userRepository: Repository<User>,
+    private readonly s3Service: S3Service
   ) {}
 
   async create(
@@ -291,5 +293,120 @@ export class BuildingService {
     throw new BadRequestException(
       "User must have operator or admin role to manage buildings"
     );
+  }
+
+  /**
+   * Extract S3 key from S3 URL
+   */
+  private extractS3KeyFromUrl(url: string): string | null {
+    try {
+      // Handle both old and new bucket URLs
+      const patterns = [
+        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
+        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
+      ];
+
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return decodeURIComponent(match[1]);
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error extracting S3 key from URL: ${url}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Update building media URLs with fresh presigned URLs
+   */
+  private async updateBuildingMediaUrls(building: Building): Promise<Building> {
+    try {
+      // Update logo
+      if (building.logo) {
+        const logoKey = this.extractS3KeyFromUrl(building.logo);
+        if (logoKey) {
+          building.logo = await this.s3Service.getPresignedUrl(logoKey);
+        }
+      }
+
+      // Update video
+      if (building.video) {
+        const videoKey = this.extractS3KeyFromUrl(building.video);
+        if (videoKey) {
+          building.video = await this.s3Service.getPresignedUrl(videoKey);
+        }
+      }
+
+      // Update documents
+      if (building.documents) {
+        const documentsKey = this.extractS3KeyFromUrl(building.documents);
+        if (documentsKey) {
+          building.documents = await this.s3Service.getPresignedUrl(documentsKey);
+        }
+      }
+
+      // Update photos array
+      if (building.photos && Array.isArray(building.photos) && building.photos.length > 0) {
+        const updatedPhotos = await Promise.all(
+          building.photos.map(async (photoUrl) => {
+            try {
+              const photoKey = this.extractS3KeyFromUrl(photoUrl);
+              if (photoKey) {
+                return await this.s3Service.getPresignedUrl(photoKey);
+              }
+              return photoUrl;
+            } catch (error) {
+              console.error(`Error updating building photo URL: ${photoUrl}`, error);
+              return photoUrl;
+            }
+          })
+        );
+        building.photos = updatedPhotos;
+      }
+
+      return building;
+    } catch (error) {
+      console.error('Error updating building media URLs:', error);
+      return building;
+    }
+  }
+
+  /**
+   * Find building by ID with updated media URLs
+   */
+  async findOneWithFreshUrls(id: string): Promise<BuildingResponse> {
+    const building = await this.buildingRepository.findOne({
+      where: { id },
+      relations: ["operator"],
+    });
+
+    if (!building) {
+      throw new NotFoundException("Building not found");
+    }
+
+    const buildingWithFreshUrls = await this.updateBuildingMediaUrls(building);
+    return toBuildingResponse(buildingWithFreshUrls);
+  }
+
+  /**
+   * Find all buildings with updated media URLs
+   */
+  async findAllWithFreshUrls(params?: any): Promise<BuildingResponse[]> {
+    // Get building entities directly
+    const buildingEntities = await this.buildingRepository.find({
+      where: params,
+      relations: ["operator", "operator.operatorProfile", "properties"],
+      order: { created_at: "DESC" },
+    });
+
+    const buildingsWithFreshUrls = await Promise.all(
+      buildingEntities.map(building => this.updateBuildingMediaUrls(building))
+    );
+
+    return buildingsWithFreshUrls.map(toBuildingResponse);
   }
 }

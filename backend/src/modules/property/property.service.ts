@@ -10,6 +10,7 @@ import {
   normalizeFindParams,
 } from "./property.mapper";
 import { PublicPropertyResponse, toPublicProperty } from "./property.response";
+import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
 export class PropertyService {
@@ -17,7 +18,8 @@ export class PropertyService {
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
     @InjectRepository(Building)
-    private readonly buildingRepository: Repository<Building>
+    private readonly buildingRepository: Repository<Building>,
+    private readonly s3Service: S3Service
   ) {}
 
   async create(createPropertyDto: CreatePropertyDto): Promise<Property> {
@@ -194,9 +196,14 @@ export class PropertyService {
     queryBuilder.skip(skip).take(limit);
 
     const properties = await queryBuilder.getMany();
+    
+    // Update photo URLs for all properties
+    const propertiesWithFreshUrls = await Promise.all(
+      properties.map(property => this.updatePhotosUrls(property))
+    );
 
     return {
-      data: properties.map(toPublicProperty),
+      data: propertiesWithFreshUrls.map(toPublicProperty),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -244,5 +251,77 @@ export class PropertyService {
   async remove(id: string): Promise<void> {
     const property = await this.findOne(id);
     await this.propertyRepository.remove(property);
+  }
+
+  /**
+   * Update photos URLs with fresh presigned URLs
+   */
+  private async updatePhotosUrls(property: Property): Promise<Property> {
+    if (!property.photos || property.photos.length === 0) {
+      return property;
+    }
+
+    const updatedPhotos = await Promise.all(
+      property.photos.map(async (photoUrl) => {
+        try {
+          // Extract S3 key from URL
+          const s3Key = this.extractS3KeyFromUrl(photoUrl);
+          if (s3Key) {
+            // Generate fresh presigned URL
+            return await this.s3Service.getPresignedUrl(s3Key);
+          }
+          return photoUrl; // Return original if can't extract key
+        } catch (error) {
+          console.error(`Error updating photo URL: ${photoUrl}`, error);
+          return photoUrl; // Return original on error
+        }
+      })
+    );
+
+    property.photos = updatedPhotos;
+    return property;
+  }
+
+  /**
+   * Extract S3 key from S3 URL
+   */
+  private extractS3KeyFromUrl(url: string): string | null {
+    try {
+      // Handle both old and new bucket URLs
+      const patterns = [
+        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
+        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
+      ];
+
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return decodeURIComponent(match[1]);
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error extracting S3 key from URL: ${url}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Find property by ID with updated photo URLs
+   */
+  async findOneWithFreshUrls(id: string): Promise<Property> {
+    const property = await this.findOne(id);
+    return await this.updatePhotosUrls(property);
+  }
+
+  /**
+   * Find all properties with updated photo URLs
+   */
+  async findAllWithFreshUrls(params?: any): Promise<Property[]> {
+    const properties = await this.findAll(params);
+    return await Promise.all(
+      properties.map(property => this.updatePhotosUrls(property))
+    );
   }
 }
