@@ -59,7 +59,7 @@ export class PropertyController {
   @ApiResponse({ status: 200, description: "Property found" })
   @ApiResponse({ status: 404, description: "Property not found" })
   async findOnePublic(@Param("id") id: string) {
-    return this.propertyService.findOne(id);
+    return this.propertyService.findOnePublic(id);
   }
 
   @Get("public")

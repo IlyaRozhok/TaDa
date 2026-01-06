@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Plus, Minus, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 import { buildingsAPI, usersAPI } from "../lib/api";
+import { FormField, Input, Select, Textarea } from "./FormField";
+import { useFormValidation, ValidationRules, commonRules } from "../hooks/useFormValidation";
 
 const AREAS = ["West", "East", "North", "South", "Center"];
 
@@ -83,6 +85,54 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   isLoading = false,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Validation rules for building form
+  const validationRules: ValidationRules = {
+    name: {
+      required: true,
+      minLength: 2,
+      maxLength: 100,
+      pattern: /^[a-zA-Z0-9\s\-'.,()&]+$/
+    },
+    address: {
+      minLength: 5,
+      maxLength: 200
+    },
+    number_of_units: {
+      min: 1,
+      max: 10000,
+      custom: (value: number) => {
+        if (value && !Number.isInteger(value)) {
+          return 'Number of units must be a whole number';
+        }
+        return null;
+      }
+    },
+    operator_id: {
+      required: true,
+      custom: (value: string) => {
+        if (!value || value.trim() === '') {
+          return 'Please select an operator';
+        }
+        return null;
+      }
+    }
+  };
+
+  const { errors, touched, validateAll, validate, setFieldTouched, clearErrors } = useFormValidation(validationRules);
+
+  // Handle field changes with validation
+  const handleFieldChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (touched[field]) {
+      validate(field, value);
+    }
+  };
+
+  const handleFieldBlur = (field: string) => {
+    setFieldTouched(field, true);
+    validate(field, formData[field as keyof typeof formData]);
+  };
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -337,6 +387,13 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       return;
     }
 
+    // Validate all fields
+    const isValid = validateAll(formData);
+    if (!isValid) {
+      toast.error("Please fix the validation errors before submitting");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Upload files first
@@ -479,6 +536,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         setVideoPreview(null);
         setPhotoPreviews([]);
         setDocumentPreviews([]);
+        
+        // Reset validation
+        clearErrors();
       }
     } catch (error) {
       console.error("Error submitting building:", error);
@@ -616,53 +676,56 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  Name *
-                </label>
-                <input
+              <FormField
+                label="Name"
+                required
+                error={errors.name}
+                touched={touched.name}
+                helpText="Enter the building name"
+              >
+                <Input
                   type="text"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  required
+                  onChange={(e) => handleFieldChange('name', e.target.value)}
+                  onBlur={() => handleFieldBlur('name')}
+                  error={touched.name && !!errors.name}
+                  placeholder="e.g. The Grand Tower"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  Address
-                </label>
-                <input
+              <FormField
+                label="Address"
+                error={errors.address}
+                touched={touched.address}
+                helpText="Building address (optional)"
+              >
+                <Input
                   type="text"
                   value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  onChange={(e) => handleFieldChange('address', e.target.value)}
+                  onBlur={() => handleFieldBlur('address')}
+                  error={touched.address && !!errors.address}
+                  placeholder="e.g. 123 Main Street, London"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  Number of Units
-                </label>
-                <input
+              <FormField
+                label="Number of Units"
+                error={errors.number_of_units}
+                touched={touched.number_of_units}
+                helpText="Total number of units in the building"
+              >
+                <Input
                   type="number"
                   value={formData.number_of_units || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      number_of_units:
-                        e.target.value === "" ? null : parseInt(e.target.value),
-                    })
-                  }
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  onChange={(e) => handleFieldChange('number_of_units', e.target.value === "" ? null : parseInt(e.target.value))}
+                  onBlur={() => handleFieldBlur('number_of_units')}
+                  error={touched.number_of_units && !!errors.number_of_units}
                   min="1"
+                  placeholder="e.g. 50"
+                  className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
-              </div>
+              </FormField>
 
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">

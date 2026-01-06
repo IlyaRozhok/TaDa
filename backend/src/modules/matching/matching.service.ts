@@ -5,6 +5,7 @@ import { Property } from "../../entities/property.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { User } from "../../entities/user.entity";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
+import { S3Service } from "../../common/services/s3.service";
 import {
   PropertyMatchResult,
   MatchingOptions,
@@ -22,8 +23,62 @@ export class MatchingService {
     private readonly preferencesRepository: Repository<Preferences>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly calculationService: MatchingCalculationService
+    private readonly calculationService: MatchingCalculationService,
+    private readonly s3Service: S3Service
   ) {}
+
+  /**
+   * Update photos URLs with fresh presigned URLs
+   */
+  private async updatePhotosUrls(property: Property): Promise<Property> {
+    if (!property.photos || property.photos.length === 0) {
+      return property;
+    }
+
+    const updatedPhotos = await Promise.all(
+      property.photos.map(async (photoUrl) => {
+        try {
+          // Extract S3 key from URL
+          const s3Key = this.extractS3KeyFromUrl(photoUrl);
+          if (s3Key) {
+            // Generate fresh presigned URL
+            return await this.s3Service.getPresignedUrl(s3Key);
+          }
+          return photoUrl; // Return original if can't extract key
+        } catch (error) {
+          console.error(`Failed to update photo URL: ${photoUrl}`, error);
+          return photoUrl; // Return original on error
+        }
+      })
+    );
+
+    return { ...property, photos: updatedPhotos };
+  }
+
+  /**
+   * Extract S3 key from S3 URL
+   */
+  private extractS3KeyFromUrl(url: string): string | null {
+    try {
+      // Handle both old and new bucket URLs
+      const patterns = [
+        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
+        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
+      ];
+
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) {
+          return decodeURIComponent(match[1]);
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error extracting S3 key from URL:', url, error);
+      return null;
+    }
+  }
 
   /**
    * Get matched properties for a user
@@ -184,15 +239,17 @@ export class MatchingService {
   }[]> {
     const response = await this.getMatchesForUser(userId, { limit });
 
-    return response.results.map((result) => ({
-      property: result.property,
-      matchScore: result.matchPercentage,
-      matchReasons: result.categories
-        .filter((c) => c.match)
-        .map((c) => c.reason),
-      perfectMatch: result.isPerfectMatch,
-      categories: result.categories,
-    }));
+    return Promise.all(
+      response.results.map(async (result) => ({
+        property: await this.updatePhotosUrls(result.property),
+        matchScore: result.matchPercentage,
+        matchReasons: result.categories
+          .filter((c) => c.match)
+          .map((c) => c.reason),
+        perfectMatch: result.isPerfectMatch,
+        categories: result.categories,
+      }))
+    );
   }
 
   /**
@@ -267,12 +324,14 @@ export class MatchingService {
     const skip = (page - 1) * limit;
     const paginatedResults = matchResults.slice(skip, skip + limit);
 
-    // Transform to response format
-    const data = paginatedResults.map((result) => ({
-      property: result.property,
-      matchScore: result.matchPercentage,
-      categories: result.categories,
-    }));
+    // Transform to response format and update photo URLs
+    const data = await Promise.all(
+      paginatedResults.map(async (result) => ({
+        property: await this.updatePhotosUrls(result.property),
+        matchScore: result.matchPercentage,
+        categories: result.categories,
+      }))
+    );
 
     return {
       data,

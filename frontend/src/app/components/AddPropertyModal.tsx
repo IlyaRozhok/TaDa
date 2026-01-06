@@ -10,6 +10,9 @@ import {
   LetDuration,
   Bills,
 } from "../types/property";
+import { FormField, Input, Select, Textarea } from "./FormField";
+import { useFormValidation, ValidationRules, commonRules } from "../hooks/useFormValidation";
+import toast from "react-hot-toast";
 
 interface Pet {
   type: "dog" | "cat" | "other";
@@ -70,6 +73,118 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   operators = [],
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Validation rules for property form
+  const validationRules: ValidationRules = {
+    title: {
+      required: true,
+      minLength: 3,
+      maxLength: 100,
+      pattern: /^[a-zA-Z0-9\s\-'.,()]+$/
+    },
+    apartment_number: {
+      maxLength: 20,
+      pattern: /^[a-zA-Z0-9\-\/]+$/
+    },
+    description: {
+      maxLength: 1000
+    },
+    price: {
+      required: true,
+      min: 1,
+      max: 50000,
+      custom: (value: number) => {
+        if (value && value % 1 !== 0 && value.toString().split('.')[1]?.length > 2) {
+          return 'Price can have maximum 2 decimal places';
+        }
+        return null;
+      }
+    },
+    deposit: {
+      min: 0,
+      max: 100000,
+      custom: (value: number) => {
+        if (value && value % 1 !== 0 && value.toString().split('.')[1]?.length > 2) {
+          return 'Deposit can have maximum 2 decimal places';
+        }
+        return null;
+      }
+    },
+    available_from: {
+      required: true,
+      custom: (value: string) => {
+        if (value && new Date(value) < new Date()) {
+          return 'Available date cannot be in the past';
+        }
+        return null;
+      }
+    },
+    bills: { required: true },
+    property_type: { required: true },
+    bedrooms: {
+      required: true,
+      min: 0,
+      max: 20
+    },
+    bathrooms: {
+      required: true,
+      min: 1,
+      max: 20
+    },
+    building_type: { required: true },
+    furnishing: { required: true },
+    let_duration: { required: true },
+    floor: {
+      min: -5,
+      max: 200
+    },
+    square_meters: {
+      min: 1,
+      max: 10000,
+      custom: (value: number) => {
+        if (value && value % 1 !== 0 && value.toString().split('.')[1]?.length > 2) {
+          return 'Square meters can have maximum 2 decimal places';
+        }
+        return null;
+      }
+    },
+    address: {
+      required: true,
+      minLength: 5,
+      maxLength: 200
+    },
+    building_id: {
+      custom: (value: string, formData?: any) => {
+        if (formData?.building_type !== 'private_landlord' && !value) {
+          return 'Please select a building';
+        }
+        return null;
+      }
+    },
+    operator_id: {
+      custom: (value: string, formData?: any) => {
+        if (formData?.building_type === 'private_landlord' && !value) {
+          return 'Please select an operator';
+        }
+        return null;
+      }
+    }
+  };
+
+  const { errors, touched, validateAll, validate, setFieldTouched, clearErrors } = useFormValidation(validationRules);
+
+  // Handle field changes with validation
+  const handleFieldChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (touched[field]) {
+      validate(field, value);
+    }
+  };
+
+  const handleFieldBlur = (field: string) => {
+    setFieldTouched(field, true);
+    validate(field, formData[field as keyof typeof formData]);
+  };
   const [formData, setFormData] = useState({
     title: "",
     apartment_number: "",
@@ -144,7 +259,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   // Load operators when building_type changes to private_landlord
   useEffect(() => {
-    if (formData.building_type === "private_landlord" && isOpen) {
+    if (formData.building_type === "private_landlord" && isOpen && !operatorsLoading && !operatorsLoaded) {
       loadOperators();
     }
   }, [formData.building_type, isOpen]);
@@ -556,22 +671,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       return;
     }
 
-    if (!formData.title.trim()) {
-      throw new Error("Please enter a property title");
-    }
-
-    if (!formData.building_type) {
-      throw new Error("Please select a building type");
-    }
-
-    if (formData.building_type === "private_landlord") {
-      if (!formData.operator_id) {
-        throw new Error("Please select an operator");
-      }
-    } else {
-      if (!formData.building_id) {
-        throw new Error("Please select a building");
-      }
+    // Validate all fields
+    const isValid = validateAll(formData);
+    if (!isValid) {
+      toast.error("Please fix the validation errors before submitting");
+      return;
     }
 
     setIsSubmitting(true);
@@ -690,6 +794,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     setVideoFile(null);
     setDocumentFile(null);
     setSelectedBuilding(null);
+    clearErrors();
     onClose();
   };
 
@@ -721,35 +826,38 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         >
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Title *
-              </label>
-              <input
+            <FormField
+              label="Title"
+              required
+              error={errors.title}
+              touched={touched.title}
+              helpText="Enter a descriptive title for the property"
+            >
+              <Input
                 type="text"
                 value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                onChange={(e) => handleFieldChange('title', e.target.value)}
+                onBlur={() => handleFieldBlur('title')}
+                error={touched.title && !!errors.title}
                 placeholder="e.g. Modern 2BR Apartment"
-                required
               />
-            </div>
+            </FormField>
 
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Apartment Number
-              </label>
-              <input
+            <FormField
+              label="Apartment Number"
+              error={errors.apartment_number}
+              touched={touched.apartment_number}
+              helpText="Optional apartment/unit number"
+            >
+              <Input
                 type="text"
                 value={formData.apartment_number}
-                onChange={(e) =>
-                  setFormData({ ...formData, apartment_number: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                onChange={(e) => handleFieldChange('apartment_number', e.target.value)}
+                onBlur={() => handleFieldBlur('apartment_number')}
+                error={touched.apartment_number && !!errors.apartment_number}
+                placeholder="e.g. 2A, 15B"
               />
-            </div>
+            </FormField>
 
             {formData.building_type === "private_landlord" ? (
               <div>
@@ -1014,57 +1122,60 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Price (£ PCM)
-              </label>
-              <input
+            <FormField
+              label="Price (£ PCM)"
+              required
+              error={errors.price}
+              touched={touched.price}
+              helpText="Monthly rent in British Pounds"
+            >
+              <Input
                 type="number"
                 value={formData.price || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    price:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                onChange={(e) => handleFieldChange('price', e.target.value === "" ? null : Number(e.target.value))}
+                onBlur={() => handleFieldBlur('price')}
+                error={touched.price && !!errors.price}
                 min="0"
+                step="0.01"
+                placeholder="e.g. 1500"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               />
-            </div>
+            </FormField>
 
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Deposit (£)
-              </label>
-              <input
+            <FormField
+              label="Deposit (£)"
+              error={errors.deposit}
+              touched={touched.deposit}
+              helpText="Security deposit amount (optional)"
+            >
+              <Input
                 type="number"
                 value={formData.deposit || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    deposit:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                onChange={(e) => handleFieldChange('deposit', e.target.value === "" ? null : Number(e.target.value))}
+                onBlur={() => handleFieldBlur('deposit')}
+                error={touched.deposit && !!errors.deposit}
                 min="0"
+                step="0.01"
+                placeholder="e.g. 1500"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               />
-            </div>
+            </FormField>
 
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Available From
-              </label>
-              <input
+            <FormField
+              label="Available From"
+              required
+              error={errors.available_from}
+              touched={touched.available_from}
+              helpText="When the property becomes available"
+            >
+              <Input
                 type="date"
                 value={formData.available_from}
-                onChange={(e) =>
-                  setFormData({ ...formData, available_from: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                onChange={(e) => handleFieldChange('available_from', e.target.value)}
+                onBlur={() => handleFieldBlur('available_from')}
+                error={touched.available_from && !!errors.available_from}
               />
-            </div>
+            </FormField>
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">

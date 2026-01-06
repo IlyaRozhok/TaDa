@@ -223,6 +223,21 @@ export class PropertyService {
     return property;
   }
 
+  async findOnePublic(id: string): Promise<PublicPropertyResponse> {
+    const property = await this.propertyRepository.findOne({
+      where: { id },
+      relations: ["building", "operator"],
+    });
+
+    if (!property) {
+      throw new NotFoundException("Property not found");
+    }
+    
+    // Update photo URLs before returning
+    const propertyWithFreshUrls = await this.updatePhotosUrls(property);
+    return toPublicProperty(propertyWithFreshUrls);
+  }
+
   async findAll(params?: {
     building_id?: string;
     operator_id?: string;
