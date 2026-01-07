@@ -26,7 +26,7 @@ export const toPublicProperty = (
   // Convert decimal price to number (TypeORM may return it as string)
   let price: number | null = null;
   if (property.price !== null && property.price !== undefined) {
-    if (typeof property.price === 'string') {
+    if (typeof property.price === "string") {
       const parsed = parseFloat(property.price);
       price = isNaN(parsed) ? null : parsed;
     } else {
@@ -37,7 +37,7 @@ export const toPublicProperty = (
   // Convert decimal square_meters to number
   let square_meters: number | null = null;
   if (property.square_meters !== null && property.square_meters !== undefined) {
-    if (typeof property.square_meters === 'string') {
+    if (typeof property.square_meters === "string") {
       const parsed = parseFloat(property.square_meters);
       square_meters = isNaN(parsed) ? null : parsed;
     } else {
@@ -57,10 +57,12 @@ export const toPublicProperty = (
     building_type: property.building_type || null,
     available_from: property.available_from || null,
     created_at: property.created_at,
-    building: property.building ? {
-      id: property.building.id,
-      name: property.building.name,
-      address: property.building.address || undefined,
-    } : null,
+    building: property.building
+      ? {
+          id: property.building.id,
+          name: property.building.name,
+          address: property.building.address || undefined,
+        }
+      : null,
   };
 };
