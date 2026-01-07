@@ -182,6 +182,11 @@ export class PropertyService {
     const queryBuilder = this.propertyRepository
       .createQueryBuilder("property")
       .leftJoinAndSelect("property.building", "building")
+      .addSelect("property.price")
+      .addSelect("property.deposit")
+      .addSelect("property.bedrooms")
+      .addSelect("property.bathrooms")
+      .addSelect("property.square_meters")
       .orderBy("property.created_at", "DESC");
 
     if (params?.building_id) {
@@ -202,6 +207,17 @@ export class PropertyService {
     queryBuilder.skip(skip).take(limit);
 
     const properties = await queryBuilder.getMany();
+    
+    // Debug: Log first property to check price field
+    if (properties.length > 0 && params?.building_id) {
+      console.log('🔍 Property from DB:', {
+        id: properties[0].id,
+        title: properties[0].title,
+        price: properties[0].price,
+        priceType: typeof properties[0].price,
+        rawPrice: JSON.stringify(properties[0].price),
+      });
+    }
     
     // Update photo URLs for all properties
     const propertiesWithFreshUrls = await Promise.all(

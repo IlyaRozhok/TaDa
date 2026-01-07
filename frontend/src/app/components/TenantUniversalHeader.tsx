@@ -9,8 +9,6 @@ import UserDropdown from "./UserDropdown";
 
 interface TenantUniversalHeaderProps {
   preferencesCount?: number;
-  showBackButton?: boolean;
-  onBackClick?: () => void;
   showSaveButton?: boolean;
   onSaveClick?: () => void;
   showPreferencesButton?: boolean;
@@ -19,8 +17,6 @@ interface TenantUniversalHeaderProps {
 
 export default function TenantUniversalHeader({
   preferencesCount = 0,
-  showBackButton = false,
-  onBackClick,
   showSaveButton = false,
   onSaveClick,
   showPreferencesButton = true,
@@ -60,14 +56,6 @@ export default function TenantUniversalHeader({
       <div className="w-full mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Logo - clickable to dashboard */}
         <div className="flex items-center flex-shrink-0">
-          {showBackButton && (
-            <button
-              onClick={onBackClick}
-              className="mr-2 sm:mr-3 md:mr-4 p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900" />
-            </button>
-          )}
           <button
             onClick={handleLogoClick}
             className="text-base sm:text-lg md:text-xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer whitespace-nowrap"
@@ -107,7 +95,7 @@ export default function TenantUniversalHeader({
           {/* Favourites */}
           <button
             onClick={handleFavouritesClick}
-            className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            className="p-1.5 sm:p-2 cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
             <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>

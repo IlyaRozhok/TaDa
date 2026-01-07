@@ -359,72 +359,132 @@ export default function BuildingPublicPage() {
               Transport and placements
             </h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               {/* Location and date */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
                   Location and date
                 </h3>
-                <div className="space-y-0.75">
+                <div className="space-y-2">
                   <div>
-                    <p className="text-xs text-gray-500">Primary postcode</p>
+                    <p className="text-xs text-gray-500 mb-1">Primary postcode</p>
                     <p className="text-sm font-medium text-black">
-                      {building.address?.split(',')[0] || 'N/A'}
+                      {(() => {
+                        if (!building.address) return 'N/A';
+                        // Try to extract UK postcode (format: SW1A 1AA or SW1A1AA)
+                        const postcodeMatch = building.address.match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}/i);
+                        if (postcodeMatch) return postcodeMatch[0].toUpperCase();
+                        // Fallback to first part of address
+                        return building.address.split(',')[0]?.trim() || 'N/A';
+                      })()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Commute location</p>
-                    <p className="text-sm font-medium text-black">Central London</p>
+                    <p className="text-xs text-gray-500 mb-1">Commute location</p>
+                    <p className="text-sm font-medium text-black">
+                      {building.districts && building.districts.length > 0 
+                        ? building.districts[0] 
+                        : building.areas && building.areas.length > 0 
+                        ? building.areas[0] 
+                        : 'Central London'}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Secondary location (option)</p>
-                    <p className="text-sm font-medium text-black">Canary Wharf</p>
+                    <p className="text-xs text-gray-500 mb-1">Secondary location (option)</p>
+                    <p className="text-sm font-medium text-black">
+                      {building.districts && building.districts.length > 1 
+                        ? building.districts[1] 
+                        : building.areas && building.areas.length > 1 
+                        ? building.areas[1] 
+                        : 'N/A'}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Move-in Date</p>
-                    <p className="text-sm font-medium text-black">16.06.1995</p>
+                    <p className="text-xs text-gray-500 mb-1">Move-in Date</p>
+                    <p className="text-sm font-medium text-black">N/A</p>
                   </div>
                 </div>
               </div>
 
               {/* Budget range */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
                   Budget range
                 </h3>
-                <div className="space-y-0.75">
+                <div className="space-y-2">
                   <div>
-                    <p className="text-xs text-gray-500">Minimum (£/Month)</p>
-                    <p className="text-sm font-medium text-black">2000</p>
+                    <p className="text-xs text-gray-500 mb-1">Minimum (£/Month)</p>
+                    <p className="text-sm font-medium text-black">
+                      {(() => {
+                        const pricesWithValues = properties.filter(p => p.price && p.price > 0).map(p => p.price!);
+                        return pricesWithValues.length > 0 
+                          ? Math.min(...pricesWithValues).toLocaleString()
+                          : 'N/A';
+                      })()}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Maximum (£/Month)</p>
-                    <p className="text-sm font-medium text-black">3000</p>
+                    <p className="text-xs text-gray-500 mb-1">Maximum (£/Month)</p>
+                    <p className="text-sm font-medium text-black">
+                      {(() => {
+                        const pricesWithValues = properties.filter(p => p.price && p.price > 0).map(p => p.price!);
+                        return pricesWithValues.length > 0 
+                          ? Math.max(...pricesWithValues).toLocaleString()
+                          : 'N/A';
+                      })()}
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Maximum commute time */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
                   Maximum commute time
                 </h3>
-                <div className="space-y-0.75">
+                <div className="space-y-2">
+                  {building.commute_times && building.commute_times.length > 0 ? (
+                    <>
+                      {building.commute_times.find(ct => ct.label.toLowerCase().includes('walk')) && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Walking (minutes)</p>
+                          <p className="text-sm font-medium text-black">
+                            {building.commute_times.find(ct => ct.label.toLowerCase().includes('walk'))?.destination || 'N/A'}
+                          </p>
+                        </div>
+                      )}
+                      {building.commute_times.find(ct => ct.label.toLowerCase().includes('cycl')) && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Cycling (minutes)</p>
+                          <p className="text-sm font-medium text-black">
+                            {building.commute_times.find(ct => ct.label.toLowerCase().includes('cycl'))?.destination || 'N/A'}
+                          </p>
+                        </div>
+                      )}
+                      {building.commute_times.length > 0 && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Secondary location</p>
+                          <p className="text-sm font-medium text-black">
+                            {building.commute_times[0]?.label || 'N/A'}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Walking (minutes)</p>
+                        <p className="text-sm font-medium text-black">N/A</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Cycling (minutes)</p>
+                        <p className="text-sm font-medium text-black">N/A</p>
+                      </div>
+                    </>
+                  )}
                   <div>
-                    <p className="text-xs text-gray-500">Walking (minutes)</p>
-                    <p className="text-sm font-medium text-black">10</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Cycling (minutes)</p>
-                    <p className="text-sm font-medium text-black">5</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Secondary location</p>
-                    <p className="text-sm font-medium text-black">Canary Wharf</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Move-in Date</p>
-                    <p className="text-sm font-medium text-black">21.09.2025</p>
+                    <p className="text-xs text-gray-500 mb-1">Move-in Date</p>
+                    <p className="text-sm font-medium text-black">N/A</p>
                   </div>
                 </div>
               </div>
