@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Save, Plus, Minus, Upload } from "lucide-react";
+import { X, Save, Plus, Minus, Upload, GripVertical } from "lucide-react";
 import { buildingsAPI, usersAPI } from "../lib/api";
 import toast from "react-hot-toast";
 
@@ -152,6 +152,10 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const [removedLogo, setRemovedLogo] = useState<boolean>(false);
   const [removedVideo, setRemovedVideo] = useState<boolean>(false);
   const [removedDocuments, setRemovedDocuments] = useState<boolean>(false);
+
+  // Drag and drop state for photos
+  const [draggedPhotoIndex, setDraggedPhotoIndex] = useState<number | null>(null);
+  const [draggedPhotoFileIndex, setDraggedPhotoFileIndex] = useState<number | null>(null);
 
   // File input refs
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -1311,8 +1315,42 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
                         {photoFiles.map((file, index) => (
                           <div
-                            key={`${file.name}-${index}`}
-                            className="relative border border-white/20 rounded-lg overflow-hidden group bg-white/5"
+                            key={`${file.name}-${index}-${file.size}`}
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedPhotoFileIndex(index);
+                              e.dataTransfer.effectAllowed = "move";
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = "move";
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedPhotoFileIndex === null || draggedPhotoFileIndex === index) {
+                                setDraggedPhotoFileIndex(null);
+                                return;
+                              }
+                              
+                              const newFiles = [...photoFiles];
+                              const [draggedFile] = newFiles.splice(draggedPhotoFileIndex, 1);
+                              newFiles.splice(index, 0, draggedFile);
+                              
+                              // Update both photoFiles and photoPreviews to maintain order
+                              setPhotoFiles(newFiles);
+                              
+                              // Update previews order
+                              const newPreviews = [...photoPreviews];
+                              const [draggedPreview] = newPreviews.splice(draggedPhotoFileIndex, 1);
+                              newPreviews.splice(index, 0, draggedPreview);
+                              setPhotoPreviews(newPreviews);
+                              
+                              setDraggedPhotoFileIndex(null);
+                              toast.success("Photo order updated");
+                            }}
+                            className={`relative border border-white/20 rounded-lg overflow-hidden group bg-white/5 cursor-move transition-all ${
+                              draggedPhotoFileIndex === index ? "opacity-50 scale-95" : ""
+                            }`}
                           >
                             <div className="relative w-full h-32 bg-white/5">
                               {photoPreviews[index] ? (
@@ -1332,18 +1370,25 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                   <Upload className="w-8 h-8" />
                                 </div>
                               )}
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-opacity flex items-center justify-center z-10">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setPhotoFiles((prev) =>
-                                      prev.filter((_, i) => i !== index)
-                                    )
-                                  }
-                                  className="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-opacity border border-white/20"
-                                >
-                                  Remove
-                                </button>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute bottom-2 left-2">
+                                  <div className="p-1 bg-white/20 rounded-full">
+                                    <GripVertical className="w-4 h-4 text-white" />
+                                  </div>
+                                </div>
+                                <div className="absolute top-2 right-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setPhotoFiles((prev) =>
+                                        prev.filter((_, i) => i !== index)
+                                      )
+                                    }
+                                    className="px-2 py-1 bg-red-500/90 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
                               </div>
                             </div>
                             <div className="p-2 bg-white/5">
@@ -1356,39 +1401,70 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       </div>
                     </div>
                   )}
-                  {building.photos && building.photos.length > 0 && (
-                    <div className="space-y-2 mt-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-white font-medium">
-                          Current photos:{" "}
-                          {
-                            building.photos.filter(
-                              (p) => !removedPhotos.includes(p)
-                            ).length
-                          }{" "}
-                          photo
-                          {building.photos.filter(
-                            (p) => !removedPhotos.includes(p)
-                          ).length !== 1
-                            ? "s"
-                            : ""}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
-                        {building.photos
-                          .filter(
-                            (photoUrl) => !removedPhotos.includes(photoUrl)
-                          )
-                          .map((photoUrl, index) => (
+                  {(() => {
+                    // Use formData.photos for display to reflect reordering
+                    const displayPhotos = (formData.photos || []).filter(
+                      (p) => !removedPhotos.includes(p)
+                    );
+                    
+                    if (displayPhotos.length === 0 && (!building.photos || building.photos.length === 0)) {
+                      return null;
+                    }
+                    
+                    return (
+                      <div className="space-y-2 mt-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-white font-medium">
+                            Current photos: {displayPhotos.length} photo
+                            {displayPhotos.length !== 1 ? "s" : ""}
+                          </span>
+                          <span className="text-xs text-white/60">
+                            Drag to reorder
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
+                          {displayPhotos.map((photoUrl, index) => (
                             <div
-                              key={`existing-photo-${photoUrl}`}
-                              className="relative border border-gray-300 rounded-md overflow-hidden group bg-gray-50"
+                              key={`existing-photo-${photoUrl}-${index}`}
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggedPhotoIndex(index);
+                                e.dataTransfer.effectAllowed = "move";
+                              }}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = "move";
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                if (draggedPhotoIndex === null || draggedPhotoIndex === index) {
+                                  setDraggedPhotoIndex(null);
+                                  return;
+                                }
+                                
+                                const newPhotos = [...displayPhotos];
+                                const [draggedPhoto] = newPhotos.splice(draggedPhotoIndex, 1);
+                                newPhotos.splice(index, 0, draggedPhoto);
+                                
+                                // Update formData with new order
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  photos: newPhotos,
+                                }));
+                                
+                                setDraggedPhotoIndex(null);
+                                toast.success("Photo order updated");
+                              }}
+                              className={`relative border border-white/20 rounded-lg overflow-hidden group bg-white/5 cursor-move transition-all ${
+                                draggedPhotoIndex === index ? "opacity-50 scale-95" : ""
+                              }`}
                             >
-                              <div className="relative w-full h-32 bg-gray-100">
+                              <div className="relative w-full h-32 bg-white/5">
                                 <img
                                   src={photoUrl}
                                   alt={`Current photo ${index + 1}`}
                                   className="w-full h-full object-cover"
+                                  draggable={false}
                                   onError={(e) => {
                                     console.error(
                                       "Failed to load current photo"
@@ -1396,38 +1472,46 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                     e.currentTarget.style.display = "none";
                                   }}
                                 />
-                                <div className="absolute inset-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center z-10">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setRemovedPhotos((prev) => [
-                                        ...prev,
-                                        photoUrl,
-                                      ]);
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-opacity"
-                                  >
-                                    Remove
-                                  </button>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="absolute bottom-2 left-2">
+                                    <div className="p-1 bg-white/20 rounded-full">
+                                      <GripVertical className="w-4 h-4 text-white" />
+                                    </div>
+                                  </div>
+                                  <div className="absolute top-2 right-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setRemovedPhotos((prev) => [
+                                          ...prev,
+                                          photoUrl,
+                                        ]);
+                                      }}
+                                      className="px-2 py-1 bg-red-500/90 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="p-2 bg-white">
-                                <p className="text-xs text-gray-600 truncate">
+                              <div className="p-2 bg-white/5">
+                                <p className="text-xs text-white/70 truncate">
                                   Photo {index + 1}
                                 </p>
                               </div>
                             </div>
                           ))}
-                      </div>
-                      {removedPhotos.length > 0 && (
-                        <div className="text-sm text-gray-500 italic">
-                          {removedPhotos.length} photo
-                          {removedPhotos.length > 1 ? "s" : ""} marked for
-                          removal
                         </div>
-                      )}
-                    </div>
-                  )}
+                        {removedPhotos.length > 0 && (
+                          <div className="text-sm text-white/60 italic">
+                            {removedPhotos.length} photo
+                            {removedPhotos.length > 1 ? "s" : ""} marked for
+                            removal
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 

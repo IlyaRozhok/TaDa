@@ -21,7 +21,7 @@ export const SelectionButton: React.FC<SelectionButtonProps> = ({
     <button
       type="button"
       onClick={() => onClick(value)}
-      className={`w-full p-6 text-left rounded-3xl border-0 shadow-sm transition-colors ${
+      className={`w-full p-4 sm:p-6 text-left rounded-3xl border-0 transition-colors ${
         isSelected
           ? "bg-black text-white"
           : "bg-white text-black hover:bg-gray-50"

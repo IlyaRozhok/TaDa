@@ -258,13 +258,14 @@ export default function MediaManager({
     e.preventDefault();
     if (!draggedItem || draggedItem === targetId || disabled) return;
 
-    const draggedIndex = media.findIndex((m) => m.id === draggedItem);
-    const targetIndex = media.findIndex((m) => m.id === targetId);
+    // Use sortedMedia indices since that's what we're displaying
+    const draggedIndex = sortedMedia.findIndex((m) => m.id === draggedItem);
+    const targetIndex = sortedMedia.findIndex((m) => m.id === targetId);
 
     if (draggedIndex === -1 || targetIndex === -1) return;
 
-    // Create new order
-    const newMedia = [...media];
+    // Create new order based on sortedMedia
+    const newMedia = [...sortedMedia];
     const [draggedMedia] = newMedia.splice(draggedIndex, 1);
     newMedia.splice(targetIndex, 0, draggedMedia);
 
