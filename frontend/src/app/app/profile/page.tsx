@@ -61,9 +61,6 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={false}
           showPreferencesButton={false}
         />
         <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
@@ -81,9 +78,6 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={false}
           showPreferencesButton={false}
         />
         <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
@@ -99,9 +93,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
-        searchTerm=""
-        onSearchChange={() => {}}
-        showSearchInput={false}
         showPreferencesButton={false}
       />
 

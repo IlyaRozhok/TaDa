@@ -24,15 +24,23 @@ import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "../../../components/ui/Button";
 import { Heart, Share } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
-import OwnerPropertiesSection from "../../../components/OwnerPropertiesSection";
+import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import toast from "react-hot-toast";
 
-type PropertyWithMedia = Property & { photos?: string[] };
+type PropertyWithMedia = Property & {
+  photos?: string[];
+  building?: {
+    id: string;
+    name: string;
+    address?: string;
+  } | null;
+};
 
 export default function PropertyPublicPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params && typeof params.id === "string" ? params.id : null;
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
@@ -66,11 +74,12 @@ export default function PropertyPublicPage() {
   useLayoutEffect(() => {
     const scrollToTop = () => {
       // Force immediate scroll to top
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
 
       // Disable smooth scrolling temporarily
-      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
-      document.documentElement.style.scrollBehavior = 'auto';
+      const originalScrollBehavior =
+        document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = "auto";
 
       // Multiple scroll attempts for reliability
       window.scrollTo(0, 0);
@@ -89,7 +98,7 @@ export default function PropertyPublicPage() {
       }
     };
 
-    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener("pageshow", handlePageShow);
 
     // Force scroll on next tick
     const timer1 = setTimeout(scrollToTop, 0);
@@ -98,14 +107,16 @@ export default function PropertyPublicPage() {
     const timer2 = setTimeout(() => {
       scrollToTop();
       // Restore original scroll behavior
-      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
-      document.documentElement.style.scrollBehavior = originalScrollBehavior || '';
+      const originalScrollBehavior =
+        document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior =
+        originalScrollBehavior || "";
     }, 50);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener("pageshow", handlePageShow);
     };
   }, []);
 
@@ -306,12 +317,7 @@ export default function PropertyPublicPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={false}
-          showPreferencesButton={true}
-        />
+        <TenantUniversalHeader showPreferencesButton={true} />
         <PropertyDetailSkeleton />
       </div>
     );
@@ -320,12 +326,7 @@ export default function PropertyPublicPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={false}
-          showPreferencesButton={true}
-        />
+        <TenantUniversalHeader showPreferencesButton={true} />
         <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-red-800 mb-4">
@@ -347,12 +348,7 @@ export default function PropertyPublicPage() {
   if (!property) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={false}
-          showPreferencesButton={true}
-        />
+        <TenantUniversalHeader showPreferencesButton={true} />
         <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-yellow-800 mb-4">
@@ -376,16 +372,11 @@ export default function PropertyPublicPage() {
   const publishDate = new Date(property.created_at || Date.now());
 
   return (
-    <div className="min-h-screen bg-white" style={{ scrollBehavior: 'auto' }}>
-      <TenantUniversalHeader
-        searchTerm=""
-        onSearchChange={() => {}}
-        showSearchInput={false}
-        showPreferencesButton={true}
-      />
+    <div className="min-h-screen bg-white" style={{ scrollBehavior: "auto" }}>
+      <TenantUniversalHeader showPreferencesButton={true} />
 
       {/* Header with title and actions */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-25">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-10">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -421,14 +412,14 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Main content: gallery + sticky price card */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-[98%] sm:max-w-[95%] lg:max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-1 sm:gap-1.5 lg:gap-2">
           {/* Left: Gallery with preview carousel */}
           <div className="lg:col-span-2">
             {allImages.length > 0 ? (
               <>
                 {/* Main image */}
-                <div className="relative rounded-2xl overflow-hidden mb-4">
+                <div className="relative rounded-lg sm:rounded-xl lg:rounded-2xl overflow-hidden mb-1 sm:mb-1.5 lg:mb-1">
                   <ImageGallery
                     media={property.media || []}
                     images={[
@@ -440,28 +431,30 @@ export default function PropertyPublicPage() {
 
                   {/* Match indicator */}
                   {isAuthenticated && user?.role === "tenant" && (
-                    <div className="absolute top-4 left-4 bg-black/80 text-white px-3 py-2 rounded-lg border border-white/20">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border border-white/30 rounded-full flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <div className="absolute top-1 sm:top-1 left-1 sm:left-1 bg-black/80 text-white px-0.75 sm:px-0.75 py-0.5 sm:py-0.5 rounded-lg border border-white/20">
+                      <div className="flex items-center gap-0.5">
+                        <div className="w-1 sm:w-1 h-1 sm:h-1 border border-white/30 rounded-full flex items-center justify-center">
+                          <div className="w-0.5 h-0.5 bg-white rounded-full"></div>
                         </div>
                         {matchLoading ? (
-                          <span className="text-sm font-medium">
+                          <span className="text-xs sm:text-sm font-medium">
                             Loading...
                           </span>
                         ) : matchScore !== null ? (
-                          <span className="text-sm font-medium">
+                          <span className="text-xs sm:text-sm font-medium">
                             {matchScore}% Match
                           </span>
                         ) : (
-                          <span className="text-sm font-medium">Match</span>
+                          <span className="text-xs sm:text-sm font-medium">
+                            Match
+                          </span>
                         )}
                       </div>
                     </div>
                   )}
 
                   {/* Photo counter */}
-                  <div className="absolute top-4 right-4 bg-black/80 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                  <div className="absolute top-1 sm:top-1 right-1 sm:right-1 bg-black/80 text-white px-0.75 py-0.25 rounded-lg text-xs sm:text-sm font-medium">
                     1 / {allImages.length}
                   </div>
                 </div>
@@ -568,36 +561,35 @@ export default function PropertyPublicPage() {
           {/* Right: Operator info and booking */}
           <div className="lg:col-span-1">
             <div className="rounded-xl ">
-              {/* Property owner info */}
-
-              <div className="flex items-start gap-3 mb-3 max-w-[400px]">
-                <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs">
-                  <div className="text-center leading-tight">
-                    <div>AUTHOR</div>
-                    <div>KING&apos;S</div>
-                    <div>CROSS</div>
+              {/* Building info */}
+              {property.building && (
+                <div className="flex items-start gap-3 mb-4 max-w-[400px]">
+                  <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                    <div className="text-center leading-tight px-1">
+                      <div>BUILDING</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-start flex-1">
+                    <div className="text-gray-600 text-sm mb-1">Building</div>
+                    <button
+                      className="font-semibold text-black mb-1 max-w-[200px] hover:text-gray-700 transition-colors text-left"
+                      onClick={() =>
+                        router.push(`/app/buildings/${property.building?.id}`)
+                      }
+                    >
+                      {property.building?.name}
+                    </button>
+                    <button
+                      className="text-black text-sm underline text-left cursor-pointer font-bold hover:text-slate-700 max-w-[180px] transition-colors"
+                      onClick={() =>
+                        router.push(`/app/buildings/${property.building?.id}`)
+                      }
+                    >
+                      See more about this building
+                    </button>
                   </div>
                 </div>
-                <div className="flex flex-col justify-start">
-                  <div className="text-gray-600 text-sm">Property owner</div>
-                  <button
-                    className="font-semibold text-black mb-1 max-w-[200px] hover:text-gray-700 transition-colors text-left"
-                    onClick={() =>
-                      router.push(`/app/operators/${property.operator?.id}`)
-                    }
-                  >
-                    {property.operator?.full_name}
-                  </button>
-                  <button
-                    className="text-black text-sm underline text-left cursor-pointer font-bold hover:text-slate-700 max-w-[180px]"
-                    onClick={() =>
-                      router.push(`/app/operators/${property.operator?.id}`)
-                    }
-                  >
-                    See more apartment from this owner
-                  </button>
-                </div>
-              </div>
+              )}
 
               {/* Availability */}
               <div className="flex items-baseline justify-start mt-4 p-3">
@@ -1031,11 +1023,11 @@ export default function PropertyPublicPage() {
         </div>
       </div>
 
-      {/* See more apartments from this owner */}
-      {property.operator && (
-        <OwnerPropertiesSection
-          operatorId={property.operator.id}
-          operatorName={property.operator.full_name}
+      {/* See more apartments from this building */}
+      {property.building && (
+        <BuildingPropertiesSection
+          buildingId={property.building.id}
+          buildingName={property.building.name}
           currentPropertyId={property.id}
         />
       )}

@@ -409,4 +409,21 @@ export class BuildingService {
 
     return buildingsWithFreshUrls.map(toBuildingResponse);
   }
+
+  /**
+   * Find building by ID for public access (no auth required)
+   */
+  async findOnePublic(id: string): Promise<BuildingResponse> {
+    const building = await this.buildingRepository.findOne({
+      where: { id },
+      relations: ["operator"],
+    });
+
+    if (!building) {
+      throw new NotFoundException("Building not found");
+    }
+
+    const buildingWithFreshUrls = await this.updateBuildingMediaUrls(building);
+    return toBuildingResponse(buildingWithFreshUrls);
+  }
 }

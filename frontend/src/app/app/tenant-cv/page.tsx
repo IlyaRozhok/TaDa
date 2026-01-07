@@ -13,7 +13,6 @@ export default function TenantCvPage() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchCv = useCallback(async () => {
     try {
@@ -57,10 +56,7 @@ export default function TenantCvPage() {
   return (
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
         showPreferencesButton={false}
-        showSearchInput={false}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">

@@ -1,32 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Map, ChevronLeft, ChevronRight } from "lucide-react";
-import { Property } from "../types";
-import { CategoryMatchResult } from "../lib/api";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Property, Preferences } from "../types";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
-import styles from "./ui/DropdownStyles.module.scss";
-
-interface MatchedProperty {
-  property: Property;
-  matchScore: number;
-  categories?: CategoryMatchResult[];
-}
 
 interface ListedPropertiesSectionProps {
-  properties: Property[];
-  matchedProperties: MatchedProperty[];
+  properties: Array<{
+    property: Property;
+    matchScore?: number;
+    categories?: Array<{
+      category: string;
+      match: boolean;
+      score: number;
+      maxScore: number;
+      reason: string;
+      details?: string;
+      hasPreference: boolean;
+    }>;
+  }>;
+  matchedProperties: Array<{
+    property: Property;
+    matchScore?: number;
+    categories?: Array<{
+      category: string;
+      match: boolean;
+      score: number;
+      maxScore: number;
+      reason: string;
+      details?: string;
+      hasPreference: boolean;
+    }>;
+  }>;
   loading: boolean;
-  userPreferences?: {
-    min_price?: number;
-    max_price?: number;
-    min_bedrooms?: number;
-    property_type?: string[];
-    lifestyle_features?: string[];
-    primary_postcode?: string;
-  };
+  userPreferences?: Preferences;
   totalCount?: number;
   currentPage?: number;
   totalPages?: number;
@@ -73,30 +82,22 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
       </button>
 
       {isOpen && (
-        <>
-          <div
-            className={`absolute top-full left-0 ${styles.dropdownContainer}`}
-          >
-            {sortOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  onSortChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`${styles.dropdownItem} ${
-                  sortBy === option.value ? "bg-white/20" : ""
-                }`}
-              >
-                <span className={styles.dropdownText}>{option.label}</span>
-              </button>
-            ))}
-          </div>
-          <div
-            className={`fixed inset-0 ${styles.dropdownBackdrop}`}
-            onClick={() => setIsOpen(false)}
-          />
-        </>
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+          {sortOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onSortChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`block w-full text-left px-4 py-3 text-sm hover:bg-gray-100 ${
+                sortBy === option.value ? "bg-gray-100 font-semibold" : ""
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -114,94 +115,65 @@ export default function ListedPropertiesSection({
 }: ListedPropertiesSectionProps) {
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Combine and sort properties
-  const getAllProperties = () => {
-    // If we have matched properties, prioritize them
-    // Otherwise, use regular properties and try to match them
-    let allProps: Array<{
-      property: Property;
-      matchScore: number;
-      categories?: CategoryMatchResult[];
-    }> = [];
-
-    if (matchedProperties.length > 0) {
-      // Use matched properties as primary source
-      allProps = matchedProperties.map((mp) => ({
-        property: mp.property,
-        matchScore: mp.matchScore || 0,
-        categories: mp.categories,
-      }));
-
-      // Add any properties from regular API that aren't in matched list
-      const matchedIds = new Set(matchedProperties.map((mp) => mp.property.id));
-      const regularProperties = Array.isArray(properties) ? properties : [];
-
-      regularProperties.forEach((property) => {
-        if (!matchedIds.has(property.id)) {
-          allProps.push({
-            property,
-            matchScore: 0, // No match data available
-            categories: undefined,
-          });
-        }
-      });
-    } else {
-      // Fallback: use regular properties if no matched properties available
-      let actualProperties = properties;
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
-        properties &&
-        typeof properties === "object" &&
-        !Array.isArray(properties) &&
-        "data" in properties
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
       ) {
-        const propertiesWithData = properties as { data: Property[] };
-        if (Array.isArray(propertiesWithData.data)) {
-          actualProperties = propertiesWithData.data;
-        }
+        // Close any open dropdowns
       }
+    };
 
-      allProps = (Array.isArray(actualProperties) ? actualProperties : []).map(
-        (property) => ({
-          property,
-          matchScore: 0,
-          categories: undefined,
-        })
-      );
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Sort properties
+  const sortedProperties = useMemo(() => {
+    // Filter out any invalid properties (where property is undefined or null)
+    const validProperties = properties.filter(
+      (item) => item && item.property && item.property.id
+    );
+
+    if (validProperties.length === 0) {
+      return [];
     }
 
-    // Sort based on selected option
-    return allProps.sort((a, b) => {
-      switch (sortBy) {
-        case "bestMatch":
-          // Sort by match score (descending), then by date if scores are equal
-          if (a.matchScore === b.matchScore) {
-            return (
-              new Date(b.property.created_at).getTime() -
-              new Date(a.property.created_at).getTime()
-            );
-          }
-          return b.matchScore - a.matchScore;
-        case "lowPrice":
-          return (a.property.price || 0) - (b.property.price || 0);
-        case "highPrice":
-          return (b.property.price || 0) - (a.property.price || 0);
-        case "lowDeposit":
-          return (a.property.deposit || 0) - (b.property.deposit || 0);
-        case "highDeposit":
-          return (b.property.deposit || 0) - (a.property.deposit || 0);
-        case "dateAdded":
-          return (
-            new Date(b.property.created_at || 0).getTime() -
-            new Date(a.property.created_at || 0).getTime()
-          );
-        default:
-          return 0;
-      }
-    });
-  };
-
-  const sortedProperties = getAllProperties();
+    switch (sortBy) {
+      case "bestMatch":
+        return validProperties.sort(
+          (a, b) => (b.matchScore || 0) - (a.matchScore || 0)
+        );
+      case "lowPrice":
+        return validProperties.sort(
+          (a, b) => (a.property.price || 0) - (b.property.price || 0)
+        );
+      case "highPrice":
+        return validProperties.sort(
+          (a, b) => (b.property.price || 0) - (a.property.price || 0)
+        );
+      case "lowDeposit":
+        return validProperties.sort(
+          (a, b) => (a.property.deposit || 0) - (b.property.deposit || 0)
+        );
+      case "highDeposit":
+        return validProperties.sort(
+          (a, b) => (b.property.deposit || 0) - (a.property.deposit || 0)
+        );
+      case "dateAdded":
+        return validProperties.sort((a, b) => {
+          const dateA = new Date(a.property.created_at || 0).getTime();
+          const dateB = new Date(b.property.created_at || 0).getTime();
+          return dateB - dateA;
+        });
+      default:
+        return validProperties;
+    }
+  }, [properties, sortBy]);
 
   const handlePropertyClick = (propertyId: string) => {
     router.push(`/app/properties/${propertyId}`);
@@ -210,7 +182,7 @@ export default function ListedPropertiesSection({
   return (
     <section>
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Listed property
@@ -218,14 +190,14 @@ export default function ListedPropertiesSection({
           <p className="text-gray-600">
             After you log in, our service gives you the best results tailored to
             your preferences
-            <span className="ml-4 text-gray-900 font-medium">
+            <span className="ml-2 text-gray-900 font-medium">
               • {totalCount} items
             </span>
           </p>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 mt-4 sm:mt-0">
           <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
         </div>
       </div>
@@ -240,22 +212,24 @@ export default function ListedPropertiesSection({
           </div>
         ) : sortedProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedProperties.map(({ property, matchScore, categories }) => (
-              <EnhancedPropertyCard
-                key={property.id}
-                property={property}
-                matchScore={matchScore || 0} // Use actual match score from API
-                userPreferences={userPreferences}
-                matchCategories={categories}
-                onClick={() => handlePropertyClick(property.id)}
-                showShortlist={true}
-              />
-            ))}
+            {sortedProperties
+              .filter((item) => item && item.property && item.property.id)
+              .map(({ property, matchScore, categories }) => (
+                <EnhancedPropertyCard
+                  key={property.id}
+                  property={property}
+                  matchScore={matchScore || 0}
+                  userPreferences={userPreferences}
+                  matchCategories={categories}
+                  onClick={() => handlePropertyClick(property.id)}
+                  showShortlist={true}
+                />
+              ))}
           </div>
         ) : (
-          <div className="text-center py-16">
+          <div className="text-center py-12">
             <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                 <svg
                   className="w-8 h-8 text-gray-400"
                   fill="none"
@@ -284,63 +258,23 @@ export default function ListedPropertiesSection({
 
       {/* Pagination */}
       {totalPages > 1 && onPageChange && (
-        <div className="flex justify-center items-center mt-8 gap-2">
-          {/* Previous button */}
+        <div className="flex justify-center items-center space-x-4 mt-8">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-              currentPage === 1
-                ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50"
-            }`}
+            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Previous
+            <ChevronLeft className="w-5 h-5" />
           </button>
-
-          {/* Page numbers */}
-          <div className="flex gap-1">
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => onPageChange(pageNum)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                    currentPage === pageNum
-                      ? "bg-gray-900 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Next button */}
+          <span className="font-medium text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-              currentPage === totalPages
-                ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50"
-            }`}
+            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Next
-            <ChevronRight className="w-4 h-4 ml-1" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       )}

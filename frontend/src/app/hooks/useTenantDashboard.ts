@@ -20,7 +20,7 @@ interface MatchedProperty {
 
 interface DashboardState {
   searchTerm: string;
-  properties: Property[];
+  properties: MatchedProperty[]; // Changed to MatchedProperty[] for consistency
   matchedProperties: MatchedProperty[];
   userPreferences: any;
   loading: boolean;
@@ -89,14 +89,19 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
           const propertiesData = response.data?.data || response.data || [];
           const totalCount = response.data?.total || propertiesData.length;
 
-          setState((prev) => ({
-            ...prev,
-            properties: propertiesData,
-            matchedProperties: propertiesData.map((p: Property) => ({
+          // Transform to MatchedProperty format and filter out invalid items
+          const matchedProperties: MatchedProperty[] = propertiesData
+            .filter((p: Property) => p && p.id)
+            .map((p: Property) => ({
               property: p,
               matchScore: 0,
               categories: undefined,
-            })),
+            }));
+
+          setState((prev) => ({
+            ...prev,
+            properties: matchedProperties, // Use matchedProperties format for consistency
+            matchedProperties,
             totalCount,
             currentPage: page,
             totalPages: response.data?.totalPages || Math.ceil(totalCount / 12),
@@ -117,18 +122,18 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
         const propertiesData = responseData.data || [];
         const totalCount = responseData.total || propertiesData.length;
 
-        // Transform to MatchedProperty format
-        const matchedProperties: MatchedProperty[] = propertiesData.map(
-          (item: any) => ({
+        // Transform to MatchedProperty format and filter out invalid items
+        const matchedProperties: MatchedProperty[] = propertiesData
+          .map((item: any) => ({
             property: item.property,
             matchScore: item.matchScore || 0,
             categories: item.categories || [],
-          })
-        );
+          }))
+          .filter((item: MatchedProperty) => item && item.property && item.property.id);
 
         setState((prev) => ({
           ...prev,
-          properties: propertiesData.map((item: any) => item.property),
+          properties: matchedProperties, // Use matchedProperties format for consistency
           matchedProperties,
           totalCount,
           currentPage: page,
@@ -145,14 +150,19 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
           const totalCount =
             fallbackResponse.data?.total || propertiesData.length;
 
-          setState((prev) => ({
-            ...prev,
-            properties: propertiesData,
-            matchedProperties: propertiesData.map((p: Property) => ({
+          // Transform to MatchedProperty format and filter out invalid items
+          const matchedProperties: MatchedProperty[] = propertiesData
+            .filter((p: Property) => p && p.id)
+            .map((p: Property) => ({
               property: p,
               matchScore: 0,
               categories: undefined,
-            })),
+            }));
+
+          setState((prev) => ({
+            ...prev,
+            properties: matchedProperties, // Use matchedProperties format for consistency
+            matchedProperties,
             totalCount,
             currentPage: page,
             totalPages:

@@ -123,7 +123,7 @@ const Header = ({
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 py-3 md:py-4 ${
+        className={`fixed top-0 left-0 right-0 z-50 py-0.75 sm:py-1 ${
           disabled ? "pointer-events-none" : ""
         }`}
       >

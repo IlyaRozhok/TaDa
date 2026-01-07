@@ -1,0 +1,374 @@
+/* Mobile-First Adaptive Styles using rem units */
+
+/* Base font size adjustments for different screen sizes */
+html {
+  font-size: 14px; /* Mobile base */
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 15px; /* Tablet base */
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 16px; /* Desktop base */
+  }
+}
+
+/* Custom rem-based utilities */
+.text-xs-mobile {
+  font-size: 0.75rem; /* 12px on mobile, 12.75px on tablet, 13.5px on desktop */
+}
+
+.text-sm-mobile {
+  font-size: 0.875rem; /* 14px on mobile, 15px on tablet, 16px on desktop */
+}
+
+.text-base-mobile {
+  font-size: 1rem; /* 16px on mobile, 17px on tablet, 18px on desktop */
+}
+
+.text-lg-mobile {
+  font-size: 1.125rem; /* 18px on mobile, 19.5px on tablet, 21px on desktop */
+}
+
+.text-xl-mobile {
+  font-size: 1.25rem; /* 20px on mobile, 21.75px on tablet, 23.5px on desktop */
+}
+
+.text-2xl-mobile {
+  font-size: 1.5rem; /* 24px on mobile, 26.25px on tablet, 28.5px on desktop */
+}
+
+/* Spacing utilities with rem */
+.space-y-mobile > * + * {
+  margin-top: 0.5rem; /* 8px on mobile, 8.75px on tablet, 9.5px on desktop */
+}
+
+.space-y-mobile-lg > * + * {
+  margin-top: 1rem; /* 16px on mobile, 17.5px on tablet, 19px on desktop */
+}
+
+/* Padding utilities */
+.p-mobile {
+  padding: 0.75rem; /* 12px on mobile, 13.125px on tablet, 14.25px on desktop */
+}
+
+.px-mobile {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.py-mobile {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.p-mobile-sm {
+  padding: 0.5rem; /* 8px on mobile, 8.75px on tablet, 9.5px on desktop */
+}
+
+.p-mobile-lg {
+  padding: 1rem; /* 16px on mobile, 17.5px on tablet, 19px on desktop */
+}
+
+/* Margin utilities */
+.m-mobile {
+  margin: 0.75rem;
+}
+
+.mx-mobile {
+  margin-left: 0.75rem;
+  margin-right: 0.75rem;
+}
+
+.my-mobile {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.mb-mobile {
+  margin-bottom: 0.75rem;
+}
+
+.mt-mobile {
+  margin-top: 0.75rem;
+}
+
+/* Border radius utilities */
+.rounded-mobile {
+  border-radius: 0.5rem; /* 8px on mobile, 8.75px on tablet, 9.5px on desktop */
+}
+
+.rounded-mobile-lg {
+  border-radius: 0.75rem; /* 12px on mobile, 13.125px on tablet, 14.25px on desktop */
+}
+
+.rounded-mobile-xl {
+  border-radius: 1rem; /* 16px on mobile, 17.5px on tablet, 19px on desktop */
+}
+
+/* Gap utilities for flexbox/grid */
+.gap-mobile {
+  gap: 0.5rem; /* 8px on mobile, 8.75px on tablet, 9.5px on desktop */
+}
+
+.gap-mobile-lg {
+  gap: 1rem; /* 16px on mobile, 17.5px on tablet, 19px on desktop */
+}
+
+/* Width and height utilities */
+.w-mobile-full {
+  width: 100%;
+}
+
+.h-mobile-screen {
+  height: 100vh;
+}
+
+.min-h-mobile-screen {
+  min-height: 100vh;
+}
+
+/* Touch-friendly button sizes */
+.btn-mobile {
+  min-height: 2.75rem; /* 44px on mobile - Apple's recommended touch target */
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.btn-mobile-sm {
+  min-height: 2.25rem; /* 36px on mobile */
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.btn-mobile-lg {
+  min-height: 3rem; /* 48px on mobile */
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 1.125rem;
+}
+
+/* Card components */
+.card-mobile {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-mobile-lg {
+  padding: 1.5rem;
+  border-radius: 1rem;
+}
+
+/* Input components */
+.input-mobile {
+  width: 100%;
+  min-height: 2.75rem; /* 44px touch target */
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.input-mobile:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Grid responsive utilities */
+.grid-mobile-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .grid-mobile-1 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-mobile-1 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Flex utilities */
+.flex-mobile-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .flex-mobile-col {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+/* Typography scale for mobile */
+.heading-mobile-1 {
+  font-size: 1.5rem; /* 24px on mobile */
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .heading-mobile-1 {
+    font-size: 1.875rem; /* 30px on tablet */
+    margin-bottom: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-mobile-1 {
+    font-size: 2.25rem; /* 36px on desktop */
+    margin-bottom: 1.25rem;
+  }
+}
+
+.heading-mobile-2 {
+  font-size: 1.25rem; /* 20px on mobile */
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .heading-mobile-2 {
+    font-size: 1.5rem; /* 24px on tablet */
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-mobile-2 {
+    font-size: 1.875rem; /* 30px on desktop */
+    margin-bottom: 1rem;
+  }
+}
+
+/* Container utilities */
+.container-mobile {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-mobile {
+    max-width: 95%;
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-mobile {
+    max-width: 92%;
+    padding: 0 2rem;
+  }
+}
+
+/* Safe area utilities for mobile devices */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Scroll utilities */
+.scroll-smooth-mobile {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Animation utilities */
+.transition-mobile {
+  transition: all 0.2s ease-in-out;
+}
+
+.transition-mobile-slow {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Focus utilities for accessibility */
+.focus-mobile:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.focus-mobile:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Loading states */
+.loading-mobile {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-mobile::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+}
+

@@ -482,8 +482,6 @@ export default function PropertiesMapPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <TenantUniversalHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
         preferencesCount={0}
       />
 

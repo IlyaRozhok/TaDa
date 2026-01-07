@@ -39,25 +39,25 @@ function OnboardingHeader() {
   }, [isLanguageOpen]);
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-      <div className="max-w-[95%] mx-auto flex items-center justify-between">
+    <nav className="bg-white border-b border-gray-200 px-1 sm:px-1.5 lg:px-2 py-0.75 sm:py-1">
+      <div className="max-w-[98%] sm:max-w-[95%] mx-auto flex items-center justify-between">
         {/* Left: Logo */}
         <div className="flex items-center">
-          <button className="text-2xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer">
+          <button className="text-lg sm:text-xl lg:text-2xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer">
             :: TADA
           </button>
         </div>
 
         {/* Right: Language + Profile */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-0.75 sm:space-x-1">
           {/* Language Dropdown */}
           <div className="relative language-dropdown">
             <button
               onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-0.25 px-0.75 py-0.375 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
             >
               <span>{selectedLanguage}</span>
-              <ChevronDown className="w-3 h-3" />
+              <ChevronDown className="w-0.75 h-0.75" />
             </button>
 
             {isLanguageOpen && (
@@ -216,7 +216,7 @@ export default function OnboardingPage() {
         <OnboardingHeader />
 
         {/* Main Content */}
-        <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
+        <div className="max-w-4xl mx-auto px-1 sm:px-1.5 lg:px-2 pb-8 sm:pb-12 lg:pb-8 pt-1.25 sm:pt-1.5 lg:pt-2.5">
           <OnboardingIntroScreens
             onComplete={handleIntroComplete}
             currentStep={state.currentStep}
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
             />
           </div>
 
-          <div className="py-4 px-8">
+          <div className="py-1 sm:py-1 px-1 sm:px-1.5 lg:px-2">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               {/* Previous Button */}
               <button
@@ -245,7 +245,7 @@ export default function OnboardingPage() {
                   }
                 }}
                 disabled={state.currentStep <= 1}
-                className={`text-base font-medium transition-colors ${
+                className={`text-sm sm:text-base font-medium transition-colors ${
                   state.currentStep <= 1
                     ? "text-gray-300 cursor-not-allowed"
                     : "text-black hover:text-gray-600"

@@ -1,43 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import {
-  Heart,
-  Bell,
-  ChevronDown,
-  Search,
-  Settings,
-  ArrowLeft,
-} from "lucide-react";
-import UserDropdown from "./UserDropdown";
-import styles from "./ui/DropdownStyles.module.scss";
 import { selectUser } from "../store/slices/authSlice";
-import { getRedirectPath } from "../utils/simpleRedirect";
+import { Heart, Settings, ChevronDown, ArrowLeft } from "lucide-react";
+import UserDropdown from "./UserDropdown";
 
 interface TenantUniversalHeaderProps {
-  searchTerm: string;
-  onSearchChange: (term: string) => void;
   preferencesCount?: number;
   showBackButton?: boolean;
   onBackClick?: () => void;
   showSaveButton?: boolean;
   onSaveClick?: () => void;
-  showSearchInput?: boolean;
   showPreferencesButton?: boolean;
   showTenantCvLink?: boolean;
 }
 
 export default function TenantUniversalHeader({
-  searchTerm,
-  onSearchChange,
   preferencesCount = 0,
   showBackButton = false,
   onBackClick,
   showSaveButton = false,
   onSaveClick,
-  showSearchInput = true,
   showPreferencesButton = true,
   showTenantCvLink = true,
 }: TenantUniversalHeaderProps) {
@@ -45,121 +30,104 @@ export default function TenantUniversalHeader({
   const user = useSelector(selectUser);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("EN");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close language dropdown when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".language-dropdown")) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsLanguageOpen(false);
       }
     };
 
-    if (isLanguageOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isLanguageOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogoClick = () => {
-    const path = getRedirectPath(user);
-    router.replace(path);
+    router.push("/app/units");
   };
 
   const handleFavouritesClick = () => {
     router.push("/app/shortlist");
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onSearchChange(e.target.value);
-  };
-
   return (
-    <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-      <div className="max-w-[95%] mx-auto flex items-center justify-between">
+    <nav className="bg-white border-b border-gray-200 px-2 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4">
+      <div className="w-full mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Logo - clickable to dashboard */}
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0">
           {showBackButton && (
             <button
               onClick={onBackClick}
-              className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="mr-2 sm:mr-3 md:mr-4 p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-900" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900" />
             </button>
           )}
           <button
             onClick={handleLogoClick}
-            className="text-xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer"
+            className="text-base sm:text-lg md:text-xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer whitespace-nowrap"
           >
             :: TADA
           </button>
         </div>
 
-        {/* Center: Search */}
-        {showSearchInput && (
-          <div className="flex-1 flex items-center justify-center gap-4 max-w-2xl mx-8">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                placeholder="Search property, location, or type of property"
-                className="text-slate-900 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Right: Icons */}
-        <div className="flex items-center space-x-4 cursor-pointer">
-          {/* Preferences Button */}
+        {/* Right: Icons - Adaptive layout */}
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 xl:gap-6 flex-shrink-0">
+          {/* Preferences Button - Beautiful mobile design */}
           {showPreferencesButton && (
             <button
               onClick={() => router.push("/app/preferences")}
-              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-700 rounded-lg transition-colors text-sm font-medium text-white"
+              className="cursor-pointer flex items-center gap-1 sm:gap-2 px-3 sm:px-4 md:px-4 py-2 sm:py-2 bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 rounded-xl sm:rounded-lg transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap shadow-md hover:shadow-lg active:scale-95"
             >
-              <Settings className="w-4 h-4" />
-              <span>Your preferences</span>
+              <Settings className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Your preferences</span>
               {preferencesCount > 0 && (
-                <span className="bg-slate-800 text-white text-xs px-2 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                <span className="bg-white/20 backdrop-blur-sm text-white text-[10px] sm:text-xs px-2 sm:px-2 py-0.5 sm:py-1 rounded-full font-semibold border border-white/30">
                   {preferencesCount}%
                 </span>
               )}
             </button>
           )}
+
+          {/* Tenant CV Link - Hide on mobile, show on tablet+ */}
           {showTenantCvLink && (
             <button
               onClick={() => router.push("/app/tenant-cv")}
-              className="text-black hover:text-gray-600 transition-colors font-medium cursor-pointer"
+              className="hidden sm:block cursor-pointer px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
             >
               Tenant CV
             </button>
           )}
+
+          {/* Favourites */}
           <button
             onClick={handleFavouritesClick}
-            className="text-black hover:text-gray-600 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
-            <Heart className="h-6 w-6" />
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* Language Dropdown */}
-          <div className="relative language-dropdown">
+          <div className="relative language-dropdown" ref={dropdownRef}>
             <button
               onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
             >
               <span>{selectedLanguage}</span>
-              <ChevronDown className="w-3 h-3" />
+              <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
 
             {isLanguageOpen && (
-              <div
-                className={`absolute right-0 top-full ${styles.dropdownContainer}`}
-              >
-                <div className="max-h-80 overflow-y">
+              <div className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl shadow-2xl border border-white/20 min-w-[100px] sm:min-w-[120px] z-50 overflow-hidden bg-black/30 backdrop-blur-lg">
+                {/* Dark glass overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg -z-10"></div>
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-md -z-10"></div>
+                <div className="max-h-40 overflow-y-auto rounded-xl relative">
                   {[
                     { code: "EN", name: "English" },
                     { code: "FR", name: "Français" },
@@ -174,11 +142,13 @@ export default function TenantUniversalHeader({
                         setSelectedLanguage(lang.code);
                         setIsLanguageOpen(false);
                       }}
-                      className={`${styles.dropdownItem} ${
-                        selectedLanguage === lang.code ? "bg-white/20" : ""
+                      className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left hover:bg-white/20 hover:backdrop-blur-md transition-all duration-200 rounded-lg ${
+                        selectedLanguage === lang.code
+                          ? "bg-white/20 text-white font-semibold"
+                          : "text-white/90"
                       }`}
                     >
-                      <span className={styles.dropdownText}>{lang.name}</span>
+                      {lang.name}
                     </button>
                   ))}
                 </div>
@@ -190,7 +160,7 @@ export default function TenantUniversalHeader({
           {showSaveButton && (
             <button
               onClick={onSaveClick}
-              className="cursor-pointer text-gray-600 border-1 rounded-2xl px-4 py-2 hover:text-black transition-colors font-medium"
+              className="cursor-pointer text-gray-600 border border-gray-200 rounded-lg px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 hover:text-black hover:bg-gray-100 transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
             >
               Save
             </button>

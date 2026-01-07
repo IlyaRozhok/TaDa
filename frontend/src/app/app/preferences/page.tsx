@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 export default function PreferencesPageRoute() {
-  const [searchTerm, setSearchTerm] = useState("");
   const searchParams = useSearchParams();
   const [currentStepOffset, setCurrentStepOffset] = useState(0);
 
@@ -37,13 +36,9 @@ export default function PreferencesPageRoute() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <TenantUniversalHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
         preferencesCount={0}
         showBackButton={false}
-        showSearchInput={false}
         showPreferencesButton={false}
         showSaveButton={false}
         showTenantCvLink={false}

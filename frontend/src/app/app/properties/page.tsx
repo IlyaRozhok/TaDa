@@ -172,8 +172,6 @@ export default function AllPropertiesPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
           showPreferencesButton={true}
         />
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -210,8 +208,6 @@ export default function AllPropertiesPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
           showPreferencesButton={true}
         />
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -239,10 +235,7 @@ export default function AllPropertiesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TenantUniversalHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
+      <TenantUniversalHeader />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}

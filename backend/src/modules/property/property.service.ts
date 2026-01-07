@@ -165,7 +165,7 @@ export class PropertyService {
   }
 
   async findAllPublic(
-    params?: Partial<{ page: number; limit: number; search: string }>
+    params?: Partial<{ page: number; limit: number; search: string; building_id?: string }>
   ): Promise<{
     data: PublicPropertyResponse[];
     total: number;
@@ -183,6 +183,12 @@ export class PropertyService {
       .createQueryBuilder("property")
       .leftJoinAndSelect("property.building", "building")
       .orderBy("property.created_at", "DESC");
+
+    if (params?.building_id) {
+      queryBuilder.andWhere("property.building_id = :building_id", {
+        building_id: params.building_id,
+      });
+    }
 
     if (search) {
       const like = `%${search}%`;

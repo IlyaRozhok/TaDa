@@ -51,6 +51,7 @@ export class PropertyController {
       page: query.page ? parseInt(query.page, 10) : undefined,
       limit: query.limit ? parseInt(query.limit, 10) : undefined,
       search: query.search,
+      building_id: query.building_id,
     });
   }
 
@@ -75,6 +76,7 @@ export class PropertyController {
       page: query.page ? parseInt(query.page, 10) : undefined,
       limit: query.limit ? parseInt(query.limit, 10) : undefined,
       search: query.search,
+      building_id: query.building_id,
     });
   }
 

@@ -13,6 +13,11 @@ export type PublicPropertyResponse = {
   building_type: Property["building_type"] | null;
   available_from: Date | null;
   created_at: Date;
+  building?: {
+    id: string;
+    name: string;
+    address?: string;
+  } | null;
 };
 
 export const toPublicProperty = (
@@ -29,4 +34,9 @@ export const toPublicProperty = (
   building_type: property.building_type || null,
   available_from: property.available_from || null,
   created_at: property.created_at,
+  building: property.building ? {
+    id: property.building.id,
+    name: property.building.name,
+    address: property.building.address || undefined,
+  } : null,
 });

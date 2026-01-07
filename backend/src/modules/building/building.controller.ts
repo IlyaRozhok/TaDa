@@ -31,14 +31,24 @@ import { S3Service } from "../../common/services/s3.service";
 
 @ApiTags("buildings")
 @Controller("buildings")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth()
 export class BuildingController {
   constructor(
     private readonly buildingService: BuildingService,
     private readonly s3Service: S3Service
   ) {}
 
+  // Public endpoints - MUST be before protected routes
+  @Get("public/:id")
+  @ApiOperation({ summary: "Get a public building by ID (no auth required)" })
+  @ApiResponse({ status: 200, description: "Building found" })
+  @ApiResponse({ status: 404, description: "Building not found" })
+  async findOnePublic(@Param("id") id: string) {
+    return this.buildingService.findOnePublic(id);
+  }
+
+  // Protected endpoints below
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Post()
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Create a new building" })

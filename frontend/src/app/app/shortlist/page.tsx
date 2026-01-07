@@ -115,9 +115,6 @@ export default function ShortlistPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={false}
           showPreferencesButton={true}
         />
         <ShortlistPageSkeleton />
@@ -130,12 +127,9 @@ export default function ShortlistPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={false}
           showPreferencesButton={true}
         />
-        <div className="max-w-[92%] mx-auto px-4 py-8">
+        <div className="max-w-[98%] sm:max-w-[95%] lg:max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-1 py-1 sm:py-1.5 lg:py-2">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Heart className="w-6 h-6 text-red-600" />
@@ -182,41 +176,37 @@ export default function ShortlistPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TenantUniversalHeader
-        searchTerm=""
-        onSearchChange={() => {}}
-        showSearchInput={false}
-      />
+      <TenantUniversalHeader />
 
-      <div className="max-w-[92%] mx-auto px-4 py-8">
+      <div className="max-w-[98%] sm:max-w-[95%] lg:max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-1 py-1 sm:py-1.5 lg:py-2">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-1.5 sm:mb-2">
           <button
             onClick={() => router.push("/app/units")}
-            className="flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-6 font-medium group"
+            className="flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-1 sm:mb-1.5 font-medium group"
           >
-            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+            <ArrowLeft className="w-1.25 h-1.25 mr-0.5 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Dashboard
           </button>
 
-          <div className="bg-white rounded-2xl p-8 border-[0.7px] border-slate-200 mt-15">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl p-1 sm:p-1.5 lg:p-2 border-[0.7px] border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
+              <div className="flex items-center gap-1">
                 <div>
-                  <h1 className="text-3xl font-bold text-slate-900">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">
                     Your Shortlist
                   </h1>
-                  <p className="text-slate-600">
-                    Properties you've saved for later viewing ({count}{" "}
+                  <p className="text-sm sm:text-base text-slate-600">
+                    <span className="hidden sm:inline">Properties you've saved for later viewing </span>({count}{" "}
                     {count === 1 ? "property" : "properties"})
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5 sm:gap-0.5">
                 <button
                   onClick={handleRefresh}
-                  className="flex items-center gap-2 px-4 py-2 text-slate-600 cursor-pointer hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-0.5 px-1 py-0.5 text-slate-600 cursor-pointer hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Refresh
                 </button>
@@ -224,7 +214,7 @@ export default function ShortlistPage() {
                 {properties.length > 0 && (
                   <button
                     onClick={handleClearShortlist}
-                    className="flex items-center gap-2 px-4 py-2 text-slate-600 border cursor-pointer hover:border-red-400 hover:text-red-400 rounded-lg transition-colors"
+                    className="flex items-center gap-0.5 px-1 py-0.5 text-slate-600 border cursor-pointer hover:border-red-400 hover:text-red-400 rounded-lg transition-colors"
                   >
                     Clear All
                   </button>

@@ -279,11 +279,11 @@ export default function EnhancedPropertyCard({
   return (
     <div
       onClick={handleCardClick}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 cursor-pointer group relative"
+      className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 cursor-pointer group relative"
       onMouseLeave={() => setShowTooltip(false)}
     >
       {/* Image Section */}
-      <div className="relative h-64 bg-gray-100 overflow-hidden rounded-t-2xl">
+      <div className="relative h-64 bg-gray-100 overflow-hidden rounded-t-xl">
         <img
           src={
             imageSuccessfullyLoaded && currentImageSrc

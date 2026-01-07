@@ -12,43 +12,34 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
-  const { state, setSearchTerm, loadProperties, clearError } =
+  const { state, loadProperties, clearError } =
     useTenantDashboard();
-
-  // Handle search term changes
-  const handleSearchChange = (term: string) => {
-    setSearchTerm(term);
-  };
 
   // Loading state
   if (!user || state.sessionLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader
-          searchTerm={state.searchTerm || ""}
-          onSearchChange={handleSearchChange}
-          showSearchInput={true}
-        />
+        <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2">
           {/* Perfect Match Section - show skeleton while loading preferences */}
           {state.preferencesLoading ? (
-            <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
+            <section className="bg-gray-50 rounded-xl sm:rounded-2xl lg:rounded-3xl px-1 sm:px-1.5 lg:px-6.25 py-1.5 sm:py-2 lg:py-3 mb-1 sm:mb-1.5 lg:mb-2">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="animate-pulse">
-                    <div className="h-10 w-96 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-5 w-full max-w-2xl bg-gray-200 rounded mb-2"></div>
-                    <div className="h-5 w-3/4 max-w-xl bg-gray-200 rounded mb-8"></div>
-                    <div className="h-12 w-48 bg-gray-200 rounded-3xl"></div>
+                    <div className="h-6 sm:h-8 lg:h-10 w-48 sm:w-72 lg:w-96 bg-gray-200 rounded mb-2 sm:mb-3 lg:mb-4"></div>
+                    <div className="h-3 sm:h-4 lg:h-5 w-full max-w-xl sm:max-w-2xl bg-gray-200 rounded mb-1 sm:mb-1.5 lg:mb-2"></div>
+                    <div className="h-3 sm:h-4 lg:h-5 w-3/4 max-w-xs sm:max-w-xl bg-gray-200 rounded mb-4 sm:mb-6 lg:mb-8"></div>
+                    <div className="h-8 sm:h-10 lg:h-12 w-32 sm:w-40 lg:w-48 bg-gray-200 rounded-2xl sm:rounded-3xl"></div>
                   </div>
                 </div>
 
                 {/* Illustration Skeleton */}
                 <div className="hidden lg:block">
                   <div className="animate-pulse">
-                    <div className="w-64 h-48 bg-gray-200 rounded-lg"></div>
+                    <div className="w-32 sm:w-48 lg:w-64 h-24 sm:h-36 lg:h-48 bg-gray-200 rounded-lg"></div>
                   </div>
                 </div>
               </div>
@@ -117,14 +108,10 @@ function TenantDashboardContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <TenantUniversalHeader
-        searchTerm={state.searchTerm}
-        onSearchChange={handleSearchChange}
-      />
+      <TenantUniversalHeader />
 
       {/* Main Content */}
-      <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2">
         {/* Perfect Match Section - only show if preferences are NOT complete and loaded */}
         {!state.preferencesLoading && !state.hasCompletePreferences && (
           <TenantPerfectMatchSection
@@ -191,14 +178,10 @@ export default function TenantUnitsPage() {
   if (!sessionReady) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={true}
-        />
+        <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Perfect Match Section Skeleton */}
           <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
             <div className="flex items-center justify-between">
@@ -239,14 +222,10 @@ export default function TenantUnitsPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader
-          searchTerm=""
-          onSearchChange={() => {}}
-          showSearchInput={true}
-        />
+        <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Perfect Match Section Skeleton */}
           <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
             <div className="flex items-center justify-between">

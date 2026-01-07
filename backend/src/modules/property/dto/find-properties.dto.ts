@@ -1,4 +1,4 @@
-import { IsNumberString, IsOptional, IsString } from "class-validator";
+import { IsNumberString, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class FindPropertiesDto {
   @IsOptional()
@@ -12,4 +12,8 @@ export class FindPropertiesDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsUUID()
+  building_id?: string;
 }

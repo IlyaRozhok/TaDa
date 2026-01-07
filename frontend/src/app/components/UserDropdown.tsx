@@ -1,50 +1,51 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
-import { logout, selectUser } from "../store/slices/authSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser } from "../store/slices/authSlice";
+import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
-import { Settings, LogOut, Mail, Sliders } from "lucide-react";
-import styles from "./ui/DropdownStyles.module.scss";
-import { buildDisplayName, buildInitials } from "../utils/displayName";
+import { LogOut, Settings, Sliders, Mail } from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
 }
 
-export default function UserDropdown({ simplified = false }: UserDropdownProps) {
+export default function UserDropdown({
+  simplified = false,
+}: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const user = useSelector(selectUser);
-  const dispatch = useDispatch();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
 
-  // Ensure component is mounted before showing dropdown
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Закрыть dropdown при клике вне его или нажатии Escape
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
-    }
+    };
 
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && isOpen) {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
         setIsOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+    }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -80,7 +81,7 @@ export default function UserDropdown({ simplified = false }: UserDropdownProps) 
         console.log("✅ Redirected to home page");
       } catch (error) {
         console.error("❌ Error during logout cleanup:", error);
-        // Принудительно перезагружаем страницу если что-то пошло не так
+        // В крайнем случае просто перезагружаем страницу
         window.location.href = "/";
       }
     }
@@ -98,23 +99,32 @@ export default function UserDropdown({ simplified = false }: UserDropdownProps) 
 
   const handleSupport = () => {
     setIsOpen(false);
-    // Можно добавить модальное окно поддержки или перенаправление
-    console.log("Support requested");
+    // Можно добавить логику для поддержки
+    console.log("Support clicked");
   };
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
-  const displayName = buildDisplayName(user);
-  const initials = buildInitials(displayName, user.email);
+  const displayName = user.full_name || user.email?.split("@")[0] || "User";
+  const initials = displayName
+    .split(" ")
+    .map((name) => name[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* User Avatar/Icon */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={styles.avatarButton}
+        className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors ${
+          simplified ? "" : ""
+        }`}
       >
-        <div className={styles.userAvatarSmall}>
+        <div className="relative w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600 flex-shrink-0">
           {user.avatar_url ? (
             <img
               src={user.avatar_url}
@@ -134,90 +144,101 @@ export default function UserDropdown({ simplified = false }: UserDropdownProps) 
             />
           ) : null}
           <div
-            className={`fallback-initials w-full h-full flex items-center justify-center ${
+            className={`fallback-initials absolute inset-0 flex items-center justify-center ${
               user.avatar_url ? "hidden" : ""
             }`}
           >
             {initials}
           </div>
         </div>
-        <span className="text-sm text-gray-700 hidden sm:block">
-          {displayName}
-        </span>
+        {!simplified && (
+          <span className="text-sm text-gray-700 hidden sm:block">
+            {displayName}
+          </span>
+        )}
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu - Dark Glassmorphism Style */}
       {isMounted && isOpen && (
-        <div className={`absolute right-0 ${styles.dropdownContainer}`}>
+        <div className="absolute right-0 mt-2 w-64 rounded-xl shadow-2xl z-50 overflow-hidden bg-black/10 backdrop-blur-lg">
+          {/* Dark glass background overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg -z-10"></div>
+          {/* Additional dark glass layer */}
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-md -z-10"></div>
+
           {/* User Info */}
-          <div className={styles.dropdownHeader}>
-            <div className="flex items-center space-x-4">
-              <div className={styles.userAvatar}>
-                {user.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt="Profile"
-                    className="w-full h-full object-cover rounded-full"
-                    onError={(e) => {
-                      // Fallback to initials if image fails to load
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = "none";
-                      const parent = target.parentElement;
-                      if (parent) {
-                        const initials = parent.querySelector(
-                          ".fallback-initials-large"
-                        );
-                        if (initials) {
-                          (initials as HTMLElement).style.display = "flex";
+          {!simplified && (
+            <div className="p-4 border-b border-white/10 relative">
+              <div className="flex items-center space-x-3">
+                <div className="relative w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-base font-medium text-white flex-shrink-0 border border-white/20 shadow-lg">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt="Profile"
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const initials = parent.querySelector(
+                            ".fallback-initials-large"
+                          );
+                          if (initials) {
+                            (initials as HTMLElement).style.display = "flex";
+                          }
                         }
-                      }
-                    }}
-                  />
-                ) : null}
-                <div
-                  className={`fallback-initials-large w-full h-full flex items-center justify-center ${
-                    user.avatar_url ? "hidden" : ""
-                  }`}
-                >
-                  {initials}
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`fallback-initials-large absolute inset-0 flex items-center justify-center ${
+                      user.avatar_url ? "hidden" : ""
+                    }`}
+                  >
+                    {initials}
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <p className="text-base font-semibold text-white">
+                    {displayName}
+                  </p>
+                  <p className="text-sm text-white/80">{user.email}</p>
                 </div>
               </div>
-              <div className={styles.userInfo}>
-                <p className={styles.userName}>{displayName}</p>
-                <p className={styles.userEmail}>{user.email}</p>
-                <p className={styles.userRole}>
-                  {user.roles?.includes("operator") ? "Operator" : "Tenant"}
-                </p>
-              </div>
             </div>
-          </div>
+          )}
 
           {/* Menu Items */}
-          <div className={styles.dropdownBody}>
+          <div className="p-2 relative">
             {!simplified && (
               <>
-                <button onClick={handleSettings} className={styles.dropdownItem}>
-                  <Settings className={styles.dropdownIcon} />
-                  <span className={styles.dropdownText}>Profile Settings</span>
+                <button
+                  onClick={handleSettings}
+                  className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
+                >
+                  <Settings className="w-4 h-4 mr-3 text-white/80" />
+                  Profile Settings
                 </button>
 
-                <button onClick={handlePreferences} className={styles.dropdownItem}>
-                  <Sliders className={styles.dropdownIcon} />
-                  <span className={styles.dropdownText}>Change Preferences</span>
+                <button
+                  onClick={handlePreferences}
+                  className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
+                >
+                  <Sliders className="w-4 h-4 mr-3 text-white/80" />
+                  Change Preferences
                 </button>
 
-                <button onClick={handleSupport} className={styles.dropdownItem}>
-                  <Mail className={styles.dropdownIcon} />
-                  <span className={styles.dropdownText}>Support</span>
-                </button>
-
-                <hr className={styles.dropdownDivider} />
+                <hr className="my-2 border-white/10" />
               </>
             )}
 
-            <button onClick={handleLogout} className={styles.dropdownItem}>
-              <LogOut className={styles.dropdownIcon} />
-              <span className={styles.dropdownText}>Logout</span>
+            <button
+              onClick={handleLogout}
+              className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-red-400 hover:backdrop-blur-md rounded-lg font-medium"
+            >
+              <LogOut className="w-4 h-4 mr-3" />
+              Logout
             </button>
           </div>
         </div>
