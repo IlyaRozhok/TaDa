@@ -160,7 +160,6 @@ export default function OnboardingProfileStep({
               value={formData.first_name}
               onChange={(e) => handleInputChange("first_name", e.target.value)}
               type="text"
-              required
             />
           </div>
 
@@ -171,7 +170,6 @@ export default function OnboardingProfileStep({
               value={formData.last_name}
               onChange={(e) => handleInputChange("last_name", e.target.value)}
               type="text"
-              required
             />
           </div>
 
@@ -182,7 +180,6 @@ export default function OnboardingProfileStep({
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
               type="text"
-              required
             />
           </div>
 
@@ -212,7 +209,6 @@ export default function OnboardingProfileStep({
                 setPhoneNumberOnly("");
                 handleInputChange("phone", "");
               }}
-              required
             />
           </div>
 
@@ -224,7 +220,6 @@ export default function OnboardingProfileStep({
               onChange={(date) => handleInputChange("date_of_birth", date)}
               maxDate={new Date().toISOString().split("T")[0]} // Today's date in YYYY-MM-DD format
               minDate="1900-01-01"
-              required
             />
           </div>
 
@@ -236,7 +231,6 @@ export default function OnboardingProfileStep({
               options={NATIONALITY_OPTIONS}
               onChange={(value) => handleInputChange("nationality", value as string)}
               placeholder="Select nationality"
-              required
             />
           </div>
 
