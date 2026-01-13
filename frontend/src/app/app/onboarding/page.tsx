@@ -68,8 +68,10 @@ function OnboardingHeader() {
               <div
                 className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[100px] sm:min-w-[120px] z-50 overflow-hidden backdrop-blur-[3px]"
                 style={{
-                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)',
-                  boxShadow: '0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)',
+                  background:
+                    "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
+                  boxShadow:
+                    "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
                 }}
               >
                 <div className="max-h-40 overflow-y-auto rounded-xl relative">
@@ -93,8 +95,12 @@ function OnboardingHeader() {
                           : "text-white hover:bg-white/12"
                       }`}
                       style={{
-                        backdropFilter: selectedLanguage === lang.code ? 'blur(10px)' : undefined,
-                        fontWeight: selectedLanguage === lang.code ? 600 : undefined,
+                        backdropFilter:
+                          selectedLanguage === lang.code
+                            ? "blur(10px)"
+                            : undefined,
+                        fontWeight:
+                          selectedLanguage === lang.code ? 600 : undefined,
                       }}
                     >
                       {lang.name}
@@ -153,7 +159,10 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (state.currentPhase === "preferences") {
       const onboardingStep = PREFERENCES_START_STEP - 1 + preferencesHook.step;
-      if (onboardingStep >= PREFERENCES_START_STEP && onboardingStep <= TOTAL_ONBOARDING_STEPS) {
+      if (
+        onboardingStep >= PREFERENCES_START_STEP &&
+        onboardingStep <= TOTAL_ONBOARDING_STEPS
+      ) {
         // Only update if different to avoid unnecessary re-renders
         if (onboardingStep !== state.currentStep) {
           setCurrentStep(onboardingStep);

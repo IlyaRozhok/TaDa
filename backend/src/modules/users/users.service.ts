@@ -69,6 +69,10 @@ export class UsersService {
     if (updateUserDto.status) {
       baseUpdates.status = updateUserDto.status;
     }
+    // Update avatar_url in base user entity
+    if (updateUserDto.avatar_url !== undefined) {
+      baseUpdates.avatar_url = updateUserDto.avatar_url;
+    }
     if (Object.keys(baseUpdates).length > 0) {
       await this.userRepository.update(id, baseUpdates);
     }
@@ -76,6 +80,9 @@ export class UsersService {
     // Обновить базовую информацию пользователя
     if (updateUserDto.email) user.email = updateUserDto.email;
     if (updateUserDto.status) user.status = updateUserDto.status;
+    if (updateUserDto.avatar_url !== undefined) {
+      user.avatar_url = updateUserDto.avatar_url;
+    }
 
     // Обновить профиль в зависимости от роли
     if (user.role === UserRole.Tenant) {

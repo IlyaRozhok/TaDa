@@ -356,7 +356,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
             <div className="flex-1">
               <InputField
                 ref={minInputRef}
-                label=""
+                label="Min"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -370,7 +370,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
             <div className="flex-1">
               <InputField
                 ref={maxInputRef}
-                label=""
+                label="Max"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -395,7 +395,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                     formData.min_square_meters ?? MIN_VALUE
                   ),
                   "--max-thumb-percent": valueToPercentage(
-                    formData.max_square_meters ?? MAX_VALUE
+                    formData.max_square_meters ?? MIN_VALUE
                   ),
                   "--range-progress-w": `calc((var(--max-thumb-percent) - var(--min-thumb-percent)) * 1%)`,
                   "--range-progress-left": `calc(var(--min-thumb-percent) * 1%)`,
@@ -448,7 +448,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                   step="1"
                   value={formData.max_square_meters !== null && formData.max_square_meters !== undefined 
                     ? valueToPercentage(formData.max_square_meters) 
-                    : valueToPercentage(MAX_VALUE)}
+                    : valueToPercentage(MIN_VALUE)}
                   onChange={handleMaxRangeChange}
                   className="w-full h-[30px] col-start-1 row-start-1 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:relative [&::-webkit-slider-track]:pointer-events-none [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-track]:pointer-events-none"
                 />

@@ -138,14 +138,15 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  // Create a preview URL for the selected file
+                  // Create a preview URL for immediate display
                   const previewUrl = URL.createObjectURL(file);
                   updateFormData({ avatar_url: previewUrl });
-                  // Store the file for later upload when saving
-                  // You might want to store this in a separate state
+                  
+                  // Upload the file to server
+                  await handleAvatarUpload(file, updateFormData);
                 }
               }}
               className="text-sm text-black"

@@ -23,8 +23,8 @@ export const SelectionButton: React.FC<SelectionButtonProps> = ({
       onClick={() => onClick(value)}
       className={`w-full p-4 sm:p-6 text-left rounded-3xl border-0 transition-colors ${
         isSelected
-          ? "bg-black text-white"
-          : "bg-white text-black hover:bg-gray-50"
+          ? "bg-black text-white cursor-pointer"
+          : "bg-white text-black hover:bg-gray-200 cursor-pointer"
       } ${className}`}
     >
       <div className="flex items-center justify-between">
