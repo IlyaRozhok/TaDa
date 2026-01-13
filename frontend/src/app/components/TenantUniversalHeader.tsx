@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser } from "../store/slices/authSlice";
-import { Heart, Settings, ChevronDown, ArrowLeft } from "lucide-react";
+import { Heart, Settings, ChevronDown, ArrowLeft, Shield } from "lucide-react";
 import UserDropdown from "./UserDropdown";
+import { getRedirectPath } from "../utils/simpleRedirect";
 
 interface TenantUniversalHeaderProps {
   preferencesCount?: number;
@@ -44,7 +45,8 @@ export default function TenantUniversalHeader({
   }, []);
 
   const handleLogoClick = () => {
-    router.push("/app/units");
+    const path = getRedirectPath(user);
+    router.push(path);
   };
 
   const handleFavouritesClick = () => {
@@ -66,6 +68,17 @@ export default function TenantUniversalHeader({
 
         {/* Right: Icons - Adaptive layout */}
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 xl:gap-6 flex-shrink-0">
+          {/* Admin Panel Button - Show for admin users */}
+          {user?.role === "admin" && (
+            <button
+              onClick={() => router.push("/app/admin/panel")}
+              className="cursor-pointer flex items-center gap-1 sm:gap-2 px-3 sm:px-4 md:px-4 py-2 sm:py-2 bg-gradient-to-r from-purple-900 to-purple-800 hover:from-purple-800 hover:to-purple-700 rounded-xl sm:rounded-lg transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap shadow-md hover:shadow-lg active:scale-95"
+            >
+              <Shield className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Admin Panel</span>
+            </button>
+          )}
+
           {/* Preferences Button - Beautiful mobile design */}
           {showPreferencesButton && (
             <button
