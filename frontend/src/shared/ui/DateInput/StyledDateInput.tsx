@@ -72,8 +72,8 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
 
   const formattedValue = formatDateValue(value);
   const hasValue = !!formattedValue;
-  
-  // For date inputs, always keep label in "focused" position since date inputs 
+
+  // For date inputs, always keep label in "focused" position since date inputs
   // always show their placeholder format (dd.mm.yyyy, mm/dd/yyyy, etc.)
   const shouldShowFocusedLabel = true;
 
@@ -90,11 +90,11 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
           max={maxDate}
           disabled={disabled}
           required={required}
-          className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 shadow-sm appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden ${
+          className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden ${
             error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
           }`}
         />
-        
+
         {/* Floating Label */}
         <label
           className={`absolute left-6 pointer-events-none ${
@@ -109,11 +109,9 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       </div>
-      
+
       {/* Error Message */}
-      {error && (
-        <p className="text-sm text-red-600 mt-1 px-6">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 mt-1 px-6">{error}</p>}
     </div>
   );
 };

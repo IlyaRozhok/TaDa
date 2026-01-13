@@ -47,11 +47,11 @@ export default function OnboardingIntroScreens({
   const isLastStep = currentStep === INTRO_STEPS.length - 1;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="w-full h-full flex flex-col items-center justify-center">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 py-16">
+      <div className="flex flex-col items-center justify-center w-full max-w-2xl px-4 sm:px-6 lg:px-8">
         {/* Illustration/Image */}
-        <div className="mb-12 w-full max-w-md mx-auto">
+        <div className="mb-6 sm:mb-8 lg:mb-12 w-full max-w-md mx-auto flex-shrink-0">
           <div className="relative w-full" style={{ paddingBottom: "75%" }}>
             <Image
               src={currentScreen.image}
@@ -64,12 +64,12 @@ export default function OnboardingIntroScreens({
         </div>
 
         {/* Title */}
-        <h1 className="text-4xl font-bold text-black mb-4 text-center max-w-2xl">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black mb-3 sm:mb-4 text-center max-w-2xl flex-shrink-0">
           {currentScreen.title}
         </h1>
 
         {/* Description */}
-        <p className="text-base text-gray-600 max-w-md text-center leading-relaxed mb-8">
+        <p className="text-sm sm:text-base text-gray-600 max-w-md text-center leading-relaxed flex-shrink-0">
           {currentScreen.description}
         </p>
 

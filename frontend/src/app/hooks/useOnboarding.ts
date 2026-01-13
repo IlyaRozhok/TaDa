@@ -50,7 +50,18 @@ export const useOnboarding = (
   });
 
   const setCurrentStep = useCallback((step: number) => {
-    setState((prev) => ({ ...prev, currentStep: step }));
+    setState((prev) => {
+      // Determine phase based on step number
+      let newPhase: 'intro' | 'profile' | 'preferences' = 'intro';
+      if (step >= PREFERENCES_START_STEP) {
+        newPhase = 'preferences';
+      } else if (step >= PROFILE_STEP) {
+        newPhase = 'profile';
+      } else {
+        newPhase = 'intro';
+      }
+      return { ...prev, currentStep: step, currentPhase: newPhase };
+    });
   }, []);
 
   const clearError = useCallback(() => {

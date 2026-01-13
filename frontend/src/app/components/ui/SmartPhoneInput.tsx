@@ -3,7 +3,8 @@
 import React, { useState, useCallback } from "react";
 import { IMaskInput } from "react-imask";
 
-interface SmartPhoneInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+interface SmartPhoneInputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
   label: string;
   required?: boolean;
   tooltip?: string;
@@ -13,25 +14,34 @@ interface SmartPhoneInputProps extends Omit<React.InputHTMLAttributes<HTMLInputE
   onChange: (value: string) => void;
 }
 
-const SmartPhoneInput = React.forwardRef<HTMLInputElement, SmartPhoneInputProps>(
-  ({
-    label,
-    required = false,
-    tooltip,
-    error,
-    className = "",
-    value,
-    onChange,
-    ...props
-  }, ref) => {
+const SmartPhoneInput = React.forwardRef<
+  HTMLInputElement,
+  SmartPhoneInputProps
+>(
+  (
+    {
+      label,
+      required = false,
+      tooltip,
+      error,
+      className = "",
+      value,
+      onChange,
+      ...props
+    },
+    ref
+  ) => {
     const [isFocused, setIsFocused] = useState(false);
     const hasValue = !!value;
 
-    const handleAccept = useCallback((newValue: string) => {
-      // Clean the value (remove formatting, keep only digits and +)
-      const cleanValue = newValue.replace(/[^\d+]/g, '');
-      onChange(cleanValue);
-    }, [onChange]);
+    const handleAccept = useCallback(
+      (newValue: string) => {
+        // Clean the value (remove formatting, keep only digits and +)
+        const cleanValue = newValue.replace(/[^\d+]/g, "");
+        onChange(cleanValue);
+      },
+      [onChange]
+    );
 
     const handleFocus = useCallback(() => {
       setIsFocused(true);
@@ -78,14 +88,7 @@ const SmartPhoneInput = React.forwardRef<HTMLInputElement, SmartPhoneInputProps>
         )}
 
         {/* Error Message */}
-        {error && (
-          <p className="text-sm text-red-600 mt-1">{error}</p>
-        )}
-
-        {/* Format hint */}
-        <p className="text-xs text-gray-400 mt-1 px-6">
-          Enter your phone number with country code (e.g., +380930794870 for Ukraine)
-        </p>
+        {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
       </div>
     );
   }

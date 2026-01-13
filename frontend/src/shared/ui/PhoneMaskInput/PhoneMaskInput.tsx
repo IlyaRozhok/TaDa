@@ -57,8 +57,8 @@ export default function PhoneMaskInput({
   onCountryChange,
   inputMaskProps,
 }: PhoneMaskInputProps) {
-  const [selectedCountry, setSelectedCountry] = useState<Country>(() =>
-    getCountryByCode(initialCountryCode) || getDefaultCountry()
+  const [selectedCountry, setSelectedCountry] = useState<Country>(
+    () => getCountryByCode(initialCountryCode) || getDefaultCountry()
   );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -101,10 +101,12 @@ export default function PhoneMaskInput({
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center justify-between px-3 py-4 bg-white border-0 rounded-l-3xl hover:bg-gray-50 transition-colors h-full shadow-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-between px-3 py-4 bg-white border-0 rounded-l-3xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg flex-shrink-0">{selectedCountry.flag}</span>
+              <span className="text-lg flex-shrink-0">
+                {selectedCountry.flag}
+              </span>
               <span className="text-sm font-medium text-gray-700 truncate">
                 {selectedCountry.dialCode}
               </span>
@@ -168,7 +170,7 @@ export default function PhoneMaskInput({
               onBlur={() => setIsFocused(false)}
               slotChar="_"
               unmask={false}
-              className={`w-full px-6 pt-8 pb-4 rounded-r-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 border-0 shadow-sm ${
+              className={`w-full px-6 pt-8 pb-4 rounded-r-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 border-0 ${
                 error
                   ? "ring-2 ring-red-400 focus:ring-red-500"
                   : "focus:ring-2 focus:ring-blue-500"
@@ -192,15 +194,7 @@ export default function PhoneMaskInput({
       </div>
 
       {/* Error Message */}
-      {error && (
-        <p className="text-sm text-red-600 mt-1 px-6">{error}</p>
-      )}
-
-      {/* Format hint */}
-      <p className="text-xs text-gray-400 mt-1 px-6">
-        Format: {selectedCountry.dialCode} {mask.replace(/9/g, "#")}
-      </p>
+      {error && <p className="text-sm text-red-600 mt-1 px-6">{error}</p>}
     </div>
   );
 }
-

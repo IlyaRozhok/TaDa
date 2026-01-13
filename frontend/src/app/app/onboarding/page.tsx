@@ -14,7 +14,12 @@ import OnboardingProfileStep from "../../components/onboarding/OnboardingProfile
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
 import NewPreferencesPage from "../../components/preferences/NewPreferencesPage";
 import UserDropdown from "../../components/UserDropdown";
-import { useOnboarding, TOTAL_ONBOARDING_STEPS, PROFILE_STEP, PREFERENCES_START_STEP } from "../../hooks/useOnboarding";
+import {
+  useOnboarding,
+  TOTAL_ONBOARDING_STEPS,
+  PROFILE_STEP,
+  PREFERENCES_START_STEP,
+} from "../../hooks/useOnboarding";
 import { usePreferences } from "../../hooks/usePreferences";
 
 // Onboarding Header Component
@@ -39,7 +44,7 @@ function OnboardingHeader() {
   }, [isLanguageOpen]);
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-1 sm:px-1.5 lg:px-2 py-0.75 sm:py-1">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-1 sm:px-1.5 lg:px-2 py-0.75 sm:py-1">
       <div className="max-w-[98%] sm:max-w-[95%] mx-auto flex items-center justify-between">
         {/* Left: Logo */}
         <div className="flex items-center">
@@ -107,17 +112,20 @@ export default function OnboardingPage() {
   const [isProfileValid, setIsProfileValid] = useState(false);
   const [isPreferencesValid, setIsPreferencesValid] = useState(true);
 
-  const { state, setCurrentStep, handleIntroComplete, handleProfileComplete, handlePreferencesComplete } = useOnboarding(
-    user,
-    () => router.push("/app/units")
-  );
+  const {
+    state,
+    setCurrentStep,
+    handleIntroComplete,
+    handleProfileComplete,
+    handlePreferencesComplete,
+  } = useOnboarding(user, () => router.push("/app/units"));
 
   // Handle profile completion with save
   const handleProfileNext = async () => {
     if (!isProfileValid) {
       return;
     }
-    
+
     // Call the save function from the profile component
     if ((window as any).onboardingProfileSave) {
       const success = await (window as any).onboardingProfileSave();
@@ -208,33 +216,36 @@ export default function OnboardingPage() {
     return null;
   }
 
-  // Show intro screens with header
   if (state.currentPhase === "intro") {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="h-screen bg-white flex flex-col overflow-hidden">
         {/* Onboarding Header */}
         <OnboardingHeader />
 
         {/* Main Content */}
-        <div className="max-w-4xl mx-auto px-1 sm:px-1.5 lg:px-2 pb-8 sm:pb-12 lg:pb-8 pt-1.25 sm:pt-1.5 lg:pt-2.5">
-          <OnboardingIntroScreens
-            onComplete={handleIntroComplete}
-            currentStep={state.currentStep}
-            totalSteps={TOTAL_ONBOARDING_STEPS}
-          />
+        <div className="flex-1 overflow-y-auto">
+          <div className="h-full max-w-4xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-12 sm:pt-14 lg:pt-16 pb-4 sm:pb-6 lg:pb-8 flex items-center justify-center">
+            <OnboardingIntroScreens
+              onComplete={handleIntroComplete}
+              currentStep={state.currentStep}
+              totalSteps={TOTAL_ONBOARDING_STEPS}
+            />
+          </div>
         </div>
 
         {/* Unified Bottom Navigation for intro phase */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
           {/* Progress Bar */}
           <div className="w-full bg-gray-200 h-px">
             <div
               className="bg-black h-px transition-all duration-300"
-              style={{ width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%` }}
+              style={{
+                width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%`,
+              }}
             />
           </div>
 
-          <div className="py-1 sm:py-1 px-1 sm:px-1.5 lg:px-2">
+          <div className="py-2 px-8">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               {/* Previous Button */}
               <button
@@ -245,19 +256,18 @@ export default function OnboardingPage() {
                   }
                 }}
                 disabled={state.currentStep <= 1}
-                className={`text-sm sm:text-base font-medium transition-colors ${
+                className={`text-sm sm:text-base font-medium transition-colors cursor-pointer ${
                   state.currentStep <= 1
                     ? "text-gray-300 cursor-not-allowed"
                     : "text-black hover:text-gray-600"
                 }`}
               >
-                {state.currentStep > 1 && (
-                  <ChevronLeft className="inline-block w-4 h-4 mr-1" />
-                )}
                 Previous
               </button>
 
-              <div className="text-sm text-gray-500">Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}</div>
+              <div className="text-sm text-gray-500">
+                Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}
+              </div>
 
               {/* Next Button */}
               <button
@@ -269,7 +279,7 @@ export default function OnboardingPage() {
                     handleIntroComplete();
                   }
                 }}
-                className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+                className="bg-black cursor-pointer text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
               >
                 Next
               </button>
@@ -281,46 +291,52 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Onboarding Header */}
       <OnboardingHeader />
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
-        {state.currentPhase === "profile" ? (
-          <OnboardingProfileStep
-            onComplete={handleProfileComplete}
-            isLoading={state.isLoading}
-            onNext={handleProfileNext}
-            currentStep={state.currentStep}
-            totalSteps={TOTAL_ONBOARDING_STEPS}
-            onValidationChange={setIsProfileValid}
-          />
-        ) : (
-          <NewPreferencesPage
-            onComplete={handlePreferencesComplete}
-            currentStepOffset={PREFERENCES_START_STEP - 1}
-            totalSteps={TOTAL_ONBOARDING_STEPS}
-            externalStep={preferencesHook.step}
-            externalNext={handlePreferencesNext}
-            externalPrevious={handlePreferencesPrevious}
-            showNavigation={false}
-            onValidationChange={setIsPreferencesValid}
-          />
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="min-h-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 lg:pt-16 pb-24 sm:pb-28 lg:pb-32 flex items-start lg:items-center">
+          <div className="w-full">
+            {state.currentPhase === "profile" ? (
+              <OnboardingProfileStep
+                onComplete={handleProfileComplete}
+                isLoading={state.isLoading}
+                onNext={handleProfileNext}
+                currentStep={state.currentStep}
+                totalSteps={TOTAL_ONBOARDING_STEPS}
+                onValidationChange={setIsProfileValid}
+              />
+            ) : (
+              <NewPreferencesPage
+                onComplete={handlePreferencesComplete}
+                currentStepOffset={PREFERENCES_START_STEP - 1}
+                totalSteps={TOTAL_ONBOARDING_STEPS}
+                externalStep={preferencesHook.step}
+                externalNext={handlePreferencesNext}
+                externalPrevious={handlePreferencesPrevious}
+                showNavigation={false}
+                onValidationChange={setIsPreferencesValid}
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Unified Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
         {/* Progress Bar */}
         <div className="w-full bg-gray-200 h-px">
           <div
             className="bg-black h-px transition-all duration-300"
-            style={{ width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%` }}
+            style={{
+              width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%`,
+            }}
           />
         </div>
 
-        <div className="py-4 px-8">
+        <div className="py-2 px-8">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             {/* Previous Button */}
             <button
@@ -339,20 +355,14 @@ export default function OnboardingPage() {
                   }
                 }
               }}
-              disabled={state.currentPhase === "intro"}
-              className={`text-base font-medium transition-colors ${
-                state.currentPhase === "intro"
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-black hover:text-gray-600 cursor-pointer"
-              }`}
+              className="text-base font-medium transition-colors text-black hover:text-gray-600 cursor-pointer"
             >
-              {(state.currentPhase === "profile" || state.currentPhase === "preferences") && (
-                <ChevronLeft className="inline-block w-4 h-4 mr-1" />
-              )}
               Previous
             </button>
 
-            <div className="text-sm text-gray-500">Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}</div>
+            <div className="text-sm text-gray-500">
+              Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}
+            </div>
 
             {/* Next Button */}
             {state.currentPhase === "profile" && (
@@ -387,7 +397,6 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

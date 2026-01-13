@@ -204,10 +204,11 @@ export default function OnboardingProfileStep({
       <StepWrapper
         title="Complete Your Profile"
         description="Let's start by setting up your profile. This information helps us personalize your experience."
+        compact={true}
       >
-        <StepContainer>
+        <StepContainer compact={true}>
           {/* First Name */}
-          <div className="mb-6">
+          <div className="mb-4">
             <InputField
               label="First Name"
               value={formData.first_name}
@@ -218,7 +219,7 @@ export default function OnboardingProfileStep({
           </div>
 
           {/* Last Name */}
-          <div className="mb-6">
+          <div className="mb-4">
             <InputField
               label="Last Name"
               value={formData.last_name}
@@ -229,7 +230,7 @@ export default function OnboardingProfileStep({
           </div>
 
           {/* Address */}
-          <div className="mb-6">
+          <div className="mb-4">
             <InputField
               label="Address"
               value={formData.address}
@@ -240,7 +241,7 @@ export default function OnboardingProfileStep({
           </div>
 
           {/* Phone */}
-          <div className="mb-6">
+          <div className="mb-4">
             <PhoneMaskInput
               countryCode={phoneCountryCode}
               label="Phone Number"
@@ -270,7 +271,7 @@ export default function OnboardingProfileStep({
           </div>
 
           {/* Date of Birth */}
-          <div className="mb-6">
+          <div className="mb-4">
             <StyledDateInput
               label="Date of Birth"
               value={formData.date_of_birth || null}
@@ -282,7 +283,7 @@ export default function OnboardingProfileStep({
           </div>
 
           {/* Nationality */}
-          <div className="mb-6">
+          <div className="mb-4">
             <GlassmorphismDropdown
               label="Nationality"
               value={formData.nationality ?? ""}
@@ -295,15 +296,15 @@ export default function OnboardingProfileStep({
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-3 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-xs sm:text-sm text-red-600">{error}</p>
             </div>
           )}
 
           {/* Success Message */}
           {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-600">{success}</p>
+            <div className="mb-3 p-2 sm:p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-xs sm:text-sm text-green-600">{success}</p>
             </div>
           )}
 
