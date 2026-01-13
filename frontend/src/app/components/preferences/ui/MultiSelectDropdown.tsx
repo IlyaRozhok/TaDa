@@ -14,6 +14,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   value = [],
   onChange,
   options,
+  placeholder,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -59,28 +60,30 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div className="relative">
-        {/* Dark Glassmorphism Input */}
+        {/* Glassmorphism Input */}
         <div
           onClick={handleToggle}
-          className={`w-full bg-black/30 backdrop-blur-lg px-6 pt-8 pb-4 pr-6 rounded-3xl cursor-pointer flex items-center justify-between border border-white/20 ${
+          className={`relative w-full bg-black/30 backdrop-blur-lg px-6 pt-8 pb-4 pr-12 rounded-3xl cursor-pointer flex items-center justify-between ${
             isInitialized ? "transition-all duration-200" : ""
           } ${isOpen ? "bg-black/40" : "hover:bg-black/35"}`}
         >
-          {/* Dark glass overlay */}
+          {/* Glass overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg rounded-3xl -z-10"></div>
           <div className="absolute inset-0 bg-black/20 backdrop-blur-md rounded-3xl -z-10"></div>
-          
-          <span
-            className={`relative z-10 ${
-              hasValue ? "text-white font-medium" : "text-transparent"
-            }`}
-          >
-            {displayValue}
-          </span>
+
+          {hasValue ? (
+            <span className="relative z-10 text-white font-medium">
+              {displayValue}
+            </span>
+          ) : (
+            <span className="relative z-10 text-white/60">
+              {placeholder || `Select ${label.toLowerCase()}`}
+            </span>
+          )}
           <ChevronDown
-            className={`relative z-10 w-5 h-5 transition-transform ${
-              hasValue ? "text-white/80" : "text-white/60"
-            } ${isOpen ? "rotate-180" : ""}`}
+            className={`relative z-10 w-5 h-5 transition-transform text-white/80 ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </div>
         <label
@@ -94,33 +97,35 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         >
           {label}
         </label>
-        {/* Dark Glassmorphism Dropdown */}
+        {/* Glassmorphism Dropdown */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-black/30 backdrop-blur-lg rounded-3xl border border-white/20 max-h-60 overflow-y-auto">
-            {/* Dark glass overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg rounded-3xl -z-10"></div>
-            <div className="absolute inset-0 bg-black/20 backdrop-blur-md rounded-3xl -z-10"></div>
-            
-            <div className="relative z-10">
-              {options.map((option) => {
-                const isSelected = value.includes(option);
-                return (
-                  <div
-                    key={option}
-                    onClick={() => handleOptionClick(option)}
-                    className={`px-6 py-4 cursor-pointer first:rounded-t-3xl last:rounded-b-3xl transition-all duration-200 flex items-center justify-between ${
-                      isSelected
-                        ? "bg-white/20 text-white hover:bg-white/30"
-                        : "text-white/90 hover:bg-white/10"
-                    }`}
-                  >
-                    <span className="font-medium">{option}</span>
-                    {isSelected && (
-                      <Check className="w-5 h-5 flex-shrink-0 ml-3 stroke-[3] text-white" />
-                    )}
-                  </div>
-                );
-              })}
+          <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-3xl max-h-60 overflow-hidden">
+            <div className="relative bg-black/30 backdrop-blur-lg rounded-3xl">
+              {/* Glass overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg rounded-3xl -z-10"></div>
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-md rounded-3xl -z-10"></div>
+
+              <div className="relative z-10 max-h-60 overflow-y-auto">
+                {options.map((option) => {
+                  const isSelected = value.includes(option);
+                  return (
+                    <div
+                      key={option}
+                      onClick={() => handleOptionClick(option)}
+                      className={`px-6 py-4 cursor-pointer first:rounded-t-3xl last:rounded-b-3xl transition-all duration-200 flex items-center justify-between ${
+                        isSelected
+                          ? "bg-white/20 text-white hover:bg-white/30"
+                          : "text-white/90 hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="font-medium">{option}</span>
+                      {isSelected && (
+                        <Check className="w-5 h-5 flex-shrink-0 ml-3 stroke-[3] text-white" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

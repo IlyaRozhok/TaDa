@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { InputMask, InputMaskChangeEvent } from "primereact/inputmask";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { getPhoneMask } from "../../lib/phoneMasks";
 import {
   COUNTRIES,
@@ -62,6 +62,8 @@ export default function PhoneMaskInput({
   );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Update selected country when countryCode prop changes
   useEffect(() => {
@@ -79,16 +81,41 @@ export default function PhoneMaskInput({
 
   const handleChange = (e: InputMaskChangeEvent) => {
     const newValue = e.value;
-    onChange(newValue);
+    onChange(newValue ?? undefined);
   };
 
   const handleCountryChange = (country: Country) => {
     setSelectedCountry(country);
     setIsDropdownOpen(false);
+    setSearchQuery("");
     // Reset phone value when country changes
     onChange("");
     onCountryChange?.(country.code);
   };
+
+  // Filter countries based on search query
+  const filteredCountries = COUNTRIES.filter(
+    (country) =>
+      country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      country.dialCode.includes(searchQuery) ||
+      country.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isDropdownOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isDropdownOpen]);
+
+  // Reset search when dropdown closes
+  useEffect(() => {
+    if (!isDropdownOpen) {
+      setSearchQuery("");
+    }
+  }, [isDropdownOpen]);
 
   const hasValue = !!value;
 
@@ -101,7 +128,7 @@ export default function PhoneMaskInput({
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center justify-between px-3 py-4 bg-white border-0 rounded-l-3xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center cursor-pointer justify-between px-3 py-4 bg-white border-0 rounded-l-3xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-lg flex-shrink-0">
@@ -127,30 +154,84 @@ export default function PhoneMaskInput({
                 onClick={() => setIsDropdownOpen(false)}
               />
               {/* Dropdown Menu */}
-              <div className="absolute top-full left-0 z-50 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {COUNTRIES.map((country) => (
-                  <button
-                    key={country.code}
-                    type="button"
-                    onClick={() => handleCountryChange(country)}
-                    className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 ${
-                      selectedCountry.code === country.code ? "bg-blue-50" : ""
-                    }`}
-                  >
-                    <span className="text-lg">{country.flag}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {country.name}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {country.dialCode}
+              <div className="absolute top-full left-0 z-50 mt-1 w-80 rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
+                <div
+                  className="relative rounded-3xl"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
+                    boxShadow:
+                      "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+                  }}
+                >
+                  <div className="relative z-10">
+                    {/* Search Input */}
+                    <div className="p-3 border-b border-gray-200/20">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
+                        <input
+                          ref={searchInputRef}
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="Search country..."
+                          className="w-full pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none"
+                        />
                       </div>
                     </div>
-                    {selectedCountry.code === country.code && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    )}
-                  </button>
-                ))}
+
+                    {/* Countries List */}
+                    <div
+                      className="overflow-y-auto max-h-48"
+                      style={{ maxHeight: "12rem" }}
+                    >
+                      {filteredCountries.length > 0 ? (
+                        filteredCountries.map((country) => (
+                          <button
+                            key={country.code}
+                            type="button"
+                            onClick={() => handleCountryChange(country)}
+                            className={`w-full px-5 py-3 text-left transition-all duration-200 flex items-center gap-3 ${
+                              selectedCountry.code === country.code
+                                ? "bg-white/18 text-white"
+                                : "text-white hover:bg-white/12"
+                            }`}
+                            style={{
+                              backdropFilter:
+                                selectedCountry.code === country.code
+                                  ? "blur(10px)"
+                                  : undefined,
+                            }}
+                          >
+                            <span className="text-lg">{country.flag}</span>
+                            <div className="flex-1 min-w-0">
+                              <div
+                                className="text-sm font-semibold truncate"
+                                style={{ fontWeight: 600 }}
+                              >
+                                {country.name}
+                              </div>
+                              <div
+                                className="text-xs"
+                                style={{ color: "rgba(255, 255, 255, 0.7)" }}
+                              >
+                                {country.dialCode}
+                              </div>
+                            </div>
+                            {selectedCountry.code === country.code && (
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            )}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-white/70 text-center">
+                          No countries found
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </>
           )}
@@ -171,9 +252,7 @@ export default function PhoneMaskInput({
               slotChar="_"
               unmask={false}
               className={`w-full px-6 pt-8 pb-4 rounded-r-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 border-0 ${
-                error
-                  ? "ring-2 ring-red-400 focus:ring-red-500"
-                  : "focus:ring-2 focus:ring-blue-500"
+                error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
               } ${inputMaskProps?.className || ""}`}
               {...inputMaskProps}
             />

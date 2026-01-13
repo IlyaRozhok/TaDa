@@ -14,7 +14,11 @@ import { InputField } from "../preferences/ui/InputField";
 import { SearchableDropdown } from "../preferences/ui/SearchableDropdown";
 import { StyledDateInput } from "../../../shared/ui/DateInput/StyledDateInput";
 import { PhoneMaskInput, Button } from "../../../shared/ui";
-import { getCountryByDialCode, getCountryByCode, getDefaultCountry } from "../../../shared/lib/countries";
+import {
+  getCountryByDialCode,
+  getCountryByCode,
+  getDefaultCountry,
+} from "../../../shared/lib/countries";
 import { NATIONALITY_OPTIONS } from "../../../shared/lib/nationalities";
 
 interface UpdateUserData {
@@ -68,14 +72,21 @@ export default function OnboardingProfileStep({
 
   // Form validation
   const validateForm = (): boolean => {
-    const requiredFields = ['first_name', 'last_name', 'address', 'phone', 'date_of_birth', 'nationality'] as const;
-    
+    const requiredFields = [
+      "first_name",
+      "last_name",
+      "address",
+      "phone",
+      "date_of_birth",
+      "nationality",
+    ] as const;
+
     for (const field of requiredFields) {
-      if (!formData[field] || String(formData[field]).trim() === '') {
+      if (!formData[field] || String(formData[field]).trim() === "") {
         return false;
       }
     }
-    
+
     return true;
   };
 
@@ -193,10 +204,11 @@ export default function OnboardingProfileStep({
                 setPhoneNumberOnly(value || "");
                 // Combine country code with phone number for storage
                 // Don't strip formatting here - let InputMask handle it internally
-                const country = getCountryByCode(phoneCountryCode) || getDefaultCountry();
+                const country =
+                  getCountryByCode(phoneCountryCode) || getDefaultCountry();
                 if (value) {
                   // Only extract digits when we need to store the final value
-                  const digitsOnly = value.replace(/\D/g, '');
+                  const digitsOnly = value.replace(/\D/g, "");
                   const fullPhoneNumber = `${country.dialCode}${digitsOnly}`;
                   handleInputChange("phone", fullPhoneNumber);
                 } else {
@@ -229,7 +241,9 @@ export default function OnboardingProfileStep({
               label="Nationality"
               value={formData.nationality ?? ""}
               options={NATIONALITY_OPTIONS}
-              onChange={(value) => handleInputChange("nationality", value as string)}
+              onChange={(value) =>
+                handleInputChange("nationality", value as string)
+              }
               placeholder="Select nationality"
             />
           </div>
@@ -247,8 +261,6 @@ export default function OnboardingProfileStep({
               <p className="text-xs sm:text-sm text-green-600">{success}</p>
             </div>
           )}
-
-
         </StepContainer>
       </StepWrapper>
     </div>

@@ -155,7 +155,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       {/* Input Field */}
       <div
         ref={inputRef}
-        className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white cursor-pointer border-0 ${
+        className={`w-full px-6 pt-7 pb-5 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white cursor-pointer border-0 flex items-center min-h-[3.5rem] ${
           hasValue ? "text-gray-900" : "text-gray-400"
         } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
         onClick={handleToggle}
@@ -163,7 +163,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         {hasValue ? (
           displayValue
         ) : (
-          <span>
+          <span className="flex items-center">
             {placeholder}
             {required && <span className="text-red-500 ml-1">*</span>}
           </span>

@@ -12,7 +12,17 @@ interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
   (
-    { label, required = false, tooltip, error, className = "", onChange, onFocus, onBlur, ...props },
+    {
+      label,
+      required = false,
+      tooltip,
+      error,
+      className = "",
+      onChange,
+      onFocus,
+      onBlur,
+      ...props
+    },
     ref
   ) => {
     const [isFocused, setIsFocused] = useState(false);
@@ -90,7 +100,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
               value={props.value || ""}
               onChange={(value) => {
                 const event = {
-                  target: { value }
+                  target: { value },
                 } as React.ChangeEvent<HTMLInputElement>;
                 handleChange(event);
               }}
@@ -103,7 +113,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
               value={props.value || ""}
               onAccept={(value: string) => {
                 const event = {
-                  target: { value }
+                  target: { value },
                 } as React.ChangeEvent<HTMLInputElement>;
                 handleChange(event);
               }}
@@ -116,7 +126,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             <input
               ref={ref}
               {...props}
-              className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
+              className={`w-full px-6 pt-8 pb-5 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
                 error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
               } ${
                 props.type === "number"
