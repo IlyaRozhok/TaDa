@@ -11,7 +11,7 @@ import { authAPI } from "../../lib/api";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
 import { InputField } from "../preferences/ui/InputField";
-import { GlassmorphismDropdown } from "../preferences/ui/GlassmorphismDropdown";
+import { SearchableDropdown } from "../preferences/ui/SearchableDropdown";
 import { StyledDateInput } from "../../../shared/ui/DateInput/StyledDateInput";
 import { PhoneMaskInput, Button } from "../../../shared/ui";
 import { getCountryByDialCode, getCountryByCode, getDefaultCountry } from "../../../shared/lib/countries";
@@ -230,7 +230,7 @@ export default function OnboardingProfileStep({
 
           {/* Nationality */}
           <div className="mb-4">
-            <GlassmorphismDropdown
+            <SearchableDropdown
               label="Nationality"
               value={formData.nationality ?? ""}
               options={NATIONALITY_OPTIONS}
