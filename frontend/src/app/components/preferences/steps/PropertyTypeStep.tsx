@@ -27,13 +27,13 @@ export const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="Step 5"
+      title="Step 4"
       description="Step 4"
     >
       <StepContainer>
         {/* Building style preferences - Multi Select */}
         <StepHeader title="Building style preferences" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {BUILDING_STYLE_OPTIONS.map((style) => (
             <SelectionButton
               key={style}
@@ -47,7 +47,7 @@ export const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
 
         {/* Duration - Single Select */}
         <StepHeader title="Duration" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {DURATION_OPTIONS.map((duration) => (
             <SelectionButton
               key={duration}

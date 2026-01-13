@@ -60,28 +60,20 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div className="relative">
-        {/* Glassmorphism Input */}
+        {/* White Input */}
         <div
           onClick={handleToggle}
-          className={`relative w-full bg-black/30 backdrop-blur-lg px-6 pt-8 pb-4 pr-12 rounded-3xl cursor-pointer flex items-center justify-between ${
+          className={`relative w-full px-6 pt-8 pb-4 pr-12 rounded-3xl cursor-pointer flex items-center bg-white border-0 h-[4.5rem] ${
             isInitialized ? "transition-all duration-200" : ""
-          } ${isOpen ? "bg-black/40" : "hover:bg-black/35"}`}
+          }`}
         >
-          {/* Glass overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg rounded-3xl -z-10"></div>
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-md rounded-3xl -z-10"></div>
-
-          {hasValue ? (
-            <span className="relative z-10 text-white font-medium">
+          {hasValue && (
+            <span className="text-gray-900 font-medium">
               {displayValue}
-            </span>
-          ) : (
-            <span className="relative z-10 text-white/60">
-              {placeholder || `Select ${label.toLowerCase()}`}
             </span>
           )}
           <ChevronDown
-            className={`relative z-10 w-5 h-5 transition-transform text-white/80 ${
+            className={`absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 transition-transform text-gray-400 ${
               isOpen ? "rotate-180" : ""
             }`}
           />
@@ -91,20 +83,22 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             isInitialized ? "transition-all duration-200" : ""
           } ${
             hasValue || isOpen
-              ? "top-3 text-xs text-white/70"
-              : "top-1/2 -translate-y-1/2 text-base text-white/60"
+              ? "top-3 text-xs text-gray-500"
+              : "top-1/2 -translate-y-1/2 text-base text-gray-400"
           }`}
         >
           {label}
         </label>
         {/* Glassmorphism Dropdown */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-3xl max-h-60 overflow-hidden">
-            <div className="relative bg-black/30 backdrop-blur-lg rounded-3xl">
-              {/* Glass overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg rounded-3xl -z-10"></div>
-              <div className="absolute inset-0 bg-black/20 backdrop-blur-md rounded-3xl -z-10"></div>
-
+          <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-3xl max-h-60 overflow-hidden backdrop-blur-[3px]">
+            <div 
+              className="relative rounded-3xl"
+              style={{
+                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)',
+              }}
+            >
               <div className="relative z-10 max-h-60 overflow-y-auto">
                 {options.map((option) => {
                   const isSelected = value.includes(option);
@@ -112,13 +106,16 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     <div
                       key={option}
                       onClick={() => handleOptionClick(option)}
-                      className={`px-6 py-4 cursor-pointer first:rounded-t-3xl last:rounded-b-3xl transition-all duration-200 flex items-center justify-between ${
+                      className={`px-5 py-3 min-h-[3rem] cursor-pointer transition-all duration-200 flex items-center justify-between ${
                         isSelected
-                          ? "bg-white/20 text-white hover:bg-white/30"
-                          : "text-white/90 hover:bg-white/10"
+                          ? "bg-white/18 text-white"
+                          : "text-white hover:bg-white/12"
                       }`}
+                      style={{
+                        backdropFilter: isSelected ? 'blur(10px)' : undefined,
+                      }}
                     >
-                      <span className="font-medium">{option}</span>
+                      <span className="font-semibold" style={{ fontWeight: 600 }}>{option}</span>
                       {isSelected && (
                         <Check className="w-5 h-5 flex-shrink-0 ml-3 stroke-[3] text-white" />
                       )}

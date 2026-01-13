@@ -59,7 +59,7 @@ export const LifestylePreferencesStep: React.FC<
   ]);
 
   return (
-    <StepWrapper title="Step 1" description="About you">
+    <StepWrapper title="Step 7" description="About you">
       <StepContainer>
         <StepHeader title="Let's get to know you" />
 

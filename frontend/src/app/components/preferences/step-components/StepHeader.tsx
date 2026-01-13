@@ -12,8 +12,8 @@ export const StepHeader: React.FC<StepHeaderProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`mb-8 ${className}`}>
-      <h2 className="text-2xl font-semibold text-black mb-2 text-left">
+    <div className={`mb-4 ${className}`}>
+      <h2 className="text-2xl font-semibold text-black mb-1 text-left">
         {title}
       </h2>
       {subtitle && <p className="text-blue-500 text-sm">{subtitle}</p>}

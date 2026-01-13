@@ -111,10 +111,13 @@ export default function TenantUniversalHeader({
             </button>
 
             {isLanguageOpen && (
-              <div className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl shadow-2xl border border-white/20 min-w-[100px] sm:min-w-[120px] z-50 overflow-hidden bg-black/30 backdrop-blur-lg">
-                {/* Dark glass overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg -z-10"></div>
-                <div className="absolute inset-0 bg-black/20 backdrop-blur-md -z-10"></div>
+              <div 
+                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[100px] sm:min-w-[120px] z-50 overflow-hidden backdrop-blur-[3px]"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)',
+                  boxShadow: '0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)',
+                }}
+              >
                 <div className="max-h-40 overflow-y-auto rounded-xl relative">
                   {[
                     { code: "EN", name: "English" },
@@ -130,11 +133,15 @@ export default function TenantUniversalHeader({
                         setSelectedLanguage(lang.code);
                         setIsLanguageOpen(false);
                       }}
-                      className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left hover:bg-white/20 hover:backdrop-blur-md transition-all duration-200 rounded-lg ${
+                      className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
                         selectedLanguage === lang.code
-                          ? "bg-white/20 text-white font-semibold"
-                          : "text-white/90"
+                          ? "bg-white/18 text-white font-semibold"
+                          : "text-white hover:bg-white/12"
                       }`}
+                      style={{
+                        backdropFilter: selectedLanguage === lang.code ? 'blur(10px)' : undefined,
+                        fontWeight: selectedLanguage === lang.code ? 600 : undefined,
+                      }}
                     >
                       {lang.name}
                     </button>

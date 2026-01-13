@@ -38,13 +38,13 @@ export const PetsStep: React.FC<PetsStepProps> = ({
 
   return (
     <StepWrapper
-      title="Step 7"
+      title="Step 6"
       description="Step 6"
     >
       <StepContainer>
         {/* Pet Type - Single Select (but stored as array for consistency) */}
         <StepHeader title="Pet Type" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {PET_TYPE_OPTIONS.map((type) => (
             <SelectionButton
               key={type}

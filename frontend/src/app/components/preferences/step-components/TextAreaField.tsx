@@ -22,7 +22,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
   return (
     <div className={`text-left ${className}`}>
       <div className="bg-gray-50 rounded-lg p-8">
-        <h2 className="text-2xl font-semibold text-black mb-8 text-left">
+        <h2 className="text-2xl font-semibold text-black mb-4 text-left">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </h2>

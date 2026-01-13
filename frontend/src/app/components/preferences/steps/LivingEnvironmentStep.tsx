@@ -39,9 +39,9 @@ export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
     <StepWrapper title="Step 10" description="Step 10">
       <StepContainer>
         {/* Ideal Living Environment - Multi Select */}
-        <div className="mb-8">
+        <div className="mb-6">
           <StepHeader title="Ideal Living Environment" />
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4">
             {IDEAL_LIVING_OPTIONS.map((option) => (
               <SelectionButton
                 key={option.value}
@@ -60,7 +60,7 @@ export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
         {/* Do you smoke? - Single Select */}
         <div>
           <StepHeader title="Do you smoke?" />
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4">
             {SMOKING_OPTIONS.map((option) => (
               <SelectionButton
                 key={option.value}

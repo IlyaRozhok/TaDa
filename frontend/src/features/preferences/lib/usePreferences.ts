@@ -30,22 +30,26 @@ export default function usePreferences(currentStepOffset: number = 0) {
   } | null>(null);
 
   const [state, setState] = useState<PreferencesState>(() => {
-    // Initialize step from localStorage if available
-    const savedStep =
-      typeof window !== "undefined"
-        ? localStorage.getItem("preferencesStep")
-        : null;
     let initialStep = 1;
 
     // For onboarding (when there's an offset), always start from step 1
     if (currentStepOffset > 0) {
-      initialStep = 1;
-    } else if (savedStep) {
-      const parsedStep = parseInt(savedStep, 10);
-      // Direct access - saved step is already internal step
-      if (parsedStep >= 1 && parsedStep <= TOTAL_STEPS) {
-        initialStep = parsedStep;
+      // For onboarding, check localStorage for saved step
+      const savedStep =
+        typeof window !== "undefined"
+          ? localStorage.getItem("preferencesStep")
+          : null;
+      if (savedStep) {
+        const parsedStep = parseInt(savedStep, 10);
+        // Convert from display step (with offset) to internal step
+        const internalStep = parsedStep - currentStepOffset;
+        if (internalStep >= 1 && internalStep <= TOTAL_STEPS) {
+          initialStep = internalStep;
+        }
       }
+    } else {
+      // For standalone preferences, always start from step 1 (don't read from localStorage)
+      initialStep = 1;
     }
 
     return {
@@ -171,11 +175,18 @@ export default function usePreferences(currentStepOffset: number = 0) {
     }
   });
 
-  // Save current step to localStorage (save display step when there's offset)
+  // Save current step to localStorage (only for onboarding, not for standalone preferences)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stepToSave = currentStepOffset > 0 ? Math.min(14, state.step + currentStepOffset) : state.step;
-      localStorage.setItem("preferencesStep", stepToSave.toString());
+      // Only save step if we're in onboarding context (currentStepOffset > 0)
+      // For standalone preferences (currentStepOffset = 0), don't save step
+      if (currentStepOffset > 0) {
+        const stepToSave = state.step + currentStepOffset;
+        localStorage.setItem("preferencesStep", stepToSave.toString());
+      } else {
+        // Clear step for standalone preferences
+        localStorage.removeItem("preferencesStep");
+      }
     }
   }, [state.step, currentStepOffset]);
 

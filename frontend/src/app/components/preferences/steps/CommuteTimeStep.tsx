@@ -18,13 +18,13 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="Step 3"
+      title="Step 2"
       description="Step 2"
     >
       <StepContainer>
         {/* Move-in Date */}
         <StepHeader title="Move-in Date" />
-        <div className="space-y-6 mb-8">
+        <div className="space-y-6 mb-6">
           <DateInput
             label="Move in date from"
             name="move_in_date"
@@ -43,7 +43,7 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
 
         {/* Budget */}
         <StepHeader title="Budget" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           <InputField
             label="Price from"
             value={formData.min_price || ""}

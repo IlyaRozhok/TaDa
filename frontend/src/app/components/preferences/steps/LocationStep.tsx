@@ -67,7 +67,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   onUpdate,
 }) => {
   return (
-    <StepWrapper title="Step 2" description="Locations">
+    <StepWrapper title="Step 1" description="Locations">
       <StepContainer>
         <StepHeader title="Where would you like to live?" />
 
@@ -101,6 +101,16 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             onChange={(value) => onUpdate("preferred_metro_stations", value)}
             options={MOCK_METRO_STATIONS}
             placeholder="Select metro stations"
+          />
+        </div>
+
+        {/* Desired Address Input */}
+        <div className="mb-6">
+          <InputField
+            label="Desired Address (optional)"
+            value={formData.preferred_address || ""}
+            onChange={(e) => onUpdate("preferred_address", e.target.value)}
+            type="text"
           />
         </div>
       </StepContainer>

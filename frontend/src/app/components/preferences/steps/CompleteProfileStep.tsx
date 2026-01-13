@@ -25,7 +25,7 @@ export const CompleteProfileStep: React.FC<CompleteProfileStepProps> = ({
         <StepHeader title="Hobbies & Interests" />
 
         {/* Description */}
-        <p className="text-base text-black mb-8">
+        <p className="text-base text-black mb-4">
           Select activities you enjoy (helps match you with like-minded
           housemates).
         </p>

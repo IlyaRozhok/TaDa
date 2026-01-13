@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { ChevronDown, ChevronLeft } from "lucide-react";
-import styles from "../../components/ui/DropdownStyles.module.scss";
 import {
   selectUser,
   selectIsAuthenticated,
@@ -67,9 +66,13 @@ function OnboardingHeader() {
 
             {isLanguageOpen && (
               <div
-                className={`absolute right-0 top-full ${styles.dropdownContainer}`}
+                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[100px] sm:min-w-[120px] z-50 overflow-hidden backdrop-blur-[3px]"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)',
+                  boxShadow: '0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)',
+                }}
               >
-                <div className="max-h-80 overflow-y">
+                <div className="max-h-40 overflow-y-auto rounded-xl relative">
                   {[
                     { code: "EN", name: "English" },
                     { code: "FR", name: "Français" },
@@ -84,11 +87,17 @@ function OnboardingHeader() {
                         setSelectedLanguage(lang.code);
                         setIsLanguageOpen(false);
                       }}
-                      className={`${styles.dropdownItem} ${
-                        selectedLanguage === lang.code ? "bg-white/20" : ""
+                      className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
+                        selectedLanguage === lang.code
+                          ? "bg-white/18 text-white font-semibold"
+                          : "text-white hover:bg-white/12"
                       }`}
+                      style={{
+                        backdropFilter: selectedLanguage === lang.code ? 'blur(10px)' : undefined,
+                        fontWeight: selectedLanguage === lang.code ? 600 : undefined,
+                      }}
                     >
-                      <span className={styles.dropdownText}>{lang.name}</span>
+                      {lang.name}
                     </button>
                   ))}
                 </div>
@@ -140,25 +149,31 @@ export default function OnboardingPage() {
   // Only use preferences hook in preferences phase to avoid conflicts
   const preferencesHook = usePreferences(PREFERENCES_START_STEP - 1);
 
+  // Sync onboarding step with preferences step
+  useEffect(() => {
+    if (state.currentPhase === "preferences") {
+      const onboardingStep = PREFERENCES_START_STEP - 1 + preferencesHook.step;
+      if (onboardingStep >= PREFERENCES_START_STEP && onboardingStep <= TOTAL_ONBOARDING_STEPS) {
+        // Only update if different to avoid unnecessary re-renders
+        if (onboardingStep !== state.currentStep) {
+          setCurrentStep(onboardingStep);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferencesHook.step, state.currentPhase]);
+
   const handlePreferencesNext = async () => {
     if (preferencesHook.isLastStep) {
       await handlePreferencesComplete();
     } else {
       await preferencesHook.nextStep();
-      // Update main onboarding step
-      if (state.currentStep < TOTAL_ONBOARDING_STEPS) {
-        setCurrentStep(state.currentStep + 1);
-      }
     }
   };
 
   const handlePreferencesPrevious = async () => {
     if (!preferencesHook.isFirstStep) {
       await preferencesHook.prevStep();
-      // Update main onboarding step
-      if (state.currentStep > PREFERENCES_START_STEP) {
-        setCurrentStep(state.currentStep - 1);
-      }
     }
   };
 

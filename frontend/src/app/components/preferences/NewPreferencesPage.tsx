@@ -85,12 +85,16 @@ export default function NewPreferencesPage({
   const step = externalStep || internalStep;
   const nextStep = externalNext || internalNextStep;
   const prevStep = externalPrevious || internalPrevStep;
-  const isLastStep = externalStep ? (step === 10) : internalIsLastStep; // For external control, last step is 10
+  const isLastStep = externalStep ? (step === TOTAL_STEPS) : internalIsLastStep;
   const isFirstStep = externalStep ? (step === 1) : internalIsFirstStep;
+  
+  // Calculate display step: for onboarding add offset, for standalone use step directly
+  const displayStep = externalStep ? step + currentStepOffset : step;
+  const displayTotalSteps = totalSteps || TOTAL_STEPS;
 
-  // Pass validation state to parent when step 10 validation changes
+  // Pass validation state to parent when step 11 validation changes
   useEffect(() => {
-    if (onValidationChange && step === 10) {
+    if (onValidationChange && step === 11) {
       onValidationChange(isCurrentStepValid);
     }
   }, [isCurrentStepValid, onValidationChange, step]);
@@ -212,19 +216,19 @@ export default function NewPreferencesPage({
 
     switch (step) {
       case 1:
-        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
-      case 2:
         return <LocationStep {...stepProps} />;
-      case 3:
+      case 2:
         return <CommuteTimeStep {...stepProps} />;
-      case 4:
+      case 3:
         return <BudgetStep {...stepProps} />;
-      case 5:
+      case 4:
         return <PropertyTypeStep {...stepProps} />;
-      case 6:
+      case 5:
         return <ApartmentSpecStep {...stepProps} />;
-      case 7:
+      case 6:
         return <PetsStep {...stepProps} />;
+      case 7:
+        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
       case 8:
         return <AmenitiesStep {...stepProps} />;
       case 9:
@@ -234,7 +238,7 @@ export default function NewPreferencesPage({
       case 11:
         return <AboutYouStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
       default:
-        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
+        return <LocationStep {...stepProps} />;
     }
   };
 
@@ -247,8 +251,17 @@ export default function NewPreferencesPage({
 
       {/* Bottom Navigation */}
       {showNavigation && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-          <div className="py-4 px-8">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-200 h-px">
+            <div
+              className="bg-black h-px transition-all duration-300"
+              style={{
+                width: `${(step / TOTAL_STEPS) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="py-2 px-8">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <button
                 type="button"
@@ -264,7 +277,7 @@ export default function NewPreferencesPage({
               </button>
 
               <div className="text-sm text-gray-500">
-                Step {step + currentStepOffset} of {totalSteps || TOTAL_STEPS}
+                Step {displayStep} of {displayTotalSteps}
               </div>
 
               <button
@@ -276,9 +289,9 @@ export default function NewPreferencesPage({
                     await nextStep();
                   }
                 }}
-                disabled={step === 10 && !isCurrentStepValid}
+                disabled={step === 11 && !isCurrentStepValid}
                 className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
-                  step === 10 && !isCurrentStepValid
+                  step === 11 && !isCurrentStepValid
                     ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                     : "bg-black text-white hover:bg-gray-800"
                 }`}

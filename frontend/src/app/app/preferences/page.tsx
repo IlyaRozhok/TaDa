@@ -7,32 +7,20 @@ import { useSearchParams } from "next/navigation";
 
 export default function PreferencesPageRoute() {
   const searchParams = useSearchParams();
-  const [currentStepOffset, setCurrentStepOffset] = useState(0);
 
+  // Clear saved step when entering preferences page (standalone, not from onboarding)
   useEffect(() => {
-    // Check if coming from onboarding
-    const fromOnboarding = searchParams.get('from') === 'onboarding';
+    // Always clear preferences step when on standalone preferences page
+    localStorage.removeItem('preferencesStep');
+  }, []);
 
-    if (fromOnboarding) {
-      // Clear any existing saved step immediately when coming from onboarding
+  // Clear step when leaving the page
+  useEffect(() => {
+    return () => {
+      // Cleanup: clear step when component unmounts (user leaves page)
       localStorage.removeItem('preferencesStep');
-      setCurrentStepOffset(3); // PREFERENCES_START_STEP - 1 = 4 - 1 = 3
-    } else {
-      // Check if we have a saved step (indicates previous onboarding context)
-      const savedStep = localStorage.getItem('preferencesStep');
-      if (savedStep) {
-        const parsedStep = parseInt(savedStep, 10);
-        // If saved step is in onboarding range (4+), apply offset
-        if (parsedStep >= 4) {
-          setCurrentStepOffset(3);
-        } else {
-          setCurrentStepOffset(0);
-        }
-      } else {
-        setCurrentStepOffset(0); // No saved progress - start from beginning
-      }
-    }
-  }, [searchParams]);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -44,7 +32,7 @@ export default function PreferencesPageRoute() {
         showTenantCvLink={false}
       />
 
-      <NewPreferencesPage currentStepOffset={currentStepOffset} />
+      <NewPreferencesPage currentStepOffset={0} totalSteps={11} />
     </div>
   );
 }

@@ -19,7 +19,7 @@ export const ApartmentSpecStep: React.FC<ApartmentSpecStepProps> = ({
 }) => {
   return (
     <StepWrapper
-      title="Step 6"
+      title="Step 5"
       description="Step 5"
     >
       <StepContainer>

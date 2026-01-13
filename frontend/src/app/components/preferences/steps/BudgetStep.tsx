@@ -268,11 +268,11 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
   );
 
   return (
-    <StepWrapper title="Step 4" description="Step 4">
+    <StepWrapper title="Step 3" description="Step 3">
       <StepContainer>
         {/* Property Type - Multi Select */}
         <StepHeader title="Select property type" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {PROPERTY_TYPES.map((type) => (
             <SelectionButton
               key={type}
@@ -288,7 +288,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
         {/* Rooms - Multi Select */}
         <StepHeader title="Rooms" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {ROOM_OPTIONS.map((room) => (
             <SelectionButton
               key={room}
@@ -302,7 +302,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
         {/* Bathrooms - Multi Select */}
         <StepHeader title="Bathrooms" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {BATHROOM_OPTIONS.map((bath) => (
             <SelectionButton
               key={bath}
@@ -318,7 +318,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
         {/* Furnishing - Multi Select */}
         <StepHeader title="Furnishing" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {FURNISHING_OPTIONS.map((option) => (
             <SelectionButton
               key={option.value}
@@ -334,7 +334,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
         {/* Outdoor Space - Multi Select */}
         <StepHeader title="Outdoor space" />
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           {OUTDOOR_SPACE_OPTIONS.map((option) => (
             <SelectionButton
               key={option}

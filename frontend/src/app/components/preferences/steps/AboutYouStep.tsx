@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { TextAreaField } from "../step-components/TextAreaField";
-import { InputField } from "../ui/InputField";
 import { PreferencesFormData } from "@/app/types/preferences";
 
 interface AboutYouStepProps {
@@ -31,7 +30,6 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
     }
   }, [
     formData.additional_info,
-    formData.preferred_address,
     onValidationChange,
     isValid,
   ]);
@@ -47,17 +45,6 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
             placeholder="e.g., I'm a quiet professional who enjoys cooking and reading. I keep a clean living space and am always respectful of neighbors. I'm looking for a peaceful home environment where I can relax after work..."
             rows={8}
           />
-
-          {/* Container for Desired Address */}
-          <div className="px-8 space-y-6">
-            {/* Desired Address Input */}
-            <InputField
-              label="Desired Address (optional)"
-              value={formData.preferred_address || ""}
-              onChange={(e) => onUpdate("preferred_address", e.target.value)}
-              type="text"
-            />
-          </div>
         </div>
       </StepContainer>
     </StepWrapper>
