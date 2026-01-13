@@ -126,6 +126,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [isProfileValid, setIsProfileValid] = useState(false);
   const [isPreferencesValid, setIsPreferencesValid] = useState(true);
+  const [isProfileSaving, setIsProfileSaving] = useState(false);
   const hasCheckedPreferences = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -139,22 +140,28 @@ export default function OnboardingPage() {
 
   // Handle profile completion with save
   const handleProfileNext = async () => {
-    if (!isProfileValid) {
+    if (!isProfileValid || isProfileSaving) {
       return;
     }
 
-    // Call the save function from the profile component
-    if ((window as any).onboardingProfileSave) {
-      const success = await (window as any).onboardingProfileSave();
-      if (success) {
+    setIsProfileSaving(true);
+
+    try {
+      // Call the save function from the profile component
+      if ((window as any).onboardingProfileSave) {
+        const success = await (window as any).onboardingProfileSave();
+        if (success) {
+          handleProfileComplete();
+          // Scroll to top when transitioning to preferences
+          scrollToTop();
+        }
+      } else {
         handleProfileComplete();
         // Scroll to top when transitioning to preferences
         scrollToTop();
       }
-    } else {
-      handleProfileComplete();
-      // Scroll to top when transitioning to preferences
-      scrollToTop();
+    } finally {
+      setIsProfileSaving(false);
     }
   };
 
@@ -164,16 +171,19 @@ export default function OnboardingPage() {
   // Helper function to scroll to top of content
   const scrollToTop = useCallback(() => {
     setTimeout(() => {
-      const header = document.querySelector('nav');
+      const header = document.querySelector("nav");
       const headerHeight = header ? header.offsetHeight : 0;
       const offset = 0; // Start from absolute top of content container
-      
+
       // Try to scroll the scrollable container first
       if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTo({ top: offset, behavior: 'instant' });
+        scrollContainerRef.current.scrollTo({
+          top: offset,
+          behavior: "instant",
+        });
       } else {
         // Fallback to window scroll with header offset
-        window.scrollTo({ top: headerHeight + 20, behavior: 'instant' });
+        window.scrollTo({ top: headerHeight + 20, behavior: "instant" });
       }
     }, 200);
   }, []);
@@ -280,13 +290,13 @@ export default function OnboardingPage() {
 
   if (state.currentPhase === "intro") {
     return (
-      <div className="h-screen bg-white flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-white flex flex-col">
         {/* Onboarding Header */}
         <OnboardingHeader />
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="h-full max-w-4xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-12 sm:pt-14 lg:pt-16 pb-4 sm:pb-6 lg:pb-8 flex items-center justify-center">
+          <div className="max-w-4xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-4 sm:pb-6 lg:pb-8">
             <OnboardingIntroScreens
               onComplete={handleIntroComplete}
               currentStep={state.currentStep}
@@ -353,15 +363,15 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Onboarding Header */}
       <OnboardingHeader />
 
       {/* Main Content */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        <div className="min-h-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 lg:pt-16 pb-24 sm:pb-28 lg:pb-32 flex items-start lg:items-center">
-          <div className="w-full">
-            {state.currentPhase === "profile" ? (
+        {state.currentPhase === "profile" ? (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-24 sm:pb-28 lg:pb-32">
+            <div className="w-full">
               <OnboardingProfileStep
                 onComplete={handleProfileComplete}
                 isLoading={state.isLoading}
@@ -370,20 +380,20 @@ export default function OnboardingPage() {
                 totalSteps={TOTAL_ONBOARDING_STEPS}
                 onValidationChange={setIsProfileValid}
               />
-            ) : (
-              <NewPreferencesPage
-                onComplete={handlePreferencesComplete}
-                currentStepOffset={PREFERENCES_START_STEP - 1}
-                totalSteps={TOTAL_ONBOARDING_STEPS}
-                externalStep={preferencesHook.step}
-                externalNext={handlePreferencesNext}
-                externalPrevious={handlePreferencesPrevious}
-                showNavigation={false}
-                onValidationChange={setIsPreferencesValid}
-              />
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <NewPreferencesPage
+            onComplete={handlePreferencesComplete}
+            currentStepOffset={PREFERENCES_START_STEP - 1}
+            totalSteps={TOTAL_ONBOARDING_STEPS}
+            externalStep={preferencesHook.step}
+            externalNext={handlePreferencesNext}
+            externalPrevious={handlePreferencesPrevious}
+            showNavigation={false}
+            onValidationChange={setIsPreferencesValid}
+          />
+        )}
       </div>
 
       {/* Unified Bottom Navigation */}
@@ -433,14 +443,21 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleProfileNext}
-                disabled={state.isLoading || !isProfileValid}
-                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
-                  state.isLoading || !isProfileValid
+                disabled={state.isLoading || !isProfileValid || isProfileSaving}
+                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer flex items-center gap-2 ${
+                  state.isLoading || !isProfileValid || isProfileSaving
                     ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                     : "bg-black text-white hover:bg-gray-800"
                 }`}
               >
-                {state.isLoading ? "Loading..." : "Next"}
+                {isProfileSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Next"
+                )}
               </button>
             )}
 

@@ -106,13 +106,8 @@ export default function NewPreferencesPage({
   useEffect(() => {
     // Use setTimeout to ensure DOM is fully updated after step change
     const scrollTimer = setTimeout(() => {
-      // Get header height
-      const header = document.querySelector('nav');
-      const headerHeight = header ? header.offsetHeight : 0;
-      const offset = headerHeight + 20; // Header + padding
-      
-      // Scroll to top of page with header offset
-      window.scrollTo({ top: offset, behavior: 'instant' });
+      // Scroll to absolute top of page so header is visible
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }, 200); // Delay to ensure DOM update and step content is fully rendered
 
     return () => clearTimeout(scrollTimer);
@@ -266,8 +261,7 @@ export default function NewPreferencesPage({
       {/* Main Content */}
       <div 
         ref={contentRef} 
-        className="max-w-4xl mx-auto px-8 pb-32 pt-10"
-        style={{ scrollMarginTop: '100px' }}
+        className="max-w-4xl mx-auto px-8 pb-32 pt-20 sm:pt-24"
       >
         <form 
           ref={formRef} 
@@ -299,10 +293,7 @@ export default function NewPreferencesPage({
                   prevStep();
                   // Scroll to top after step change
                   setTimeout(() => {
-                    const header = document.querySelector('nav');
-                    const headerHeight = header ? header.offsetHeight : 0;
-                    const offset = headerHeight + 20;
-                    window.scrollTo({ top: offset, behavior: 'instant' });
+                    window.scrollTo({ top: 0, behavior: 'instant' });
                   }, 200);
                 }}
                 disabled={isFirstStep}
@@ -328,10 +319,7 @@ export default function NewPreferencesPage({
                     await nextStep();
                     // Scroll to top after step change
                     setTimeout(() => {
-                      const header = document.querySelector('nav');
-                      const headerHeight = header ? header.offsetHeight : 0;
-                      const offset = headerHeight + 20;
-                      window.scrollTo({ top: offset, behavior: 'instant' });
+                      window.scrollTo({ top: 0, behavior: 'instant' });
                     }, 200);
                   }
                 }}

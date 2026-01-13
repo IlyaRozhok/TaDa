@@ -79,11 +79,12 @@ export default function OnboardingProfileStep({
     }
 
     // Try to find country by dial code from the phone number
-    const country = getCountryByDialCode(phoneNumber.substring(0, 4)) || 
-                   getCountryByDialCode(phoneNumber.substring(0, 3)) || 
-                   getCountryByDialCode(phoneNumber.substring(0, 2)) ||
-                   getDefaultCountry();
-    
+    const country =
+      getCountryByDialCode(phoneNumber.substring(0, 4)) ||
+      getCountryByDialCode(phoneNumber.substring(0, 3)) ||
+      getCountryByDialCode(phoneNumber.substring(0, 2)) ||
+      getDefaultCountry();
+
     setPhoneCountryCode(country.code);
     setPhoneNumberOnly(phoneNumber.slice(country.dialCode.length));
   }, []);
@@ -92,21 +93,22 @@ export default function OnboardingProfileStep({
   // Only fill if user has actual saved profile data (not just full_name from Google)
   useEffect(() => {
     if (user) {
-      const profile = user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
-      
+      const profile =
+        user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+
       // Only prefill if profile exists and has actual saved data (not just from full_name)
-      const hasSavedProfileData = profile && (
-        profile.first_name || 
-        profile.last_name || 
-        profile.address || 
-        profile.phone || 
-        profile.date_of_birth || 
-        profile.nationality
-      );
-      
+      const hasSavedProfileData =
+        profile &&
+        (profile.first_name ||
+          profile.last_name ||
+          profile.address ||
+          profile.phone ||
+          profile.date_of_birth ||
+          profile.nationality);
+
       if (hasSavedProfileData) {
         const savedData = buildFormDataFromUser(user as UserType);
-        
+
         setFormData((prev) => ({
           first_name: savedData.first_name || prev.first_name,
           last_name: savedData.last_name || prev.last_name,
