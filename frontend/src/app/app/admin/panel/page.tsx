@@ -9,7 +9,7 @@ import {
 import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 import { useDebounce } from "../../../hooks/useDebounce";
-import AdminNotifications from "../../../components/AdminNotifications";
+import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
 import AdminPropertiesSection from "../../../components/AdminPropertiesSection";
@@ -1119,7 +1119,7 @@ function AdminPanelContent() {
 
       <DeleteModal />
 
-      <AdminNotifications
+      <GlassmorphismToast
         notifications={notifications}
         onCloseNotification={removeNotification}
       />

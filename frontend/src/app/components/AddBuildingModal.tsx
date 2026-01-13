@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Plus, Minus, Upload } from "lucide-react";
-import toast from "react-hot-toast";
 import { buildingsAPI, usersAPI } from "../lib/api";
 import { FormField, Input, Select, Textarea } from "./FormField";
 import { useFormValidation, ValidationRules, commonRules } from "../hooks/useFormValidation";
@@ -209,7 +208,6 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           setOperators(filteredOperators);
         } catch (error) {
           console.error("Failed to load operators:", error);
-          toast.error("Failed to load operators");
         } finally {
           setOperatorsLoading(false);
         }
@@ -367,9 +365,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     if (uploadPromises.length > 0) {
       await Promise.allSettled(uploadPromises);
 
-      // Show errors if any occurred
+      // Errors are logged to console
       if (errors.length > 0) {
-        toast.error(`Some uploads failed: ${errors.join("; ")}`);
+        console.error(`Some uploads failed: ${errors.join("; ")}`);
       }
     }
 
@@ -390,7 +388,6 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     // Validate all fields
     const isValid = validateAll(formData);
     if (!isValid) {
-      toast.error("Please fix the validation errors before submitting");
       return;
     }
 

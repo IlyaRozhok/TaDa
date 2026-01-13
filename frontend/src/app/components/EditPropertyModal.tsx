@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Trash2, Upload, Plus, Minus, GripVertical } from "lucide-react";
 import { propertiesAPI, buildingsAPI, usersAPI } from "../lib/api";
-import toast from "react-hot-toast";
 import {
   Property,
   PropertyType,
@@ -2357,7 +2356,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         }));
                         
                         setDraggedPhotoIndex(null);
-                        toast.success("Photo order updated");
                       }}
                       className={`relative group cursor-move transition-all ${
                         draggedPhotoIndex === index ? "opacity-50 scale-95" : ""
@@ -2448,7 +2446,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         setPhotoPreviews(newPreviews);
                         
                         setDraggedPhotoFileIndex(null);
-                        toast.success("Photo order updated");
                       }}
                       className={`relative group cursor-move transition-all ${
                         draggedPhotoFileIndex === index ? "opacity-50 scale-95" : ""

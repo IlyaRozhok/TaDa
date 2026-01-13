@@ -177,7 +177,17 @@ export class AuthService {
     } else {
       // Update existing user with latest Google data
       user.full_name = googleUser.full_name;
-      user.avatar_url = googleUser.avatar_url;
+      // Only update avatar_url if user hasn't uploaded their own avatar
+      // Check if current avatar_url is from Google (contains googleusercontent.com or is null/empty)
+      const hasCustomAvatar = user.avatar_url && 
+        !user.avatar_url.includes('googleusercontent.com') &&
+        !user.avatar_url.includes('google.com');
+      
+      if (!hasCustomAvatar) {
+        // User doesn't have a custom avatar, update with Google's
+        user.avatar_url = googleUser.avatar_url;
+      }
+      // Always update email_verified status
       user.email_verified = googleUser.email_verified;
       user = await this.userRepository.save(user);
     }

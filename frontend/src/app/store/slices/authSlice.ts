@@ -204,6 +204,8 @@ const authSlice = createSlice({
       state.user = {
         ...state.user,
         ...payload,
+        // Update avatar_url if provided
+        avatar_url: payload.avatar_url !== undefined ? payload.avatar_url : state.user.avatar_url,
         tenantProfile: nextTenant,
         operatorProfile: nextOperator,
       };

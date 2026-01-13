@@ -12,7 +12,6 @@ import {
 } from "../types/property";
 import { FormField, Input, Select, Textarea } from "./FormField";
 import { useFormValidation, ValidationRules, commonRules } from "../hooks/useFormValidation";
-import toast from "react-hot-toast";
 
 interface Pet {
   type: "dog" | "cat" | "other";
@@ -674,7 +673,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     // Validate all fields
     const isValid = validateAll(formData);
     if (!isValid) {
-      toast.error("Please fix the validation errors before submitting");
       return;
     }
 

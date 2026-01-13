@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { ChevronDown, ChevronLeft } from "lucide-react";
@@ -126,6 +126,8 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [isProfileValid, setIsProfileValid] = useState(false);
   const [isPreferencesValid, setIsPreferencesValid] = useState(true);
+  const hasCheckedPreferences = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     state,
@@ -146,14 +148,35 @@ export default function OnboardingPage() {
       const success = await (window as any).onboardingProfileSave();
       if (success) {
         handleProfileComplete();
+        // Scroll to top when transitioning to preferences
+        scrollToTop();
       }
     } else {
       handleProfileComplete();
+      // Scroll to top when transitioning to preferences
+      scrollToTop();
     }
   };
 
   // Only use preferences hook in preferences phase to avoid conflicts
   const preferencesHook = usePreferences(PREFERENCES_START_STEP - 1);
+
+  // Helper function to scroll to top of content
+  const scrollToTop = useCallback(() => {
+    setTimeout(() => {
+      const header = document.querySelector('nav');
+      const headerHeight = header ? header.offsetHeight : 0;
+      const offset = 0; // Start from absolute top of content container
+      
+      // Try to scroll the scrollable container first
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: offset, behavior: 'instant' });
+      } else {
+        // Fallback to window scroll with header offset
+        window.scrollTo({ top: headerHeight + 20, behavior: 'instant' });
+      }
+    }, 200);
+  }, []);
 
   // Sync onboarding step with preferences step
   useEffect(() => {
@@ -166,33 +189,48 @@ export default function OnboardingPage() {
         // Only update if different to avoid unnecessary re-renders
         if (onboardingStep !== state.currentStep) {
           setCurrentStep(onboardingStep);
+          // Scroll to top when step changes
+          scrollToTop();
         }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preferencesHook.step, state.currentPhase]);
+  }, [preferencesHook.step, state.currentPhase, scrollToTop]);
 
   const handlePreferencesNext = async () => {
     if (preferencesHook.isLastStep) {
       await handlePreferencesComplete();
     } else {
       await preferencesHook.nextStep();
+      // Scroll to top after step change
+      scrollToTop();
     }
   };
 
   const handlePreferencesPrevious = async () => {
     if (!preferencesHook.isFirstStep) {
       await preferencesHook.prevStep();
+      // Scroll to top after step change
+      scrollToTop();
     }
   };
 
   // Check if user is authenticated and has preferences
+  // Only check once, not when user object changes during onboarding
   useEffect(() => {
+    // Skip if already checked
+    if (hasCheckedPreferences.current) {
+      return;
+    }
+
     const checkUserStatus = async () => {
       if (!isAuthenticated || !user) {
         router.push("/app/auth/login");
         return;
       }
+
+      // Mark as checked to prevent re-checking
+      hasCheckedPreferences.current = true;
 
       // Reset preferences step for new onboarding
       localStorage.removeItem("preferencesStep");
@@ -320,7 +358,7 @@ export default function OnboardingPage() {
       <OnboardingHeader />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         <div className="min-h-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14 lg:pt-16 pb-24 sm:pb-28 lg:pb-32 flex items-start lg:items-center">
           <div className="w-full">
             {state.currentPhase === "profile" ? (
@@ -377,6 +415,8 @@ export default function OnboardingPage() {
                     // Go to previous preferences step
                     handlePreferencesPrevious();
                   }
+                  // Scroll to top after navigation
+                  scrollToTop();
                 }
               }}
               className="text-base font-medium transition-colors text-black hover:text-gray-600 cursor-pointer"
@@ -407,7 +447,9 @@ export default function OnboardingPage() {
             {state.currentPhase === "preferences" && (
               <button
                 type="button"
-                onClick={handlePreferencesNext}
+                onClick={async () => {
+                  await handlePreferencesNext();
+                }}
                 disabled={preferencesHook.step === 10 && !isPreferencesValid}
                 className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
                   preferencesHook.step === 10 && !isPreferencesValid

@@ -20,6 +20,8 @@ import {
   getDefaultCountry,
 } from "../../../shared/lib/countries";
 import { NATIONALITY_OPTIONS } from "../../../shared/lib/nationalities";
+import { buildFormDataFromUser } from "../../../entities/user/lib/utils";
+import { User as UserType } from "../../../entities/user/model/types";
 
 interface UpdateUserData {
   first_name?: string;
@@ -68,7 +70,59 @@ export default function OnboardingProfileStep({
     nationality: "",
   });
 
-  // Removed auto-fill from Google data - fields should be empty by default
+  // Helper function to parse phone number
+  const parsePhoneNumber = useCallback((phoneNumber: string) => {
+    if (!phoneNumber) {
+      setPhoneCountryCode("GB");
+      setPhoneNumberOnly("");
+      return;
+    }
+
+    // Try to find country by dial code from the phone number
+    const country = getCountryByDialCode(phoneNumber.substring(0, 4)) || 
+                   getCountryByDialCode(phoneNumber.substring(0, 3)) || 
+                   getCountryByDialCode(phoneNumber.substring(0, 2)) ||
+                   getDefaultCountry();
+    
+    setPhoneCountryCode(country.code);
+    setPhoneNumberOnly(phoneNumber.slice(country.dialCode.length));
+  }, []);
+
+  // Fill form with saved user data when component mounts or user changes
+  // Only fill if user has actual saved profile data (not just full_name from Google)
+  useEffect(() => {
+    if (user) {
+      const profile = user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+      
+      // Only prefill if profile exists and has actual saved data (not just from full_name)
+      const hasSavedProfileData = profile && (
+        profile.first_name || 
+        profile.last_name || 
+        profile.address || 
+        profile.phone || 
+        profile.date_of_birth || 
+        profile.nationality
+      );
+      
+      if (hasSavedProfileData) {
+        const savedData = buildFormDataFromUser(user as UserType);
+        
+        setFormData((prev) => ({
+          first_name: savedData.first_name || prev.first_name,
+          last_name: savedData.last_name || prev.last_name,
+          address: savedData.address || prev.address,
+          phone: savedData.phone || prev.phone,
+          date_of_birth: savedData.date_of_birth || prev.date_of_birth,
+          nationality: savedData.nationality || prev.nationality,
+        }));
+
+        // Parse phone number if available
+        if (savedData.phone) {
+          parsePhoneNumber(savedData.phone);
+        }
+      }
+    }
+  }, [user, parsePhoneNumber]);
 
   // Form validation
   const validateForm = (): boolean => {

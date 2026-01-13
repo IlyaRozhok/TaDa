@@ -110,6 +110,46 @@ export class UsersService {
   async deleteAccount(id: string): Promise<void> {
     const user = await this.userQueryService.findOneForDeletion(id);
 
+    // Delete avatar from S3 if exists
+    if (user.avatar_url) {
+      try {
+        const url = user.avatar_url;
+        
+        // Extract S3 key from URL
+        let key: string | null = null;
+        
+        if (url.includes('/uploads/')) {
+          // Local dev mode - extract path after /uploads/
+          const keyMatch = url.match(/\/uploads\/(.+)$/);
+          if (keyMatch && keyMatch[1]) {
+            key = keyMatch[1];
+          }
+        } else {
+          // S3 URL - try to extract key
+          try {
+            const urlObj = new URL(url);
+            const pathParts = urlObj.pathname.split('/').filter(p => p);
+            const keyIndex = pathParts.findIndex(part => part === 'tada-media' || part === 'avatars');
+            if (keyIndex !== -1) {
+              key = pathParts.slice(keyIndex).join('/');
+            } else if (pathParts.length > 0) {
+              // Fallback: use all path parts
+              key = pathParts.join('/');
+            }
+          } catch (urlError) {
+            console.error("Failed to parse avatar URL for deletion:", urlError);
+          }
+        }
+        
+        if (key) {
+          await this.s3Service.deleteFile(key);
+        }
+      } catch (error) {
+        console.error("Failed to delete avatar from S3:", error);
+        // Continue with account deletion even if avatar deletion fails
+      }
+    }
+
     // Удалить все связанные данные
     await this.userProfileService.deleteUserData(user);
   }

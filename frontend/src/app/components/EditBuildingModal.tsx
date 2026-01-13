@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Plus, Minus, Upload, GripVertical } from "lucide-react";
 import { buildingsAPI, usersAPI } from "../lib/api";
-import toast from "react-hot-toast";
 
 interface Building {
   id: string;
@@ -196,7 +195,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
           setOperators(filteredOperators);
         } catch (error) {
           console.error("Failed to load operators:", error);
-          toast.error("Failed to load operators");
         } finally {
           setOperatorsLoading(false);
         }
@@ -412,7 +410,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
       // Show errors if any occurred
       if (errors.length > 0) {
-        toast.error(`Some uploads failed: ${errors.join("; ")}`);
+        console.error(`Some uploads failed: ${errors.join("; ")}`);
       }
     }
 
@@ -1346,7 +1344,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                               setPhotoPreviews(newPreviews);
                               
                               setDraggedPhotoFileIndex(null);
-                              toast.success("Photo order updated");
                             }}
                             className={`relative border border-white/20 rounded-lg overflow-hidden group bg-white/5 cursor-move transition-all ${
                               draggedPhotoFileIndex === index ? "opacity-50 scale-95" : ""
@@ -1453,7 +1450,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                 }));
                                 
                                 setDraggedPhotoIndex(null);
-                                toast.success("Photo order updated");
                               }}
                               className={`relative border border-white/20 rounded-lg overflow-hidden group bg-white/5 cursor-move transition-all ${
                                 draggedPhotoIndex === index ? "opacity-50 scale-95" : ""

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePreferences } from "@/app/hooks/usePreferences";
@@ -60,6 +60,9 @@ export default function NewPreferencesPage({
   onValidationChange,
 }: NewPreferencesPageProps = {}) {
   const router = useRouter();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const stepContentRef = useRef<HTMLDivElement>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
@@ -98,6 +101,22 @@ export default function NewPreferencesPage({
       onValidationChange(isCurrentStepValid);
     }
   }, [isCurrentStepValid, onValidationChange, step]);
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    // Use setTimeout to ensure DOM is fully updated after step change
+    const scrollTimer = setTimeout(() => {
+      // Get header height
+      const header = document.querySelector('nav');
+      const headerHeight = header ? header.offsetHeight : 0;
+      const offset = headerHeight + 20; // Header + padding
+      
+      // Scroll to top of page with header offset
+      window.scrollTo({ top: offset, behavior: 'instant' });
+    }, 200); // Delay to ensure DOM update and step content is fully rendered
+
+    return () => clearTimeout(scrollTimer);
+  }, [step]);
 
   // Wait for session manager to initialize
   useEffect(() => {
@@ -245,8 +264,19 @@ export default function NewPreferencesPage({
   return (
     <div className="min-h-screen bg-white">
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
-        <form onSubmit={(e) => e.preventDefault()}>{renderStep()}</form>
+      <div 
+        ref={contentRef} 
+        className="max-w-4xl mx-auto px-8 pb-32 pt-10"
+        style={{ scrollMarginTop: '100px' }}
+      >
+        <form 
+          ref={formRef} 
+          onSubmit={(e) => e.preventDefault()}
+        >
+          <div ref={stepContentRef}>
+            {renderStep()}
+          </div>
+        </form>
       </div>
 
       {/* Bottom Navigation */}
@@ -265,7 +295,16 @@ export default function NewPreferencesPage({
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <button
                 type="button"
-                onClick={prevStep}
+                onClick={() => {
+                  prevStep();
+                  // Scroll to top after step change
+                  setTimeout(() => {
+                    const header = document.querySelector('nav');
+                    const headerHeight = header ? header.offsetHeight : 0;
+                    const offset = headerHeight + 20;
+                    window.scrollTo({ top: offset, behavior: 'instant' });
+                  }, 200);
+                }}
                 disabled={isFirstStep}
                 className={`font-medium ${
                   isFirstStep
@@ -287,6 +326,13 @@ export default function NewPreferencesPage({
                     await handleFinish();
                   } else {
                     await nextStep();
+                    // Scroll to top after step change
+                    setTimeout(() => {
+                      const header = document.querySelector('nav');
+                      const headerHeight = header ? header.offsetHeight : 0;
+                      const offset = headerHeight + 20;
+                      window.scrollTo({ top: offset, behavior: 'instant' });
+                    }, 200);
                   }
                 }}
                 disabled={step === 11 && !isCurrentStepValid}
