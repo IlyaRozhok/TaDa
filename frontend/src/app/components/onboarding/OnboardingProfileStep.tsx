@@ -64,61 +64,7 @@ export default function OnboardingProfileStep({
     nationality: "",
   });
 
-  useEffect(() => {
-    if (user) {
-      const profile =
-        user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
-
-      const splitFullName = (full?: string | null) => {
-        if (!full) return { first: "", last: "" };
-        const parts = full.trim().split(" ");
-        if (parts.length === 1) return { first: parts[0], last: "" };
-        const [first, ...rest] = parts;
-        return { first, last: rest.join(" ") };
-      };
-
-      const nameFallback = splitFullName(
-        (profile as any)?.full_name || user.full_name
-      );
-
-      let formattedDateOfBirth = "";
-      // Check if profile has date_of_birth (for tenant profile)
-      const dateOfBirth = (profile as any)?.date_of_birth;
-      if (dateOfBirth) {
-        try {
-          const date = new Date(dateOfBirth);
-          if (!isNaN(date.getTime())) {
-            formattedDateOfBirth = date.toISOString().split("T")[0];
-          }
-        } catch (error) {
-          console.warn("Error formatting date_of_birth:", error);
-        }
-      }
-
-      const initialData = {
-        first_name: (profile as any)?.first_name || nameFallback.first || "",
-        last_name: (profile as any)?.last_name || nameFallback.last || "",
-        address: (profile as any)?.address || "",
-        phone: profile?.phone || "",
-        date_of_birth: formattedDateOfBirth,
-        nationality: (profile as any)?.nationality || "",
-        occupation: (profile as any)?.occupation || "",
-      };
-      setFormData(initialData);
-
-      // Parse existing phone number to extract country code and number
-      if (initialData.phone) {
-        // Try to find country by dial code from the phone number
-        const country = getCountryByDialCode(initialData.phone.substring(0, 4)) || 
-                       getCountryByDialCode(initialData.phone.substring(0, 3)) || 
-                       getCountryByDialCode(initialData.phone.substring(0, 2)) ||
-                       getDefaultCountry();
-        
-        setPhoneCountryCode(country.code);
-        setPhoneNumberOnly(initialData.phone.slice(country.dialCode.length));
-      }
-    }
-  }, [user]);
+  // Removed auto-fill from Google data - fields should be empty by default
 
   // Form validation
   const validateForm = (): boolean => {
