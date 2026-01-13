@@ -210,7 +210,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 onChange={handleSearchChange}
                 onClick={handleInputClick}
                 placeholder="Search nationality..."
-                className="w-full pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="w-full pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none"
               />
             </div>
           </div>
