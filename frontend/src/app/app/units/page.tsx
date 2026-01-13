@@ -263,8 +263,8 @@ export default function TenantUnitsPage() {
     );
   }
 
-  // Redirect non-tenants
-  if (user && user.role !== "tenant") {
+  // Allow tenants and admins
+  if (user && user.role !== "tenant" && user.role !== "admin") {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
