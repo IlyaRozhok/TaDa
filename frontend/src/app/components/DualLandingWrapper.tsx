@@ -224,28 +224,16 @@ const TenantsCardsSection = ({
     <section
       id="cards"
       className="md:py-20 py-5 relative overflow-x-hidden overflow-y-visible"
+      style={{ backgroundColor: '#F7F7F9' }}
     >
-      {/* Background image */}
-      <div className="absolute inset-0">
-        <Image
-          src="/operator-reinvent-bg.png"
-          alt="Background"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-          quality={85}
-        />
-      </div>
-
       <div className="relative z-10">
         {/* Section Header */}
         <div className="container mx-auto px-4">
           <div className="text-start mb-16">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-white lg:max-w-4xl lg:mx-0 mx-auto mt-6">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-black lg:max-w-4xl lg:mx-0 mx-auto mt-6">
               {t(tenantKeys.rentSection.title)}
             </h2>
-            <p className="text-white text-lg lg:max-w-[500px] lg:mx-0 mx-auto mt-6">
+            <p className="text-black text-lg lg:max-w-[500px] lg:mx-0 mx-auto mt-6">
               {t(tenantKeys.rentSection.subtitle)}
             </p>
           </div>
