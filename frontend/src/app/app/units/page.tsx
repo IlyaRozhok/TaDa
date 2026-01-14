@@ -22,7 +22,7 @@ function TenantDashboardContent() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2">
+        <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">
           {/* Perfect Match Section - show skeleton while loading preferences */}
           {state.preferencesLoading ? (
             <section className="bg-gray-50 rounded-xl sm:rounded-2xl lg:rounded-3xl px-1 sm:px-1.5 lg:px-6.25 py-1.5 sm:py-2 lg:py-3 mb-1 sm:mb-1.5 lg:mb-2">
@@ -111,7 +111,7 @@ function TenantDashboardContent() {
       <TenantUniversalHeader />
 
       {/* Main Content */}
-      <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 py-1 sm:py-1.5 lg:py-2">
+      <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">
         {/* Perfect Match Section - only show if preferences are NOT complete and loaded */}
         {!state.preferencesLoading && !state.hasCompletePreferences && (
           <TenantPerfectMatchSection
@@ -181,7 +181,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-8">
           {/* Perfect Match Section Skeleton */}
           <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
             <div className="flex items-center justify-between">
@@ -225,7 +225,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-8">
           {/* Perfect Match Section Skeleton */}
           <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
             <div className="flex items-center justify-between">
