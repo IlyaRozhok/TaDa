@@ -11,7 +11,6 @@ import { redirectAfterLogin } from "../utils/simpleRedirect";
 import { useAuthContext } from "../contexts/AuthContext";
 import { ApiError } from "../types/api";
 import { Loader2, Eye, EyeOff, Mail, Lock, X } from "lucide-react";
-import Logo from "./Logo";
 import { Button } from "./ui/Button";
 
 interface AuthModalProps {
@@ -177,7 +176,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </button>
 
         <div className="text-center mb-6">
-          <Logo size="md" className="mx-auto mb-4" />
+          <div className="flex justify-center mb-4">
+            <img
+              src="/black-logo.svg"
+              alt="TADA Logo"
+              className="h-10"
+            />
+          </div>
           <h2 className="text-2xl font-bold text-gray-900">Sign In to Tada</h2>
         </div>
 

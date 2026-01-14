@@ -150,11 +150,12 @@ export default function HomePage() {
             <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center py-4">
                 {/* Logo */}
-                <div className="flex items-center gap-3">
-                  <div className="relative rounded-full overflow-hidden border-2 border-black shadow-lg bg-black w-10 h-10 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">TD</span>
-                  </div>
-                  <span className="text-2xl font-bold text-black">TADA</span>
+                <div className="flex items-center">
+                  <img
+                    src="/black-logo.svg"
+                    alt="TADA Logo"
+                    className="h-8 sm:h-10"
+                  />
                 </div>
 
                 {/* Search Bar */}

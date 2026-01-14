@@ -41,9 +41,13 @@ export default function PublicTenantCvPage() {
       <nav className="w-full border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <button
           onClick={() => router.push("/")}
-          className="text-xl font-semibold text-gray-900"
+          className="transition-opacity hover:opacity-80 cursor-pointer"
         >
-          TADA
+          <img
+            src="/black-logo.svg"
+            alt="TADA Logo"
+            className="h-7 sm:h-8"
+          />
         </button>
       </nav>
 

@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
-import Logo from "./Logo";
 import styles from "./ui/DropdownStyles.module.scss";
 import { getRedirectPath, getUserRole } from "../utils/simpleRedirect";
 
@@ -130,12 +129,13 @@ export default function DashboardHeader() {
           {/* Logo */}
           <button
             onClick={handleLogoClick}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer group"
+            className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <Logo size="md" />
-            <div>
-              <p className="text-xs text-slate-500 -mt-1">Rental Platform</p>
-            </div>
+            <img
+              src="/black-logo.svg"
+              alt="TADA Logo"
+              className="h-7 sm:h-8"
+            />
           </button>
 
           {/* Admin Navigation removed; links moved to profile dropdown */}

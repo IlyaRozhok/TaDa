@@ -60,9 +60,13 @@ export default function TenantUniversalHeader({
         <div className="flex items-center flex-shrink-0">
           <button
             onClick={handleLogoClick}
-            className="text-base sm:text-lg md:text-xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer whitespace-nowrap"
+            className="transition-opacity hover:opacity-80 cursor-pointer"
           >
-            :: TADA
+            <img
+              src="/black-logo.svg"
+              alt="TADA Logo"
+              className="h-6 sm:h-7 md:h-8"
+            />
           </button>
         </div>
 

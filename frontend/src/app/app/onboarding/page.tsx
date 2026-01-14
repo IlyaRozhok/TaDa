@@ -47,8 +47,12 @@ function OnboardingHeader() {
       <div className="max-w-[98%] sm:max-w-[95%] mx-auto flex items-center justify-between">
         {/* Left: Logo */}
         <div className="flex items-center">
-          <button className="text-lg sm:text-xl lg:text-2xl font-bold text-black hover:text-gray-700 transition-colors cursor-pointer">
-            :: TADA
+          <button className="transition-opacity hover:opacity-80 cursor-pointer">
+            <img
+              src="/black-logo.svg"
+              alt="TADA Logo"
+              className="h-6 sm:h-7 lg:h-8"
+            />
           </button>
         </div>
 
