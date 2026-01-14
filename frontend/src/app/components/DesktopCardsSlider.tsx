@@ -46,7 +46,9 @@ const DesktopCardsSlider = ({ cards }: DesktopCardsSliderProps) => {
   const showStaticGrid = cards.length <= 4;
 
   return (
-    <div className={showStaticGrid ? "container mx-auto px-4" : ""}>
+    <div
+      className={showStaticGrid ? "container mx-auto px-4" : "relative z-10"}
+    >
       {showStaticGrid ? (
         /* Static Grid - No Slider */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -101,7 +103,7 @@ const DesktopCardsSlider = ({ cards }: DesktopCardsSliderProps) => {
         </div>
       ) : (
         /* Slider - For 5+ cards */
-        <div className="relative w-full">
+        <div className="relative w-full z-10">
           {/* Slider Container */}
           <div className="overflow-x-hidden overflow-y-visible">
             <div
@@ -180,21 +182,6 @@ const DesktopCardsSlider = ({ cards }: DesktopCardsSliderProps) => {
             >
               <ChevronLeft className="w-6 h-6 text-gray-700" />
             </button>
-
-            {/* Dots indicator */}
-            <div className="flex items-center gap-2">
-              {Array.from({ length: Math.max(1, cards.length - 2) }).map(
-                (_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-colors cursor-pointer hover:bg-gray-500 ${
-                      currentIndex === index ? "bg-gray-900" : "bg-gray-300"
-                    }`}
-                  />
-                )
-              )}
-            </div>
 
             <button
               onClick={nextSlide}

@@ -105,10 +105,10 @@ const ResponsiveCardsDisplay = ({ cards }: ResponsiveCardsDisplayProps) => {
           </div>
         ) : (
           /* Use DesktopCardsSlider for 5+ cards (including Tenants section with 5 cards) */
-          <div
-            className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}
-          >
-            <DesktopCardsSlider cards={cards} />
+          <div className="relative z-10 w-full">
+            <div className={`${sliderLeftPaddingClasses} max-w-none overflow-visible`}>
+              <DesktopCardsSlider cards={cards} />
+            </div>
           </div>
         )}
       </div>

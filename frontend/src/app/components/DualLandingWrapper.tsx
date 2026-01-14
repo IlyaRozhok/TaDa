@@ -223,31 +223,48 @@ const TenantsCardsSection = ({
   return (
     <section
       id="cards"
-      className="md:py-20 py-5 bg-gradient-to-b from-white to-[#F5F5F7] overflow-hidden"
+      className="md:py-20 py-5 relative overflow-x-hidden overflow-y-visible"
     >
-      <div className="container mx-auto px-4">
-        {/* Section Header */}
-        getIndividualLimits        <div className="text-start mb-16">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 lg:max-w-4xl lg:mx-0 mx-auto mt-6">
-            {t(tenantKeys.rentSection.title)}
-          </h2>
-          <p className="text-gray-600 text-lg mt-6cl lg:max-w-[500px] lg:mx-0 mx-auto mt-6">
-            {t(tenantKeys.rentSection.subtitle)}
-          </p>
-        </div>
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/operator-reinvent-bg.png"
+          alt="Background"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+          quality={85}
+        />
       </div>
 
-      {/* Responsive Cards Display */}
-      <ResponsiveCardsDisplay cards={cards} />
+      <div className="relative z-10">
+        {/* Section Header */}
+        <div className="container mx-auto px-4">
+          <div className="text-start mb-16">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-white lg:max-w-4xl lg:mx-0 mx-auto mt-6">
+              {t(tenantKeys.rentSection.title)}
+            </h2>
+            <p className="text-white text-lg lg:max-w-[500px] lg:mx-0 mx-auto mt-6">
+              {t(tenantKeys.rentSection.subtitle)}
+            </p>
+          </div>
+        </div>
 
-      {/* Contact Us Button */}
-      <div className="text-center mt-6 md:mt-16 px-4">
-        <button
-          onClick={onContactClick}
-          className="bg-black w-auto text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
-        >
-          {t(tenantKeys.rentSection.ctaBtn)}
-        </button>
+        {/* Responsive Cards Display */}
+        <ResponsiveCardsDisplay cards={cards} />
+
+        {/* Contact Us Button */}
+        <div className="container mx-auto px-4">
+          <div className="text-center mt-6 md:mt-16">
+            <button
+              onClick={onContactClick}
+              className="bg-black w-auto text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
+            >
+              {t(tenantKeys.rentSection.ctaBtn)}
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
