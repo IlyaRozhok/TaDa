@@ -14,31 +14,33 @@ export const SelectionButton: React.FC<SelectionButtonProps> = ({
   value,
   isSelected,
   onClick,
-  icon,
+  icon: Icon,
   className = "",
 }) => {
   return (
     <button
       type="button"
       onClick={() => onClick(value)}
-      className={`w-full p-4 sm:p-6 text-left rounded-3xl border-0 transition-colors ${
+      className={`w-full h-full min-h-[3rem] sm:min-h-[3.5rem] p-3 sm:p-4 text-left rounded-3xl border-0 transition-colors flex items-center justify-between ${
         isSelected
           ? "bg-black text-white cursor-pointer"
           : "bg-white text-black hover:bg-gray-200 cursor-pointer"
       } ${className}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          {icon && (
-            <div className="text-2xl mr-3">
-              <icon className="w-6 h-6" />
-            </div>
-          )}
-          <span className="font-medium">{label}</span>
-        </div>
+      <div className="flex items-center flex-1 min-w-0 pr-2">
+        {Icon && (
+          <div className="text-2xl mr-2 sm:mr-3 flex-shrink-0">
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+        )}
+        <span className="font-medium text-sm sm:text-base break-words leading-tight">
+          {label}
+        </span>
+      </div>
+      <div className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ml-1 flex items-center justify-center">
         {isSelected && (
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4 sm:w-5 sm:h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

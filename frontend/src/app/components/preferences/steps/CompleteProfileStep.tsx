@@ -30,8 +30,8 @@ export const CompleteProfileStep: React.FC<CompleteProfileStepProps> = ({
           housemates).
         </p>
 
-        {/* Hobbies Grid - 3 columns */}
-        <div className="grid grid-cols-3 gap-4">
+        {/* Hobbies Grid - responsive columns */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           {HOBBY_OPTIONS.map((hobby) => (
             <SelectionButton
               key={hobby}

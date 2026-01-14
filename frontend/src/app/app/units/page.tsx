@@ -12,8 +12,7 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
-  const { state, loadProperties, clearError } =
-    useTenantDashboard();
+  const { state, loadProperties, clearError } = useTenantDashboard();
 
   // Loading state
   if (!user || state.sessionLoading) {
@@ -281,4 +280,3 @@ export default function TenantUnitsPage() {
 
   return <TenantDashboardContent />;
 }
-
