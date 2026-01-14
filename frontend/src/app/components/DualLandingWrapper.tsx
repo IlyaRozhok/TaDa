@@ -49,7 +49,7 @@ const TenantsHeroSection = ({
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/tenant-landing-bg.png"
+          src="/tenant-hero-bg.png"
           alt="Background"
           fill
           priority

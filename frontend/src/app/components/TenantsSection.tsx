@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import ResponsiveCardsDisplay from "./ResponsiveCardsDisplay";
 import { useTranslation } from "../hooks/useTranslation";
 import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
@@ -44,8 +45,18 @@ const TenantsSection = () => {
 
   return (
     <section id="tenants" className="md:py-21 py-5 relative overflow-hidden">
-      {/* Background overlay */}
-      <div className="absolute inset-0"></div>
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/operator-reinvent-bg.png"
+          alt="Background"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+          quality={85}
+        />
+      </div>
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
