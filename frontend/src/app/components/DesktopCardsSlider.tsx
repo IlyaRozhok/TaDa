@@ -174,7 +174,7 @@ const DesktopCardsSlider = ({ cards }: DesktopCardsSliderProps) => {
           </div>
 
           {/* Navigation Controls */}
-          <div className="flex items-center justify-center gap-4 mt-8">
+          <div className="flex items-center justify-center gap-4 mt-8 pr-[12%]">
             <button
               onClick={prevSlide}
               disabled={!canGoPrev}
