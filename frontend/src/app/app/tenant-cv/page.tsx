@@ -59,7 +59,7 @@ export default function TenantCvPage() {
         showPreferencesButton={false}
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 mt-6">
         {loading && (
           <div className="py-16 text-center text-gray-600">Loading CV...</div>
         )}

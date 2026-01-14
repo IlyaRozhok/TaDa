@@ -80,3 +80,12 @@ export function getDefaultCountry(): Country {
   return COUNTRIES[0];
 }
 
+/**
+ * Get country by name (case-insensitive)
+ */
+export function getCountryByName(name: string): Country | undefined {
+  return COUNTRIES.find(
+    (c) => c.name.toLowerCase() === name.toLowerCase()
+  );
+}
+

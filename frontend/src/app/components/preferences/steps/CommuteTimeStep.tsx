@@ -29,14 +29,39 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
             label="Move in date from"
             name="move_in_date"
             value={formData.move_in_date || null}
-            onChange={(date) => onUpdate("move_in_date", date)}
+            onChange={(date) => {
+              // Validate date is not in the past
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const selectedDate = date ? new Date(date) : null;
+              
+              if (selectedDate && selectedDate < today) {
+                // Don't update if date is in the past
+                return;
+              }
+              onUpdate("move_in_date", date);
+            }}
             minDate={new Date().toISOString().split("T")[0]}
           />
           <DateInput
             label="Move in date to"
             name="move_out_date"
             value={formData.move_out_date || null}
-            onChange={(date) => onUpdate("move_out_date", date)}
+            onChange={(date) => {
+              // Validate date is not before move_in_date or today
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const moveInDate = formData.move_in_date ? new Date(formData.move_in_date) : today;
+              moveInDate.setHours(0, 0, 0, 0);
+              const selectedDate = date ? new Date(date) : null;
+              const minDate = moveInDate > today ? moveInDate : today;
+              
+              if (selectedDate && selectedDate < minDate) {
+                // Don't update if date is before minimum allowed date
+                return;
+              }
+              onUpdate("move_out_date", date);
+            }}
             minDate={formData.move_in_date || new Date().toISOString().split("T")[0]}
           />
         </div>

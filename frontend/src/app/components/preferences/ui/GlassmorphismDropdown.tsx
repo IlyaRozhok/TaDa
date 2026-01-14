@@ -140,7 +140,6 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
         ) : (
           <span>
             {placeholder}
-            {required && <span className="text-red-500 ml-1">*</span>}
           </span>
         )}
       </div>
@@ -153,7 +152,6 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
           } top-3 text-xs text-gray-500`}
         >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
 

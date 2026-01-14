@@ -140,7 +140,7 @@ export default function OnboardingPage() {
     handleIntroComplete,
     handleProfileComplete,
     handlePreferencesComplete,
-  } = useOnboarding(user, () => router.push("/app/units"));
+  } = useOnboarding(user, () => router.push("/app/tenant-cv"));
 
   // Handle profile completion with save
   const handleProfileNext = async () => {

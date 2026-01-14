@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
@@ -14,27 +14,13 @@ interface PetsStepProps {
 // Pet type options
 const PET_TYPE_OPTIONS = ["No pets", "Dog", "Cat", "Other", "Planning to get a pet"];
 
-// Dog size options
-const DOG_SIZE_OPTIONS = [
-  "Small (<10kg)",
-  "Medium (10-25kg)",
-  "Large (>25kg)",
-];
-
 export const PetsStep: React.FC<PetsStepProps> = ({
   formData,
   onUpdate,
 }) => {
   const selectedPetType = formData.pet_type_preferences?.[0] || "";
   const numberOfPets = formData.number_of_pets || "";
-  const dogSize = formData.dog_size || "";
-
-  // Set default dog size to "Small" when Dog is selected
-  useEffect(() => {
-    if (selectedPetType === "Dog" && !dogSize) {
-      onUpdate("dog_size", "Small (<10kg)");
-    }
-  }, [selectedPetType, dogSize, onUpdate]);
+  const petAdditionalInfo = formData.pet_additional_info || "";
 
   return (
     <StepWrapper
@@ -54,6 +40,15 @@ export const PetsStep: React.FC<PetsStepProps> = ({
               onClick={() => {
                 // Store as array but only allow one selection
                 onUpdate("pet_type_preferences", [type]);
+                // Clear additional info if "No pets" is selected
+                if (type === "No pets") {
+                  onUpdate("pet_additional_info", "");
+                  onUpdate("number_of_pets", undefined);
+                }
+                // Clear additional info when switching away from "Other"
+                if (type !== "Other" && selectedPetType === "Other") {
+                  onUpdate("pet_additional_info", "");
+                }
               }}
             />
           ))}
@@ -73,29 +68,27 @@ export const PetsStep: React.FC<PetsStepProps> = ({
               min={1}
             />
 
-            {/* Dog size - only show for Dog */}
-            {selectedPetType === "Dog" && (
-              <div>
-                <StepHeader title="Dog size" />
-                <div className="space-y-4 mt-4">
-                  {DOG_SIZE_OPTIONS.map((size) => (
-                    <SelectionButton
-                      key={size}
-                      label={size}
-                      value={size}
-                      isSelected={dogSize === size}
-                      onClick={() => {
-                        // Single select - if already selected, deselect, otherwise select
-                        if (dogSize === size) {
-                          onUpdate("dog_size", null);
-                        } else {
-                          onUpdate("dog_size", size);
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
+            {/* Specify an animal - show only for "Other" */}
+            {selectedPetType === "Other" && (
+              <InputField
+                label="Specify an animal"
+                value={petAdditionalInfo}
+                onChange={(e) => onUpdate("pet_additional_info", e.target.value)}
+                type="text"
+                placeholder="e.g., Hamster, Rabbit, Bird..."
+                required
+              />
+            )}
+
+            {/* Additional info - show for Dog, Cat, Planning to get a pet (but not for Other) */}
+            {selectedPetType !== "Other" && (
+              <InputField
+                label="Additional info (optional)"
+                value={petAdditionalInfo}
+                onChange={(e) => onUpdate("pet_additional_info", e.target.value)}
+                type="text"
+                placeholder="Any additional information about your pet..."
+              />
             )}
           </div>
         )}

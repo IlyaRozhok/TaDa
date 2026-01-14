@@ -6,10 +6,8 @@ import { Upload, X, Camera, Loader2 } from "lucide-react";
 import { StepWrapper } from "../../../../app/components/preferences/step-components/StepWrapper";
 import { StepContainer } from "../../../../app/components/preferences/step-components/StepContainer";
 import { InputField } from "../../../../app/components/preferences/ui/InputField";
-import { GlassmorphismDropdown } from "../../../../app/components/preferences/ui/GlassmorphismDropdown";
-import { PhoneMaskInput, DateInput, Button } from "../../../../shared/ui";
+import { PhoneMaskInput, DateInput, Button, CountryDropdown } from "../../../../shared/ui";
 import { getCountryByDialCode, getCountryByCode, getDefaultCountry } from "../../../../shared/lib/countries";
-import { NATIONALITY_OPTIONS } from "../../../../shared/lib/nationalities";
 import { User, UpdateUserData } from "../../../../entities/user/model/types";
 import { buildFormDataFromUser } from "../../../../entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
@@ -32,6 +30,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dateOfBirthError, setDateOfBirthError] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -67,6 +66,36 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
     }
   }, [user, parsePhoneNumber]);
 
+  // Validate form - check if all required fields are filled
+  const validateForm = useCallback((): boolean => {
+    const requiredFields: (keyof UpdateUserData)[] = [
+      "first_name",
+      "last_name",
+      "address",
+      "phone",
+      "date_of_birth",
+      "nationality",
+    ];
+
+    // Check all required fields are filled
+    for (const field of requiredFields) {
+      const value = formData[field];
+      if (!value || String(value).trim() === "") {
+        return false;
+      }
+    }
+
+    // Check date of birth validation error
+    if (dateOfBirthError) {
+      return false;
+    }
+
+    return true;
+  }, [formData, dateOfBirthError]);
+
+  // Track form validity
+  const isFormValid = validateForm();
+
   // Track changes to enable/disable save button
   useEffect(() => {
     const initialData = buildFormDataFromUser(user);
@@ -89,6 +118,42 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   };
 
   const handleSave = async () => {
+    // Validate form before saving
+    if (!isFormValid) {
+      return;
+    }
+
+    // Validate date of birth before saving
+    if (dateOfBirthError) {
+      return;
+    }
+
+    // Validate age if date_of_birth is provided
+    if (formData.date_of_birth) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const birthDate = new Date(formData.date_of_birth);
+      birthDate.setHours(0, 0, 0, 0);
+
+      // Check if date is in the future
+      if (birthDate > today) {
+        setDateOfBirthError("Date of birth cannot be in the future");
+        return;
+      }
+
+      // Calculate age
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 18) {
+        setDateOfBirthError("You must be at least 18 years old");
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
       // Prepare update data
@@ -163,6 +228,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
     <StepWrapper
       title="Profile Settings"
       description="Update your profile information and click Save to apply changes."
+      className="pt-12 sm:pt-16 md:pt-20 lg:pt-24"
     >
       <StepContainer>
         {/* Avatar */}
@@ -375,20 +441,72 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
             label="Date of Birth"
             name="date_of_birth"
             value={formData.date_of_birth || null}
-            onChange={(date) => updateFormData({ date_of_birth: date })}
-            maxDate={new Date().toISOString().split("T")[0]} // Today's date in YYYY-MM-DD format
-            minDate="1900-01-01"
+            onChange={(date) => {
+              // Always update the form data, even if invalid
+              // This allows the user to see what they typed and get validation feedback
+              updateFormData({ date_of_birth: date });
+              
+              // Validate age (must be 18+)
+              if (date) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const birthDate = new Date(date);
+                birthDate.setHours(0, 0, 0, 0);
+                
+                // Check if date is in the future
+                if (birthDate > today) {
+                  setDateOfBirthError("Date of birth cannot be in the future");
+                  return;
+                }
+                
+                // Check if date is too old (more than 120 years)
+                const minDate = new Date();
+                minDate.setFullYear(today.getFullYear() - 120);
+                minDate.setHours(0, 0, 0, 0);
+                if (birthDate < minDate) {
+                  setDateOfBirthError("Please enter a valid date of birth");
+                  return;
+                }
+                
+                // Calculate age
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                
+                if (age < 18) {
+                  setDateOfBirthError("You must be at least 18 years old");
+                } else {
+                  setDateOfBirthError(null);
+                }
+              } else {
+                setDateOfBirthError(null);
+              }
+            }}
+            maxDate={(() => {
+              // Maximum date: 18 years ago (user must be 18+)
+              const maxDate = new Date();
+              maxDate.setFullYear(maxDate.getFullYear() - 18);
+              return maxDate.toISOString().split("T")[0];
+            })()}
+            minDate={(() => {
+              // Minimum date: 120 years ago
+              const minDate = new Date();
+              minDate.setFullYear(minDate.getFullYear() - 120);
+              return minDate.toISOString().split("T")[0];
+            })()}
+            error={dateOfBirthError || undefined}
             required
           />
         </div>
 
         {/* Nationality */}
         <div className="mb-6">
-          <GlassmorphismDropdown
+          <CountryDropdown
             label="Nationality"
-            value={formData.nationality ?? ""}
-            options={NATIONALITY_OPTIONS}
-            onChange={(value) => updateFormData({ nationality: value as string })}
+            value={formData.nationality ?? undefined}
+            onChange={(value) => updateFormData({ nationality: value })}
             placeholder="Select nationality"
             required
           />
@@ -399,7 +517,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         <div className="flex justify-end">
           <Button
             onClick={handleSave}
-            disabled={!hasChanges || isSaving}
+            disabled={!isFormValid || !hasChanges || isSaving}
             className="px-8 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSaving ? (

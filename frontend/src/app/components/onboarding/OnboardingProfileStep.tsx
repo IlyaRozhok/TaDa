@@ -11,15 +11,13 @@ import { authAPI } from "../../lib/api";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
 import { InputField } from "../preferences/ui/InputField";
-import { SearchableDropdown } from "../preferences/ui/SearchableDropdown";
 import { StyledDateInput } from "../../../shared/ui/DateInput/StyledDateInput";
-import { PhoneMaskInput, Button } from "../../../shared/ui";
+import { PhoneMaskInput, Button, CountryDropdown } from "../../../shared/ui";
 import {
   getCountryByDialCode,
   getCountryByCode,
   getDefaultCountry,
 } from "../../../shared/lib/countries";
-import { NATIONALITY_OPTIONS } from "../../../shared/lib/nationalities";
 import { buildFormDataFromUser } from "../../../entities/user/lib/utils";
 import { User as UserType } from "../../../entities/user/model/types";
 
@@ -58,6 +56,7 @@ export default function OnboardingProfileStep({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [dateOfBirthError, setDateOfBirthError] = useState<string | null>(null);
   const [phoneCountryCode, setPhoneCountryCode] = useState("GB"); // Default to GB
   const [phoneNumberOnly, setPhoneNumberOnly] = useState(""); // Store phone number without country code
 
@@ -122,9 +121,51 @@ export default function OnboardingProfileStep({
         if (savedData.phone) {
           parsePhoneNumber(savedData.phone);
         }
+        
+        // Validate age for existing date_of_birth
+        if (savedData.date_of_birth) {
+          const ageError = validateAge(savedData.date_of_birth);
+          setDateOfBirthError(ageError);
+        }
       }
     }
   }, [user, parsePhoneNumber]);
+
+  // Validate age (must be 18+)
+  const validateAge = (dateOfBirth: string | null): string | null => {
+    if (!dateOfBirth) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const birthDate = new Date(dateOfBirth);
+    birthDate.setHours(0, 0, 0, 0);
+
+    // Check if date is in the future
+    if (birthDate > today) {
+      return "Date of birth cannot be in the future";
+    }
+
+    // Check if date is too old (more than 120 years)
+    const minDate = new Date();
+    minDate.setFullYear(today.getFullYear() - 120);
+    minDate.setHours(0, 0, 0, 0);
+    if (birthDate < minDate) {
+      return "Please enter a valid date of birth";
+    }
+
+    // Calculate age
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    if (age < 18) {
+      return "You must be at least 18 years old to register";
+    }
+
+    return null;
+  };
 
   // Form validation
   const validateForm = (): boolean => {
@@ -143,17 +184,23 @@ export default function OnboardingProfileStep({
       }
     }
 
+    // Validate age
+    const ageError = validateAge(formData.date_of_birth || null);
+    if (ageError) {
+      return false;
+    }
+
     return true;
   };
 
-  const isFormValid = validateForm();
+  const isFormValid = validateForm() && !dateOfBirthError;
 
   // Notify parent of validation state changes
   useEffect(() => {
     if (onValidationChange) {
       onValidationChange(isFormValid);
     }
-  }, [isFormValid, onValidationChange]);
+  }, [isFormValid, dateOfBirthError, onValidationChange]);
 
   const handleInputChange = useCallback(
     (field: keyof UpdateUserData, value: string | number) => {
@@ -167,12 +214,17 @@ export default function OnboardingProfileStep({
 
   const handleSave = async () => {
     if (!isFormValid) {
-      setError("Please fill in all required fields");
+      if (dateOfBirthError) {
+        setError(dateOfBirthError);
+      } else {
+        setError("Please fill in all required fields");
+      }
       return false;
     }
 
     setIsSaving(true);
     setError(null);
+    setDateOfBirthError(null);
 
     try {
       await authAPI.updateProfile(formData);
@@ -285,22 +337,39 @@ export default function OnboardingProfileStep({
             <StyledDateInput
               label="Date of Birth"
               value={formData.date_of_birth || null}
-              onChange={(date) => handleInputChange("date_of_birth", date)}
-              maxDate={new Date().toISOString().split("T")[0]} // Today's date in YYYY-MM-DD format
-              minDate="1900-01-01"
+              onChange={(date) => {
+                // Always update the form data, even if invalid
+                // This allows the user to see what they typed and get validation feedback
+                handleInputChange("date_of_birth", date);
+                
+                // Validate age after update
+                const ageError = validateAge(date);
+                setDateOfBirthError(ageError);
+              }}
+              maxDate={(() => {
+                // Maximum date: 18 years ago (user must be 18+)
+                const maxDate = new Date();
+                maxDate.setFullYear(maxDate.getFullYear() - 18);
+                return maxDate.toISOString().split("T")[0];
+              })()}
+              minDate={(() => {
+                // Minimum date: 120 years ago
+                const minDate = new Date();
+                minDate.setFullYear(minDate.getFullYear() - 120);
+                return minDate.toISOString().split("T")[0];
+              })()}
+              error={dateOfBirthError || undefined}
             />
           </div>
 
           {/* Nationality */}
           <div className="mb-4">
-            <SearchableDropdown
+            <CountryDropdown
               label="Nationality"
-              value={formData.nationality ?? ""}
-              options={NATIONALITY_OPTIONS}
-              onChange={(value) =>
-                handleInputChange("nationality", value as string)
-              }
+              value={formData.nationality ?? undefined}
+              onChange={(value) => handleInputChange("nationality", value)}
               placeholder="Select nationality"
+              required
             />
           </div>
 

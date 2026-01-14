@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { IMaskInput } from "react-imask";
 
 interface StyledDateInputProps {
   label: string;
@@ -27,6 +28,7 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [displayValue, setDisplayValue] = useState("");
 
   // Initialize component to enable animations after first render
   useEffect(() => {
@@ -36,20 +38,24 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
     }
   }, [isInitialized]);
 
-  // Format date value for input (ensure it's in YYYY-MM-DD format)
-  const formatDateValue = (dateValue: string | null): string => {
+  // Convert YYYY-MM-DD to DD.MM.YYYY for display
+  const formatDateForDisplay = (dateValue: string | null): string => {
     if (!dateValue) return "";
 
     try {
-      // If it's already in YYYY-MM-DD format, return as is
+      // If it's already in YYYY-MM-DD format, convert to DD.MM.YYYY
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-        return dateValue;
+        const [year, month, day] = dateValue.split("-");
+        return `${day}.${month}.${year}`;
       }
 
       // Try to parse and format the date
       const date = new Date(dateValue);
       if (!isNaN(date.getTime())) {
-        return date.toISOString().split("T")[0];
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}`;
       }
 
       return "";
@@ -58,8 +64,55 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
+  // Convert DD.MM.YYYY to YYYY-MM-DD for storage
+  const parseDateFromDisplay = (displayDate: string): string | null => {
+    if (!displayDate) return null;
+
+    // Remove all non-digit characters
+    const digitsOnly = displayDate.replace(/\D/g, "");
+
+    // If we have 8 digits (DDMMYYYY), convert to YYYY-MM-DD
+    if (digitsOnly.length === 8) {
+      const day = digitsOnly.substring(0, 2);
+      const month = digitsOnly.substring(2, 4);
+      const year = digitsOnly.substring(4, 8);
+
+      // Validate date
+      const date = new Date(`${year}-${month}-${day}`);
+      if (!isNaN(date.getTime())) {
+        // Check if parsed date matches input (handles invalid dates like 31.02.2024)
+        if (
+          date.getDate() === parseInt(day) &&
+          date.getMonth() + 1 === parseInt(month) &&
+          date.getFullYear() === parseInt(year)
+        ) {
+          const isoDate = `${year}-${month}-${day}`;
+          // Return the date even if out of range - let parent component validate
+          // This allows parent to show appropriate error messages
+          return isoDate;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Initialize display value from prop value
+  useEffect(() => {
+    setDisplayValue(formatDateForDisplay(value));
+  }, [value]);
+
+  const handleAccept = (maskedValue: string) => {
+    setDisplayValue(maskedValue);
+    // Only parse and update if we have a complete date (10 characters: DD.MM.YYYY)
+    if (maskedValue.length === 10) {
+      const isoDate = parseDateFromDisplay(maskedValue);
+      // Always call onChange with the parsed date (even if null) so parent can validate
+      // This allows parent components to show validation errors for invalid dates
+      onChange(isoDate || "");
+    } else if (maskedValue.length === 0) {
+      onChange("");
+    }
   };
 
   const handleFocus = () => {
@@ -68,29 +121,33 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
 
   const handleBlur = () => {
     setIsFocused(false);
+    // On blur, if the value is incomplete, clear it
+    if (displayValue && displayValue.length < 10) {
+      setDisplayValue("");
+      onChange("");
+    }
   };
 
-  const formattedValue = formatDateValue(value);
-  const hasValue = !!formattedValue;
-
-  // For date inputs, always keep label in "focused" position since date inputs
-  // always show their placeholder format (dd.mm.yyyy, mm/dd/yyyy, etc.)
   const shouldShowFocusedLabel = true;
 
   return (
     <div className={`relative ${className}`}>
       <div className="relative">
-        <input
-          type="date"
-          value={formattedValue}
-          onChange={handleChange}
+        <IMaskInput
+          mask="00.00.0000"
+          value={displayValue}
+          onAccept={handleAccept}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          min={minDate}
-          max={maxDate}
           disabled={disabled}
-          required={required}
-          className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden ${
+          placeholder="DD.MM.YYYY"
+          inputRef={(el) => {
+            if (el) {
+              // Ensure input type is text to hide calendar picker on desktop
+              el.type = "text";
+            }
+          }}
+          className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 border-0 appearance-none [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden ${
             error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
           }`}
         />
@@ -106,7 +163,6 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
           }`}
         >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       </div>
 

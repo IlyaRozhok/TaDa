@@ -21,3 +21,6 @@ export { PhoneMaskInput } from "./PhoneMaskInput";
 export type { PhoneMaskInputProps } from "./PhoneMaskInput";
 
 export { DateInput, StyledDateInput } from "./DateInput";
+
+export { default as CountryDropdown } from "./CountryDropdown/CountryDropdown";
+export type { CountryDropdownProps } from "./CountryDropdown/CountryDropdown";

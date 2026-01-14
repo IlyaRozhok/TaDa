@@ -114,7 +114,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       pets: [],
       pet_type_preferences: [], // UI alias
       number_of_pets: undefined,
-      dog_size: "", // UI alias
+      pet_additional_info: "", // UI field for pet additional info
       // Step 8 - Amenities
       amenities: [],
       amenities_preferences: [], // UI alias
@@ -129,10 +129,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       // Step 11 - About You
       preferred_address: "",
       additional_info: "",
-      // Legacy fields (for backward compatibility)
-      primary_postcode: "",
-      secondary_location: "",
-      commute_location: "",
+      // Legacy fields (for backward compatibility - only keeping used ones)
       commute_time_walk: undefined,
       commute_time_cycle: undefined,
       commute_time_tube: undefined,
@@ -140,19 +137,6 @@ export default function usePreferences(currentStepOffset: number = 0) {
       max_bedrooms: undefined,
       min_bathrooms: undefined,
       max_bathrooms: undefined,
-      property_type: [],
-      building_style: [],
-      designer_furniture: false,
-      house_shares: "",
-      date_property_added: "",
-      lifestyle_features: [],
-      social_features: [],
-      work_features: [],
-      convenience_features: [],
-      pet_friendly_features: [],
-      luxury_features: [],
-      pet_policy_preferences: undefined,
-      pets_legacy: "",
     },
   });
 

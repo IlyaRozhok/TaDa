@@ -36,7 +36,7 @@ const FURNISHING_OPTIONS = [
 ];
 
 // Outdoor space options (multi-select)
-const OUTDOOR_SPACE_OPTIONS = ["Balcony", "Teracce", "Outdoor Space"];
+const OUTDOOR_SPACE_OPTIONS = ["Balcony", "Terrace", "Outdoor Space"];
 
 export const BudgetStep: React.FC<BudgetStepProps> = ({
   formData,

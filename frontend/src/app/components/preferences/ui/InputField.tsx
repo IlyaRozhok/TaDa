@@ -148,7 +148,6 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             }`}
           >
             {label}
-            {required && <span className="text-red-500 ml-1">*</span>}
           </label>
         </div>
         {tooltip && (

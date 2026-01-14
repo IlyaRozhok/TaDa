@@ -60,13 +60,10 @@ export interface PreferencesFormData {
 
   // ==================== STEP 10: ABOUT YOU ====================
   preferred_address?: string;
-  occupation?: string;
   additional_info?: string;
 
   // ==================== LEGACY FIELDS (for backward compatibility) ====================
-  primary_postcode?: string;
-  secondary_location?: string;
-  commute_location?: string;
+  // Only keeping fields that are used in transformations or matching
   commute_time_walk?: number;
   commute_time_cycle?: number;
   commute_time_tube?: number;
@@ -74,18 +71,6 @@ export interface PreferencesFormData {
   max_bedrooms?: number;
   min_bathrooms?: number;
   max_bathrooms?: number;
-  property_type?: string[];
-  building_style?: string[];
-  designer_furniture?: boolean;
-  house_shares?: string;
-  date_property_added?: string;
-  lifestyle_features?: string[];
-  social_features?: string[];
-  work_features?: string[];
-  convenience_features?: string[];
-  pet_friendly_features?: string[];
-  luxury_features?: string[];
-  pets_legacy?: string; // old single string format
 
   // ==================== UI-ONLY FIELDS (not sent to backend) ====================
   // These are used by UI components and transformed before sending
@@ -99,7 +84,7 @@ export interface PreferencesFormData {
   selected_bills?: string; // UI alias for bills
   tenant_type_preferences?: string[]; // UI alias for tenant_types
   pet_type_preferences?: string[]; // UI field, transformed to pets[]
-  dog_size?: string; // UI field, used in pets[] transformation
+  pet_additional_info?: string; // UI field for pet additional info, stored in pets[].customType
   amenities_preferences?: string[]; // UI alias for amenities
   additional_preferences?: string[]; // UI field for smoking_area and is_concierge
 }
@@ -242,17 +227,12 @@ export function transformFormDataForApi(
     apiData.property_types = formData.property_type_preferences;
   }
 
-  // Outdoor space transformation (case-insensitive)
+  // Outdoor space transformation (case-insensitive, handle UI values)
   if (formData.outdoor_space_preferences !== undefined) {
-    apiData.outdoor_space = formData.outdoor_space_preferences.some((p) =>
-      p.toLowerCase().includes("outdoor space")
-    );
-    apiData.balcony = formData.outdoor_space_preferences.some(
-      (p) => p.toLowerCase() === "balcony"
-    );
-    apiData.terrace = formData.outdoor_space_preferences.some(
-      (p) => p.toLowerCase() === "terrace"
-    );
+    const prefs = formData.outdoor_space_preferences.map((p) => p.toLowerCase().trim());
+    apiData.outdoor_space = prefs.some((p) => p.includes("outdoor space"));
+    apiData.balcony = prefs.some((p) => p === "balcony");
+    apiData.terrace = prefs.some((p) => p === "terrace" || p === "teracce"); // Handle typo
   }
 
   // Building style transformation
@@ -277,7 +257,11 @@ export function transformFormDataForApi(
 
   // Pets transformation (normalize to dog | cat | other; ignore unknowns)
   const normalizePet = (pet: string) => {
-    const p = pet?.toString().toLowerCase();
+    const p = pet?.toString().toLowerCase().trim();
+    // Handle "No pets" and "Planning to get a pet" - these should not create pets
+    if (p === "no pets" || p === "planning to get a pet") {
+      return null;
+    }
     if (p === "dog" || p === "cat" || p === "other") return p as Pet["type"];
     return null;
   };
@@ -291,11 +275,18 @@ export function transformFormDataForApi(
     if (normalizedPets.length > 0) {
       apiData.pets = normalizedPets.map((petType) => {
         const pet: Pet = { type: petType };
-        if (petType === "dog" && formData.dog_size) {
-          pet.size = formData.dog_size as Pet["size"];
+        // Add customType (additional info) if provided
+        if (formData.pet_additional_info && formData.pet_additional_info.trim()) {
+          pet.customType = formData.pet_additional_info.trim();
         }
         return pet;
       });
+      // Set pet_policy to true if we have pets
+      apiData.pet_policy = true;
+    } else {
+      // If no pets selected or "No pets" selected, set pet_policy to false
+      apiData.pets = [];
+      apiData.pet_policy = false;
     }
   }
 
@@ -403,26 +394,32 @@ export function transformApiDataForForm(
     selected_bills: apiData.bills || "",
     tenant_type_preferences: apiData.tenant_types || [],
     pet_type_preferences: [],
+    pet_additional_info: "",
     amenities_preferences: apiData.amenities || [],
     additional_preferences: [],
-    dog_size: "",
   };
 
-  // Outdoor space preferences
+  // Outdoor space preferences - map to UI format
   if (apiData.outdoor_space)
-    formData.outdoor_space_preferences.push("outdoor_space");
-  if (apiData.balcony) formData.outdoor_space_preferences.push("balcony");
-  if (apiData.terrace) formData.outdoor_space_preferences.push("terrace");
+    formData.outdoor_space_preferences.push("Outdoor Space");
+  if (apiData.balcony) formData.outdoor_space_preferences.push("Balcony");
+  if (apiData.terrace) formData.outdoor_space_preferences.push("Terrace");
 
   // Pet preferences
-  if (apiData.pets) {
+  if (apiData.pets && apiData.pets.length > 0) {
     formData.pet_type_preferences = apiData.pets.map((pet) => {
       const petType = pet.type;
-      if (petType === "dog" && pet.size) {
-        formData.dog_size = pet.size;
+      // Extract customType (additional info) from first pet if available
+      if (pet.customType && !formData.pet_additional_info) {
+        formData.pet_additional_info = pet.customType;
       }
-      return petType;
+      // Capitalize first letter for UI display
+      return petType.charAt(0).toUpperCase() + petType.slice(1);
     });
+  } else {
+    // If no pets or pet_policy is false, set to "No pets"
+    formData.pet_type_preferences = [];
+    formData.pet_additional_info = "";
   }
 
   // number_of_pets roundtrip
