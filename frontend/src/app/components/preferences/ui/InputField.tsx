@@ -69,22 +69,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
       }
     }, [props.value, isInitialized]);
 
-    const inputElement = (
-      <input
-        ref={ref}
-        {...props}
-        className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
-          error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
-        } ${
-          props.type === "number"
-            ? "[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-            : ""
-        } ${className}`}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onChange={handleChange}
-      />
-    );
+    const stringValue = props.value != null ? String(props.value) : "";
 
     return (
       <div className="relative">
@@ -97,20 +82,19 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
               tooltip={tooltip}
               error={error}
               className={className}
-              value={props.value || ""}
-              onChange={(value) => {
+              value={stringValue}
+              onChange={(value: string) => {
                 const event = {
                   target: { value },
                 } as React.ChangeEvent<HTMLInputElement>;
                 handleChange(event);
               }}
-              {...props}
             />
           ) : shouldUseMask ? (
             <IMaskInput
               ref={ref}
               mask={phoneMask}
-              value={props.value || ""}
+              value={stringValue}
               onAccept={(value: string) => {
                 const event = {
                   target: { value },
@@ -153,7 +137,9 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         {tooltip && (
           <p className="text-xs text-gray-500 mt-1 px-6">{tooltip}</p>
         )}
-        <ErrorMessage error={error} />
+        <div className="min-h-[20px] mt-1">
+          <ErrorMessage error={error} />
+        </div>
       </div>
     );
   }

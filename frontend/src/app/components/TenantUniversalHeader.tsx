@@ -14,6 +14,7 @@ interface TenantUniversalHeaderProps {
   onSaveClick?: () => void;
   showPreferencesButton?: boolean;
   showTenantCvLink?: boolean;
+  showFavouritesButton?: boolean;
 }
 
 export default function TenantUniversalHeader({
@@ -22,6 +23,7 @@ export default function TenantUniversalHeader({
   onSaveClick,
   showPreferencesButton = true,
   showTenantCvLink = true,
+  showFavouritesButton = true,
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
   const user = useSelector(selectUser);
@@ -110,12 +112,14 @@ export default function TenantUniversalHeader({
           )}
 
           {/* Favourites */}
-          <button
-            onClick={handleFavouritesClick}
-            className="p-1.5 sm:p-2 cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-          >
-            <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+          {showFavouritesButton && (
+            <button
+              onClick={handleFavouritesClick}
+              className="p-1.5 sm:p-2 cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            >
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          )}
 
           {/* Language Dropdown */}
           <div className="relative language-dropdown" ref={dropdownRef}>

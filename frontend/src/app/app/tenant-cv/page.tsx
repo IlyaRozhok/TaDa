@@ -57,6 +57,7 @@ export default function TenantCvPage() {
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
         showPreferencesButton={false}
+        showFavouritesButton={false}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 mt-6">
