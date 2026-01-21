@@ -9,6 +9,7 @@ interface DateInputProps {
   name: string;
   value: string | null;
   onChange: (date: string) => void;
+  onBlur?: () => void;
   error?: string;
   required?: boolean;
   className?: string;
@@ -24,6 +25,7 @@ export const DateInput: React.FC<DateInputProps> = ({
   name,
   value,
   onChange,
+  onBlur,
   error,
   required = false,
   className = "",
@@ -75,6 +77,12 @@ export const DateInput: React.FC<DateInputProps> = ({
   const parseDateFromDisplay = (displayDate: string): string | null => {
     if (!displayDate) return null;
 
+    // Check if format matches DD.MM.YYYY (10 characters with dots)
+    if (displayDate.length !== 10 || !/^\d{2}\.\d{2}\.\d{4}$/.test(displayDate)) {
+      // If format doesn't match, return special marker for invalid format
+      return "INVALID_FORMAT";
+    }
+
     // Remove all non-digit characters
     const digitsOnly = displayDate.replace(/\D/g, "");
 
@@ -83,6 +91,16 @@ export const DateInput: React.FC<DateInputProps> = ({
       const day = digitsOnly.substring(0, 2);
       const month = digitsOnly.substring(2, 4);
       const year = digitsOnly.substring(4, 8);
+
+      // Validate date ranges
+      const dayNum = parseInt(day);
+      const monthNum = parseInt(month);
+      const yearNum = parseInt(year);
+
+      // Basic range validation
+      if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > 2100) {
+        return "INVALID_FORMAT";
+      }
 
       // Validate date
       const date = new Date(`${year}-${month}-${day}`);
@@ -101,7 +119,7 @@ export const DateInput: React.FC<DateInputProps> = ({
       }
     }
 
-    return null;
+    return "INVALID_FORMAT";
   };
 
   // Initialize display value from prop value
@@ -114,12 +132,13 @@ export const DateInput: React.FC<DateInputProps> = ({
     // Only parse and update if we have a complete date (10 characters: DD.MM.YYYY)
     if (maskedValue.length === 10) {
       const isoDate = parseDateFromDisplay(maskedValue);
-      // Always call onChange with the parsed date (even if null) so parent can validate
+      // Pass the parsed date (or "INVALID_FORMAT" marker) so parent can validate
       // This allows parent components to show validation errors for invalid dates
       onChange(isoDate || "");
     } else if (maskedValue.length === 0) {
       onChange("");
     }
+    // If incomplete (less than 10 chars), don't call onChange to avoid validation while typing
   };
 
   const handleFocus = () => {
@@ -132,6 +151,10 @@ export const DateInput: React.FC<DateInputProps> = ({
     if (displayValue && displayValue.length < 10) {
       setDisplayValue("");
       onChange("");
+    }
+    // Call external onBlur handler if provided
+    if (onBlur) {
+      onBlur();
     }
   };
 
