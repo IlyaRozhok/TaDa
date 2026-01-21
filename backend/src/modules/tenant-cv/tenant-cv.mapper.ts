@@ -63,8 +63,9 @@ export const buildTenantCvResponse = (
 
   const meta = {
     headline: cv?.headline || null,
-    kyc_status: cv?.kyc_status || null,
-    referencing_status: cv?.referencing_status || null,
+    // Prefer preferences over tenant_cvs for kyc/referencing (with fallback for backward compatibility)
+    kyc_status: preferences?.kyc_status || cv?.kyc_status || null,
+    referencing_status: preferences?.referencing_status || cv?.referencing_status || null,
     move_in_date: preferences?.move_in_date
       ? new Date(preferences.move_in_date as any).toISOString()
       : null,

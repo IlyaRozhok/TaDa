@@ -10,6 +10,8 @@ import {
   Info,
   Share,
   BookOpen,
+  Baby,
+  Heart,
 } from "lucide-react";
 import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
 import { buildDisplayName, buildInitials } from "../../utils/displayName";
@@ -33,6 +35,17 @@ const SectionTitle = ({ title }: { title: string }) => (
 const Pill = ({ children }: { children: React.ReactNode }) => (
   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-800">
     {children}
+  </span>
+);
+
+const StatusBadge = ({ label }: { label: string }) => (
+  <span className="inline-flex font-semibold items-center gap-2 px-6 py-3 rounded-3xl border-[1.5] border-gray-300 bg-white text-sm text-gray-900">
+    <span>{label}</span>
+    <img 
+      src="/warning-triangle.svg" 
+      alt="warning" 
+      className="w-4 h-4 flex-shrink-0" 
+    />
   </span>
 );
 
@@ -107,12 +120,11 @@ export function TenantCvView({
     (meta as any)?.avatar_url ||
     null;
 
+  // Always show KYC and Referencing badges, even if status is null
   const badges = [
-    meta.kyc_status ? { label: "KYC", value: meta.kyc_status } : null,
-    meta.referencing_status
-      ? { label: "Referencing", value: meta.referencing_status }
-      : null,
-  ].filter(Boolean) as { label: string; value: string }[];
+    { label: "KYC", value: meta.kyc_status || null },
+    { label: "Referencing", value: meta.referencing_status || null },
+  ];
 
   const smokeBadge =
     meta.smoker && meta.smoker !== "yes"
@@ -123,9 +135,38 @@ export function TenantCvView({
 
   const petsBadge = meta.pets || null;
 
+  // Lifestyle attributes
+  const childrenCount = preferences?.children_count;
+  const childrenLabel =
+    childrenCount === "no"
+      ? "No child"
+      : childrenCount === "yes-1-child"
+      ? "1 child"
+      : childrenCount === "yes-2-children"
+      ? "2 children"
+      : childrenCount === "yes-3-plus-children"
+      ? "3+ children"
+      : null;
+
+  const familyStatus = preferences?.family_status;
+  const marriedLabel =
+    familyStatus === "couple" || familyStatus === "couple-with-children"
+      ? "Married"
+      : null;
+
   const readyLabel =
     meta.headline ||
     (moveIn ? `Ready to move from ${moveIn}` : "Ready to move");
+
+  // Building types for "Ready to move" section
+  const buildingTypes = preferences?.building_types || [];
+  const buildingTypesLabels = buildingTypes
+    .map((type: string) => {
+      if (type === "btr") return "BTR";
+      if (type === "co-living") return "Co-living";
+      return type;
+    })
+    .filter(Boolean);
 
   const priceRange = formatCurrencyRange(
     preferences?.min_price,
@@ -192,43 +233,51 @@ export function TenantCvView({
                 initials
               )}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {displayName}
-              </h1>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900 mr-10">
+                  {displayName}
+                </h1>
+                {badges.map((b) => (
+                  <StatusBadge key={b.label} label={b.label} />
+                ))}
+              </div>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-700">
                 {profile.age_years ? (
                   <span>{profile.age_years} Years old</span>
                 ) : null}
                 {onPlatform ? (
                   <>
-                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-900">•</span>
                     <span>On platform from {onPlatform}</span>
                   </>
                 ) : null}
+              </div>
+              {/* Lifestyle attributes */}
+              <div className="flex flex-wrap items-center gap-4 mt-3">
                 {smokeBadge ? (
-                  <span className="flex items-center gap-1 text-gray-800">
-                    <Ban className="w-4 h-4" /> {smokeBadge}
+                  <span className="flex items-center gap-1.5 text-gray-800">
+                    <Ban className="w-4 h-4" />
+                    {smokeBadge}
                   </span>
                 ) : null}
                 {petsBadge ? (
-                  <span className="flex items-center gap-1 text-gray-800">
-                    <PawPrint className="w-4 h-4" /> {petsBadge}
+                  <span className="flex items-center capitalize gap-1.5 text-gray-800">
+                    <PawPrint className="w-4 h-4" />
+                    {petsBadge}
                   </span>
                 ) : null}
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {badges.map((b) => (
-                  <Pill key={b.label}>
-                    <Shield className="w-4 h-4" />
-                    {b.label}: {b.value}
-                  </Pill>
-                ))}
-                {readyLabel ? (
-                  <Pill>
-                    <CalendarDays className="w-4 h-4" />
-                    {readyLabel}
-                  </Pill>
+                {childrenLabel ? (
+                  <span className="flex items-center gap-1.5 text-gray-800">
+                    <Baby className="w-4 h-4" />
+                    {childrenLabel}
+                  </span>
+                ) : null}
+                {marriedLabel ? (
+                  <span className="flex items-center gap-1.5 text-gray-800">
+                    <Heart className="w-4 h-4" />
+                    {marriedLabel}
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -239,7 +288,7 @@ export function TenantCvView({
               <button
                 onClick={onShareClick}
                 disabled={shareLoading}
-                className="inline-flex cursor-pointer items-center gap-2 px-5 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+                className="inline-flex cursor-pointer items-center gap-4 px-6 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
               >
                 {shareLoading ? (
                   <Info className="w-4 h-4 animate-pulse" />
@@ -252,21 +301,31 @@ export function TenantCvView({
           </div>
         </div>
 
-        {/* Divider bar under header */}
-        <div className="mt-6 h-[1px] bg-gray-200/70 w-full" />
+        {/* Separator after lifestyle attributes */}
+        <div className="mt-6 h-[15px] bg-gray-100/70 w-full rounded-3xl" />
+
+        {/* Ready to move section */}
+        {readyLabel && (
+          <div className="mt-6 flex items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-green-500 bg-green-50/50">
+              <CalendarDays className="w-4 h-4 text-green-700" />
+              <span className="font-medium text-green-900">{readyLabel}</span>
+              {buildingTypesLabels.length > 0 && (
+                <>
+                  <span className="text-green-700">→</span>
+                  <span className="text-green-800">
+                    {buildingTypesLabels.join(", ")}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Preferences overview */}
         {hasPreferences && (
           <div className="mt-10 space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
-              {readyLabel ? (
-                <Pill>
-                  <CalendarDays className="w-4 h-4" />
-                  {readyLabel}
-                </Pill>
-              ) : null}
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Column 1 */}
@@ -365,6 +424,11 @@ export function TenantCvView({
               </div>
             )}
           </div>
+        )}
+
+        {/* Separator after amenities */}
+        {hasAmenities && (
+          <div className="mt-6 h-[1px] bg-gray-200/70 w-full" />
         )}
 
         {/* About / Hobbies / Rent history */}

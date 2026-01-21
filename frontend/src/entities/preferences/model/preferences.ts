@@ -11,6 +11,10 @@ export interface PreferencesFormData {
   family_status?: string;
   children_count?: string;
 
+  // ==================== KYC & REFERENCING ====================
+  kyc_status?: string;
+  referencing_status?: string;
+
   // ==================== STEP 1: LOCATION ====================
   preferred_areas?: string[];
   preferred_districts?: string[];

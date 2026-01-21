@@ -103,6 +103,24 @@ export class CreatePreferencesDto {
   ])
   children_count?: string;
 
+  // ==================== KYC & REFERENCING ====================
+
+  @ApiPropertyOptional({
+    description: "KYC status badge",
+    example: "pending",
+  })
+  @IsOptional()
+  @IsString()
+  kyc_status?: string;
+
+  @ApiPropertyOptional({
+    description: "Referencing status badge",
+    example: "pending",
+  })
+  @IsOptional()
+  @IsString()
+  referencing_status?: string;
+
   // ==================== STEP 1: LOCATION ====================
 
   @ApiPropertyOptional({

@@ -424,6 +424,24 @@ export class Preferences {
   @Column({ nullable: true })
   children_count?: string;
 
+  // ==================== KYC & REFERENCING ====================
+
+  @ApiProperty({
+    description: "KYC status badge",
+    example: "pending",
+    required: false,
+  })
+  @Column({ nullable: true })
+  kyc_status?: string | null;
+
+  @ApiProperty({
+    description: "Referencing status badge",
+    example: "pending",
+    required: false,
+  })
+  @Column({ nullable: true })
+  referencing_status?: string | null;
+
   // ==================== STEP 10: ABOUT YOU ====================
 
   @ApiProperty({
