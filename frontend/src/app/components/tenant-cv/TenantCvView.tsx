@@ -12,6 +12,16 @@ import {
   BookOpen,
   Baby,
   Heart,
+  MapPin,
+  Train,
+  Building2,
+  Sun,
+  Ruler,
+  Zap,
+  Users,
+  Bed,
+  Bath,
+  Sofa,
 } from "lucide-react";
 import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
 import { buildDisplayName, buildInitials } from "../../utils/displayName";
@@ -103,6 +113,7 @@ export function TenantCvView({
 }: TenantCvViewProps) {
   const { profile, meta, preferences } = data;
   const moveIn = dateToDisplay(meta.move_in_date);
+  const moveOut = dateToDisplay(meta.move_out_date);
   const onPlatform = dateToDisplay(meta.created_at);
   const displayName = buildDisplayName({
     tenantProfile: {
@@ -154,9 +165,31 @@ export function TenantCvView({
       ? "Married"
       : null;
 
-  const readyLabel =
-    meta.headline ||
-    (moveIn ? `Ready to move from ${moveIn}` : "Ready to move");
+  // Ready label without date
+  const readyLabel = meta.headline || "Ready to move";
+  
+  // Date range for display on the right
+  const readyMoveDateRange = moveIn 
+    ? `Ready to move ${moveIn}${moveOut ? ` - to ${moveOut}` : ''}`
+    : null;
+
+  // Format duration for display
+  const formatDuration = (duration?: string | null): string | null => {
+    if (!duration) return null;
+    const durationMap: Record<string, string> = {
+      "long_term": "Long term 6+ m",
+      "short_term": "Short term 1+ m",
+      "flexible": "Flexible",
+      "6_months": "6 months",
+      "12_months": "12 months",
+      "18_months": "18 months",
+      "24_months": "24 months",
+      "any": "Any",
+    };
+    return durationMap[duration] || duration;
+  };
+
+  const durationLabel = formatDuration(preferences?.let_duration);
 
   // Building types for "Ready to move" section
   const buildingTypes = preferences?.building_types || [];
@@ -177,6 +210,37 @@ export function TenantCvView({
   const preferredDistricts = preferences?.preferred_districts?.join(", ");
   const preferredMetro = preferences?.preferred_metro_stations?.join(", ");
   const preferredAddress = preferences?.preferred_address;
+
+  // Outdoor space preferences
+  const outdoorSpaceItems = [];
+  if (preferences?.balcony) outdoorSpaceItems.push("Balcony");
+  if (preferences?.terrace) outdoorSpaceItems.push("Terrace");
+  if (preferences?.outdoor_space && !preferences?.balcony && !preferences?.terrace) {
+    outdoorSpaceItems.push("Outdoor space");
+  }
+  const outdoorSpaceLabel = outdoorSpaceItems.length > 0 ? outdoorSpaceItems.join(", ") : null;
+
+  // Meters range
+  const metersRange =
+    preferences?.min_square_meters && preferences?.max_square_meters
+      ? `${preferences.min_square_meters} msq - ${preferences.max_square_meters} msq`
+      : preferences?.min_square_meters
+      ? `${preferences.min_square_meters} msq+`
+      : preferences?.max_square_meters
+      ? `up to ${preferences.max_square_meters} msq`
+      : null;
+
+  // Bills label
+  const billsLabel = preferences?.bills
+    ? preferences.bills === "included"
+      ? "Include"
+      : preferences.bills === "excluded"
+      ? "Exclude"
+      : preferences.bills.charAt(0).toUpperCase() + preferences.bills.slice(1)
+    : null;
+
+  // Tenant types
+  const tenantTypesLabel = preferences?.tenant_types?.join(", ") || null;
 
   const amenityTags = [
     ...(preferences?.amenities || []),
@@ -305,20 +369,40 @@ export function TenantCvView({
         <div className="mt-6 h-[15px] bg-gray-100/70 w-full rounded-3xl" />
 
         {/* Ready to move section */}
-        {readyLabel && (
-          <div className="mt-6 flex items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-green-500 bg-green-50/50">
-              <CalendarDays className="w-4 h-4 text-green-700" />
-              <span className="font-medium text-green-900">{readyLabel}</span>
-              {buildingTypesLabels.length > 0 && (
-                <>
-                  <span className="text-green-700">→</span>
-                  <span className="text-green-800">
-                    {buildingTypesLabels.join(", ")}
-                  </span>
-                </>
-              )}
-            </div>
+        {(readyLabel || buildingTypesLabels.length > 0 || readyMoveDateRange) && (
+          <div className="mt-6 flex items-center gap-3 flex-wrap">
+            {/* Ready to move badge with green border and duration */}
+            {readyLabel && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-[1.5px] border-green-500 bg-white">
+                <Home className="w-4 h-4 text-gray-900" />
+                <span className="font-medium text-gray-900">
+                  {readyLabel}
+                </span>
+                {durationLabel && (
+                  <>
+                    <span className="text-gray-900">-</span>
+                    <span className="text-gray-900">{durationLabel}</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Building style preferences badge without green border */}
+            {buildingTypesLabels.length > 0 && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-[1.5px] border-gray-300 bg-white">
+                <Building2 className="w-4 h-4 text-gray-900" />
+                <span className="font-medium text-gray-900">
+                  {buildingTypesLabels.join(", ")}
+                </span>
+              </div>
+            )}
+
+            {/* Date range text on the right, aligned to container */}
+            {readyMoveDateRange && (
+              <span className="ml-auto font-medium text-gray-900">
+                {readyMoveDateRange}
+              </span>
+            )}
           </div>
         )}
 
@@ -327,56 +411,58 @@ export function TenantCvView({
           <div className="mt-10 space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Preferences</h2>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            {/* Price section */}
+            <div className="bg-white">
+              <div className="text-xs tracking-wide text-gray-500 mb-1">
+                Price per month
+              </div>
+              <div className="text-3xl font-semibold tracking-wide text-gray-900">
+                {priceRange}
+              </div>
+            </div>
+
+            {/* Three columns */}
+            <div className="grid md:grid-cols-3 gap-6">
               {/* Column 1 */}
               <div className="bg-white space-y-4">
-                <div>
-                  <div className="text-sm uppercase text-gray-500">
-                    Price per month
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-1">
-                    {priceRange}
-                  </div>
-                </div>
-
-                <div className="space-y-3 text-gray-800">
+                <div className="space-y-4">
                   {preferredAreas ? (
                     <div className="flex items-start gap-2">
-                      <Home className="w-4 h-4 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-500">Area</div>
-                        <div className="font-medium">{preferredAreas}</div>
+                      <Home className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-500 mb-0.5">Area</div>
+                        <div className="font-medium text-gray-900">{preferredAreas}</div>
                       </div>
                     </div>
                   ) : null}
                   {preferredDistricts ? (
                     <div className="flex items-start gap-2">
-                      <Home className="w-4 h-4 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-500">District</div>
-                        <div className="font-medium">{preferredDistricts}</div>
+                      <Home className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-500 mb-0.5">District</div>
+                        <div className="font-medium text-gray-900">{preferredDistricts}</div>
                       </div>
                     </div>
                   ) : null}
                   {preferredMetro ? (
                     <div className="flex items-start gap-2">
-                      <Home className="w-4 h-4 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-500">
+                      <Train className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-500 mb-0.5">
                           Metro Station
                         </div>
-                        <div className="font-medium">{preferredMetro}</div>
+                        <div className="font-medium text-gray-900">{preferredMetro}</div>
                       </div>
                     </div>
                   ) : null}
                   {preferredAddress ? (
                     <div className="flex items-start gap-2">
-                      <Home className="w-4 h-4 mt-1" />
-                      <div>
-                        <div className="text-sm text-gray-500">
+                      <MapPin className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-500 mb-0.5">
                           Desired Address
                         </div>
-                        <div className="font-medium">{preferredAddress}</div>
+                        <div className="font-medium text-gray-900">{preferredAddress}</div>
                       </div>
                     </div>
                   ) : null}
@@ -384,31 +470,83 @@ export function TenantCvView({
               </div>
 
               {/* Column 2 */}
-              <div className="bg-white space-y-4 md:pt-6">
-                <div className="space-y-2 text-gray-800">
-                  <div className="text-sm text-gray-500">Property type</div>
-                  <div className="font-medium">
-                    {preferences?.property_types?.join(", ") || "Not set"}
+              <div className="bg-white space-y-4">
+                <div className="flex items-start gap-2">
+                  <Home className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="text-sm text-gray-500">Property type</div>
+                    <div className="font-medium text-gray-900">
+                      {preferences?.property_types?.join(", ") || "Not set"}
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2 text-gray-800">
-                  <div className="text-sm text-gray-500">Rooms</div>
-                  <div className="font-medium">
-                    {preferences?.bedrooms?.join(", ") || "Not set"}
+                <div className="flex items-start gap-2">
+                  <Bed className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="text-sm text-gray-500">Rooms</div>
+                    <div className="font-medium text-gray-900">
+                      {preferences?.bedrooms?.join(", ") || "Not set"}
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2 text-gray-800">
-                  <div className="text-sm text-gray-500">Bathrooms</div>
-                  <div className="font-medium">
-                    {preferences?.bathrooms?.join(", ") || "Not set"}
+                <div className="flex items-start gap-2">
+                  <Bath className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="text-sm text-gray-500">Bathrooms</div>
+                    <div className="font-medium text-gray-900">
+                      {preferences?.bathrooms?.join(", ") || "Not set"}
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2 text-gray-800">
-                  <div className="text-sm text-gray-500">Furnishing</div>
-                  <div className="font-medium">
-                    {preferences?.furnishing?.join(", ") || "Not set"}
+                <div className="flex items-start gap-2">
+                  <Sofa className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="text-sm text-gray-500">Furnishing</div>
+                    <div className="font-medium text-gray-900">
+                      {preferences?.furnishing?.join(", ") || "Not set"}
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Column 3 */}
+              <div className="bg-white space-y-4">
+                {outdoorSpaceLabel && (
+                  <div className="flex items-start gap-2">
+                    <Sun className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-500 mb-0.5">Outdoor space</div>
+                      <div className="font-medium text-gray-900">{outdoorSpaceLabel}</div>
+                    </div>
+                  </div>
+                )}
+                {metersRange && (
+                  <div className="flex items-start gap-2">
+                    <Ruler className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-500 mb-0.5">Meters</div>
+                      <div className="font-medium text-gray-900">{metersRange}</div>
+                    </div>
+                  </div>
+                )}
+                {billsLabel && (
+                  <div className="flex items-start gap-2">
+                    <Zap className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-500 mb-0.5">Bills</div>
+                      <div className="font-medium text-gray-900">{billsLabel}</div>
+                    </div>
+                  </div>
+                )}
+                {tenantTypesLabel && (
+                  <div className="flex items-start gap-2">
+                    <Users className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-500 mb-0.5">Tenant Type</div>
+                      <div className="font-medium text-gray-900">{tenantTypesLabel}</div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -428,7 +566,7 @@ export function TenantCvView({
 
         {/* Separator after amenities */}
         {hasAmenities && (
-          <div className="mt-6 h-[1px] bg-gray-200/70 w-full" />
+          <div className="mt-6 h-[15px] bg-gray-100/70 w-full rounded-3xl" />
         )}
 
         {/* About / Hobbies / Rent history */}
@@ -456,7 +594,6 @@ export function TenantCvView({
 
           <div className="bg-white">
             <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="w-5 h-5 text-gray-700" />
               <h2 className="text-2xl font-bold text-gray-900">Rent History</h2>
             </div>
             {hasRentHistory ? (
