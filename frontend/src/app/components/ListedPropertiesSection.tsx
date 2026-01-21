@@ -75,7 +75,7 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex text-slate-900 items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+        className="flex text-slate-900 items-center gap-2 px-4 py-2 border border-gray-300 rounded-3xl bg-white hover:bg-gray-50 transition-colors"
       >
         <span className="font-medium">{currentLabel}</span>
         <ChevronDown className="w-4 h-4" />

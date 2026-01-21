@@ -302,10 +302,25 @@ export default function usePreferences(currentStepOffset: number = 0) {
   const saveSingleField = useCallback(
     async (field: keyof PreferencesFormData, value: unknown) => {
       try {
-        // Transform the field value to API format
+        // For pet-related fields, we need to include both pet_type_preferences and pet_additional_info
+        // so the transformation can properly construct the pets array with customType
         const formData: Partial<PreferencesFormData> = {
           [field]: value,
         } as Partial<PreferencesFormData>;
+        
+        // Include related fields needed for transformation
+        if (field === "pet_additional_info") {
+          const currentPetTypes = getValues("pet_type_preferences");
+          if (currentPetTypes) {
+            formData.pet_type_preferences = currentPetTypes;
+          }
+        } else if (field === "pet_type_preferences") {
+          const currentPetAdditionalInfo = getValues("pet_additional_info");
+          if (currentPetAdditionalInfo !== undefined) {
+            formData.pet_additional_info = currentPetAdditionalInfo;
+          }
+        }
+        
         const transformedData = transformFormDataForApi(formData);
 
         // Process all transformed keys (handle empty arrays, nulls, etc.)

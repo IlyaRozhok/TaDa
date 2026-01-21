@@ -272,6 +272,11 @@ export function transformFormDataForApi(
         ?.map(normalizePet)
         .filter((v): v is Pet["type"] => Boolean(v)) || [];
 
+    // Check if "Planning to get a pet" is selected
+    const hasPlanningToGetPet = formData.pet_type_preferences.some(
+      (p) => p?.toString().toLowerCase().trim() === "planning to get a pet"
+    );
+
     if (normalizedPets.length > 0) {
       apiData.pets = normalizedPets.map((petType) => {
         const pet: Pet = { type: petType };
@@ -283,6 +288,12 @@ export function transformFormDataForApi(
       });
       // Set pet_policy to true if we have pets
       apiData.pet_policy = true;
+    } else if (hasPlanningToGetPet) {
+      // If "Planning to get a pet" is selected, set pet_policy to true but no pets array
+      apiData.pets = [];
+      apiData.pet_policy = true;
+      // Note: additional_info for "Planning to get a pet" cannot be stored in pets[].customType
+      // as there are no pets yet. This is a design limitation.
     } else {
       // If no pets selected or "No pets" selected, set pet_policy to false
       apiData.pets = [];
@@ -336,15 +347,22 @@ export function transformFormDataForApi(
     }
   });
 
-  // Smoker normalization (string -> boolean | null)
-  if (formData.smoker !== undefined) {
+  // Smoker normalization (UI string -> backend string)
+  // UI: "smoker" -> Backend: "yes"
+  // UI: "non-smoker" -> Backend: "no"
+  // UI: empty/null -> Backend: null
+  if (formData.smoker !== undefined && formData.smoker !== null && formData.smoker !== "") {
     if (formData.smoker === "smoker") {
-      apiData.smoker = true as unknown as PreferencesFormData["smoker"];
+      apiData.smoker = "yes";
     } else if (formData.smoker === "non-smoker") {
-      apiData.smoker = false as unknown as PreferencesFormData["smoker"];
+      apiData.smoker = "no";
     } else {
-      apiData.smoker = null as unknown as PreferencesFormData["smoker"];
+      // If it's already a backend value, pass it through
+      apiData.smoker = formData.smoker;
     }
+  } else {
+    // Empty/null value - set to null for backend
+    apiData.smoker = null as unknown as PreferencesFormData["smoker"];
   }
 
   // Normalize numeric fields: min/max price, min/max square meters
@@ -449,10 +467,25 @@ export function transformApiDataForForm(
   }
 
   // Smoker mapping back to UI strings
-  if (apiData.smoker !== undefined) {
-    if (apiData.smoker === true) formData.smoker = "smoker";
-    else if (apiData.smoker === false) formData.smoker = "non-smoker";
-    else formData.smoker = "";
+  // Backend: "yes" -> UI: "smoker"
+  // Backend: "no" -> UI: "non-smoker"
+  // Backend: null/empty/other -> UI: ""
+  if (apiData.smoker !== undefined && apiData.smoker !== null) {
+    if (apiData.smoker === "yes" || apiData.smoker === true) {
+      formData.smoker = "smoker";
+    } else if (apiData.smoker === "no" || apiData.smoker === false) {
+      formData.smoker = "non-smoker";
+    } else {
+      // Handle other backend values or pass through if already UI format
+      const smokerStr = String(apiData.smoker);
+      if (smokerStr === "smoker" || smokerStr === "non-smoker") {
+        formData.smoker = smokerStr;
+      } else {
+        formData.smoker = "";
+      }
+    }
+  } else {
+    formData.smoker = "";
   }
 
   return formData;
