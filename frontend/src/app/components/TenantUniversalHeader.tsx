@@ -99,11 +99,11 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Tenant CV Link - Hide on mobile, show on tablet+ */}
+          {/* Tenant CV Link */}
           {showTenantCvLink && (
             <button
               onClick={() => router.push("/app/tenant-cv")}
-              className="hidden sm:block cursor-pointer px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
+              className="cursor-pointer px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
             >
               Tenant CV
             </button>
