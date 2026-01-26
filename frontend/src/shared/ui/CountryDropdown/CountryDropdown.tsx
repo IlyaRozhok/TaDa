@@ -122,7 +122,7 @@ export default function CountryDropdown({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           disabled={disabled}
-          className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-left flex items-center justify-between ${
+          className={`w-full px-6 pt-6 pb-6 rounded-3xl focus:outline-none transition-all duration-200 text-left flex items-center justify-between ${
             hasValue ? "text-gray-900" : "text-gray-400"
           } bg-gray-50 sm:bg-white border-0 ${
             error ? "ring-2 ring-red-400 focus:ring-red-500" : ""

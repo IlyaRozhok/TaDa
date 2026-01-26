@@ -43,7 +43,6 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
   isLoading,
   updatingId,
   onUpdateStatus,
-  onRefresh,
 }) => {
   return (
     <div className="space-y-6">
@@ -56,14 +55,6 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
             Track tenant booking requests and update statuses
           </p>
         </div>
-        {onRefresh && (
-          <button
-            onClick={onRefresh}
-            className="px-4 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium"
-          >
-            Refresh
-          </button>
-        )}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm">

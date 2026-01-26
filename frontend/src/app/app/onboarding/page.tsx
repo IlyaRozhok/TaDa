@@ -45,7 +45,7 @@ function OnboardingHeader() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 py-0.75 sm:py-1">
-      <div className="max-w-4xl lg:max-w-none mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-1.5">
+      <div className="max-w-4xl lg:max-w-none mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Logo */}
         <div className="flex items-center">
           <button className="transition-opacity hover:opacity-80 cursor-pointer">

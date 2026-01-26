@@ -646,20 +646,9 @@ function AdminPanelContent() {
   // Sidebar
   const renderSidebar = () => (
     <div className="w-64 min-h-screen bg-white border-r border-gray-200">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div>
-            <img
-              src="/black-logo.svg"
-              alt="TADA Logo"
-              className="h-8 cursor-pointer"
-            />
-            <p className="text-xs text-black">Management Console</p>
-          </div>
-        </div>
-      </div>
 
-      <nav className="space-y-2 p-4">
+
+      <nav className="space-y-4 p-4">
         <button
           onClick={() => setActiveSection("users")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
@@ -781,22 +770,6 @@ function AdminPanelContent() {
             isLoading={isLoadingRequests}
             updatingId={updatingRequestId}
             onUpdateStatus={handleUpdateBookingStatus}
-            onRefresh={async () => {
-              setIsLoadingRequests(true);
-              try {
-                const data = await bookingRequestsAPI.list();
-                setRequests(data || []);
-              } catch (error: any) {
-                addNotification(
-                  "error",
-                  error?.response?.data?.message ||
-                    error?.message ||
-                    "Failed to refresh requests"
-                );
-              } finally {
-                setIsLoadingRequests(false);
-              }
-            }}
           />
         );
       default:
@@ -1057,7 +1030,7 @@ function AdminPanelContent() {
     <div className="min-h-screen bg-gray-50">
       <UniversalHeader />
 
-      <div className="flex pt-20 md:pt-24">
+      <div className="flex pt-21 md:pt-13">
         {renderSidebar()}
         <div className="flex-1 p-6">{renderContent()}</div>
       </div>
