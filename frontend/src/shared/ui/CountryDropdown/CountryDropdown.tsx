@@ -124,7 +124,7 @@ export default function CountryDropdown({
           disabled={disabled}
           className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-left flex items-center justify-between ${
             hasValue ? "text-gray-900" : "text-gray-400"
-          } bg-white border-0 ${
+          } bg-gray-50 sm:bg-white border-0 ${
             error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
           } disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed`}
         >
@@ -164,8 +164,8 @@ export default function CountryDropdown({
             className="fixed inset-0 z-40"
             onClick={() => setIsDropdownOpen(false)}
           />
-          {/* Dropdown Menu */}
-          <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
+          {/* Dropdown Menu - always opens upward */}
+          <div className="absolute bottom-full left-0 z-50 mb-1 w-full rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
             <div
               className="relative rounded-3xl"
               style={{

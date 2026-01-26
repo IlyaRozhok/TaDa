@@ -275,105 +275,107 @@ export default function OnboardingProfileStep({
         compact={true}
       >
         <StepContainer compact={true}>
-          {/* First Name */}
-          <div className="mb-4">
-            <InputField
-              label="First Name"
-              value={formData.first_name}
-              onChange={(e) => handleInputChange("first_name", e.target.value)}
-              type="text"
-            />
-          </div>
+          <div className="flex flex-col gap-2 sm:gap-4">
+            {/* First Name */}
+            <div>
+              <InputField
+                label="First Name"
+                value={formData.first_name}
+                onChange={(e) => handleInputChange("first_name", e.target.value)}
+                type="text"
+              />
+            </div>
 
-          {/* Last Name */}
-          <div className="mb-4">
-            <InputField
-              label="Last Name"
-              value={formData.last_name}
-              onChange={(e) => handleInputChange("last_name", e.target.value)}
-              type="text"
-            />
-          </div>
+            {/* Last Name */}
+            <div>
+              <InputField
+                label="Last Name"
+                value={formData.last_name}
+                onChange={(e) => handleInputChange("last_name", e.target.value)}
+                type="text"
+              />
+            </div>
 
-          {/* Address */}
-          <div className="mb-4">
-            <InputField
-              label="Address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              type="text"
-            />
-          </div>
+            {/* Address */}
+            <div>
+              <InputField
+                label="Address"
+                value={formData.address}
+                onChange={(e) => handleInputChange("address", e.target.value)}
+                type="text"
+              />
+            </div>
 
-          {/* Phone */}
-          <div className="mb-4">
-            <PhoneMaskInput
-              countryCode={phoneCountryCode}
-              label="Phone Number"
-              value={phoneNumberOnly}
-              onChange={(value) => {
-                setPhoneNumberOnly(value || "");
-                // Combine country code with phone number for storage
-                // Don't strip formatting here - let InputMask handle it internally
-                const country =
-                  getCountryByCode(phoneCountryCode) || getDefaultCountry();
-                if (value) {
-                  // Only extract digits when we need to store the final value
-                  const digitsOnly = value.replace(/\D/g, "");
-                  const fullPhoneNumber = `${country.dialCode}${digitsOnly}`;
-                  handleInputChange("phone", fullPhoneNumber);
-                } else {
+            {/* Phone */}
+            <div>
+              <PhoneMaskInput
+                countryCode={phoneCountryCode}
+                label="Phone Number"
+                value={phoneNumberOnly}
+                onChange={(value) => {
+                  setPhoneNumberOnly(value || "");
+                  // Combine country code with phone number for storage
+                  // Don't strip formatting here - let InputMask handle it internally
+                  const country =
+                    getCountryByCode(phoneCountryCode) || getDefaultCountry();
+                  if (value) {
+                    // Only extract digits when we need to store the final value
+                    const digitsOnly = value.replace(/\D/g, "");
+                    const fullPhoneNumber = `${country.dialCode}${digitsOnly}`;
+                    handleInputChange("phone", fullPhoneNumber);
+                  } else {
+                    handleInputChange("phone", "");
+                  }
+                }}
+                onCountryChange={(countryCode) => {
+                  setPhoneCountryCode(countryCode);
+                  // Clear the phone input when country changes
+                  setPhoneNumberOnly("");
                   handleInputChange("phone", "");
-                }
-              }}
-              onCountryChange={(countryCode) => {
-                setPhoneCountryCode(countryCode);
-                // Clear the phone input when country changes
-                setPhoneNumberOnly("");
-                handleInputChange("phone", "");
-              }}
-            />
-          </div>
+                }}
+              />
+            </div>
 
-          {/* Date of Birth */}
-          <div className="mb-4">
-            <StyledDateInput
-              label="Date of Birth"
-              value={formData.date_of_birth || null}
-              onChange={(date) => {
-                // Always update the form data, even if invalid
-                // This allows the user to see what they typed and get validation feedback
-                handleInputChange("date_of_birth", date);
-                
-                // Validate age after update
-                const ageError = validateAge(date);
-                setDateOfBirthError(ageError);
-              }}
-              maxDate={(() => {
-                // Maximum date: 18 years ago (user must be 18+)
-                const maxDate = new Date();
-                maxDate.setFullYear(maxDate.getFullYear() - 18);
-                return maxDate.toISOString().split("T")[0];
-              })()}
-              minDate={(() => {
-                // Minimum date: 120 years ago
-                const minDate = new Date();
-                minDate.setFullYear(minDate.getFullYear() - 120);
-                return minDate.toISOString().split("T")[0];
-              })()}
-              error={dateOfBirthError || undefined}
-            />
-          </div>
+            {/* Date of Birth */}
+            <div>
+              <StyledDateInput
+                label="Date of Birth"
+                value={formData.date_of_birth || null}
+                onChange={(date) => {
+                  // Always update the form data, even if invalid
+                  // This allows the user to see what they typed and get validation feedback
+                  handleInputChange("date_of_birth", date);
+                  
+                  // Validate age after update
+                  const ageError = validateAge(date);
+                  setDateOfBirthError(ageError);
+                }}
+                maxDate={(() => {
+                  // Maximum date: 18 years ago (user must be 18+)
+                  const maxDate = new Date();
+                  maxDate.setFullYear(maxDate.getFullYear() - 18);
+                  return maxDate.toISOString().split("T")[0];
+                })()}
+                minDate={(() => {
+                  // Minimum date: 120 years ago
+                  const minDate = new Date();
+                  minDate.setFullYear(minDate.getFullYear() - 120);
+                  return minDate.toISOString().split("T")[0];
+                })()}
+                error={dateOfBirthError || undefined}
+              />
+            </div>
 
-          {/* Nationality */}
-          <div className="mb-4">
-            <CountryDropdown
-              label="Nationality"
-              value={formData.nationality ?? undefined}
-              onChange={(value) => handleInputChange("nationality", value)}
-              placeholder="Select nationality"
-              required
-            />
+            {/* Nationality */}
+            <div>
+              <CountryDropdown
+                label="Nationality"
+                value={formData.nationality ?? undefined}
+                onChange={(value) => handleInputChange("nationality", value)}
+                placeholder="Select nationality"
+                required
+              />
+            </div>
           </div>
 
           {/* Error Message */}

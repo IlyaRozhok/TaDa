@@ -13,7 +13,7 @@ export const StepContainer: React.FC<StepContainerProps> = ({
 }) => {
   return (
     <div className={`text-left ${className}`}>
-      <div className={`bg-gray-50 rounded-3xl ${compact ? "p-4 sm:p-6" : "p-8"}`}>{children}</div>
+      <div className={`bg-white sm:bg-gray-50 rounded-3xl ${compact ? "p-0 sm:p-6" : "p-0 sm:p-8"}`}>{children}</div>
     </div>
   );
 };

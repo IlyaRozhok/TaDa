@@ -101,7 +101,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
                 } as React.ChangeEvent<HTMLInputElement>;
                 handleChange(event);
               }}
-              className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
+              className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent peer border-0 ${
                 error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
               } ${className}`}
               placeholder=""
@@ -110,7 +110,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             <input
               ref={ref}
               {...props}
-              className={`w-full px-6 pt-8 pb-5 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
+              className={`w-full px-6 pt-8 pb-5 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent peer border-0 ${
                 error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
               } ${
                 props.type === "number"
@@ -137,9 +137,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         {tooltip && (
           <p className="text-xs text-gray-500 mt-1 px-6">{tooltip}</p>
         )}
-        <div className="min-h-[20px] mt-1">
-          <ErrorMessage error={error} />
-        </div>
+
       </div>
     );
   }
