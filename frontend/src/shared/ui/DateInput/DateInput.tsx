@@ -181,7 +181,7 @@ export const DateInput: React.FC<DateInputProps> = ({
             }
           }}
           className={cn(
-            "w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 border-0",
+            "w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0",
             "[&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden",
             "appearance-none",
             "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",

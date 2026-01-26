@@ -110,7 +110,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             <input
               ref={ref}
               {...props}
-              className={`w-full px-6 pt-8 pb-5 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent peer border-0 ${
+              className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent peer border-0 ${
                 error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
               } ${
                 props.type === "number"

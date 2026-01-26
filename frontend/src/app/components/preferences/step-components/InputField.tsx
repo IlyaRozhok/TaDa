@@ -68,7 +68,7 @@ export const InputField: React.FC<InputFieldProps> = ({
       onChange(newValue);
     },
     className:
-      "w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm",
+      "w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent border-0 shadow-sm",
     placeholder: "",
     required,
   };
@@ -95,7 +95,7 @@ export const InputField: React.FC<InputFieldProps> = ({
               type === "number" ? Number(newValue) : newValue;
             onChange(processedValue);
           }}
-          className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent border-0 shadow-sm"
+          className="w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent border-0 shadow-sm"
           placeholder=""
         />
       ) : (

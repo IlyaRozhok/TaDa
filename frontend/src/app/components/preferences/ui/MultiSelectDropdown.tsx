@@ -63,15 +63,17 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         {/* White Input */}
         <div
           onClick={handleToggle}
-          className={`relative w-full px-6 pt-8 pb-4 pr-12 rounded-3xl cursor-pointer flex items-center bg-white border-0 h-[4.5rem] ${
+          className={`relative w-full px-6 pt-8 pb-4 pr-12 rounded-3xl cursor-pointer flex items-center bg-gray-50 sm:bg-white border-0 h-[4.5rem] overflow-hidden ${
             isInitialized ? "transition-all duration-200" : ""
           }`}
         >
           {hasValue && (
-            <span className="text-gray-900 font-medium">{displayValue}</span>
+            <span className="text-gray-900 font-medium truncate whitespace-nowrap pr-2">
+              {displayValue}
+            </span>
           )}
           <ChevronDown
-            className={`absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 transition-transform text-gray-400 ${
+            className={`absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 transition-transform text-gray-400 flex-shrink-0 ${
               isOpen ? "rotate-180" : ""
             }`}
           />
@@ -87,9 +89,9 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         >
           {label}
         </label>
-        {/* Glassmorphism Dropdown */}
+        {/* Glassmorphism Dropdown - opens upward on mobile, downward on desktop */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-3xl max-h-60 overflow-hidden backdrop-blur-[3px]">
+          <div className="absolute bottom-full left-0 right-0 sm:top-full sm:bottom-auto mb-2 sm:mt-2 sm:mb-0 z-50 rounded-3xl max-h-60 overflow-hidden backdrop-blur-[3px]">
             <div
               className="relative rounded-3xl"
               style={{

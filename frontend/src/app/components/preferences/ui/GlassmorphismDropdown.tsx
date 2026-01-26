@@ -130,7 +130,7 @@ export const GlassmorphismDropdown: React.FC<GlassmorphismDropdownProps> = ({
       {/* Input Field */}
       <div
         ref={inputRef}
-        className={`w-full px-6 pt-8 pb-5 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white cursor-pointer border-0 ${
+        className={`w-full px-6 pt-8 pb-5 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-gray-50 sm:bg-white cursor-pointer border-0 ${
           hasValue ? "text-gray-900" : "text-gray-400"
         } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
         onClick={handleToggle}

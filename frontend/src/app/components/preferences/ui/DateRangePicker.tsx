@@ -333,7 +333,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       <div
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          w-full px-6 pt-8 pb-4 pr-12 bg-white rounded-3xl cursor-pointer
+          w-full px-6 pt-8 pb-4 pr-12 bg-gray-50 sm:bg-white rounded-3xl cursor-pointer
           flex items-center border-0 shadow-sm
           transition-all duration-200 focus:outline-none
           ${error ? "ring-2 ring-red-400" : ""}

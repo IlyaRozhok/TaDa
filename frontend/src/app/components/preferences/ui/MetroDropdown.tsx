@@ -69,7 +69,7 @@ export const MetroDropdown: React.FC<MetroDropdownProps> = ({
         {/* Input Field */}
         <div
           className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 cursor-pointer border-0 shadow-sm ${
-            hasValue ? "bg-black text-white" : "bg-white text-gray-400"
+            hasValue ? "bg-black text-white" : "bg-gray-50 sm:bg-white text-gray-400"
           } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
           onClick={handleToggle}
         >
@@ -99,9 +99,9 @@ export const MetroDropdown: React.FC<MetroDropdownProps> = ({
         />
       </div>
 
-      {/* Dropdown List */}
+      {/* Dropdown List - opens upward on mobile, downward on desktop */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-3xl shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+        <div className="absolute bottom-full left-0 right-0 sm:top-full sm:bottom-auto mb-2 sm:mt-2 sm:mb-0 z-50 bg-white rounded-3xl shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
           {options.map((option) => (
             <div
               key={option.value}

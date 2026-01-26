@@ -21,10 +21,10 @@ export const SelectionButton: React.FC<SelectionButtonProps> = ({
     <button
       type="button"
       onClick={() => onClick(value)}
-      className={`w-full h-full min-h-[3rem] sm:min-h-[3.5rem] p-3 sm:p-4 text-left rounded-3xl border-0 transition-colors flex items-center justify-between ${
+      className={`w-full h-full min-h-[3rem] sm:min-h-[3.5rem] pl-4 sm:pl-6 p-3 sm:p-4 text-left rounded-3xl border-0 transition-colors flex items-center justify-between ${
         isSelected
           ? "bg-black text-white cursor-pointer"
-          : "bg-white text-black hover:bg-gray-200 cursor-pointer"
+          : "bg-gray-50 sm:bg-white text-black hover:bg-gray-200 cursor-pointer"
       } ${className}`}
     >
       <div className="flex items-center flex-1 min-w-0 pr-2">

@@ -31,7 +31,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={rows}
-          className="w-full p-4 border-0 rounded-3xl text-gray-700 placeholder-gray-400 bg-white resize-none shadow-sm"
+          className="w-full p-4 border-0 rounded-3xl text-gray-700 placeholder-gray-400 bg-gray-50 sm:bg-white resize-none shadow-sm"
         />
       </div>
     </div>

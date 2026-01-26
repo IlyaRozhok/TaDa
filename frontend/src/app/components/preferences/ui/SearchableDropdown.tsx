@@ -118,10 +118,16 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     const dropdownHeight = 300; // Approximate dropdown height with search
     const spaceBelow = viewportHeight - rect.bottom;
     const spaceAbove = rect.top;
+    
+    // On mobile (viewport width < 640px), always open upward
+    const isMobile = window.innerWidth < 640;
 
     // Determine direction based on available space
+    // On mobile, always open upward; on desktop, use space calculation
     const direction =
-      spaceBelow < dropdownHeight && spaceAbove > spaceBelow ? "up" : "down";
+      isMobile || (spaceBelow < dropdownHeight && spaceAbove > spaceBelow)
+        ? "up"
+        : "down";
 
     setDropdownPosition({
       top: direction === "up" ? rect.top - dropdownHeight : rect.bottom,
@@ -155,13 +161,13 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       {/* Input Field */}
       <div
         ref={inputRef}
-        className={`w-full px-6 pt-7 pb-5 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white cursor-pointer border-0 flex items-center min-h-[3.5rem] ${
+        className={`w-full px-6 pt-7 pb-5 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-gray-50 sm:bg-white cursor-pointer border-0 flex items-center min-h-[3.5rem] overflow-hidden ${
           hasValue ? "text-gray-900" : "text-gray-400"
         } ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
         onClick={handleToggle}
       >
         {hasValue ? (
-          displayValue
+          <span className="truncate whitespace-nowrap pr-2">{displayValue}</span>
         ) : (
           <span className="flex items-center">
             {placeholder}
@@ -184,7 +190,7 @@ export const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
       {/* Dropdown Arrow */}
       <ChevronDown
-        className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none transition-transform duration-200 ${
+        className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none transition-transform duration-200 flex-shrink-0 ${
           isOpen ? "rotate-180" : ""
         }`}
       />

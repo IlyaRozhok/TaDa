@@ -46,7 +46,7 @@ function OnboardingHeader() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 py-0.75 sm:py-1">
-      <div className="max-w-4xl lg:max-w-none mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl lg:max-w-none mx-auto flex items-center justify-between px-8 sm:px-6 lg:px-8">
         {/* Left: Logo */}
         <div className="flex items-center">
           <button className="transition-opacity hover:opacity-80 cursor-pointer">
@@ -460,10 +460,10 @@ export default function OnboardingPage() {
                 type="button"
                 onClick={handleProfileNext}
                 disabled={state.isLoading || !isProfileValid || isProfileSaving}
-                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer flex items-center gap-2 ${
+                className={`px-8 py-3 rounded-full font-medium transition-all cursor-pointer flex items-center gap-2 bg-black text-white hover:bg-gray-800 ${
                   state.isLoading || !isProfileValid || isProfileSaving
-                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                    : "bg-black text-white hover:bg-gray-800"
+                    ? "opacity-30 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 {isProfileSaving ? (
@@ -484,10 +484,10 @@ export default function OnboardingPage() {
                   await handlePreferencesNext();
                 }}
                 disabled={preferencesHook.step === 10 && !isPreferencesValid}
-                className={`px-8 py-3 rounded-full font-medium transition-colors cursor-pointer ${
+                className={`px-8 py-3 rounded-full font-medium transition-all cursor-pointer bg-black text-white hover:bg-gray-800 ${
                   preferencesHook.step === 10 && !isPreferencesValid
-                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                    : "bg-black text-white hover:bg-gray-800"
+                    ? "opacity-30 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 {preferencesHook.isLastStep ? "Finish" : "Next"}

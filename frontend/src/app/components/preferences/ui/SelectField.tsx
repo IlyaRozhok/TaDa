@@ -70,7 +70,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           <select
             ref={ref}
             {...props}
-            className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-white appearance-none border-0 ${
+            className={`w-full px-6 pt-8 pb-4 pr-12 rounded-3xl focus:outline-none transition-all duration-200 bg-gray-50 sm:bg-white appearance-none border-0 ${
               hasValue ? "text-gray-900" : "text-gray-400"
             } ${
               error ? "ring-2 ring-red-400 focus:ring-red-500" : ""

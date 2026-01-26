@@ -64,7 +64,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       <div
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          w-full px-6 pt-8 pb-4 pr-12 bg-white rounded-full cursor-pointer
+          w-full px-6 pt-8 pb-4 pr-12 bg-gray-50 sm:bg-white rounded-full cursor-pointer
           flex items-center 
           transition-all duration-200 focus:outline-none
           ${error ? "border-red-400" : ""}
@@ -96,7 +96,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
       {isOpen && (
         <div
-          className={`absolute backdrop-blur-[3px] top-full mt-2 left-0 right-0 z-50 ${styles.dropdownCard}`}
+          className={`absolute backdrop-blur-[3px] bottom-full sm:top-full sm:bottom-auto mb-2 sm:mt-2 sm:mb-0 left-0 right-0 z-50 ${styles.dropdownCard}`}
         >
           {options.map((option) => (
             <div
