@@ -261,7 +261,7 @@ export default function NewPreferencesPage({
       {/* Main Content */}
       <div 
         ref={contentRef} 
-        className="max-w-4xl mx-auto px-8 pb-32 pt-20 sm:pt-24"
+        className="max-w-4xl mx-auto px-5 pb-32 pt-20 sm:pt-24"
       >
         <form 
           ref={formRef} 

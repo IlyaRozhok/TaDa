@@ -63,7 +63,7 @@ export default function ProfilePage() {
         <TenantUniversalHeader
           showPreferencesButton={false}
         />
-        <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
+        <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
           <div className="py-16 text-center text-gray-600">
             <div className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4" />
             Loading profile...
@@ -80,7 +80,7 @@ export default function ProfilePage() {
         <TenantUniversalHeader
           showPreferencesButton={false}
         />
-        <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
+        <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
           <div className="py-16 text-center text-red-600">
             Failed to load profile. Please refresh the page.
           </div>
@@ -96,7 +96,7 @@ export default function ProfilePage() {
         showPreferencesButton={false}
       />
 
-      <div className="max-w-4xl mx-auto px-8 pb-32 pt-10">
+      <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
         <ProfileForm user={user} />
       </div>
     </div>

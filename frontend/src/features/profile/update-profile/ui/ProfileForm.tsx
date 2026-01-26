@@ -267,14 +267,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
 
             {/* Upload Controls */}
             <div className="flex-1 flex flex-col gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-black text-white rounded-full text-xs sm:text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                 >
-                  <Upload className="w-4 h-4" />
+                  <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {formData.avatar_url || avatarPreview ? "Change Avatar" : "Upload Avatar"}
                 </button>
                 {(formData.avatar_url || avatarPreview) && (
@@ -294,16 +294,13 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                       setHasChanges(true);
                     }}
                     disabled={isSaving}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-full text-xs sm:text-sm font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     Remove
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-500">
-                JPG, PNG or GIF. Max size 5MB
-              </p>
             </div>
 
             {/* Hidden File Input */}
