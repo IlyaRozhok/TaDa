@@ -282,7 +282,7 @@ export function TenantCvView({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <div className="flex flex-col items-start gap-4">

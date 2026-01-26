@@ -242,9 +242,9 @@ export default function NewPreferencesPage({
       case 6:
         return <PetsStep {...stepProps} />;
       case 7:
-        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
-      case 8:
         return <AmenitiesStep {...stepProps} />;
+      case 8:
+        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
       case 9:
         return <CompleteProfileStep {...stepProps} />;
       case 10:

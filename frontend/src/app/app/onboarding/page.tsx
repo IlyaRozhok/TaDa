@@ -306,12 +306,12 @@ export default function OnboardingPage() {
 
   if (state.currentPhase === "intro") {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-white">
         {/* Onboarding Header */}
         <OnboardingHeader />
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="min-h-[calc(100vh-120px)] flex items-center justify-center pb-24">
           <div className="w-full max-w-4xl mx-auto px-1 sm:px-1.5 lg:px-2">
             <OnboardingIntroScreens
               onComplete={handleIntroComplete}
@@ -379,12 +379,12 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white">
       {/* Onboarding Header */}
       <OnboardingHeader />
 
       {/* Main Content */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef}>
         {state.currentPhase === "profile" ? (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-24 sm:pb-28 lg:pb-32">
             <div className="w-full">
@@ -484,7 +484,7 @@ export default function OnboardingPage() {
                   await handlePreferencesNext();
                 }}
                 disabled={preferencesHook.step === 10 && !isPreferencesValid}
-                className={`px-8 py-3 rounded-full font-medium transition-all cursor-pointer bg-black text-white hover:bg-gray-800 ${
+                className={`px-7 py-3 rounded-full font-medium transition-all cursor-pointer bg-black text-white hover:bg-black/90 ${
                   preferencesHook.step === 10 && !isPreferencesValid
                     ? "opacity-30 cursor-not-allowed"
                     : ""
