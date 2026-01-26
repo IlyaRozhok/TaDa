@@ -49,12 +49,12 @@ const Pill = ({ children }: { children: React.ReactNode }) => (
 );
 
 const StatusBadge = ({ label }: { label: string }) => (
-  <span className="inline-flex font-semibold items-center gap-2 px-6 py-3 rounded-3xl border-[1.5] border-gray-300 bg-white text-sm text-gray-900">
+  <span className="inline-flex font-semibold items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-3 rounded-3xl border-[1.5] border-gray-300 bg-white text-xs sm:text-sm text-gray-900">
     <span>{label}</span>
     <img 
       src="/warning-triangle.svg" 
       alt="warning" 
-      className="w-4 h-4 flex-shrink-0" 
+      className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" 
     />
   </span>
 );
@@ -298,13 +298,15 @@ export function TenantCvView({
               )}
             </div>
             <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900 mr-10">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900 sm:mr-10">
                   {displayName}
                 </h1>
-                {badges.map((b) => (
-                  <StatusBadge key={b.label} label={b.label} />
-                ))}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {badges.map((b) => (
+                    <StatusBadge key={b.label} label={b.label} />
+                  ))}
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-700">
                 {profile.age_years ? (
@@ -347,12 +349,12 @@ export function TenantCvView({
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-3">
+          <div className="flex flex-col items-end sm:items-end w-full sm:w-auto gap-3">
             {onShareClick && (
               <button
                 onClick={onShareClick}
                 disabled={shareLoading}
-                className="inline-flex cursor-pointer items-center gap-4 px-6 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+                className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-4 px-6 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
               >
                 {shareLoading ? (
                   <Info className="w-4 h-4 animate-pulse" />
@@ -370,36 +372,38 @@ export function TenantCvView({
 
         {/* Ready to move section */}
         {(readyLabel || buildingTypesLabels.length > 0 || readyMoveDateRange) && (
-          <div className="mt-6 flex items-center gap-3 flex-wrap">
-            {/* Ready to move badge with green border and duration */}
-            {readyLabel && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-[1.5px] border-green-500 bg-white">
-                <Home className="w-4 h-4 text-gray-900" />
-                <span className="font-medium text-gray-900">
-                  {readyLabel}
-                </span>
-                {durationLabel && (
-                  <>
-                    <span className="text-gray-900">-</span>
-                    <span className="text-gray-900">{durationLabel}</span>
-                  </>
-                )}
-              </div>
-            )}
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:flex-wrap">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              {/* Ready to move badge with green border and duration */}
+              {readyLabel && (
+                <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-2 rounded-full border-[1.5px] border-green-500 bg-white w-full sm:w-fit">
+                  <Home className="w-4 h-4 text-gray-900" />
+                  <span className="font-medium text-gray-900">
+                    {readyLabel}
+                  </span>
+                  {durationLabel && (
+                    <>
+                      <span className="text-gray-900">-</span>
+                      <span className="text-gray-900">{durationLabel}</span>
+                    </>
+                  )}
+                </div>
+              )}
 
-            {/* Building style preferences badge without green border */}
-            {buildingTypesLabels.length > 0 && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-[1.5px] border-gray-300 bg-white">
-                <Building2 className="w-4 h-4 text-gray-900" />
-                <span className="font-medium text-gray-900">
-                  {buildingTypesLabels.join(", ")}
-                </span>
-              </div>
-            )}
+              {/* Building style preferences badge without green border */}
+              {buildingTypesLabels.length > 0 && (
+                <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-2 rounded-full border-[1.5px] border-gray-300 bg-white w-full sm:w-fit">
+                  <Building2 className="w-4 h-4 text-gray-900" />
+                  <span className="font-medium text-gray-900">
+                    {buildingTypesLabels.join(", ")}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Date range text on the right, aligned to container */}
             {readyMoveDateRange && (
-              <span className="ml-auto font-medium text-gray-900">
+              <span className="sm:ml-auto font-medium text-gray-900">
                 {readyMoveDateRange}
               </span>
             )}
