@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { selectUser } from "../../store/slices/authSlice";
+import {
+  selectUser,
+  selectIsAuthenticated,
+  selectIsOnboarded,
+} from "../../store/slices/authSlice";
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import TenantPerfectMatchSection from "../../components/TenantPerfectMatchSection";
@@ -139,6 +143,8 @@ function TenantDashboardContent() {
 
 export default function TenantUnitsPage() {
   const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isOnboarded = useSelector(selectIsOnboarded);
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -169,10 +175,19 @@ export default function TenantUnitsPage() {
       return;
     }
 
-    if (!user) {
+    if (!isAuthenticated || !user) {
       router.replace("/");
+      return;
     }
-  }, [sessionReady, user, router]);
+
+    // Check onboarding status - redirect to onboarding if not onboarded
+    const currentPath =
+      typeof window !== "undefined" ? window.location.pathname : "";
+    if (!isOnboarded && !currentPath.includes("/onboarding")) {
+      router.replace("/app/onboarding");
+      return;
+    }
+  }, [sessionReady, isAuthenticated, user, isOnboarded, router]);
 
   if (!sessionReady) {
     return (

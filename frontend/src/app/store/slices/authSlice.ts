@@ -16,6 +16,8 @@ interface User {
   // Computed properties from getter methods
   full_name?: string;
   roles?: string[];
+  // Onboarding flag
+  isOnboarded?: boolean;
   // Profile data that might be included
   tenantProfile?: {
     id: string;
@@ -49,6 +51,57 @@ interface User {
   };
 }
 
+// Utility function to check if user profile is complete
+export function isProfileComplete(user: User | null): boolean {
+  if (!user) return false;
+
+  // For tenant role, check tenantProfile
+  if (user.role === "tenant") {
+    const profile = user.tenantProfile;
+    if (!profile) return false;
+
+    // Required fields for tenant profile
+    const requiredFields = [
+      "first_name",
+      "last_name",
+      "address",
+      "phone",
+      "date_of_birth",
+      "nationality",
+    ] as const;
+
+    for (const field of requiredFields) {
+      const value = profile[field];
+      if (!value || String(value).trim() === "") {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // For operator role, check operatorProfile
+  if (user.role === "operator") {
+    const profile = user.operatorProfile;
+    if (!profile) return false;
+
+    // Required fields for operator profile
+    const requiredFields = ["full_name", "phone", "business_address"] as const;
+
+    for (const field of requiredFields) {
+      const value = profile[field];
+      if (!value || String(value).trim() === "") {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // For admin or other roles, consider onboarded by default
+  return true;
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -76,6 +129,9 @@ const authSlice = createSlice({
     ) => {
       const { user, accessToken } = action.payload;
 
+      // Compute isOnboarded based on profile completeness
+      const onboarded = user.isOnboarded ?? isProfileComplete(user);
+
       console.log("🔍 authSlice.setCredentials called with:", {
         user_id: user.id,
         user_email: user.email,
@@ -84,9 +140,10 @@ const authSlice = createSlice({
         user_full_name: user.full_name,
         has_tenant_profile: !!user.tenantProfile,
         has_operator_profile: !!user.operatorProfile,
+        isOnboarded: onboarded,
       });
 
-      state.user = user;
+      state.user = { ...user, isOnboarded: onboarded };
       state.accessToken = accessToken;
       state.isAuthenticated = true;
 
@@ -135,7 +192,10 @@ const authSlice = createSlice({
     ) => {
       const { user, accessToken } = action.payload;
 
-      state.user = user;
+      // Compute isOnboarded based on profile completeness
+      const onboarded = user.isOnboarded ?? isProfileComplete(user);
+
+      state.user = { ...user, isOnboarded: onboarded };
       state.accessToken = accessToken;
       state.isAuthenticated = true;
 
@@ -201,7 +261,7 @@ const authSlice = createSlice({
         }
       });
 
-      state.user = {
+      const updatedUser = {
         ...state.user,
         ...payload,
         // Update avatar_url if provided
@@ -209,11 +269,20 @@ const authSlice = createSlice({
         tenantProfile: nextTenant,
         operatorProfile: nextOperator,
       };
+
+      // Recompute isOnboarded after profile update
+      const onboarded = payload.isOnboarded ?? isProfileComplete(updatedUser);
+      state.user = { ...updatedUser, isOnboarded: onboarded };
+    },
+    setIsOnboarded: (state, action: PayloadAction<boolean>) => {
+      if (state.user) {
+        state.user.isOnboarded = action.payload;
+      }
     },
   },
 });
 
-export const { setCredentials, logout, setAuth, updateUser } =
+export const { setCredentials, logout, setAuth, updateUser, setIsOnboarded } =
   authSlice.actions;
 export default authSlice.reducer;
 
@@ -226,3 +295,5 @@ export const selectAccessToken = (state: { auth: AuthState }) =>
   state.auth.accessToken;
 export const selectSessionExpiry = (state: { auth: AuthState }) =>
   state.auth.sessionExpiry;
+export const selectIsOnboarded = (state: { auth: AuthState }) =>
+  state.auth.user?.isOnboarded ?? false;

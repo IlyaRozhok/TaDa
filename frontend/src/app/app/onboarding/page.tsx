@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import {
   selectUser,
   selectIsAuthenticated,
+  setIsOnboarded,
 } from "../../store/slices/authSlice";
 import { preferencesAPI } from "../../lib/api";
 import OnboardingProfileStep from "../../components/onboarding/OnboardingProfileStep";
@@ -44,7 +45,7 @@ function OnboardingHeader() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-1 sm:px-1.5 lg:px-2 py-0.75 sm:py-1">
-      <div className="max-w-[98%] sm:max-w-[95%] mx-auto flex items-center justify-between">
+      <div className="max-w-[98%] sm:max-w-[95%] mx-auto flex items-center justify-between px-2">
         {/* Left: Logo */}
         <div className="flex items-center">
           <button className="transition-opacity hover:opacity-80 cursor-pointer">
@@ -125,6 +126,7 @@ function OnboardingHeader() {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [loading, setLoading] = useState(true);
@@ -155,11 +157,15 @@ export default function OnboardingPage() {
       if ((window as any).onboardingProfileSave) {
         const success = await (window as any).onboardingProfileSave();
         if (success) {
+          // Set isOnboarded to true after profile is saved
+          dispatch(setIsOnboarded(true));
           handleProfileComplete();
           // Scroll to top when transitioning to preferences
           scrollToTop();
         }
       } else {
+        // Set isOnboarded to true even if save function doesn't exist
+        dispatch(setIsOnboarded(true));
         handleProfileComplete();
         // Scroll to top when transitioning to preferences
         scrollToTop();
@@ -355,7 +361,7 @@ export default function OnboardingPage() {
                     handleIntroComplete();
                   }
                 }}
-                className="bg-black cursor-pointer text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
+                className="bg-black cursor-pointer text-white px-8 mt-1 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors"
               >
                 Next
               </button>

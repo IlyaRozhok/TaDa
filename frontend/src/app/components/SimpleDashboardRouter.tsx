@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { selectUser, selectIsAuthenticated } from "../store/slices/authSlice";
+import {
+  selectUser,
+  selectIsAuthenticated,
+  selectIsOnboarded,
+} from "../store/slices/authSlice";
 import { waitForSessionManager } from "./providers/SessionManager";
 
 interface SimpleDashboardRouterProps {
@@ -17,6 +21,7 @@ export default function SimpleDashboardRouter({
 }: SimpleDashboardRouterProps) {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isOnboarded = useSelector(selectIsOnboarded);
   const router = useRouter();
   const [sessionInitialized, setSessionInitialized] = useState(false);
 
@@ -47,6 +52,7 @@ export default function SimpleDashboardRouter({
       userRole: user?.role,
       requiredRole,
       userEmail: user?.email,
+      isOnboarded,
       currentPath:
         typeof window !== "undefined" ? window.location.pathname : "",
       sessionInitialized,
@@ -63,6 +69,16 @@ export default function SimpleDashboardRouter({
     if (!user) {
       console.log("⏳ User still loading, waiting...");
       return; // Still loading - don't redirect yet
+    }
+
+    // Check onboarding status - redirect to onboarding if not onboarded
+    // Skip this check if already on onboarding page to avoid redirect loop
+    const currentPath =
+      typeof window !== "undefined" ? window.location.pathname : "";
+    if (!isOnboarded && !currentPath.includes("/onboarding")) {
+      console.log("❌ User not onboarded, redirecting to /app/onboarding");
+      router.replace("/app/onboarding");
+      return;
     }
 
     // Check role if required
@@ -87,7 +103,7 @@ export default function SimpleDashboardRouter({
         console.log("✅ Access granted");
       }
     }
-  }, [sessionInitialized, isAuthenticated, user, requiredRole, router]);
+  }, [sessionInitialized, isAuthenticated, user, isOnboarded, requiredRole, router]);
 
 
 

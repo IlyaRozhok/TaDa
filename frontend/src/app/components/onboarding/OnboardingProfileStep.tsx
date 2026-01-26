@@ -6,6 +6,7 @@ import {
   selectUser,
   selectIsAuthenticated,
   updateUser,
+  setIsOnboarded,
 } from "../../store/slices/authSlice";
 import { authAPI } from "../../lib/api";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
@@ -229,6 +230,8 @@ export default function OnboardingProfileStep({
     try {
       await authAPI.updateProfile(formData);
       dispatch(updateUser(formData as any));
+      // Set isOnboarded to true after profile is saved
+      dispatch(setIsOnboarded(true));
       setSuccess("Profile saved successfully!");
       return true;
     } catch (error: any) {
