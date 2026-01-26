@@ -7,6 +7,7 @@ import { ChevronDown, ChevronLeft } from "lucide-react";
 import {
   selectUser,
   selectIsAuthenticated,
+  selectIsOnboarded,
   setIsOnboarded,
 } from "../../store/slices/authSlice";
 import { preferencesAPI } from "../../lib/api";
@@ -129,6 +130,7 @@ export default function OnboardingPage() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isOnboarded = useSelector(selectIsOnboarded);
   const [loading, setLoading] = useState(true);
   const [isProfileValid, setIsProfileValid] = useState(false);
   const [isPreferencesValid, setIsPreferencesValid] = useState(true);
@@ -255,7 +257,8 @@ export default function OnboardingPage() {
       // Reset preferences step for new onboarding
       localStorage.removeItem("preferencesStep");
 
-      // Check if user already has preferences
+      // Check if user already has preferences AND is onboarded
+      // Only redirect if both conditions are met to avoid redirect loops
       try {
         const token = localStorage.getItem("accessToken");
         if (!token) {
@@ -264,24 +267,27 @@ export default function OnboardingPage() {
         }
 
         const response = await preferencesAPI.get();
-        if (response.data && response.data.id) {
-          // User has preferences, redirect to dashboard
+        if (response.data && response.data.id && isOnboarded) {
+          // User has preferences AND is onboarded, redirect to dashboard
           router.push("/app/units");
           return;
         }
+        // If user has preferences but is not onboarded, stay on onboarding
+        // If user doesn't have preferences, stay on onboarding
       } catch (error: unknown) {
         // 404 means no preferences - user needs onboarding
         const errorResponse = error as { response?: { status?: number } };
         if (errorResponse.response?.status !== 404) {
           console.error("Error checking preferences:", error);
         }
+        // Stay on onboarding if error (except 404)
       } finally {
         setLoading(false);
       }
     };
 
     checkUserStatus();
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, isOnboarded, router]);
 
   if (loading) {
     return (

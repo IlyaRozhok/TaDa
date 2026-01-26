@@ -228,8 +228,18 @@ export default function OnboardingProfileStep({
     setDateOfBirthError(null);
 
     try {
-      await authAPI.updateProfile(formData);
-      dispatch(updateUser(formData as any));
+      const response = await authAPI.updateProfile(formData);
+      // Get updated user data from response
+      const updatedUser = response.data?.user || response.data;
+      
+      if (updatedUser) {
+        // Update user with full data from server
+        dispatch(updateUser(updatedUser));
+      } else {
+        // Fallback: update with form data
+        dispatch(updateUser(formData as any));
+      }
+      
       // Set isOnboarded to true after profile is saved
       dispatch(setIsOnboarded(true));
       setSuccess("Profile saved successfully!");
