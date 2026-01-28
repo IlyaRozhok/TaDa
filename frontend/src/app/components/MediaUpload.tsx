@@ -52,12 +52,6 @@ const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
     };
 
     const validateFile = (file: File): string | null => {
-      // Check file size (10MB limit)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        return `File "${file.name}" is too large. Maximum size is 10MB.`;
-      }
-
       // Check file type
       const allowedTypes = [
         // Images
@@ -86,16 +80,6 @@ const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
-
-      // Check total file count
-      if (mediaFiles.length + files.length > maxFiles) {
-        setError(
-          `Maximum ${maxFiles} files allowed. You can upload ${
-            maxFiles - mediaFiles.length
-          } more files.`
-        );
-        return;
-      }
 
       // Validate each file
       for (const file of files) {
@@ -226,7 +210,6 @@ const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
           <div className="space-y-4">
             <div className="text-slate-600">
               <p className="text-base font-medium">Select images and videos</p>
-              <p className="text-sm">Max {maxFiles} files, 10MB each</p>
               <p className="text-xs text-slate-500 mt-1">
                 Supported: JPEG, PNG, GIF, WebP, MP4, MPEG, MOV, AVI, WMV
               </p>
@@ -241,14 +224,14 @@ const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
               multiple
               accept={acceptedTypes}
               onChange={handleFileSelect}
-              disabled={disabled || mediaFiles.length >= maxFiles}
+              disabled={disabled}
               className="hidden"
             />
 
             <button
               type="button"
               onClick={handleButtonClick}
-              disabled={disabled || mediaFiles.length >= maxFiles}
+              disabled={disabled}
               className="inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-6 py-3 text-sm"
             >
               {mediaFiles.some((f) => f.isUploading) ? (

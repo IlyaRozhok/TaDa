@@ -191,7 +191,7 @@ export class BuildingController {
 
   @Post("upload/photos")
   @Roles(UserRole.Admin)
-  @UseInterceptors(FilesInterceptor("photos", 10))
+  @UseInterceptors(FilesInterceptor("photos", 1000))
   @ApiConsumes("multipart/form-data")
   @ApiOperation({ summary: "Upload building photos" })
   @ApiResponse({ status: 201, description: "Photos uploaded successfully" })

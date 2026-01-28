@@ -13,7 +13,7 @@ import { S3Service } from "../../common/services/s3.service";
     TypeOrmModule.forFeature([Building, Property, User]),
     MulterModule.register({
       limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
+        fileSize: 1024 * 1024 * 1024, // 1GB - практически без ограничений
       },
     }),
   ],

@@ -85,7 +85,7 @@ export class PropertyController {
   @ApiBearerAuth()
   @Post("upload/photos")
   @Roles(UserRole.Admin, UserRole.Operator)
-  @UseInterceptors(FilesInterceptor("photos", 10))
+  @UseInterceptors(FilesInterceptor("photos", 1000))
   @ApiOperation({ summary: "Upload property photos" })
   @ApiConsumes("multipart/form-data")
   @ApiBody({

@@ -109,12 +109,6 @@ export default function MediaManager({
   };
 
   const validateFile = (file: File): string | null => {
-    // Check file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return `File "${file.name}" is too large. Maximum size is 10MB.`;
-    }
-
     // Check file type
     const allowedTypes = [
       "image/jpeg",
@@ -140,18 +134,6 @@ export default function MediaManager({
 
   const handleFileSelect = async (files: File[]) => {
     if (disabled) return;
-
-    // Check total file count
-    const currentCount = media.length + uploadingFiles.length;
-    if (currentCount + files.length > maxFiles) {
-      showMessage(
-        "error",
-        `Maximum ${maxFiles} files allowed. You can upload ${
-          maxFiles - currentCount
-        } more files.`
-      );
-      return;
-    }
 
     // Validate files
     for (const file of files) {
@@ -221,7 +203,7 @@ export default function MediaManager({
       const files = Array.from(e.dataTransfer.files);
       handleFileSelect(files);
     },
-    [disabled, media.length, uploadingFiles.length, maxFiles]
+    [disabled, media.length, uploadingFiles.length]
   );
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -355,12 +337,12 @@ export default function MediaManager({
               >
                 browse
               </button>{" "}
-              • JPG, PNG, WebP • Max 10MB
+              • JPG, PNG, WebP
             </p>
           </div>
           <div className="text-right text-sm">
             <p className="text-blue-600 font-medium">
-              {media.length + uploadingFiles.length}/{maxFiles}
+              {media.length + uploadingFiles.length}
             </p>
             <p className="text-xs text-gray-500">files</p>
           </div>

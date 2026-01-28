@@ -1104,7 +1104,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                         Click to upload logo
                       </p>
                       <p className="text-xs text-white/60 mt-1">
-                        PNG, JPG up to 10MB
+                        PNG, JPG
                       </p>
                     </div>
                   </label>
@@ -1190,9 +1190,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       <p className="text-sm text-white/90 font-medium">
                         Click to upload video
                       </p>
-                      <p className="text-xs text-white/60 mt-1">
-                        MP4, AVI up to 100MB
-                      </p>
+                  <p className="text-xs text-white/60 mt-1">
+                    MP4, AVI
+                  </p>
                     </div>
                   </label>
                   {videoFile && (

@@ -81,21 +81,6 @@ export class PropertyMediaService {
       );
     }
 
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      throw new BadRequestException("File too large. Maximum size is 10MB.");
-    }
-
-    const existingMediaCount = await this.propertyMediaRepository.count({
-      where: { property_id: propertyId },
-    });
-
-    if (existingMediaCount >= 10) {
-      throw new BadRequestException(
-        "Maximum 10 media files per property allowed."
-      );
-    }
-
     const fileKey = this.s3Service.generateFileKey(
       file.originalname,
       "property-media"

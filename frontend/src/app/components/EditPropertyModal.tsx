@@ -2523,7 +2523,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     Click to upload video
                   </p>
                   <p className="text-xs text-white/60 mt-1">
-                    MP4, AVI up to 100MB
+                    MP4, AVI
                   </p>
                 </div>
               </label>
