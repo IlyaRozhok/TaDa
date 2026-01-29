@@ -112,13 +112,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       },
     },
     operator_id: {
-      required: true,
-      custom: (value: string) => {
-        if (!value || value.trim() === "") {
-          return "Please select an operator";
-        }
-        return null;
-      },
+      required: false,
     },
   };
 
@@ -989,7 +983,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
-                  Operator *
+                  Operator (optional)
                 </label>
                 <div className="relative" data-dropdown>
                   <div

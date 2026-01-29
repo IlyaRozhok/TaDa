@@ -22,29 +22,31 @@ export class BuildingService {
     private propertyRepository: Repository<Property>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private readonly s3Service: S3Service
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(
-    createBuildingDto: CreateBuildingDto
+    createBuildingDto: CreateBuildingDto,
   ): Promise<BuildingResponse> {
-    // Verify that the operator exists and has operator role
-    const operator = await this.userRepository.findOne({
-      where: { id: createBuildingDto.operator_id },
-      relations: ["operatorProfile"],
-    });
+    // If operator_id provided, verify that the operator exists and has operator role
+    let operatorId: string | null = createBuildingDto.operator_id ?? null;
+    if (operatorId) {
+      const operator = await this.userRepository.findOne({
+        where: { id: operatorId },
+        relations: ["operatorProfile"],
+      });
 
-    if (!operator) {
-      throw new NotFoundException("Operator not found");
+      if (!operator) {
+        throw new NotFoundException("Operator not found");
+      }
+
+      this.ensureOperatorRole(operator);
     }
 
-    this.ensureOperatorRole(operator);
-
-    // Set default values for optional fields
+    // Set default values for optional fields (only name is required)
     const buildingData = {
-      // Required fields
       name: createBuildingDto.name,
-      operator_id: createBuildingDto.operator_id,
+      operator_id: operatorId,
 
       // Optional fields with defaults
       address: createBuildingDto.address || null,
@@ -114,7 +116,7 @@ export class BuildingService {
 
   async update(
     id: string,
-    updateBuildingDto: UpdateBuildingDto
+    updateBuildingDto: UpdateBuildingDto,
   ): Promise<BuildingResponse> {
     const building = await this.findOne(id);
 
@@ -240,7 +242,7 @@ export class BuildingService {
   }
 
   async remove(
-    id: string
+    id: string,
   ): Promise<{ success: boolean; message: string; id: string }> {
     const building = await this.buildingRepository.findOne({
       where: { id },
@@ -253,7 +255,7 @@ export class BuildingService {
 
     if (building.properties && building.properties.length > 0) {
       throw new BadRequestException(
-        `Cannot delete building. It has ${building.properties.length} associated properties. Please delete or reassign the properties first.`
+        `Cannot delete building. It has ${building.properties.length} associated properties. Please delete or reassign the properties first.`,
       );
     }
 
@@ -261,7 +263,7 @@ export class BuildingService {
 
     if (!deleteResult || deleteResult.affected === 0) {
       throw new NotFoundException(
-        `Building with ID ${id} could not be deleted. No rows affected.`
+        `Building with ID ${id} could not be deleted. No rows affected.`,
       );
     }
 
@@ -291,7 +293,7 @@ export class BuildingService {
   private ensureOperatorRole(user: User) {
     if (user.role === UserRole.Operator || user.role === UserRole.Admin) return;
     throw new BadRequestException(
-      "User must have operator or admin role to manage buildings"
+      "User must have operator or admin role to manage buildings",
     );
   }
 
@@ -345,12 +347,17 @@ export class BuildingService {
       if (building.documents) {
         const documentsKey = this.extractS3KeyFromUrl(building.documents);
         if (documentsKey) {
-          building.documents = await this.s3Service.getPresignedUrl(documentsKey);
+          building.documents =
+            await this.s3Service.getPresignedUrl(documentsKey);
         }
       }
 
       // Update photos array
-      if (building.photos && Array.isArray(building.photos) && building.photos.length > 0) {
+      if (
+        building.photos &&
+        Array.isArray(building.photos) &&
+        building.photos.length > 0
+      ) {
         const updatedPhotos = await Promise.all(
           building.photos.map(async (photoUrl) => {
             try {
@@ -360,17 +367,20 @@ export class BuildingService {
               }
               return photoUrl;
             } catch (error) {
-              console.error(`Error updating building photo URL: ${photoUrl}`, error);
+              console.error(
+                `Error updating building photo URL: ${photoUrl}`,
+                error,
+              );
               return photoUrl;
             }
-          })
+          }),
         );
         building.photos = updatedPhotos;
       }
 
       return building;
     } catch (error) {
-      console.error('Error updating building media URLs:', error);
+      console.error("Error updating building media URLs:", error);
       return building;
     }
   }
@@ -404,7 +414,9 @@ export class BuildingService {
     });
 
     const buildingsWithFreshUrls = await Promise.all(
-      buildingEntities.map(building => this.updateBuildingMediaUrls(building))
+      buildingEntities.map((building) =>
+        this.updateBuildingMediaUrls(building),
+      ),
     );
 
     return buildingsWithFreshUrls.map(toBuildingResponse);
