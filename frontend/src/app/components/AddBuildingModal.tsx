@@ -4,7 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Plus, Minus, Upload } from "lucide-react";
 import { buildingsAPI, usersAPI } from "../lib/api";
 import { FormField, Input, Select, Textarea } from "./FormField";
-import { useFormValidation, ValidationRules, commonRules } from "../hooks/useFormValidation";
+import {
+  useFormValidation,
+  ValidationRules,
+  commonRules,
+} from "../hooks/useFormValidation";
 
 const AREAS = ["West", "East", "North", "South", "Center"];
 
@@ -91,38 +95,45 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       required: true,
       minLength: 2,
       maxLength: 100,
-      pattern: /^[a-zA-Z0-9\s\-'.,()&]+$/
+      pattern: /^[a-zA-Z0-9\s\-'.,()&]+$/,
     },
     address: {
       minLength: 5,
-      maxLength: 200
+      maxLength: 200,
     },
     number_of_units: {
       min: 1,
       max: 10000,
       custom: (value: number) => {
         if (value && !Number.isInteger(value)) {
-          return 'Number of units must be a whole number';
+          return "Number of units must be a whole number";
         }
         return null;
-      }
+      },
     },
     operator_id: {
       required: true,
       custom: (value: string) => {
-        if (!value || value.trim() === '') {
-          return 'Please select an operator';
+        if (!value || value.trim() === "") {
+          return "Please select an operator";
         }
         return null;
-      }
-    }
+      },
+    },
   };
 
-  const { errors, touched, validateAll, validate, setFieldTouched, clearErrors } = useFormValidation(validationRules);
+  const {
+    errors,
+    touched,
+    validateAll,
+    validate,
+    setFieldTouched,
+    clearErrors,
+  } = useFormValidation(validationRules);
 
   // Handle field changes with validation
   const handleFieldChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (touched[field]) {
       validate(field, value);
     }
@@ -198,11 +209,11 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
 
           // Filter to ensure only operators (double check)
           const filteredOperators = operatorsList.filter(
-            (user: any) => user.role === "operator" || user.role === "Operator"
+            (user: any) => user.role === "operator" || user.role === "Operator",
           );
 
           console.log(
-            `✅ Loaded ${filteredOperators.length} operators from API`
+            `✅ Loaded ${filteredOperators.length} operators from API`,
           );
           console.log("Operators list:", filteredOperators);
           setOperators(filteredOperators);
@@ -308,23 +319,63 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           .catch((error: any) => {
             console.error("❌ Logo upload failed:", error);
             errors.push("Logo upload failed");
-          })
+          }),
       );
     }
 
     // Upload video if selected
     if (videoFile) {
       uploadPromises.push(
-        buildingsAPI
-          .uploadVideo(videoFile)
-          .then((result: { url: string; key: string }) => {
+        (async () => {
+          try {
+            // Validate video file before upload
+            const allowedVideoTypes = [
+              "video/mp4",
+              "video/mpeg",
+              "video/quicktime",
+              "video/x-msvideo",
+              "video/x-ms-wmv",
+            ];
+
+            if (!allowedVideoTypes.includes(videoFile.type)) {
+              throw new Error(
+                `Неподдерживаемый формат видео. Разрешены: MP4, MPEG, MOV, AVI, WMV. Ваш файл: ${videoFile.type || "неизвестный формат"}`,
+              );
+            }
+
+            // Check file size (max 500MB)
+            const maxSize = 500 * 1024 * 1024; // 500MB
+            if (videoFile.size > maxSize) {
+              const sizeMB = (videoFile.size / (1024 * 1024)).toFixed(2);
+              throw new Error(
+                `Файл слишком большой (${sizeMB} MB). Максимальный размер: 500 MB`,
+              );
+            }
+
+            console.log("📹 Загрузка видео:", {
+              name: videoFile.name,
+              type: videoFile.type,
+              size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`,
+            });
+
+            const result = await buildingsAPI.uploadVideo(videoFile);
+
+            if (!result || !result.url) {
+              throw new Error("Сервер не вернул URL загруженного видео");
+            }
+
             uploadedUrls.video = result.url;
-            console.log("✅ Video uploaded successfully");
-          })
-          .catch((error: any) => {
-            console.error("❌ Video upload failed:", error);
-            errors.push("Video upload failed");
-          })
+            console.log("✅ Видео успешно загружено:", uploadedUrls.video);
+          } catch (error: any) {
+            console.error("❌ Ошибка загрузки видео:", error);
+            const errorMessage =
+              error.response?.data?.message ||
+              error.message ||
+              "Ошибка загрузки видео";
+            errors.push(errorMessage);
+            throw error;
+          }
+        })(),
       );
     }
 
@@ -340,7 +391,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           .catch((error: any) => {
             console.error("❌ Photos upload failed:", error);
             errors.push("Photos upload failed");
-          })
+          }),
       );
     }
 
@@ -358,7 +409,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           .catch((error: any) => {
             console.error("❌ Documents upload failed:", error);
             errors.push("Documents upload failed");
-          })
+          }),
       );
     }
 
@@ -413,7 +464,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           operatorIdValue = (formData.operator_id as any).id;
           console.warn(
             "⚠️ operator_id was an object, extracting ID:",
-            operatorIdValue
+            operatorIdValue,
           );
         }
       }
@@ -533,7 +584,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         setVideoPreview(null);
         setPhotoPreviews([]);
         setDocumentPreviews([]);
-        
+
         // Reset validation
         clearErrors();
       }
@@ -565,12 +616,12 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   const updateMetroStation = (
     index: number,
     field: keyof MetroStation,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       metro_stations: prev.metro_stations.map((station, i) =>
-        i === index ? { ...station, [field]: value } : station
+        i === index ? { ...station, [field]: value } : station,
       ),
     }));
   };
@@ -634,7 +685,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       ...prev,
       pets: prev.pets
         ? prev.pets.map((pet, i) =>
-            i === index ? { ...pet, [field]: value } : pet
+            i === index ? { ...pet, [field]: value } : pet,
           )
         : null,
     }));
@@ -683,8 +734,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <Input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => handleFieldChange('name', e.target.value)}
-                  onBlur={() => handleFieldBlur('name')}
+                  onChange={(e) => handleFieldChange("name", e.target.value)}
+                  onBlur={() => handleFieldBlur("name")}
                   error={touched.name && !!errors.name}
                   placeholder="e.g. The Grand Tower"
                 />
@@ -699,8 +750,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <Input
                   type="text"
                   value={formData.address}
-                  onChange={(e) => handleFieldChange('address', e.target.value)}
-                  onBlur={() => handleFieldBlur('address')}
+                  onChange={(e) => handleFieldChange("address", e.target.value)}
+                  onBlur={() => handleFieldBlur("address")}
                   error={touched.address && !!errors.address}
                   placeholder="e.g. 123 Main Street, London"
                 />
@@ -715,8 +766,13 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 <Input
                   type="number"
                   value={formData.number_of_units || ""}
-                  onChange={(e) => handleFieldChange('number_of_units', e.target.value === "" ? null : parseInt(e.target.value))}
-                  onBlur={() => handleFieldBlur('number_of_units')}
+                  onChange={(e) =>
+                    handleFieldChange(
+                      "number_of_units",
+                      e.target.value === "" ? null : parseInt(e.target.value),
+                    )
+                  }
+                  onBlur={() => handleFieldBlur("number_of_units")}
                   error={touched.number_of_units && !!errors.number_of_units}
                   min="1"
                   placeholder="e.g. 50"
@@ -758,7 +814,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                   setFormData({
                                     ...formData,
                                     type_of_unit: formData.type_of_unit.filter(
-                                      (t) => t !== value
+                                      (t) => t !== value,
                                     ),
                                   });
                                 }}
@@ -803,7 +859,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                             const newTypeOfUnit =
                               formData.type_of_unit.includes(option.value)
                                 ? formData.type_of_unit.filter(
-                                    (t) => t !== option.value
+                                    (t) => t !== option.value,
                                   )
                                 : [...formData.type_of_unit, option.value];
                             setFormData({
@@ -815,7 +871,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           <input
                             type="checkbox"
                             checked={formData.type_of_unit.includes(
-                              option.value
+                              option.value,
                             )}
                             readOnly
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -861,7 +917,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                   setFormData({
                                     ...formData,
                                     tenant_type: formData.tenant_type.filter(
-                                      (t) => t !== value
+                                      (t) => t !== value,
                                     ),
                                   });
                                 }}
@@ -903,10 +959,10 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                           onClick={() => {
                             const newTenantType = formData.tenant_type.includes(
-                              option.value
+                              option.value,
                             )
                               ? formData.tenant_type.filter(
-                                  (t) => t !== option.value
+                                  (t) => t !== option.value,
                                 )
                               : [...formData.tenant_type, option.value];
                             setFormData({
@@ -918,7 +974,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           <input
                             type="checkbox"
                             checked={formData.tenant_type.includes(
-                              option.value
+                              option.value,
                             )}
                             readOnly
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -950,23 +1006,23 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                       {operatorsLoading
                         ? "Loading operators..."
                         : formData.operator_id
-                        ? (() => {
-                            const op = operators.find(
-                              (o) => o.id === formData.operator_id
-                            );
-                            const displayName =
-                              op?.operatorProfile?.company_name ||
-                              op?.operatorProfile?.full_name ||
-                              op?.full_name ||
-                              op?.email;
-                            return (
-                              displayName +
-                              (op?.email && displayName !== op?.email
-                                ? ` (${op.email})`
-                                : "")
-                            );
-                          })()
-                        : "Select an operator"}
+                          ? (() => {
+                              const op = operators.find(
+                                (o) => o.id === formData.operator_id,
+                              );
+                              const displayName =
+                                op?.operatorProfile?.company_name ||
+                                op?.operatorProfile?.full_name ||
+                                op?.full_name ||
+                                op?.email;
+                              return (
+                                displayName +
+                                (op?.email && displayName !== op?.email
+                                  ? ` (${op.email})`
+                                  : "")
+                              );
+                            })()
+                          : "Select an operator"}
                     </span>
                     <svg
                       className="w-5 h-5 text-white/70"
@@ -1053,9 +1109,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                       <p className="text-sm text-white/90 font-medium">
                         Click to upload logo
                       </p>
-                      <p className="text-xs text-white/60 mt-1">
-                        PNG, JPG
-                      </p>
+                      <p className="text-xs text-white/60 mt-1">PNG, JPG</p>
                     </div>
                   </label>
                   {logoFile && (
@@ -1108,9 +1162,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                       <p className="text-sm text-white/90 font-medium">
                         Click to upload video
                       </p>
-                  <p className="text-xs text-white/60 mt-1">
-                    MP4, AVI
-                  </p>
+                      <p className="text-xs text-white/60 mt-1">MP4, AVI</p>
                     </div>
                   </label>
                   {videoFile && (
@@ -1208,7 +1260,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     console.error(
-                                      "Failed to load image preview"
+                                      "Failed to load image preview",
                                     );
                                     e.currentTarget.style.display = "none";
                                   }}
@@ -1223,7 +1275,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                   type="button"
                                   onClick={() =>
                                     setPhotoFiles((prev) =>
-                                      prev.filter((_, i) => i !== index)
+                                      prev.filter((_, i) => i !== index),
                                     )
                                   }
                                   className="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-opacity border border-white/20"
@@ -1316,7 +1368,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                 type="button"
                                 onClick={() =>
                                   setDocumentFiles((prev) =>
-                                    prev.filter((_, i) => i !== index)
+                                    prev.filter((_, i) => i !== index),
                                   )
                                 }
                                 className="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-opacity border border-white/20"
@@ -1416,7 +1468,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                       } else {
                         const val = Math.max(
                           0,
-                          Math.min(23, parseInt(inputVal) || 0)
+                          Math.min(23, parseInt(inputVal) || 0),
                         );
                         setFormData({
                           ...formData,
@@ -1452,7 +1504,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                       } else {
                         const val = Math.max(
                           0,
-                          Math.min(23, parseInt(inputVal) || 0)
+                          Math.min(23, parseInt(inputVal) || 0),
                         );
                         setFormData({
                           ...formData,
@@ -1626,7 +1678,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                     updatePet(
                                       index,
                                       "size",
-                                      size.value || undefined
+                                      size.value || undefined,
                                     );
                                     setOpenDropdown(null);
                                   }}

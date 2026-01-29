@@ -153,8 +153,12 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const [removedDocuments, setRemovedDocuments] = useState<boolean>(false);
 
   // Drag and drop state for photos
-  const [draggedPhotoIndex, setDraggedPhotoIndex] = useState<number | null>(null);
-  const [draggedPhotoFileIndex, setDraggedPhotoFileIndex] = useState<number | null>(null);
+  const [draggedPhotoIndex, setDraggedPhotoIndex] = useState<number | null>(
+    null,
+  );
+  const [draggedPhotoFileIndex, setDraggedPhotoFileIndex] = useState<
+    number | null
+  >(null);
 
   // File input refs
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -185,11 +189,11 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           // Filter to ensure only operators (double check)
           const filteredOperators = operatorsList.filter(
-            (user: any) => user.role === "operator" || user.role === "Operator"
+            (user: any) => user.role === "operator" || user.role === "Operator",
           );
 
           console.log(
-            `✅ Loaded ${filteredOperators.length} operators from API`
+            `✅ Loaded ${filteredOperators.length} operators from API`,
           );
           console.log("Operators list:", filteredOperators);
           setOperators(filteredOperators);
@@ -241,7 +245,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
       console.log(
         "✅ Form data initialized with operator_id:",
-        building.operator_id || null
+        building.operator_id || null,
       );
       // Reset removed media when modal opens
       setRemovedPhotos([]);
@@ -351,23 +355,63 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
           .catch((error: any) => {
             console.error("❌ Logo upload failed:", error);
             errors.push("Logo upload failed");
-          })
+          }),
       );
     }
 
     // Upload video if selected
     if (videoFile) {
       uploadPromises.push(
-        buildingsAPI
-          .uploadVideo(videoFile)
-          .then((result: { url: string; key: string }) => {
+        (async () => {
+          try {
+            // Validate video file before upload
+            const allowedVideoTypes = [
+              "video/mp4",
+              "video/mpeg",
+              "video/quicktime",
+              "video/x-msvideo",
+              "video/x-ms-wmv",
+            ];
+
+            if (!allowedVideoTypes.includes(videoFile.type)) {
+              throw new Error(
+                `Неподдерживаемый формат видео. Разрешены: MP4, MPEG, MOV, AVI, WMV. Ваш файл: ${videoFile.type || "неизвестный формат"}`,
+              );
+            }
+
+            // Check file size (max 500MB)
+            const maxSize = 500 * 1024 * 1024; // 500MB
+            if (videoFile.size > maxSize) {
+              const sizeMB = (videoFile.size / (1024 * 1024)).toFixed(2);
+              throw new Error(
+                `Файл слишком большой (${sizeMB} MB). Максимальный размер: 500 MB`,
+              );
+            }
+
+            console.log("📹 Загрузка видео:", {
+              name: videoFile.name,
+              type: videoFile.type,
+              size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`,
+            });
+
+            const result = await buildingsAPI.uploadVideo(videoFile);
+
+            if (!result || !result.url) {
+              throw new Error("Сервер не вернул URL загруженного видео");
+            }
+
             uploadedUrls.video = result.url;
-            console.log("✅ Video uploaded successfully");
-          })
-          .catch((error: any) => {
-            console.error("❌ Video upload failed:", error);
-            errors.push("Video upload failed");
-          })
+            console.log("✅ Видео успешно загружено:", uploadedUrls.video);
+          } catch (error: any) {
+            console.error("❌ Ошибка загрузки видео:", error);
+            const errorMessage =
+              error.response?.data?.message ||
+              error.message ||
+              "Ошибка загрузки видео";
+            errors.push(errorMessage);
+            throw error;
+          }
+        })(),
       );
     }
 
@@ -383,7 +427,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
           .catch((error: any) => {
             console.error("❌ Photos upload failed:", error);
             errors.push("Photos upload failed");
-          })
+          }),
       );
     }
 
@@ -401,7 +445,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
           .catch((error: any) => {
             console.error("❌ Documents upload failed:", error);
             errors.push("Documents upload failed");
-          })
+          }),
       );
     }
 
@@ -435,121 +479,124 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       // Upload files first
       const uploadResult = await uploadAllFiles();
 
-    // Prepare data with uploaded URLs
-    // For photos: combine existing (minus removed) + new uploaded
-    const existingPhotos = (formData.photos || []).filter(
-      (photo) => !removedPhotos.includes(photo)
-    );
-    const allPhotos = [...existingPhotos, ...uploadResult.uploadedUrls.photos];
+      // Prepare data with uploaded URLs
+      // For photos: combine existing (minus removed) + new uploaded
+      const existingPhotos = (formData.photos || []).filter(
+        (photo) => !removedPhotos.includes(photo),
+      );
+      const allPhotos = [
+        ...existingPhotos,
+        ...uploadResult.uploadedUrls.photos,
+      ];
 
-    // For logo: use new if uploaded, empty if removed, otherwise keep existing
-    let finalLogo = formData.logo;
-    if (uploadResult.uploadedUrls.logo) {
-      finalLogo = uploadResult.uploadedUrls.logo;
-    } else if (removedLogo) {
-      finalLogo = "";
-    }
-
-    // For video: use new if uploaded, empty if removed, otherwise keep existing
-    let finalVideo = formData.video;
-    if (uploadResult.uploadedUrls.video) {
-      finalVideo = uploadResult.uploadedUrls.video;
-    } else if (removedVideo) {
-      finalVideo = "";
-    }
-
-    // For documents: use new if uploaded, empty if removed, otherwise keep existing
-    let finalDocuments = formData.documents;
-    if (uploadResult.uploadedUrls.documents) {
-      finalDocuments = uploadResult.uploadedUrls.documents;
-    } else if (removedDocuments) {
-      finalDocuments = "";
-    }
-
-    // Ensure operator_id is only the ID string, not an object
-    let operatorIdValue: string | null = null;
-    if (formData.operator_id) {
-      if (
-        typeof formData.operator_id === "string" &&
-        formData.operator_id.trim() !== ""
-      ) {
-        operatorIdValue = formData.operator_id.trim();
-      } else if (
-        typeof formData.operator_id === "object" &&
-        formData.operator_id !== null &&
-        "id" in formData.operator_id
-      ) {
-        // If somehow an object was passed, extract the ID
-        operatorIdValue = (formData.operator_id as any).id;
-        console.warn(
-          "⚠️ operator_id was an object, extracting ID:",
-          operatorIdValue
-        );
+      // For logo: use new if uploaded, empty if removed, otherwise keep existing
+      let finalLogo = formData.logo;
+      if (uploadResult.uploadedUrls.logo) {
+        finalLogo = uploadResult.uploadedUrls.logo;
+      } else if (removedLogo) {
+        finalLogo = "";
       }
-    }
 
-    const buildingData: any = {
-      name: formData.name,
-      // Only send operator_id as string or null, never as object
-      operator_id: operatorIdValue,
-    };
+      // For video: use new if uploaded, empty if removed, otherwise keep existing
+      let finalVideo = formData.video;
+      if (uploadResult.uploadedUrls.video) {
+        finalVideo = uploadResult.uploadedUrls.video;
+      } else if (removedVideo) {
+        finalVideo = "";
+      }
 
-    // Add optional fields only if they have values
-    if (formData.address && formData.address.trim() !== "") {
-      buildingData.address = formData.address;
-    }
-    if (formData.number_of_units != null) {
-      buildingData.number_of_units = formData.number_of_units;
-    }
-    if (formData.type_of_unit && formData.type_of_unit.length > 0) {
-      buildingData.type_of_unit = formData.type_of_unit;
-    }
-    if (finalLogo && finalLogo.trim() !== "") {
-      buildingData.logo = finalLogo;
-    }
-    if (finalVideo && finalVideo.trim() !== "") {
-      buildingData.video = finalVideo;
-    }
-    if (allPhotos && allPhotos.length > 0) {
-      buildingData.photos = allPhotos;
-    }
-    if (finalDocuments && finalDocuments.trim() !== "") {
-      buildingData.documents = finalDocuments;
-    }
-    if (formData.metro_stations && formData.metro_stations.length > 0) {
-      buildingData.metro_stations = formData.metro_stations;
-    }
-    if (formData.commute_times && formData.commute_times.length > 0) {
-      buildingData.commute_times = formData.commute_times;
-    }
-    if (formData.local_essentials && formData.local_essentials.length > 0) {
-      buildingData.local_essentials = formData.local_essentials;
-    }
-    if (formData.amenities && formData.amenities.length > 0) {
-      buildingData.amenities = formData.amenities;
-    }
-    // Boolean fields - always include, even if false
-    buildingData.is_concierge = formData.is_concierge;
-    buildingData.pet_policy = formData.pet_policy;
-    buildingData.smoking_area = formData.smoking_area;
+      // For documents: use new if uploaded, empty if removed, otherwise keep existing
+      let finalDocuments = formData.documents;
+      if (uploadResult.uploadedUrls.documents) {
+        finalDocuments = uploadResult.uploadedUrls.documents;
+      } else if (removedDocuments) {
+        finalDocuments = "";
+      }
 
-    if (formData.concierge_hours) {
-      buildingData.concierge_hours = formData.concierge_hours;
-    }
-    if (formData.pets && formData.pets.length > 0) {
-      buildingData.pets = formData.pets;
-    }
-    if (formData.tenant_type && formData.tenant_type.length > 0) {
-      buildingData.tenant_type = formData.tenant_type;
-    }
+      // Ensure operator_id is only the ID string, not an object
+      let operatorIdValue: string | null = null;
+      if (formData.operator_id) {
+        if (
+          typeof formData.operator_id === "string" &&
+          formData.operator_id.trim() !== ""
+        ) {
+          operatorIdValue = formData.operator_id.trim();
+        } else if (
+          typeof formData.operator_id === "object" &&
+          formData.operator_id !== null &&
+          "id" in formData.operator_id
+        ) {
+          // If somehow an object was passed, extract the ID
+          operatorIdValue = (formData.operator_id as any).id;
+          console.warn(
+            "⚠️ operator_id was an object, extracting ID:",
+            operatorIdValue,
+          );
+        }
+      }
 
-    console.log("📤 Submitting building data:", {
-      id: building.id,
-      operator_id: buildingData.operator_id,
-      operator_id_type: typeof buildingData.operator_id,
-      formData_operator_id: formData.operator_id,
-      formData_operator_id_type: typeof formData.operator_id,
-    });
+      const buildingData: any = {
+        name: formData.name,
+        // Only send operator_id as string or null, never as object
+        operator_id: operatorIdValue,
+      };
+
+      // Add optional fields only if they have values
+      if (formData.address && formData.address.trim() !== "") {
+        buildingData.address = formData.address;
+      }
+      if (formData.number_of_units != null) {
+        buildingData.number_of_units = formData.number_of_units;
+      }
+      if (formData.type_of_unit && formData.type_of_unit.length > 0) {
+        buildingData.type_of_unit = formData.type_of_unit;
+      }
+      if (finalLogo && finalLogo.trim() !== "") {
+        buildingData.logo = finalLogo;
+      }
+      if (finalVideo && finalVideo.trim() !== "") {
+        buildingData.video = finalVideo;
+      }
+      if (allPhotos && allPhotos.length > 0) {
+        buildingData.photos = allPhotos;
+      }
+      if (finalDocuments && finalDocuments.trim() !== "") {
+        buildingData.documents = finalDocuments;
+      }
+      if (formData.metro_stations && formData.metro_stations.length > 0) {
+        buildingData.metro_stations = formData.metro_stations;
+      }
+      if (formData.commute_times && formData.commute_times.length > 0) {
+        buildingData.commute_times = formData.commute_times;
+      }
+      if (formData.local_essentials && formData.local_essentials.length > 0) {
+        buildingData.local_essentials = formData.local_essentials;
+      }
+      if (formData.amenities && formData.amenities.length > 0) {
+        buildingData.amenities = formData.amenities;
+      }
+      // Boolean fields - always include, even if false
+      buildingData.is_concierge = formData.is_concierge;
+      buildingData.pet_policy = formData.pet_policy;
+      buildingData.smoking_area = formData.smoking_area;
+
+      if (formData.concierge_hours) {
+        buildingData.concierge_hours = formData.concierge_hours;
+      }
+      if (formData.pets && formData.pets.length > 0) {
+        buildingData.pets = formData.pets;
+      }
+      if (formData.tenant_type && formData.tenant_type.length > 0) {
+        buildingData.tenant_type = formData.tenant_type;
+      }
+
+      console.log("📤 Submitting building data:", {
+        id: building.id,
+        operator_id: buildingData.operator_id,
+        operator_id_type: typeof buildingData.operator_id,
+        formData_operator_id: formData.operator_id,
+        formData_operator_id_type: typeof formData.operator_id,
+      });
 
       await onSubmit(building.id, buildingData);
     } catch (error) {
@@ -579,12 +626,12 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const updateMetroStation = (
     index: number,
     field: keyof MetroStation,
-    value: string | number
+    value: string | number,
   ) => {
     setFormData((prev) => ({
       ...prev,
       metro_stations: prev.metro_stations.map((station, i) =>
-        i === index ? { ...station, [field]: value } : station
+        i === index ? { ...station, [field]: value } : station,
       ),
     }));
   };
@@ -606,12 +653,12 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const updateCommuteTime = (
     index: number,
     field: keyof CommuteTime,
-    value: string | number
+    value: string | number,
   ) => {
     setFormData((prev) => ({
       ...prev,
       commute_times: prev.commute_times.map((time, i) =>
-        i === index ? { ...time, [field]: value } : time
+        i === index ? { ...time, [field]: value } : time,
       ),
     }));
   };
@@ -636,12 +683,12 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const updateLocalEssential = (
     index: number,
     field: keyof LocalEssential,
-    value: string | number
+    value: string | number,
   ) => {
     setFormData((prev) => ({
       ...prev,
       local_essentials: prev.local_essentials.map((essential, i) =>
-        i === index ? { ...essential, [field]: value } : essential
+        i === index ? { ...essential, [field]: value } : essential,
       ),
     }));
   };
@@ -692,7 +739,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       ...prev,
       pets: prev.pets
         ? prev.pets.map((pet, i) =>
-            i === index ? { ...pet, [field]: value } : pet
+            i === index ? { ...pet, [field]: value } : pet,
           )
         : null,
     }));
@@ -717,7 +764,10 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         <form
           onSubmit={handleSubmit}
           className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto"
-          style={{ pointerEvents: isLoading || isSubmitting ? 'none' : 'auto', opacity: isLoading || isSubmitting ? 0.7 : 1 }}
+          style={{
+            pointerEvents: isLoading || isSubmitting ? "none" : "auto",
+            opacity: isLoading || isSubmitting ? 0.7 : 1,
+          }}
         >
           {/* Basic Information */}
           <div className="space-y-4">
@@ -808,7 +858,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                   setFormData({
                                     ...formData,
                                     type_of_unit: formData.type_of_unit.filter(
-                                      (t) => t !== value
+                                      (t) => t !== value,
                                     ),
                                   });
                                 }}
@@ -853,7 +903,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                             const newTypeOfUnit =
                               formData.type_of_unit.includes(option.value)
                                 ? formData.type_of_unit.filter(
-                                    (t) => t !== option.value
+                                    (t) => t !== option.value,
                                   )
                                 : [...formData.type_of_unit, option.value];
                             setFormData({
@@ -865,7 +915,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                           <input
                             type="checkbox"
                             checked={formData.type_of_unit.includes(
-                              option.value
+                              option.value,
                             )}
                             readOnly
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -911,7 +961,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                   setFormData({
                                     ...formData,
                                     tenant_type: formData.tenant_type.filter(
-                                      (t) => t !== value
+                                      (t) => t !== value,
                                     ),
                                   });
                                 }}
@@ -953,10 +1003,10 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                           className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                           onClick={() => {
                             const newTenantType = formData.tenant_type.includes(
-                              option.value
+                              option.value,
                             )
                               ? formData.tenant_type.filter(
-                                  (t) => t !== option.value
+                                  (t) => t !== option.value,
                                 )
                               : [...formData.tenant_type, option.value];
                             setFormData({
@@ -968,7 +1018,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                           <input
                             type="checkbox"
                             checked={formData.tenant_type.includes(
-                              option.value
+                              option.value,
                             )}
                             readOnly
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -1000,23 +1050,23 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       {operatorsLoading
                         ? "Loading operators..."
                         : formData.operator_id
-                        ? (() => {
-                            const op = operators.find(
-                              (o) => o.id === formData.operator_id
-                            );
-                            const displayName =
-                              op?.operatorProfile?.company_name ||
-                              op?.operatorProfile?.full_name ||
-                              op?.full_name ||
-                              op?.email;
-                            return (
-                              displayName +
-                              (op?.email && displayName !== op?.email
-                                ? ` (${op.email})`
-                                : "")
-                            );
-                          })()
-                        : "Select an operator"}
+                          ? (() => {
+                              const op = operators.find(
+                                (o) => o.id === formData.operator_id,
+                              );
+                              const displayName =
+                                op?.operatorProfile?.company_name ||
+                                op?.operatorProfile?.full_name ||
+                                op?.full_name ||
+                                op?.email;
+                              return (
+                                displayName +
+                                (op?.email && displayName !== op?.email
+                                  ? ` (${op.email})`
+                                  : "")
+                              );
+                            })()
+                          : "Select an operator"}
                     </span>
                     <svg
                       className="w-5 h-5 text-white/70"
@@ -1103,9 +1153,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       <p className="text-sm text-white/90 font-medium">
                         Click to upload logo
                       </p>
-                      <p className="text-xs text-white/60 mt-1">
-                        PNG, JPG
-                      </p>
+                      <p className="text-xs text-white/60 mt-1">PNG, JPG</p>
                     </div>
                   </label>
                   {logoFile && (
@@ -1190,9 +1238,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                       <p className="text-sm text-white/90 font-medium">
                         Click to upload video
                       </p>
-                  <p className="text-xs text-white/60 mt-1">
-                    MP4, AVI
-                  </p>
+                      <p className="text-xs text-white/60 mt-1">MP4, AVI</p>
                     </div>
                   </label>
                   {videoFile && (
@@ -1325,28 +1371,39 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                             }}
                             onDrop={(e) => {
                               e.preventDefault();
-                              if (draggedPhotoFileIndex === null || draggedPhotoFileIndex === index) {
+                              if (
+                                draggedPhotoFileIndex === null ||
+                                draggedPhotoFileIndex === index
+                              ) {
                                 setDraggedPhotoFileIndex(null);
                                 return;
                               }
-                              
+
                               const newFiles = [...photoFiles];
-                              const [draggedFile] = newFiles.splice(draggedPhotoFileIndex, 1);
+                              const [draggedFile] = newFiles.splice(
+                                draggedPhotoFileIndex,
+                                1,
+                              );
                               newFiles.splice(index, 0, draggedFile);
-                              
+
                               // Update both photoFiles and photoPreviews to maintain order
                               setPhotoFiles(newFiles);
-                              
+
                               // Update previews order
                               const newPreviews = [...photoPreviews];
-                              const [draggedPreview] = newPreviews.splice(draggedPhotoFileIndex, 1);
+                              const [draggedPreview] = newPreviews.splice(
+                                draggedPhotoFileIndex,
+                                1,
+                              );
                               newPreviews.splice(index, 0, draggedPreview);
                               setPhotoPreviews(newPreviews);
-                              
+
                               setDraggedPhotoFileIndex(null);
                             }}
                             className={`relative border border-white/20 rounded-lg overflow-hidden group bg-white/5 cursor-move transition-all ${
-                              draggedPhotoFileIndex === index ? "opacity-50 scale-95" : ""
+                              draggedPhotoFileIndex === index
+                                ? "opacity-50 scale-95"
+                                : ""
                             }`}
                           >
                             <div className="relative w-full h-32 bg-white/5">
@@ -1357,7 +1414,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     console.error(
-                                      "Failed to load image preview"
+                                      "Failed to load image preview",
                                     );
                                     e.currentTarget.style.display = "none";
                                   }}
@@ -1378,7 +1435,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                     type="button"
                                     onClick={() =>
                                       setPhotoFiles((prev) =>
-                                        prev.filter((_, i) => i !== index)
+                                        prev.filter((_, i) => i !== index),
                                       )
                                     }
                                     className="px-2 py-1 bg-red-500/90 text-white text-xs rounded hover:bg-red-600 transition-colors"
@@ -1401,13 +1458,16 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   {(() => {
                     // Use formData.photos for display to reflect reordering
                     const displayPhotos = (formData.photos || []).filter(
-                      (p) => !removedPhotos.includes(p)
+                      (p) => !removedPhotos.includes(p),
                     );
-                    
-                    if (displayPhotos.length === 0 && (!building.photos || building.photos.length === 0)) {
+
+                    if (
+                      displayPhotos.length === 0 &&
+                      (!building.photos || building.photos.length === 0)
+                    ) {
                       return null;
                     }
-                    
+
                     return (
                       <div className="space-y-2 mt-3">
                         <div className="flex items-center gap-2">
@@ -1434,25 +1494,33 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                               }}
                               onDrop={(e) => {
                                 e.preventDefault();
-                                if (draggedPhotoIndex === null || draggedPhotoIndex === index) {
+                                if (
+                                  draggedPhotoIndex === null ||
+                                  draggedPhotoIndex === index
+                                ) {
                                   setDraggedPhotoIndex(null);
                                   return;
                                 }
-                                
+
                                 const newPhotos = [...displayPhotos];
-                                const [draggedPhoto] = newPhotos.splice(draggedPhotoIndex, 1);
+                                const [draggedPhoto] = newPhotos.splice(
+                                  draggedPhotoIndex,
+                                  1,
+                                );
                                 newPhotos.splice(index, 0, draggedPhoto);
-                                
+
                                 // Update formData with new order
                                 setFormData((prev) => ({
                                   ...prev,
                                   photos: newPhotos,
                                 }));
-                                
+
                                 setDraggedPhotoIndex(null);
                               }}
                               className={`relative border border-white/20 rounded-lg overflow-hidden group bg-white/5 cursor-move transition-all ${
-                                draggedPhotoIndex === index ? "opacity-50 scale-95" : ""
+                                draggedPhotoIndex === index
+                                  ? "opacity-50 scale-95"
+                                  : ""
                               }`}
                             >
                               <div className="relative w-full h-32 bg-white/5">
@@ -1463,7 +1531,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                   draggable={false}
                                   onError={(e) => {
                                     console.error(
-                                      "Failed to load current photo"
+                                      "Failed to load current photo",
                                     );
                                     e.currentTarget.style.display = "none";
                                   }}
@@ -1582,7 +1650,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                 type="button"
                                 onClick={() =>
                                   setDocumentFiles((prev) =>
-                                    prev.filter((_, i) => i !== index)
+                                    prev.filter((_, i) => i !== index),
                                   )
                                 }
                                 className="opacity-0 group-hover:opacity-100 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs rounded transition-opacity border border-white/20"
@@ -1912,7 +1980,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                     updatePet(
                                       index,
                                       "size",
-                                      size.value || undefined
+                                      size.value || undefined,
                                     );
                                     setOpenDropdown(null);
                                   }}
@@ -1988,7 +2056,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                     updateMetroStation(
                       index,
                       "destination",
-                      parseInt(e.target.value) || 0
+                      parseInt(e.target.value) || 0,
                     )
                   }
                   className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
@@ -2038,7 +2106,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                     updateCommuteTime(
                       index,
                       "destination",
-                      parseInt(e.target.value) || 0
+                      parseInt(e.target.value) || 0,
                     )
                   }
                   className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
@@ -2088,7 +2156,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                     updateLocalEssential(
                       index,
                       "destination",
-                      parseInt(e.target.value) || 0
+                      parseInt(e.target.value) || 0,
                     )
                   }
                   className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"

@@ -242,13 +242,37 @@ export const buildingsAPI = {
     const formData = new FormData();
     formData.append("video", file);
     try {
+      console.log("📤 Отправка видео на сервер:", {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+      });
+
       const response = await api.post("/buildings/upload/video", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        // Add timeout for large video files (5 minutes)
+        timeout: 5 * 60 * 1000,
+        // Track upload progress
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            );
+            console.log(`📊 Прогресс загрузки: ${percentCompleted}%`);
+          }
+        },
       });
+
+      console.log("✅ Ответ сервера:", response.data);
       return response.data;
     } catch (error: any) {
+      console.error("❌ Ошибка API при загрузке видео:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       throw error;
     }
   },
