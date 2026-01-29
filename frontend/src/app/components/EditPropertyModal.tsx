@@ -165,6 +165,14 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   // Load property data when modal opens
   useEffect(() => {
     if (property && isOpen) {
+      console.log("📥 Загрузка данных property в EditPropertyModal:", {
+        id: property.id,
+        video: property.video,
+        videoType: typeof property.video,
+        videoLength: property.video?.length,
+        fullProperty: property,
+      });
+
       // Ensure arrays are properly parsed
       const parseArray = (value: any) => {
         if (Array.isArray(value)) return value;
@@ -178,6 +186,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         }
         return [];
       };
+
+      const videoValue = property.video || "";
+      console.log("🎬 Установка video в formData:", {
+        original: property.video,
+        final: videoValue,
+        isEmpty: !videoValue,
+      });
 
       setFormData({
         title: property.title || "",
@@ -202,7 +217,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         terrace: property.terrace || false,
         square_meters: property.square_meters || null,
         photos: property.photos || [],
-        video: property.video || "",
+        video: videoValue,
         documents: property.documents || "",
         building_id: property.building_id || "",
         // Inherited fields - parse arrays properly
@@ -794,8 +809,53 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       }
 
       if (videoFile) {
-        const videoResult = await propertiesAPI.uploadVideo(videoFile);
-        uploadedVideo = videoResult.url;
+        try {
+          // Validate video file before upload
+          const allowedVideoTypes = [
+            "video/mp4",
+            "video/mpeg",
+            "video/quicktime",
+            "video/x-msvideo",
+            "video/x-ms-wmv",
+          ];
+
+          if (!allowedVideoTypes.includes(videoFile.type)) {
+            throw new Error(
+              `Неподдерживаемый формат видео. Разрешены: MP4, MPEG, MOV, AVI, WMV. Ваш файл: ${videoFile.type || "неизвестный формат"}`,
+            );
+          }
+
+          // Check file size (max 500MB)
+          const maxSize = 500 * 1024 * 1024; // 500MB
+          if (videoFile.size > maxSize) {
+            const sizeMB = (videoFile.size / (1024 * 1024)).toFixed(2);
+            throw new Error(
+              `Файл слишком большой (${sizeMB} MB). Максимальный размер: 500 MB`,
+            );
+          }
+
+          console.log("📹 Загрузка видео:", {
+            name: videoFile.name,
+            type: videoFile.type,
+            size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`,
+          });
+
+          const videoResult = await propertiesAPI.uploadVideo(videoFile);
+
+          if (!videoResult || !videoResult.url) {
+            throw new Error("Сервер не вернул URL загруженного видео");
+          }
+
+          uploadedVideo = videoResult.url;
+          console.log("✅ Видео успешно загружено:", uploadedVideo);
+        } catch (error: any) {
+          console.error("❌ Ошибка загрузки видео:", error);
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            "Не удалось загрузить видео. Проверьте формат файла и размер.";
+          throw new Error(`Ошибка загрузки видео: ${errorMessage}`);
+        }
       }
 
       if (documentFile) {
@@ -2575,6 +2635,18 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       src={formData.video}
                       className="w-full h-32 object-cover rounded-lg"
                       controls
+                      onError={(e) => {
+                        console.error("❌ Ошибка загрузки видео:", {
+                          src: formData.video,
+                          error: e,
+                        });
+                      }}
+                      onLoadedData={() => {
+                        console.log(
+                          "✅ Видео успешно загружено:",
+                          formData.video,
+                        );
+                      }}
                     />
                     <button
                       type="button"

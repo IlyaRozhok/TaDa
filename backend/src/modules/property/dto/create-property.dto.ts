@@ -382,4 +382,22 @@ export class CreatePropertyDto {
   @IsArray()
   @IsString({ each: true })
   photos?: string[];
+
+  @ApiProperty({
+    description: "Property video URL",
+    example: "https://s3.amazonaws.com/bucket/video.mp4",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  video?: string;
+
+  @ApiProperty({
+    description: "Property documents URL",
+    example: "https://s3.amazonaws.com/bucket/document.pdf",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  documents?: string;
 }

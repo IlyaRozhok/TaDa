@@ -153,7 +153,18 @@ function AdminPanelContent() {
           const response = await fetch(`${apiUrl}/properties`, { headers });
           if (response.ok) {
             const data = await response.json();
-            setProperties(data.data || data || []);
+            const propertiesList = data.data || data || [];
+            console.log("📋 Загружены properties:", {
+              count: propertiesList.length,
+              firstProperty: propertiesList[0]
+                ? {
+                    id: propertiesList[0].id,
+                    video: propertiesList[0].video,
+                    videoType: typeof propertiesList[0].video,
+                  }
+                : null,
+            });
+            setProperties(propertiesList);
           }
         } else if (activeSection === "requests") {
           setIsLoadingRequests(true);
@@ -571,7 +582,13 @@ function AdminPanelContent() {
   const handleUpdateProperty = async (id: string, data: any) => {
     setIsActionLoading(true);
     try {
-      console.log("🔄 Updating property:", { id, data });
+      console.log("🔄 Updating property:", {
+        id,
+        video: data.video,
+        videoType: typeof data.video,
+        videoLength: data.video?.length,
+        fullData: data,
+      });
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const token = localStorage.getItem("accessToken");
@@ -592,7 +609,13 @@ function AdminPanelContent() {
       }
 
       const updatedProperty = await response.json();
-      console.log("✅ Property updated successfully:", updatedProperty);
+      console.log("✅ Property updated successfully:", {
+        id: updatedProperty.id,
+        video: updatedProperty.video,
+        videoType: typeof updatedProperty.video,
+        videoInData: data.video,
+        fullProperty: updatedProperty,
+      });
 
       const propertyTitle =
         updatedProperty.title ||
@@ -611,12 +634,22 @@ function AdminPanelContent() {
         if (response.ok) {
           const propertiesData = await response.json();
           const updatedProperties = propertiesData.data || propertiesData || [];
+          console.log("🔄 Обновленный список properties:", {
+            count: updatedProperties.length,
+            updatedProperty: updatedProperties.find(
+              (p: Property) => p.id === id,
+            ),
+          });
           setProperties(updatedProperties);
 
           const updatedPropertyFromList = updatedProperties.find(
             (p: Property) => p.id === id,
           );
           if (updatedPropertyFromList) {
+            console.log("📌 Установка selectedItem:", {
+              id: updatedPropertyFromList.id,
+              video: updatedPropertyFromList.video,
+            });
             setSelectedItem(updatedPropertyFromList);
           }
         }

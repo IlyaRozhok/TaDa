@@ -21,7 +21,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor - handle 401 errors
@@ -48,7 +48,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // API methods for different resources
@@ -170,7 +170,7 @@ export const matchingAPI = {
   getMatchedPropertiesWithPagination: (
     page?: number,
     limit?: number,
-    search?: string
+    search?: string,
   ) =>
     api.get("/matching/matched-properties", {
       params: { page, limit, search },
@@ -322,14 +322,61 @@ export const propertiesAPI = {
     const formData = new FormData();
     formData.append("video", file);
     try {
+      console.log("📤 Отправка видео на сервер:", {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+      });
+
       const response = await api.post("/properties/upload/video", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        // Add timeout for large video files (5 minutes)
+        timeout: 5 * 60 * 1000,
+        // Track upload progress
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            );
+            console.log(`📊 Прогресс загрузки: ${percentCompleted}%`);
+          }
+        },
       });
+
+      console.log("✅ Ответ сервера:", response.data);
       return response.data;
     } catch (error: any) {
-      throw error;
+      console.error("❌ Ошибка API при загрузке видео:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+
+      // Provide more detailed error messages
+      if (error.response) {
+        // Server responded with error status
+        const serverMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          "Ошибка сервера";
+        const errorWithDetails = new Error(serverMessage);
+        (errorWithDetails as any).status = error.response.status;
+        (errorWithDetails as any).response = error.response.data;
+        throw errorWithDetails;
+      } else if (error.request) {
+        // Request was made but no response received
+        throw new Error(
+          "Не удалось подключиться к серверу. Проверьте интернет-соединение.",
+        );
+      } else {
+        // Something else happened
+        throw new Error(
+          error.message || "Неизвестная ошибка при загрузке видео",
+        );
+      }
     }
   },
   uploadDocuments: async (file: File) => {
@@ -343,7 +390,7 @@ export const propertiesAPI = {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       return response.data;
     } catch (error: any) {
@@ -364,7 +411,7 @@ export const propertyMediaAPI = {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       return response.data;
     } catch (error: any) {
@@ -377,7 +424,7 @@ export const propertyMediaAPI = {
   },
   deletePropertyMedia: async (propertyId: string, mediaId: string) => {
     const response = await api.delete(
-      `/properties/${propertyId}/media/${mediaId}`
+      `/properties/${propertyId}/media/${mediaId}`,
     );
     return response.data;
   },
@@ -388,7 +435,7 @@ export const propertyMediaAPI = {
 
   updateMediaOrder: async (
     propertyId: string,
-    mediaOrders: { id: string; order_index: number }[]
+    mediaOrders: { id: string; order_index: number }[],
   ) => {
     const response = await api.put(`/properties/${propertyId}/media/order`, {
       mediaOrders,
@@ -429,9 +476,7 @@ export interface PaginationOptions {
 
 // Combined filtering options
 export interface PropertyQueryOptions
-  extends PropertyFilters,
-    SortOptions,
-    PaginationOptions {}
+  extends PropertyFilters, SortOptions, PaginationOptions {}
 
 export interface MatchingResult {
   properties: Property[];

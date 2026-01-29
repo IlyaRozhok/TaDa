@@ -703,16 +703,102 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       return;
     }
 
-    // Validate all fields
+    // Validate all fields - this will mark all fields as touched and set errors
     const isValid = validateAll(formData);
+
     if (!isValid) {
-      console.log("❌ Validation failed. Errors:", errors);
-      console.log("📋 Form data:", formData);
-      // Scroll to first error field
-      const buildingField = document.querySelector("[data-building-field]");
-      if (buildingField && errors.building_id) {
-        buildingField.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      // Get errors after validation (they should be updated by validateAll)
+      // Use requestAnimationFrame to ensure React has updated the state
+      requestAnimationFrame(() => {
+        const currentErrors = errors;
+        const errorFields = Object.keys(currentErrors).filter(
+          (key) => currentErrors[key],
+        );
+
+        console.log("❌ Validation failed. Errors:", currentErrors);
+        console.log("📋 Form data:", formData);
+        console.log("⚠️ Поля с ошибками:", errorFields);
+
+        // Find first error field and scroll to it
+        if (errorFields.length > 0) {
+          const firstErrorField = errorFields[0];
+          console.log(
+            `⚠️ Первая ошибка в поле: ${firstErrorField}`,
+            currentErrors[firstErrorField],
+          );
+
+          // Try to find the field element by various selectors
+          let fieldElement: HTMLElement | null = null;
+
+          // Try by name attribute
+          fieldElement = document.querySelector(
+            `[name="${firstErrorField}"]`,
+          ) as HTMLElement;
+
+          // Try by data attribute
+          if (!fieldElement) {
+            fieldElement = document.querySelector(
+              `[data-field="${firstErrorField}"]`,
+            ) as HTMLElement;
+          }
+
+          // Special case for building_id
+          if (!fieldElement && firstErrorField === "building_id") {
+            fieldElement = document.querySelector(
+              "[data-building-field]",
+            ) as HTMLElement;
+          }
+
+          // Try to find input by label text (for "Title" field)
+          if (!fieldElement && firstErrorField === "title") {
+            const labels = Array.from(document.querySelectorAll("label"));
+            const matchingLabel = labels.find((label) =>
+              label.textContent?.includes("Title"),
+            );
+            if (matchingLabel) {
+              const parent = matchingLabel.closest(".space-y-2");
+              if (parent) {
+                fieldElement = parent.querySelector("input") as HTMLElement;
+              }
+            }
+          }
+
+          if (fieldElement) {
+            fieldElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            // Try to focus the input if it's focusable
+            setTimeout(() => {
+              if (fieldElement && "focus" in fieldElement) {
+                (fieldElement as HTMLElement).focus();
+              }
+            }, 300);
+          }
+        }
+
+        // Show user-friendly error message
+        const errorMessages = errorFields
+          .map((field) => {
+            const fieldLabel =
+              field === "title"
+                ? "Название"
+                : field === "building_id"
+                  ? "Здание"
+                  : field === "operator_id"
+                    ? "Оператор"
+                    : field;
+            return `• ${fieldLabel}: ${currentErrors[field] || "Обязательное поле"}`;
+          })
+          .join("\n");
+
+        if (errorMessages) {
+          alert(`Пожалуйста, заполните обязательные поля:\n\n${errorMessages}`);
+        } else {
+          alert("Пожалуйста, заполните все обязательные поля формы.");
+        }
+      });
+
       return;
     }
 
@@ -731,8 +817,53 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       }
 
       if (videoFile) {
-        const videoResult = await propertiesAPI.uploadVideo(videoFile);
-        uploadedVideo = videoResult.url;
+        try {
+          // Validate video file before upload
+          const allowedVideoTypes = [
+            "video/mp4",
+            "video/mpeg",
+            "video/quicktime",
+            "video/x-msvideo",
+            "video/x-ms-wmv",
+          ];
+
+          if (!allowedVideoTypes.includes(videoFile.type)) {
+            throw new Error(
+              `Неподдерживаемый формат видео. Разрешены: MP4, MPEG, MOV, AVI, WMV. Ваш файл: ${videoFile.type || "неизвестный формат"}`,
+            );
+          }
+
+          // Check file size (max 500MB)
+          const maxSize = 500 * 1024 * 1024; // 500MB
+          if (videoFile.size > maxSize) {
+            const sizeMB = (videoFile.size / (1024 * 1024)).toFixed(2);
+            throw new Error(
+              `Файл слишком большой (${sizeMB} MB). Максимальный размер: 500 MB`,
+            );
+          }
+
+          console.log("📹 Загрузка видео:", {
+            name: videoFile.name,
+            type: videoFile.type,
+            size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`,
+          });
+
+          const videoResult = await propertiesAPI.uploadVideo(videoFile);
+
+          if (!videoResult || !videoResult.url) {
+            throw new Error("Сервер не вернул URL загруженного видео");
+          }
+
+          uploadedVideo = videoResult.url;
+          console.log("✅ Видео успешно загружено:", uploadedVideo);
+        } catch (error: any) {
+          console.error("❌ Ошибка загрузки видео:", error);
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            "Не удалось загрузить видео. Проверьте формат файла и размер.";
+          throw new Error(`Ошибка загрузки видео: ${errorMessage}`);
+        }
       }
 
       if (documentFile) {

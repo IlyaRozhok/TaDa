@@ -7,7 +7,7 @@ type PropertyDto = CreatePropertyDto | UpdatePropertyDto;
 
 export const assignPropertyOptionals = (
   target: Partial<Property>,
-  dto: PropertyDto
+  dto: PropertyDto,
 ): void => {
   if (dto.apartment_number !== undefined) {
     target.apartment_number = dto.apartment_number;
@@ -85,6 +85,14 @@ export const assignPropertyOptionals = (
 
   if (dto.photos !== undefined) {
     target.photos = dto.photos;
+  }
+
+  if (dto.video !== undefined) {
+    target.video = dto.video;
+  }
+
+  if (dto.documents !== undefined) {
+    target.documents = dto.documents;
   }
 
   if (dto.luxury !== undefined) {

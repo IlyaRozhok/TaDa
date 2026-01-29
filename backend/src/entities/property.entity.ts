@@ -9,7 +9,14 @@ import {
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
-import { Building, MetroStation, CommuteTime, LocalEssential, ConciergeHours, Pet } from "./building.entity";
+import {
+  Building,
+  MetroStation,
+  CommuteTime,
+  LocalEssential,
+  ConciergeHours,
+  Pet,
+} from "./building.entity";
 
 @Entity("properties")
 export class Property {
@@ -108,7 +115,8 @@ export class Property {
   address?: string;
 
   @ApiProperty({
-    description: "Tenant types for this property (inherited from building or custom)",
+    description:
+      "Tenant types for this property (inherited from building or custom)",
     example: ["family", "student"],
     type: [String],
     required: false,
@@ -126,7 +134,8 @@ export class Property {
   amenities?: string[];
 
   @ApiProperty({
-    description: "Whether property has concierge (inherited from building or custom)",
+    description:
+      "Whether property has concierge (inherited from building or custom)",
     example: true,
     required: false,
   })
@@ -142,7 +151,8 @@ export class Property {
   pet_policy?: boolean;
 
   @ApiProperty({
-    description: "Smoking area availability (inherited from building or custom)",
+    description:
+      "Smoking area availability (inherited from building or custom)",
     example: false,
     required: false,
   })
@@ -150,7 +160,8 @@ export class Property {
   smoking_area?: boolean;
 
   @ApiProperty({
-    description: "Metro stations with travel times (inherited from building or custom)",
+    description:
+      "Metro stations with travel times (inherited from building or custom)",
     example: [{ label: "Oxford Circus", destination: 5 }],
     type: "json",
     required: false,
@@ -159,7 +170,8 @@ export class Property {
   metro_stations?: MetroStation[];
 
   @ApiProperty({
-    description: "Commute times to popular destinations (inherited from building or custom)",
+    description:
+      "Commute times to popular destinations (inherited from building or custom)",
     example: [{ label: "City Centre", destination: 15 }],
     type: "json",
     required: false,
@@ -168,7 +180,8 @@ export class Property {
   commute_times?: CommuteTime[];
 
   @ApiProperty({
-    description: "Local essentials with distances (inherited from building or custom)",
+    description:
+      "Local essentials with distances (inherited from building or custom)",
     example: [{ label: "Tesco Express", destination: 200 }],
     type: "json",
     required: false,
@@ -177,7 +190,8 @@ export class Property {
   local_essentials?: LocalEssential[];
 
   @ApiProperty({
-    description: "Concierge operating hours (inherited from building or custom)",
+    description:
+      "Concierge operating hours (inherited from building or custom)",
     example: { from: 8, to: 22 },
     type: "json",
     required: false,
@@ -186,7 +200,8 @@ export class Property {
   concierge_hours?: ConciergeHours | null;
 
   @ApiProperty({
-    description: "Allowed pet types and sizes (inherited from building or custom)",
+    description:
+      "Allowed pet types and sizes (inherited from building or custom)",
     example: [{ type: "dog", size: "small" }],
     type: "json",
     required: false,
@@ -283,7 +298,25 @@ export class Property {
   @Column("text", { array: true, nullable: true, default: [] })
   photos: string[];
 
-  @ApiProperty({ description: "Operator ID (from building or direct assignment)" })
+  @ApiProperty({
+    description: "Property video URL",
+    example: "https://s3.amazonaws.com/bucket/video.mp4",
+    required: false,
+  })
+  @Column({ nullable: true })
+  video?: string;
+
+  @ApiProperty({
+    description: "Property documents URL",
+    example: "https://s3.amazonaws.com/bucket/document.pdf",
+    required: false,
+  })
+  @Column({ nullable: true })
+  documents?: string;
+
+  @ApiProperty({
+    description: "Operator ID (from building or direct assignment)",
+  })
   @Column("uuid")
   operator_id: string;
 
