@@ -18,15 +18,13 @@ const INTRO_STEPS = [
   },
   {
     id: "smart-matching",
-    title: "Smart matching",
-    description:
-      "Our advanced algorithm analyzes your preferences and matches you with properties that fit your lifestyle, budget and requirements.",
+    titleKey: onboardingKeys.step2.title,
+    subtitleKey: onboardingKeys.step2.subtitle,
   },
   {
     id: "personalized",
-    title: "Personalized Experience",
-    description:
-      "Save your favorites properties, track your search history and get personalized recommendations based on your activity.",
+    titleKey: onboardingKeys.step3.title,
+    subtitleKey: onboardingKeys.step3.subtitle,
   },
 ];
 
