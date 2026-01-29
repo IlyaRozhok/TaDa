@@ -13,6 +13,7 @@ interface StyledDateInputProps {
   minDate?: string; // ISO date string (YYYY-MM-DD)
   maxDate?: string; // ISO date string (YYYY-MM-DD)
   disabled?: boolean;
+  placeholder?: string;
 }
 
 export const StyledDateInput: React.FC<StyledDateInputProps> = ({
@@ -25,6 +26,7 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
   minDate,
   maxDate,
   disabled = false,
+  placeholder = "DD.MM.YYYY",
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -140,7 +142,7 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           disabled={disabled}
-          placeholder="DD.MM.YYYY"
+          placeholder={placeholder}
           inputRef={(el) => {
             if (el) {
               // Ensure input type is text to hide calendar picker on desktop

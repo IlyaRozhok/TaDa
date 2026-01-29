@@ -9,6 +9,8 @@ import {
   setIsOnboarded,
 } from "../../store/slices/authSlice";
 import { authAPI } from "../../lib/api";
+import { useTranslation } from "../../hooks/useTranslation";
+import { wizardKeys } from "../../lib/translationsKeys/wizardTranslationKeys";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
 import { InputField } from "../preferences/ui/InputField";
@@ -50,6 +52,7 @@ export default function OnboardingProfileStep({
   onValidationChange,
   onSave,
 }: OnboardingProfileStepProps) {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -122,7 +125,7 @@ export default function OnboardingProfileStep({
         if (savedData.phone) {
           parsePhoneNumber(savedData.phone);
         }
-        
+
         // Validate age for existing date_of_birth
         if (savedData.date_of_birth) {
           const ageError = validateAge(savedData.date_of_birth);
@@ -157,7 +160,10 @@ export default function OnboardingProfileStep({
     // Calculate age
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
 
@@ -210,7 +216,7 @@ export default function OnboardingProfileStep({
         [field]: value,
       }));
     },
-    []
+    [],
   );
 
   const handleSave = async () => {
@@ -231,7 +237,7 @@ export default function OnboardingProfileStep({
       const response = await authAPI.updateProfile(formData);
       // Get updated user data from response
       const updatedUser = response.data?.user || response.data;
-      
+
       if (updatedUser) {
         // Update user with full data from server
         dispatch(updateUser(updatedUser));
@@ -239,7 +245,7 @@ export default function OnboardingProfileStep({
         // Fallback: update with form data
         dispatch(updateUser(formData as any));
       }
-      
+
       // Set isOnboarded to true after profile is saved
       dispatch(setIsOnboarded(true));
       setSuccess("Profile saved successfully!");
@@ -249,7 +255,7 @@ export default function OnboardingProfileStep({
       setError(
         error?.response?.data?.message ||
           error?.message ||
-          "Failed to save profile. Please try again."
+          "Failed to save profile. Please try again.",
       );
       return false;
     } finally {
@@ -280,8 +286,8 @@ export default function OnboardingProfileStep({
   return (
     <div>
       <StepWrapper
-        title="Complete Your Profile"
-        description="Let's start by setting up your profile. This information helps us personalize your experience."
+        title={t(wizardKeys.profile.title)}
+        description={t(wizardKeys.profile.subtitle)}
         compact={true}
       >
         <StepContainer compact={true}>
@@ -289,9 +295,11 @@ export default function OnboardingProfileStep({
             {/* First Name */}
             <div>
               <InputField
-                label="First Name"
+                label={t(wizardKeys.profile.name)}
                 value={formData.first_name}
-                onChange={(e) => handleInputChange("first_name", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("first_name", e.target.value)
+                }
                 type="text"
               />
             </div>
@@ -299,7 +307,7 @@ export default function OnboardingProfileStep({
             {/* Last Name */}
             <div>
               <InputField
-                label="Last Name"
+                label={t(wizardKeys.profile.lastName)}
                 value={formData.last_name}
                 onChange={(e) => handleInputChange("last_name", e.target.value)}
                 type="text"
@@ -309,7 +317,7 @@ export default function OnboardingProfileStep({
             {/* Address */}
             <div>
               <InputField
-                label="Address"
+                label={t(wizardKeys.profile.address)}
                 value={formData.address}
                 onChange={(e) => handleInputChange("address", e.target.value)}
                 type="text"
@@ -349,13 +357,14 @@ export default function OnboardingProfileStep({
             {/* Date of Birth */}
             <div>
               <StyledDateInput
-                label="Date of Birth"
+                label={t(wizardKeys.profile.birth.title)}
+                placeholder={t(wizardKeys.profile.birth.text)}
                 value={formData.date_of_birth || null}
                 onChange={(date) => {
                   // Always update the form data, even if invalid
                   // This allows the user to see what they typed and get validation feedback
                   handleInputChange("date_of_birth", date);
-                  
+
                   // Validate age after update
                   const ageError = validateAge(date);
                   setDateOfBirthError(ageError);
@@ -382,7 +391,7 @@ export default function OnboardingProfileStep({
                 label="Nationality"
                 value={formData.nationality ?? undefined}
                 onChange={(value) => handleInputChange("nationality", value)}
-                placeholder="Select nationality"
+                placeholder={t(wizardKeys.profile.nationality)}
                 required
               />
             </div>
