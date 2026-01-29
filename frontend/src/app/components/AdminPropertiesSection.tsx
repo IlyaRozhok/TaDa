@@ -9,6 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Property } from "../types/property";
+import CopyableId from "./CopyableId";
 
 interface AdminPropertiesSectionProps {
   properties: Property[];
@@ -21,6 +22,7 @@ interface AdminPropertiesSectionProps {
   onEdit: (property: Property) => void;
   onDelete: (property: Property) => void;
   onAdd: () => void;
+  onCopyId?: (id: string, type: "property" | "building") => void;
 }
 
 const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
@@ -34,6 +36,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
   onEdit,
   onDelete,
   onAdd,
+  onCopyId,
 }) => {
   const SortButton = ({ field, label }: { field: string; label: string }) => {
     const isActive = sort.field === field;
@@ -100,10 +103,10 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                   Title
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                  Apartment
+                  Property ID
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                  Building
+                  Building ID
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Price (PCM)
@@ -118,6 +121,9 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                   Available From
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Image
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -125,7 +131,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
             <tbody className="bg-white divide-y divide-gray-100">
               {properties.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
+                  <td colSpan={9} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Home className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -150,34 +156,28 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 w-10 h-10">
-                          {property.photos && property.photos.length > 0 ? (
-                            <img
-                              className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                              src={property.photos[0]}
-                              alt={property.apartment_number || property.title}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                              <Home className="w-5 h-5 text-black" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-black">
-                            {property.apartment_number || "-"}
-                          </div>
-                        </div>
-                      </div>
+                      <CopyableId
+                        id={property.id}
+                        maxLength={8}
+                        onCopy={(id) => {
+                          if (onCopyId) {
+                            onCopyId(id, "property");
+                          }
+                        }}
+                        className="text-sm font-medium text-black"
+                      />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-black">
-                        {property.building?.name || "N/A"}
-                      </div>
-                      <div className="text-xs text-black">
-                        {property.building?.address}
-                      </div>
+                      <CopyableId
+                        id={property.building_id || property.building?.id}
+                        maxLength={8}
+                        onCopy={(id) => {
+                          if (onCopyId) {
+                            onCopyId(id, "building");
+                          }
+                        }}
+                        className="text-sm text-black"
+                      />
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-black">
@@ -205,6 +205,45 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                             ).toLocaleDateString()
                           : "-"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        // Get first image from media or fallback to photos array
+                        let imageUrl = "";
+
+                        if (property.media && property.media.length > 0) {
+                          const featuredImage = property.media.find(
+                            (item) => item.type === "image",
+                          );
+                          if (featuredImage) {
+                            imageUrl = featuredImage.url;
+                          } else {
+                            const firstImage = property.media
+                              .filter((item) => item.type === "image")
+                              .sort((a, b) => a.order_index - b.order_index)[0];
+                            if (firstImage) {
+                              imageUrl = firstImage.url;
+                            }
+                          }
+                        } else if (
+                          property.photos &&
+                          property.photos.length > 0
+                        ) {
+                          imageUrl = property.photos[0];
+                        }
+
+                        return imageUrl ? (
+                          <img
+                            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                            src={imageUrl}
+                            alt={property.title || property.id}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                            <Home className="w-5 h-5 text-gray-400" />
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td
                       className="px-6 py-4"

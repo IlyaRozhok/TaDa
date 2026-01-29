@@ -21,6 +21,7 @@ import EditUserModal from "../../../components/EditUserModal";
 import EditBuildingModal from "../../../components/EditBuildingModal";
 import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
+import { Copy, Check } from "lucide-react";
 import {
   bookingRequestsAPI,
   buildingsAPI,
@@ -770,6 +771,12 @@ function AdminPanelContent() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
+            onCopyId={(id, type) => {
+              addNotification(
+                "success",
+                `${type === "property" ? "Property" : "Building"} ID "${id}" copied to clipboard`,
+              );
+            }}
           />
         );
       case "requests":
@@ -790,9 +797,26 @@ function AdminPanelContent() {
   const ViewModal = () => {
     if (!selectedItem || showModal !== "view") return null;
 
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+
     const building =
       activeSection === "buildings" ? (selectedItem as Building) : null;
     const user = activeSection === "users" ? (selectedItem as User) : null;
+
+    const handleCopyId = async (id: string, type: "building") => {
+      try {
+        await navigator.clipboard.writeText(id);
+        setCopiedId(id);
+        addNotification("success", `Building ID "${id}" copied to clipboard`);
+        setTimeout(() => setCopiedId(null), 2000);
+      } catch (err) {
+        console.error("Failed to copy:", err);
+      }
+    };
+
+    const truncateId = (id: string, maxLength: number = 8) => {
+      return id.length > maxLength ? `${id.substring(0, maxLength)}...` : id;
+    };
 
     return (
       <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -822,6 +846,27 @@ function AdminPanelContent() {
                 {/* Key Info Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                    <div className="text-sm text-white/70 mb-1">
+                      Building ID
+                    </div>
+                    <button
+                      onClick={() =>
+                        building.id && handleCopyId(building.id, "building")
+                      }
+                      className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group w-full text-left"
+                      title={`Click to copy: ${building.id}`}
+                    >
+                      <span className="text-lg font-semibold">
+                        {truncateId(building.id || "", 8)}
+                      </span>
+                      {copiedId === building.id ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-white/50 group-hover:text-white/70" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
                     <div className="text-sm text-white/70 mb-1">Address</div>
                     <div className="text-lg font-semibold text-white">
                       {building.address || "N/A"}
@@ -849,6 +894,25 @@ function AdminPanelContent() {
                     Building Information
                   </h3>
                   <div className="space-y-2">
+                    <div className="flex justify-between py-2 border-b border-white/10">
+                      <span className="text-white/70">Building ID</span>
+                      <button
+                        onClick={() =>
+                          building.id && handleCopyId(building.id, "building")
+                        }
+                        className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group"
+                        title={`Click to copy: ${building.id}`}
+                      >
+                        <span className="font-medium">
+                          {truncateId(building.id || "", 8)}
+                        </span>
+                        {copiedId === building.id ? (
+                          <Check className="w-3.5 h-3.5 text-green-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-white/50 group-hover:text-white/70" />
+                        )}
+                      </button>
+                    </div>
                     <div className="flex justify-between py-2 border-b border-white/10">
                       <span className="text-white/70">Name</span>
                       <span className="font-medium text-white">
@@ -1051,6 +1115,12 @@ function AdminPanelContent() {
           isOpen={showModal === "view"}
           onClose={() => setShowModal(null)}
           property={selectedItem as Property}
+          onCopyId={(id, type) => {
+            addNotification(
+              "success",
+              `${type === "property" ? "Property" : "Building"} ID "${id}" copied to clipboard`,
+            );
+          }}
         />
       )}
 

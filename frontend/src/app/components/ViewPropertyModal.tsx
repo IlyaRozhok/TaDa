@@ -1,21 +1,59 @@
 "use client";
 
-import React from "react";
-import { X, MapPin, Bed, Bath, DoorClosed, Star, Users, Shield, Clock, Train, Car, ShoppingBag, Dog, Cigarette } from "lucide-react";
+import React, { useState } from "react";
+import {
+  X,
+  MapPin,
+  Bed,
+  Bath,
+  DoorClosed,
+  Star,
+  Users,
+  Shield,
+  Clock,
+  Train,
+  Car,
+  ShoppingBag,
+  Dog,
+  Cigarette,
+  Copy,
+  Check,
+} from "lucide-react";
 import { Property } from "../types/property";
 
 interface ViewPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
   property: Property | null;
+  onCopyId?: (id: string, type: "property" | "building") => void;
 }
 
 const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
   isOpen,
   onClose,
   property,
+  onCopyId,
 }) => {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
   if (!isOpen || !property) return null;
+
+  const handleCopyId = async (id: string, type: "property" | "building") => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopiedId(id);
+      if (onCopyId) {
+        onCopyId(id, type);
+      }
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const truncateId = (id: string, maxLength: number = 8) => {
+    return id.length > maxLength ? `${id.substring(0, maxLength)}...` : id;
+  };
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center p-4 z-50 overflow-y-auto">
@@ -88,6 +126,52 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                 Property Information
               </h3>
               <div className="space-y-2">
+                <div className="flex justify-between py-2 border-b border-white/10">
+                  <span className="text-white/70">Property ID</span>
+                  <button
+                    onClick={() =>
+                      property.id && handleCopyId(property.id, "property")
+                    }
+                    className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group"
+                    title={`Click to copy: ${property.id}`}
+                  >
+                    <span>{truncateId(property.id || "", 8)}</span>
+                    {copiedId === property.id ? (
+                      <Check className="w-3.5 h-3.5 text-green-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 text-white/50 group-hover:text-white/70" />
+                    )}
+                  </button>
+                </div>
+                <div className="flex justify-between py-2 border-b border-white/10">
+                  <span className="text-white/70">Building ID</span>
+                  <button
+                    onClick={() => {
+                      const buildingId =
+                        property.building_id || property.building?.id;
+                      if (buildingId) {
+                        handleCopyId(buildingId, "building");
+                      }
+                    }}
+                    className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group"
+                    title={`Click to copy: ${property.building_id || property.building?.id || ""}`}
+                    disabled={!property.building_id && !property.building?.id}
+                  >
+                    <span>
+                      {truncateId(
+                        property.building_id || property.building?.id || "",
+                        8,
+                      ) || "N/A"}
+                    </span>
+                    {(property.building_id || property.building?.id) &&
+                      (copiedId ===
+                      (property.building_id || property.building?.id) ? (
+                        <Check className="w-3.5 h-3.5 text-green-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-white/50 group-hover:text-white/70" />
+                      ))}
+                  </button>
+                </div>
                 <div className="flex justify-between py-2 border-b border-white/10">
                   <span className="text-white/70">Property Type</span>
                   <span className="font-medium text-white">
@@ -313,7 +397,8 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-white/70">Hours:</span>
                     <span className="font-medium text-white">
-                      {property.concierge_hours.from != null && property.concierge_hours.to != null
+                      {property.concierge_hours.from != null &&
+                      property.concierge_hours.to != null
                         ? `${property.concierge_hours.from}:00 - ${property.concierge_hours.to}:00`
                         : "N/A"}
                     </span>
@@ -339,7 +424,9 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                 </div>
                 {property.pets && property.pets.length > 0 && (
                   <div className="mt-3">
-                    <span className="text-white/70 block mb-2">Allowed Pet Types:</span>
+                    <span className="text-white/70 block mb-2">
+                      Allowed Pet Types:
+                    </span>
                     <div className="flex flex-wrap gap-2">
                       {property.pets.map((pet, index) => (
                         <span
@@ -348,7 +435,8 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                         >
                           {pet.type === "other" && pet.customType
                             ? pet.customType
-                            : pet.type.charAt(0).toUpperCase() + pet.type.slice(1)}
+                            : pet.type.charAt(0).toUpperCase() +
+                              pet.type.slice(1)}
                           {pet.size && ` (${pet.size})`}
                         </span>
                       ))}
@@ -426,29 +514,30 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
           )}
 
           {/* Local Essentials */}
-          {property.local_essentials && property.local_essentials.length > 0 && (
-            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5" />
-                Local Essentials
-              </h3>
-              <div className="space-y-2">
-                {property.local_essentials.map((essential, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center py-2 border-b border-white/10 last:border-0"
-                  >
-                    <span className="text-white/90">{essential.label}</span>
-                    {essential.destination != null && (
-                      <span className="text-white/70 text-sm">
-                        {essential.destination} min
-                      </span>
-                    )}
-                  </div>
-                ))}
+          {property.local_essentials &&
+            property.local_essentials.length > 0 && (
+              <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                  <ShoppingBag className="w-5 h-5" />
+                  Local Essentials
+                </h3>
+                <div className="space-y-2">
+                  {property.local_essentials.map((essential, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center py-2 border-b border-white/10 last:border-0"
+                    >
+                      <span className="text-white/90">{essential.label}</span>
+                      {essential.destination != null && (
+                        <span className="text-white/70 text-sm">
+                          {essential.destination} min
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Luxury Flag */}
           {property.luxury !== undefined && (
