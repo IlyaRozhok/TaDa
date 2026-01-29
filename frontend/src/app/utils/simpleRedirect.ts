@@ -53,7 +53,6 @@ export function getRedirectPath(user: any): string {
   // Определяем основную роль (с поддержкой множественных ролей)
   const primaryRole = getPrimaryRole(user);
 
-
   // В зависимости от основной роли - на соответствующий дашборд
   switch (primaryRole) {
     case "admin":
@@ -61,10 +60,10 @@ export function getRedirectPath(user: any): string {
     case "operator":
       return "/app/dashboard/operator";
     case "tenant":
-      return "/app/units";
+      return "/app/tenant-cv";
     default:
       console.warn(
-        `⚠️ Unknown role "${user.role}", redirecting to role selection`
+        `⚠️ Unknown role "${user.role}", redirecting to role selection`,
       );
       return "/?needsRole=true";
   }
@@ -94,7 +93,9 @@ export async function redirectAfterLogin(user: any, router: any) {
     } catch (error: any) {
       // 404 means no preferences - redirect to onboarding
       if (error.response?.status === 404) {
-        console.log(`🔄 New tenant user (no preferences), redirecting to onboarding`);
+        console.log(
+          `🔄 New tenant user (no preferences), redirecting to onboarding`,
+        );
         router.replace("/app/onboarding");
         return;
       }

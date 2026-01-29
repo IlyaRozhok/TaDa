@@ -16,8 +16,9 @@ interface User {
   // Computed properties from getter methods
   full_name?: string;
   roles?: string[];
-  // Onboarding flag
+  // Onboarding flags
   isOnboarded?: boolean;
+  onboardingCompleted?: boolean;
   // Profile data that might be included
   tenantProfile?: {
     id: string;
@@ -125,7 +126,7 @@ const authSlice = createSlice({
       action: PayloadAction<{
         user: User;
         accessToken: string;
-      }>
+      }>,
     ) => {
       const { user, accessToken } = action.payload;
 
@@ -171,10 +172,11 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.sessionExpiry = null;
 
-      // Clear localStorage
+      // Clear localStorage (including onboarding state so next login starts fresh)
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionExpiry");
+        localStorage.removeItem("onboardingState");
       }
 
       // Log the logout event
@@ -188,7 +190,7 @@ const authSlice = createSlice({
       action: PayloadAction<{
         user: User;
         accessToken: string;
-      }>
+      }>,
     ) => {
       const { user, accessToken } = action.payload;
 
@@ -265,7 +267,10 @@ const authSlice = createSlice({
         ...state.user,
         ...payload,
         // Update avatar_url if provided
-        avatar_url: payload.avatar_url !== undefined ? payload.avatar_url : state.user.avatar_url,
+        avatar_url:
+          payload.avatar_url !== undefined
+            ? payload.avatar_url
+            : state.user.avatar_url,
         tenantProfile: nextTenant,
         operatorProfile: nextOperator,
       };
@@ -279,11 +284,22 @@ const authSlice = createSlice({
         state.user.isOnboarded = action.payload;
       }
     },
+    setOnboardingCompleted: (state, action: PayloadAction<boolean>) => {
+      if (state.user) {
+        state.user.onboardingCompleted = action.payload;
+      }
+    },
   },
 });
 
-export const { setCredentials, logout, setAuth, updateUser, setIsOnboarded } =
-  authSlice.actions;
+export const {
+  setCredentials,
+  logout,
+  setAuth,
+  updateUser,
+  setIsOnboarded,
+  setOnboardingCompleted,
+} = authSlice.actions;
 export default authSlice.reducer;
 
 // Selectors
@@ -297,3 +313,5 @@ export const selectSessionExpiry = (state: { auth: AuthState }) =>
   state.auth.sessionExpiry;
 export const selectIsOnboarded = (state: { auth: AuthState }) =>
   state.auth.user?.isOnboarded ?? false;
+export const selectOnboardingCompleted = (state: { auth: AuthState }) =>
+  state.auth.user?.onboardingCompleted ?? false;

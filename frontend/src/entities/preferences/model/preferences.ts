@@ -25,6 +25,7 @@ export interface PreferencesFormData {
   move_out_date?: string;
   min_price?: number;
   max_price?: number;
+  move_in_flexibility?: string; // UI: "flexible" / fixed etc.
 
   // ==================== STEP 3: PROPERTY & ROOMS ====================
   property_types?: string[]; // matches Property.property_type

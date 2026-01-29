@@ -173,7 +173,7 @@ export const DateInput: React.FC<DateInputProps> = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           disabled={disabled}
-          placeholder="DD.MM.YYYY"
+          placeholder={placeholder ?? "DD.MM.YYYY"}
           inputRef={(el) => {
             if (el) {
               // Ensure input type is text to hide calendar picker on desktop

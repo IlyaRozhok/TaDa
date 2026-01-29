@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setAuth } from "../store/slices/authSlice";
@@ -12,13 +12,55 @@ export const INTRO_STEPS = 3;
 export const PROFILE_STEP = 4; // After intro steps
 export const PREFERENCES_START_STEP = 5; // After profile step
 
+const ONBOARDING_STORAGE_KEY = "onboardingState";
+
+type OnboardingPhase = "intro" | "profile" | "preferences";
+
+function getPersistedOnboardingState(): {
+  currentStep: number;
+  currentPhase: OnboardingPhase;
+} | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      currentStep?: number;
+      currentPhase?: string;
+    };
+    const step =
+      typeof parsed.currentStep === "number" &&
+      parsed.currentStep >= 1 &&
+      parsed.currentStep <= TOTAL_ONBOARDING_STEPS
+        ? parsed.currentStep
+        : null;
+    const phase =
+      parsed.currentPhase === "intro" ||
+      parsed.currentPhase === "profile" ||
+      parsed.currentPhase === "preferences"
+        ? (parsed.currentPhase as OnboardingPhase)
+        : null;
+    if (step !== null && phase !== null)
+      return { currentStep: step, currentPhase: phase };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearOnboardingState(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+  }
+}
+
 interface OnboardingState {
   currentStep: number;
   isLoading: boolean;
   error: string;
   registeredUser: any;
   registeredToken: string | null;
-  currentPhase: 'intro' | 'profile' | 'preferences';
+  currentPhase: OnboardingPhase;
 }
 
 interface UseOnboardingReturn {
@@ -35,30 +77,42 @@ interface UseOnboardingReturn {
 export const useOnboarding = (
   user: any,
   onComplete: () => void,
-  isGoogleAuth: boolean = false
+  isGoogleAuth: boolean = false,
 ): UseOnboardingReturn => {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  const [state, setState] = useState<OnboardingState>({
-    currentStep: 1,
+  const persisted = getPersistedOnboardingState();
+  const [state, setState] = useState<OnboardingState>(() => ({
+    currentStep: persisted?.currentStep ?? 1,
     isLoading: false,
     error: "",
     registeredUser: null,
     registeredToken: null,
-    currentPhase: 'intro',
-  });
+    currentPhase: persisted?.currentPhase ?? "intro",
+  }));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+      ONBOARDING_STORAGE_KEY,
+      JSON.stringify({
+        currentStep: state.currentStep,
+        currentPhase: state.currentPhase,
+      }),
+    );
+  }, [state.currentStep, state.currentPhase]);
 
   const setCurrentStep = useCallback((step: number) => {
     setState((prev) => {
       // Determine phase based on step number
-      let newPhase: 'intro' | 'profile' | 'preferences' = 'intro';
+      let newPhase: OnboardingPhase = "intro";
       if (step >= PREFERENCES_START_STEP) {
-        newPhase = 'preferences';
+        newPhase = "preferences";
       } else if (step >= PROFILE_STEP) {
-        newPhase = 'profile';
+        newPhase = "profile";
       } else {
-        newPhase = 'intro';
+        newPhase = "intro";
       }
       return { ...prev, currentStep: step, currentPhase: newPhase };
     });
@@ -78,7 +132,7 @@ export const useOnboarding = (
         localStorage.setItem("accessToken", state.registeredToken);
         localStorage.setItem(
           "sessionExpiry",
-          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         );
 
         // Redirect to tenant dashboard
@@ -111,7 +165,7 @@ export const useOnboarding = (
     setState((prev) => ({
       ...prev,
       currentStep: PROFILE_STEP,
-      currentPhase: 'profile'
+      currentPhase: "profile",
     }));
   }, []);
 
@@ -119,7 +173,7 @@ export const useOnboarding = (
     setState((prev) => ({
       ...prev,
       currentStep: PREFERENCES_START_STEP,
-      currentPhase: 'preferences'
+      currentPhase: "preferences",
     }));
   }, []);
 
@@ -133,7 +187,7 @@ export const useOnboarding = (
         localStorage.setItem("accessToken", state.registeredToken);
         localStorage.setItem(
           "sessionExpiry",
-          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         );
 
         // Redirect to tenant dashboard

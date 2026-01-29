@@ -5,6 +5,8 @@ import { StepHeader } from "../step-components/StepHeader";
 import { InputField } from "../ui/InputField";
 import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
 import { PreferencesFormData } from "@/app/types/preferences";
+import { useTranslation } from "../../../hooks/useTranslation";
+import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 
 interface LocationStepProps {
   formData: PreferencesFormData;
@@ -66,48 +68,53 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   formData,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+
   return (
-    <StepWrapper title="Step 1" description="Locations">
+    <StepWrapper
+      title={t(wizardKeys.step1.title)}
+      description={t(wizardKeys.step1.subtitle)}
+    >
       <StepContainer>
-        <StepHeader title="Where would you like to live?" />
+        <StepHeader title={t(wizardKeys.step1.des.text)} />
 
         {/* Areas - Multi Select */}
         <div className="mb-6">
           <MultiSelectDropdown
-            label="Areas"
+            label={t(wizardKeys.step1.areas)}
             value={formData.preferred_areas || []}
             onChange={(value) => onUpdate("preferred_areas", value)}
             options={AREAS}
-            placeholder="Select areas"
+            placeholder={t(wizardKeys.step1.areas)}
           />
         </div>
 
         {/* Districts - Multi Select */}
         <div className="mb-6">
           <MultiSelectDropdown
-            label="Districts"
+            label={t(wizardKeys.step1.districts)}
             value={formData.preferred_districts || []}
             onChange={(value) => onUpdate("preferred_districts", value)}
             options={LONDON_DISTRICTS}
-            placeholder="Select London districts"
+            placeholder={t(wizardKeys.step1.districts)}
           />
         </div>
 
         {/* Metro Station - Multi Select */}
         <div className="mb-6">
           <MultiSelectDropdown
-            label="Metro Station"
+            label={t(wizardKeys.step1.metro.station)}
             value={formData.preferred_metro_stations || []}
             onChange={(value) => onUpdate("preferred_metro_stations", value)}
             options={MOCK_METRO_STATIONS}
-            placeholder="Select metro stations"
+            placeholder={t(wizardKeys.step1.metro.station)}
           />
         </div>
 
         {/* Desired Address Input */}
         <div className="mb-6">
           <InputField
-            label="Desired Address (optional)"
+            label={t(wizardKeys.step1.des.address)}
             value={formData.preferred_address || ""}
             onChange={(e) => onUpdate("preferred_address", e.target.value)}
             type="text"

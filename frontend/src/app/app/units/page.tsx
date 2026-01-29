@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import {
   selectUser,
   selectIsAuthenticated,
-  selectIsOnboarded,
+  selectOnboardingCompleted,
 } from "../../store/slices/authSlice";
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
@@ -144,7 +144,7 @@ function TenantDashboardContent() {
 export default function TenantUnitsPage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isOnboarded = useSelector(selectIsOnboarded);
+  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -180,14 +180,28 @@ export default function TenantUnitsPage() {
       return;
     }
 
-    // Check onboarding status - redirect to onboarding if not onboarded
-    const currentPath =
-      typeof window !== "undefined" ? window.location.pathname : "";
-    if (!isOnboarded && !currentPath.includes("/onboarding")) {
-      router.replace("/app/onboarding");
+    // Check if user is admin - only admins can access units page
+    if (user.role !== "admin") {
+      // For tenant users, check if onboarding is completed
+      if (user.role === "tenant" && !onboardingCompleted) {
+        router.replace("/app/onboarding");
+        return;
+      }
+      // For completed tenant users, redirect to tenant-cv
+      if (user.role === "tenant" && onboardingCompleted) {
+        router.replace("/app/tenant-cv");
+        return;
+      }
+      // For other roles, redirect to appropriate dashboard
+      if (user.role === "operator") {
+        router.replace("/app/dashboard/operator");
+        return;
+      }
+      // Unknown role - redirect to home
+      router.replace("/");
       return;
     }
-  }, [sessionReady, isAuthenticated, user, isOnboarded, router]);
+  }, [sessionReady, isAuthenticated, user, onboardingCompleted, router]);
 
   if (!sessionReady) {
     return (
@@ -277,8 +291,8 @@ export default function TenantUnitsPage() {
     );
   }
 
-  // Allow tenants and admins
-  if (user && user.role !== "tenant" && user.role !== "admin") {
+  // Only allow admins
+  if (user && user.role !== "admin") {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -286,7 +300,7 @@ export default function TenantUnitsPage() {
             Access Denied
           </h1>
           <p className="text-gray-600">
-            This page is only accessible to tenant users.
+            This page is only accessible to admin users.
           </p>
         </div>
       </div>

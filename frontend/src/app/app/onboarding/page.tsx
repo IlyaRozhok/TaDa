@@ -8,13 +8,16 @@ import {
   selectUser,
   selectIsAuthenticated,
   selectIsOnboarded,
+  selectOnboardingCompleted,
   setIsOnboarded,
+  setOnboardingCompleted,
 } from "../../store/slices/authSlice";
 import { preferencesAPI } from "../../lib/api";
 import OnboardingProfileStep from "../../components/onboarding/OnboardingProfileStep";
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
 import NewPreferencesPage from "../../components/preferences/NewPreferencesPage";
 import UserDropdown from "../../components/UserDropdown";
+import { waitForSessionManager } from "../../components/providers/SessionManager";
 import {
   useOnboarding,
   TOTAL_ONBOARDING_STEPS,
@@ -133,10 +136,12 @@ export default function OnboardingPage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isOnboarded = useSelector(selectIsOnboarded);
+  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const [loading, setLoading] = useState(true);
   const [isProfileValid, setIsProfileValid] = useState(false);
   const [isPreferencesValid, setIsPreferencesValid] = useState(true);
   const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const hasCheckedPreferences = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -223,6 +228,8 @@ export default function OnboardingPage() {
 
   const handlePreferencesNext = async () => {
     if (preferencesHook.isLastStep) {
+      // Mark onboarding as fully completed
+      dispatch(setOnboardingCompleted(true));
       await handlePreferencesComplete();
     } else {
       await preferencesHook.nextStep();
@@ -239,9 +246,35 @@ export default function OnboardingPage() {
     }
   };
 
-  // Check if user is authenticated and has preferences
-  // Only check once, not when user object changes during onboarding
+  // Wait for SessionManager to restore session before checking auth (avoids redirect loop)
   useEffect(() => {
+    let isMounted = true;
+
+    const initSession = async () => {
+      try {
+        await waitForSessionManager();
+      } catch (error) {
+        console.error("Failed to wait for session manager:", error);
+      } finally {
+        if (isMounted) {
+          setSessionReady(true);
+        }
+      }
+    };
+
+    initSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Check if user is authenticated and has preferences (only after session is ready)
+  useEffect(() => {
+    if (!sessionReady) {
+      return;
+    }
+
     // Skip if already checked
     if (hasCheckedPreferences.current) {
       return;
@@ -269,12 +302,12 @@ export default function OnboardingPage() {
         }
 
         const response = await preferencesAPI.get();
-        if (response.data && response.data.id && isOnboarded) {
-          // User has preferences AND is onboarded, redirect to dashboard
-          router.push("/app/units");
+        if (response.data && response.data.id && onboardingCompleted) {
+          // User has preferences AND completed full onboarding, redirect to tenant-cv
+          router.push("/app/tenant-cv");
           return;
         }
-        // If user has preferences but is not onboarded, stay on onboarding
+        // If user has preferences but onboarding not completed, stay on onboarding
         // If user doesn't have preferences, stay on onboarding
       } catch (error: unknown) {
         // 404 means no preferences - user needs onboarding
@@ -289,9 +322,9 @@ export default function OnboardingPage() {
     };
 
     checkUserStatus();
-  }, [isAuthenticated, user, isOnboarded, router]);
+  }, [sessionReady, isAuthenticated, user, onboardingCompleted, router]);
 
-  if (loading) {
+  if (!sessionReady || loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">

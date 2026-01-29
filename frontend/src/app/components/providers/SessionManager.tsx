@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { setAuth, logout } from "../../store/slices/authSlice";
+import {
+  setAuth,
+  logout,
+  setOnboardingCompleted,
+} from "../../store/slices/authSlice";
 import { fetchShortlist } from "../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../store/store";
-import api from "../../lib/api";
+import api, { preferencesAPI } from "../../lib/api";
 
 // Global promise for session initialization
 let sessionManagerPromise: Promise<void> | null = null;
@@ -47,14 +51,28 @@ export default function SessionManager() {
               setAuth({
                 user: response.data.user,
                 accessToken: token,
-              })
+              }),
             );
             console.log("Session restored for:", response.data.user.email);
 
             // Initialize shortlist for tenant users
             if (response.data.user.role === "tenant") {
-              
               dispatch(fetchShortlist());
+
+              // Check if tenant has preferences to set onboardingCompleted flag
+              // This is for backward compatibility with existing users
+              if (!response.data.user.onboardingCompleted) {
+                try {
+                  const prefsResponse = await preferencesAPI.get();
+                  if (prefsResponse.data && prefsResponse.data.id) {
+                    // User has preferences, mark onboarding as completed
+                    dispatch(setOnboardingCompleted(true));
+                  }
+                } catch (error: any) {
+                  // No preferences found - user needs to complete onboarding
+                  // onboardingCompleted remains false
+                }
+              }
             }
           }
         } catch (error: any) {

@@ -84,6 +84,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       move_out_date: "",
       min_price: undefined,
       max_price: undefined,
+      move_in_flexibility: "",
       // Step 4 - Property & Rooms
       property_types: [],
       property_type_preferences: [], // UI alias
