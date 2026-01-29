@@ -12,10 +12,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { X } from "lucide-react";
 import Header from "../../components/Header";
+import { useTranslation } from "../../hooks/useTranslation";
+import { loginKeys } from "../../lib/translationsKeys/loginTranslationKeys";
 
 export default function AuthPage() {
   const [error, setError] = useState("");
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { t } = useTranslation();
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -52,7 +55,7 @@ export default function AuthPage() {
             setAuth({
               user,
               accessToken: token,
-            })
+            }),
           );
           localStorage.setItem("user", JSON.stringify(user));
 
@@ -129,7 +132,9 @@ export default function AuthPage() {
 
             {/* Header */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-white">Sign In to Tada</h1>
+              <h1 className="text-2xl font-bold text-white">
+                {t(loginKeys.page.title)}
+              </h1>
             </div>
 
             {/* Error */}
@@ -163,32 +168,30 @@ export default function AuthPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Continue with Google
+                {t(loginKeys.google.text)}
               </button>
             </div>
 
             {/* Terms & Privacy */}
             <div className="mt-6 text-center">
               <p className="text-xs text-white/80">
-                By clicking Continue with Google, you agree to Tada{" "}
+                By clicking {t(loginKeys.google.text)}, you agree to Tada{" "}
                 <Link
                   href="/terms"
                   className="underline hover:text-white transition-colors"
                 >
-                  Terms of Use
+                  {t(loginKeys.footerTermsOfUse)}
                 </Link>{" "}
                 and{" "}
                 <Link
                   href="/privacy"
                   className="underline hover:text-white transition-colors"
                 >
-                  Privacy Policy
+                  {t(loginKeys.terms.text)}
                 </Link>
               </p>
               <p className="text-xs text-white/80 mt-2">
-                Tada may send you communications; you may change your
-                preferences in your account settings. We'll never post without
-                your permission
+                {t(loginKeys.page.desText)}
               </p>
             </div>
           </div>

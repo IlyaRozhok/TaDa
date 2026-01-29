@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-
-// Type declarations for EmailJS
+// Type declarations for EmailJS (kept for RequestDemoModal / other usage)
 declare global {
   interface Window {
     emailjs?: {
@@ -23,58 +21,6 @@ declare global {
 }
 
 export default function EmailJSInitializer() {
-  useEffect(() => {
-    let initAttempts = 0;
-    const maxInitAttempts = 50;
-
-    async function initEmailJS() {
-      initAttempts++;
-
-      if (typeof window !== "undefined" && window.emailjs) {
-        console.log("EmailJS script loaded, getting config from API...");
-
-        try {
-          const response = await fetch("/api/emailjs-config");
-          const data = await response.json();
-
-          console.log("API Response:", data);
-
-          if (data.success && data.config) {
-            const { serviceId, templateId, publicKey } = data.config;
-
-            // Store config globally
-            window.EMAILJS_CONFIG = data.config;
-
-            // Initialize EmailJS
-            window.emailjs.init(publicKey);
-
-            console.log("✅ EmailJS initialized successfully!", {
-              serviceId: `${serviceId.substring(0, 8)}...`,
-              templateId: `${templateId.substring(0, 8)}...`,
-              publicKey: `${publicKey.substring(0, 8)}...`,
-            });
-          } else {
-            console.error("❌ API returned invalid response:", data);
-          }
-        } catch (error) {
-          console.error("❌ Failed to get EmailJS config:", error);
-        }
-      } else if (initAttempts < maxInitAttempts) {
-        console.log(
-          `⏳ EmailJS not ready, retrying... (${initAttempts}/${maxInitAttempts})`
-        );
-        setTimeout(initEmailJS, 100);
-      } else {
-        console.error(
-          "❌ EmailJS failed to load after",
-          maxInitAttempts,
-          "attempts"
-        );
-      }
-    }
-
-    initEmailJS();
-  }, []);
-
-  return null; // This component doesn't render anything
+  // EmailJS config is no longer fetched from /api/emailjs-config
+  return null;
 }

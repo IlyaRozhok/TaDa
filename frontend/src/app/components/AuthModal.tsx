@@ -12,6 +12,8 @@ import { useAuthContext } from "../contexts/AuthContext";
 import { ApiError } from "../types/api";
 import { Loader2, Eye, EyeOff, Mail, Lock, X } from "lucide-react";
 import { Button } from "./ui/Button";
+import { useTranslation } from "../hooks/useTranslation";
+import { loginKeys } from "../lib/translationsKeys/loginTranslationKeys";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -19,6 +21,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const { t } = useTranslation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,7 +74,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     };
   }, [isOpen, onClose]);
 
-
   const resetForm = () => {
     setEmail("");
     setPassword("");
@@ -103,7 +105,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           setAuth({
             user: loginResponse.data.user,
             accessToken: loginResponse.data.access_token,
-          })
+          }),
         );
 
         // Initialize shortlist for tenant users
@@ -115,7 +117,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         await redirectAfterLogin(loginResponse.data.user, router);
       } else {
         // User doesn't exist - show error
-        throw new Error("Account not found. Please check your email or create a new account.");
+        throw new Error(
+          "Account not found. Please check your email or create a new account.",
+        );
       }
     } catch (err: unknown) {
       console.error("🔍 AuthModal authentication error:", err);
@@ -177,13 +181,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
-            <img
-              src="/black-logo.svg"
-              alt="TADA Logo"
-              className="h-10"
-            />
+            <img src="/black-logo.svg" alt="TADA Logo" className="h-10" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Sign In to Tada</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {t(loginKeys.page.title)}
+          </h2>
         </div>
 
         {error && (
@@ -314,7 +316,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               />
             </svg>
             <span className="text-gray-700 font-medium group-hover:text-gray-900">
-              Continue with Google
+              {t(loginKeys.google.text)}
             </span>
           </button>
         </div>
@@ -322,18 +324,17 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         {/* Terms & Privacy */}
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500">
-            By clicking Continue with Google, you agree to Tada{" "}
+            By clicking {t(loginKeys.google.text)}, you agree to Tada{" "}
             <a href="/terms" className="underline">
-              Term&apos;s of Use
+              {t(loginKeys.footerTermsOfUse)}
             </a>{" "}
             and{" "}
             <a href="/privacy" className="underline">
-              Privacy Policy
+              {t(loginKeys.terms.text)}
             </a>
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Tada may send you communications; you may change your preferences in
-            your account settings. We&apos;ll never post without your permission
+            {t(loginKeys.page.desText)}
           </p>
         </div>
       </div>

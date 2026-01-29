@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import RequestDemoModal from "./RequestDemoModal";
 import {
@@ -11,6 +12,7 @@ import {
 import { useTranslation } from "../hooks/useTranslation";
 import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
 import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
+import { onboardingKeys } from "../lib/translationsKeys/onboardingTranslationKeys";
 
 interface HeaderProps {
   onSignIn?: () => void;
@@ -35,6 +37,7 @@ const Header = ({
     | "operator-spotlight"
     | undefined
   >(undefined);
+  const router = useRouter();
   const { t } = useTranslation();
 
   // Close language dropdown when clicking outside
@@ -211,28 +214,16 @@ const Header = ({
                   )}
                 </div>
 
-                {/* Request Demo Button */}
+                {/* Get Started CTA - navigates to auth */}
                 <button
                   onClick={() => {
                     if (disabled) return;
-                    setModalSource(
-                      landingType === "tenants"
-                        ? "tenant-contact"
-                        : "operator-request-demo"
-                    );
-                    setIsRequestDemoOpen(true);
+                    router.push("/app/auth");
                   }}
                   disabled={disabled}
                   className="bg-black cursor-pointer text-white px-3 sm:px-4 md:px-6 py-2 md:py-3 rounded-full hover:bg-black/20 transition-colors font-medium text-xs sm:text-sm flex-shrink-0 hidden lg:inline disabled:cursor-default disabled:hover:bg-black"
                 >
-                  <span className="hidden sm:inline">
-                    {landingType === "tenants"
-                      ? `${t(tenantKeys.header.ctaBtn)}`
-                      : `${t(operatorKeys.header.ctaBtn)}`}
-                  </span>
-                  <span className="sm:hidden">
-                    {landingType === "tenants" ? "Contact" : "Demo"}
-                  </span>
+                  {t(onboardingKeys.headerCtaGetStarted)}
                 </button>
 
                 {/* Mobile menu button */}
@@ -283,23 +274,16 @@ const Header = ({
 
           {/* Menu Panel */}
           <div className="absolute top-24 left-4 right-4 bg-black/50 backdrop-blur-[3px] rounded-3xl p-6 shadow-2xl animate-in slide-in-from-top duration-300">
-            {/* Request Demo Button */}
+            {/* Get Started CTA - navigates to auth */}
             <div className="mb-6 border-gray-200/30">
               <button
                 onClick={() => {
-                  setModalSource(
-                    landingType === "tenants"
-                      ? "tenant-contact"
-                      : "operator-request-demo"
-                  );
-                  setIsRequestDemoOpen(true);
                   setIsMobileMenuOpen(false);
+                  router.push("/app/auth");
                 }}
                 className="w-full bg-black text-white px-6 py-4 rounded-full font-semibold hover:bg-black/50 hover:text-white transition-colors text-base cursor-pointer"
               >
-                {landingType === "tenants"
-                  ? `${t(tenantKeys.header.ctaBtn)}`
-                  : `${t(operatorKeys.header.ctaBtn)}`}
+                {t(onboardingKeys.headerCtaGetStarted)}
               </button>
             </div>
 

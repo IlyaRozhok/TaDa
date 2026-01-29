@@ -22,11 +22,19 @@ import {
   PREFERENCES_START_STEP,
 } from "../../hooks/useOnboarding";
 import { usePreferences } from "../../hooks/usePreferences";
+import { useTranslation } from "../../hooks/useTranslation";
+import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
+import {
+  useI18n,
+  getLanguageDisplayCode,
+  SUPPORTED_LANGUAGES,
+} from "../../contexts/I18nContext";
 
-// Onboarding Header Component
+// Onboarding Header Component - uses same language as landing (saved in localStorage via I18nContext)
 function OnboardingHeader() {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("EN");
+  const { language, setLanguage } = useI18n();
+  const selectedLanguage = getLanguageDisplayCode(language);
 
   // Close language dropdown when clicking outside
   useEffect(() => {
@@ -60,7 +68,7 @@ function OnboardingHeader() {
 
         {/* Right: Language + Profile */}
         <div className="flex items-center space-x-0.75 sm:space-x-1">
-          {/* Language Dropdown */}
+          {/* Language Dropdown - same list as landing, persists via I18nContext/localStorage */}
           <div className="relative language-dropdown">
             <button
               onClick={() => setIsLanguageOpen(!isLanguageOpen)}
@@ -81,18 +89,11 @@ function OnboardingHeader() {
                 }}
               >
                 <div className="max-h-40 overflow-y-auto rounded-xl relative">
-                  {[
-                    { code: "EN", name: "English" },
-                    { code: "FR", name: "Français" },
-                    { code: "ES", name: "Español" },
-                    { code: "IT", name: "Italiano" },
-                    { code: "PT", name: "Português" },
-                    { code: "RU", name: "Русский" },
-                  ].map((lang) => (
+                  {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}
                       onClick={() => {
-                        setSelectedLanguage(lang.code);
+                        setLanguage(lang.langCode);
                         setIsLanguageOpen(false);
                       }}
                       className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
@@ -128,6 +129,7 @@ function OnboardingHeader() {
 export default function OnboardingPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isOnboarded = useSelector(selectIsOnboarded);
@@ -350,11 +352,12 @@ export default function OnboardingPage() {
                     : "text-black hover:text-gray-600"
                 }`}
               >
-                Previous
+                {t(onboardingKeys.bottom.prevButton)}
               </button>
 
               <div className="text-sm text-gray-500">
-                Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}
+                {t(onboardingKeys.bottom.stepText)} {state.currentStep}{" "}
+                {t(onboardingKeys.bottom.ofText)} {TOTAL_ONBOARDING_STEPS}
               </div>
 
               {/* Next Button */}
@@ -369,7 +372,7 @@ export default function OnboardingPage() {
                 }}
                 className="bg-black cursor-pointer text-white px-8 mt-1 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors"
               >
-                Next
+                {t(onboardingKeys.bottom.nextButton)}
               </button>
             </div>
           </div>
