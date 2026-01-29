@@ -73,7 +73,7 @@ export default function ManagePropertiesPage() {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
-    null
+    null,
   );
   const [interestedTenants, setInterestedTenants] = useState<
     InterestedTenant[]
@@ -140,7 +140,7 @@ export default function ManagePropertiesPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -164,9 +164,17 @@ export default function ManagePropertiesPage() {
   };
 
   const handleDeleteProperty = async (propertyId: string) => {
+    // Find property to get its title/id for the confirmation message
+    const propertyToDelete = properties.find((p) => p.id === propertyId);
+    const propertyTitle =
+      propertyToDelete?.title ||
+      propertyToDelete?.id ||
+      propertyToDelete?.apartment_number ||
+      "Property";
+
     if (
       !confirm(
-        "Are you sure you want to delete this property? This action cannot be undone."
+        `Are you sure you want to delete property "${propertyTitle}"? This action cannot be undone.`,
       )
     ) {
       return;
@@ -191,6 +199,9 @@ export default function ManagePropertiesPage() {
 
       // Refresh properties list
       await fetchProperties();
+
+      // Show success message (you might want to add a toast/notification system here)
+      alert(`Property "${propertyTitle}" deleted successfully`);
     } catch (err: any) {
       alert(err.message || "Failed to delete property");
     }
@@ -312,7 +323,7 @@ export default function ManagePropertiesPage() {
 
                     if (property.media && property.media.length > 0) {
                       const featuredImage = property.media.find(
-                        (item) => item.type === "image"
+                        (item) => item.type === "image",
                       );
                       if (featuredImage) {
                         imageUrl = featuredImage.url;

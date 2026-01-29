@@ -123,12 +123,22 @@ export const usePropertyForm = (): UsePropertyFormReturn => {
       if (id) {
         // Update existing property
         await propertiesAPI.update(id as string, requestData);
-        setSuccess("Property updated successfully!");
+        const propertyTitle =
+          formData.title ||
+          property?.title ||
+          property?.apartment_number ||
+          "Property";
+        setSuccess(`Property "${propertyTitle}" updated successfully!`);
       } else {
         // Create new property
         const response = await propertiesAPI.create(requestData);
         const newProperty = response.data;
-        setSuccess("Property created successfully!");
+        const propertyTitle =
+          formData.title ||
+          newProperty.title ||
+          newProperty.apartment_number ||
+          "Property";
+        setSuccess(`Property "${propertyTitle}" created successfully!`);
         router.push(`/app/properties/${newProperty.id}/edit`);
       }
     } catch (err: any) {

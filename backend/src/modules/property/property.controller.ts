@@ -30,13 +30,15 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { UserRole } from "../../entities/user.entity";
 import { S3Service } from "../../common/services/s3.service";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { User } from "../../entities/user.entity";
 
 @ApiTags("properties")
 @Controller("properties")
 export class PropertyController {
   constructor(
     private readonly propertyService: PropertyService,
-    private readonly s3Service: S3Service
+    private readonly s3Service: S3Service,
   ) {}
 
   // Public endpoints - MUST be before protected routes
@@ -125,19 +127,19 @@ export class PropertyController {
       try {
         if (!file.mimetype.startsWith("image/")) {
           throw new Error(
-            `Invalid file type for ${file.originalname}. Only images are allowed.`
+            `Invalid file type for ${file.originalname}. Only images are allowed.`,
           );
         }
 
         const fileKey = this.s3Service.generateFileKey(
           file.originalname,
-          "property-photo"
+          "property-photo",
         );
         const uploadResult = await this.s3Service.uploadFile(
           file.buffer,
           fileKey,
           file.mimetype,
-          file.originalname
+          file.originalname,
         );
 
         return {
@@ -147,7 +149,7 @@ export class PropertyController {
       } catch (error) {
         console.error(`Error uploading photo ${file.originalname}:`, error);
         throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`
+          `Failed to upload ${file.originalname}: ${error.message}`,
         );
       }
     });
@@ -200,13 +202,13 @@ export class PropertyController {
 
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
-        "property-video"
+        "property-video",
       );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname
+        file.originalname,
       );
 
       return {
@@ -258,13 +260,13 @@ export class PropertyController {
 
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
-        "property-documents"
+        "property-documents",
       );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname
+        file.originalname,
       );
 
       return {
@@ -286,8 +288,11 @@ export class PropertyController {
   @ApiResponse({ status: 201, description: "Property created successfully" })
   @ApiResponse({ status: 400, description: "Bad request" })
   @ApiResponse({ status: 404, description: "Building not found" })
-  create(@Body() createPropertyDto: CreatePropertyDto) {
-    return this.propertyService.create(createPropertyDto);
+  create(
+    @Body() createPropertyDto: CreatePropertyDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.propertyService.create(createPropertyDto, user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -301,9 +306,12 @@ export class PropertyController {
   })
   async findAll(
     @Query("building_id") building_id?: string,
-    @Query("operator_id") operator_id?: string
+    @Query("operator_id") operator_id?: string,
   ) {
-    return await this.propertyService.findAllWithFreshUrls({ building_id, operator_id });
+    return await this.propertyService.findAllWithFreshUrls({
+      building_id,
+      operator_id,
+    });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -327,7 +335,7 @@ export class PropertyController {
   @ApiResponse({ status: 404, description: "Property not found" })
   update(
     @Param("id") id: string,
-    @Body() updatePropertyDto: UpdatePropertyDto
+    @Body() updatePropertyDto: UpdatePropertyDto,
   ) {
     return this.propertyService.update(id, updatePropertyDto);
   }

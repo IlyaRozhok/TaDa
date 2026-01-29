@@ -97,6 +97,9 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Apartment
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
@@ -122,7 +125,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
             <tbody className="bg-white divide-y divide-gray-100">
               {properties.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Home className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -142,13 +145,18 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >
                     <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-black">
+                        {property.title || "-"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 w-10 h-10">
                           {property.photos && property.photos.length > 0 ? (
                             <img
                               className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                               src={property.photos[0]}
-                              alt={property.apartment_number}
+                              alt={property.apartment_number || property.title}
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
@@ -158,7 +166,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-black">
-                            {property.apartment_number}
+                            {property.apartment_number || "-"}
                           </div>
                         </div>
                       </div>
@@ -193,7 +201,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                       <span className="text-sm text-black">
                         {property.available_from
                           ? new Date(
-                              property.available_from
+                              property.available_from,
                             ).toLocaleDateString()
                           : "-"}
                       </span>

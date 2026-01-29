@@ -11,7 +11,11 @@ import {
   Bills,
 } from "../types/property";
 import { FormField, Input, Select, Textarea } from "./FormField";
-import { useFormValidation, ValidationRules, commonRules } from "../hooks/useFormValidation";
+import {
+  useFormValidation,
+  ValidationRules,
+  commonRules,
+} from "../hooks/useFormValidation";
 
 interface Pet {
   type: "dog" | "cat" | "other";
@@ -79,102 +83,126 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       required: true,
       minLength: 3,
       maxLength: 100,
-      pattern: /^[a-zA-Z0-9\s\-'.,()]+$/
+      pattern: /^[a-zA-Z0-9\s\-'.,()]+$/,
     },
     apartment_number: {
       maxLength: 20,
-      pattern: /^[a-zA-Z0-9\-\/]+$/
+      pattern: /^[a-zA-Z0-9\-\/]+$/,
     },
     description: {
-      maxLength: 1000
+      maxLength: 1000,
     },
     price: {
-      required: true,
+      required: false,
       min: 1,
       max: 50000,
       custom: (value: number) => {
-        if (value && value % 1 !== 0 && value.toString().split('.')[1]?.length > 2) {
-          return 'Price can have maximum 2 decimal places';
+        if (
+          value &&
+          value % 1 !== 0 &&
+          value.toString().split(".")[1]?.length > 2
+        ) {
+          return "Price can have maximum 2 decimal places";
         }
         return null;
-      }
+      },
     },
     deposit: {
       min: 0,
       max: 100000,
       custom: (value: number) => {
-        if (value && value % 1 !== 0 && value.toString().split('.')[1]?.length > 2) {
-          return 'Deposit can have maximum 2 decimal places';
+        if (
+          value &&
+          value % 1 !== 0 &&
+          value.toString().split(".")[1]?.length > 2
+        ) {
+          return "Deposit can have maximum 2 decimal places";
         }
         return null;
-      }
+      },
     },
     available_from: {
-      required: true,
+      required: false,
       custom: (value: string) => {
         if (value && new Date(value) < new Date()) {
-          return 'Available date cannot be in the past';
+          return "Available date cannot be in the past";
         }
         return null;
-      }
+      },
     },
-    bills: { required: true },
-    property_type: { required: true },
+    bills: { required: false },
+    property_type: { required: false },
     bedrooms: {
-      required: true,
+      required: false,
       min: 0,
-      max: 20
+      max: 20,
     },
     bathrooms: {
-      required: true,
+      required: false,
       min: 1,
-      max: 20
+      max: 20,
     },
-    building_type: { required: true },
-    furnishing: { required: true },
-    let_duration: { required: true },
+    building_type: { required: false },
+    furnishing: { required: false },
+    let_duration: { required: false },
     floor: {
       min: -5,
-      max: 200
+      max: 200,
     },
     square_meters: {
       min: 1,
       max: 10000,
       custom: (value: number) => {
-        if (value && value % 1 !== 0 && value.toString().split('.')[1]?.length > 2) {
-          return 'Square meters can have maximum 2 decimal places';
+        if (
+          value &&
+          value % 1 !== 0 &&
+          value.toString().split(".")[1]?.length > 2
+        ) {
+          return "Square meters can have maximum 2 decimal places";
         }
         return null;
-      }
+      },
     },
     address: {
-      required: true,
+      required: false,
       minLength: 5,
-      maxLength: 200
+      maxLength: 200,
     },
     building_id: {
       custom: (value: string, formData?: any) => {
-        if (formData?.building_type !== 'private_landlord' && !value) {
-          return 'Please select a building';
+        // building_id is required only if building_type is set and not "private_landlord"
+        if (
+          formData?.building_type &&
+          formData.building_type !== "private_landlord" &&
+          !value
+        ) {
+          return "Please select a building";
         }
         return null;
-      }
+      },
     },
     operator_id: {
       custom: (value: string, formData?: any) => {
-        if (formData?.building_type === 'private_landlord' && !value) {
-          return 'Please select an operator';
+        if (formData?.building_type === "private_landlord" && !value) {
+          return "Please select an operator";
         }
         return null;
-      }
-    }
+      },
+    },
   };
 
-  const { errors, touched, validateAll, validate, setFieldTouched, clearErrors } = useFormValidation(validationRules);
+  const {
+    errors,
+    touched,
+    validateAll,
+    validate,
+    setFieldTouched,
+    clearErrors,
+  } = useFormValidation(validationRules);
 
   // Handle field changes with validation
   const handleFieldChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (touched[field]) {
       validate(field, value);
     }
@@ -225,7 +253,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
-    null
+    null,
   );
   const [availableOperators, setAvailableOperators] = useState<User[]>([]);
   const [operatorsLoading, setOperatorsLoading] = useState(false);
@@ -258,7 +286,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   // Load operators when building_type changes to private_landlord
   useEffect(() => {
-    if (formData.building_type === "private_landlord" && isOpen && !operatorsLoading && !operatorsLoaded) {
+    if (
+      formData.building_type === "private_landlord" &&
+      isOpen &&
+      !operatorsLoading &&
+      !operatorsLoaded
+    ) {
       loadOperators();
     }
   }, [formData.building_type, isOpen]);
@@ -270,7 +303,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       console.log(
         "✅ Setting availableOperators from props:",
         operators.length,
-        "operators"
+        "operators",
       );
       setAvailableOperators(operators);
       setOperatorsLoaded(true);
@@ -390,7 +423,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
       // Filter only operators
       const operatorsData = usersData.filter(
-        (user: User) => user.role === "operator" || user.role === "Operator"
+        (user: User) => user.role === "operator" || user.role === "Operator",
       );
       console.log("✅ Filtered operators:", operatorsData.length, "operators");
 
@@ -535,12 +568,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const updateMetroStation = (
     index: number,
     field: keyof MetroStation,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       metro_stations: prev.metro_stations.map((station, i) =>
-        i === index ? { ...station, [field]: value } : station
+        i === index ? { ...station, [field]: value } : station,
       ),
     }));
   };
@@ -566,12 +599,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const updateCommuteTime = (
     index: number,
     field: keyof CommuteTime,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       commute_times: prev.commute_times.map((time, i) =>
-        i === index ? { ...time, [field]: value } : time
+        i === index ? { ...time, [field]: value } : time,
       ),
     }));
   };
@@ -597,12 +630,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const updateLocalEssential = (
     index: number,
     field: keyof LocalEssential,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       local_essentials: prev.local_essentials.map((essential, i) =>
-        i === index ? { ...essential, [field]: value } : essential
+        i === index ? { ...essential, [field]: value } : essential,
       ),
     }));
   };
@@ -656,7 +689,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       ...prev,
       pets: prev.pets
         ? prev.pets.map((pet, i) =>
-            i === index ? { ...pet, [field]: value } : pet
+            i === index ? { ...pet, [field]: value } : pet,
           )
         : null,
     }));
@@ -673,8 +706,17 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     // Validate all fields
     const isValid = validateAll(formData);
     if (!isValid) {
+      console.log("❌ Validation failed. Errors:", errors);
+      console.log("📋 Form data:", formData);
+      // Scroll to first error field
+      const buildingField = document.querySelector("[data-building-field]");
+      if (buildingField && errors.building_id) {
+        buildingField.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
+
+    console.log("✅ Validation passed. Submitting form...");
 
     setIsSubmitting(true);
     try {
@@ -699,7 +741,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       }
 
       // Prepare property data - exclude operator_id for regular buildings (backend gets it from building)
-      const { operator_id, ...formDataWithoutOperator } = formData;
+      const { operator_id, building_id, ...formDataWithoutOperator } = formData;
       const propertyData: any = {
         ...formDataWithoutOperator,
         photos: uploadedPhotos,
@@ -707,16 +749,35 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         documents: uploadedDocuments,
       };
 
-      // For private landlord, operator_id must be provided
+      // Handle building_id based on building_type
       if (formData.building_type === "private_landlord") {
+        // For private landlord, operator_id must be provided and building_id should be null
         if (!formData.operator_id) {
           throw new Error(
-            "Please select an operator for private landlord properties"
+            "Please select an operator for private landlord properties",
           );
         }
         propertyData.operator_id = formData.operator_id;
         propertyData.building_id = null; // Explicitly set to null for private landlord
+      } else if (formData.building_type && formData.building_type !== "") {
+        // If building_type is set and not private_landlord, building_id must be provided
+        if (!formData.building_id || formData.building_id === "") {
+          setFieldTouched("building_id", true);
+          // Trigger validation - custom validator will check building_id against formData
+          validate("building_id", formData.building_id, formData);
+          // Scroll to building field
+          const buildingField = document.querySelector("[data-building-field]");
+          if (buildingField) {
+            buildingField.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+          throw new Error("Please select a building");
+        }
+        propertyData.building_id = formData.building_id;
       }
+      // If building_type is empty/not set, don't include building_id at all
 
       // Include inherited fields
       propertyData.metro_stations = formData.metro_stations;
@@ -727,7 +788,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
       console.log(
         "📤 Sending propertyData:",
-        JSON.stringify(propertyData, null, 2)
+        JSON.stringify(propertyData, null, 2),
       );
       await onSubmit(propertyData);
       // Don't show toast here - let the parent component handle notifications
@@ -834,8 +895,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <Input
                 type="text"
                 value={formData.title}
-                onChange={(e) => handleFieldChange('title', e.target.value)}
-                onBlur={() => handleFieldBlur('title')}
+                onChange={(e) => handleFieldChange("title", e.target.value)}
+                onBlur={() => handleFieldBlur("title")}
                 error={touched.title && !!errors.title}
                 placeholder="e.g. Modern 2BR Apartment"
               />
@@ -850,8 +911,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               <Input
                 type="text"
                 value={formData.apartment_number}
-                onChange={(e) => handleFieldChange('apartment_number', e.target.value)}
-                onBlur={() => handleFieldBlur('apartment_number')}
+                onChange={(e) =>
+                  handleFieldChange("apartment_number", e.target.value)
+                }
+                onBlur={() => handleFieldBlur("apartment_number")}
                 error={touched.apartment_number && !!errors.apartment_number}
                 placeholder="e.g. 2A, 15B"
               />
@@ -874,10 +937,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     >
                       {formData.operator_id
                         ? availableOperators.find(
-                            (o) => o.id === formData.operator_id
+                            (o) => o.id === formData.operator_id,
                           )?.full_name ||
                           availableOperators.find(
-                            (o) => o.id === formData.operator_id
+                            (o) => o.id === formData.operator_id,
                           )?.email
                         : "Select Operator"}
                     </span>
@@ -921,14 +984,21 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
               </div>
             ) : formData.building_type ? (
-              <div>
+              <div data-building-field>
                 <label className="block text-sm font-medium text-white/90 mb-2">
                   Building *
                 </label>
                 <div className="relative" data-dropdown>
                   <div
-                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                    onClick={() => toggleDropdown("building")}
+                    className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between ${
+                      errors.building_id && touched.building_id
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : "border-white/20"
+                    }`}
+                    onClick={() => {
+                      toggleDropdown("building");
+                      setFieldTouched("building_id", true);
+                    }}
                   >
                     <span
                       className={
@@ -968,10 +1038,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                               : ""
                           }`}
                           onClick={() => {
-                            setFormData({
+                            const newFormData = {
                               ...formData,
                               building_id: building.id,
-                            });
+                            };
+                            setFormData(newFormData);
+                            // Clear error for building_id by validating it with formData
+                            validate("building_id", building.id, newFormData);
+                            setFieldTouched("building_id", false);
                             setOpenDropdown(null);
                           }}
                         >
@@ -981,6 +1055,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     </div>
                   )}
                 </div>
+                {errors.building_id && touched.building_id && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.building_id}
+                  </p>
+                )}
               </div>
             ) : null}
 
@@ -1049,7 +1128,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                                   setFormData({
                                     ...formData,
                                     tenant_types: formData.tenant_types.filter(
-                                      (t) => t !== value
+                                      (t) => t !== value,
                                     ),
                                   });
                                 }}
@@ -1094,10 +1173,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                         onClick={() => {
                           const newTenantTypes = formData.tenant_types.includes(
-                            option.value
+                            option.value,
                           )
                             ? formData.tenant_types.filter(
-                                (t) => t !== option.value
+                                (t) => t !== option.value,
                               )
                             : [...formData.tenant_types, option.value];
                           setFormData({
@@ -1113,115 +1192,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                         <span>{option.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <FormField
-              label="Price (£ PCM)"
-              required
-              error={errors.price}
-              touched={touched.price}
-              helpText="Monthly rent in British Pounds"
-            >
-              <Input
-                type="number"
-                value={formData.price || ""}
-                onChange={(e) => handleFieldChange('price', e.target.value === "" ? null : Number(e.target.value))}
-                onBlur={() => handleFieldBlur('price')}
-                error={touched.price && !!errors.price}
-                min="0"
-                step="0.01"
-                placeholder="e.g. 1500"
-                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-              />
-            </FormField>
-
-            <FormField
-              label="Deposit (£)"
-              error={errors.deposit}
-              touched={touched.deposit}
-              helpText="Security deposit amount (optional)"
-            >
-              <Input
-                type="number"
-                value={formData.deposit || ""}
-                onChange={(e) => handleFieldChange('deposit', e.target.value === "" ? null : Number(e.target.value))}
-                onBlur={() => handleFieldBlur('deposit')}
-                error={touched.deposit && !!errors.deposit}
-                min="0"
-                step="0.01"
-                placeholder="e.g. 1500"
-                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-              />
-            </FormField>
-
-            <FormField
-              label="Available From"
-              required
-              error={errors.available_from}
-              touched={touched.available_from}
-              helpText="When the property becomes available"
-            >
-              <Input
-                type="date"
-                value={formData.available_from}
-                onChange={(e) => handleFieldChange('available_from', e.target.value)}
-                onBlur={() => handleFieldBlur('available_from')}
-                error={touched.available_from && !!errors.available_from}
-              />
-            </FormField>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Property Type
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("property_type")}
-                >
-                  <span
-                    className={
-                      formData.property_type ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.property_type
-                      ? formData.property_type.charAt(0).toUpperCase() +
-                        formData.property_type.slice(1)
-                      : "Select Type"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "property_type" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {Object.values(PropertyType).map((type) => (
-                      <div
-                        key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.property_type === type ? "bg-white/10" : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({ ...formData, property_type: type });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
                       </div>
                     ))}
                   </div>
@@ -1283,6 +1253,125 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                             .replace(/\b\w/g, (l) => l.toUpperCase())}
                         </div>
                       ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <FormField
+              label="Price (£ PCM)"
+              error={errors.price}
+              touched={touched.price}
+              helpText="Monthly rent in British Pounds (optional)"
+            >
+              <Input
+                type="number"
+                value={formData.price || ""}
+                onChange={(e) =>
+                  handleFieldChange(
+                    "price",
+                    e.target.value === "" ? null : Number(e.target.value),
+                  )
+                }
+                onBlur={() => handleFieldBlur("price")}
+                error={touched.price && !!errors.price}
+                min="0"
+                step="0.01"
+                placeholder="e.g. 1500"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+              />
+            </FormField>
+
+            <FormField
+              label="Deposit (£)"
+              error={errors.deposit}
+              touched={touched.deposit}
+              helpText="Security deposit amount (optional)"
+            >
+              <Input
+                type="number"
+                value={formData.deposit || ""}
+                onChange={(e) =>
+                  handleFieldChange(
+                    "deposit",
+                    e.target.value === "" ? null : Number(e.target.value),
+                  )
+                }
+                onBlur={() => handleFieldBlur("deposit")}
+                error={touched.deposit && !!errors.deposit}
+                min="0"
+                step="0.01"
+                placeholder="e.g. 1500"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+              />
+            </FormField>
+
+            <FormField
+              label="Available From"
+              error={errors.available_from}
+              touched={touched.available_from}
+              helpText="When the property becomes available (optional)"
+            >
+              <Input
+                type="date"
+                value={formData.available_from}
+                onChange={(e) =>
+                  handleFieldChange("available_from", e.target.value)
+                }
+                onBlur={() => handleFieldBlur("available_from")}
+                error={touched.available_from && !!errors.available_from}
+              />
+            </FormField>
+
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Property Type
+              </label>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown("property_type")}
+                >
+                  <span
+                    className={
+                      formData.property_type ? "text-white" : "text-white/50"
+                    }
+                  >
+                    {formData.property_type
+                      ? formData.property_type.charAt(0).toUpperCase() +
+                        formData.property_type.slice(1)
+                      : "Select Type"}
+                  </span>
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+                {openDropdown === "property_type" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {Object.values(PropertyType).map((type) => (
+                      <div
+                        key={type}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          formData.property_type === type ? "bg-white/10" : ""
+                        }`}
+                        onClick={() => {
+                          setFormData({ ...formData, property_type: type });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1769,7 +1858,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         } else {
                           const val = Math.max(
                             0,
-                            Math.min(23, parseInt(inputVal) || 0)
+                            Math.min(23, parseInt(inputVal) || 0),
                           );
                           setFormData({
                             ...formData,
@@ -1805,7 +1894,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         } else {
                           const val = Math.max(
                             0,
-                            Math.min(23, parseInt(inputVal) || 0)
+                            Math.min(23, parseInt(inputVal) || 0),
                           );
                           setFormData({
                             ...formData,
@@ -2014,7 +2103,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                                         updatePet(
                                           index,
                                           "size",
-                                          size.value || undefined
+                                          size.value || undefined,
                                         );
                                         setOpenDropdown(null);
                                       }}
@@ -2302,9 +2391,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   <p className="text-sm text-white/90 font-medium">
                     Click to upload video
                   </p>
-                  <p className="text-xs text-white/60 mt-1">
-                    MP4, AVI
-                  </p>
+                  <p className="text-xs text-white/60 mt-1">MP4, AVI</p>
                 </div>
               </label>
               {videoPreview && (

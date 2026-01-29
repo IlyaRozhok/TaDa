@@ -41,7 +41,7 @@ import {
 // Form data interface
 interface PropertyFormData {
   title: string;
-  description: string;
+  descriptions: string; // Changed from description to descriptions to match backend
   address: string;
   price: number;
   available_from: string;
@@ -106,7 +106,12 @@ interface ErrorMessageProps {
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ error }) => {
   if (!error) return null;
-  return <p className="text-red-500 text-sm mt-1">{error}</p>;
+  return (
+    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+      <span>{error}</span>
+    </p>
+  );
 };
 
 export default function CreatePropertyPage() {
@@ -120,6 +125,7 @@ export default function CreatePropertyPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [backendErrors, setBackendErrors] = useState<FormFieldErrors>({});
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
   const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
 
   // Ref for MediaUpload component
@@ -127,7 +133,7 @@ export default function CreatePropertyPage() {
 
   const [formData, setFormData] = useState<PropertyFormData>({
     title: "",
-    description: "",
+    descriptions: "", // Changed from description to descriptions
     address: "",
     price: 0,
     available_from: "",
@@ -139,27 +145,220 @@ export default function CreatePropertyPage() {
     lifestyle_features: [],
   });
 
+  // Define required fields - only title is required on backend
+  const REQUIRED_FIELDS: { [key: string]: boolean } = {
+    title: true,
+  };
+
+  // Validation function for a specific field
+  const validateField = (fieldName: string, value: any): string => {
+    const isRequired = REQUIRED_FIELDS[fieldName];
+
+    switch (fieldName) {
+      case "title":
+        if (
+          !value ||
+          (typeof value === "string" && value.trim().length === 0)
+        ) {
+          return "Title is required";
+        }
+        if (typeof value === "string" && value.trim().length < 3) {
+          return "Title must be at least 3 characters";
+        }
+        break;
+      case "descriptions":
+        // Optional field, but if provided, should meet minimum length
+        if (
+          value &&
+          typeof value === "string" &&
+          value.trim().length > 0 &&
+          value.trim().length < 10
+        ) {
+          return "Description must be at least 10 characters if provided";
+        }
+        break;
+      case "address":
+        // Optional field, but if provided, should meet minimum length
+        if (
+          value &&
+          typeof value === "string" &&
+          value.trim().length > 0 &&
+          value.trim().length < 5
+        ) {
+          return "Address must be at least 5 characters if provided";
+        }
+        break;
+      case "price":
+        // No validation - completely optional
+        break;
+      case "available_from":
+        // No validation - completely optional
+        break;
+      case "bedrooms":
+        if (isRequired) {
+          if (!value || value === 0 || value === "") {
+            return "Bedrooms is required";
+          }
+          const bedroomsNum =
+            typeof value === "string" ? parseInt(value, 10) : value;
+          if (isNaN(bedroomsNum) || bedroomsNum < 1) {
+            return "Bedrooms must be at least 1";
+          }
+        }
+        break;
+      case "bathrooms":
+        if (isRequired) {
+          if (!value || value === 0 || value === "") {
+            return "Bathrooms is required";
+          }
+          const bathroomsNum =
+            typeof value === "string" ? parseInt(value, 10) : value;
+          if (isNaN(bathroomsNum) || bathroomsNum < 1) {
+            return "Bathrooms must be at least 1";
+          }
+        }
+        break;
+      case "property_type":
+        if (isRequired) {
+          if (
+            !value ||
+            (typeof value === "string" && value.trim().length === 0)
+          ) {
+            return "Property type is required";
+          }
+        }
+        break;
+      case "furnishing":
+        if (isRequired) {
+          if (
+            !value ||
+            (typeof value === "string" && value.trim().length === 0)
+          ) {
+            return "Furnishing is required";
+          }
+        }
+        break;
+    }
+    return "";
+  };
+
+  // Validate all fields for a specific step
+  const validateStep = (stepNumber: number): FormFieldErrors => {
+    const errors: FormFieldErrors = {};
+
+    if (stepNumber === 1) {
+      // Step 1: Basic Information - only title is required
+      const titleError = validateField("title", formData.title);
+      if (titleError) errors.title = titleError;
+
+      // Optional fields - validate only if they have values
+      if (formData.descriptions) {
+        const descriptionsError = validateField(
+          "descriptions",
+          formData.descriptions,
+        );
+        if (descriptionsError) errors.descriptions = descriptionsError;
+      }
+
+      if (formData.address) {
+        const addressError = validateField("address", formData.address);
+        if (addressError) errors.address = addressError;
+      }
+    } else if (stepNumber === 2) {
+      // Step 2: Property Details - only required fields
+      const bedroomsError = validateField("bedrooms", formData.bedrooms);
+      if (bedroomsError) errors.bedrooms = bedroomsError;
+
+      const bathroomsError = validateField("bathrooms", formData.bathrooms);
+      if (bathroomsError) errors.bathrooms = bathroomsError;
+
+      const propertyTypeError = validateField(
+        "property_type",
+        formData.property_type,
+      );
+      if (propertyTypeError) errors.property_type = propertyTypeError;
+
+      const furnishingError = validateField("furnishing", formData.furnishing);
+      if (furnishingError) errors.furnishing = furnishingError;
+    }
+    // Steps 3 and 4 don't have required fields
+
+    return errors;
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
+    let newValue: any;
+    if (type === "checkbox") {
+      newValue = checked;
+    } else if (type === "number") {
+      newValue = value === "" ? 0 : parseFloat(value);
+      if (isNaN(newValue)) newValue = 0;
+    } else if (name === "bedrooms" || name === "bathrooms") {
+      // Handle select elements that return strings but should be numbers
+      newValue = parseInt(value, 10);
+      if (isNaN(newValue)) newValue = 1;
+    } else {
+      newValue = value;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: newValue,
     }));
 
-    // Clear backend error for this field
-    if (backendErrors[name]) {
+    // Mark field as touched
+    setTouched((prev) => ({
+      ...prev,
+      [name]: true,
+    }));
+
+    // Validate field in real-time if it's been touched
+    if (touched[name]) {
+      const error = validateField(name, newValue);
+      setBackendErrors((prev) => {
+        const newErrors = { ...prev };
+        if (error) {
+          newErrors[name] = error;
+        } else {
+          delete newErrors[name];
+        }
+        return newErrors;
+      });
+    } else {
+      // Clear error if field hasn't been touched yet
       setBackendErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
     }
+  };
+
+  const handleBlur = (fieldName: string) => {
+    setTouched((prev) => ({
+      ...prev,
+      [fieldName]: true,
+    }));
+
+    // Validate field on blur
+    const value = formData[fieldName as keyof PropertyFormData];
+    const error = validateField(fieldName, value);
+    setBackendErrors((prev) => {
+      const newErrors = { ...prev };
+      if (error) {
+        newErrors[fieldName] = error;
+      } else {
+        delete newErrors[fieldName];
+      }
+      return newErrors;
+    });
   };
 
   const handleLifestyleFeatureToggle = (featureId: string) => {
@@ -176,6 +375,39 @@ export default function CreatePropertyPage() {
   };
 
   const nextStep = () => {
+    // Validate current step before proceeding
+    const stepErrors = validateStep(step);
+
+    // Mark only REQUIRED fields in current step as touched (so errors will be visible)
+    const newTouched: { [key: string]: boolean } = { ...touched };
+    if (step === 1) {
+      // Only title is required
+      newTouched.title = true;
+    }
+    // Step 2+ have no required fields
+    setTouched(newTouched);
+
+    // Set all errors for current step (so they're all visible)
+    if (Object.keys(stepErrors).length > 0) {
+      setBackendErrors((prev) => ({ ...prev, ...stepErrors }));
+      setError("Please fill in all required fields before proceeding");
+      // Scroll to first error
+      setTimeout(() => {
+        const firstErrorField = Object.keys(stepErrors)[0];
+        const element = document.querySelector(`[name="${firstErrorField}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          (element as HTMLElement).focus();
+        }
+      }, 100);
+      return;
+    }
+
+    // Clear error if validation passes
+    setError("");
+    setBackendErrors({});
+
+    // Proceed to next step
     if (step < 4) {
       setStep(step + 1);
     }
@@ -195,6 +427,40 @@ export default function CreatePropertyPage() {
       return;
     }
 
+    // Validate all steps before submitting
+    const allErrors: FormFieldErrors = {};
+
+    // Validate step 1 fields
+    const step1Errors = validateStep(1);
+    Object.assign(allErrors, step1Errors);
+
+    // Validate step 2 fields
+    const step2Errors = validateStep(2);
+    Object.assign(allErrors, step2Errors);
+
+    // Mark only REQUIRED fields as touched (so errors will be visible)
+    const allTouched: { [key: string]: boolean } = {
+      title: true,
+    };
+    setTouched(allTouched);
+
+    if (Object.keys(allErrors).length > 0) {
+      setBackendErrors(allErrors);
+      setError("Please fill in all required fields before submitting");
+      // Go back to first step with errors
+      setStep(1);
+      // Scroll to first error
+      setTimeout(() => {
+        const firstErrorField = Object.keys(allErrors)[0];
+        const element = document.querySelector(`[name="${firstErrorField}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          (element as HTMLElement).focus();
+        }
+      }, 100);
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -202,7 +468,8 @@ export default function CreatePropertyPage() {
 
     try {
       // Step 1: Create the property
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
       const response = await fetch(`${apiUrl}/properties`, {
         method: "POST",
         headers: {
@@ -237,13 +504,13 @@ export default function CreatePropertyPage() {
         try {
           await mediaUploadRef.current.uploadFiles(
             responseData.id,
-            accessToken
+            accessToken,
           );
         } catch (uploadError) {
           console.error("Media upload failed:", uploadError);
           // Property was created but media upload failed
           setError(
-            "Property created successfully, but some media files failed to upload. You can add them later from the property management page."
+            "Property created successfully, but some media files failed to upload. You can add them later from the property management page.",
           );
           setTimeout(() => {
             router.push("/app/dashboard/operator");
@@ -362,7 +629,12 @@ export default function CreatePropertyPage() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl disabled:bg-slate-400 disabled:cursor-not-allowed"
+                  title={
+                    Object.keys(validateStep(1)).length > 0
+                      ? "Please fix validation errors"
+                      : ""
+                  }
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />
@@ -383,7 +655,13 @@ export default function CreatePropertyPage() {
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
+                      onBlur={() => handleBlur("title")}
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.title || backendErrors.title) &&
+                        backendErrors.title
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                       placeholder="e.g., Luxury 2-bed flat in Central London"
                       required
                     />
@@ -391,26 +669,28 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div className="lg:col-span-2">
-                    <RequiredLabel
-                      required
-                      tooltip="Detailed description to attract potential tenants"
-                    >
+                    <RequiredLabel tooltip="Detailed description to attract potential tenants">
                       Description
                     </RequiredLabel>
                     <textarea
-                      name="description"
-                      value={formData.description}
+                      name="descriptions"
+                      value={formData.descriptions}
                       onChange={handleInputChange}
+                      onBlur={() => handleBlur("descriptions")}
                       rows={4}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm resize-none"
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm resize-none ${
+                        (touched.descriptions || backendErrors.descriptions) &&
+                        backendErrors.descriptions
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                       placeholder="Describe your property's unique features, location benefits, and what makes it special..."
-                      required
                     />
-                    <ErrorMessage error={backendErrors.description} />
+                    <ErrorMessage error={backendErrors.descriptions} />
                   </div>
 
                   <div className="lg:col-span-2">
-                    <RequiredLabel required>
+                    <RequiredLabel>
                       <MapPin className="inline w-4 h-4 mr-1" />
                       Address
                     </RequiredLabel>
@@ -419,15 +699,20 @@ export default function CreatePropertyPage() {
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
+                      onBlur={() => handleBlur("address")}
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.address || backendErrors.address) &&
+                        backendErrors.address
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                       placeholder="e.g., 123 Oxford Street, London W1D 2HX"
-                      required
                     />
                     <ErrorMessage error={backendErrors.address} />
                   </div>
 
                   <div>
-                    <RequiredLabel required>
+                    <RequiredLabel>
                       <DollarSign className="inline w-4 h-4 mr-1" />
                       Monthly Rent (£)
                     </RequiredLabel>
@@ -436,17 +721,22 @@ export default function CreatePropertyPage() {
                       name="price"
                       value={formData.price || ""}
                       onChange={handleInputChange}
+                      onBlur={() => handleBlur("price")}
                       min="0"
                       step="50"
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.price || backendErrors.price) &&
+                        backendErrors.price
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                       placeholder="2500"
-                      required
                     />
                     <ErrorMessage error={backendErrors.price} />
                   </div>
 
                   <div>
-                    <RequiredLabel required>
+                    <RequiredLabel>
                       <Calendar className="inline w-4 h-4 mr-1" />
                       Available From
                     </RequiredLabel>
@@ -455,8 +745,14 @@ export default function CreatePropertyPage() {
                       name="available_from"
                       value={formData.available_from}
                       onChange={handleInputChange}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
-                      required
+                      onBlur={() => handleBlur("available_from")}
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.available_from ||
+                          backendErrors.available_from) &&
+                        backendErrors.available_from
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                     />
                     <ErrorMessage error={backendErrors.available_from} />
                   </div>
@@ -495,7 +791,12 @@ export default function CreatePropertyPage() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl disabled:bg-slate-400 disabled:cursor-not-allowed"
+                  title={
+                    Object.keys(validateStep(2)).length > 0
+                      ? "Please fix validation errors"
+                      : ""
+                  }
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />
@@ -505,7 +806,7 @@ export default function CreatePropertyPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div>
-                    <RequiredLabel required>
+                    <RequiredLabel>
                       <Bed className="inline w-4 h-4 mr-1" />
                       Bedrooms
                     </RequiredLabel>
@@ -513,8 +814,13 @@ export default function CreatePropertyPage() {
                       name="bedrooms"
                       value={formData.bedrooms}
                       onChange={handleInputChange}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
-                      required
+                      onBlur={() => handleBlur("bedrooms")}
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.bedrooms || backendErrors.bedrooms) &&
+                        backendErrors.bedrooms
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                     >
                       {[1, 2, 3, 4, 5, 6].map((num) => (
                         <option key={num} value={num}>
@@ -526,7 +832,7 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <RequiredLabel required>
+                    <RequiredLabel>
                       <Bath className="inline w-4 h-4 mr-1" />
                       Bathrooms
                     </RequiredLabel>
@@ -534,8 +840,13 @@ export default function CreatePropertyPage() {
                       name="bathrooms"
                       value={formData.bathrooms}
                       onChange={handleInputChange}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
-                      required
+                      onBlur={() => handleBlur("bathrooms")}
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.bathrooms || backendErrors.bathrooms) &&
+                        backendErrors.bathrooms
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                     >
                       {[1, 2, 3, 4, 5, 6].map((num) => (
                         <option key={num} value={num}>
@@ -552,7 +863,14 @@ export default function CreatePropertyPage() {
                       name="property_type"
                       value={formData.property_type}
                       onChange={handleInputChange}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
+                      onBlur={() => handleBlur("property_type")}
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.property_type ||
+                          backendErrors.property_type) &&
+                        backendErrors.property_type
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                       required
                     >
                       <option value="apartment">Apartment</option>
@@ -566,13 +884,18 @@ export default function CreatePropertyPage() {
                   </div>
 
                   <div>
-                    <RequiredLabel required>Furnishing</RequiredLabel>
+                    <RequiredLabel>Furnishing</RequiredLabel>
                     <select
                       name="furnishing"
                       value={formData.furnishing}
                       onChange={handleInputChange}
-                      className="w-full text-slate-900 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
-                      required
+                      onBlur={() => handleBlur("furnishing")}
+                      className={`w-full text-slate-900 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm ${
+                        (touched.furnishing || backendErrors.furnishing) &&
+                        backendErrors.furnishing
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-300"
+                      }`}
                     >
                       <option value="furnished">Furnished</option>
                       <option value="unfurnished">Unfurnished</option>
@@ -645,7 +968,7 @@ export default function CreatePropertyPage() {
                   {lifestyleFeatures.map((feature) => {
                     const Icon = feature.icon;
                     const isSelected = formData.lifestyle_features.includes(
-                      feature.id
+                      feature.id,
                     );
 
                     return (
@@ -675,7 +998,7 @@ export default function CreatePropertyPage() {
                       ? formData.lifestyle_features
                           .map(
                             (id) =>
-                              lifestyleFeatures.find((f) => f.id === id)?.label
+                              lifestyleFeatures.find((f) => f.id === id)?.label,
                           )
                           .join(", ")
                       : "None selected"}
@@ -813,7 +1136,7 @@ export default function CreatePropertyPage() {
                     <div className="md:col-span-2">
                       <p className="text-sm text-slate-600">Description</p>
                       <p className="font-medium text-slate-900">
-                        {formData.description || "Not specified"}
+                        {formData.descriptions || "Not specified"}
                       </p>
                     </div>
                     <div className="md:col-span-2">
@@ -826,7 +1149,7 @@ export default function CreatePropertyPage() {
                               .map(
                                 (id) =>
                                   lifestyleFeatures.find((f) => f.id === id)
-                                    ?.label
+                                    ?.label,
                               )
                               .join(", ")
                           : "None selected"}

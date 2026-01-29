@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Save, Trash2, Upload, Plus, Minus, GripVertical } from "lucide-react";
+import {
+  X,
+  Save,
+  Trash2,
+  Upload,
+  Plus,
+  Minus,
+  GripVertical,
+} from "lucide-react";
 import { propertiesAPI, buildingsAPI, usersAPI } from "../lib/api";
 import {
   Property,
@@ -74,6 +82,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
+    title: "",
     apartment_number: "",
     descriptions: "",
     price: null as number | null,
@@ -113,10 +122,14 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
-    null
+    null,
   );
   const [availableOperators, setAvailableOperators] = useState<User[]>([]);
   const [operatorsLoading, setOperatorsLoading] = useState(false);
+
+  // Validation errors state
+  const [buildingError, setBuildingError] = useState<string | null>(null);
+  const [buildingTouched, setBuildingTouched] = useState(false);
 
   // Dropdown open states
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -137,8 +150,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const [removedDocuments, setRemovedDocuments] = useState(false);
 
   // Drag and drop state for photos
-  const [draggedPhotoIndex, setDraggedPhotoIndex] = useState<number | null>(null);
-  const [draggedPhotoFileIndex, setDraggedPhotoFileIndex] = useState<number | null>(null);
+  const [draggedPhotoIndex, setDraggedPhotoIndex] = useState<number | null>(
+    null,
+  );
+  const [draggedPhotoFileIndex, setDraggedPhotoFileIndex] = useState<
+    number | null
+  >(null);
 
   // Refs
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -163,6 +180,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       };
 
       setFormData({
+        title: property.title || "",
         apartment_number: property.apartment_number || "",
         descriptions: property.descriptions || "",
         price: property.price || null,
@@ -266,7 +284,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         console.log(
           "✅ Operators loaded with role filter:",
           operatorsData.length,
-          "operators"
+          "operators",
         );
 
         if (operatorsData.length > 0) {
@@ -279,11 +297,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           ) {
             console.log(
               "⚠️ Current operator not found in list, adding it:",
-              formData.operator_id
+              formData.operator_id,
             );
             console.log(
               "🔍 Available operators IDs:",
-              finalOperators.map((op) => op.id)
+              finalOperators.map((op) => op.id),
             );
             finalOperators = [
               {
@@ -299,7 +317,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           console.log(
             "✅ Final operators set:",
             finalOperators.length,
-            "operators"
+            "operators",
           );
           setAvailableOperators(finalOperators);
           return;
@@ -307,7 +325,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       } catch (operatorsError) {
         console.log(
           "⚠️ Failed to load operators with role filter:",
-          operatorsError
+          operatorsError,
         );
       }
 
@@ -329,7 +347,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           user.email,
           user.role,
           "-> isOperator:",
-          isOperator
+          isOperator,
         );
         return isOperator;
       });
@@ -363,11 +381,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       ) {
         console.log(
           "⚠️ Current operator not found in list, adding it:",
-          formData.operator_id
+          formData.operator_id,
         );
         console.log(
           "🔍 Available operators IDs:",
-          finalOperators.map((op) => op.id)
+          finalOperators.map((op) => op.id),
         );
         finalOperators = [
           {
@@ -383,7 +401,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       console.log(
         "✅ Final operators set:",
         finalOperators.length,
-        "operators"
+        "operators",
       );
       console.log("✅ Final operators:", finalOperators);
       setAvailableOperators(finalOperators);
@@ -421,6 +439,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         local_essentials: [],
       }));
       setSelectedBuilding(null);
+      setBuildingError(null);
+      setBuildingTouched(false);
     } else if (
       prevBuildingType !== "private_landlord" &&
       formData.building_type === "private_landlord"
@@ -442,6 +462,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         local_essentials: [],
       }));
       setSelectedBuilding(null);
+      setBuildingError(null);
+      setBuildingTouched(false);
     }
     setPrevBuildingType(formData.building_type);
   }, [formData.building_type]);
@@ -603,12 +625,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const updateMetroStation = (
     index: number,
     field: keyof MetroStation,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       metro_stations: prev.metro_stations.map((station, i) =>
-        i === index ? { ...station, [field]: value } : station
+        i === index ? { ...station, [field]: value } : station,
       ),
     }));
   };
@@ -634,12 +656,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const updateCommuteTime = (
     index: number,
     field: keyof CommuteTime,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       commute_times: prev.commute_times.map((time, i) =>
-        i === index ? { ...time, [field]: value } : time
+        i === index ? { ...time, [field]: value } : time,
       ),
     }));
   };
@@ -665,12 +687,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const updateLocalEssential = (
     index: number,
     field: keyof LocalEssential,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       local_essentials: prev.local_essentials.map((essential, i) =>
-        i === index ? { ...essential, [field]: value } : essential
+        i === index ? { ...essential, [field]: value } : essential,
       ),
     }));
   };
@@ -724,7 +746,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       ...prev,
       pets: prev.pets
         ? prev.pets.map((pet, i) =>
-            i === index ? { ...pet, [field]: value } : pet
+            i === index ? { ...pet, [field]: value } : pet,
           )
         : null,
     }));
@@ -740,11 +762,23 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
     if (!property) return;
 
-    if (
-      !formData.building_id &&
-      formData.building_type !== "private_landlord"
-    ) {
-      throw new Error("Please select a building");
+    // Validate building_id - required only if building_type is set and not "private_landlord"
+    const isBuildingRequired =
+      formData.building_type &&
+      formData.building_type !== "" &&
+      formData.building_type !== "private_landlord";
+
+    if (isBuildingRequired && !formData.building_id) {
+      setBuildingError("Please select a building");
+      setBuildingTouched(true);
+      // Scroll to building field
+      const buildingField = document.querySelector("[data-building-field]");
+      if (buildingField) {
+        buildingField.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    } else {
+      setBuildingError(null);
     }
 
     setIsSubmitting(true);
@@ -771,7 +805,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
       // Combine existing (non-removed) photos with new uploads
       const existingPhotos = formData.photos.filter(
-        (photo) => !removedPhotos.includes(photo)
+        (photo) => !removedPhotos.includes(photo),
       );
       const allPhotos = [...existingPhotos, ...uploadedPhotos];
 
@@ -784,7 +818,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
       // Normalize data before sending - ensure numbers are numbers, not strings
       const normalizeNumber = (
-        value: number | null | undefined | string
+        value: number | null | undefined | string,
       ): number | null => {
         if (
           value === null ||
@@ -800,9 +834,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
       // Build the property data object, ensuring all numeric fields are properly converted
       // Prepare property data - exclude operator_id for regular buildings (backend gets it from building)
-      const { operator_id, ...formDataWithoutOperator } = formData;
+      const { operator_id, building_id, ...formDataWithoutOperator } = formData;
       const propertyData: any = {
-        building_id: formData.building_id,
+        title: formData.title?.trim() || "",
         apartment_number: formData.apartment_number?.trim() || null,
         descriptions: formData.descriptions?.trim() || null,
         // Convert numeric fields to proper numbers or null
@@ -842,16 +876,24 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         documents: finalDocuments || null,
       };
 
-      // For private landlord, operator_id must be provided
+      // Handle building_id based on building_type
       if (formData.building_type === "private_landlord") {
+        // For private landlord, operator_id must be provided and building_id should be null
         if (!formData.operator_id) {
           throw new Error(
-            "Please select an operator for private landlord properties"
+            "Please select an operator for private landlord properties",
           );
         }
         propertyData.operator_id = formData.operator_id;
         propertyData.building_id = null; // Explicitly set to null for private landlord
+      } else if (formData.building_type && formData.building_type !== "") {
+        // If building_type is set and not private_landlord, building_id must be provided
+        if (!formData.building_id || formData.building_id === "") {
+          throw new Error("Please select a building");
+        }
+        propertyData.building_id = formData.building_id;
       }
+      // If building_type is empty/not set, don't include building_id at all
 
       // Remove null values from optional fields (except for explicitly nullable fields like price, deposit)
       // But keep null for fields that backend expects to be nullable
@@ -879,6 +921,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     setRemovedPhotos([]);
     setRemovedVideo(false);
     setRemovedDocuments(false);
+    setBuildingError(null);
+    setBuildingTouched(false);
     onClose();
   };
 
@@ -886,7 +930,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
   // Filter out removed photos
   const displayPhotos = formData.photos.filter(
-    (photo) => !removedPhotos.includes(photo)
+    (photo) => !removedPhotos.includes(photo),
   );
 
   return (
@@ -915,6 +959,22 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         >
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Title *
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                placeholder="Enter property title"
+                required
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Apartment Number
@@ -930,14 +990,21 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </div>
 
             {formData.building_type !== "private_landlord" ? (
-              <div>
+              <div data-building-field>
                 <label className="block text-sm font-medium text-white/90 mb-2">
                   Building *
                 </label>
                 <div className="relative" data-dropdown>
                   <div
-                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                    onClick={() => toggleDropdown("building")}
+                    className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between ${
+                      buildingError && buildingTouched
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : "border-white/20"
+                    }`}
+                    onClick={() => {
+                      toggleDropdown("building");
+                      setBuildingTouched(true);
+                    }}
                   >
                     <span
                       className={
@@ -981,6 +1048,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                               ...formData,
                               building_id: building.id,
                             });
+                            setBuildingError(null);
                             setOpenDropdown(null);
                           }}
                         >
@@ -990,6 +1058,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     </div>
                   )}
                 </div>
+                {buildingError && buildingTouched && (
+                  <p className="mt-1 text-sm text-red-500">{buildingError}</p>
+                )}
               </div>
             ) : (
               <div>
@@ -1009,13 +1080,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       {operatorsLoading
                         ? "Loading operators..."
                         : formData.operator_id
-                        ? availableOperators.find(
-                            (o) => o.id === formData.operator_id
-                          )?.full_name ||
-                          availableOperators.find(
-                            (o) => o.id === formData.operator_id
-                          )?.email
-                        : "Select Operator"}
+                          ? availableOperators.find(
+                              (o) => o.id === formData.operator_id,
+                            )?.full_name ||
+                            availableOperators.find(
+                              (o) => o.id === formData.operator_id,
+                            )?.email
+                          : "Select Operator"}
                     </span>
                     <svg
                       className="w-5 h-5 text-white/70"
@@ -1057,6 +1128,65 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 </div>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Building Type
+              </label>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  onClick={() => toggleDropdown("building_type")}
+                >
+                  <span
+                    className={
+                      formData.building_type ? "text-white" : "text-white/50"
+                    }
+                  >
+                    {formData.building_type
+                      ? formData.building_type
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                      : "Select Type"}
+                  </span>
+                  <svg
+                    className="w-5 h-5 text-white/70"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+                {openDropdown === "building_type" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {Object.values(BuildingType)
+                      .filter((type) => type !== "luxury")
+                      .map((type) => (
+                        <div
+                          key={type}
+                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                            formData.building_type === type ? "bg-white/10" : ""
+                          }`}
+                          onClick={() => {
+                            setFormData({ ...formData, building_type: type });
+                            setOpenDropdown(null);
+                          }}
+                        >
+                          {type
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
@@ -1167,65 +1297,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Building Type
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("building_type")}
-                >
-                  <span
-                    className={
-                      formData.building_type ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.building_type
-                      ? formData.building_type
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())
-                      : "Select Type"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "building_type" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {Object.values(BuildingType)
-                      .filter((type) => type !== "luxury")
-                      .map((type) => (
-                        <div
-                          key={type}
-                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                            formData.building_type === type ? "bg-white/10" : ""
-                          }`}
-                          onClick={() => {
-                            setFormData({ ...formData, building_type: type });
-                            setOpenDropdown(null);
-                          }}
-                        >
-                          {type
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Address field - readonly if linked to building */}
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
@@ -1291,7 +1362,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                                   setFormData({
                                     ...formData,
                                     tenant_types: formData.tenant_types.filter(
-                                      (t) => t !== value
+                                      (t) => t !== value,
                                     ),
                                   });
                                 }}
@@ -1336,10 +1407,10 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                         onClick={() => {
                           const newTenantTypes = formData.tenant_types.includes(
-                            option.value
+                            option.value,
                           )
                             ? formData.tenant_types.filter(
-                                (t) => t !== option.value
+                                (t) => t !== option.value,
                               )
                             : [...formData.tenant_types, option.value];
                           setFormData({
@@ -1846,7 +1917,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         } else {
                           const val = Math.max(
                             0,
-                            Math.min(23, parseInt(inputVal) || 0)
+                            Math.min(23, parseInt(inputVal) || 0),
                           );
                           setFormData({
                             ...formData,
@@ -1882,7 +1953,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         } else {
                           const val = Math.max(
                             0,
-                            Math.min(23, parseInt(inputVal) || 0)
+                            Math.min(23, parseInt(inputVal) || 0),
                           );
                           setFormData({
                             ...formData,
@@ -2091,7 +2162,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                                         updatePet(
                                           index,
                                           "size",
-                                          size.value || undefined
+                                          size.value || undefined,
                                         );
                                         setOpenDropdown(null);
                                       }}
@@ -2321,9 +2392,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   <label className="block text-sm font-medium text-white/90">
                     Current Photos ({displayPhotos.length})
                   </label>
-                  <span className="text-xs text-white/60">
-                    Drag to reorder
-                  </span>
+                  <span className="text-xs text-white/60">Drag to reorder</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {displayPhotos.map((photo, index) => (
@@ -2340,21 +2409,27 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
-                        if (draggedPhotoIndex === null || draggedPhotoIndex === index) {
+                        if (
+                          draggedPhotoIndex === null ||
+                          draggedPhotoIndex === index
+                        ) {
                           setDraggedPhotoIndex(null);
                           return;
                         }
-                        
+
                         const newPhotos = [...displayPhotos];
-                        const [draggedPhoto] = newPhotos.splice(draggedPhotoIndex, 1);
+                        const [draggedPhoto] = newPhotos.splice(
+                          draggedPhotoIndex,
+                          1,
+                        );
                         newPhotos.splice(index, 0, draggedPhoto);
-                        
+
                         // Update formData with new order
                         setFormData((prev) => ({
                           ...prev,
                           photos: newPhotos,
                         }));
-                        
+
                         setDraggedPhotoIndex(null);
                       }}
                       className={`relative group cursor-move transition-all ${
@@ -2427,28 +2502,39 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
-                        if (draggedPhotoFileIndex === null || draggedPhotoFileIndex === index) {
+                        if (
+                          draggedPhotoFileIndex === null ||
+                          draggedPhotoFileIndex === index
+                        ) {
                           setDraggedPhotoFileIndex(null);
                           return;
                         }
-                        
+
                         const newFiles = [...photoFiles];
-                        const [draggedFile] = newFiles.splice(draggedPhotoFileIndex, 1);
+                        const [draggedFile] = newFiles.splice(
+                          draggedPhotoFileIndex,
+                          1,
+                        );
                         newFiles.splice(index, 0, draggedFile);
-                        
+
                         // Update both photoFiles and photoPreviews to maintain order
                         setPhotoFiles(newFiles);
-                        
+
                         // Update previews order
                         const newPreviews = [...photoPreviews];
-                        const [draggedPreview] = newPreviews.splice(draggedPhotoFileIndex, 1);
+                        const [draggedPreview] = newPreviews.splice(
+                          draggedPhotoFileIndex,
+                          1,
+                        );
                         newPreviews.splice(index, 0, draggedPreview);
                         setPhotoPreviews(newPreviews);
-                        
+
                         setDraggedPhotoFileIndex(null);
                       }}
                       className={`relative group cursor-move transition-all ${
-                        draggedPhotoFileIndex === index ? "opacity-50 scale-95" : ""
+                        draggedPhotoFileIndex === index
+                          ? "opacity-50 scale-95"
+                          : ""
                       }`}
                     >
                       <img
@@ -2522,9 +2608,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                   <p className="text-sm text-white/90 font-medium">
                     Click to upload video
                   </p>
-                  <p className="text-xs text-white/60 mt-1">
-                    MP4, AVI
-                  </p>
+                  <p className="text-xs text-white/60 mt-1">MP4, AVI</p>
                 </div>
               </label>
               {videoPreview && (

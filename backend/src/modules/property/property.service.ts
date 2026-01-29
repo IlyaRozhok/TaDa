@@ -19,10 +19,13 @@ export class PropertyService {
     private readonly propertyRepository: Repository<Property>,
     @InjectRepository(Building)
     private readonly buildingRepository: Repository<Building>,
-    private readonly s3Service: S3Service
+    private readonly s3Service: S3Service,
   ) {}
 
-  async create(createPropertyDto: CreatePropertyDto): Promise<Property> {
+  async create(
+    createPropertyDto: CreatePropertyDto,
+    userId: string,
+  ): Promise<Property> {
     let building: Building | null = null;
 
     // For private landlord, building is not required
@@ -48,7 +51,7 @@ export class PropertyService {
     if (createPropertyDto.building_type === "private_landlord") {
       // For private landlord, link directly to operator
       propertyData.building_id = null;
-      propertyData.operator_id = createPropertyDto.operator_id;
+      propertyData.operator_id = createPropertyDto.operator_id || userId;
       // Use provided values for inherited fields
       propertyData.address = createPropertyDto.address;
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
@@ -59,7 +62,7 @@ export class PropertyService {
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
       propertyData.concierge_hours = createPropertyDto.concierge_hours || null;
       propertyData.pets = createPropertyDto.pets || null;
-    } else {
+    } else if (building) {
       // Normal case - link to building and inherit fields
       propertyData.building_id = createPropertyDto.building_id;
       propertyData.operator_id = building.operator_id;
@@ -73,6 +76,20 @@ export class PropertyService {
       propertyData.metro_stations = building.metro_stations || [];
       propertyData.concierge_hours = building.concierge_hours || null;
       propertyData.pets = building.pets || null;
+    } else {
+      // No building provided - use authenticated user as operator
+      propertyData.building_id = null;
+      propertyData.operator_id = userId;
+      // Use provided values for fields
+      propertyData.address = createPropertyDto.address;
+      propertyData.tenant_types = createPropertyDto.tenant_types || [];
+      propertyData.amenities = createPropertyDto.amenities || [];
+      propertyData.is_concierge = createPropertyDto.is_concierge;
+      propertyData.pet_policy = createPropertyDto.pet_policy;
+      propertyData.smoking_area = createPropertyDto.smoking_area;
+      propertyData.metro_stations = createPropertyDto.metro_stations || [];
+      propertyData.concierge_hours = createPropertyDto.concierge_hours || null;
+      propertyData.pets = createPropertyDto.pets || null;
     }
 
     assignPropertyOptionals(propertyData, createPropertyDto);
@@ -85,7 +102,7 @@ export class PropertyService {
 
   async update(
     id: string,
-    updatePropertyDto: UpdatePropertyDto
+    updatePropertyDto: UpdatePropertyDto,
   ): Promise<Property> {
     const property = await this.findOne(id);
     const updateData: Partial<Property> = {};
@@ -165,7 +182,12 @@ export class PropertyService {
   }
 
   async findAllPublic(
-    params?: Partial<{ page: number; limit: number; search: string; building_id?: string }>
+    params?: Partial<{
+      page: number;
+      limit: number;
+      search: string;
+      building_id?: string;
+    }>,
   ): Promise<{
     data: PublicPropertyResponse[];
     total: number;
@@ -199,7 +221,7 @@ export class PropertyService {
       const like = `%${search}%`;
       queryBuilder.andWhere(
         "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search)",
-        { search: like }
+        { search: like },
       );
     }
 
@@ -207,10 +229,10 @@ export class PropertyService {
     queryBuilder.skip(skip).take(limit);
 
     const properties = await queryBuilder.getMany();
-    
+
     // Debug: Log first property to check price field
     if (properties.length > 0 && params?.building_id) {
-      console.log('🔍 Property from DB:', {
+      console.log("🔍 Property from DB:", {
         id: properties[0].id,
         title: properties[0].title,
         price: properties[0].price,
@@ -218,10 +240,10 @@ export class PropertyService {
         rawPrice: JSON.stringify(properties[0].price),
       });
     }
-    
+
     // Update photo URLs for all properties
     const propertiesWithFreshUrls = await Promise.all(
-      properties.map(property => this.updatePhotosUrls(property))
+      properties.map((property) => this.updatePhotosUrls(property)),
     );
 
     return {
@@ -254,7 +276,7 @@ export class PropertyService {
     if (!property) {
       throw new NotFoundException("Property not found");
     }
-    
+
     // Update photo URLs before returning
     const propertyWithFreshUrls = await this.updatePhotosUrls(property);
     return toPublicProperty(propertyWithFreshUrls);
@@ -312,7 +334,7 @@ export class PropertyService {
           console.error(`Error updating photo URL: ${photoUrl}`, error);
           return photoUrl; // Return original on error
         }
-      })
+      }),
     );
 
     property.photos = updatedPhotos;
@@ -358,7 +380,7 @@ export class PropertyService {
   async findAllWithFreshUrls(params?: any): Promise<Property[]> {
     const properties = await this.findAll(params);
     return await Promise.all(
-      properties.map(property => this.updatePhotosUrls(property))
+      properties.map((property) => this.updatePhotosUrls(property)),
     );
   }
 }

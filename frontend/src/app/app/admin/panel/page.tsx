@@ -101,7 +101,7 @@ function AdminPanelContent() {
   >([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(
-    null
+    null,
   );
 
   // Debounced search term
@@ -110,7 +110,7 @@ function AdminPanelContent() {
   // Notification management
   const addNotification = (
     type: "success" | "error" | "info",
-    message: string
+    message: string,
   ) => {
     const id = Date.now().toString();
     setNotifications((prev) => [...prev, { id, type, message }]);
@@ -210,12 +210,12 @@ function AdminPanelContent() {
         if (response.status === 200 || response.status === 204) {
           // Remove from local state
           setBuildings((prevBuildings) =>
-            prevBuildings.filter((b) => b.id !== building.id)
+            prevBuildings.filter((b) => b.id !== building.id),
           );
 
           addNotification(
             "success",
-            `Building "${building.name}" deleted successfully`
+            `Building "${building.name}" deleted successfully`,
           );
           setShowModal(null);
           setSelectedItem(null);
@@ -232,12 +232,17 @@ function AdminPanelContent() {
         if (response.status === 200 || response.status === 204) {
           // Remove from local state
           setProperties((prevProperties) =>
-            prevProperties.filter((p) => p.id !== property.id)
+            prevProperties.filter((p) => p.id !== property.id),
           );
 
+          const propertyTitle =
+            property.title ||
+            property.id ||
+            property.apartment_number ||
+            "Property";
           addNotification(
             "success",
-            `Property "${property.apartment_number}" deleted successfully`
+            `Property "${propertyTitle}" deleted successfully`,
           );
           setShowModal(null);
           setSelectedItem(null);
@@ -255,7 +260,7 @@ function AdminPanelContent() {
           setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
           addNotification(
             "success",
-            `User "${user.full_name || user.email}" deleted successfully`
+            `User "${user.full_name || user.email}" deleted successfully`,
           );
           setShowModal(null);
           setSelectedItem(null);
@@ -316,7 +321,7 @@ function AdminPanelContent() {
 
       addNotification(
         "success",
-        `User "${data.full_name}" created successfully!`
+        `User "${data.full_name}" created successfully!`,
       );
       setShowModal(null);
 
@@ -358,7 +363,7 @@ function AdminPanelContent() {
 
       addNotification(
         "success",
-        `Building "${data.name}" created successfully!`
+        `Building "${data.name}" created successfully!`,
       );
       setShowModal(null);
 
@@ -379,7 +384,7 @@ function AdminPanelContent() {
 
   const handleUpdateUser = async (
     id: string,
-    data: { full_name: string; email: string; role: string }
+    data: { full_name: string; email: string; role: string },
   ) => {
     setIsActionLoading(true);
     try {
@@ -406,7 +411,7 @@ function AdminPanelContent() {
 
       addNotification(
         "success",
-        `User "${data.full_name}" updated successfully!`
+        `User "${data.full_name}" updated successfully!`,
       );
 
       // Reload users list
@@ -419,7 +424,7 @@ function AdminPanelContent() {
 
           // Update selectedItem with the updated user from the list
           const updatedUserFromList = updatedUsers.find(
-            (u: User) => u.id === id
+            (u: User) => u.id === id,
           );
           if (updatedUserFromList) {
             setSelectedItem(updatedUserFromList);
@@ -467,7 +472,7 @@ function AdminPanelContent() {
 
       addNotification(
         "success",
-        `Building "${data.name}" updated successfully!`
+        `Building "${data.name}" updated successfully!`,
       );
 
       // Refresh buildings list and update selectedItem
@@ -486,12 +491,12 @@ function AdminPanelContent() {
 
           // Update selectedItem with the updated building from the list
           const updatedBuildingFromList = updatedBuildings.find(
-            (b: Building) => b.id === id
+            (b: Building) => b.id === id,
           );
           if (updatedBuildingFromList) {
             console.log(
               "🔄 Updating selectedItem with:",
-              updatedBuildingFromList
+              updatedBuildingFromList,
             );
             setSelectedItem(updatedBuildingFromList);
           }
@@ -510,7 +515,7 @@ function AdminPanelContent() {
   const handleCreateProperty = async (data: any) => {
     console.log(
       "🎯 handleCreateProperty received data:",
-      JSON.stringify(data, null, 2)
+      JSON.stringify(data, null, 2),
     );
     setIsActionLoading(true);
     try {
@@ -537,7 +542,7 @@ function AdminPanelContent() {
         "success",
         `Property "${
           data.title || data.apartment_number || "Property"
-        }" created successfully!`
+        }" created successfully!`,
       );
       setShowModal(null);
 
@@ -588,9 +593,15 @@ function AdminPanelContent() {
       const updatedProperty = await response.json();
       console.log("✅ Property updated successfully:", updatedProperty);
 
+      const propertyTitle =
+        updatedProperty.title ||
+        data.title ||
+        updatedProperty.apartment_number ||
+        data.apartment_number ||
+        "Property";
       addNotification(
         "success",
-        `Property "${data.apartment_number}" updated successfully!`
+        `Property "${propertyTitle}" updated successfully!`,
       );
 
       // Refresh properties list
@@ -602,7 +613,7 @@ function AdminPanelContent() {
           setProperties(updatedProperties);
 
           const updatedPropertyFromList = updatedProperties.find(
-            (p: Property) => p.id === id
+            (p: Property) => p.id === id,
           );
           if (updatedPropertyFromList) {
             setSelectedItem(updatedPropertyFromList);
@@ -621,15 +632,15 @@ function AdminPanelContent() {
 
   const handleUpdateBookingStatus = async (
     id: string,
-    status: BookingRequestStatus
+    status: BookingRequestStatus,
   ) => {
     try {
       setUpdatingRequestId(id);
       const updated = await bookingRequestsAPI.updateStatus(id, status);
       setRequests((prev) =>
         prev.map((request) =>
-          request.id === id ? { ...request, ...updated } : request
-        )
+          request.id === id ? { ...request, ...updated } : request,
+        ),
       );
       addNotification("success", "Booking status updated");
     } catch (error: any) {
@@ -646,8 +657,6 @@ function AdminPanelContent() {
   // Sidebar
   const renderSidebar = () => (
     <div className="w-64 min-h-screen bg-white border-r border-gray-200">
-
-
       <nav className="space-y-4 p-4">
         <button
           onClick={() => setActiveSection("users")}
@@ -735,14 +744,14 @@ function AdminPanelContent() {
                 const headers = {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${localStorage.getItem(
-                    "accessToken"
+                    "accessToken",
                   )}`,
                 };
                 fetch(`${apiUrl}/buildings`, { headers })
                   .then((response) => response.json())
                   .then((data) => setBuildings(data.data || data || []))
                   .catch((error) =>
-                    console.error("Error refreshing buildings:", error)
+                    console.error("Error refreshing buildings:", error),
                   );
               }
             }}
@@ -793,8 +802,8 @@ function AdminPanelContent() {
               {building
                 ? building.name
                 : user
-                ? user.full_name || user.email
-                : `View ${activeSection.slice(0, -1)}`}
+                  ? user.full_name || user.email
+                  : `View ${activeSection.slice(0, -1)}`}
             </h3>
             <button
               onClick={() => setShowModal(null)}
@@ -967,10 +976,10 @@ function AdminPanelContent() {
       activeSection === "buildings"
         ? (selectedItem as Building).name
         : activeSection === "properties"
-        ? (selectedItem as Property).apartment_number
-        : (selectedItem as User).full_name ||
-          (selectedItem as User).email ||
-          "this item";
+          ? (selectedItem as Property).apartment_number
+          : (selectedItem as User).full_name ||
+            (selectedItem as User).email ||
+            "this item";
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">

@@ -7,6 +7,7 @@ import {
   IsArray,
   IsBoolean,
   ValidateNested,
+  IsNotEmpty,
 } from "class-validator";
 import { Type } from "class-transformer";
 
@@ -56,6 +57,7 @@ export class CreatePropertyDto {
     example: "Modern 2BR Apartment",
     required: true,
   })
+  @IsNotEmpty({ message: "Title is required" })
   @IsString()
   title: string;
 
@@ -165,7 +167,8 @@ export class CreatePropertyDto {
   address?: string;
 
   @ApiProperty({
-    description: "Tenant types for this property (inherited from building or custom)",
+    description:
+      "Tenant types for this property (inherited from building or custom)",
     example: ["family", "student"],
     type: [String],
     required: false,
@@ -187,7 +190,8 @@ export class CreatePropertyDto {
   amenities?: string[];
 
   @ApiProperty({
-    description: "Whether property has concierge (inherited from building or custom)",
+    description:
+      "Whether property has concierge (inherited from building or custom)",
     example: true,
     required: false,
   })
@@ -205,7 +209,8 @@ export class CreatePropertyDto {
   pet_policy?: boolean;
 
   @ApiProperty({
-    description: "Smoking area availability (inherited from building or custom)",
+    description:
+      "Smoking area availability (inherited from building or custom)",
     example: false,
     required: false,
   })
@@ -214,7 +219,8 @@ export class CreatePropertyDto {
   smoking_area?: boolean;
 
   @ApiProperty({
-    description: "Metro stations with travel times (inherited from building or custom)",
+    description:
+      "Metro stations with travel times (inherited from building or custom)",
     example: [{ label: "Oxford Circus", destination: 5 }],
     type: [MetroStationDto],
     required: false,
@@ -226,7 +232,8 @@ export class CreatePropertyDto {
   metro_stations?: MetroStationDto[];
 
   @ApiProperty({
-    description: "Commute times to popular destinations (inherited from building or custom)",
+    description:
+      "Commute times to popular destinations (inherited from building or custom)",
     example: [{ label: "City Centre", destination: 15 }],
     type: [CommuteTimeDto],
     required: false,
@@ -238,7 +245,8 @@ export class CreatePropertyDto {
   commute_times?: CommuteTimeDto[];
 
   @ApiProperty({
-    description: "Local essentials with distances (inherited from building or custom)",
+    description:
+      "Local essentials with distances (inherited from building or custom)",
     example: [{ label: "Tesco Express", destination: 200 }],
     type: [LocalEssentialDto],
     required: false,
@@ -250,7 +258,8 @@ export class CreatePropertyDto {
   local_essentials?: LocalEssentialDto[];
 
   @ApiProperty({
-    description: "Concierge operating hours (inherited from building or custom)",
+    description:
+      "Concierge operating hours (inherited from building or custom)",
     example: { from: 8, to: 22 },
     type: ConciergeHoursDto,
     required: false,
@@ -261,7 +270,8 @@ export class CreatePropertyDto {
   concierge_hours?: ConciergeHoursDto;
 
   @ApiProperty({
-    description: "Allowed pet types and sizes (inherited from building or custom)",
+    description:
+      "Allowed pet types and sizes (inherited from building or custom)",
     example: [{ type: "dog", size: "small" }],
     type: [PetDto],
     required: false,
