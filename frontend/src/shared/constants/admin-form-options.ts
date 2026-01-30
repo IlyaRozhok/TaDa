@@ -13,32 +13,64 @@ export const TENANT_TYPE_OPTIONS = [
 ] as const;
 
 // ==================== AMENITIES ====================
-export const AMENITIES_OPTIONS = [
-  "Gym",
-  "Co-working",
-  "Meeting rooms",
-  "Lounge",
-  "Cinema",
-  "Roof terrace",
-  "Courtyard",
-  "Parking",
-  "Bike storage",
-  "Parcel room",
-  "Maintenance",
-  "Events calendar",
-  "Pet areas",
-  "Kids' room",
-  "Garden",
+// Same categories and values as preferences Step 7 (AmenitiesStep) for consistency.
+export const AMENITIES_BY_CATEGORY = [
+  {
+    title: "Facilities & Workspace",
+    values: [
+      "Gym",
+      "Co-working",
+      "Meeting rooms",
+      "Lounge",
+      "Cinema",
+      "Roof terrace",
+      "Courtyard",
+      "Parking",
+      "Bike storage",
+      "Parcel room",
+    ],
+  },
+  {
+    title: "Services & Community",
+    values: [
+      "Maintenance",
+      "Events calendar",
+      "Pet areas",
+      "Kids' room",
+      "Garden",
+    ],
+  },
+  {
+    title: "Lifestyle & Culture",
+    values: ["Reading", "Music", "Art"],
+  },
+  {
+    title: "Outdoor & Activities",
+    values: ["Hiking", "Cooking"],
+  },
+  {
+    title: "Wellbeing & Sport",
+    values: ["Travel", "Sport"],
+  },
 ] as const;
 
-// ==================== BUILDING UNIT TYPES ====================
-export const BUILDING_UNIT_TYPE_OPTIONS = [
-  { value: "studio", label: "Studio" },
-  { value: "1-bed", label: "1 bedroom" },
-  { value: "2-bed", label: "2 bedrooms" },
-  { value: "3-bed", label: "3 bedrooms" },
-  { value: "Duplex", label: "Duplex" },
-  { value: "penthouse", label: "Penthouse" },
+/** Flat list of all amenities (for backward compatibility and simple dropdowns). */
+export const AMENITIES_OPTIONS: readonly string[] =
+  AMENITIES_BY_CATEGORY.flatMap((s) => s.values);
+
+// ==================== BUILDING UNIT TYPES (Type of Unit) ====================
+// Same values as preferences Step 3 (Property type) + 2/3 bedrooms, Duplex for building.
+// Form stores these UI strings; save via transformUnitTypeUIToAPI, load via buildingUnitTypeAPIToUI.
+export const TYPE_OF_UNIT_OPTIONS = [
+  "Apartment",
+  "Flat",
+  "Studio",
+  "Penthouse",
+  "En-suite room",
+  "Room",
+  "2 bedrooms",
+  "3 bedrooms",
+  "Duplex",
 ] as const;
 
 // ==================== PROPERTY TYPES ====================

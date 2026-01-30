@@ -12,8 +12,10 @@ import {
 import {
   AREA_OPTIONS,
   LONDON_DISTRICTS,
-  AMENITIES_OPTIONS,
+  AMENITIES_BY_CATEGORY,
+  TYPE_OF_UNIT_OPTIONS,
 } from "../../shared/constants/admin-form-options";
+import { transformUnitTypeUIToAPI } from "../../shared/constants/mappings";
 
 const AREAS = AREA_OPTIONS;
 
@@ -447,7 +449,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         buildingData.number_of_units = formData.number_of_units;
       }
       if (formData.type_of_unit && formData.type_of_unit.length > 0) {
-        buildingData.type_of_unit = formData.type_of_unit;
+        buildingData.type_of_unit = transformUnitTypeUIToAPI(
+          formData.type_of_unit,
+        );
       }
       if (
         uploadResult.uploadedUrls.logo ||
@@ -714,39 +718,29 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   >
                     <div className="flex flex-wrap gap-1 flex-1">
                       {formData.type_of_unit.length > 0 ? (
-                        formData.type_of_unit.map((value) => {
-                          const option = [
-                            { value: "studio", label: "Studio" },
-                            { value: "1-bed", label: "1-bed" },
-                            { value: "2-bed", label: "2-bed" },
-                            { value: "3-bed", label: "3-bed" },
-                            { value: "Duplex", label: "Duplex" },
-                            { value: "penthouse", label: "Penthouse" },
-                          ].find((opt) => opt.value === value);
-                          return (
-                            <span
-                              key={value}
-                              className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                        formData.type_of_unit.map((value) => (
+                          <span
+                            key={value}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                          >
+                            {value}
+                            <button
+                              type="button"
+                              className="ml-1 text-white/70 hover:text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFormData({
+                                  ...formData,
+                                  type_of_unit: formData.type_of_unit.filter(
+                                    (t) => t !== value,
+                                  ),
+                                });
+                              }}
                             >
-                              {option?.label}
-                              <button
-                                type="button"
-                                className="ml-1 text-white/70 hover:text-white"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setFormData({
-                                    ...formData,
-                                    type_of_unit: formData.type_of_unit.filter(
-                                      (t) => t !== value,
-                                    ),
-                                  });
-                                }}
-                              >
-                                ×
-                              </button>
-                            </span>
-                          );
-                        })
+                              ×
+                            </button>
+                          </span>
+                        ))
                       ) : (
                         <span className="text-white/50">Select types...</span>
                       )}
@@ -767,24 +761,17 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   </div>
                   {openDropdown === "type_of_unit" && (
                     <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {[
-                        { value: "studio", label: "Studio" },
-                        { value: "1-bed", label: "1-bed" },
-                        { value: "2-bed", label: "2-bed" },
-                        { value: "3-bed", label: "3-bed" },
-                        { value: "Duplex", label: "Duplex" },
-                        { value: "penthouse", label: "Penthouse" },
-                      ].map((option) => (
+                      {TYPE_OF_UNIT_OPTIONS.map((option) => (
                         <div
-                          key={option.value}
+                          key={option}
                           className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                           onClick={() => {
                             const newTypeOfUnit =
-                              formData.type_of_unit.includes(option.value)
+                              formData.type_of_unit.includes(option)
                                 ? formData.type_of_unit.filter(
-                                    (t) => t !== option.value,
+                                    (t) => t !== option,
                                   )
-                                : [...formData.type_of_unit, option.value];
+                                : [...formData.type_of_unit, option];
                             setFormData({
                               ...formData,
                               type_of_unit: newTypeOfUnit,
@@ -793,13 +780,11 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                         >
                           <input
                             type="checkbox"
-                            checked={formData.type_of_unit.includes(
-                              option.value,
-                            )}
+                            checked={formData.type_of_unit.includes(option)}
                             readOnly
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span>{option.label}</span>
+                          <span>{option}</span>
                         </div>
                       ))}
                     </div>
@@ -1371,29 +1356,36 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
               </div>
               {openDropdown === "amenities" && (
                 <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {AMENITIES_OPTIONS.map((amenity) => (
-                    <div
-                      key={amenity}
-                      className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                      onClick={() => {
-                        const newAmenities = formData.amenities.includes(
-                          amenity,
-                        )
-                          ? formData.amenities.filter((a) => a !== amenity)
-                          : [...formData.amenities, amenity];
-                        setFormData({
-                          ...formData,
-                          amenities: newAmenities,
-                        });
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.amenities.includes(amenity)}
-                        readOnly
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>{amenity}</span>
+                  {AMENITIES_BY_CATEGORY.map((category) => (
+                    <div key={category.title}>
+                      <div className="px-4 py-2 text-xs font-semibold text-white/70 border-b border-white/10 sticky top-0 bg-gray-900/95">
+                        {category.title}
+                      </div>
+                      {category.values.map((amenity) => (
+                        <div
+                          key={amenity}
+                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                          onClick={() => {
+                            const newAmenities = formData.amenities.includes(
+                              amenity,
+                            )
+                              ? formData.amenities.filter((a) => a !== amenity)
+                              : [...formData.amenities, amenity];
+                            setFormData({
+                              ...formData,
+                              amenities: newAmenities,
+                            });
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.amenities.includes(amenity)}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{amenity}</span>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>

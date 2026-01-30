@@ -135,6 +135,16 @@ export const UNIT_TYPE_API_TO_UI: Record<string, string> = {
   penthouse: "Penthouse",
 };
 
+/** Building form load: API value → UI label aligned with preferences Step 3 (Property type). */
+export const BUILDING_UNIT_TYPE_API_TO_UI: Record<string, string> = {
+  "1-bed": "Apartment",
+  "2-bed": "2 bedrooms",
+  "3-bed": "3 bedrooms",
+  studio: "Studio",
+  penthouse: "Penthouse",
+  Duplex: "Duplex",
+};
+
 // ==================== FURNISHING MAPPING ====================
 
 export const FURNISHING_UI_TO_API: Record<string, string> = {
@@ -201,7 +211,7 @@ export const BATHROOMS_API_TO_UI: Record<number, string> = {
 
 // ==================== AMENITIES MAPPING ====================
 
-// Admin form amenities (15 items) - these are stored in the database
+// Admin form amenities (22 items) – same set as preferences Step 7, stored in the database
 export const ADMIN_AMENITIES = [
   "Gym",
   "Co-working",
@@ -218,6 +228,13 @@ export const ADMIN_AMENITIES = [
   "Pet areas",
   "Kids' room",
   "Garden",
+  "Reading",
+  "Music",
+  "Art",
+  "Hiking",
+  "Cooking",
+  "Travel",
+  "Sport",
 ] as const;
 
 // Preferences UI amenities mapping to admin amenities
@@ -402,6 +419,13 @@ export function transformUnitTypeUIToAPI(uiValues: string[]): string[] {
 
 export function transformUnitTypeAPIToUI(apiValues: string[]): string[] {
   return apiValues.map((value) => UNIT_TYPE_API_TO_UI[value]).filter(Boolean);
+}
+
+/** Building form: map API type_of_unit to UI labels (preferences Step 3 style). */
+export function buildingUnitTypeAPIToUI(apiValues: string[]): string[] {
+  return apiValues
+    .map((value) => BUILDING_UNIT_TYPE_API_TO_UI[value])
+    .filter(Boolean);
 }
 
 export function transformFurnishingUIToAPI(uiValues: string[]): string[] {

@@ -20,6 +20,7 @@ import {
   Bills,
 } from "../types/property";
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
+import { AMENITIES_BY_CATEGORY } from "../../shared/constants/admin-form-options";
 
 interface Pet {
   type: "dog" | "cat" | "other";
@@ -715,25 +716,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       ),
     }));
   };
-
-  // Available amenities list
-  const availableAmenities = [
-    "Gym",
-    "Co-working",
-    "Meeting rooms",
-    "Lounge",
-    "Cinema",
-    "Roof terrace",
-    "Courtyard",
-    "Parking",
-    "Bike storage",
-    "Parcel room",
-    "Maintenance",
-    "Events calendar",
-    "Pet areas",
-    "Kids' room",
-    "Garden",
-  ];
 
   const toggleAmenity = (amenity: string) => {
     if (isFieldReadonly) return;
@@ -1902,555 +1884,615 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </label>
           </div>
 
-          {/* Property Features */}
+          {/* Property Features - Amenities (multi-select dropdown, same as building) */}
+          <div>
+            <label className="block text-sm font-medium text-white/90 mb-2">
+              Amenities{" "}
+              {isFieldReadonly && (
+                <span className="text-white/50 text-xs">(from building)</span>
+              )}
+            </label>
+            <div className="relative" data-dropdown>
+              <div
+                className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center ${
+                  isFieldReadonly
+                    ? "cursor-default opacity-80"
+                    : "cursor-pointer"
+                }`}
+                onClick={() => !isFieldReadonly && toggleDropdown("amenities")}
+              >
+                <div className="flex flex-wrap gap-1 flex-1">
+                  {(formData.amenities || []).length > 0 ? (
+                    (formData.amenities || []).map((amenity) => (
+                      <span
+                        key={amenity}
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                      >
+                        {amenity}
+                        {!isFieldReadonly && (
+                          <button
+                            type="button"
+                            className="ml-1 text-white/70 hover:text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFormData({
+                                ...formData,
+                                amenities: (formData.amenities || []).filter(
+                                  (a) => a !== amenity,
+                                ),
+                              });
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-white/50">Select amenities...</span>
+                  )}
+                </div>
+                {!isFieldReadonly && (
+                  <svg
+                    className="w-5 h-5 text-white/70 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                )}
+              </div>
+              {!isFieldReadonly && openDropdown === "amenities" && (
+                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {AMENITIES_BY_CATEGORY.map((category) => (
+                    <div key={category.title}>
+                      <div className="px-4 py-2 text-xs font-semibold text-white/70 border-b border-white/10 sticky top-0 bg-gray-900/95">
+                        {category.title}
+                      </div>
+                      {category.values.map((amenity) => (
+                        <div
+                          key={amenity}
+                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                          onClick={() => toggleAmenity(amenity)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(formData.amenities || []).includes(
+                              amenity,
+                            )}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{amenity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Concierge */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Amenities{" "}
+              Concierge{" "}
               {isFieldReadonly && (
                 <span className="text-white/50 text-xs">(from building)</span>
               )}
             </h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {availableAmenities.map((amenity) => (
-                <div key={amenity} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`edit-amenity-${amenity}`}
-                    checked={formData.amenities.includes(amenity)}
-                    onChange={() => toggleAmenity(amenity)}
-                    disabled={isFieldReadonly}
-                    className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
-                      isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
-                  />
-                  <label
-                    htmlFor={`edit-amenity-${amenity}`}
-                    className={`text-sm font-medium text-white/90 ${
-                      isFieldReadonly ? "cursor-not-allowed" : "cursor-pointer"
-                    }`}
-                  >
-                    {amenity}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_concierge_property_edit"
+                checked={formData.is_concierge}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_concierge: e.target.checked })
+                }
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label
+                htmlFor="is_concierge_property_edit"
+                className="text-sm font-medium text-white/90"
+              >
+                Has Concierge Service
+              </label>
+            </div>
+
+            {formData.is_concierge && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Opening Hour (0-23)
                   </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={formData.concierge_hours?.from ?? ""}
+                    onChange={(e) => {
+                      const inputVal = e.target.value;
+                      if (inputVal === "") {
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: undefined,
+                            to: formData.concierge_hours?.to,
+                          },
+                        });
+                      } else {
+                        const val = Math.max(
+                          0,
+                          Math.min(23, parseInt(inputVal) || 0),
+                        );
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: val,
+                            to: formData.concierge_hours?.to,
+                          },
+                        });
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  />
                 </div>
-              ))}
-            </div>
-
-            {/* Concierge */}
-            <div className="space-y-4">
-              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Concierge{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
-                )}
-              </h4>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="is_concierge_property_edit"
-                  checked={formData.is_concierge}
-                  onChange={(e) =>
-                    setFormData({ ...formData, is_concierge: e.target.checked })
-                  }
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="is_concierge_property_edit"
-                  className="text-sm font-medium text-white/90"
-                >
-                  Has Concierge Service
-                </label>
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Closing Hour (0-23)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={formData.concierge_hours?.to ?? ""}
+                    onChange={(e) => {
+                      const inputVal = e.target.value;
+                      if (inputVal === "") {
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: formData.concierge_hours?.from,
+                            to: undefined,
+                          },
+                        });
+                      } else {
+                        const val = Math.max(
+                          0,
+                          Math.min(23, parseInt(inputVal) || 0),
+                        );
+                        setFormData({
+                          ...formData,
+                          concierge_hours: {
+                            from: formData.concierge_hours?.from,
+                            to: val,
+                          },
+                        });
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  />
+                </div>
               </div>
+            )}
+          </div>
 
-              {formData.is_concierge && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-2">
-                      Opening Hour (0-23)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      value={formData.concierge_hours?.from ?? ""}
-                      onChange={(e) => {
-                        const inputVal = e.target.value;
-                        if (inputVal === "") {
-                          setFormData({
-                            ...formData,
-                            concierge_hours: {
-                              from: undefined,
-                              to: formData.concierge_hours?.to,
-                            },
-                          });
-                        } else {
-                          const val = Math.max(
-                            0,
-                            Math.min(23, parseInt(inputVal) || 0),
-                          );
-                          setFormData({
-                            ...formData,
-                            concierge_hours: {
-                              from: val,
-                              to: formData.concierge_hours?.to,
-                            },
-                          });
-                        }
-                      }}
-                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white/90 mb-2">
-                      Closing Hour (0-23)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      value={formData.concierge_hours?.to ?? ""}
-                      onChange={(e) => {
-                        const inputVal = e.target.value;
-                        if (inputVal === "") {
-                          setFormData({
-                            ...formData,
-                            concierge_hours: {
-                              from: formData.concierge_hours?.from,
-                              to: undefined,
-                            },
-                          });
-                        } else {
-                          const val = Math.max(
-                            0,
-                            Math.min(23, parseInt(inputVal) || 0),
-                          );
-                          setFormData({
-                            ...formData,
-                            concierge_hours: {
-                              from: formData.concierge_hours?.from,
-                              to: val,
-                            },
-                          });
-                        }
-                      }}
-                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    />
-                  </div>
-                </div>
+          {/* Pets */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+              Pet Policy{" "}
+              {isFieldReadonly && (
+                <span className="text-white/50 text-xs">(from building)</span>
               )}
+            </h4>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="pet_policy_property_edit"
+                checked={formData.pet_policy}
+                onChange={(e) =>
+                  !isFieldReadonly &&
+                  setFormData({ ...formData, pet_policy: e.target.checked })
+                }
+                disabled={isFieldReadonly}
+                className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
+                  isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+              />
+              <label
+                htmlFor="pet_policy_property_edit"
+                className="text-sm font-medium text-white/90"
+              >
+                Pets Allowed
+              </label>
             </div>
 
-            {/* Pets */}
-            <div className="space-y-4">
-              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Pet Policy{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
-                )}
-              </h4>
+            {formData.pet_policy && (
+              <div className="ml-6 space-y-4">
+                {(formData.pets || []).map((pet, index) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-md p-4"
+                  >
+                    <div className="flex justify-between items-center mb-4">
+                      <h5 className="font-medium text-white">
+                        Pet {index + 1}
+                      </h5>
+                      {!isFieldReadonly && (
+                        <button
+                          type="button"
+                          onClick={() => removePet(index)}
+                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="pet_policy_property_edit"
-                  checked={formData.pet_policy}
-                  onChange={(e) =>
-                    !isFieldReadonly &&
-                    setFormData({ ...formData, pet_policy: e.target.checked })
-                  }
-                  disabled={isFieldReadonly}
-                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
-                    isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
-                  }`}
-                />
-                <label
-                  htmlFor="pet_policy_property_edit"
-                  className="text-sm font-medium text-white/90"
-                >
-                  Pets Allowed
-                </label>
-              </div>
-
-              {formData.pet_policy && (
-                <div className="ml-6 space-y-4">
-                  {(formData.pets || []).map((pet, index) => (
-                    <div
-                      key={index}
-                      className="border border-gray-200 rounded-md p-4"
-                    >
-                      <div className="flex justify-between items-center mb-4">
-                        <h5 className="font-medium text-white">
-                          Pet {index + 1}
-                        </h5>
-                        {!isFieldReadonly && (
-                          <button
-                            type="button"
-                            onClick={() => removePet(index)}
-                            className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-white/90 mb-2">
+                          Type
+                        </label>
+                        <div className="relative" data-dropdown>
+                          <div
+                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
+                              isFieldReadonly
+                                ? "opacity-60 cursor-not-allowed"
+                                : "cursor-pointer"
+                            }`}
+                            onClick={() =>
+                              !isFieldReadonly &&
+                              toggleDropdown(`pet_type_${index}`)
+                            }
                           >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                        )}
+                            <span className="capitalize">{pet.type}</span>
+                            {!isFieldReadonly && (
+                              <svg
+                                className="w-5 h-5 text-white/70"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          {!isFieldReadonly &&
+                            openDropdown === `pet_type_${index}` && (
+                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {["dog", "cat", "other"].map((type) => (
+                                  <div
+                                    key={type}
+                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${
+                                      pet.type === type ? "bg-white/10" : ""
+                                    }`}
+                                    onClick={() => {
+                                      updatePet(index, "type", type);
+                                      setOpenDropdown(null);
+                                    }}
+                                  >
+                                    {type}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {pet.type === "other" && (
                         <div>
                           <label className="block text-sm font-medium text-white/90 mb-2">
-                            Type
+                            Custom Type
                           </label>
-                          <div className="relative" data-dropdown>
-                            <div
-                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
-                                isFieldReadonly
-                                  ? "opacity-60 cursor-not-allowed"
-                                  : "cursor-pointer"
-                              }`}
-                              onClick={() =>
-                                !isFieldReadonly &&
-                                toggleDropdown(`pet_type_${index}`)
-                              }
-                            >
-                              <span className="capitalize">{pet.type}</span>
-                              {!isFieldReadonly && (
-                                <svg
-                                  className="w-5 h-5 text-white/70"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 9l-7 7-7-7"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                            {!isFieldReadonly &&
-                              openDropdown === `pet_type_${index}` && (
-                                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                  {["dog", "cat", "other"].map((type) => (
-                                    <div
-                                      key={type}
-                                      className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${
-                                        pet.type === type ? "bg-white/10" : ""
-                                      }`}
-                                      onClick={() => {
-                                        updatePet(index, "type", type);
-                                        setOpenDropdown(null);
-                                      }}
-                                    >
-                                      {type}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                          </div>
+                          <input
+                            type="text"
+                            value={pet.customType || ""}
+                            onChange={(e) =>
+                              !isFieldReadonly &&
+                              updatePet(index, "customType", e.target.value)
+                            }
+                            readOnly={isFieldReadonly}
+                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${
+                              isFieldReadonly
+                                ? "opacity-60 cursor-not-allowed"
+                                : ""
+                            }`}
+                            placeholder="e.g., Hamster"
+                          />
                         </div>
+                      )}
 
-                        {pet.type === "other" && (
-                          <div>
-                            <label className="block text-sm font-medium text-white/90 mb-2">
-                              Custom Type
-                            </label>
-                            <input
-                              type="text"
-                              value={pet.customType || ""}
-                              onChange={(e) =>
-                                !isFieldReadonly &&
-                                updatePet(index, "customType", e.target.value)
-                              }
-                              readOnly={isFieldReadonly}
-                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${
-                                isFieldReadonly
-                                  ? "opacity-60 cursor-not-allowed"
-                                  : ""
-                              }`}
-                              placeholder="e.g., Hamster"
-                            />
-                          </div>
-                        )}
-
-                        <div>
-                          <label className="block text-sm font-medium text-white/90 mb-2">
-                            Size (Optional)
-                          </label>
-                          <div className="relative" data-dropdown>
-                            <div
-                              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
-                                isFieldReadonly
-                                  ? "opacity-60 cursor-not-allowed"
-                                  : "cursor-pointer"
-                              }`}
-                              onClick={() =>
-                                !isFieldReadonly &&
-                                toggleDropdown(`pet_size_${index}`)
+                      <div>
+                        <label className="block text-sm font-medium text-white/90 mb-2">
+                          Size (Optional)
+                        </label>
+                        <div className="relative" data-dropdown>
+                          <div
+                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
+                              isFieldReadonly
+                                ? "opacity-60 cursor-not-allowed"
+                                : "cursor-pointer"
+                            }`}
+                            onClick={() =>
+                              !isFieldReadonly &&
+                              toggleDropdown(`pet_size_${index}`)
+                            }
+                          >
+                            <span
+                              className={
+                                pet.size ? "capitalize" : "text-white/50"
                               }
                             >
-                              <span
-                                className={
-                                  pet.size ? "capitalize" : "text-white/50"
-                                }
+                              {pet.size ? pet.size : "Not specified"}
+                            </span>
+                            {!isFieldReadonly && (
+                              <svg
+                                className="w-5 h-5 text-white/70"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
                               >
-                                {pet.size ? pet.size : "Not specified"}
-                              </span>
-                              {!isFieldReadonly && (
-                                <svg
-                                  className="w-5 h-5 text-white/70"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 9l-7 7-7-7"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                            {!isFieldReadonly &&
-                              openDropdown === `pet_size_${index}` && (
-                                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                  {[
-                                    { value: "", label: "Not specified" },
-                                    { value: "small", label: "Small" },
-                                    { value: "medium", label: "Medium" },
-                                    { value: "large", label: "Large" },
-                                  ].map((size) => (
-                                    <div
-                                      key={size.value}
-                                      className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                                        (pet.size || "") === size.value
-                                          ? "bg-white/10"
-                                          : ""
-                                      }`}
-                                      onClick={() => {
-                                        updatePet(
-                                          index,
-                                          "size",
-                                          size.value || undefined,
-                                        );
-                                        setOpenDropdown(null);
-                                      }}
-                                    >
-                                      {size.label}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            )}
                           </div>
+                          {!isFieldReadonly &&
+                            openDropdown === `pet_size_${index}` && (
+                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {[
+                                  { value: "", label: "Not specified" },
+                                  { value: "small", label: "Small" },
+                                  { value: "medium", label: "Medium" },
+                                  { value: "large", label: "Large" },
+                                ].map((size) => (
+                                  <div
+                                    key={size.value}
+                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                                      (pet.size || "") === size.value
+                                        ? "bg-white/10"
+                                        : ""
+                                    }`}
+                                    onClick={() => {
+                                      updatePet(
+                                        index,
+                                        "size",
+                                        size.value || undefined,
+                                      );
+                                      setOpenDropdown(null);
+                                    }}
+                                  >
+                                    {size.label}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
 
-                  {!isFieldReadonly && (
-                    <button
-                      type="button"
-                      onClick={addPet}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-200"
-                    >
-                      Add Pet Type
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Smoking Area */}
-            <div className="space-y-4">
-              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Other{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
+                {!isFieldReadonly && (
+                  <button
+                    type="button"
+                    onClick={addPet}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-200"
+                  >
+                    Add Pet Type
+                  </button>
                 )}
-              </h4>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="smoking_area_property_edit"
-                  checked={formData.smoking_area_prop}
-                  onChange={(e) =>
-                    !isFieldReadonly &&
-                    setFormData({
-                      ...formData,
-                      smoking_area_prop: e.target.checked,
-                    })
-                  }
-                  disabled={isFieldReadonly}
-                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
-                    isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
-                  }`}
-                />
-                <label
-                  htmlFor="smoking_area_property_edit"
-                  className="text-sm font-medium text-white/90"
-                >
-                  Has Smoking Area
-                </label>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Metro Stations */}
-            <div className="space-y-4">
-              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Metro Stations
-              </h4>
+          {/* Smoking Area */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+              Other{" "}
+              {isFieldReadonly && (
+                <span className="text-white/50 text-xs">(from building)</span>
+              )}
+            </h4>
 
-              {formData.metro_stations.map((station, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={station.label}
-                    onChange={(e) =>
-                      updateMetroStation(index, "label", e.target.value)
-                    }
-                    className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                    placeholder="Station name"
-                  />
-                  <input
-                    type="number"
-                    value={station.destination ?? ""}
-                    onChange={(e) => {
-                      const inputVal = e.target.value;
-                      if (inputVal === "") {
-                        updateMetroStation(index, "destination", undefined);
-                      } else {
-                        const val = Math.max(0, parseInt(inputVal) || 0);
-                        updateMetroStation(index, "destination", val);
-                      }
-                    }}
-                    className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    placeholder="min"
-                    min="0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeMetroStation(index)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={addMetroStation}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="smoking_area_property_edit"
+                checked={formData.smoking_area_prop}
+                onChange={(e) =>
+                  !isFieldReadonly &&
+                  setFormData({
+                    ...formData,
+                    smoking_area_prop: e.target.checked,
+                  })
+                }
+                disabled={isFieldReadonly}
+                className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
+                  isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+              />
+              <label
+                htmlFor="smoking_area_property_edit"
+                className="text-sm font-medium text-white/90"
               >
-                Add Metro Station
-              </button>
+                Has Smoking Area
+              </label>
             </div>
+          </div>
 
-            {/* Commute Times */}
-            <div className="space-y-4">
-              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Commute Times
-              </h4>
+          {/* Metro Stations */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+              Metro Stations
+            </h4>
 
-              {formData.commute_times.map((time, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={time.label}
-                    onChange={(e) =>
-                      updateCommuteTime(index, "label", e.target.value)
+            {formData.metro_stations.map((station, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={station.label}
+                  onChange={(e) =>
+                    updateMetroStation(index, "label", e.target.value)
+                  }
+                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  placeholder="Station name"
+                />
+                <input
+                  type="number"
+                  value={station.destination ?? ""}
+                  onChange={(e) => {
+                    const inputVal = e.target.value;
+                    if (inputVal === "") {
+                      updateMetroStation(index, "destination", undefined);
+                    } else {
+                      const val = Math.max(0, parseInt(inputVal) || 0);
+                      updateMetroStation(index, "destination", val);
                     }
-                    className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                    placeholder="Destination"
-                  />
-                  <input
-                    type="number"
-                    value={time.destination ?? ""}
-                    onChange={(e) => {
-                      const inputVal = e.target.value;
-                      if (inputVal === "") {
-                        updateCommuteTime(index, "destination", undefined);
-                      } else {
-                        const val = Math.max(0, parseInt(inputVal) || 0);
-                        updateCommuteTime(index, "destination", val);
-                      }
-                    }}
-                    className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    placeholder="min"
-                    min="0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeCommuteTime(index)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                  }}
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  placeholder="min"
+                  min="0"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeMetroStation(index)}
+                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
 
-              <button
-                type="button"
-                onClick={addCommuteTime}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-              >
-                Add Commute Time
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={addMetroStation}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+            >
+              Add Metro Station
+            </button>
+          </div>
 
-            {/* Local Essentials */}
-            <div className="space-y-4">
-              <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-                Local Essentials
-              </h4>
+          {/* Commute Times */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+              Commute Times
+            </h4>
 
-              {formData.local_essentials.map((essential, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={essential.label}
-                    onChange={(e) =>
-                      updateLocalEssential(index, "label", e.target.value)
+            {formData.commute_times.map((time, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={time.label}
+                  onChange={(e) =>
+                    updateCommuteTime(index, "label", e.target.value)
+                  }
+                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  placeholder="Destination"
+                />
+                <input
+                  type="number"
+                  value={time.destination ?? ""}
+                  onChange={(e) => {
+                    const inputVal = e.target.value;
+                    if (inputVal === "") {
+                      updateCommuteTime(index, "destination", undefined);
+                    } else {
+                      const val = Math.max(0, parseInt(inputVal) || 0);
+                      updateCommuteTime(index, "destination", val);
                     }
-                    className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                    placeholder="Essential name"
-                  />
-                  <input
-                    type="number"
-                    value={essential.destination ?? ""}
-                    onChange={(e) => {
-                      const inputVal = e.target.value;
-                      if (inputVal === "") {
-                        updateLocalEssential(index, "destination", undefined);
-                      } else {
-                        const val = Math.max(0, parseInt(inputVal) || 0);
-                        updateLocalEssential(index, "destination", val);
-                      }
-                    }}
-                    className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                    placeholder="min"
-                    min="0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeLocalEssential(index)}
-                    className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                  }}
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  placeholder="min"
+                  min="0"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCommuteTime(index)}
+                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
 
-              <button
-                type="button"
-                onClick={addLocalEssential}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-              >
-                Add Local Essential
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={addCommuteTime}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+            >
+              Add Commute Time
+            </button>
+          </div>
+
+          {/* Local Essentials */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+              Local Essentials
+            </h4>
+
+            {formData.local_essentials.map((essential, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={essential.label}
+                  onChange={(e) =>
+                    updateLocalEssential(index, "label", e.target.value)
+                  }
+                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                  placeholder="Essential name"
+                />
+                <input
+                  type="number"
+                  value={essential.destination ?? ""}
+                  onChange={(e) => {
+                    const inputVal = e.target.value;
+                    if (inputVal === "") {
+                      updateLocalEssential(index, "destination", undefined);
+                    } else {
+                      const val = Math.max(0, parseInt(inputVal) || 0);
+                      updateLocalEssential(index, "destination", val);
+                    }
+                  }}
+                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  placeholder="min"
+                  min="0"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeLocalEssential(index)}
+                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addLocalEssential}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
+            >
+              Add Local Essential
+            </button>
           </div>
 
           {/* Media Uploads */}
