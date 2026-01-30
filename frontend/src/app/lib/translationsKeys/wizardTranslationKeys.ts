@@ -78,6 +78,28 @@ export const wizardKeys = {
       max: "meters.des.name.max",
     },
   },
+  step4: {
+    title: "wizard.step4.title",
+    subtitle: "wizard.step4.subtitle",
+    des: {
+      text1: "wizard.step4.des.text1",
+      text2: "wizard.step4.des.text2",
+      text3: "wizard.step4.des.text3",
+    },
+    buildtype: [
+      "buildtype.name1",
+      "buildtype.name2",
+      "buildtype.name3",
+      "buildtype.name4",
+    ],
+    rentalDuration: [
+      "rental.duration.name1",
+      "rental.duration.name2",
+      "rental.duration.name3",
+      "rental.duration.name4",
+    ],
+    bills: ["bills.name1", "bills.name2"],
+  },
   profile: {
     title: "wizard.profile.title",
     subtitle: "wizard.profile.subtitle",

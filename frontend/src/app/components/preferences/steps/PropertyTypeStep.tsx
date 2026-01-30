@@ -4,6 +4,8 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { PreferencesFormData } from "@/app/types/preferences";
+import { useTranslation } from "../../../hooks/useTranslation";
+import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 
 interface PropertyTypeStepProps {
   formData: PreferencesFormData;
@@ -11,64 +13,78 @@ interface PropertyTypeStepProps {
   onToggle: (category: keyof PreferencesFormData, value: string) => void;
 }
 
-// Building style preferences options
-const BUILDING_STYLE_OPTIONS = ["Professional Management", "BTR", "Co-living"];
+// Building style values stored in form (labels from buildtype.name1–4)
+const BUILDING_STYLE_VALUES = [
+  "BTR",
+  "Co-living",
+  "Professional Management",
+  "Private Landlord",
+];
 
-// Duration options
-const DURATION_OPTIONS = ["Any", "Long term 6+ m", "Short term 1+ m"];
+// Duration values stored in form (labels from rental.duration.name1–4)
+const DURATION_VALUES = [
+  "Short term (1–6 months)",
+  "Medium term (6–12 months)",
+  "Long term (12+ months)",
+  "Flexible",
+];
 
-// Bills options
-const BILLS_OPTIONS = ["Include", "Exclude"];
+// Bills values stored in form (labels from bills.name1–2)
+const BILLS_VALUES = ["Include", "Exclude"];
 
 export const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
   formData,
   onUpdate,
   onToggle,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <StepWrapper
-      title="Step 4"
-      description="Step 4"
+      title={t(wizardKeys.step4.title)}
+      description={t(wizardKeys.step4.subtitle)}
     >
       <StepContainer>
         {/* Building style preferences - Multi Select */}
-        <StepHeader title="Building style preferences" />
+        <StepHeader title={t(wizardKeys.step4.des.text1)} />
         <div className="space-y-4 mb-6">
-          {BUILDING_STYLE_OPTIONS.map((style) => (
+          {BUILDING_STYLE_VALUES.map((value, i) => (
             <SelectionButton
-              key={style}
-              label={style}
-              value={style}
-              isSelected={formData.building_style_preferences?.includes(style) || false}
-              onClick={() => onToggle("building_style_preferences", style)}
+              key={value}
+              label={t(wizardKeys.step4.buildtype[i])}
+              value={value}
+              isSelected={
+                formData.building_style_preferences?.includes(value) || false
+              }
+              onClick={() => onToggle("building_style_preferences", value)}
             />
           ))}
         </div>
 
         {/* Duration - Single Select */}
-        <StepHeader title="Duration" />
+        <StepHeader title={t(wizardKeys.step4.des.text2)} />
         <div className="space-y-4 mb-6">
-          {DURATION_OPTIONS.map((duration) => (
+          {DURATION_VALUES.map((value, i) => (
             <SelectionButton
-              key={duration}
-              label={duration}
-              value={duration}
-              isSelected={formData.selected_duration === duration}
-              onClick={() => onUpdate("selected_duration", duration)}
+              key={value}
+              label={t(wizardKeys.step4.rentalDuration[i])}
+              value={value}
+              isSelected={formData.selected_duration === value}
+              onClick={() => onUpdate("selected_duration", value)}
             />
           ))}
         </div>
 
         {/* Bills - Single Select */}
-        <StepHeader title="Bills" />
+        <StepHeader title={t(wizardKeys.step4.des.text3)} />
         <div className="space-y-4">
-          {BILLS_OPTIONS.map((bill) => (
+          {BILLS_VALUES.map((value, i) => (
             <SelectionButton
-              key={bill}
-              label={bill}
-              value={bill}
-              isSelected={formData.selected_bills === bill}
-              onClick={() => onUpdate("selected_bills", bill)}
+              key={value}
+              label={t(wizardKeys.step4.bills[i])}
+              value={value}
+              isSelected={formData.selected_bills === value}
+              onClick={() => onUpdate("selected_bills", value)}
             />
           ))}
         </div>
