@@ -34,7 +34,7 @@ import { S3Service } from "../../common/services/s3.service";
 export class BuildingController {
   constructor(
     private readonly buildingService: BuildingService,
-    private readonly s3Service: S3Service
+    private readonly s3Service: S3Service,
   ) {}
 
   // Public endpoints - MUST be before protected routes
@@ -97,7 +97,7 @@ export class BuildingController {
   @ApiResponse({ status: 404, description: "Building not found" })
   update(
     @Param("id") id: string,
-    @Body() updateBuildingDto: UpdateBuildingDto
+    @Body() updateBuildingDto: UpdateBuildingDto,
   ) {
     return this.buildingService.update(id, updateBuildingDto);
   }
@@ -115,6 +115,8 @@ export class BuildingController {
     return await this.buildingService.remove(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Post("upload/logo")
   @Roles(UserRole.Admin)
   @UseInterceptors(FileInterceptor("logo"))
@@ -133,13 +135,13 @@ export class BuildingController {
 
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
-        "building-logo"
+        "building-logo",
       );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname
+        file.originalname,
       );
 
       return {
@@ -152,6 +154,8 @@ export class BuildingController {
     }
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Post("upload/video")
   @Roles(UserRole.Admin)
   @UseInterceptors(FileInterceptor("video"))
@@ -170,13 +174,13 @@ export class BuildingController {
 
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
-        "building-video"
+        "building-video",
       );
       const uploadResult = await this.s3Service.uploadFile(
         file.buffer,
         fileKey,
         file.mimetype,
-        file.originalname
+        file.originalname,
       );
 
       return {
@@ -189,6 +193,8 @@ export class BuildingController {
     }
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Post("upload/photos")
   @Roles(UserRole.Admin)
   @UseInterceptors(FilesInterceptor("photos", 1000))
@@ -204,19 +210,19 @@ export class BuildingController {
       try {
         if (!file.mimetype.startsWith("image/")) {
           throw new Error(
-            `Invalid file type for ${file.originalname}. Only images are allowed.`
+            `Invalid file type for ${file.originalname}. Only images are allowed.`,
           );
         }
 
         const fileKey = this.s3Service.generateFileKey(
           file.originalname,
-          "building-photo"
+          "building-photo",
         );
         const uploadResult = await this.s3Service.uploadFile(
           file.buffer,
           fileKey,
           file.mimetype,
-          file.originalname
+          file.originalname,
         );
 
         return {
@@ -226,7 +232,7 @@ export class BuildingController {
       } catch (error) {
         console.error(`Error uploading photo ${file.originalname}:`, error);
         throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`
+          `Failed to upload ${file.originalname}: ${error.message}`,
         );
       }
     });
@@ -240,6 +246,8 @@ export class BuildingController {
     }
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Post("upload/documents")
   @Roles(UserRole.Admin)
   @UseInterceptors(FilesInterceptor("documents", 5))
@@ -255,19 +263,19 @@ export class BuildingController {
       try {
         if (file.mimetype !== "application/pdf") {
           throw new Error(
-            `Invalid file type for ${file.originalname}. Only PDF files are allowed.`
+            `Invalid file type for ${file.originalname}. Only PDF files are allowed.`,
           );
         }
 
         const fileKey = this.s3Service.generateFileKey(
           file.originalname,
-          "building-document"
+          "building-document",
         );
         const uploadResult = await this.s3Service.uploadFile(
           file.buffer,
           fileKey,
           file.mimetype,
-          file.originalname
+          file.originalname,
         );
 
         return {
@@ -277,7 +285,7 @@ export class BuildingController {
       } catch (error) {
         console.error(`Error uploading document ${file.originalname}:`, error);
         throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`
+          `Failed to upload ${file.originalname}: ${error.message}`,
         );
       }
     });

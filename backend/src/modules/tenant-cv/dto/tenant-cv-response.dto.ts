@@ -73,8 +73,11 @@ export class TenantCvResponseDto {
   @ApiProperty({ type: TenantCvMetaDto })
   meta: TenantCvMetaDto;
 
-  @ApiProperty({ description: "Preferences snapshot", required: false })
-  preferences?: Preferences | null;
+  @ApiProperty({
+    description: "Preferences snapshot (no user ref)",
+    required: false,
+  })
+  preferences?: Omit<Preferences, "user"> | null;
 
   @ApiProperty({ required: false })
   amenities?: string[];
@@ -88,4 +91,3 @@ export class TenantCvResponseDto {
   @ApiProperty({ type: [Object], description: "Rent history entries" })
   rent_history?: RentHistoryEntry[];
 }
-

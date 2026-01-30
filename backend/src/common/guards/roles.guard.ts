@@ -9,7 +9,7 @@ export class RolesGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(
       ROLES_KEY,
-      [context.getHandler(), context.getClass()]
+      [context.getHandler(), context.getClass()],
     );
 
     if (!requiredRoles) {
@@ -32,13 +32,19 @@ export class RolesGuard implements CanActivate {
     }
 
     // Проверяем, есть ли у пользователя хотя бы одна из требуемых ролей
-    // Поддерживаем как новый формат (role), так и старый (roles)
-    if (user.role && requiredRoles.includes(user.role)) {
+    // Поддерживаем как новый формат (role), так и старый (roles). Сравниваем как строки (enum/string).
+    const userRoleStr = user.role != null ? String(user.role) : "";
+    const hasRequiredRole = requiredRoles.some(
+      (r) => String(r) === userRoleStr,
+    );
+    if (hasRequiredRole) {
       console.log("✅ RolesGuard: User role matches", { user_role: user.role });
       return true;
     }
     if (Array.isArray(user.roles)) {
-      const hasRole = requiredRoles.some((role) => user.roles.includes(role));
+      const hasRole = requiredRoles.some((role) =>
+        user.roles.some((ur) => String(ur) === String(role)),
+      );
       console.log("✅ RolesGuard: User roles check", {
         user_roles: user.roles,
         hasRole,

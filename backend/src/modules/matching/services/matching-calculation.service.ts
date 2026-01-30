@@ -758,7 +758,7 @@ export class MatchingCalculationService {
       score: 0,
       maxScore,
       reason: "Duration doesn't match",
-      details: `${propertyDuration}, you prefer ${prefDuration}`,
+      details: `${propertyDuration}, you prefer ${prefDurations.join(", ")}`,
       hasPreference: true,
     };
   }

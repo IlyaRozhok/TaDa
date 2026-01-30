@@ -4,7 +4,7 @@ import { User } from "../../entities/user.entity";
 import { TenantCvResponseDto } from "./dto/tenant-cv-response.dto";
 
 const splitName = (
-  full?: string | null
+  full?: string | null,
 ): { first: string | null; last: string | null } => {
   if (!full) return { first: null, last: null };
   const parts = full.trim().split(" ").filter(Boolean);
@@ -29,7 +29,7 @@ const resolveAge = (dateOfBirth?: Date | string | null): number | null => {
 
 export const buildTenantCvResponse = (
   user: User,
-  cv?: TenantCv | null
+  cv?: TenantCv | null,
 ): TenantCvResponseDto => {
   const preferences = user.preferences as Preferences | undefined;
   const tenantProfile = user.tenantProfile;
@@ -65,7 +65,8 @@ export const buildTenantCvResponse = (
     headline: cv?.headline || null,
     // Prefer preferences over tenant_cvs for kyc/referencing (with fallback for backward compatibility)
     kyc_status: preferences?.kyc_status || cv?.kyc_status || null,
-    referencing_status: preferences?.referencing_status || cv?.referencing_status || null,
+    referencing_status:
+      preferences?.referencing_status || cv?.referencing_status || null,
     move_in_date: preferences?.move_in_date
       ? new Date(preferences.move_in_date as any).toISOString()
       : null,
@@ -91,12 +92,23 @@ export const buildTenantCvResponse = (
   const hobbies =
     cv?.hobbies ?? preferences?.hobbies ?? tenantProfile?.hobbies ?? [];
 
+  // Strip user relation from preferences to avoid circular ref on JSON serialize (500 for admin/operator)
+  const preferencesPayload =
+    preferences && typeof preferences === "object"
+      ? (() => {
+          const { user: _user, ...rest } = preferences as Preferences & {
+            user?: unknown;
+          };
+          return rest;
+        })()
+      : null;
+
   return {
     user_id: user.id,
     share_uuid: cv?.share_uuid || null,
     profile,
     meta,
-    preferences: preferences || null,
+    preferences: preferencesPayload,
     amenities: preferences?.amenities || [],
     about,
     hobbies,

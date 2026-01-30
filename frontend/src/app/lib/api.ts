@@ -119,7 +119,7 @@ export const preferencesAPI = {
 };
 
 export const tenantCvAPI = {
-  getMine: () => api.get("/tenant-cv/me"),
+  getMine: () => api.get("/tenant-cv/current"),
   getPublic: (uuid: string) => api.get(`/tenant-cv/${uuid}`),
   update: (data: any) => api.put("/tenant-cv", data),
   createShare: () => api.post("/tenant-cv/share"),
