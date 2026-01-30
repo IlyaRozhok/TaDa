@@ -112,34 +112,33 @@ export const PROPERTY_TYPE_API_TO_UI_MULTI: Record<string, string[]> = {
 
 // ==================== UNIT TYPE MAPPING (Building) ====================
 
-// Building unit types from preferences to admin forms
-// Only the 6 preference property types. Used by Add/Edit Building "Type of Unit".
+// 6 UI options map 1:1 to 6 backend enum values so all selections are saved.
 export const UNIT_TYPE_UI_TO_API: Record<string, string> = {
-  Studio: "studio",
   Apartment: "1-bed",
-  Flat: "1-bed",
+  Flat: "2-bed",
+  Studio: "studio",
   Penthouse: "penthouse",
-  "En-suite room": "studio",
-  Room: "studio",
+  "En-suite room": "3-bed",
+  Room: "Duplex",
 };
 
 export const UNIT_TYPE_API_TO_UI: Record<string, string> = {
-  studio: "Studio",
   "1-bed": "Apartment",
-  "2-bed": "Apartment",
-  "3-bed": "Apartment",
-  Duplex: "Apartment",
+  "2-bed": "Flat",
+  studio: "Studio",
   penthouse: "Penthouse",
+  "3-bed": "En-suite room",
+  Duplex: "Room",
 };
 
-/** Building form load: API value → UI label. Only the 6 preference types. */
+/** Building form load: API value → UI label. 1:1 so all 6 options restore. */
 export const BUILDING_UNIT_TYPE_API_TO_UI: Record<string, string> = {
   "1-bed": "Apartment",
-  "2-bed": "Apartment",
-  "3-bed": "Apartment",
+  "2-bed": "Flat",
   studio: "Studio",
   penthouse: "Penthouse",
-  Duplex: "Apartment",
+  "3-bed": "En-suite room",
+  Duplex: "Room",
 };
 
 // ==================== FURNISHING MAPPING ====================

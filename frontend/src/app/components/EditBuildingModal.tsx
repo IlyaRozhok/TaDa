@@ -236,11 +236,17 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         name: building.name || "",
         address: building.address || "",
         number_of_units: building.number_of_units || 1,
-        type_of_unit: buildingUnitTypeAPIToUI(
-          (Array.isArray(building.type_of_unit)
-            ? building.type_of_unit
-            : [building.type_of_unit].filter(Boolean)) || [],
-        ),
+        type_of_unit: [
+          ...new Set(
+            buildingUnitTypeAPIToUI(
+              (Array.isArray(building.type_of_unit)
+                ? building.type_of_unit
+                : building.type_of_unit != null
+                  ? [building.type_of_unit]
+                  : []) as string[],
+            ),
+          ),
+        ],
         logo: building.logo || "",
         video: building.video || "",
         photos: building.photos || [],
@@ -571,11 +577,10 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       if (formData.number_of_units != null) {
         buildingData.number_of_units = formData.number_of_units;
       }
-      if (formData.type_of_unit && formData.type_of_unit.length > 0) {
-        buildingData.type_of_unit = transformUnitTypeUIToAPI(
-          formData.type_of_unit,
-        );
-      }
+      buildingData.type_of_unit =
+        (formData.type_of_unit?.length ?? 0) > 0
+          ? [...new Set(transformUnitTypeUIToAPI(formData.type_of_unit || []))]
+          : [];
       if (finalLogo && finalLogo.trim() !== "") {
         buildingData.logo = finalLogo;
       }
@@ -886,7 +891,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                             const current = formData.type_of_unit || [];
                             const newTypeOfUnit = current.includes(option)
                               ? current.filter((t) => t !== option)
-                              : [...current, option];
+                              : [...new Set([...current, option])];
                             setFormData({
                               ...formData,
                               type_of_unit: newTypeOfUnit,

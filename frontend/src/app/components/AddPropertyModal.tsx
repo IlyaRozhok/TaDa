@@ -285,8 +285,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const documentInputRef = useRef<HTMLInputElement>(null);
 
   // Localized options (same as preferences step 3)
-  const { propertyTypeOptions, tenantTypeOptions, durationOptions } =
-    useLocalizedFormOptions();
+  const {
+    propertyTypeOptions,
+    tenantTypeOptions,
+    durationOptions,
+    furnishingOptions,
+    buildingTypeOptions,
+  } = useLocalizedFormOptions();
 
   // Load buildings and use operators from props
   useEffect(() => {
@@ -1334,9 +1339,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     }
                   >
                     {formData.building_type
-                      ? formData.building_type
+                      ? (buildingTypeOptions.find(
+                          (o) => o.value === formData.building_type,
+                        )?.label ??
+                        formData.building_type
                           .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                          .replace(/\b\w/g, (l) => l.toUpperCase()))
                       : "Select Type"}
                   </span>
                   <svg
@@ -1355,24 +1363,25 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
                 {openDropdown === "building_type" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {Object.values(BuildingType)
-                      .filter((type) => type !== "luxury")
-                      .map((type) => (
-                        <div
-                          key={type}
-                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                            formData.building_type === type ? "bg-white/10" : ""
-                          }`}
-                          onClick={() => {
-                            setFormData({ ...formData, building_type: type });
-                            setOpenDropdown(null);
-                          }}
-                        >
-                          {type
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </div>
-                      ))}
+                    {buildingTypeOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                          formData.building_type === option.value
+                            ? "bg-white/10"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            building_type: option.value as BuildingType,
+                          });
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {option.label}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1515,9 +1524,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     }
                   >
                     {formData.furnishing
-                      ? formData.furnishing
+                      ? (furnishingOptions.find(
+                          (o) => o.value === formData.furnishing,
+                        )?.label ??
+                        formData.furnishing
                           .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                          .replace(/\b\w/g, (l) => l.toUpperCase()))
                       : "Select Type"}
                   </span>
                   <svg
@@ -1536,20 +1548,23 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
                 {openDropdown === "furnishing" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {Object.values(Furnishing).map((type) => (
+                    {furnishingOptions.map((option) => (
                       <div
-                        key={type}
+                        key={option.value}
                         className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.furnishing === type ? "bg-white/10" : ""
+                          formData.furnishing === option.value
+                            ? "bg-white/10"
+                            : ""
                         }`}
                         onClick={() => {
-                          setFormData({ ...formData, furnishing: type });
+                          setFormData({
+                            ...formData,
+                            furnishing: option.value as Furnishing,
+                          });
                           setOpenDropdown(null);
                         }}
                       >
-                        {type
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        {option.label}
                       </div>
                     ))}
                   </div>

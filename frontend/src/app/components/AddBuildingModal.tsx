@@ -454,11 +454,10 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       if (formData.number_of_units != null) {
         buildingData.number_of_units = formData.number_of_units;
       }
-      if (formData.type_of_unit && formData.type_of_unit.length > 0) {
-        buildingData.type_of_unit = transformUnitTypeUIToAPI(
-          formData.type_of_unit,
-        );
-      }
+      buildingData.type_of_unit =
+        (formData.type_of_unit?.length ?? 0) > 0
+          ? [...new Set(transformUnitTypeUIToAPI(formData.type_of_unit || []))]
+          : [];
       if (
         uploadResult.uploadedUrls.logo ||
         (formData.logo && formData.logo.trim() !== "")
@@ -776,7 +775,12 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                                 ? formData.type_of_unit.filter(
                                     (t) => t !== option,
                                   )
-                                : [...formData.type_of_unit, option];
+                                : [
+                                    ...new Set([
+                                      ...formData.type_of_unit,
+                                      option,
+                                    ]),
+                                  ];
                             setFormData({
                               ...formData,
                               type_of_unit: newTypeOfUnit,

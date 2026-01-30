@@ -39,12 +39,11 @@ export function useLocalizedFormOptions() {
     { value: "penthouse", label: t("property.type.name4") }, // "Penthouse"
   ];
 
-  // Furnishing Options - matches preferences step 3
+  // Furnishing Options - only the 3 from preferences step 3 (Furnishing), same as locales
   const furnishingOptions: FormOption[] = [
-    { value: "furnished", label: t("furnishing.count.name1") }, // "Furnished"
-    { value: "unfurnished", label: t("furnishing.count.name2") }, // "Unfurnished"
-    { value: "part_furnished", label: t("furnishing.count.name3") }, // "Part-furnished"
-    { value: "designer_furniture", label: "Designer furniture" }, // Admin-only option
+    { value: "furnished", label: t(wizardKeys.step3.furnishingCount[0]) }, // "Furnished"
+    { value: "unfurnished", label: t(wizardKeys.step3.furnishingCount[1]) }, // "Unfurnished"
+    { value: "part_furnished", label: t(wizardKeys.step3.furnishingCount[2]) }, // "Part-furnished"
   ];
 
   // Outdoor Space Options - matches preferences step 3
@@ -72,7 +71,7 @@ export function useLocalizedFormOptions() {
     { value: 4, label: t("bathrooms.count.name4") + " bathrooms" }, // "4+ bathrooms"
   ];
 
-  // Building Types - matches preferences step 4
+  // Building Types - only the 4 from preferences step 4 (Building Type), same as locales
   const buildingTypeOptions: FormOption[] = [
     { value: "btr", label: t(wizardKeys.step4.buildtype[0]) }, // "Build-to-Rent"
     { value: "co_living", label: t(wizardKeys.step4.buildtype[1]) }, // "Co-living"
