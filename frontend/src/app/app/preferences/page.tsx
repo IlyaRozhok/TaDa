@@ -11,14 +11,14 @@ export default function PreferencesPageRoute() {
   // Clear saved step when entering preferences page (standalone, not from onboarding)
   useEffect(() => {
     // Always clear preferences step when on standalone preferences page
-    localStorage.removeItem('preferencesStep');
+    localStorage.removeItem("preferencesStep");
   }, []);
 
   // Clear step when leaving the page
   useEffect(() => {
     return () => {
       // Cleanup: clear step when component unmounts (user leaves page)
-      localStorage.removeItem('preferencesStep');
+      localStorage.removeItem("preferencesStep");
     };
   }, []);
 
@@ -29,7 +29,7 @@ export default function PreferencesPageRoute() {
         showBackButton={false}
         showPreferencesButton={false}
         showSaveButton={false}
-        showTenantCvLink={false}
+        showTenantCvLink={true}
       />
 
       <NewPreferencesPage currentStepOffset={0} totalSteps={11} />
