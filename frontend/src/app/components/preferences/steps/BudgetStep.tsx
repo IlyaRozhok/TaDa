@@ -5,6 +5,8 @@ import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { InputField } from "../ui/InputField";
 import { PreferencesFormData } from "@/app/types/preferences";
+import { useTranslation } from "../../../hooks/useTranslation";
+import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 
 interface BudgetStepProps {
   formData: PreferencesFormData;
@@ -12,7 +14,7 @@ interface BudgetStepProps {
   onToggle: (category: keyof PreferencesFormData, value: string) => void;
 }
 
-// Property type options matching the screenshot
+// Property type values (labels from wizardKeys.step3.propertyTypeOptions)
 const PROPERTY_TYPES = [
   "Flat",
   "Apartment",
@@ -22,27 +24,28 @@ const PROPERTY_TYPES = [
   "Penthouse",
 ];
 
-// Room options
+// Room values (labels from rooms.count.name1–5)
 const ROOM_OPTIONS = ["1", "2", "3", "4", "5+"];
 
-// Bathroom options
+// Bathroom values (labels from bathrooms.count.name1–4)
 const BATHROOM_OPTIONS = ["1", "2", "3", "4+"];
 
-// Furnishing options - using same values as in database
+// Furnishing options - values for form, labels from furnishing.count.name1–3
 const FURNISHING_OPTIONS = [
-  { value: "furnished", label: "Furnished" },
-  { value: "unfurnished", label: "Unfurnished" },
-  { value: "partially_furnished", label: "Part-furnished" },
+  { value: "furnished" },
+  { value: "unfurnished" },
+  { value: "partially_furnished" },
 ];
 
-// Outdoor space options (multi-select)
-const OUTDOOR_SPACE_OPTIONS = ["Balcony", "Terrace", "Outdoor Space"];
+// Outdoor space values (labels from outdoorspace.name1–3)
+const OUTDOOR_SPACE_OPTIONS = ["Balcony", "Terrace"];
 
 export const BudgetStep: React.FC<BudgetStepProps> = ({
   formData,
   onUpdate,
   onToggle,
 }) => {
+  const { t } = useTranslation();
   const rangeRef = useRef<HTMLDivElement>(null);
   const minSliderRef = useRef<HTMLInputElement>(null);
   const maxSliderRef = useRef<HTMLInputElement>(null);
@@ -51,7 +54,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
   const MIN_VALUE = 15;
   const MAX_VALUE = 500;
-  
+
   const [minError, setMinError] = React.useState<string | undefined>(undefined);
   const [maxError, setMaxError] = React.useState<string | undefined>(undefined);
 
@@ -73,7 +76,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         thumbType === "min" ? "--min-thumb-percent" : "--max-thumb-percent";
       rangeRef.current.style.setProperty(cssVar, percentage.toString());
     },
-    []
+    [],
   );
 
   // Get thumb position from CSS variable
@@ -88,7 +91,10 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
   // Update CSS variables when values change
   // Only update slider if values are actually set (not null/undefined)
   useEffect(() => {
-    if (formData.min_square_meters !== null && formData.min_square_meters !== undefined) {
+    if (
+      formData.min_square_meters !== null &&
+      formData.min_square_meters !== undefined
+    ) {
       const minValue = formData.min_square_meters;
       const minPercent = valueToPercentage(minValue);
       setThumbPosition("min", minPercent);
@@ -96,8 +102,11 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         minSliderRef.current.value = minPercent.toString();
       }
     }
-    
-    if (formData.max_square_meters !== null && formData.max_square_meters !== undefined) {
+
+    if (
+      formData.max_square_meters !== null &&
+      formData.max_square_meters !== undefined
+    ) {
       const maxValue = formData.max_square_meters;
       const maxPercent = valueToPercentage(maxValue);
       setThumbPosition("max", maxPercent);
@@ -114,14 +123,23 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
   // Validate max when min changes
   useEffect(() => {
-    if (formData.min_square_meters !== null && formData.min_square_meters !== undefined && 
-        formData.max_square_meters !== null && formData.max_square_meters !== undefined) {
+    if (
+      formData.min_square_meters !== null &&
+      formData.min_square_meters !== undefined &&
+      formData.max_square_meters !== null &&
+      formData.max_square_meters !== undefined
+    ) {
       if (formData.max_square_meters < formData.min_square_meters) {
-        setMaxError(`Maximum value cannot be less than minimum value (${formData.min_square_meters} meters)`);
+        setMaxError(
+          `Maximum value cannot be less than minimum value (${formData.min_square_meters} meters)`,
+        );
       } else {
         setMaxError(undefined);
       }
-    } else if (formData.max_square_meters === null || formData.max_square_meters === undefined) {
+    } else if (
+      formData.max_square_meters === null ||
+      formData.max_square_meters === undefined
+    ) {
       setMaxError(undefined);
     }
   }, [formData.min_square_meters, formData.max_square_meters]);
@@ -140,7 +158,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
       const maxValue = formData.max_square_meters ?? MAX_VALUE;
       let value = parseInt(inputValue);
-      
+
       if (isNaN(value)) {
         setMinError(undefined);
         onUpdate("min_square_meters", null);
@@ -153,11 +171,11 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       } else {
         setMinError(undefined);
       }
-      
+
       if (value > MAX_VALUE) {
         value = MAX_VALUE;
       }
-      
+
       if (maxValue !== null && value >= maxValue) {
         value = maxValue - 1;
       }
@@ -169,14 +187,14 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       setThumbPosition("min", percentage);
       onUpdate("min_square_meters", value);
     },
-    [formData.max_square_meters, valueToPercentage, setThumbPosition, onUpdate]
+    [formData.max_square_meters, valueToPercentage, setThumbPosition, onUpdate],
   );
 
   // Handle min input blur - validate on blur
   const handleMinInputBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       const inputValue = e.target.value.trim();
-      
+
       // If empty, set to null (no value)
       if (inputValue === "") {
         setMinError(undefined);
@@ -199,18 +217,18 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       } else {
         setMinError(undefined);
       }
-      
+
       if (value > MAX_VALUE) {
         value = MAX_VALUE;
       }
-      
+
       if (maxValue !== null && value >= maxValue) {
         value = maxValue - 1;
       }
 
       onUpdate("min_square_meters", value);
     },
-    [formData.max_square_meters, onUpdate]
+    [formData.max_square_meters, onUpdate],
   );
 
   // Handle max input change
@@ -227,7 +245,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
       const minValue = formData.min_square_meters;
       let value = parseInt(inputValue);
-      
+
       if (isNaN(value)) {
         setMaxError(undefined);
         onUpdate("max_square_meters", null);
@@ -236,11 +254,13 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
       // Validate range - show error instead of auto-correcting
       if (minValue !== null && value < minValue) {
-        setMaxError(`Maximum value cannot be less than minimum value (${minValue} meters)`);
+        setMaxError(
+          `Maximum value cannot be less than minimum value (${minValue} meters)`,
+        );
       } else {
         setMaxError(undefined);
       }
-      
+
       if (value > MAX_VALUE) {
         value = MAX_VALUE;
       }
@@ -252,14 +272,14 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       setThumbPosition("max", percentage);
       onUpdate("max_square_meters", value);
     },
-    [formData.min_square_meters, valueToPercentage, setThumbPosition, onUpdate]
+    [formData.min_square_meters, valueToPercentage, setThumbPosition, onUpdate],
   );
 
   // Handle max input blur - validate on blur
   const handleMaxInputBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       const inputValue = e.target.value.trim();
-      
+
       // If empty, set to null (no value)
       if (inputValue === "") {
         setMaxError(undefined);
@@ -278,18 +298,20 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
       // Validate range - show error instead of auto-correcting
       if (minValue !== null && value < minValue) {
-        setMaxError(`Maximum value cannot be less than minimum value (${minValue} meters)`);
+        setMaxError(
+          `Maximum value cannot be less than minimum value (${minValue} meters)`,
+        );
       } else {
         setMaxError(undefined);
       }
-      
+
       if (value > MAX_VALUE) {
         value = MAX_VALUE;
       }
 
       onUpdate("max_square_meters", value);
     },
-    [formData.min_square_meters, onUpdate]
+    [formData.min_square_meters, onUpdate],
   );
 
   // Handle min range slider change
@@ -307,7 +329,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       setThumbPosition("min", percentage);
       onUpdate("min_square_meters", value);
     },
-    [getThumbPosition, percentageToValue, setThumbPosition, onUpdate]
+    [getThumbPosition, percentageToValue, setThumbPosition, onUpdate],
   );
 
   // Handle max range slider change
@@ -325,19 +347,22 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       setThumbPosition("max", percentage);
       onUpdate("max_square_meters", value);
     },
-    [getThumbPosition, percentageToValue, setThumbPosition, onUpdate]
+    [getThumbPosition, percentageToValue, setThumbPosition, onUpdate],
   );
 
   return (
-    <StepWrapper title="Step 3" description="Step 3">
+    <StepWrapper
+      title={t(wizardKeys.step3.title)}
+      description={t(wizardKeys.step3.subtitle)}
+    >
       <StepContainer>
         {/* Property Type - Multi Select */}
-        <StepHeader title="Select property type" />
+        <StepHeader title={t(wizardKeys.step3.sectionPropertyType)} />
         <div className="space-y-4 mb-6">
-          {PROPERTY_TYPES.map((type) => (
+          {PROPERTY_TYPES.map((type, i) => (
             <SelectionButton
               key={type}
-              label={type}
+              label={t(wizardKeys.step3.propertyTypeOptions[i])}
               value={type}
               isSelected={
                 formData.property_type_preferences?.includes(type) || false
@@ -348,12 +373,12 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         </div>
 
         {/* Rooms - Multi Select */}
-        <StepHeader title="Rooms" />
+        <StepHeader title={t(wizardKeys.step3.des.text2)} />
         <div className="space-y-4 mb-6">
-          {ROOM_OPTIONS.map((room) => (
+          {ROOM_OPTIONS.map((room, i) => (
             <SelectionButton
               key={room}
-              label={room}
+              label={t(wizardKeys.step3.roomsCount[i])}
               value={room}
               isSelected={formData.rooms_preferences?.includes(room) || false}
               onClick={() => onToggle("rooms_preferences", room)}
@@ -362,12 +387,12 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         </div>
 
         {/* Bathrooms - Multi Select */}
-        <StepHeader title="Bathrooms" />
+        <StepHeader title={t(wizardKeys.step3.des.text3)} />
         <div className="space-y-4 mb-6">
-          {BATHROOM_OPTIONS.map((bath) => (
+          {BATHROOM_OPTIONS.map((bath, i) => (
             <SelectionButton
               key={bath}
-              label={bath}
+              label={t(wizardKeys.step3.bathroomsCount[i])}
               value={bath}
               isSelected={
                 formData.bathrooms_preferences?.includes(bath) || false
@@ -378,12 +403,12 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         </div>
 
         {/* Furnishing - Multi Select */}
-        <StepHeader title="Furnishing" />
+        <StepHeader title={t(wizardKeys.step3.des.text4)} />
         <div className="space-y-4 mb-6">
-          {FURNISHING_OPTIONS.map((option) => (
+          {FURNISHING_OPTIONS.map((option, i) => (
             <SelectionButton
               key={option.value}
-              label={option.label}
+              label={t(wizardKeys.step3.furnishingCount[i])}
               value={option.value}
               isSelected={
                 formData.furnishing_preferences?.includes(option.value) || false
@@ -394,12 +419,12 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         </div>
 
         {/* Outdoor Space - Multi Select */}
-        <StepHeader title="Outdoor space" />
+        <StepHeader title={t(wizardKeys.step3.des.text5)} />
         <div className="space-y-4 mb-6">
-          {OUTDOOR_SPACE_OPTIONS.map((option) => (
+          {OUTDOOR_SPACE_OPTIONS.map((option, i) => (
             <SelectionButton
               key={option}
-              label={option}
+              label={t(wizardKeys.step3.outdoorspace[i])}
               value={option}
               isSelected={
                 formData.outdoor_space_preferences?.includes(option) || false
@@ -410,14 +435,14 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         </div>
 
         {/* Meters - Range Input with Dual Slider */}
-        <StepHeader title="Meters" />
+        <StepHeader title={t(wizardKeys.step3.des.text6)} />
         <div className="space-y-4">
           {/* Input fields */}
           <div className="flex gap-4">
             <div className="flex-1">
               <InputField
                 ref={minInputRef}
-                label="Min"
+                label={t(wizardKeys.step3.meters.min)}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -432,7 +457,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
             <div className="flex-1">
               <InputField
                 ref={maxInputRef}
-                label="Max"
+                label={t(wizardKeys.step3.meters.max)}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -455,10 +480,10 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 {
                   "--range-track-top": "10px",
                   "--min-thumb-percent": valueToPercentage(
-                    formData.min_square_meters ?? MIN_VALUE
+                    formData.min_square_meters ?? MIN_VALUE,
                   ),
                   "--max-thumb-percent": valueToPercentage(
-                    formData.max_square_meters ?? MIN_VALUE
+                    formData.max_square_meters ?? MIN_VALUE,
                   ),
                   "--range-progress-w": `calc((var(--max-thumb-percent) - var(--min-thumb-percent)) * 1%)`,
                   "--range-progress-left": `calc(var(--min-thumb-percent) * 1%)`,
@@ -495,9 +520,12 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                   min="0"
                   max="100"
                   step="1"
-                  value={formData.min_square_meters !== null && formData.min_square_meters !== undefined 
-                    ? valueToPercentage(formData.min_square_meters) 
-                    : valueToPercentage(MIN_VALUE)}
+                  value={
+                    formData.min_square_meters !== null &&
+                    formData.min_square_meters !== undefined
+                      ? valueToPercentage(formData.min_square_meters)
+                      : valueToPercentage(MIN_VALUE)
+                  }
                   onChange={handleMinRangeChange}
                   className="w-full h-[30px] col-start-1 row-start-1 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:relative [&::-webkit-slider-track]:pointer-events-none [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-track]:pointer-events-none"
                 />
@@ -509,9 +537,12 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                   min="0"
                   max="100"
                   step="1"
-                  value={formData.max_square_meters !== null && formData.max_square_meters !== undefined 
-                    ? valueToPercentage(formData.max_square_meters) 
-                    : valueToPercentage(MIN_VALUE)}
+                  value={
+                    formData.max_square_meters !== null &&
+                    formData.max_square_meters !== undefined
+                      ? valueToPercentage(formData.max_square_meters)
+                      : valueToPercentage(MIN_VALUE)
+                  }
                   onChange={handleMaxRangeChange}
                   className="w-full h-[30px] col-start-1 row-start-1 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:relative [&::-webkit-slider-track]:pointer-events-none [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-track]:pointer-events-none"
                 />

@@ -151,7 +151,9 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
             onChange={(e) =>
               onUpdate(
                 "min_price",
-                e.target.value ? parseInt(e.target.value) : 0,
+                e.target.value && e.target.value.trim() !== ""
+                  ? parseInt(e.target.value)
+                  : undefined,
               )
             }
             type="number"
@@ -163,7 +165,9 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
             onChange={(e) =>
               onUpdate(
                 "max_price",
-                e.target.value ? parseInt(e.target.value) : 0,
+                e.target.value && e.target.value.trim() !== ""
+                  ? parseInt(e.target.value)
+                  : undefined,
               )
             }
             type="number"

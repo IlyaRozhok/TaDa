@@ -5,7 +5,7 @@
 export const wizardKeys = {
   step1: {
     title: "wizard.step1.title",
-    subtitle: "wizard.step1.subtitle",
+    subtitle: "wizard.step1.subtitletitle",
     des: {
       text: "wizard.step1.des.text",
       address: "wizard.step1.des.address",
@@ -31,6 +31,51 @@ export const wizardKeys = {
       from: "wizard.step2.budget.from",
       to: "wizard.step2.budget.to",
       flexible: "wizard.step2.budget.flexible",
+    },
+  },
+  step3: {
+    title: "wizard.step3.title",
+    subtitle: "wizard.step3.subtitle",
+    des: {
+      text1: "wizard.step3.des.text1",
+      text2: "wizard.step3.des.text2",
+      text3: "wizard.step3.des.text3",
+      text4: "wizard.step3.des.text4",
+      text5: "wizard.step3.des.text5",
+      text6: "wizard.step3.des.text6",
+    },
+    /** Section "Select property type" uses des.text1; 6 option labels use option1–6 */
+    sectionPropertyType: "wizard.step3.des.text1",
+    propertyTypeOptions: [
+      "property.type.name1",
+      "property.type.name2",
+      "property.type.name3",
+      "property.type.name4",
+      "property.type.name5",
+      "property.type.name6",
+    ],
+    roomsCount: [
+      "rooms.count.name1",
+      "rooms.count.name2",
+      "rooms.count.name3",
+      "rooms.count.name4",
+      "rooms.count.name5",
+    ],
+    bathroomsCount: [
+      "bathrooms.count.name1",
+      "bathrooms.count.name2",
+      "bathrooms.count.name3",
+      "bathrooms.count.name4",
+    ],
+    furnishingCount: [
+      "furnishing.count.name1",
+      "furnishing.count.name2",
+      "furnishing.count.name3",
+    ],
+    outdoorspace: ["outdoorspace.name1", "outdoorspace.name2"],
+    meters: {
+      min: "meters.des.name.min",
+      max: "meters.des.name.max",
     },
   },
   profile: {
