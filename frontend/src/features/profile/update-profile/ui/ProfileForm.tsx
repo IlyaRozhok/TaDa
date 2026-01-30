@@ -2,12 +2,23 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "../../../../app/hooks/useTranslation";
+import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { Upload, X, Camera, Loader2 } from "lucide-react";
 import { StepWrapper } from "../../../../app/components/preferences/step-components/StepWrapper";
 import { StepContainer } from "../../../../app/components/preferences/step-components/StepContainer";
 import { InputField } from "../../../../app/components/preferences/ui/InputField";
-import { PhoneMaskInput, DateInput, Button, CountryDropdown } from "../../../../shared/ui";
-import { getCountryByDialCode, getCountryByCode, getDefaultCountry } from "../../../../shared/lib/countries";
+import {
+  PhoneMaskInput,
+  DateInput,
+  Button,
+  CountryDropdown,
+} from "../../../../shared/ui";
+import {
+  getCountryByDialCode,
+  getCountryByCode,
+  getDefaultCountry,
+} from "../../../../shared/lib/countries";
 import { User, UpdateUserData } from "../../../../entities/user/model/types";
 import { buildFormDataFromUser } from "../../../../entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
@@ -15,15 +26,15 @@ import { authAPI } from "../../../../app/lib/api";
 import { updateUser } from "../../../../app/store/slices/authSlice";
 import { AvatarCropModal } from "./AvatarCropModal";
 
-
 interface ProfileFormProps {
   user: User | null;
 }
 
 export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [formData, setFormData] = useState<UpdateUserData>(() =>
-    buildFormDataFromUser(user)
+    buildFormDataFromUser(user),
   );
   const [phoneCountryCode, setPhoneCountryCode] = useState("GB"); // Default to GB for UK-based platform
   const [phoneNumberOnly, setPhoneNumberOnly] = useState(""); // Store phone number without country code
@@ -46,11 +57,12 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
     }
 
     // Try to find country by dial code from the phone number
-    const country = getCountryByDialCode(phoneNumber.substring(0, 4)) || 
-                   getCountryByDialCode(phoneNumber.substring(0, 3)) || 
-                   getCountryByDialCode(phoneNumber.substring(0, 2)) ||
-                   getDefaultCountry();
-    
+    const country =
+      getCountryByDialCode(phoneNumber.substring(0, 4)) ||
+      getCountryByDialCode(phoneNumber.substring(0, 3)) ||
+      getCountryByDialCode(phoneNumber.substring(0, 2)) ||
+      getDefaultCountry();
+
     setPhoneCountryCode(country.code);
     setPhoneNumberOnly(phoneNumber.slice(country.dialCode.length));
   }, []);
@@ -60,7 +72,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
     if (user?.id) {
       const newFormData = buildFormDataFromUser(user);
       setFormData(newFormData);
-      
+
       // Parse phone number only when user data changes
       parsePhoneNumber(newFormData.phone || "");
     }
@@ -99,7 +111,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   // Track changes to enable/disable save button
   useEffect(() => {
     const initialData = buildFormDataFromUser(user);
-    const hasFormChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
+    const hasFormChanges =
+      JSON.stringify(formData) !== JSON.stringify(initialData);
     // Also check if avatar file is selected
     setHasChanges(hasFormChanges || avatarFile !== null);
   }, [formData, user, avatarFile]);
@@ -144,7 +157,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
       // Calculate age
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+      ) {
         age--;
       }
 
@@ -163,7 +179,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
       if (avatarFile) {
         try {
           const uploadResponse = await authAPI.uploadAvatar(avatarFile);
-          const avatarUrl = uploadResponse?.avatar_url || uploadResponse?.user?.avatar_url || uploadResponse?.url;
+          const avatarUrl =
+            uploadResponse?.avatar_url ||
+            uploadResponse?.user?.avatar_url ||
+            uploadResponse?.url;
           if (avatarUrl) {
             // Update formData with uploaded avatar URL
             updateData.avatar_url = avatarUrl;
@@ -183,21 +202,21 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
       // Update profile via API (including avatar_url if it was removed or changed)
       const response = await authAPI.updateProfile(updateData);
       const updatedUser = response.data;
-      
+
       // Refresh user data from server to get latest avatar_url
       const meResponse = await authAPI.getMe();
       const freshUser = meResponse.data?.user || updatedUser;
-      
+
       // Update Redux store with the latest user data (including avatar_url)
       dispatch(updateUser(freshUser));
-      
+
       // Update local form data with fresh user data
       const freshFormData = buildFormDataFromUser(freshUser);
       setFormData(freshFormData);
-      
+
       // Reset changes state after successful save
       setHasChanges(false);
-      
+
       console.log("Profile saved successfully", freshUser);
     } catch (error) {
       console.error("Failed to save profile:", error);
@@ -211,7 +230,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   if (!user?.id) {
     return (
       <StepWrapper
-        title="Profile Settings"
+        title={t(profileKeys.dropProfileSettings)}
         description="Loading your profile information..."
       >
         <StepContainer>
@@ -226,15 +245,15 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
 
   return (
     <StepWrapper
-      title="Profile Settings"
-      description="Update your profile information and click Save to apply changes."
+      title={t(profileKeys.dropProfileSettings)}
+      description={t(profileKeys.settingsDescription)}
       className="pt-12 sm:pt-16 md:pt-20 lg:pt-24"
     >
       <StepContainer>
         {/* Avatar */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-black mb-4">
-            Avatar
+            {t(profileKeys.avatar)}
           </label>
           <div className="flex items-center gap-6">
             {/* Avatar Preview */}
@@ -275,7 +294,9 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                   className="px-3 py-1.5 sm:px-4 sm:py-2 bg-black text-white rounded-full text-xs sm:text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                 >
                   <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  {formData.avatar_url || avatarPreview ? "Change Avatar" : "Upload Avatar"}
+                  {formData.avatar_url || avatarPreview
+                    ? t(profileKeys.changeAvatar)
+                    : t(profileKeys.uploadAvatar)}
                 </button>
                 {(formData.avatar_url || avatarPreview) && (
                   <button
@@ -297,7 +318,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                     className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-full text-xs sm:text-sm font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                   >
                     <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    Remove
+                    {t(profileKeys.avatarRemove)}
                   </button>
                 )}
               </div>
@@ -322,7 +343,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                   const previewUrl = URL.createObjectURL(file);
                   setImageToCrop(previewUrl);
                   setShowCropModal(true);
-                  
+
                   // Reset input to allow selecting the same file again
                   if (fileInputRef.current) {
                     fileInputRef.current.value = "";
@@ -345,18 +366,16 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                 }}
                 onCropComplete={(croppedBlob) => {
                   // Create a File from the cropped blob
-                  const croppedFile = new File(
-                    [croppedBlob],
-                    "avatar.jpg",
-                    { type: "image/jpeg" }
-                  );
-                  
+                  const croppedFile = new File([croppedBlob], "avatar.jpg", {
+                    type: "image/jpeg",
+                  });
+
                   // Create preview URL
                   const previewUrl = URL.createObjectURL(croppedFile);
                   setAvatarPreview(previewUrl);
                   setAvatarFile(croppedFile);
                   setHasChanges(true);
-                  
+
                   // Cleanup
                   setShowCropModal(false);
                   if (imageToCrop) {
@@ -412,10 +431,11 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
               setPhoneNumberOnly(value || "");
               // Combine country code with phone number for storage
               // Don't strip formatting here - let InputMask handle it internally
-              const country = getCountryByCode(phoneCountryCode) || getDefaultCountry();
+              const country =
+                getCountryByCode(phoneCountryCode) || getDefaultCountry();
               if (value) {
                 // Only extract digits when we need to store the final value
-                const digitsOnly = value.replace(/\D/g, '');
+                const digitsOnly = value.replace(/\D/g, "");
                 const fullPhoneNumber = `${country.dialCode}${digitsOnly}`;
                 updateFormData({ phone: fullPhoneNumber });
               } else {
@@ -442,20 +462,20 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
               // Always update the form data, even if invalid
               // This allows the user to see what they typed and get validation feedback
               updateFormData({ date_of_birth: date });
-              
+
               // Validate age (must be 18+)
               if (date) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const birthDate = new Date(date);
                 birthDate.setHours(0, 0, 0, 0);
-                
+
                 // Check if date is in the future
                 if (birthDate > today) {
                   setDateOfBirthError("Date of birth cannot be in the future");
                   return;
                 }
-                
+
                 // Check if date is too old (more than 120 years)
                 const minDate = new Date();
                 minDate.setFullYear(today.getFullYear() - 120);
@@ -464,14 +484,17 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                   setDateOfBirthError("Please enter a valid date of birth");
                   return;
                 }
-                
+
                 // Calculate age
                 let age = today.getFullYear() - birthDate.getFullYear();
                 const monthDiff = today.getMonth() - birthDate.getMonth();
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                if (
+                  monthDiff < 0 ||
+                  (monthDiff === 0 && today.getDate() < birthDate.getDate())
+                ) {
                   age--;
                 }
-                
+
                 if (age < 18) {
                   setDateOfBirthError("You must be at least 18 years old");
                 } else {
@@ -509,7 +532,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
           />
         </div>
 
-
         {/* Save Button */}
         <div className="flex justify-end">
           <Button
@@ -523,7 +545,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                 Saving...
               </div>
             ) : (
-              "Save Changes"
+              t(profileKeys.saveChangesBtn)
             )}
           </Button>
         </div>

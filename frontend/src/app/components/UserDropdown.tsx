@@ -3,9 +3,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
+import { useTranslation } from "../hooks/useTranslation";
 import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
+import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { LogOut, Settings, Sliders, Mail } from "lucide-react";
 
 interface UserDropdownProps {
@@ -15,6 +17,7 @@ interface UserDropdownProps {
 export default function UserDropdown({
   simplified = false,
 }: UserDropdownProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -182,7 +185,7 @@ export default function UserDropdown({
                         const parent = target.parentElement;
                         if (parent) {
                           const initials = parent.querySelector(
-                            ".fallback-initials-large"
+                            ".fallback-initials-large",
                           );
                           if (initials) {
                             (initials as HTMLElement).style.display = "flex";
@@ -218,7 +221,7 @@ export default function UserDropdown({
                   className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
                 >
                   <Settings className="w-4 h-4 mr-3 text-white/80" />
-                  Profile Settings
+                  {t(profileKeys.dropProfileSettings)}
                 </button>
 
                 <button
