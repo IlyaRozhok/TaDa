@@ -187,7 +187,7 @@ export function TenantCvView({
     ? `${t(tenantCvKeys.readyToMove)} ${moveIn}${moveOut ? ` - to ${moveOut}` : ""}`
     : null;
 
-  // Format duration for display
+  // Format duration for display (supports comma-separated multiselect)
   const formatDuration = (duration?: string | null): string | null => {
     if (!duration) return null;
     const durationMap: Record<string, string> = {
@@ -200,7 +200,11 @@ export function TenantCvView({
       "24_months": "24 months",
       any: "Any",
     };
-    return durationMap[duration] || duration;
+    const parts = duration
+      .split(",")
+      .map((s) => durationMap[s.trim()] || s.trim())
+      .filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : null;
   };
 
   const durationLabel = formatDuration(preferences?.let_duration);

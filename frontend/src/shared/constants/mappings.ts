@@ -113,36 +113,33 @@ export const PROPERTY_TYPE_API_TO_UI_MULTI: Record<string, string[]> = {
 // ==================== UNIT TYPE MAPPING (Building) ====================
 
 // Building unit types from preferences to admin forms
+// Only the 6 preference property types. Used by Add/Edit Building "Type of Unit".
 export const UNIT_TYPE_UI_TO_API: Record<string, string> = {
-  Studio: "studio", // property.type.name3 -> building unit type
-  Apartment: "1-bed", // Default mapping for apartment
-  Flat: "1-bed", // Default mapping for flat
-  Penthouse: "penthouse", // property.type.name4 -> building unit type
-  "En-suite room": "studio", // Map to studio as closest match
-  Room: "studio", // Map to studio as closest match
-  "1 bedroom": "1-bed",
-  "2 bedrooms": "2-bed",
-  "3 bedrooms": "3-bed",
-  Duplex: "Duplex",
+  Studio: "studio",
+  Apartment: "1-bed",
+  Flat: "1-bed",
+  Penthouse: "penthouse",
+  "En-suite room": "studio",
+  Room: "studio",
 };
 
 export const UNIT_TYPE_API_TO_UI: Record<string, string> = {
   studio: "Studio",
-  "1-bed": "1 bedroom",
-  "2-bed": "2 bedrooms",
-  "3-bed": "3 bedrooms",
-  Duplex: "Duplex",
+  "1-bed": "Apartment",
+  "2-bed": "Apartment",
+  "3-bed": "Apartment",
+  Duplex: "Apartment",
   penthouse: "Penthouse",
 };
 
-/** Building form load: API value → UI label aligned with preferences Step 3 (Property type). */
+/** Building form load: API value → UI label. Only the 6 preference types. */
 export const BUILDING_UNIT_TYPE_API_TO_UI: Record<string, string> = {
   "1-bed": "Apartment",
-  "2-bed": "2 bedrooms",
-  "3-bed": "3 bedrooms",
+  "2-bed": "Apartment",
+  "3-bed": "Apartment",
   studio: "Studio",
   penthouse: "Penthouse",
-  Duplex: "Duplex",
+  Duplex: "Apartment",
 };
 
 // ==================== FURNISHING MAPPING ====================
@@ -358,6 +355,23 @@ export function transformDurationUIToAPI(uiValue: string): string {
 
 export function transformDurationAPIToUI(apiValue: string): string {
   return DURATION_API_TO_UI[apiValue] || apiValue;
+}
+
+/** Multiselect: UI keys array → API comma-separated string. */
+export function transformDurationUIToAPIArray(uiValues: string[]): string {
+  const api = [
+    ...new Set(uiValues.map((v) => DURATION_UI_TO_API[v]).filter(Boolean)),
+  ];
+  return api.join(",");
+}
+
+/** Multiselect: API comma-separated string → UI keys array. */
+export function transformDurationAPIToUIArray(apiValue: string): string[] {
+  if (!apiValue?.trim()) return [];
+  return apiValue
+    .split(",")
+    .map((s) => transformDurationAPIToUI(s.trim()))
+    .filter(Boolean);
 }
 
 export function transformBillsUIToAPI(uiValue: string): string {

@@ -83,13 +83,17 @@ export function useLocalizedFormOptions() {
     { value: "private_landlord", label: t(wizardKeys.step4.buildtype[3]) }, // "Private Landlord"
   ];
 
-  // Duration Options - matches preferences step 4
-  const durationOptions: FormOption[] = [
-    { value: "short_term", label: t(wizardKeys.step4.rentalDuration[0]) }, // "Short term (1–6 months)"
-    { value: "long_term", label: t(wizardKeys.step4.rentalDuration[1]) }, // "Medium term (6–12 months)" -> maps to long_term
-    { value: "long_term", label: t(wizardKeys.step4.rentalDuration[2]) }, // "Long term (12+ months)"
-    { value: "flexible", label: t(wizardKeys.step4.rentalDuration[3]) }, // "Flexible"
-  ];
+  // Duration Options - matches preferences step 4 (value = UI key for multiselect)
+  const DURATION_UI_KEYS = [
+    "Short term (1–6 months)",
+    "Medium term (6–12 months)",
+    "Long term (12+ months)",
+    "Flexible",
+  ] as const;
+  const durationOptions: FormOption[] = DURATION_UI_KEYS.map((key, i) => ({
+    value: key,
+    label: t(wizardKeys.step4.rentalDuration[i]),
+  }));
 
   // Bills Options - matches preferences step 4
   const billsOptions: FormOption[] = [
@@ -97,15 +101,19 @@ export function useLocalizedFormOptions() {
     { value: "excluded", label: t(wizardKeys.step4.bills[1]) }, // "Exclude"
   ];
 
-  // Tenant Types - matches preferences step 5
-  const tenantTypeOptions: FormOption[] = [
-    { value: "corporateLets", label: t(wizardKeys.step5.tenantType[0]) }, // "Professional"
-    { value: "student", label: t(wizardKeys.step5.tenantType[1]) }, // "Student"
-    { value: "corporateLets", label: t(wizardKeys.step5.tenantType[2]) }, // "Corporate tenant"
-    { value: "family", label: t(wizardKeys.step5.tenantType[3]) }, // "Family"
-    { value: "sharers", label: t(wizardKeys.step5.tenantType[4]) }, // "Sharers / Friends"
-    { value: "family", label: t(wizardKeys.step5.tenantType[5]) }, // "Other" -> maps to family
-  ];
+  // Tenant Types - matches preferences step 5 (value = UI key for form state, label = localized)
+  const TENANT_TYPE_UI_KEYS = [
+    "Professional",
+    "Student",
+    "Corporate tenant",
+    "Family",
+    "Sharers / Friends",
+    "Other",
+  ] as const;
+  const tenantTypeOptions: FormOption[] = TENANT_TYPE_UI_KEYS.map((key, i) => ({
+    value: key,
+    label: t(wizardKeys.step5.tenantType[i]),
+  }));
 
   return {
     propertyTypeOptions,

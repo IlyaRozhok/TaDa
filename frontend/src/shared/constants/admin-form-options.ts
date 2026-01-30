@@ -59,8 +59,7 @@ export const AMENITIES_OPTIONS: readonly string[] =
   AMENITIES_BY_CATEGORY.flatMap((s) => s.values);
 
 // ==================== BUILDING UNIT TYPES (Type of Unit) ====================
-// Same values as preferences Step 3 (Property type) + 2/3 bedrooms, Duplex for building.
-// Form stores these UI strings; save via transformUnitTypeUIToAPI, load via buildingUnitTypeAPIToUI.
+// Same 6 options as preferences Step 3 (Property type). Form stores UI strings; save/load via mappings.
 export const TYPE_OF_UNIT_OPTIONS = [
   "Apartment",
   "Flat",
@@ -68,9 +67,6 @@ export const TYPE_OF_UNIT_OPTIONS = [
   "Penthouse",
   "En-suite room",
   "Room",
-  "2 bedrooms",
-  "3 bedrooms",
-  "Duplex",
 ] as const;
 
 // ==================== PROPERTY TYPES ====================

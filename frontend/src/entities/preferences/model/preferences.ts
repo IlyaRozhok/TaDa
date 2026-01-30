@@ -5,6 +5,8 @@ import {
   transformTenantTypeAPIToUI,
   transformDurationUIToAPI,
   transformDurationAPIToUI,
+  transformDurationUIToAPIArray,
+  transformDurationAPIToUIArray,
   transformBillsUIToAPI,
   transformBillsAPIToUI,
   transformPropertyTypeUIToAPI,
@@ -107,7 +109,7 @@ export interface PreferencesFormData {
   furnishing_preferences?: string[]; // UI alias for furnishing[]
   outdoor_space_preferences?: string[]; // UI field, transformed to booleans
   building_style_preferences?: string[]; // UI alias for building_types
-  selected_duration?: string; // UI alias for let_duration
+  selected_duration?: string[]; // UI alias for let_duration (multiselect)
   selected_bills?: string; // UI alias for bills
   tenant_type_preferences?: string[]; // UI alias for tenant_types
   pet_type_preferences?: string[]; // UI field, transformed to pets[]
@@ -260,9 +262,15 @@ export function transformFormDataForApi(
     );
   }
 
-  // Let duration transformation
-  if (formData.selected_duration !== undefined) {
-    apiData.let_duration = transformDurationUIToAPI(formData.selected_duration);
+  // Let duration transformation (multiselect → comma-separated API string)
+  if (
+    formData.selected_duration !== undefined &&
+    Array.isArray(formData.selected_duration) &&
+    formData.selected_duration.length > 0
+  ) {
+    apiData.let_duration = transformDurationUIToAPIArray(
+      formData.selected_duration,
+    );
   }
 
   // Bills transformation
@@ -273,9 +281,7 @@ export function transformFormDataForApi(
   // Tenant types transformation
   if (formData.tenant_type_preferences !== undefined) {
     apiData.tenant_types = [
-      ...new Set(
-        transformTenantTypeUIToAPI(formData.tenant_type_preferences),
-      ),
+      ...new Set(transformTenantTypeUIToAPI(formData.tenant_type_preferences)),
     ];
   }
 
@@ -445,7 +451,9 @@ export function transformApiDataForForm(
     building_style_preferences: transformBuildingTypeAPIToUI(
       apiData.building_types || [],
     ),
-    selected_duration: transformDurationAPIToUI(apiData.let_duration || ""),
+    selected_duration: transformDurationAPIToUIArray(
+      apiData.let_duration || "",
+    ),
     selected_bills: transformBillsAPIToUI(apiData.bills || ""),
     tenant_type_preferences: transformTenantTypeAPIToUI(
       apiData.tenant_types || [],

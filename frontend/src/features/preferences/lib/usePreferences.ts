@@ -16,6 +16,8 @@ import { TOTAL_STEPS_NEW as TOTAL_STEPS } from "@/entities/preferences/model/con
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { blockNavigation } from "@/app/utils/navigationGuard";
 
+const PREFERENCES_DRAFT_KEY = "preferencesDraft";
+
 export default function usePreferences(currentStepOffset: number = 0) {
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -24,6 +26,8 @@ export default function usePreferences(currentStepOffset: number = 0) {
   const hasCheckedAuthRef = useRef<boolean>(false);
   const [sessionInitialized, setSessionInitialized] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const hasAppliedInitialLoadRef = useRef(false);
   const pendingFieldRef = useRef<{
     field: keyof PreferencesFormData;
     value: unknown;
@@ -104,7 +108,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       building_types: [],
       building_style_preferences: [], // UI alias
       let_duration: "",
-      selected_duration: "", // UI alias
+      selected_duration: [], // UI alias (multiselect)
       bills: "",
       selected_bills: "", // UI alias
       // Step 6 - Tenant Type
@@ -215,7 +219,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
     // Important: check that session is initialized before checking authentication
     if (sessionInitialized && isAuthenticated === false) {
       console.log(
-        "🔒 User not authenticated, redirecting to login from usePreferences"
+        "🔒 User not authenticated, redirecting to login from usePreferences",
       );
       router.push("/app/auth/login");
       return;
@@ -242,6 +246,27 @@ export default function usePreferences(currentStepOffset: number = 0) {
     loadExistingPreferences();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionInitialized, isAuthenticated, user?.id]); // Include sessionInitialized in dependencies
+
+  // Persist form draft to localStorage (debounced) so "back then return" restores data
+  useEffect(() => {
+    if (!sessionInitialized || !isAuthenticated) return;
+    if (draftSaveTimeoutRef.current) clearTimeout(draftSaveTimeoutRef.current);
+    draftSaveTimeoutRef.current = setTimeout(() => {
+      try {
+        const data = getValues();
+        if (typeof window !== "undefined" && data) {
+          localStorage.setItem(PREFERENCES_DRAFT_KEY, JSON.stringify(data));
+        }
+      } catch {
+        // Ignore quota/parse errors
+      }
+      draftSaveTimeoutRef.current = undefined;
+    }, 500);
+    return () => {
+      if (draftSaveTimeoutRef.current)
+        clearTimeout(draftSaveTimeoutRef.current);
+    };
+  }, [sessionInitialized, isAuthenticated, watchedData, getValues]);
 
   const loadExistingPreferences = async () => {
     try {
@@ -293,9 +318,65 @@ export default function usePreferences(currentStepOffset: number = 0) {
           setValue(key as keyof PreferencesFormData, value);
         });
       }
+
+      // Restore draft from localStorage so "back then return" shows last form state
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem(PREFERENCES_DRAFT_KEY);
+          if (raw) {
+            const draft = JSON.parse(raw) as Partial<PreferencesFormData>;
+            if (draft && typeof draft === "object") {
+              Object.keys(draft).forEach((key) => {
+                const value = draft[key as keyof PreferencesFormData];
+                if (value === null || value === undefined) return;
+                if (
+                  key === "id" ||
+                  key === "user_id" ||
+                  key === "user" ||
+                  key === "created_at" ||
+                  key === "updated_at"
+                )
+                  return;
+                setValue(key as keyof PreferencesFormData, value);
+              });
+            }
+          }
+        } catch {
+          // Ignore invalid draft
+        }
+      }
+      hasAppliedInitialLoadRef.current = true;
     } catch {
       // Check if this is a 404 (no preferences yet) or another error
       setState((prev) => ({ ...prev, existingPreferences: null }));
+
+      // Restore draft when no API preferences (e.g. first time or 404)
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem(PREFERENCES_DRAFT_KEY);
+          if (raw) {
+            const draft = JSON.parse(raw) as Partial<PreferencesFormData>;
+            if (draft && typeof draft === "object") {
+              Object.keys(draft).forEach((key) => {
+                const value = draft[key as keyof PreferencesFormData];
+                if (value === null || value === undefined) return;
+                if (
+                  key === "id" ||
+                  key === "user_id" ||
+                  key === "user" ||
+                  key === "created_at" ||
+                  key === "updated_at"
+                )
+                  return;
+                setValue(key as keyof PreferencesFormData, value);
+              });
+            }
+          }
+        } catch {
+          // Ignore invalid draft
+        }
+      }
+      hasAppliedInitialLoadRef.current = true;
     }
   };
 
@@ -308,7 +389,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
         const formData: Partial<PreferencesFormData> = {
           [field]: value,
         } as Partial<PreferencesFormData>;
-        
+
         // Include related fields needed for transformation
         if (field === "pet_additional_info") {
           const currentPetTypes = getValues("pet_type_preferences");
@@ -321,7 +402,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
             formData.pet_additional_info = currentPetAdditionalInfo;
           }
         }
-        
+
         const transformedData = transformFormDataForApi(formData);
 
         // Process all transformed keys (handle empty arrays, nulls, etc.)
@@ -369,7 +450,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
               );
             }
             return processedValue !== existingValue;
-          }
+          },
         );
 
         if (!hasChanged) {
@@ -392,13 +473,13 @@ export default function usePreferences(currentStepOffset: number = 0) {
         // Silent fail - don't show toast
       }
     },
-    [state.existingPreferences]
+    [state.existingPreferences],
   );
 
   const updateField = useCallback(
     (
       field: keyof PreferencesFormData,
-      value: string | number | boolean | string[] | undefined
+      value: string | number | boolean | string[] | undefined,
     ) => {
       setValue(field, value, { shouldValidate: false, shouldDirty: true });
 
@@ -413,13 +494,13 @@ export default function usePreferences(currentStepOffset: number = 0) {
         if (pendingFieldRef.current) {
           saveSingleField(
             pendingFieldRef.current.field,
-            pendingFieldRef.current.value
+            pendingFieldRef.current.value,
           );
           pendingFieldRef.current = null;
         }
       }, 500); // 500ms debounce
     },
-    [setValue, saveSingleField]
+    [setValue, saveSingleField],
   );
 
   const toggleFeature = useCallback(
@@ -444,7 +525,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
         if (pendingFieldRef.current) {
           saveSingleField(
             pendingFieldRef.current.field,
-            pendingFieldRef.current.value
+            pendingFieldRef.current.value,
           );
           pendingFieldRef.current = null;
         }
@@ -459,7 +540,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       requestAnimationFrame(restoreScroll);
       setTimeout(restoreScroll, 0);
     },
-    [watchedData, setValue, saveSingleField]
+    [watchedData, setValue, saveSingleField],
   );
 
   const prevStep = useCallback(() => {
@@ -557,9 +638,10 @@ export default function usePreferences(currentStepOffset: number = 0) {
           existingPreferences: response.data,
         }));
 
-        // Clear saved step from localStorage on successful save
+        // Clear saved step and draft from localStorage on successful save (Finish)
         if (typeof window !== "undefined") {
           localStorage.removeItem("preferencesStep");
+          localStorage.removeItem(PREFERENCES_DRAFT_KEY);
         }
 
         // Reset success state after a short delay to avoid UI issues
@@ -629,7 +711,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       if (pendingFieldRef.current) {
         saveSingleField(
           pendingFieldRef.current.field,
-          pendingFieldRef.current.value
+          pendingFieldRef.current.value,
         );
         pendingFieldRef.current = null;
       }

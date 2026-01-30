@@ -172,11 +172,13 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.sessionExpiry = null;
 
-      // Clear localStorage (including onboarding state so next login starts fresh)
+      // Clear localStorage (including onboarding and preferences draft so next login starts fresh)
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionExpiry");
         localStorage.removeItem("onboardingState");
+        localStorage.removeItem("preferencesStep");
+        localStorage.removeItem("preferencesDraft");
       }
 
       // Log the logout event

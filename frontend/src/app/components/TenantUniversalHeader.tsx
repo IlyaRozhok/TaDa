@@ -77,14 +77,14 @@ export default function TenantUniversalHeader({
 
         {/* Right: Icons - Adaptive layout */}
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 xl:gap-6 flex-shrink-0">
-          {/* Admin Panel Button - Show for admin users */}
+          {/* Admin Panel - same style as Tenant CV / Preferences / Units links */}
           {user?.role === "admin" && (
             <button
               onClick={() => router.push("/app/admin/panel")}
-              className="cursor-pointer flex items-center gap-1 sm:gap-2 px-5 py-3 sm:py-2 bg-gradient-to-r from-green-900 to-black hover:from-green-900 hover:to-black/90 rounded-3xl transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap hover:shadow-lg active:scale-95"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
             >
-              <Shield className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Admin Panel</span>
+              <Shield className="w-4 h-4 flex-shrink-0" />
+              <span>Admin Panel</span>
             </button>
           )}
 

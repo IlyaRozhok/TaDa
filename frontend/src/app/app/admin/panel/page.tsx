@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import Link from "next/link";
 import {
   selectUser,
   selectIsAuthenticated,
@@ -43,6 +44,9 @@ import {
   Plus,
   X,
   Save,
+  FileText,
+  SlidersHorizontal,
+  LayoutGrid,
 } from "lucide-react";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
@@ -1142,9 +1146,34 @@ function AdminPanelContent() {
     <div className="min-h-screen bg-gray-50">
       <UniversalHeader />
 
-      <div className="flex pt-21 md:pt-13">
-        {renderSidebar()}
-        <div className="flex-1 p-6">{renderContent()}</div>
+      <div className="pt-21 md:pt-13">
+        <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-2.5 flex items-center gap-4 md:gap-6 flex-wrap">
+          <Link
+            href="/app/tenant-cv"
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors"
+          >
+            <FileText className="w-4 h-4 flex-shrink-0" />
+            <span>Tenant CV</span>
+          </Link>
+          <Link
+            href="/app/preferences"
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors"
+          >
+            <SlidersHorizontal className="w-4 h-4 flex-shrink-0" />
+            <span>Preferences</span>
+          </Link>
+          <Link
+            href="/app/units"
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors"
+          >
+            <LayoutGrid className="w-4 h-4 flex-shrink-0" />
+            <span>Units</span>
+          </Link>
+        </div>
+        <div className="flex">
+          {renderSidebar()}
+          <div className="flex-1 p-6">{renderContent()}</div>
+        </div>
       </div>
 
       {activeSection !== "properties" && <ViewModal />}

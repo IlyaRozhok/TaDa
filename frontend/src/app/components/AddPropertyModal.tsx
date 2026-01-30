@@ -7,7 +7,6 @@ import {
   PropertyType,
   BuildingType,
   Furnishing,
-  LetDuration,
   Bills,
 } from "../types/property";
 import { FormField, Input, Select, Textarea } from "./FormField";
@@ -18,6 +17,12 @@ import {
 } from "../hooks/useFormValidation";
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
 import { AMENITIES_BY_CATEGORY } from "../../shared/constants/admin-form-options";
+import {
+  transformTenantTypeUIToAPI,
+  transformTenantTypeAPIToUI,
+  transformDurationUIToAPIArray,
+  transformDurationAPIToUIArray,
+} from "../../shared/constants/mappings";
 
 interface Pet {
   type: "dog" | "cat" | "other";
@@ -228,7 +233,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     building_type: "" as BuildingType | "",
     luxury: false,
     furnishing: "" as Furnishing | "",
-    let_duration: "" as LetDuration | "",
+    let_duration: [] as string[],
     floor: null as number | null,
     outdoor_space: false,
     balcony: false,
@@ -280,7 +285,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const documentInputRef = useRef<HTMLInputElement>(null);
 
   // Localized options (same as preferences step 3)
-  const { propertyTypeOptions } = useLocalizedFormOptions();
+  const { propertyTypeOptions, tenantTypeOptions, durationOptions } =
+    useLocalizedFormOptions();
 
   // Load buildings and use operators from props
   useEffect(() => {
@@ -387,7 +393,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             setFormData((prev) => ({
               ...prev,
               address: building.address || "",
-              tenant_types: building.tenant_type || [],
+              tenant_types: transformTenantTypeAPIToUI(
+                building.tenant_type || [],
+              ),
               amenities: building.amenities || [],
               is_concierge: building.is_concierge || false,
               concierge_hours: building.concierge_hours || null,
@@ -902,6 +910,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       propertyData.local_essentials = formData.local_essentials;
       propertyData.concierge_hours = formData.concierge_hours;
       propertyData.pets = formData.pets;
+      propertyData.tenant_types = [
+        ...new Set(transformTenantTypeUIToAPI(formData.tenant_types || [])),
+      ];
+      propertyData.let_duration =
+        (formData.let_duration?.length ?? 0) > 0
+          ? transformDurationUIToAPIArray(formData.let_duration || [])
+          : "";
 
       console.log(
         "📤 Sending propertyData:",
@@ -935,7 +950,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       building_type: "" as BuildingType | "",
       luxury: false,
       furnishing: "" as Furnishing | "",
-      let_duration: "" as LetDuration | "",
+      let_duration: [] as string[],
       floor: null as number | null,
       outdoor_space: false,
       balcony: false,
@@ -1007,7 +1022,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               required
               error={errors.title}
               touched={touched.title}
-              helpText="Enter a descriptive title for the property"
             >
               <Input
                 type="text"
@@ -1023,7 +1037,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               label="Apartment Number"
               error={errors.apartment_number}
               touched={touched.apartment_number}
-              helpText="Optional apartment/unit number"
             >
               <Input
                 type="text"
@@ -1040,7 +1053,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             {formData.building_type === "private_landlord" ? (
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
-                  Operator *
+                  Operator
                 </label>
                 <div className="relative" data-dropdown>
                   <div
@@ -1223,19 +1236,15 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   <div className="flex flex-wrap gap-1 flex-1">
                     {formData.tenant_types.length > 0 ? (
                       formData.tenant_types.map((value) => {
-                        const option = [
-                          { value: "corporateLets", label: "Corporate Lets" },
-                          { value: "sharers", label: "Sharers" },
-                          { value: "student", label: "Student" },
-                          { value: "family", label: "Family" },
-                          { value: "elder", label: "Elder" },
-                        ].find((opt) => opt.value === value);
+                        const option = tenantTypeOptions.find(
+                          (opt) => opt.value === value,
+                        );
                         return (
                           <span
                             key={value}
                             className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
                           >
-                            {option?.label || value}
+                            {option?.label ?? value}
                             {!isFieldReadonly && (
                               <button
                                 type="button"
@@ -1278,13 +1287,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
                 {!isFieldReadonly && openDropdown === "tenant_types" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {[
-                      { value: "corporateLets", label: "Corporate Lets" },
-                      { value: "sharers", label: "Sharers" },
-                      { value: "student", label: "Student" },
-                      { value: "family", label: "Family" },
-                      { value: "elder", label: "Elder" },
-                    ].map((option) => (
+                    {tenantTypeOptions.map((option) => (
                       <div
                         key={option.value}
                         className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
@@ -1379,7 +1382,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               label="Price (£ PCM)"
               error={errors.price}
               touched={touched.price}
-              helpText="Monthly rent in British Pounds (optional)"
             >
               <Input
                 type="number"
@@ -1403,7 +1405,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               label="Deposit (£)"
               error={errors.deposit}
               touched={touched.deposit}
-              helpText="Security deposit amount (optional)"
             >
               <Input
                 type="number"
@@ -1427,7 +1428,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               label="Available From"
               error={errors.available_from}
               touched={touched.available_from}
-              helpText="When the property becomes available (optional)"
             >
               <Input
                 type="date"
@@ -1563,22 +1563,45 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </label>
               <div className="relative" data-dropdown>
                 <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
                   onClick={() => toggleDropdown("let_duration")}
                 >
-                  <span
-                    className={
-                      formData.let_duration ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.let_duration
-                      ? formData.let_duration
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())
-                      : "Select Duration"}
-                  </span>
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {(formData.let_duration || []).length > 0 ? (
+                      (formData.let_duration || []).map((value) => {
+                        const option = durationOptions.find(
+                          (opt) => opt.value === value,
+                        );
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                          >
+                            {option?.label ?? value}
+                            <button
+                              type="button"
+                              className="ml-1 text-white/70 hover:text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFormData({
+                                  ...formData,
+                                  let_duration: (
+                                    formData.let_duration || []
+                                  ).filter((d) => d !== value),
+                                });
+                              }}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-white/50">Select duration...</span>
+                    )}
+                  </div>
                   <svg
-                    className="w-5 h-5 text-white/70"
+                    className="w-5 h-5 text-white/70 ml-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1593,20 +1616,30 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
                 {openDropdown === "let_duration" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {Object.values(LetDuration).map((type) => (
+                    {durationOptions.map((option) => (
                       <div
-                        key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.let_duration === type ? "bg-white/10" : ""
-                        }`}
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                         onClick={() => {
-                          setFormData({ ...formData, let_duration: type });
-                          setOpenDropdown(null);
+                          const current = formData.let_duration || [];
+                          const newDuration = current.includes(option.value)
+                            ? current.filter((d) => d !== option.value)
+                            : [...current, option.value];
+                          setFormData({
+                            ...formData,
+                            let_duration: newDuration,
+                          });
                         }}
                       >
-                        {type
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        <input
+                          type="checkbox"
+                          checked={(formData.let_duration || []).includes(
+                            option.value,
+                          )}
+                          readOnly
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{option.label}</span>
                       </div>
                     ))}
                   </div>
@@ -1853,18 +1886,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={formData.outdoor_space}
-                onChange={(e) =>
-                  setFormData({ ...formData, outdoor_space: e.target.checked })
-                }
-                className="w-4 h-4 text-white border-white/30 rounded focus:ring-white/50 bg-white/10"
-              />
-              <span className="text-sm text-white/90">Outdoor Space</span>
-            </label>
-
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
                 checked={formData.balcony}
                 onChange={(e) =>
                   setFormData({ ...formData, balcony: e.target.checked })
@@ -1884,18 +1905,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 className="w-4 h-4 text-white border-white/30 rounded focus:ring-white/50 bg-white/10"
               />
               <span className="text-sm text-white/90">Terrace</span>
-            </label>
-
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.luxury}
-                onChange={(e) =>
-                  setFormData({ ...formData, luxury: e.target.checked })
-                }
-                className="w-4 h-4 text-white border-white/30 rounded focus:ring-white/50 bg-white/10"
-              />
-              <span className="text-sm text-white/90">Luxury</span>
             </label>
           </div>
 

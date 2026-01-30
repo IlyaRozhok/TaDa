@@ -58,8 +58,8 @@ export class PreferencesController {
   }
 
   @Post()
-  @Auth("tenant")
-  @ApiOperation({ summary: "Save tenant preferences (create or update)" })
+  @Auth("tenant", "admin")
+  @ApiOperation({ summary: "Save current user preferences (tenant or admin)" })
   @ApiResponse({
     status: 201,
     description: "Preferences saved successfully",
@@ -67,7 +67,7 @@ export class PreferencesController {
   })
   @ApiResponse({
     status: 403,
-    description: "Only tenants can set preferences",
+    description: "Only tenants or admins can set preferences",
   })
   async save(
     @CurrentUser() user: User,
@@ -82,7 +82,7 @@ export class PreferencesController {
   }
 
   @Get()
-  @Auth("tenant")
+  @Auth("tenant", "admin")
   @ApiOperation({ summary: "Get current user preferences" })
   @ApiResponse({
     status: 200,
@@ -99,8 +99,8 @@ export class PreferencesController {
   }
 
   @Put()
-  @Auth("tenant")
-  @ApiOperation({ summary: "Update tenant preferences" })
+  @Auth("tenant", "admin")
+  @ApiOperation({ summary: "Update current user preferences" })
   @ApiResponse({
     status: 200,
     description: "Preferences updated successfully",
@@ -118,9 +118,9 @@ export class PreferencesController {
   }
 
   @Delete()
-  @Auth("tenant")
+  @Auth("tenant", "admin")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: "Delete tenant preferences" })
+  @ApiOperation({ summary: "Delete current user preferences" })
   @ApiResponse({
     status: 204,
     description: "Preferences deleted successfully",

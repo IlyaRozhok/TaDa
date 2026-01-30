@@ -16,7 +16,7 @@ export class MatchingCalculationService {
   calculateMatch(
     property: Property,
     preferences: Preferences,
-    weights: CategoryWeights = DEFAULT_WEIGHTS
+    weights: CategoryWeights = DEFAULT_WEIGHTS,
   ): PropertyMatchResult {
     const categories: CategoryMatchResult[] = [];
 
@@ -25,7 +25,7 @@ export class MatchingCalculationService {
 
     // 2. Availability/Dates matching
     categories.push(
-      this.matchAvailability(property, preferences, weights.availability)
+      this.matchAvailability(property, preferences, weights.availability),
     );
 
     // 3. Deposit matching
@@ -33,32 +33,32 @@ export class MatchingCalculationService {
 
     // 4. Property type matching
     categories.push(
-      this.matchPropertyType(property, preferences, weights.propertyType)
+      this.matchPropertyType(property, preferences, weights.propertyType),
     );
 
     // 5. Bedrooms matching
     categories.push(
-      this.matchBedrooms(property, preferences, weights.bedrooms)
+      this.matchBedrooms(property, preferences, weights.bedrooms),
     );
 
     // 6. Bathrooms matching
     categories.push(
-      this.matchBathrooms(property, preferences, weights.bathrooms)
+      this.matchBathrooms(property, preferences, weights.bathrooms),
     );
 
     // 7. Building style matching
     categories.push(
-      this.matchBuildingStyle(property, preferences, weights.buildingStyle)
+      this.matchBuildingStyle(property, preferences, weights.buildingStyle),
     );
 
     // 8. Duration matching
     categories.push(
-      this.matchDuration(property, preferences, weights.duration)
+      this.matchDuration(property, preferences, weights.duration),
     );
 
     // 9. Square meters matching
     categories.push(
-      this.matchSquareMeters(property, preferences, weights.squareMeters)
+      this.matchSquareMeters(property, preferences, weights.squareMeters),
     );
 
     // 10. Bills matching
@@ -66,7 +66,7 @@ export class MatchingCalculationService {
 
     // 11. Tenant type matching
     categories.push(
-      this.matchTenantType(property, preferences, weights.tenantType)
+      this.matchTenantType(property, preferences, weights.tenantType),
     );
 
     // 12. Pets matching
@@ -74,22 +74,22 @@ export class MatchingCalculationService {
 
     // 13. Amenities matching
     categories.push(
-      this.matchAmenities(property, preferences, weights.amenities)
+      this.matchAmenities(property, preferences, weights.amenities),
     );
 
     // 14. Outdoor space matching
     categories.push(
-      this.matchOutdoorSpace(property, preferences, weights.outdoorSpace)
+      this.matchOutdoorSpace(property, preferences, weights.outdoorSpace),
     );
 
     // 15. Furnishing matching
     categories.push(
-      this.matchFurnishing(property, preferences, weights.furnishing)
+      this.matchFurnishing(property, preferences, weights.furnishing),
     );
 
     // 16. Location matching
     categories.push(
-      this.matchLocation(property, preferences, weights.location)
+      this.matchLocation(property, preferences, weights.location),
     );
 
     // Calculate totals - ONLY include categories where user has set a preference
@@ -98,11 +98,11 @@ export class MatchingCalculationService {
 
     const totalScore = categoriesWithPreference.reduce(
       (sum, cat) => sum + cat.score,
-      0
+      0,
     );
     const maxPossibleScore = categoriesWithPreference.reduce(
       (sum, cat) => sum + cat.maxScore,
-      0
+      0,
     );
 
     // If no preferences set at all, matchPercentage = 0
@@ -113,13 +113,13 @@ export class MatchingCalculationService {
 
     // Count category matches (only from categories with preferences)
     const matched = categoriesWithPreference.filter(
-      (c) => c.match && c.score === c.maxScore
+      (c) => c.match && c.score === c.maxScore,
     ).length;
     const partial = categoriesWithPreference.filter(
-      (c) => c.score > 0 && c.score < c.maxScore
+      (c) => c.score > 0 && c.score < c.maxScore,
     ).length;
     const notMatched = categoriesWithPreference.filter(
-      (c) => c.score === 0 && c.maxScore > 0
+      (c) => c.score === 0 && c.maxScore > 0,
     ).length;
     const skipped = categories.filter((c) => !c.hasPreference).length;
 
@@ -141,7 +141,7 @@ export class MatchingCalculationService {
   private matchBudget(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const price = Number(property.price) || 0;
     const minPrice = preferences.min_price;
@@ -191,7 +191,7 @@ export class MatchingCalculationService {
           maxScore,
           reason: "Slightly over budget",
           details: `£${price}/month is ${overBy.toFixed(
-            1
+            1,
           )}% over max budget of £${maxPrice}`,
           hasPreference: true,
         };
@@ -210,7 +210,7 @@ export class MatchingCalculationService {
           maxScore,
           reason: "Under budget",
           details: `£${price}/month is ${underBy.toFixed(
-            1
+            1,
           )}% under min budget of £${minPrice}`,
           hasPreference: true,
         };
@@ -236,7 +236,7 @@ export class MatchingCalculationService {
   private matchAvailability(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const moveInDate = preferences.move_in_date;
     const availableFrom = property.available_from;
@@ -287,7 +287,7 @@ export class MatchingCalculationService {
 
     // Property available after move-in date
     const daysDiff = Math.ceil(
-      (available.getTime() - moveIn.getTime()) / (1000 * 60 * 60 * 24)
+      (available.getTime() - moveIn.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (daysDiff <= 14) {
@@ -333,7 +333,7 @@ export class MatchingCalculationService {
   private matchDeposit(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const depositPref = preferences.deposit_preference;
     const propertyDeposit = Number(property.deposit) || 0;
@@ -397,7 +397,7 @@ export class MatchingCalculationService {
   private matchPropertyType(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefTypes = preferences.property_types || [];
     const propertyType = property.property_type?.toLowerCase();
@@ -450,7 +450,7 @@ export class MatchingCalculationService {
   private matchBedrooms(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefBedrooms = preferences.bedrooms || [];
     const propertyBedrooms = property.bedrooms;
@@ -506,7 +506,7 @@ export class MatchingCalculationService {
         maxScore,
         reason: "Close to preferred bedroom count",
         details: `${propertyBedrooms} bedrooms is close to your preference (${prefBedrooms.join(
-          ", "
+          ", ",
         )})`,
         hasPreference: true,
       };
@@ -519,7 +519,7 @@ export class MatchingCalculationService {
       maxScore,
       reason: "Bedroom count doesn't match",
       details: `${propertyBedrooms} bedrooms, you prefer ${prefBedrooms.join(
-        ", "
+        ", ",
       )}`,
       hasPreference: true,
     };
@@ -531,7 +531,7 @@ export class MatchingCalculationService {
   private matchBathrooms(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefBathrooms = preferences.bathrooms || [];
     const propertyBathrooms = property.bathrooms;
@@ -595,7 +595,7 @@ export class MatchingCalculationService {
       maxScore,
       reason: "Bathroom count doesn't match",
       details: `${propertyBathrooms} bathrooms, you prefer ${prefBathrooms.join(
-        ", "
+        ", ",
       )}`,
       hasPreference: true,
     };
@@ -607,7 +607,7 @@ export class MatchingCalculationService {
   private matchBuildingStyle(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefStyles = preferences.building_types || [];
     const buildingType = property.building_type?.toLowerCase();
@@ -658,13 +658,18 @@ export class MatchingCalculationService {
   private matchDuration(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
-    const prefDuration = preferences.let_duration;
+    const prefDurationRaw = preferences.let_duration;
     const propertyDuration = property.let_duration?.toLowerCase();
 
+    // Support comma-separated multiselect (preferences and property)
+    const prefDurations = prefDurationRaw
+      ? prefDurationRaw.split(",").map((s) => s.trim().toLowerCase())
+      : [];
+
     // No preference set - exclude from calculation
-    if (!prefDuration) {
+    if (prefDurations.length === 0) {
       return {
         category: "duration",
         match: false,
@@ -689,8 +694,16 @@ export class MatchingCalculationService {
       };
     }
 
-    // Exact match
-    if (prefDuration.toLowerCase() === propertyDuration) {
+    // Property may be comma-separated (multiselect)
+    const propertyDurations = propertyDuration
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    // Match if any preference duration matches any property duration
+    const prefSet = new Set(prefDurations);
+    const hasExactMatch = propertyDurations.some((pd) => prefSet.has(pd));
+    if (hasExactMatch) {
       return {
         category: "duration",
         match: true,
@@ -702,7 +715,7 @@ export class MatchingCalculationService {
       };
     }
 
-    // Partial match for similar durations
+    // Partial match for similar durations (short/long term variants)
     const shortTermVariants = [
       "short_term",
       "short-term",
@@ -716,10 +729,16 @@ export class MatchingCalculationService {
       "12-months",
     ];
 
-    const prefIsShort = shortTermVariants.includes(prefDuration.toLowerCase());
-    const propIsShort = shortTermVariants.includes(propertyDuration);
-    const prefIsLong = longTermVariants.includes(prefDuration.toLowerCase());
-    const propIsLong = longTermVariants.includes(propertyDuration);
+    const prefIsShort = prefDurations.some((p) =>
+      shortTermVariants.includes(p),
+    );
+    const propIsShort = propertyDurations.some((p) =>
+      shortTermVariants.includes(p),
+    );
+    const prefIsLong = prefDurations.some((p) => longTermVariants.includes(p));
+    const propIsLong = propertyDurations.some((p) =>
+      longTermVariants.includes(p),
+    );
 
     if ((prefIsShort && propIsShort) || (prefIsLong && propIsLong)) {
       return {
@@ -750,7 +769,7 @@ export class MatchingCalculationService {
   private matchSquareMeters(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const minSqm = preferences.min_square_meters;
     const maxSqm = preferences.max_square_meters;
@@ -811,7 +830,7 @@ export class MatchingCalculationService {
           maxScore,
           reason: "Slightly smaller",
           details: `${propertySqm} sqm is ${underBy.toFixed(
-            0
+            0,
           )}% smaller than preferred`,
           hasPreference: true,
         };
@@ -835,7 +854,7 @@ export class MatchingCalculationService {
   private matchBills(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefBills = preferences.bills;
     const propertyBills = property.bills?.toLowerCase();
@@ -899,7 +918,7 @@ export class MatchingCalculationService {
   private matchTenantType(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefTypes = preferences.tenant_types || [];
     const propertyTypes = property.tenant_types || [];
@@ -936,7 +955,7 @@ export class MatchingCalculationService {
     const normalizedPrefTypes = prefTypes.map((t) => t.toLowerCase());
     const normalizedPropTypes = propertyTypes.map((t) => t.toLowerCase());
     const overlap = normalizedPrefTypes.filter((t) =>
-      normalizedPropTypes.includes(t)
+      normalizedPropTypes.includes(t),
     );
 
     if (overlap.length > 0) {
@@ -969,7 +988,7 @@ export class MatchingCalculationService {
   private matchPets(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const needsPetFriendly = preferences.pet_policy === true;
     const userPets = preferences.pets || [];
@@ -1011,7 +1030,7 @@ export class MatchingCalculationService {
 
         const allPetsAllowed = userPetTypes.every(
           (type) =>
-            allowedPetTypes.includes(type) || allowedPetTypes.includes("all")
+            allowedPetTypes.includes(type) || allowedPetTypes.includes("all"),
         );
 
         if (allPetsAllowed) {
@@ -1029,7 +1048,7 @@ export class MatchingCalculationService {
         // Partial match
         const matchedPets = userPetTypes.filter(
           (type) =>
-            allowedPetTypes.includes(type) || allowedPetTypes.includes("all")
+            allowedPetTypes.includes(type) || allowedPetTypes.includes("all"),
         );
 
         if (matchedPets.length > 0) {
@@ -1037,7 +1056,7 @@ export class MatchingCalculationService {
             category: "pets",
             match: false,
             score: Math.round(
-              maxScore * (matchedPets.length / userPetTypes.length)
+              maxScore * (matchedPets.length / userPetTypes.length),
             ),
             maxScore,
             reason: "Some pets allowed",
@@ -1077,7 +1096,7 @@ export class MatchingCalculationService {
   private matchAmenities(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefAmenities = preferences.amenities || [];
     const propertyAmenities = property.amenities || [];
@@ -1160,7 +1179,7 @@ export class MatchingCalculationService {
   private matchOutdoorSpace(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const wantsOutdoor = preferences.outdoor_space === true;
     const wantsBalcony = preferences.balcony === true;
@@ -1251,7 +1270,7 @@ export class MatchingCalculationService {
   private matchFurnishing(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefFurnishing = preferences.furnishing || [];
     const propertyFurnishing = property.furnishing?.toLowerCase();
@@ -1321,7 +1340,7 @@ export class MatchingCalculationService {
   private matchLocation(
     property: Property,
     preferences: Preferences,
-    maxScore: number
+    maxScore: number,
   ): CategoryMatchResult {
     const prefAreas = preferences.preferred_areas || [];
     const prefDistricts = preferences.preferred_districts || [];
@@ -1356,8 +1375,8 @@ export class MatchingCalculationService {
       const prefMetroNormalized = prefMetro.map((m) => m.toLowerCase());
       metroMatch = prefMetroNormalized.some((pm) =>
         propMetroLabels.some(
-          (pml) => pml?.includes(pm) || pm.includes(pml || "")
-        )
+          (pml) => pml?.includes(pm) || pm.includes(pml || ""),
+        ),
       );
     }
 

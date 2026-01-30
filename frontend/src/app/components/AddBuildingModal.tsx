@@ -15,7 +15,12 @@ import {
   AMENITIES_BY_CATEGORY,
   TYPE_OF_UNIT_OPTIONS,
 } from "../../shared/constants/admin-form-options";
-import { transformUnitTypeUIToAPI } from "../../shared/constants/mappings";
+import {
+  transformUnitTypeUIToAPI,
+  transformTenantTypeUIToAPI,
+  transformTenantTypeAPIToUI,
+} from "../../shared/constants/mappings";
+import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
 
 const AREAS = AREA_OPTIONS;
 
@@ -58,6 +63,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const { tenantTypeOptions } = useLocalizedFormOptions();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Validation rules for building form
@@ -505,7 +511,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         buildingData.pets = formData.pets;
       }
       if (formData.tenant_type && formData.tenant_type.length > 0) {
-        buildingData.tenant_type = formData.tenant_type;
+        buildingData.tenant_type = [
+          ...new Set(transformTenantTypeUIToAPI(formData.tenant_type)),
+        ];
       }
 
       console.log("📤 Submitting building data (Add):", {
@@ -536,7 +544,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           pet_policy: false,
           pets: null,
           smoking_area: false,
-          tenant_type: ["family"] as string[],
+          tenant_type: [] as string[],
           operator_id: null,
         });
 
@@ -656,7 +664,6 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 required
                 error={errors.name}
                 touched={touched.name}
-                helpText="Enter the building name"
               >
                 <Input
                   type="text"
@@ -672,7 +679,6 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 label="Address"
                 error={errors.address}
                 touched={touched.address}
-                helpText="Building address (optional)"
               >
                 <Input
                   type="text"
@@ -688,7 +694,6 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                 label="Number of Units"
                 error={errors.number_of_units}
                 touched={touched.number_of_units}
-                helpText="Total number of units in the building"
               >
                 <Input
                   type="number"
@@ -794,7 +799,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
-                  Tenant Type
+                  Tenant Types
                 </label>
                 <div className="relative" data-dropdown>
                   <div
@@ -804,19 +809,15 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                     <div className="flex flex-wrap gap-1 flex-1">
                       {formData.tenant_type.length > 0 ? (
                         formData.tenant_type.map((value) => {
-                          const option = [
-                            { value: "corporateLets", label: "Corporate Lets" },
-                            { value: "sharers", label: "Sharers" },
-                            { value: "student", label: "Student" },
-                            { value: "family", label: "Family" },
-                            { value: "elder", label: "Elder" },
-                          ].find((opt) => opt.value === value);
+                          const option = tenantTypeOptions.find(
+                            (opt) => opt.value === value,
+                          );
                           return (
                             <span
                               key={value}
                               className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
                             >
-                              {option?.label}
+                              {option?.label ?? value}
                               <button
                                 type="button"
                                 className="ml-1 text-white/70 hover:text-white"
@@ -855,13 +856,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   </div>
                   {openDropdown === "tenant_type" && (
                     <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {[
-                        { value: "corporateLets", label: "Corporate Lets" },
-                        { value: "sharers", label: "Sharers" },
-                        { value: "student", label: "Student" },
-                        { value: "family", label: "Family" },
-                        { value: "elder", label: "Elder" },
-                      ].map((option) => (
+                      {tenantTypeOptions.map((option) => (
                         <div
                           key={option.value}
                           className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
@@ -897,7 +892,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
-                  Operator (optional)
+                  Operator
                 </label>
                 <div className="relative" data-dropdown>
                   <div

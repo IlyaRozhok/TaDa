@@ -11,7 +11,10 @@ import {
 import {
   transformUnitTypeUIToAPI,
   buildingUnitTypeAPIToUI,
+  transformTenantTypeUIToAPI,
+  transformTenantTypeAPIToUI,
 } from "../../shared/constants/mappings";
+import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
 
 interface Building {
   id: string;
@@ -119,6 +122,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const { tenantTypeOptions } = useLocalizedFormOptions();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<BuildingFormData>({
     name: "",
@@ -250,9 +254,14 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         pet_policy: building.pet_policy || false,
         pets: building.pets || null,
         smoking_area: building.smoking_area || false,
-        tenant_type: (Array.isArray(building.tenant_type)
-          ? building.tenant_type
-          : [building.tenant_type].filter(Boolean)) || ["family"],
+        tenant_type:
+          transformTenantTypeAPIToUI(
+            (Array.isArray(building.tenant_type)
+              ? building.tenant_type
+              : building.tenant_type != null
+                ? [building.tenant_type]
+                : []) as string[],
+          ) || [],
         districts: building.districts || [],
         operator_id: building.operator_id || null,
       });
@@ -603,7 +612,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         buildingData.pets = formData.pets;
       }
       if (formData.tenant_type && formData.tenant_type.length > 0) {
-        buildingData.tenant_type = formData.tenant_type;
+        buildingData.tenant_type = [
+          ...new Set(transformTenantTypeUIToAPI(formData.tenant_type)),
+        ];
       }
 
       console.log("📤 Submitting building data:", {
@@ -767,7 +778,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
-                  Name *
+                  Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -900,7 +911,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
-                  Tenant Type
+                  Tenant Types
                 </label>
                 <div className="relative" data-dropdown>
                   <div
@@ -908,21 +919,17 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                     onClick={() => toggleDropdown("tenant_type")}
                   >
                     <div className="flex flex-wrap gap-1 flex-1">
-                      {formData.tenant_type.length > 0 ? (
-                        formData.tenant_type.map((value) => {
-                          const option = [
-                            { value: "corporateLets", label: "Corporate Lets" },
-                            { value: "sharers", label: "Sharers" },
-                            { value: "student", label: "Student" },
-                            { value: "family", label: "Family" },
-                            { value: "elder", label: "Elder" },
-                          ].find((opt) => opt.value === value);
+                      {(formData.tenant_type || []).length > 0 ? (
+                        (formData.tenant_type || []).map((value) => {
+                          const option = tenantTypeOptions.find(
+                            (opt) => opt.value === value,
+                          );
                           return (
                             <span
                               key={value}
                               className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
                             >
-                              {option?.label}
+                              {option?.label ?? value}
                               <button
                                 type="button"
                                 className="ml-1 text-white/70 hover:text-white"
@@ -930,9 +937,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                                   e.stopPropagation();
                                   setFormData({
                                     ...formData,
-                                    tenant_type: formData.tenant_type.filter(
-                                      (t) => t !== value,
-                                    ),
+                                    tenant_type: (
+                                      formData.tenant_type || []
+                                    ).filter((t) => t !== value),
                                   });
                                 }}
                               >
@@ -961,24 +968,15 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                   </div>
                   {openDropdown === "tenant_type" && (
                     <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {[
-                        { value: "corporateLets", label: "Corporate Lets" },
-                        { value: "sharers", label: "Sharers" },
-                        { value: "student", label: "Student" },
-                        { value: "family", label: "Family" },
-                        { value: "elder", label: "Elder" },
-                      ].map((option) => (
+                      {tenantTypeOptions.map((option) => (
                         <div
                           key={option.value}
                           className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
                           onClick={() => {
-                            const newTenantType = formData.tenant_type.includes(
-                              option.value,
-                            )
-                              ? formData.tenant_type.filter(
-                                  (t) => t !== option.value,
-                                )
-                              : [...formData.tenant_type, option.value];
+                            const current = formData.tenant_type || [];
+                            const newTenantType = current.includes(option.value)
+                              ? current.filter((t) => t !== option.value)
+                              : [...current, option.value];
                             setFormData({
                               ...formData,
                               tenant_type: newTenantType,
@@ -987,7 +985,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                         >
                           <input
                             type="checkbox"
-                            checked={formData.tenant_type.includes(
+                            checked={(formData.tenant_type || []).includes(
                               option.value,
                             )}
                             readOnly
@@ -1003,7 +1001,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">
-                  Operator *
+                  Operator
                 </label>
                 <div className="relative" data-dropdown>
                   <div

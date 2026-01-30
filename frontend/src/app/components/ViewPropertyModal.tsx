@@ -206,8 +206,14 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                   <span className="font-medium text-white">
                     {property.let_duration
                       ? property.let_duration
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())
+                          .split(",")
+                          .map((s) =>
+                            s
+                              .trim()
+                              .replace(/_/g, " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase()),
+                          )
+                          .join(", ")
                       : "N/A"}
                   </span>
                 </div>

@@ -61,7 +61,7 @@ export const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
           ))}
         </div>
 
-        {/* Duration - Single Select */}
+        {/* Duration - Multi Select */}
         <StepHeader title={t(wizardKeys.step4.des.text2)} />
         <div className="space-y-4 mb-6">
           {DURATION_VALUES.map((value, i) => (
@@ -69,8 +69,8 @@ export const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
               key={value}
               label={t(wizardKeys.step4.rentalDuration[i])}
               value={value}
-              isSelected={formData.selected_duration === value}
-              onClick={() => onUpdate("selected_duration", value)}
+              isSelected={formData.selected_duration?.includes(value) ?? false}
+              onClick={() => onToggle("selected_duration", value)}
             />
           ))}
         </div>
