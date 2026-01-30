@@ -14,14 +14,16 @@ interface BudgetStepProps {
   onToggle: (category: keyof PreferencesFormData, value: string) => void;
 }
 
-// Property type values (labels from wizardKeys.step3.propertyTypeOptions)
+// Property type values – must match wizardKeys.step3.propertyTypeOptions order
+// (name1=Apartment, name2=Flat, name3=Studio, name4=Penthouse, name5=En-suite room, name6=Room)
+// and PROPERTY_TYPE_UI_TO_API in mappings.ts so Studio and others save/load correctly.
 const PROPERTY_TYPES = [
-  "Flat",
   "Apartment",
-  "House",
-  "Room",
+  "Flat",
   "Studio",
   "Penthouse",
+  "En-suite room",
+  "Room",
 ];
 
 // Room values (labels from rooms.count.name1–5)
@@ -30,11 +32,12 @@ const ROOM_OPTIONS = ["1", "2", "3", "4", "5+"];
 // Bathroom values (labels from bathrooms.count.name1–4)
 const BATHROOM_OPTIONS = ["1", "2", "3", "4+"];
 
-// Furnishing options - values for form, labels from furnishing.count.name1–3
+// Furnishing options – use UI labels as values so they match form state
+// (form loads apiData as transformFurnishingAPIToUI -> "Furnished" | "Unfurnished" | "Part-furnished")
 const FURNISHING_OPTIONS = [
-  { value: "furnished" },
-  { value: "unfurnished" },
-  { value: "partially_furnished" },
+  { value: "Furnished" },
+  { value: "Unfurnished" },
+  { value: "Part-furnished" },
 ];
 
 // Outdoor space values (labels from outdoorspace.name1–3)

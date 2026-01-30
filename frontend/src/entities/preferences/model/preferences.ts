@@ -7,8 +7,6 @@ import {
   transformDurationAPIToUI,
   transformBillsUIToAPI,
   transformBillsAPIToUI,
-  transformPreferencesAmenitiesToAdmin,
-  transformAdminAmenitiesToPreferences,
   transformPropertyTypeUIToAPI,
   transformPropertyTypeAPIToUI,
   transformFurnishingUIToAPI,
@@ -274,9 +272,11 @@ export function transformFormDataForApi(
 
   // Tenant types transformation
   if (formData.tenant_type_preferences !== undefined) {
-    apiData.tenant_types = transformTenantTypeUIToAPI(
-      formData.tenant_type_preferences,
-    );
+    apiData.tenant_types = [
+      ...new Set(
+        transformTenantTypeUIToAPI(formData.tenant_type_preferences),
+      ),
+    ];
   }
 
   // Pets transformation (normalize to dog | cat | other; ignore unknowns)
@@ -334,11 +334,9 @@ export function transformFormDataForApi(
       formData.number_of_pets === "" ? null : formData.number_of_pets;
   }
 
-  // Amenities transformation
+  // Amenities: Step 7 stores admin names (Gym, Co-working, ...) – pass through to API
   if (formData.amenities_preferences !== undefined) {
-    apiData.amenities = transformPreferencesAmenitiesToAdmin(
-      formData.amenities_preferences,
-    );
+    apiData.amenities = formData.amenities_preferences;
   }
 
   // Additional preferences transformation (smoking area, concierge) with normalization
@@ -454,9 +452,7 @@ export function transformApiDataForForm(
     ),
     pet_type_preferences: [],
     pet_additional_info: "",
-    amenities_preferences: transformAdminAmenitiesToPreferences(
-      apiData.amenities || [],
-    ),
+    amenities_preferences: apiData.amenities ?? [],
     additional_preferences: [],
   };
 

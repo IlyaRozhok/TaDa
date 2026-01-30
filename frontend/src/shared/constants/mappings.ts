@@ -42,6 +42,15 @@ export const TENANT_TYPE_API_TO_UI: Record<string, string> = {
   elder: "Other", // Map elder to Other since it's not in preferences UI
 };
 
+/** One API value can map to multiple UI options (so Corporate tenant/Other display after load). */
+export const TENANT_TYPE_API_TO_UI_MULTI: Record<string, string[]> = {
+  corporateLets: ["Professional", "Corporate tenant"],
+  student: ["Student"],
+  family: ["Family", "Other"],
+  sharers: ["Sharers / Friends"],
+  elder: ["Other"],
+};
+
 // ==================== DURATION MAPPING ====================
 
 export const DURATION_UI_TO_API: Record<string, string> = {
@@ -89,6 +98,16 @@ export const PROPERTY_TYPE_API_TO_UI: Record<string, string> = {
   penthouse: "Penthouse",
   room: "Room", // Default for both room types
   house: "House", // Additional admin form value
+};
+
+/** One API value can map to multiple UI options (so En-suite room and Room both display when API has "room"). */
+export const PROPERTY_TYPE_API_TO_UI_MULTI: Record<string, string[]> = {
+  apartment: ["Apartment"],
+  flat: ["Flat"],
+  studio: ["Studio"],
+  penthouse: ["Penthouse"],
+  room: ["En-suite room", "Room"],
+  house: ["House"],
 };
 
 // ==================== UNIT TYPE MAPPING (Building) ====================
@@ -308,7 +327,12 @@ export function transformTenantTypeUIToAPI(uiValues: string[]): string[] {
 }
 
 export function transformTenantTypeAPIToUI(apiValues: string[]): string[] {
-  return apiValues.map((value) => TENANT_TYPE_API_TO_UI[value]).filter(Boolean);
+  return apiValues.flatMap((value) => {
+    const multi = TENANT_TYPE_API_TO_UI_MULTI[value];
+    if (multi?.length) return multi;
+    const single = TENANT_TYPE_API_TO_UI[value];
+    return single ? [single] : [];
+  });
 }
 
 export function transformDurationUIToAPI(uiValue: string): string {
@@ -364,9 +388,12 @@ export function transformPropertyTypeUIToAPI(uiValues: string[]): string[] {
 }
 
 export function transformPropertyTypeAPIToUI(apiValues: string[]): string[] {
-  return apiValues
-    .map((value) => PROPERTY_TYPE_API_TO_UI[value])
-    .filter(Boolean);
+  return apiValues.flatMap((value) => {
+    const multi = PROPERTY_TYPE_API_TO_UI_MULTI[value];
+    if (multi?.length) return multi;
+    const single = PROPERTY_TYPE_API_TO_UI[value];
+    return single ? [single] : [];
+  });
 }
 
 export function transformUnitTypeUIToAPI(uiValues: string[]): string[] {

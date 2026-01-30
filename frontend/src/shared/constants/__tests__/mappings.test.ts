@@ -51,10 +51,14 @@ describe("Tenant Type Transformations", () => {
     expect(transformTenantTypeUIToAPI(uiValues)).toEqual(expected);
   });
 
-  test("should transform API values to UI values", () => {
+  test("should transform API values to UI values (multi: Corporate tenant/Other)", () => {
     const apiValues = ["corporateLets", "student", "family"];
-    const expected = ["Professional", "Student", "Family"];
-    expect(transformTenantTypeAPIToUI(apiValues)).toEqual(expected);
+    const result = transformTenantTypeAPIToUI(apiValues);
+    expect(result).toContain("Professional");
+    expect(result).toContain("Corporate tenant");
+    expect(result).toContain("Student");
+    expect(result).toContain("Family");
+    expect(result).toContain("Other");
   });
 
   test("should handle Corporate tenant mapping", () => {
@@ -70,6 +74,17 @@ describe("Tenant Type Transformations", () => {
     expect(transformTenantTypeAPIToUI(["sharers"])).toEqual([
       "Sharers / Friends",
     ]);
+  });
+
+  test("should expand corporateLets to Professional and Corporate tenant", () => {
+    expect(transformTenantTypeAPIToUI(["corporateLets"])).toEqual([
+      "Professional",
+      "Corporate tenant",
+    ]);
+  });
+
+  test("should expand family to Family and Other", () => {
+    expect(transformTenantTypeAPIToUI(["family"])).toEqual(["Family", "Other"]);
   });
 });
 
@@ -165,7 +180,8 @@ describe("Round-trip Transformations", () => {
     const originalUI = ["Professional", "Student", "Family"];
     const toAPI = transformTenantTypeUIToAPI(originalUI);
     const backToUI = transformTenantTypeAPIToUI(toAPI);
-    expect(backToUI).toEqual(originalUI);
+    expect(toAPI).toEqual(["corporateLets", "student", "family"]);
+    originalUI.forEach((v) => expect(backToUI).toContain(v));
   });
 
   test("duration should maintain consistency in round-trip", () => {
@@ -201,7 +217,10 @@ describe("Property Type Transformations", () => {
       "room",
       "room",
     ]);
-    expect(transformPropertyTypeAPIToUI(["room"])).toEqual(["Room"]);
+    expect(transformPropertyTypeAPIToUI(["room"])).toEqual([
+      "En-suite room",
+      "Room",
+    ]);
   });
 });
 
