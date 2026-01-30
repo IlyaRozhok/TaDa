@@ -128,6 +128,7 @@ export const FURNISHING_API_TO_UI: Record<string, string> = {
   furnished: "Furnished",
   unfurnished: "Unfurnished",
   part_furnished: "Part-furnished",
+  partially_furnished: "Part-furnished", // Backend variant
   designer_furniture: "Furnished", // Map designer furniture to furnished
 };
 
@@ -262,6 +263,31 @@ export const ADMIN_AMENITIES_TO_PREFERENCES: Record<string, string[]> = {
   "Kids' room": ["communal-space"],
   Garden: ["garden"],
 };
+
+// ==================== HOBBIES (Tenant CV display) ====================
+// Hobby keys stored in API (e.g. personal_growth_1) -> translation key (e.g. personal.growth.name1)
+
+const HOBBY_PREFIX_TO_TRANSLATION_PREFIX: Record<string, string> = {
+  personal_growth: "personal.growth.name",
+  social_fun: "social.fun.name",
+  sport_outdoors: "sport.outdoors.name",
+  wellbeing_lifestyle: "wellbeing.lifestyle.name",
+  creative_cultural: "creative.cultural.name",
+};
+
+export function getHobbyTranslationKey(hobbyKey: string): string | undefined {
+  if (!hobbyKey || typeof hobbyKey !== "string") return undefined;
+  const trimmed = hobbyKey.trim();
+  for (const [prefix, transPrefix] of Object.entries(
+    HOBBY_PREFIX_TO_TRANSLATION_PREFIX,
+  )) {
+    if (trimmed.startsWith(prefix + "_")) {
+      const num = trimmed.slice(prefix.length + 1);
+      if (/^\d+$/.test(num)) return `${transPrefix}${num}`;
+    }
+  }
+  return undefined;
+}
 
 // ==================== HELPER FUNCTIONS ====================
 

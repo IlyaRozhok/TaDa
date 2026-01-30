@@ -19,6 +19,7 @@ import {
   LetDuration,
   Bills,
 } from "../types/property";
+import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
 
 interface Pet {
   type: "dog" | "cat" | "other";
@@ -161,6 +162,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+
+  // Localized options (same as preferences step 3)
+  const { propertyTypeOptions } = useLocalizedFormOptions();
 
   // Load property data when modal opens
   useEffect(() => {
@@ -1318,8 +1322,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     }
                   >
                     {formData.property_type
-                      ? formData.property_type.charAt(0).toUpperCase() +
-                        formData.property_type.slice(1)
+                      ? (propertyTypeOptions.find(
+                          (o) => o.value === formData.property_type,
+                        )?.label ?? formData.property_type)
                       : "Select Type"}
                   </span>
                   <svg
@@ -1338,18 +1343,23 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 </div>
                 {openDropdown === "property_type" && (
                   <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {Object.values(PropertyType).map((type) => (
+                    {propertyTypeOptions.map((option, idx) => (
                       <div
-                        key={type}
+                        key={`${option.value}-${idx}`}
                         className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.property_type === type ? "bg-white/10" : ""
+                          formData.property_type === option.value
+                            ? "bg-white/10"
+                            : ""
                         }`}
                         onClick={() => {
-                          setFormData({ ...formData, property_type: type });
+                          setFormData({
+                            ...formData,
+                            property_type: option.value as PropertyType,
+                          });
                           setOpenDropdown(null);
                         }}
                       >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                        {option.label}
                       </div>
                     ))}
                   </div>

@@ -173,22 +173,6 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
             type="number"
             min={0}
           />
-          <StepHeader title={t(wizardKeys.step2.budget.flexibleBudget)} />
-          <div className="flex items-center gap-2 mb-4">
-            <input
-              type="checkbox"
-              id="flexible_budget"
-              checked={formData.flexible_budget ?? false}
-              onChange={(e) => onUpdate("flexible_budget", e.target.checked)}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label
-              htmlFor="flexible_budget"
-              className="text-sm font-medium text-black cursor-pointer"
-            >
-              {t(wizardKeys.step2.budget.flexibleBudget)}
-            </label>
-          </div>
           <StepHeader title={t(wizardKeys.step2.budget.flexible)} />
           <div className="space-y-4">
             {FLEXIBILITY_OPTIONS.map((option) => (

@@ -215,6 +215,9 @@ export function transformFormDataForApi(
 ): Partial<PreferencesFormData> {
   const apiData: Partial<PreferencesFormData> = { ...formData };
 
+  // flexible_budget: derive from existing "Flexible" (move_in_flexibility)
+  apiData.flexible_budget = formData.move_in_flexibility === "flexible";
+
   // Transform rooms_preferences to bedrooms array
   if (formData.rooms_preferences !== undefined) {
     apiData.bedrooms = transformRoomsUIToAPI(formData.rooms_preferences);
@@ -463,6 +466,9 @@ export function transformApiDataForForm(
     apiData.balcony,
     apiData.terrace,
   );
+
+  // flexible_budget -> existing "Flexible" (move_in_flexibility)
+  formData.move_in_flexibility = apiData.flexible_budget ? "flexible" : "";
 
   // Pet preferences
   if (apiData.pets && apiData.pets.length > 0) {

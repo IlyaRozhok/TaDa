@@ -34,6 +34,9 @@ import {
 import {
   transformBuildingTypeAPIToUI,
   transformBillsAPIToUI,
+  transformFurnishingAPIToUI,
+  transformTenantTypeAPIToUI,
+  getHobbyTranslationKey,
 } from "../../../shared/constants/mappings";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
@@ -245,8 +248,19 @@ export function TenantCvView({
     ? transformBillsAPIToUI(preferences.bills)
     : null;
 
-  // Tenant types
-  const tenantTypesLabel = preferences?.tenant_types?.join(", ") || null;
+  // Tenant types (localized labels)
+  const tenantTypesLabels = transformTenantTypeAPIToUI(
+    preferences?.tenant_types || [],
+  );
+  const tenantTypesLabel =
+    tenantTypesLabels.length > 0 ? tenantTypesLabels.join(", ") : null;
+
+  // Furnishing (localized labels)
+  const furnishingLabels = transformFurnishingAPIToUI(
+    preferences?.furnishing || [],
+  );
+  const furnishingLabel =
+    furnishingLabels.length > 0 ? furnishingLabels.join(", ") : null;
 
   const amenityTags = [
     ...(preferences?.amenities || []),
@@ -282,8 +296,13 @@ export function TenantCvView({
       ? data.hobbies
       : null) || preferences?.hobbies;
   const hobbiesList = normalizeHobbies(hobbiesSource);
+  // Localized hobby labels for display (hobby keys -> translation keys -> t())
+  const localizedHobbiesList = hobbiesList.map((key) => {
+    const transKey = getHobbyTranslationKey(key);
+    return transKey ? t(transKey) : key;
+  });
   const hasAbout = Boolean(aboutText);
-  const hasHobbies = hobbiesList.length > 0;
+  const hasHobbies = localizedHobbiesList.length > 0;
   const hasRentHistory = data.rent_history && data.rent_history.length > 0;
 
   return (
@@ -543,7 +562,7 @@ export function TenantCvView({
                       {t(wizardKeys.step3.des.text4)}
                     </div>
                     <div className="font-medium text-gray-900">
-                      {preferences?.furnishing?.join(", ") || "Not set"}
+                      {furnishingLabel || "Not set"}
                     </div>
                   </div>
                 </div>
@@ -638,8 +657,8 @@ export function TenantCvView({
               <SectionTitle title={t(wizardKeys.step9.des.text1)} />
               <div className="flex flex-wrap gap-2">
                 {hasHobbies ? (
-                  hobbiesList.map((hobby: string) => (
-                    <Pill key={hobby}>{hobby}</Pill>
+                  localizedHobbiesList.map((label: string, idx: number) => (
+                    <Pill key={hobbiesList[idx] ?? idx}>{label}</Pill>
                   ))
                 ) : (
                   <span className="text-sm text-gray-500">Not provided</span>

@@ -31,7 +31,6 @@ export const wizardKeys = {
       from: "wizard.step2.budget.from",
       to: "wizard.step2.budget.to",
       flexible: "wizard.step2.budget.flexible",
-      flexibleBudget: "wizard.step2.budget.flexibleBudget",
     },
   },
   step3: {
