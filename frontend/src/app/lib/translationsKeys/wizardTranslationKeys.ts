@@ -100,6 +100,39 @@ export const wizardKeys = {
     ],
     bills: ["bills.name1", "bills.name2"],
   },
+  step5: {
+    title: "wizard.step5.title",
+    subtitle: "wizard.step5.subtitle",
+    des: {
+      text1: "wizard.step5.des.text1",
+    },
+    tenantType: [
+      "tenant.type.name.1",
+      "tenant.type.name.2",
+      "tenant.type.name.3",
+      "tenant.type.name.4",
+      "tenant.type.name.5",
+      "tenant.type.name.6",
+    ],
+  },
+  step6: {
+    title: "wizard.step6.title",
+    subtitle: "wizard.step6.subtitle",
+    des: {
+      text1: "wizard.step6.des.text1",
+      text2: "wizard.step6.des.text2",
+    },
+    petType: [
+      "pet.type.name1",
+      "pet.type.name2",
+      "pet.type.name3",
+      "pet.type.name4",
+      "pet.type.name5",
+    ],
+    numberPets: "pet.type.number.pets",
+    additionalField: "wizard.step6.additional.field",
+    optionalText: "wizard.text.optional",
+  },
   profile: {
     title: "wizard.profile.title",
     subtitle: "wizard.profile.subtitle",
