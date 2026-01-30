@@ -85,12 +85,7 @@ export class CreatePreferencesDto {
   @ApiPropertyOptional({
     description: "Number of children",
     example: "no",
-    enum: [
-      "no",
-      "yes-1-child",
-      "yes-2-children",
-      "yes-3-plus-children",
-    ],
+    enum: ["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"],
   })
   @IsOptional()
   @IsIn([
@@ -198,6 +193,15 @@ export class CreatePreferencesDto {
   @IsInt()
   @Min(0)
   max_price?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "Whether budget is flexible (tenant open to different price range)",
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  flexible_budget?: boolean;
 
   @ApiPropertyOptional({
     description: "Deposit preference",

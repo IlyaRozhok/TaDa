@@ -771,6 +771,12 @@ function AdminPanelContent() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
+            onCopyId={(id) => {
+              addNotification(
+                "success",
+                `Building ID "${id}" copied to clipboard`,
+              );
+            }}
             onRefresh={() => {
               if (activeSection === "buildings") {
                 const apiUrl =

@@ -3,6 +3,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Save, Plus, Minus, Upload, GripVertical } from "lucide-react";
 import { buildingsAPI, usersAPI } from "../lib/api";
+import {
+  LONDON_DISTRICTS,
+  AMENITIES_OPTIONS,
+} from "../../shared/constants/admin-form-options";
 
 interface Building {
   id: string;
@@ -28,6 +32,7 @@ interface Building {
   }>;
   smoking_area?: boolean;
   tenant_type?: string[];
+  districts?: string[];
   operator_id: string | null;
 }
 
@@ -54,6 +59,7 @@ interface BuildingFormData {
   }>;
   smoking_area?: boolean;
   tenant_type?: string[];
+  districts?: string[];
   operator_id: string | null;
 }
 
@@ -128,6 +134,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     pets: null as Pet[] | null,
     smoking_area: false,
     tenant_type: [] as string[],
+    districts: [] as string[],
     operator_id: null,
   });
 
@@ -240,6 +247,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         tenant_type: (Array.isArray(building.tenant_type)
           ? building.tenant_type
           : [building.tenant_type].filter(Boolean)) || ["family"],
+        districts: building.districts || [],
         operator_id: building.operator_id || null,
       });
 
@@ -690,33 +698,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       local_essentials: prev.local_essentials.map((essential, i) =>
         i === index ? { ...essential, [field]: value } : essential,
       ),
-    }));
-  };
-
-  const availableAmenities = [
-    "Gym",
-    "Co-working",
-    "Meeting rooms",
-    "Lounge",
-    "Cinema",
-    "Roof terrace",
-    "Courtyard",
-    "Parking",
-    "Bike storage",
-    "Parcel room",
-    "Maintenance",
-    "Events calendar",
-    "Pet areas",
-    "Kids' room",
-    "Garden",
-  ];
-
-  const toggleAmenity = (amenity: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter((a) => a !== amenity)
-        : [...prev.amenities, amenity],
     }));
   };
 
@@ -1727,28 +1708,87 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
           {/* Amenities */}
           <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Amenities
-            </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {availableAmenities.map((amenity) => (
-                <div key={amenity} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`amenity-${amenity}`}
-                    checked={formData.amenities.includes(amenity)}
-                    onChange={() => toggleAmenity(amenity)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor={`amenity-${amenity}`}
-                    className="text-sm font-medium text-white/90 cursor-pointer"
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Amenities
+              </label>
+              <div className="relative" data-dropdown>
+                <div
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
+                  onClick={() => toggleDropdown("amenities")}
+                >
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {(formData.amenities || []).length > 0 ? (
+                      (formData.amenities || []).map((amenity) => (
+                        <span
+                          key={amenity}
+                          className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                        >
+                          {amenity}
+                          <button
+                            type="button"
+                            className="ml-1 text-white/70 hover:text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFormData({
+                                ...formData,
+                                amenities: (formData.amenities || []).filter(
+                                  (a) => a !== amenity,
+                                ),
+                              });
+                            }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-white/50">Select amenities...</span>
+                    )}
+                  </div>
+                  <svg
+                    className="w-5 h-5 text-white/70 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    {amenity}
-                  </label>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </div>
-              ))}
+                {openDropdown === "amenities" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {AMENITIES_OPTIONS.map((amenity) => (
+                      <div
+                        key={amenity}
+                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                        onClick={() => {
+                          const current = formData.amenities || [];
+                          const newAmenities = current.includes(amenity)
+                            ? current.filter((a) => a !== amenity)
+                            : [...current, amenity];
+                          setFormData({
+                            ...formData,
+                            amenities: newAmenities,
+                          });
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={(formData.amenities || []).includes(amenity)}
+                          readOnly
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -2180,6 +2220,90 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             >
               Add Local Essential
             </button>
+          </div>
+
+          {/* Districts */}
+          <div>
+            <label className="block text-sm font-medium text-white/90 mb-2">
+              Districts
+            </label>
+            <div className="relative" data-dropdown>
+              <div
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
+                onClick={() => toggleDropdown("districts")}
+              >
+                <div className="flex flex-wrap gap-1 flex-1">
+                  {(formData.districts || []).length > 0 ? (
+                    (formData.districts || []).map((district) => (
+                      <span
+                        key={district}
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                      >
+                        {district}
+                        <button
+                          type="button"
+                          className="ml-1 text-white/70 hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData({
+                              ...formData,
+                              districts: (formData.districts || []).filter(
+                                (d) => d !== district,
+                              ),
+                            });
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-white/50">Select districts...</span>
+                  )}
+                </div>
+                <svg
+                  className="w-5 h-5 text-white/70 ml-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+              {openDropdown === "districts" && (
+                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {LONDON_DISTRICTS.map((district) => (
+                    <div
+                      key={district}
+                      className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                      onClick={() => {
+                        const current = formData.districts || [];
+                        const newDistricts = current.includes(district)
+                          ? current.filter((d) => d !== district)
+                          : [...current, district];
+                        setFormData({
+                          ...formData,
+                          districts: newDistricts,
+                        });
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(formData.districts || []).includes(district)}
+                        readOnly
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{district}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">

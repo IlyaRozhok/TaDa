@@ -1,3 +1,26 @@
+import {
+  transformBuildingTypeUIToAPI,
+  transformBuildingTypeAPIToUI,
+  transformTenantTypeUIToAPI,
+  transformTenantTypeAPIToUI,
+  transformDurationUIToAPI,
+  transformDurationAPIToUI,
+  transformBillsUIToAPI,
+  transformBillsAPIToUI,
+  transformPreferencesAmenitiesToAdmin,
+  transformAdminAmenitiesToPreferences,
+  transformPropertyTypeUIToAPI,
+  transformPropertyTypeAPIToUI,
+  transformFurnishingUIToAPI,
+  transformFurnishingAPIToUI,
+  transformOutdoorSpaceUIToAPI,
+  transformOutdoorSpaceAPIToUI,
+  transformRoomsUIToAPI,
+  transformRoomsAPIToUI,
+  transformBathroomsUIToAPI,
+  transformBathroomsAPIToUI,
+} from "../../../shared/constants/mappings";
+
 // Pet type matching Property.pets structure
 export interface Pet {
   type: "dog" | "cat" | "other";
@@ -25,6 +48,7 @@ export interface PreferencesFormData {
   move_out_date?: string;
   min_price?: number;
   max_price?: number;
+  flexible_budget?: boolean;
   move_in_flexibility?: string; // UI: "flexible" / fixed etc.
 
   // ==================== STEP 3: PROPERTY & ROOMS ====================
@@ -187,77 +211,69 @@ export interface PropertyMatchCriteria {
  * This normalizes UI-specific fields to the backend format
  */
 export function transformFormDataForApi(
-  formData: PreferencesFormData
+  formData: PreferencesFormData,
 ): Partial<PreferencesFormData> {
   const apiData: Partial<PreferencesFormData> = { ...formData };
 
-  // Transform rooms_preferences to bedrooms array (always set, even if empty)
-  // Check if field exists in formData (including empty arrays)
+  // Transform rooms_preferences to bedrooms array
   if (formData.rooms_preferences !== undefined) {
-    apiData.bedrooms = formData.rooms_preferences
-      .map((room) => {
-        const trimmed = room?.toString().trim();
-        if (trimmed?.endsWith("+")) {
-          const parsedPlus = parseInt(trimmed, 10);
-          return isNaN(parsedPlus) ? undefined : parsedPlus;
-        }
-        const parsed = parseInt(room, 10);
-        return isNaN(parsed) ? undefined : parsed;
-      })
-      .filter((value): value is number => value !== undefined);
+    apiData.bedrooms = transformRoomsUIToAPI(formData.rooms_preferences);
   }
 
   // Bathrooms transformation
   if (formData.bathrooms_preferences !== undefined) {
-    apiData.bathrooms = formData.bathrooms_preferences
-      .map((bath) => {
-        const trimmed = bath?.toString().trim();
-        if (trimmed?.endsWith("+")) {
-          const parsedPlus = parseInt(trimmed, 10);
-          return isNaN(parsedPlus) ? undefined : parsedPlus;
-        }
-        const parsed = parseInt(bath, 10);
-        return isNaN(parsed) ? undefined : parsed;
-      })
-      .filter((value): value is number => value !== undefined);
+    apiData.bathrooms = transformBathroomsUIToAPI(
+      formData.bathrooms_preferences,
+    );
   }
 
   // Furnishing transformation
   if (formData.furnishing_preferences !== undefined) {
-    apiData.furnishing = formData.furnishing_preferences;
+    apiData.furnishing = transformFurnishingUIToAPI(
+      formData.furnishing_preferences,
+    );
   }
 
   // Property type transformation
   if (formData.property_type_preferences !== undefined) {
-    apiData.property_types = formData.property_type_preferences;
+    apiData.property_types = transformPropertyTypeUIToAPI(
+      formData.property_type_preferences,
+    );
   }
 
-  // Outdoor space transformation (case-insensitive, handle UI values)
+  // Outdoor space transformation
   if (formData.outdoor_space_preferences !== undefined) {
-    const prefs = formData.outdoor_space_preferences.map((p) => p.toLowerCase().trim());
-    apiData.outdoor_space = prefs.some((p) => p.includes("outdoor space"));
-    apiData.balcony = prefs.some((p) => p === "balcony");
-    apiData.terrace = prefs.some((p) => p === "terrace" || p === "teracce"); // Handle typo
+    const outdoorSpaceData = transformOutdoorSpaceUIToAPI(
+      formData.outdoor_space_preferences,
+    );
+    if (outdoorSpaceData.outdoor_space)
+      apiData.outdoor_space = outdoorSpaceData.outdoor_space;
+    if (outdoorSpaceData.balcony) apiData.balcony = outdoorSpaceData.balcony;
+    if (outdoorSpaceData.terrace) apiData.terrace = outdoorSpaceData.terrace;
   }
 
   // Building style transformation
   if (formData.building_style_preferences !== undefined) {
-    apiData.building_types = formData.building_style_preferences;
+    apiData.building_types = transformBuildingTypeUIToAPI(
+      formData.building_style_preferences,
+    );
   }
 
   // Let duration transformation
   if (formData.selected_duration !== undefined) {
-    apiData.let_duration = formData.selected_duration;
+    apiData.let_duration = transformDurationUIToAPI(formData.selected_duration);
   }
 
   // Bills transformation
   if (formData.selected_bills !== undefined) {
-    apiData.bills = formData.selected_bills;
+    apiData.bills = transformBillsUIToAPI(formData.selected_bills);
   }
 
   // Tenant types transformation
   if (formData.tenant_type_preferences !== undefined) {
-    apiData.tenant_types = formData.tenant_type_preferences;
+    apiData.tenant_types = transformTenantTypeUIToAPI(
+      formData.tenant_type_preferences,
+    );
   }
 
   // Pets transformation (normalize to dog | cat | other; ignore unknowns)
@@ -279,14 +295,17 @@ export function transformFormDataForApi(
 
     // Check if "Planning to get a pet" is selected
     const hasPlanningToGetPet = formData.pet_type_preferences.some(
-      (p) => p?.toString().toLowerCase().trim() === "planning to get a pet"
+      (p) => p?.toString().toLowerCase().trim() === "planning to get a pet",
     );
 
     if (normalizedPets.length > 0) {
       apiData.pets = normalizedPets.map((petType) => {
         const pet: Pet = { type: petType };
         // Add customType (additional info) if provided
-        if (formData.pet_additional_info && formData.pet_additional_info.trim()) {
+        if (
+          formData.pet_additional_info &&
+          formData.pet_additional_info.trim()
+        ) {
           pet.customType = formData.pet_additional_info.trim();
         }
         return pet;
@@ -314,7 +333,9 @@ export function transformFormDataForApi(
 
   // Amenities transformation
   if (formData.amenities_preferences !== undefined) {
-    apiData.amenities = formData.amenities_preferences;
+    apiData.amenities = transformPreferencesAmenitiesToAdmin(
+      formData.amenities_preferences,
+    );
   }
 
   // Additional preferences transformation (smoking area, concierge) with normalization
@@ -356,7 +377,11 @@ export function transformFormDataForApi(
   // UI: "smoker" -> Backend: "yes"
   // UI: "non-smoker" -> Backend: "no"
   // UI: empty/null -> Backend: null
-  if (formData.smoker !== undefined && formData.smoker !== null && formData.smoker !== "") {
+  if (
+    formData.smoker !== undefined &&
+    formData.smoker !== null &&
+    formData.smoker !== ""
+  ) {
     if (formData.smoker === "smoker") {
       apiData.smoker = "yes";
     } else if (formData.smoker === "non-smoker") {
@@ -402,31 +427,42 @@ export function transformFormDataForApi(
  * Maps backend fields to UI-specific fields where necessary
  */
 export function transformApiDataForForm(
-  apiData: Partial<PreferencesFormData>
+  apiData: Partial<PreferencesFormData>,
 ): PreferencesFormData {
   const formData: PreferencesFormData = {
     ...apiData,
     // Ensure arrays are initialized to avoid uncontrolled inputs
-    property_type_preferences: apiData.property_types || [],
+    property_type_preferences: transformPropertyTypeAPIToUI(
+      apiData.property_types || [],
+    ),
     rooms_preferences: [],
     bathrooms_preferences: [],
-    furnishing_preferences: apiData.furnishing || [],
+    furnishing_preferences: transformFurnishingAPIToUI(
+      apiData.furnishing || [],
+    ),
     outdoor_space_preferences: [],
-    building_style_preferences: apiData.building_types || [],
-    selected_duration: apiData.let_duration || "",
-    selected_bills: apiData.bills || "",
-    tenant_type_preferences: apiData.tenant_types || [],
+    building_style_preferences: transformBuildingTypeAPIToUI(
+      apiData.building_types || [],
+    ),
+    selected_duration: transformDurationAPIToUI(apiData.let_duration || ""),
+    selected_bills: transformBillsAPIToUI(apiData.bills || ""),
+    tenant_type_preferences: transformTenantTypeAPIToUI(
+      apiData.tenant_types || [],
+    ),
     pet_type_preferences: [],
     pet_additional_info: "",
-    amenities_preferences: apiData.amenities || [],
+    amenities_preferences: transformAdminAmenitiesToPreferences(
+      apiData.amenities || [],
+    ),
     additional_preferences: [],
   };
 
   // Outdoor space preferences - map to UI format
-  if (apiData.outdoor_space)
-    formData.outdoor_space_preferences.push("Outdoor Space");
-  if (apiData.balcony) formData.outdoor_space_preferences.push("Balcony");
-  if (apiData.terrace) formData.outdoor_space_preferences.push("Terrace");
+  formData.outdoor_space_preferences = transformOutdoorSpaceAPIToUI(
+    apiData.outdoor_space,
+    apiData.balcony,
+    apiData.terrace,
+  );
 
   // Pet preferences
   if (apiData.pets && apiData.pets.length > 0) {
@@ -456,19 +492,15 @@ export function transformApiDataForForm(
   if (apiData.is_concierge)
     formData.additional_preferences.push("is_concierge");
 
-  // Normalize number arrays to strings for UI (with "+" thresholds)
+  // Transform bedrooms and bathrooms to UI format
   if (apiData.bedrooms) {
-    formData.rooms_preferences = apiData.bedrooms.map((bedroom) => {
-      if (bedroom >= 5) return "5+";
-      return bedroom.toString();
-    });
+    formData.rooms_preferences = transformRoomsAPIToUI(apiData.bedrooms);
   }
 
   if (apiData.bathrooms) {
-    formData.bathrooms_preferences = apiData.bathrooms.map((bathroom) => {
-      if (bathroom >= 4) return "4+";
-      return bathroom.toString();
-    });
+    formData.bathrooms_preferences = transformBathroomsAPIToUI(
+      apiData.bathrooms,
+    );
   }
 
   // Smoker mapping back to UI strings

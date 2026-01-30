@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import { useTranslation } from "../hooks/useTranslation";
 import { selectUser } from "../store/slices/authSlice";
+import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { Heart, Settings, ChevronDown, ArrowLeft, Shield } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
@@ -27,6 +29,7 @@ export default function TenantUniversalHeader({
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
   const user = useSelector(selectUser);
+  const { t } = useTranslation();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("EN");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -107,7 +110,7 @@ export default function TenantUniversalHeader({
               onClick={() => router.push("/app/tenant-cv")}
               className="cursor-pointer px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
             >
-              Tenant CV
+              {t(tenantCvKeys.tenantCvButton)}
             </button>
           )}
 

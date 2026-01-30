@@ -7,49 +7,17 @@ import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
 import { PreferencesFormData } from "@/app/types/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
+import {
+  AREA_OPTIONS,
+  LONDON_DISTRICTS,
+} from "../../../../shared/constants/admin-form-options";
 
 interface LocationStepProps {
   formData: PreferencesFormData;
   onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
 }
 
-const AREAS = ["West", "East", "North", "South", "Center"];
-
-const LONDON_DISTRICTS = [
-  "Barking and Dagenham",
-  "Barnet",
-  "Bexley",
-  "Brent",
-  "Bromley",
-  "Camden",
-  "City of London",
-  "Croydon",
-  "Ealing",
-  "Enfield",
-  "Greenwich",
-  "Hackney",
-  "Hammersmith and Fulham",
-  "Haringey",
-  "Harrow",
-  "Havering",
-  "Hillingdon",
-  "Hounslow",
-  "Islington",
-  "Kensington and Chelsea",
-  "Kingston upon Thames",
-  "Lambeth",
-  "Lewisham",
-  "Merton",
-  "Newham",
-  "Redbridge",
-  "Richmond upon Thames",
-  "Southwark",
-  "Sutton",
-  "Tower Hamlets",
-  "Waltham Forest",
-  "Wandsworth",
-  "Westminster",
-];
+const AREAS = AREA_OPTIONS;
 
 const MOCK_METRO_STATIONS = [
   "Central London",

@@ -8,6 +8,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
+import CopyableId from "./CopyableId";
 
 interface Building {
   id: string;
@@ -33,6 +34,7 @@ interface AdminBuildingsSectionProps {
   onDelete: (building: Building) => void;
   onAdd: () => void;
   onRefresh?: () => void;
+  onCopyId?: (id: string, type: "building") => void;
 }
 
 const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
@@ -46,6 +48,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
   onEdit,
   onDelete,
   onAdd,
+  onCopyId,
 }) => {
   const SortButton = ({
     field,
@@ -128,6 +131,9 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                   Name
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Building ID
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Address
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
@@ -147,7 +153,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
             <tbody className="bg-white divide-y divide-gray-100">
               {buildings.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Building2 className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -189,6 +195,18 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                           </div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <CopyableId
+                        id={building.id}
+                        maxLength={8}
+                        onCopy={(id) => {
+                          if (onCopyId) {
+                            onCopyId(id, "building");
+                          }
+                        }}
+                        className="text-sm font-medium text-black"
+                      />
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-black max-w-xs truncate">
@@ -296,7 +314,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                             console.log(
                               "🗑️ Delete button clicked for building:",
                               building.id,
-                              building.name
+                              building.name,
                             );
                             onDelete(building);
                           }}

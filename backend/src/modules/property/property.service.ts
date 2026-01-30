@@ -313,31 +313,56 @@ export class PropertyService {
   }
 
   /**
-   * Update photos URLs with fresh presigned URLs
+   * Update media URLs (photos, video, documents) with fresh presigned URLs
    */
   private async updatePhotosUrls(property: Property): Promise<Property> {
-    if (!property.photos || property.photos.length === 0) {
-      return property;
+    // Update video with presigned URL (same as building – required for playback in edit form)
+    if (property.video) {
+      try {
+        const videoKey = this.extractS3KeyFromUrl(property.video);
+        if (videoKey) {
+          property.video = await this.s3Service.getPresignedUrl(videoKey);
+        }
+      } catch (error) {
+        console.error(`Error updating video URL: ${property.video}`, error);
+      }
     }
 
-    const updatedPhotos = await Promise.all(
-      property.photos.map(async (photoUrl) => {
-        try {
-          // Extract S3 key from URL
-          const s3Key = this.extractS3KeyFromUrl(photoUrl);
-          if (s3Key) {
-            // Generate fresh presigned URL
-            return await this.s3Service.getPresignedUrl(s3Key);
-          }
-          return photoUrl; // Return original if can't extract key
-        } catch (error) {
-          console.error(`Error updating photo URL: ${photoUrl}`, error);
-          return photoUrl; // Return original on error
+    // Update documents with presigned URL
+    if (property.documents) {
+      try {
+        const documentsKey = this.extractS3KeyFromUrl(property.documents);
+        if (documentsKey) {
+          property.documents =
+            await this.s3Service.getPresignedUrl(documentsKey);
         }
-      }),
-    );
+      } catch (error) {
+        console.error(
+          `Error updating documents URL: ${property.documents}`,
+          error,
+        );
+      }
+    }
 
-    property.photos = updatedPhotos;
+    // Update photos with presigned URLs
+    if (property.photos && property.photos.length > 0) {
+      const updatedPhotos = await Promise.all(
+        property.photos.map(async (photoUrl) => {
+          try {
+            const s3Key = this.extractS3KeyFromUrl(photoUrl);
+            if (s3Key) {
+              return await this.s3Service.getPresignedUrl(s3Key);
+            }
+            return photoUrl;
+          } catch (error) {
+            console.error(`Error updating photo URL: ${photoUrl}`, error);
+            return photoUrl;
+          }
+        }),
+      );
+      property.photos = updatedPhotos;
+    }
+
     return property;
   }
 

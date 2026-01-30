@@ -158,6 +158,15 @@ export class Preferences {
   max_price?: number;
 
   @ApiProperty({
+    description:
+      "Whether budget is flexible (tenant open to different price range)",
+    example: false,
+    required: false,
+  })
+  @Column({ type: "boolean", nullable: true })
+  flexible_budget?: boolean;
+
+  @ApiProperty({
     description: "Deposit preference - whether tenant accepts deposit",
     example: "yes",
     enum: ["yes", "no"],
@@ -413,12 +422,7 @@ export class Preferences {
   @ApiProperty({
     description: "Number of children",
     example: "no",
-    enum: [
-      "no",
-      "yes-1-child",
-      "yes-2-children",
-      "yes-3-plus-children",
-    ],
+    enum: ["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"],
     required: false,
   })
   @Column({ nullable: true })
