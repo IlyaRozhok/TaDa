@@ -1,9 +1,10 @@
 import React from "react";
+import { useTranslation } from "../../../hooks/useTranslation";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
-import { IDEAL_LIVING_OPTIONS, SMOKING_OPTIONS } from "@/app/constants/preferences";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 interface LivingEnvironmentStepProps {
   formData: {
@@ -15,64 +16,71 @@ interface LivingEnvironmentStepProps {
   onToggle: (category: string, value: string) => void;
 }
 
+/** Section 1: title wizard.step10.des.text1, options living.env.name1–7. */
+const LIVING_ENV_VALUES = [
+  "living_env_1",
+  "living_env_2",
+  "living_env_3",
+  "living_env_4",
+  "living_env_5",
+  "living_env_6",
+  "living_env_7",
+];
+
+/** Section 2: title wizard.step10.des.text2, options smoker.answer.name1–2. API expects "non-smoker" | "smoker". */
+const SMOKER_VALUES = ["non-smoker", "smoker"] as const;
+
 export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
   formData,
   onToggle,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+  const k = wizardKeys.step10;
+
   const handleIdealLivingToggle = (value: string) => {
     const current = formData.ideal_living_environment || [];
     const isSelected = current.includes(value);
-
-    if (isSelected) {
-      // Deselect this option
-      const updated = current.filter((v) => v !== value);
-      onUpdate("ideal_living_environment", updated);
-    } else {
-      // Select this option
-      const updated = [...current, value];
-      onUpdate("ideal_living_environment", updated);
-    }
+    const updated = isSelected
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    onUpdate("ideal_living_environment", updated);
   };
 
   return (
-    <StepWrapper title="Step 10" description="Step 10">
+    <StepWrapper title={t(k.title)} description={t(k.subtitle)}>
       <StepContainer>
-        {/* Ideal Living Environment - Multi Select */}
         <div className="mb-6">
-          <StepHeader title="Ideal Living Environment" />
-          <div className="space-y-4">
-            {IDEAL_LIVING_OPTIONS.map((option) => (
+          <StepHeader title={t(k.des.text1)} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch">
+            {LIVING_ENV_VALUES.map((value, i) => (
               <SelectionButton
-                key={option.value}
-                label={option.label}
-                value={option.value}
+                key={value}
+                label={t(k.livingEnvOptions[i])}
+                value={value}
                 isSelected={
-                  formData.ideal_living_environment?.includes(option.value) ||
-                  false
+                  formData.ideal_living_environment?.includes(value) ?? false
                 }
-                onClick={() => handleIdealLivingToggle(option.value)}
+                onClick={() => handleIdealLivingToggle(value)}
               />
             ))}
           </div>
         </div>
 
-        {/* Do you smoke? - Single Select */}
         <div>
-          <StepHeader title="Do you smoke?" />
-          <div className="space-y-4">
-            {SMOKING_OPTIONS.map((option) => (
+          <StepHeader title={t(k.des.text2)} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch">
+            {SMOKER_VALUES.map((value, i) => (
               <SelectionButton
-                key={option.value}
-                label={option.label}
-                value={option.value}
-                isSelected={formData.smoker === option.value}
+                key={value}
+                label={t(k.smokerAnswerOptions[i])}
+                value={value}
+                isSelected={formData.smoker === value}
                 onClick={() => {
-                  // Single select - if already selected, deselect, otherwise select
-                  if (formData.smoker === option.value) {
-                    onUpdate("smoker", null);
+                  if (formData.smoker === value) {
+                    onUpdate("smoker", "");
                   } else {
-                    onUpdate("smoker", option.value);
+                    onUpdate("smoker", value);
                   }
                 }}
               />
@@ -83,4 +91,3 @@ export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
     </StepWrapper>
   );
 };
-

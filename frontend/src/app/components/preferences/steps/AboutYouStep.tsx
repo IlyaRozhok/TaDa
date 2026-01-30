@@ -1,8 +1,10 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "../../../hooks/useTranslation";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { TextAreaField } from "../step-components/TextAreaField";
 import { PreferencesFormData } from "@/app/types/preferences";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 interface AboutYouStepProps {
   formData: PreferencesFormData;
@@ -10,39 +12,31 @@ interface AboutYouStepProps {
   onValidationChange?: (isValid: boolean) => void;
 }
 
-
 export const AboutYouStep: React.FC<AboutYouStepProps> = ({
   formData,
   onUpdate,
   onValidationChange,
 }) => {
-  // Validation logic - all fields are optional, so always valid
-  const isValid = (): boolean => {
-    // Since most preferences are optional, the step is always valid
-    // Users can complete onboarding without filling all fields
-    return true;
-  };
+  const { t } = useTranslation();
+  const k = wizardKeys.step11;
 
-  // Notify parent of validation state changes
+  const isValid = (): boolean => true;
+
   useEffect(() => {
     if (onValidationChange) {
       onValidationChange(isValid());
     }
-  }, [
-    formData.additional_info,
-    onValidationChange,
-    isValid,
-  ]);
+  }, [formData.additional_info, onValidationChange]);
+
   return (
-    <StepWrapper title="Step 11" description="Step 11">
+    <StepWrapper title={t(k.title)} description={t(k.subtitle)}>
       <StepContainer>
         <div className="space-y-6">
-          {/* About You */}
           <TextAreaField
-            label="Tell about yourself (optional)"
+            label={t(k.des.text1)}
             value={formData.additional_info || ""}
             onChange={(value) => onUpdate("additional_info", value)}
-            placeholder="e.g., I'm a quiet professional who enjoys cooking and reading. I keep a clean living space and am always respectful of neighbors. I'm looking for a peaceful home environment where I can relax after work..."
+            placeholder={t(k.des.textField)}
             rows={8}
           />
         </div>

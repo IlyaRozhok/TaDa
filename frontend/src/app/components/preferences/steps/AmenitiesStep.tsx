@@ -44,8 +44,6 @@ const SECTION4_VALUES = ["Hiking", "Cooking"];
 /** Section 5: title wizard.step7.des.text5, options amenities.name21–22. */
 const SECTION5_VALUES = ["Travel", "Sport"];
 
-const ADDITIONAL_OPTIONS = ["Smoking Area", "Concierge"];
-
 export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
   formData,
   onToggle,
@@ -138,21 +136,6 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
                 formData.amenities_preferences?.includes(value) ?? false
               }
               onClick={() => onToggle("amenities_preferences", value)}
-            />
-          ))}
-        </div>
-
-        {/* Additional options (Smoking Area, Concierge) – no section title key provided */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch">
-          {ADDITIONAL_OPTIONS.map((option) => (
-            <SelectionButton
-              key={option}
-              label={option}
-              value={option}
-              isSelected={
-                formData.additional_preferences?.includes(option) ?? false
-              }
-              onClick={() => onToggle("additional_preferences", option)}
             />
           ))}
         </div>

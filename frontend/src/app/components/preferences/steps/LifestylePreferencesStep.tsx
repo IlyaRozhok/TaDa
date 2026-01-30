@@ -1,9 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
+import { useTranslation } from "../../../hooks/useTranslation";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { GlassmorphismDropdown } from "../ui/GlassmorphismDropdown";
 import { PreferencesFormData } from "@/entities/preferences/model/preferences";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { Briefcase, Users, Baby } from "lucide-react";
 
 interface LifestylePreferencesStepProps {
@@ -12,41 +14,66 @@ interface LifestylePreferencesStepProps {
   onValidationChange?: (isValid: boolean) => void;
 }
 
-const OCCUPATION_OPTIONS = [
-  { value: "student", label: "Student" },
-  { value: "young-professional", label: "Young professional" },
-  { value: "freelancer-remote-worker", label: "Freelancer / Remote worker" },
-  { value: "business-owner", label: "Business owner" },
-  { value: "family-professional", label: "Family professional" },
-  { value: "other", label: "Other" },
+/** API values for occupation (labels from occupation.name1–6). */
+const OCCUPATION_VALUES = [
+  "student",
+  "young-professional",
+  "freelancer-remote-worker",
+  "business-owner",
+  "family-professional",
+  "other",
 ];
 
-const FAMILY_STATUS_OPTIONS = [
-  { value: "just-me", label: "Just me" },
-  { value: "couple", label: "Couple" },
-  { value: "couple-with-children", label: "Couple with children" },
-  { value: "single-parent", label: "Single parent" },
-  { value: "friends-flatmates", label: "Friends / flatmates" },
+/** API values for family status (labels from family.status.name1–5). */
+const FAMILY_STATUS_VALUES = [
+  "just-me",
+  "couple",
+  "couple-with-children",
+  "single-parent",
+  "friends-flatmates",
 ];
 
-const CHILDREN_OPTIONS = [
-  { value: "no", label: "No" },
-  { value: "yes-1-child", label: "Yes, 1 child" },
-  { value: "yes-2-children", label: "Yes, 2 children" },
-  { value: "yes-3-plus-children", label: "Yes, 3+ children" },
+/** API values for children (labels from children.status.name1–4). */
+const CHILDREN_VALUES = [
+  "no",
+  "yes-1-child",
+  "yes-2-children",
+  "yes-3-plus-children",
 ];
 
 export const LifestylePreferencesStep: React.FC<
   LifestylePreferencesStepProps
 > = ({ formData, onUpdate, onValidationChange }) => {
-  // Validation logic - all fields are optional, so always valid
-  const isValid = (): boolean => {
-    // Since lifestyle preferences are optional, the step is always valid
-    // Users can complete onboarding without filling all fields
-    return true;
-  };
+  const { t } = useTranslation();
+  const k = wizardKeys.step8;
 
-  // Notify parent of validation state changes
+  const occupationOptions = useMemo(
+    () =>
+      OCCUPATION_VALUES.map((value, i) => ({
+        value,
+        label: t(k.occupationOptions[i]),
+      })),
+    [t, k.occupationOptions],
+  );
+  const familyStatusOptions = useMemo(
+    () =>
+      FAMILY_STATUS_VALUES.map((value, i) => ({
+        value,
+        label: t(k.familyStatusOptions[i]),
+      })),
+    [t, k.familyStatusOptions],
+  );
+  const childrenOptions = useMemo(
+    () =>
+      CHILDREN_VALUES.map((value, i) => ({
+        value,
+        label: t(k.childrenStatusOptions[i]),
+      })),
+    [t, k.childrenStatusOptions],
+  );
+
+  const isValid = (): boolean => true;
+
   useEffect(() => {
     if (onValidationChange) {
       onValidationChange(isValid());
@@ -59,40 +86,37 @@ export const LifestylePreferencesStep: React.FC<
   ]);
 
   return (
-    <StepWrapper title="Step 8" description="About you">
+    <StepWrapper title={t(k.title)} description={t(k.subtitle)}>
       <StepContainer>
-        <StepHeader title="Let's get to know you" />
+        <StepHeader title={t(k.des.text1)} />
 
         <div className="space-y-6">
-          {/* Occupation */}
           <GlassmorphismDropdown
-            label="Occupation"
+            label={t(k.field1.title)}
             value={formData.occupation || ""}
-            options={OCCUPATION_OPTIONS}
+            options={occupationOptions}
             onChange={(value) => onUpdate("occupation", value as string)}
-            placeholder="What do you do?"
+            placeholder={t(k.field1.title)}
             icon={<Briefcase className="w-5 h-5 text-white" />}
             noPreferenceValue=""
           />
 
-          {/* Family Status */}
           <GlassmorphismDropdown
-            label="Family status"
+            label={t(k.field2.title)}
             value={formData.family_status || ""}
-            options={FAMILY_STATUS_OPTIONS}
+            options={familyStatusOptions}
             onChange={(value) => onUpdate("family_status", value as string)}
-            placeholder="Who will live in the property?"
+            placeholder={t(k.field2.title)}
             icon={<Users className="w-5 h-5 text-white" />}
             noPreferenceValue=""
           />
 
-          {/* Children */}
           <GlassmorphismDropdown
-            label="Children"
+            label={t(k.field3.title)}
             value={formData.children_count || ""}
-            options={CHILDREN_OPTIONS}
+            options={childrenOptions}
             onChange={(value) => onUpdate("children_count", value as string)}
-            placeholder="Do you have children?"
+            placeholder={t(k.field3.title)}
             icon={<Baby className="w-5 h-5 text-white" />}
             noPreferenceValue=""
           />
