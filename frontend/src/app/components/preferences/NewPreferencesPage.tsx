@@ -4,6 +4,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePreferences } from "@/app/hooks/usePreferences";
+import { useTranslation } from "@/app/hooks/useTranslation";
+import { onboardingKeys } from "@/app/lib/translationsKeys/onboardingTranslationKeys";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { getRedirectPath } from "@/app/utils/simpleRedirect";
 import {
@@ -60,6 +62,7 @@ export default function NewPreferencesPage({
   onValidationChange,
 }: NewPreferencesPageProps = {}) {
   const router = useRouter();
+  const { t } = useTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const stepContentRef = useRef<HTMLDivElement>(null);
@@ -88,9 +91,9 @@ export default function NewPreferencesPage({
   const step = externalStep || internalStep;
   const nextStep = externalNext || internalNextStep;
   const prevStep = externalPrevious || internalPrevStep;
-  const isLastStep = externalStep ? (step === TOTAL_STEPS) : internalIsLastStep;
-  const isFirstStep = externalStep ? (step === 1) : internalIsFirstStep;
-  
+  const isLastStep = externalStep ? step === TOTAL_STEPS : internalIsLastStep;
+  const isFirstStep = externalStep ? step === 1 : internalIsFirstStep;
+
   // Calculate display step: for onboarding add offset, for standalone use step directly
   const displayStep = externalStep ? step + currentStepOffset : step;
   const displayTotalSteps = totalSteps || TOTAL_STEPS;
@@ -107,7 +110,7 @@ export default function NewPreferencesPage({
     // Use setTimeout to ensure DOM is fully updated after step change
     const scrollTimer = setTimeout(() => {
       // Scroll to absolute top of page so header is visible
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, behavior: "instant" });
     }, 200); // Delay to ensure DOM update and step content is fully rendered
 
     return () => clearTimeout(scrollTimer);
@@ -151,7 +154,7 @@ export default function NewPreferencesPage({
           <div className="space-y-6">
             {/* Title Skeleton */}
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-4"></div>
-            
+
             {/* Form Fields Skeleton */}
             <div className="space-y-4">
               <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
@@ -204,7 +207,7 @@ export default function NewPreferencesPage({
     try {
       await savePreferences();
       console.log("✅ Preferences saved successfully");
-      
+
       // Call onComplete callback if provided (for onboarding flow)
       if (onComplete) {
         onComplete();
@@ -244,13 +247,23 @@ export default function NewPreferencesPage({
       case 7:
         return <AmenitiesStep {...stepProps} />;
       case 8:
-        return <LifestylePreferencesStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
+        return (
+          <LifestylePreferencesStep
+            {...stepProps}
+            onValidationChange={setIsCurrentStepValid}
+          />
+        );
       case 9:
         return <CompleteProfileStep {...stepProps} />;
       case 10:
         return <LivingEnvironmentStep {...stepProps} />;
       case 11:
-        return <AboutYouStep {...stepProps} onValidationChange={setIsCurrentStepValid} />;
+        return (
+          <AboutYouStep
+            {...stepProps}
+            onValidationChange={setIsCurrentStepValid}
+          />
+        );
       default:
         return <LocationStep {...stepProps} />;
     }
@@ -259,17 +272,12 @@ export default function NewPreferencesPage({
   return (
     <div className="min-h-screen bg-white">
       {/* Main Content */}
-      <div 
-        ref={contentRef} 
+      <div
+        ref={contentRef}
         className="max-w-4xl mx-auto px-5 pb-32 pt-20 sm:pt-24"
       >
-        <form 
-          ref={formRef} 
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div ref={stepContentRef}>
-            {renderStep()}
-          </div>
+        <form ref={formRef} onSubmit={(e) => e.preventDefault()}>
+          <div ref={stepContentRef}>{renderStep()}</div>
         </form>
       </div>
 
@@ -293,7 +301,7 @@ export default function NewPreferencesPage({
                   prevStep();
                   // Scroll to top after step change
                   setTimeout(() => {
-                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    window.scrollTo({ top: 0, behavior: "instant" });
                   }, 200);
                 }}
                 disabled={isFirstStep}
@@ -303,11 +311,12 @@ export default function NewPreferencesPage({
                     : "text-black hover:text-gray-600 cursor-pointer"
                 } transition-colors`}
               >
-                Back
+                {t(onboardingKeys.bottom.prevButton)}
               </button>
 
               <div className="text-sm text-gray-500">
-                Step {displayStep} of {displayTotalSteps}
+                {t(onboardingKeys.bottom.stepText)} {displayStep}{" "}
+                {t(onboardingKeys.bottom.ofText)} {displayTotalSteps}
               </div>
 
               <button
@@ -319,7 +328,7 @@ export default function NewPreferencesPage({
                     await nextStep();
                     // Scroll to top after step change
                     setTimeout(() => {
-                      window.scrollTo({ top: 0, behavior: 'instant' });
+                      window.scrollTo({ top: 0, behavior: "instant" });
                     }, 200);
                   }
                 }}
@@ -330,7 +339,7 @@ export default function NewPreferencesPage({
                     : "bg-black text-white hover:bg-gray-800"
                 }`}
               >
-                {isLastStep ? "Finish" : "Next"}
+                {t(onboardingKeys.bottom.nextButton)}
               </button>
             </div>
           </div>
