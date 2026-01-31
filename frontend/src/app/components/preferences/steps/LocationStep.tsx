@@ -9,7 +9,8 @@ import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 import {
   AREA_OPTIONS,
-  LONDON_DISTRICTS,
+  DISTRICTS_BY_AREA,
+  LONDON_METRO_STATIONS,
 } from "../../../../shared/constants/admin-form-options";
 
 interface LocationStepProps {
@@ -19,24 +20,41 @@ interface LocationStepProps {
 
 const AREAS = AREA_OPTIONS;
 
-const MOCK_METRO_STATIONS = [
-  "Central London",
-  "King's Cross",
-  "Oxford Circus",
-  "Piccadilly Circus",
-  "Waterloo",
-  "London Bridge",
-  "Canary Wharf",
-  "Paddington",
-  "Victoria",
-  "Euston",
-];
+const DISTRICT_OPTION_GROUPS = DISTRICTS_BY_AREA.map((g) => ({
+  label: g.area,
+  options: [...g.districts],
+}));
 
 export const LocationStep: React.FC<LocationStepProps> = ({
   formData,
   onUpdate,
 }) => {
   const { t } = useTranslation();
+  const preferredAreas = formData.preferred_areas || [];
+  const preferredDistricts = formData.preferred_districts || [];
+
+  // Districts only for selected areas; when areas change, clear districts that no longer belong to any selected area
+  const districtOptionGroups =
+    preferredAreas.length > 0
+      ? DISTRICT_OPTION_GROUPS.filter((g) => preferredAreas.includes(g.label))
+      : [];
+
+  const handleAreasChange = (newAreas: string[]) => {
+    onUpdate("preferred_areas", newAreas);
+    if (newAreas.length === 0) {
+      onUpdate("preferred_districts", []);
+      return;
+    }
+    const allowedDistricts = new Set(
+      DISTRICT_OPTION_GROUPS.filter((g) => newAreas.includes(g.label)).flatMap(
+        (g) => g.options,
+      ),
+    );
+    const cleaned = preferredDistricts.filter((d) => allowedDistricts.has(d));
+    if (cleaned.length !== preferredDistricts.length) {
+      onUpdate("preferred_districts", cleaned);
+    }
+  };
 
   return (
     <StepWrapper
@@ -50,32 +68,36 @@ export const LocationStep: React.FC<LocationStepProps> = ({
         <div className="mb-6">
           <MultiSelectDropdown
             label={t(wizardKeys.step1.areas)}
-            value={formData.preferred_areas || []}
-            onChange={(value) => onUpdate("preferred_areas", value)}
+            value={preferredAreas}
+            onChange={handleAreasChange}
             options={AREAS}
             placeholder={t(wizardKeys.step1.areas)}
           />
         </div>
 
-        {/* Districts - Multi Select */}
-        <div className="mb-6">
-          <MultiSelectDropdown
-            label={t(wizardKeys.step1.districts)}
-            value={formData.preferred_districts || []}
-            onChange={(value) => onUpdate("preferred_districts", value)}
-            options={LONDON_DISTRICTS}
-            placeholder={t(wizardKeys.step1.districts)}
-          />
-        </div>
+        {/* Districts - only for selected areas; grouped by area */}
+        {districtOptionGroups.length > 0 && (
+          <div className="mb-6">
+            <MultiSelectDropdown
+              label={t(wizardKeys.step1.districts)}
+              value={preferredDistricts}
+              onChange={(value) => onUpdate("preferred_districts", value)}
+              optionGroups={districtOptionGroups}
+              placeholder={t(wizardKeys.step1.districts)}
+            />
+          </div>
+        )}
 
-        {/* Metro Station - Multi Select */}
+        {/* Metro Station - Multi Select with search (opens upward for visibility) */}
         <div className="mb-6">
           <MultiSelectDropdown
             label={t(wizardKeys.step1.metro.station)}
             value={formData.preferred_metro_stations || []}
             onChange={(value) => onUpdate("preferred_metro_stations", value)}
-            options={MOCK_METRO_STATIONS}
+            options={[...LONDON_METRO_STATIONS]}
             placeholder={t(wizardKeys.step1.metro.station)}
+            searchable
+            openUpward
           />
         </div>
 

@@ -224,7 +224,7 @@ const TenantsCardsSection = ({
     <section
       id="cards"
       className="md:py-20 py-5 relative overflow-x-hidden overflow-y-visible"
-      style={{ backgroundColor: '#F7F7F9' }}
+      style={{ backgroundColor: "#F7F7F9" }}
     >
       <div className="relative z-10">
         {/* Section Header */}
@@ -713,7 +713,7 @@ interface DualLandingWrapperProps {
 const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
   onSignIn,
 }) => {
-  const [currentType, setCurrentType] = useState<LandingType>("operators");
+  const [currentType, setCurrentType] = useState<LandingType>("tenants");
   const [isRequestDemoOpen, setIsRequestDemoOpen] = useState(false);
 
   const handleSwitch = (newType: LandingType) => {
