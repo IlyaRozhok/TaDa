@@ -36,7 +36,7 @@ export class PreferencesController {
   async findAll(
     @Query("page") page: number = 1,
     @Query("limit") limit: number = 10,
-    @Query("search") search?: string
+    @Query("search") search?: string,
   ) {
     // Ensure page and limit are numbers
     const pageNum = parseInt(page as any) || 1;
@@ -45,7 +45,7 @@ export class PreferencesController {
     const result = await this.preferencesService.findAll(
       pageNum,
       limitNum,
-      search
+      search,
     );
 
     // Format response to match frontend expectations
@@ -71,11 +71,11 @@ export class PreferencesController {
   })
   async save(
     @CurrentUser() user: User,
-    @Body() createPreferencesDto: CreatePreferencesDto
+    @Body() createPreferencesDto: CreatePreferencesDto,
   ): Promise<Preferences> {
     const result = await this.preferencesService.upsert(
       user.id,
-      createPreferencesDto
+      createPreferencesDto,
     );
 
     return result;
@@ -112,7 +112,7 @@ export class PreferencesController {
   })
   async update(
     @CurrentUser() user: User,
-    @Body() updatePreferencesDto: UpdatePreferencesDto
+    @Body() updatePreferencesDto: UpdatePreferencesDto,
   ): Promise<Preferences> {
     return this.preferencesService.update(user.id, updatePreferencesDto);
   }
@@ -147,7 +147,7 @@ export class PreferencesController {
   })
   async updateByAdmin(
     @Param("userId") userId: string,
-    @Body() updatePreferencesDto: UpdatePreferencesDto
+    @Body() updatePreferencesDto: UpdatePreferencesDto,
   ): Promise<Preferences> {
     return this.preferencesService.update(userId, updatePreferencesDto);
   }

@@ -28,6 +28,7 @@ import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
 import { buildDisplayName, buildInitials } from "../../utils/displayName";
 import {
   dateToDisplay,
+  dateToDisplayDDMMYYYY,
   formatCurrencyRange,
   normalizeHobbies,
 } from "./tenantCv.utils";
@@ -42,6 +43,10 @@ import {
   getBuildingTypeTranslationKey,
   getDurationTranslationKey,
   getAmenityDisplayTranslationKey,
+  getChildrenCountTranslationKey,
+  getFamilyStatusTranslationKey,
+  getSmokerTranslationKey,
+  getPetsDisplayTranslationKey,
 } from "../../../shared/constants/mappings";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
@@ -130,7 +135,7 @@ export function TenantCvView({
   const { profile, meta, preferences } = data;
   const moveIn = dateToDisplay(meta.move_in_date);
   const moveOut = dateToDisplay(meta.move_out_date);
-  const onPlatform = dateToDisplay(meta.created_at);
+  const onPlatform = dateToDisplayDDMMYYYY(meta.created_at);
   const displayName = buildDisplayName({
     tenantProfile: {
       first_name: profile.first_name,
@@ -156,32 +161,36 @@ export function TenantCvView({
     },
   ];
 
-  const smokeBadge =
-    meta.smoker && meta.smoker !== "yes"
-      ? "No smoke"
-      : meta.smoker === "yes"
-        ? "Smoker"
-        : null;
+  // Lifestyle badges (localized via t())
+  const smokeBadge = meta.smoker
+    ? (() => {
+        const key = getSmokerTranslationKey(meta.smoker);
+        return key ? t(key) : meta.smoker === "yes" ? "Smoker" : "Non-smoker";
+      })()
+    : null;
 
-  const petsBadge = meta.pets || null;
+  const petsBadge = meta.pets
+    ? (() => {
+        const key = getPetsDisplayTranslationKey(meta.pets);
+        return key ? t(key) : meta.pets;
+      })()
+    : null;
 
-  // Lifestyle attributes
   const childrenCount = preferences?.children_count;
-  const childrenLabel =
-    childrenCount === "no"
-      ? "No child"
-      : childrenCount === "yes-1-child"
-        ? "1 child"
-        : childrenCount === "yes-2-children"
-          ? "2 children"
-          : childrenCount === "yes-3-plus-children"
-            ? "3+ children"
-            : null;
+  const childrenLabel = childrenCount
+    ? (() => {
+        const key = getChildrenCountTranslationKey(childrenCount);
+        return key ? t(key) : null;
+      })()
+    : null;
 
   const familyStatus = preferences?.family_status;
   const marriedLabel =
     familyStatus === "couple" || familyStatus === "couple-with-children"
-      ? "Married"
+      ? (() => {
+          const key = getFamilyStatusTranslationKey(familyStatus);
+          return key ? t(key) : "Married";
+        })()
       : null;
 
   // Ready label without date

@@ -1,6 +1,6 @@
 export const formatCurrencyRange = (
   min?: number | null,
-  max?: number | null
+  max?: number | null,
 ) => {
   if (!min && !max) return "Not set";
   const fmt = (v: number) =>
@@ -22,6 +22,17 @@ export const dateToDisplay = (value?: string | null) => {
     month: "long",
     year: "numeric",
   });
+};
+
+/** Format date as DD.MM.YYYY (e.g. for "on platform from" in Tenant CV). */
+export const dateToDisplayDDMMYYYY = (value?: string | null): string | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return null;
+  const d = date.getDate().toString().padStart(2, "0");
+  const m = (date.getMonth() + 1).toString().padStart(2, "0");
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
 };
 
 export const normalizeHobbies = (input: unknown): string[] => {

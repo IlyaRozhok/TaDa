@@ -229,7 +229,7 @@ export default function UserDropdown({
                   className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
                 >
                   <Sliders className="w-4 h-4 mr-3 text-white/80" />
-                  Change Preferences
+                  {t(profileKeys.dropChangePreferences)}
                 </button>
 
                 <hr className="my-2 border-white/10" />
@@ -241,7 +241,7 @@ export default function UserDropdown({
               className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-red-400 hover:backdrop-blur-md rounded-lg font-medium"
             >
               <LogOut className="w-4 h-4 mr-3" />
-              Logout
+              {t(profileKeys.dropLogout)}
             </button>
           </div>
         </div>

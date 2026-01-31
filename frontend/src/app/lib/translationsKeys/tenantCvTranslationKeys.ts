@@ -3,6 +3,8 @@
  * Reuse wizard keys where specified: Area, District, Metro, etc. via wizardTranslationKeys.
  */
 export const tenantCvKeys = {
+  /** Header button "My Preferences" / "Your preferences" */
+  myPreferencesButton: "header.my.preferences.btn",
   /** Header button "Tenant CV" */
   tenantCvButton: "header.tenant.cv.button",
   shareButton: "tenant.cv.share.button",

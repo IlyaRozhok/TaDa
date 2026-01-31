@@ -269,10 +269,7 @@ export const PREFERENCES_AMENITIES_TO_ADMIN: Record<string, string> = {
   "pet-sitting": "Pet areas",
   "pet-friendly": "Pet areas",
 
-  // Luxury features
-  concierge: "Maintenance", // Handled via is_concierge flag
   valet: "Maintenance", // No direct match
-  spa: "Garden", // No direct match
   "wine-cellar": "Lounge", // No direct match
   "private-dining": "Lounge", // No direct match
 };
@@ -590,15 +587,21 @@ const AMENITY_DISPLAY_TO_KEY: Record<string, string> = {
   Sport: "amenities.name1",
 };
 
-export function getPropertyTypeTranslationKey(apiValue: string): string | undefined {
+export function getPropertyTypeTranslationKey(
+  apiValue: string,
+): string | undefined {
   return PROPERTY_TYPE_API_TO_KEY[apiValue];
 }
 
-export function getFurnishingTranslationKey(apiValue: string): string | undefined {
+export function getFurnishingTranslationKey(
+  apiValue: string,
+): string | undefined {
   return FURNISHING_API_TO_KEY[apiValue];
 }
 
-export function getOutdoorSpaceTranslationKey(apiValue: string): string | undefined {
+export function getOutdoorSpaceTranslationKey(
+  apiValue: string,
+): string | undefined {
   return OUTDOOR_API_TO_KEY[apiValue];
 }
 
@@ -610,14 +613,75 @@ export function getTenantTypeTranslationKeys(apiValue: string): string[] {
   return TENANT_TYPE_API_TO_KEY[apiValue] ?? [];
 }
 
-export function getBuildingTypeTranslationKey(apiValue: string): string | undefined {
+export function getBuildingTypeTranslationKey(
+  apiValue: string,
+): string | undefined {
   return BUILDING_TYPE_API_TO_KEY[apiValue];
 }
 
-export function getDurationTranslationKey(apiValue: string): string | undefined {
+export function getDurationTranslationKey(
+  apiValue: string,
+): string | undefined {
   return DURATION_API_TO_KEY[apiValue];
 }
 
-export function getAmenityDisplayTranslationKey(displayName: string): string | undefined {
+export function getAmenityDisplayTranslationKey(
+  displayName: string,
+): string | undefined {
   return AMENITY_DISPLAY_TO_KEY[displayName];
+}
+
+// ==================== TENANT CV LIFESTYLE (smoke, pets, children, family) ====================
+
+const CHILDREN_COUNT_API_TO_KEY: Record<string, string> = {
+  no: "children.status.name1",
+  "yes-1-child": "children.status.name2",
+  "yes-2-children": "children.status.name3",
+  "yes-3-plus-children": "children.status.name4",
+};
+
+const FAMILY_STATUS_API_TO_KEY: Record<string, string> = {
+  couple: "family.status.name2",
+  "couple-with-children": "family.status.name3",
+};
+
+const SMOKER_API_TO_KEY: Record<string, string> = {
+  yes: "smoker.answer.name2",
+  no: "smoker.answer.name1",
+};
+
+/** Pet display value (from API or UI) → translation key */
+const PETS_DISPLAY_TO_KEY: Record<string, string> = {
+  "No pets": "pet.type.name1",
+  Dog: "pet.type.name2",
+  Cat: "pet.type.name3",
+  Other: "pet.type.name4",
+  "Planning to get a pet": "pet.type.name5",
+  "no pets": "pet.type.name1",
+  dog: "pet.type.name2",
+  cat: "pet.type.name3",
+  other: "pet.type.name4",
+  "planning to get a pet": "pet.type.name5",
+};
+
+export function getChildrenCountTranslationKey(
+  apiValue: string,
+): string | undefined {
+  return CHILDREN_COUNT_API_TO_KEY[apiValue];
+}
+
+export function getFamilyStatusTranslationKey(
+  apiValue: string,
+): string | undefined {
+  return FAMILY_STATUS_API_TO_KEY[apiValue];
+}
+
+export function getSmokerTranslationKey(apiValue: string): string | undefined {
+  return SMOKER_API_TO_KEY[apiValue];
+}
+
+export function getPetsDisplayTranslationKey(
+  displayValue: string,
+): string | undefined {
+  return PETS_DISPLAY_TO_KEY[displayValue];
 }

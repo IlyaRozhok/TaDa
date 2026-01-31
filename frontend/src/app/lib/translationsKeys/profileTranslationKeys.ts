@@ -4,6 +4,10 @@
 export const profileKeys = {
   /** Dropdown item "Profile Settings" */
   dropProfileSettings: "profile.drop.profile.settings",
+  /** Dropdown item "Change Preferences" */
+  dropChangePreferences: "profile.drop.change.preferencing",
+  /** Dropdown item "Logout" */
+  dropLogout: "profile.drop.logout",
   /** Description under Profile Settings title */
   settingsDescription: "profile.settings.description",
   /** Avatar section label */
