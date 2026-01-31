@@ -8,12 +8,18 @@ import UserDropdown from "./UserDropdown";
 import styles from "./ui/DropdownStyles.module.scss";
 import { selectUser } from "../store/slices/authSlice";
 import { getRedirectPath } from "../utils/simpleRedirect";
+import {
+  useI18n,
+  SUPPORTED_LANGUAGES,
+  getLanguageDisplayCode,
+} from "../contexts/I18nContext";
 
 export default function UniversalHeader() {
   const router = useRouter();
   const user = useSelector(selectUser);
+  const { language, setLanguage } = useI18n();
+  const selectedLanguage = getLanguageDisplayCode(language);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("EN");
 
   // Close language dropdown when clicking outside
   useEffect(() => {
@@ -67,7 +73,7 @@ export default function UniversalHeader() {
             >
               <Heart className="h-1.25 w-1.25" />
             </button>
-            <button 
+            <button
               className="text-gray-600 hover:text-gray-900 transition-colors p-0.75 rounded-lg hover:bg-gray-100 min-h-touch-sm min-w-[2.25rem] flex items-center justify-center"
               aria-label="Notifications"
             >
@@ -81,9 +87,7 @@ export default function UniversalHeader() {
                 className="flex items-center justify-center gap-0.5 px-1 py-0.75 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors rounded-lg min-w-[3.5rem] border border-gray-200 hover:bg-gray-50 min-h-touch-sm"
                 aria-label="Select language"
               >
-                <span className="text-center">
-                  {selectedLanguage}
-                </span>
+                <span className="text-center">{selectedLanguage}</span>
                 <ChevronDown
                   className={`w-1 h-1 flex-shrink-0 transition-transform ${
                     isLanguageOpen ? "rotate-180" : ""
@@ -92,17 +96,13 @@ export default function UniversalHeader() {
               </button>
 
               {isLanguageOpen && (
-                <div className="absolute right-0 mt-0.5 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 mt-0.5 min-w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                   <div className="py-1 max-h-80 overflow-y-auto">
-                    {[
-                      { code: "EN", name: "English" },
-                      { code: "RU", name: "Русский" },
-                      { code: "LV", name: "Latviešu" },
-                    ].map((lang) => (
+                    {SUPPORTED_LANGUAGES.map((lang) => (
                       <button
                         key={lang.code}
                         onClick={() => {
-                          setSelectedLanguage(lang.code);
+                          setLanguage(lang.langCode);
                           setIsLanguageOpen(false);
                         }}
                         className={`w-full text-left px-1 py-0.75 text-sm transition-colors min-h-touch-sm ${

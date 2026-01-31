@@ -191,8 +191,8 @@ const Header = ({
                   </button>
 
                   {isLanguageOpen && (
-                    <div className="absolute right-0 top-full mt-6 rounded-xl shadow-lg bg-black/50 backdrop-blur-[10px] border-gray-200 min-w-[150px] z-50">
-                      <div className="max-h-80 overflow-y-auto rounded-xl">
+                    <div className="absolute right-0 top-full mt-6 rounded-xl shadow-lg bg-black/50 backdrop-blur-[10px] border-gray-200 min-w-[240px] z-50">
+                      <div className="max-h-80 overflow-y-auto rounded-xl py-1">
                         {SUPPORTED_LANGUAGES.map((lang) => (
                           <button
                             key={lang.code}

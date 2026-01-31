@@ -83,7 +83,7 @@ function OnboardingHeader() {
 
             {isLanguageOpen && (
               <div
-                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[100px] sm:min-w-[120px] z-50 overflow-hidden backdrop-blur-[3px]"
+                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
                 style={{
                   background:
                     "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
@@ -91,7 +91,7 @@ function OnboardingHeader() {
                     "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
                 }}
               >
-                <div className="max-h-40 overflow-y-auto rounded-xl relative">
+                <div className="max-h-64 overflow-y-auto rounded-xl relative">
                   {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}

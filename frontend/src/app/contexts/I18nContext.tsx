@@ -8,15 +8,31 @@ import React, {
   useCallback,
 } from "react";
 
-// Синхронный импорт начальных переводов для предотвращения мигания
+// Синхронный импорт начальных переводов для предотвращения мигания (все локали из frontend/src/translations)
+import arTranslations from "../../translations/ar.json";
+import deTranslations from "../../translations/de.json";
 import enTranslations from "../../translations/en.json";
 import esTranslations from "../../translations/es.json";
+import frTranslations from "../../translations/fr.json";
+import hiTranslations from "../../translations/hi.json";
 import plTranslations from "../../translations/pl.json";
 import ruTranslations from "../../translations/ru.json";
+import trTranslations from "../../translations/tr.json";
 import ukTranslations from "../../translations/uk.json";
 import zhTranslations from "../../translations/zh-Hans-CN.json";
 
-type LanguageCode = "en" | "es" | "pl" | "ru" | "uk" | "zh-Hans-CN";
+type LanguageCode =
+  | "ar"
+  | "de"
+  | "en"
+  | "es"
+  | "fr"
+  | "hi"
+  | "pl"
+  | "ru"
+  | "tr"
+  | "uk"
+  | "zh-Hans-CN";
 
 interface Translations {
   [key: string]: string;
@@ -36,74 +52,81 @@ const LANGUAGE_STORAGE_KEY = "tada_language";
 
 // Маппинг кодов языков Header -> файлы переводов
 const LANGUAGE_MAP: Record<string, LanguageCode> = {
+  AR: "ar",
+  DE: "de",
   EN: "en",
   ES: "es",
+  FR: "fr",
+  HI: "hi",
   PL: "pl",
   RU: "ru",
+  TR: "tr",
   UK: "uk",
   ZH: "zh-Hans-CN",
 };
 
 // Обратный маппинг для отображения
 const LANGUAGE_DISPLAY_MAP: Record<LanguageCode, string> = {
+  ar: "AR",
+  de: "DE",
   en: "EN",
   es: "ES",
+  fr: "FR",
+  hi: "HI",
   pl: "PL",
   ru: "RU",
+  tr: "TR",
   uk: "UK",
   "zh-Hans-CN": "ZH",
 };
 
-// Предзагруженные переводы для всех языков
+// Предзагруженные переводы для всех языков (Localazy: frontend/src/translations)
 const PRELOADED_TRANSLATIONS: Record<LanguageCode, Translations> = {
+  ar: arTranslations as Translations,
+  de: deTranslations as Translations,
   en: enTranslations as Translations,
   es: esTranslations as Translations,
+  fr: frTranslations as Translations,
+  hi: hiTranslations as Translations,
   pl: plTranslations as Translations,
   ru: ruTranslations as Translations,
+  tr: trTranslations as Translations,
   uk: ukTranslations as Translations,
   "zh-Hans-CN": zhTranslations as Translations,
 };
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  // Начинаем с английского по умолчанию (для SSR)
-  const [language, setLanguageState] = useState<LanguageCode>("en");
+  // Lazy init from localStorage on client so header language change is never overwritten by init effect
+  const [language, setLanguageState] =
+    useState<LanguageCode>(getInitialLanguage);
   const [translations, setTranslations] = useState<Translations>(
-    PRELOADED_TRANSLATIONS["en"]
+    () => PRELOADED_TRANSLATIONS[getInitialLanguage()],
   );
   const [isLoading, setIsLoading] = useState(false);
 
-  // Инициализация языка из localStorage или браузера (только на клиенте)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    let targetLang: LanguageCode = "en";
-
-    if (savedLang && isValidLanguageCode(savedLang)) {
-      targetLang = savedLang as LanguageCode;
-    } else {
-      // Определение языка браузера
-      const browserLang = navigator.language.split("-")[0].toLowerCase();
-      const mappedLang =
-        Object.values(LANGUAGE_MAP).find((code) => code === browserLang) ||
-        "en";
-      targetLang = mappedLang;
-    }
-
-    if (targetLang !== language) {
-      setLanguageState(targetLang);
-      setTranslations(PRELOADED_TRANSLATIONS[targetLang]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Обновление переводов при смене языка (используем предзагруженные)
+  // Keep translations in sync when language changes (e.g. from header or storage event)
   useEffect(() => {
     if (PRELOADED_TRANSLATIONS[language]) {
       setTranslations(PRELOADED_TRANSLATIONS[language]);
       setIsLoading(false);
     }
   }, [language]);
+
+  // Sync language from other tabs (storage event)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (
+        e.key === LANGUAGE_STORAGE_KEY &&
+        e.newValue &&
+        isValidLanguageCode(e.newValue)
+      ) {
+        setLanguageState(e.newValue as LanguageCode);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const setLanguage = useCallback((lang: LanguageCode) => {
     setLanguageState(lang);
@@ -114,7 +137,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     (key: string): string => {
       return translations[key] || key;
     },
-    [translations]
+    [translations],
   );
 
   const value: I18nContextType = {
@@ -146,13 +169,50 @@ export function getLanguageCodeFromDisplay(displayCode: string): LanguageCode {
 }
 
 export function isValidLanguageCode(code: string): code is LanguageCode {
-  return ["en", "es", "pl", "ru", "uk", "zh-Hans-CN"].includes(code);
+  return [
+    "ar",
+    "de",
+    "en",
+    "es",
+    "fr",
+    "hi",
+    "pl",
+    "ru",
+    "tr",
+    "uk",
+    "zh-Hans-CN",
+  ].includes(code);
 }
 
-// Экспорт для использования в Header
-export const SUPPORTED_LANGUAGES = [
-  { code: "EN", name: "English", langCode: "en" as LanguageCode },
-  { code: "PL", name: "Polish", langCode: "pl" as LanguageCode },
-  { code: "RU", name: "Русский", langCode: "ru" as LanguageCode },
-  { code: "ZH", name: "中文", langCode: "zh-Hans-CN" as LanguageCode },
+/** Initial language: from localStorage on client, "en" on SSR. Ensures no race with useEffect. */
+function getInitialLanguage(): LanguageCode {
+  if (typeof window === "undefined") return "en";
+  const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (saved && isValidLanguageCode(saved)) return saved as LanguageCode;
+  const browserLang = navigator.language.split("-")[0].toLowerCase();
+  if (browserLang === "zh") return "zh-Hans-CN";
+  const mapped =
+    (Object.values(LANGUAGE_MAP).find(
+      (code) => code === browserLang,
+    ) as LanguageCode) || "en";
+  return mapped;
+}
+
+// Все локали из frontend/src/translations (Localazy) — для дропдауна выбора языка
+export const SUPPORTED_LANGUAGES: Array<{
+  code: string;
+  name: string;
+  langCode: LanguageCode;
+}> = [
+  { code: "AR", name: "العربية", langCode: "ar" },
+  { code: "DE", name: "Deutsch", langCode: "de" },
+  { code: "EN", name: "English", langCode: "en" },
+  { code: "ES", name: "Español", langCode: "es" },
+  { code: "FR", name: "Français", langCode: "fr" },
+  { code: "HI", name: "हिन्दी", langCode: "hi" },
+  { code: "PL", name: "Polski", langCode: "pl" },
+  { code: "RU", name: "Русский", langCode: "ru" },
+  { code: "TR", name: "Türkçe", langCode: "tr" },
+  { code: "UK", name: "Українська", langCode: "uk" },
+  { code: "ZH", name: "中文", langCode: "zh-Hans-CN" },
 ];

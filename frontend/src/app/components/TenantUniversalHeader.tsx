@@ -4,6 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
+import {
+  useI18n,
+  SUPPORTED_LANGUAGES,
+  getLanguageDisplayCode,
+} from "../contexts/I18nContext";
 import { selectUser } from "../store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { Heart, Settings, ChevronDown, ArrowLeft, Shield } from "lucide-react";
@@ -30,8 +35,9 @@ export default function TenantUniversalHeader({
   const router = useRouter();
   const user = useSelector(selectUser);
   const { t } = useTranslation();
+  const { language, setLanguage } = useI18n();
+  const selectedLanguage = getLanguageDisplayCode(language);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("EN");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -136,7 +142,7 @@ export default function TenantUniversalHeader({
 
             {isLanguageOpen && (
               <div
-                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[100px] sm:min-w-[120px] z-50 overflow-hidden backdrop-blur-[3px]"
+                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
                 style={{
                   background:
                     "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
@@ -144,19 +150,12 @@ export default function TenantUniversalHeader({
                     "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
                 }}
               >
-                <div className="max-h-40 overflow-y-auto rounded-xl relative">
-                  {[
-                    { code: "EN", name: "English" },
-                    { code: "FR", name: "Français" },
-                    { code: "ES", name: "Español" },
-                    { code: "IT", name: "Italiano" },
-                    { code: "PT", name: "Português" },
-                    { code: "RU", name: "Русский" },
-                  ].map((lang) => (
+                <div className="max-h-64 overflow-y-auto rounded-xl relative">
+                  {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}
                       onClick={() => {
-                        setSelectedLanguage(lang.code);
+                        setLanguage(lang.langCode);
                         setIsLanguageOpen(false);
                       }}
                       className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
