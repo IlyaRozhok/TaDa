@@ -163,7 +163,7 @@ export class Preferences {
     example: false,
     required: false,
   })
-  @Column({ type: "boolean", nullable: true })
+  @Column({ type: "boolean", nullable: true, default: false })
   flexible_budget?: boolean;
 
   @ApiProperty({
