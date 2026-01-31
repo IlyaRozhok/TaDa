@@ -74,32 +74,14 @@ export const PetsStep: React.FC<PetsStepProps> = ({ formData, onUpdate }) => {
               min={1}
             />
 
-            {/* Specify an animal - show only for "Other" */}
-            {selectedPetType === "Other" && (
-              <InputField
-                label="Specify an animal"
-                value={petAdditionalInfo}
-                onChange={(e) =>
-                  onUpdate("pet_additional_info", e.target.value)
-                }
-                type="text"
-                placeholder="e.g., Hamster, Rabbit, Bird..."
-                required
-              />
-            )}
-
-            {/* Additional info - show for Dog, Cat, Planning to get a pet (but not for Other) */}
-            {selectedPetType !== "Other" && (
-              <InputField
-                label={t(wizardKeys.step6.additionalField)}
-                value={petAdditionalInfo}
-                onChange={(e) =>
-                  onUpdate("pet_additional_info", e.target.value)
-                }
-                type="text"
-                placeholder={t(wizardKeys.step6.optionalText)}
-              />
-            )}
+            {/* Additional info - for Dog, Cat, Other, Planning to get a pet */}
+            <InputField
+              label={t(wizardKeys.step6.additionalField)}
+              value={petAdditionalInfo}
+              onChange={(e) => onUpdate("pet_additional_info", e.target.value)}
+              type="text"
+              placeholder={t(wizardKeys.step6.optionalText)}
+            />
           </div>
         )}
       </StepContainer>

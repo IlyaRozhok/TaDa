@@ -303,6 +303,7 @@ export const wizardKeys = {
     name: "wizard.profile.name",
     lastName: "wizard.profile.last.name",
     address: "wizard.profile.address",
+    phone: "wizard.profile.phone",
     birth: {
       title: "wizard.profile.birth.title",
       text: "wizard.profile.birth.text",

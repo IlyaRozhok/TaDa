@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "../../../../app/hooks/useTranslation";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { Upload, X, Camera, Loader2 } from "lucide-react";
 import { StepWrapper } from "../../../../app/components/preferences/step-components/StepWrapper";
 import { StepContainer } from "../../../../app/components/preferences/step-components/StepContainer";
@@ -391,7 +392,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         {/* First Name */}
         <div className="mb-6">
           <InputField
-            label="First Name"
+            label={t(wizardKeys.profile.name)}
             value={formData.first_name || ""}
             onChange={(e) => updateFormData({ first_name: e.target.value })}
             type="text"
@@ -402,7 +403,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         {/* Last Name */}
         <div className="mb-6">
           <InputField
-            label="Last Name"
+            label={t(wizardKeys.profile.lastName)}
             value={formData.last_name || ""}
             onChange={(e) => updateFormData({ last_name: e.target.value })}
             type="text"
@@ -413,7 +414,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         {/* Address */}
         <div className="mb-6">
           <InputField
-            label="Address"
+            label={t(wizardKeys.profile.address)}
             value={formData.address || ""}
             onChange={(e) => updateFormData({ address: e.target.value })}
             type="text"
@@ -425,7 +426,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         <div className="mb-6">
           <PhoneMaskInput
             countryCode={phoneCountryCode}
-            label="Phone Number"
+            label={t(wizardKeys.profile.phone)}
             value={phoneNumberOnly}
             onChange={(value) => {
               setPhoneNumberOnly(value || "");
@@ -455,7 +456,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         {/* Date of Birth */}
         <div className="mb-6">
           <DateInput
-            label="Date of Birth"
+            label={t(wizardKeys.profile.birth.title)}
             name="date_of_birth"
             value={formData.date_of_birth || null}
             onChange={(date) => {
@@ -524,10 +525,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         {/* Nationality */}
         <div className="mb-6">
           <CountryDropdown
-            label="Nationality"
+            label={t(wizardKeys.profile.nationality)}
             value={formData.nationality ?? undefined}
             onChange={(value) => updateFormData({ nationality: value })}
-            placeholder="Select nationality"
+            placeholder={t(wizardKeys.profile.nationality)}
             required
           />
         </div>
