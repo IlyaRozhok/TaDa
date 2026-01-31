@@ -33,10 +33,15 @@ import {
 } from "./tenantCv.utils";
 import {
   transformBuildingTypeAPIToUI,
-  transformBillsAPIToUI,
-  transformFurnishingAPIToUI,
-  transformTenantTypeAPIToUI,
   getHobbyTranslationKey,
+  getPropertyTypeTranslationKey,
+  getFurnishingTranslationKey,
+  getOutdoorSpaceTranslationKey,
+  getBillsTranslationKey,
+  getTenantTypeTranslationKeys,
+  getBuildingTypeTranslationKey,
+  getDurationTranslationKey,
+  getAmenityDisplayTranslationKey,
 } from "../../../shared/constants/mappings";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
@@ -187,31 +192,26 @@ export function TenantCvView({
     ? `${t(tenantCvKeys.readyToMove)} ${moveIn}${moveOut ? ` - to ${moveOut}` : ""}`
     : null;
 
-  // Format duration for display (supports comma-separated multiselect)
-  const formatDuration = (duration?: string | null): string | null => {
-    if (!duration) return null;
-    const durationMap: Record<string, string> = {
-      long_term: "Long term 6+ m",
-      short_term: "Short term 1+ m",
-      flexible: "Flexible",
-      "6_months": "6 months",
-      "12_months": "12 months",
-      "18_months": "18 months",
-      "24_months": "24 months",
-      any: "Any",
-    };
-    const parts = duration
-      .split(",")
-      .map((s) => durationMap[s.trim()] || s.trim())
-      .filter(Boolean);
-    return parts.length > 0 ? parts.join(", ") : null;
-  };
+  // Duration: API values → translation keys → t()
+  const durationLabel = preferences?.let_duration
+    ? preferences.let_duration
+        .split(",")
+        .map((s) => {
+          const key = getDurationTranslationKey(s.trim());
+          return key ? t(key) : s.trim();
+        })
+        .filter(Boolean)
+        .join(", ")
+    : null;
 
-  const durationLabel = formatDuration(preferences?.let_duration);
-
-  // Building types for "Ready to move" section
+  // Building types for "Ready to move" section (localized)
   const buildingTypes = preferences?.building_types || [];
-  const buildingTypesLabels = transformBuildingTypeAPIToUI(buildingTypes);
+  const buildingTypesLabels = buildingTypes
+    .map((v) => {
+      const key = getBuildingTypeTranslationKey(v);
+      return key ? t(key) : v;
+    })
+    .filter(Boolean);
 
   const priceRange = formatCurrencyRange(
     preferences?.min_price,
@@ -223,16 +223,23 @@ export function TenantCvView({
   const preferredMetro = preferences?.preferred_metro_stations?.join(", ");
   const preferredAddress = preferences?.preferred_address;
 
-  // Outdoor space preferences
-  const outdoorSpaceItems = [];
-  if (preferences?.balcony) outdoorSpaceItems.push("Balcony");
-  if (preferences?.terrace) outdoorSpaceItems.push("Terrace");
+  // Outdoor space preferences (localized via t())
+  const outdoorSpaceItems: string[] = [];
+  if (preferences?.balcony) {
+    const key = getOutdoorSpaceTranslationKey("balcony");
+    outdoorSpaceItems.push(key ? t(key) : "Balcony");
+  }
+  if (preferences?.terrace) {
+    const key = getOutdoorSpaceTranslationKey("terrace");
+    outdoorSpaceItems.push(key ? t(key) : "Terrace");
+  }
   if (
     preferences?.outdoor_space &&
     !preferences?.balcony &&
     !preferences?.terrace
   ) {
-    outdoorSpaceItems.push("Outdoor space");
+    const key = getOutdoorSpaceTranslationKey("outdoor_space");
+    outdoorSpaceItems.push(key ? t(key) : "Outdoor space");
   }
   const outdoorSpaceLabel =
     outdoorSpaceItems.length > 0 ? outdoorSpaceItems.join(", ") : null;
@@ -247,24 +254,51 @@ export function TenantCvView({
           ? `up to ${preferences.max_square_meters} msq`
           : null;
 
-  // Bills label
+  // Bills label (localized)
   const billsLabel = preferences?.bills
-    ? transformBillsAPIToUI(preferences.bills)
+    ? (() => {
+        const key = getBillsTranslationKey(preferences.bills!);
+        return key ? t(key) : null;
+      })()
     : null;
 
-  // Tenant types (localized labels)
-  const tenantTypesLabels = transformTenantTypeAPIToUI(
-    preferences?.tenant_types || [],
-  );
+  // Tenant types (localized via t())
   const tenantTypesLabel =
-    tenantTypesLabels.length > 0 ? tenantTypesLabels.join(", ") : null;
+    (preferences?.tenant_types || [])
+      .flatMap((v) => getTenantTypeTranslationKeys(v).map((k) => t(k)))
+      .filter(Boolean)
+      .join(", ") || null;
+  const hasTenantTypesLabel = Boolean(tenantTypesLabel);
 
-  // Furnishing (localized labels)
-  const furnishingLabels = transformFurnishingAPIToUI(
-    preferences?.furnishing || [],
-  );
+  // Furnishing (localized via t())
   const furnishingLabel =
-    furnishingLabels.length > 0 ? furnishingLabels.join(", ") : null;
+    (preferences?.furnishing || [])
+      .map((v) => {
+        const key = getFurnishingTranslationKey(v);
+        return key ? t(key) : v;
+      })
+      .filter(Boolean)
+      .join(", ") || null;
+
+  // Property types, bedrooms, bathrooms for preferences section (localized)
+  const propertyTypesDisplay =
+    (preferences?.property_types || [])
+      .map((v) => {
+        const key = getPropertyTypeTranslationKey(v);
+        return key ? t(key) : v;
+      })
+      .filter(Boolean)
+      .join(", ") || t(tenantCvKeys.notSet);
+  const bedroomsDisplay =
+    (preferences?.bedrooms || [])
+      .map((n) => t(wizardKeys.step3.roomsCount[n - 1]))
+      .filter(Boolean)
+      .join(", ") || t(tenantCvKeys.notSet);
+  const bathroomsDisplay =
+    (preferences?.bathrooms || [])
+      .map((n) => t(wizardKeys.step3.bathroomsCount[n - 1]))
+      .filter(Boolean)
+      .join(", ") || t(tenantCvKeys.notSet);
 
   const amenityTags = [
     ...(preferences?.amenities || []),
@@ -533,7 +567,7 @@ export function TenantCvView({
                       {t(wizardKeys.step3.des.text1)}
                     </div>
                     <div className="font-medium text-gray-900">
-                      {preferences?.property_types?.join(", ") || "Not set"}
+                      {propertyTypesDisplay}
                     </div>
                   </div>
                 </div>
@@ -544,7 +578,7 @@ export function TenantCvView({
                       {t(wizardKeys.step3.des.text2)}
                     </div>
                     <div className="font-medium text-gray-900">
-                      {preferences?.bedrooms?.join(", ") || "Not set"}
+                      {bedroomsDisplay}
                     </div>
                   </div>
                 </div>
@@ -555,7 +589,7 @@ export function TenantCvView({
                       {t(wizardKeys.step3.des.text3)}
                     </div>
                     <div className="font-medium text-gray-900">
-                      {preferences?.bathrooms?.join(", ") || "Not set"}
+                      {bathroomsDisplay}
                     </div>
                   </div>
                 </div>
@@ -566,7 +600,7 @@ export function TenantCvView({
                       {t(wizardKeys.step3.des.text4)}
                     </div>
                     <div className="font-medium text-gray-900">
-                      {furnishingLabel || "Not set"}
+                      {furnishingLabel || t(tenantCvKeys.notSet)}
                     </div>
                   </div>
                 </div>
@@ -613,7 +647,7 @@ export function TenantCvView({
                     </div>
                   </div>
                 )}
-                {tenantTypesLabel && (
+                {hasTenantTypesLabel && tenantTypesLabel && (
                   <div className="flex items-start gap-2">
                     <Users className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
                     <div className="flex-1">
@@ -629,14 +663,15 @@ export function TenantCvView({
               </div>
             </div>
 
-            {/* Amenities */}
+            {/* Amenities (title and tags localized via t()) */}
             {hasAmenities && (
               <div className="bg-white pt-1">
-                <SectionTitle title="Amenities" />
+                <SectionTitle title={t(wizardKeys.step7.title)} />
                 <div className="flex flex-wrap gap-2">
-                  {amenityTags.map((a) => (
-                    <Pill key={a}>{a}</Pill>
-                  ))}
+                  {amenityTags.map((a) => {
+                    const key = getAmenityDisplayTranslationKey(a);
+                    return <Pill key={a}>{key ? t(key) : a}</Pill>;
+                  })}
                 </div>
               </div>
             )}

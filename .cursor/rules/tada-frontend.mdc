@@ -43,6 +43,9 @@ GLOBAL RULES
    - Do not change visible behaviour, UX flows, or design unless I explicitly allow it.
    - Do not introduce new dependencies (libraries) without asking first.
    - Prefer small, incremental changes and patches instead of large rewrites.
+   - Never change files in the frontend/src/translations!!
+   - Never create
+
 
 2. Refactoring workflow
    For ANY refactor request:
@@ -87,7 +90,6 @@ GLOBAL RULES
    - Look for obvious issues (heavy computations in render, unnecessary re-renders, inline anonymous callbacks in large lists) and propose safe micro-optimizations.
    - Prefer memoization only when there is a clear benefit (large lists, expensive calculations).
    - Do not introduce premature optimizations that complicate the code without clear value.
-   - Do not create a MD files
 
 7. Error handling & UX
 

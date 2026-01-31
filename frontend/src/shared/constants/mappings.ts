@@ -503,3 +503,121 @@ export function transformBathroomsUIToAPI(uiValues: string[]): number[] {
 export function transformBathroomsAPIToUI(apiValues: number[]): string[] {
   return apiValues.map((value) => BATHROOMS_API_TO_UI[value]).filter(Boolean);
 }
+
+// ==================== TRANSLATION KEYS FOR TENANT CV (API value → i18n key) ====================
+// Use with t(getPropertyTypeTranslationKey(apiValue)) etc. so preference values are localized.
+
+const PROPERTY_TYPE_API_TO_KEY: Record<string, string> = {
+  apartment: "property.type.name1",
+  flat: "property.type.name2",
+  studio: "property.type.name3",
+  penthouse: "property.type.name4",
+  room: "property.type.name5",
+  house: "property.type.name1",
+};
+
+const FURNISHING_API_TO_KEY: Record<string, string> = {
+  furnished: "furnishing.count.name1",
+  unfurnished: "furnishing.count.name2",
+  part_furnished: "furnishing.count.name3",
+  partially_furnished: "furnishing.count.name3",
+  designer_furniture: "furnishing.count.name1",
+};
+
+const OUTDOOR_API_TO_KEY: Record<string, string> = {
+  balcony: "outdoorspace.name1",
+  terrace: "outdoorspace.name2",
+  outdoor_space: "tenant.cv.outdoor.space",
+};
+
+const BILLS_API_TO_KEY: Record<string, string> = {
+  included: "bills.name1",
+  excluded: "bills.name2",
+};
+
+const TENANT_TYPE_API_TO_KEY: Record<string, string[]> = {
+  corporateLets: ["tenant.type.name.1", "tenant.type.name.3"],
+  student: ["tenant.type.name.2"],
+  family: ["tenant.type.name.4"],
+  sharers: ["tenant.type.name.5"],
+  elder: ["tenant.type.name.6"],
+};
+
+const BUILDING_TYPE_API_TO_KEY: Record<string, string> = {
+  btr: "buildtype.name1",
+  co_living: "buildtype.name2",
+  professional_management: "buildtype.name3",
+  private_landlord: "buildtype.name4",
+};
+
+const DURATION_API_TO_KEY: Record<string, string> = {
+  short_term: "rental.duration.name1",
+  long_term: "rental.duration.name3",
+  flexible: "rental.duration.name4",
+  any: "rental.duration.name4",
+};
+
+/** Display name (e.g. from API or hardcoded) → translation key for amenities / outdoor / special. */
+const AMENITY_DISPLAY_TO_KEY: Record<string, string> = {
+  "Has Concierge Service": "amenities.name3",
+  Concierge: "amenities.name3",
+  "Has smoking area": "tenant.cv.smoking.area",
+  Balcony: "outdoorspace.name1",
+  Terrace: "outdoorspace.name2",
+  "Outdoor space": "tenant.cv.outdoor.space",
+  "Co-working": "amenities.name1",
+  "Meeting rooms": "amenities.name2",
+  "Parcel room": "amenities.name4",
+  "Parcel lockers": "amenities.name4",
+  Maintenance: "amenities.name5",
+  Parking: "amenities.name8",
+  "Bike storage": "amenities.name10",
+  Gym: "amenities.name1",
+  Lounge: "amenities.name1",
+  Cinema: "amenities.name1",
+  "Roof terrace": "outdoorspace.name2",
+  Courtyard: "outdoorspace.name2",
+  "Events calendar": "amenities.name1",
+  "Pet areas": "amenities.name19",
+  "Kids' room": "amenities.name21",
+  Garden: "amenities.name1",
+  Reading: "amenities.name1",
+  Music: "amenities.name1",
+  Art: "amenities.name1",
+  Hiking: "amenities.name1",
+  Cooking: "amenities.name1",
+  Travel: "amenities.name1",
+  Sport: "amenities.name1",
+};
+
+export function getPropertyTypeTranslationKey(apiValue: string): string | undefined {
+  return PROPERTY_TYPE_API_TO_KEY[apiValue];
+}
+
+export function getFurnishingTranslationKey(apiValue: string): string | undefined {
+  return FURNISHING_API_TO_KEY[apiValue];
+}
+
+export function getOutdoorSpaceTranslationKey(apiValue: string): string | undefined {
+  return OUTDOOR_API_TO_KEY[apiValue];
+}
+
+export function getBillsTranslationKey(apiValue: string): string | undefined {
+  return BILLS_API_TO_KEY[apiValue];
+}
+
+export function getTenantTypeTranslationKeys(apiValue: string): string[] {
+  return TENANT_TYPE_API_TO_KEY[apiValue] ?? [];
+}
+
+export function getBuildingTypeTranslationKey(apiValue: string): string | undefined {
+  return BUILDING_TYPE_API_TO_KEY[apiValue];
+}
+
+export function getDurationTranslationKey(apiValue: string): string | undefined {
+  return DURATION_API_TO_KEY[apiValue];
+}
+
+export function getAmenityDisplayTranslationKey(displayName: string): string | undefined {
+  return AMENITY_DISPLAY_TO_KEY[displayName];
+}

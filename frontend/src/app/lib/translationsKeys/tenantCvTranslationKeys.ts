@@ -15,4 +15,7 @@ export const tenantCvKeys = {
   ppm: "tenant.cv.ppm",
   aboutMe: "tenant.cv.about.me",
   rentHistory: "tenant.cv.rent.history",
+  notSet: "tenant.cv.not.set",
+  outdoorSpace: "tenant.cv.outdoor.space",
+  smokingArea: "tenant.cv.smoking.area",
 };
