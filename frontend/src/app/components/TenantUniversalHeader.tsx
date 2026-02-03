@@ -75,7 +75,7 @@ export default function TenantUniversalHeader({
           {showPreferencesButton && (
             <button
               onClick={() => router.push("/app/preferences")}
-              className="cursor-pointer flex items-center gap-1 sm:gap-2 px-3 sm:px-4 md:px-4 py-2 sm:py-2 bg-black hover:bg-gray-900 rounded-3xl transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap shadow-md hover:shadow-lg active:scale-95"
+              className="cursor-pointer flex items-center gap-1 sm:gap-2 px-3.5 sm:px-4 md:px-4 py-2 sm:py-2 bg-black hover:bg-gray-900 rounded-3xl transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap shadow-md hover:shadow-lg active:scale-95"
             >
               <Settings className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
               <span className="hidden sm:inline">

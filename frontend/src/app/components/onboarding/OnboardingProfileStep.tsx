@@ -92,48 +92,74 @@ export default function OnboardingProfileStep({
     setPhoneNumberOnly(phoneNumber.slice(country.dialCode.length));
   }, []);
 
-  // Fill form with saved user data when component mounts or user changes
-  // Only fill if user has actual saved profile data (not just full_name from Google)
+  // Fill form with saved user data when component mounts, user changes, or when returning to profile step
+  // Only use data from tenantProfile (saved in database), NOT from Google OAuth (full_name)
+  // Always reload data from Redux store when returning to this step to ensure saved data is displayed
   useEffect(() => {
-    if (user) {
-      const profile =
-        user.role === "tenant" ? user.tenantProfile : user.operatorProfile;
+    if (user && currentStep === 4) {
+      // Only get data from tenantProfile, not from user.full_name (which might be from Google)
+      const tenantProfile = (user as UserType)?.tenantProfile;
+      
+      // Extract saved data only from tenantProfile (database), ignore Google OAuth data
+      const savedData = {
+        first_name: tenantProfile?.first_name || "",
+        last_name: tenantProfile?.last_name || "",
+        address: tenantProfile?.address || "",
+        phone: tenantProfile?.phone || "",
+        date_of_birth: tenantProfile?.date_of_birth 
+          ? (() => {
+              try {
+                const date = new Date(tenantProfile.date_of_birth);
+                if (!isNaN(date.getTime())) {
+                  return date.toISOString().split("T")[0];
+                }
+              } catch (error) {
+                console.warn("Error formatting date_of_birth:", error);
+              }
+              return "";
+            })()
+          : "",
+        nationality: tenantProfile?.nationality || "",
+      };
 
-      // Only prefill if profile exists and has actual saved data (not just from full_name)
+      // Check if user has actual saved profile data (not just empty strings)
       const hasSavedProfileData =
-        profile &&
-        (profile.first_name ||
-          profile.last_name ||
-          profile.address ||
-          profile.phone ||
-          profile.date_of_birth ||
-          profile.nationality);
+        savedData.first_name ||
+        savedData.last_name ||
+        savedData.address ||
+        savedData.phone ||
+        savedData.date_of_birth ||
+        savedData.nationality;
 
-      if (hasSavedProfileData) {
-        const savedData = buildFormDataFromUser(user as UserType);
+      // Always update form data when returning to this step, even if empty
+      // This ensures that saved data from the database is displayed, or form is reset if no data
+      setFormData({
+        first_name: savedData.first_name || "",
+        last_name: savedData.last_name || "",
+        address: savedData.address || "",
+        phone: savedData.phone || "",
+        date_of_birth: savedData.date_of_birth || "",
+        nationality: savedData.nationality || "",
+      });
 
-        setFormData((prev) => ({
-          first_name: savedData.first_name || prev.first_name,
-          last_name: savedData.last_name || prev.last_name,
-          address: savedData.address || prev.address,
-          phone: savedData.phone || prev.phone,
-          date_of_birth: savedData.date_of_birth || prev.date_of_birth,
-          nationality: savedData.nationality || prev.nationality,
-        }));
+      // Parse phone number if available
+      if (savedData.phone) {
+        parsePhoneNumber(savedData.phone);
+      } else {
+        // Reset phone fields if no saved phone
+        setPhoneCountryCode("GB");
+        setPhoneNumberOnly("");
+      }
 
-        // Parse phone number if available
-        if (savedData.phone) {
-          parsePhoneNumber(savedData.phone);
-        }
-
-        // Validate age for existing date_of_birth
-        if (savedData.date_of_birth) {
-          const ageError = validateAge(savedData.date_of_birth);
-          setDateOfBirthError(ageError);
-        }
+      // Validate age for existing date_of_birth
+      if (savedData.date_of_birth) {
+        const ageError = validateAge(savedData.date_of_birth);
+        setDateOfBirthError(ageError);
+      } else {
+        setDateOfBirthError(null);
       }
     }
-  }, [user, parsePhoneNumber]);
+  }, [user, currentStep, parsePhoneNumber]);
 
   // Validate age (must be 18+)
   const validateAge = (dateOfBirth: string | null): string | null => {
@@ -240,10 +266,33 @@ export default function OnboardingProfileStep({
 
       if (updatedUser) {
         // Update user with full data from server
-        dispatch(updateUser(updatedUser));
+        // Ensure tenantProfile is properly structured
+        const userUpdate = {
+          ...updatedUser,
+          tenantProfile: updatedUser.tenantProfile || {
+            ...user?.tenantProfile,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            address: formData.address,
+            phone: formData.phone,
+            date_of_birth: formData.date_of_birth,
+            nationality: formData.nationality,
+          },
+        };
+        dispatch(updateUser(userUpdate));
       } else {
-        // Fallback: update with form data
-        dispatch(updateUser(formData as any));
+        // Fallback: update with form data in tenantProfile structure
+        dispatch(updateUser({
+          tenantProfile: {
+            ...user?.tenantProfile,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            address: formData.address,
+            phone: formData.phone,
+            date_of_birth: formData.date_of_birth,
+            nationality: formData.nationality,
+          },
+        } as any));
       }
 
       // Set isOnboarded to true after profile is saved

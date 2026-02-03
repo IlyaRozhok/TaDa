@@ -137,7 +137,6 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         {tooltip && (
           <p className="text-xs text-gray-500 mt-1 px-6">{tooltip}</p>
         )}
-
       </div>
     );
   }

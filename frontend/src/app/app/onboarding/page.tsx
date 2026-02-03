@@ -413,11 +413,11 @@ export default function OnboardingPage() {
               }}
               className="text-base font-medium transition-colors text-black hover:text-gray-600 cursor-pointer"
             >
-              Previous
+              {t(onboardingKeys.bottom.prevButton)}
             </button>
 
             <div className="text-sm text-gray-500">
-              Step {state.currentStep} of {TOTAL_ONBOARDING_STEPS}
+              {t(onboardingKeys.bottom.stepText)} {state.currentStep} {t(onboardingKeys.bottom.ofText)} {TOTAL_ONBOARDING_STEPS}
             </div>
 
             {/* Next Button */}
@@ -435,10 +435,10 @@ export default function OnboardingPage() {
                 {isProfileSaving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Saving...
+                    {t(onboardingKeys.bottom.savingText)}
                   </>
                 ) : (
-                  "Next"
+                  t(onboardingKeys.bottom.nextButton)
                 )}
               </button>
             )}
@@ -456,7 +456,9 @@ export default function OnboardingPage() {
                     : ""
                 }`}
               >
-                {preferencesHook.isLastStep ? "Finish" : "Next"}
+                {preferencesHook.isLastStep
+                  ? t(onboardingKeys.bottom.finishButton)
+                  : t(onboardingKeys.bottom.nextButton)}
               </button>
             )}
           </div>

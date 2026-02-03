@@ -18,6 +18,8 @@ export const onboardingKeys = {
   bottom: {
     prevButton: "onboarding..prev.button",
     nextButton: "onboarding..next.button",
+    finishButton: "onboarding..finish.button",
+    savingText: "onboarding..saving.text",
     stepText: "onboarding.step.text",
     ofText: "onboarding.step.of.text",
   },
