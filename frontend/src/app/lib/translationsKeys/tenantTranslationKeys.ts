@@ -12,6 +12,7 @@ export const tenantKeys = {
     title: "landing.tenant.web.hero.title",
     subtitle: "landing.tenant.web.hero.subtitle",
     ctaBtn: "landing.tenant.web.hero.btn",
+    ctaBtnMobile: "header.cta.get.started",
   },
   rentSection: {
     title: "landing.tenant.web.hiw.title",
@@ -42,12 +43,14 @@ export const tenantKeys = {
       description: "landing.tenant.web.hiw.card5.description",
     },
     ctaBtn: "landing.tenant.web.hero.btn",
+    ctaBtnMobile: "header.cta.get.started",
   },
   generation: {
     title: "landing.tenant.web.gr.title",
     subtitle: "landing.tenant.web.gr.description",
     notice: "landing.tenant.web.gr.notice",
     ctaBtn: "landing.tenant.web.hero.btn",
+    ctaBtnMobile: "header.cta.get.started",
     communityCard: {
       title: "landing.tenant.web.gr.card1.title",
       description: "landing.tenant.web.gr.card1.description",

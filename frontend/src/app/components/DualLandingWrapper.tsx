@@ -31,6 +31,7 @@ const TenantsHeroSection = ({
 }) => {
   const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Force a small delay to ensure transition is visible on first load
@@ -40,6 +41,18 @@ const TenantsHeroSection = ({
     }, 1);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Detect mobile on mount and resize
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return (
@@ -88,7 +101,9 @@ const TenantsHeroSection = ({
               onClick={onContactClick}
               className="bg-white text-black w-full sm:w-auto hover:text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-black transition-colors shadow-lg cursor-pointer"
             >
-              {t(tenantKeys.hero.ctaBtn)}
+              {isMobile
+                ? t(tenantKeys.hero.ctaBtnMobile)
+                : t(tenantKeys.hero.ctaBtn)}
             </button>
           </div>
         </div>
@@ -182,6 +197,20 @@ const TenantsCardsSection = ({
   onContactClick?: () => void;
 }) => {
   const { t } = useTranslation();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Detect mobile on mount and resize
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const cards = [
     {
       id: 1,
@@ -249,7 +278,9 @@ const TenantsCardsSection = ({
               onClick={onContactClick}
               className="bg-black w-auto text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
             >
-              {t(tenantKeys.rentSection.ctaBtn)}
+              {isMobile
+                ? t(tenantKeys.rentSection.ctaBtnMobile)
+                : t(tenantKeys.rentSection.ctaBtn)}
             </button>
           </div>
         </div>
@@ -435,6 +466,20 @@ const GenerationRentSection = ({
   onContactClick?: () => void;
 }) => {
   const { t } = useTranslation();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Detect mobile on mount and resize
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const genRentImages = [
     {
       id: 1,
@@ -561,7 +606,9 @@ const GenerationRentSection = ({
             onClick={onContactClick}
             className="bg-black w-auto cursor-pointer text-white px-8 py-4 rounded-full font-semibold hover:bg-black/20 hover:text-black transition-colors mb-8"
           >
-            {t(tenantKeys.generation.ctaBtn)}
+            {isMobile
+              ? t(tenantKeys.generation.ctaBtnMobile)
+              : t(tenantKeys.generation.ctaBtn)}
           </button>
 
           <p className="text-gray-700 text-base mb-12">
