@@ -167,94 +167,53 @@ export default function UserDropdown({
         )}
       </button>
 
-      {/* Dropdown Menu - Dark Glassmorphism Style */}
+      {/* Dropdown Menu - Same style as mobile menu */}
       {isMounted && isOpen && (
-        <div className="absolute right-0 mt-2 w-64 rounded-xl shadow-2xl z-50 overflow-hidden bg-black/10 backdrop-blur-lg">
-          {/* Dark glass background overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/20 backdrop-blur-lg -z-10"></div>
-          {/* Additional dark glass layer */}
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-md -z-10"></div>
-
-          {/* User Info */}
-          {!simplified && (
-            <div className="p-4 border-b border-white/10 relative">
-              <div className="flex items-center space-x-3">
-                <div className="relative w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-base font-medium text-white flex-shrink-0 border border-white/20 shadow-lg">
-                  {user.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt="Profile"
-                      className="w-full h-full object-cover rounded-full"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        const parent = target.parentElement;
-                        if (parent) {
-                          const initials = parent.querySelector(
-                            ".fallback-initials-large",
-                          );
-                          if (initials) {
-                            (initials as HTMLElement).style.display = "flex";
-                          }
-                        }
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className={`fallback-initials-large absolute inset-0 flex items-center justify-center ${
-                      user.avatar_url ? "hidden" : ""
-                    }`}
-                  >
-                    {initials}
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <p className="text-base font-semibold text-white">
-                    {displayName}
-                  </p>
-                  <p className="text-sm text-white/80">{user.email}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Menu Items */}
-          <div className="p-2 relative">
+        <div
+          className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
+            boxShadow:
+              "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+          }}
+        >
+          <div className="max-h-64 overflow-y-auto rounded-xl relative">
             {!simplified && (
               <>
                 <button
                   onClick={handleSettings}
-                  className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
+                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
                 >
-                  <Settings className="w-4 h-4 mr-3 text-white/80" />
+                  <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
                   {t(profileKeys.dropProfileSettings)}
                 </button>
 
                 <button
                   onClick={handlePreferences}
-                  className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
+                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
                 >
-                  <Sliders className="w-4 h-4 mr-3 text-white/80" />
+                  <Sliders className="w-4 h-4 mr-3 flex-shrink-0" />
                   {t(profileKeys.dropChangePreferences)}
                 </button>
 
                 <button
                   onClick={handleTenantCv}
-                  className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
+                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
                 >
-                  <FileText className="w-4 h-4 mr-3 text-white/80" />
+                  <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
                   {t(tenantCvKeys.tenantCvButton)}
                 </button>
 
-                <hr className="my-2 border-white/10" />
+                <hr className="my-1 border-white/10" />
               </>
             )}
 
             <button
               onClick={handleLogout}
-              className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-red-400 hover:backdrop-blur-md rounded-lg font-medium"
+              className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-red-400 hover:bg-white/12"
             >
-              <LogOut className="w-4 h-4 mr-3" />
+              <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
               {t(profileKeys.dropLogout)}
             </button>
           </div>

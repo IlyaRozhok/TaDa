@@ -102,38 +102,6 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Preferences Button - visible only on desktop */}
-          {showPreferencesButton && (
-            <div className="hidden md:block">
-              <button
-                onClick={() => router.push("/app/preferences")}
-                className="cursor-pointer flex items-center gap-1 sm:gap-2 px-3.5 sm:px-4 md:px-4 py-2 sm:py-2 bg-black hover:bg-gray-900 rounded-3xl transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap shadow-md hover:shadow-lg active:scale-95"
-              >
-                <Settings className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">
-                  {t(tenantCvKeys.myPreferencesButton)}
-                </span>
-                {preferencesCount > 0 && (
-                  <span className="bg-white/20 backdrop-blur-sm text-white text-[10px] sm:text-xs px-2 sm:px-2 py-0.5 sm:py-1 rounded-full font-semibold border border-white/30">
-                    {preferencesCount}%
-                  </span>
-                )}
-              </button>
-            </div>
-          )}
-
-          {/* Tenant CV Link - visible only on desktop */}
-          {showTenantCvLink && (
-            <div className="hidden md:block">
-              <button
-                onClick={() => router.push("/app/tenant-cv")}
-                className="cursor-pointer px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
-              >
-                {t(tenantCvKeys.tenantCvButton)}
-              </button>
-            </div>
-          )}
-
           {/* Language Dropdown */}
           <LanguageDropdown variant="default" />
 
