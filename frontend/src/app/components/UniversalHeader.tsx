@@ -1,41 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { Heart, Bell, ChevronDown } from "lucide-react";
+import { Heart, Bell } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import styles from "./ui/DropdownStyles.module.scss";
 import { selectUser } from "../store/slices/authSlice";
 import { getRedirectPath } from "../utils/simpleRedirect";
-import {
-  useI18n,
-  SUPPORTED_LANGUAGES,
-  getLanguageDisplayCode,
-} from "../contexts/I18nContext";
+import LanguageDropdown from "./LanguageDropdown";
 
 export default function UniversalHeader() {
   const router = useRouter();
   const user = useSelector(selectUser);
-  const { language, setLanguage } = useI18n();
-  const selectedLanguage = getLanguageDisplayCode(language);
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-
-  // Close language dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".language-dropdown")) {
-        setIsLanguageOpen(false);
-      }
-    };
-
-    if (isLanguageOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isLanguageOpen]);
 
   const handleLogoClick = () => {
     const path = getRedirectPath(user);
@@ -81,43 +58,10 @@ export default function UniversalHeader() {
             </button>
 
             {/* Language Dropdown */}
-            <div className="relative language-dropdown">
-              <button
-                onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-                className="flex items-center justify-center gap-0.5 px-1 py-0.75 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors rounded-lg min-w-[3.5rem] border border-gray-200 hover:bg-gray-50 min-h-touch-sm"
-                aria-label="Select language"
-              >
-                <span className="text-center">{selectedLanguage}</span>
-                <ChevronDown
-                  className={`w-1 h-1 flex-shrink-0 transition-transform ${
-                    isLanguageOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {isLanguageOpen && (
-                <div className="absolute right-0 mt-0.5 min-w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  <div className="py-1 max-h-80 overflow-y-auto">
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => {
-                          setLanguage(lang.langCode);
-                          setIsLanguageOpen(false);
-                        }}
-                        className={`w-full text-left px-1 py-0.75 text-sm transition-colors min-h-touch-sm ${
-                          selectedLanguage === lang.code
-                            ? "bg-gray-100 font-semibold text-gray-900"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        {lang.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <LanguageDropdown
+              variant="default"
+              buttonClassName="min-w-[3.5rem] border border-gray-200"
+            />
 
             {/* User Dropdown */}
             <UserDropdown />

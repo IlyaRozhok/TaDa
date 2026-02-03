@@ -1,17 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
-import {
-  useI18n,
-  SUPPORTED_LANGUAGES,
-  getLanguageDisplayCode,
-} from "../contexts/I18nContext";
+import LanguageDropdown from "./LanguageDropdown";
 import { selectUser } from "../store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { Heart, Settings, ChevronDown, ArrowLeft, Shield } from "lucide-react";
+import { Heart, Settings, ArrowLeft, Shield } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
 
@@ -35,25 +31,6 @@ export default function TenantUniversalHeader({
   const router = useRouter();
   const user = useSelector(selectUser);
   const { t } = useTranslation();
-  const { language, setLanguage } = useI18n();
-  const selectedLanguage = getLanguageDisplayCode(language);
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsLanguageOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleLogoClick = () => {
     const path = getRedirectPath(user);
@@ -133,54 +110,7 @@ export default function TenantUniversalHeader({
           )}
 
           {/* Language Dropdown */}
-          <div className="relative language-dropdown" ref={dropdownRef}>
-            <button
-              onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <span>{selectedLanguage}</span>
-              <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            </button>
-
-            {isLanguageOpen && (
-              <div
-                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
-                  boxShadow:
-                    "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
-                }}
-              >
-                <div className="max-h-64 overflow-y-auto rounded-xl relative">
-                  {SUPPORTED_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setLanguage(lang.langCode);
-                        setIsLanguageOpen(false);
-                      }}
-                      className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
-                        selectedLanguage === lang.code
-                          ? "bg-white/18 text-white font-semibold"
-                          : "text-white hover:bg-white/12"
-                      }`}
-                      style={{
-                        backdropFilter:
-                          selectedLanguage === lang.code
-                            ? "blur(10px)"
-                            : undefined,
-                        fontWeight:
-                          selectedLanguage === lang.code ? 600 : undefined,
-                      }}
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <LanguageDropdown variant="default" />
 
           {/* Save Button */}
           {showSaveButton && (

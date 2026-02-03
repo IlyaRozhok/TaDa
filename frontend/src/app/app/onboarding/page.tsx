@@ -27,33 +27,10 @@ import {
 import { usePreferences } from "../../hooks/usePreferences";
 import { useTranslation } from "../../hooks/useTranslation";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
-import {
-  useI18n,
-  getLanguageDisplayCode,
-  SUPPORTED_LANGUAGES,
-} from "../../contexts/I18nContext";
+import LanguageDropdown from "../../components/LanguageDropdown";
 
 // Onboarding Header Component - uses same language as landing (saved in localStorage via I18nContext)
 function OnboardingHeader() {
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const { language, setLanguage } = useI18n();
-  const selectedLanguage = getLanguageDisplayCode(language);
-
-  // Close language dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".language-dropdown")) {
-        setIsLanguageOpen(false);
-      }
-    };
-
-    if (isLanguageOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isLanguageOpen]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 py-0.75 sm:py-1">
@@ -72,54 +49,7 @@ function OnboardingHeader() {
         {/* Right: Language + Profile */}
         <div className="flex items-center space-x-0.75 sm:space-x-1">
           {/* Language Dropdown - same list as landing, persists via I18nContext/localStorage */}
-          <div className="relative language-dropdown">
-            <button
-              onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center gap-0.25 px-0.75 py-0.375 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-            >
-              <span>{selectedLanguage}</span>
-              <ChevronDown className="w-0.75 h-0.75" />
-            </button>
-
-            {isLanguageOpen && (
-              <div
-                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
-                  boxShadow:
-                    "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
-                }}
-              >
-                <div className="max-h-64 overflow-y-auto rounded-xl relative">
-                  {SUPPORTED_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setLanguage(lang.langCode);
-                        setIsLanguageOpen(false);
-                      }}
-                      className={`block w-full px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
-                        selectedLanguage === lang.code
-                          ? "bg-white/18 text-white font-semibold"
-                          : "text-white hover:bg-white/12"
-                      }`}
-                      style={{
-                        backdropFilter:
-                          selectedLanguage === lang.code
-                            ? "blur(10px)"
-                            : undefined,
-                        fontWeight:
-                          selectedLanguage === lang.code ? 600 : undefined,
-                      }}
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <LanguageDropdown variant="default" />
 
           {/* User Dropdown - Simplified */}
           <UserDropdown simplified={true} />

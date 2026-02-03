@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import LandingSwitcher, { LandingType } from "./LandingSwitcher";
 import RequestDemoModal from "./RequestDemoModal";
 
@@ -30,6 +31,7 @@ const TenantsHeroSection = ({
   onContactClick?: () => void;
 }) => {
   const { t } = useTranslation();
+  const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -98,7 +100,13 @@ const TenantsHeroSection = ({
           {/* CTA Button */}
           <div className="pt-4">
             <button
-              onClick={onContactClick}
+              onClick={() => {
+                if (isMobile) {
+                  router.push("/app/auth");
+                } else {
+                  onContactClick?.();
+                }
+              }}
               className="bg-white text-black w-full sm:w-auto hover:text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-black transition-colors shadow-lg cursor-pointer"
             >
               {isMobile
@@ -197,6 +205,7 @@ const TenantsCardsSection = ({
   onContactClick?: () => void;
 }) => {
   const { t } = useTranslation();
+  const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -258,7 +267,7 @@ const TenantsCardsSection = ({
       <div className="relative z-10">
         {/* Section Header */}
         <div className="container mx-auto px-4">
-          <div className="text-start mb-16">
+          <div className="text-start mb-8 md:mb-16">
             <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-black lg:max-w-4xl lg:mx-0 mx-auto mt-6">
               {t(tenantKeys.rentSection.title)}
             </h2>
@@ -275,8 +284,14 @@ const TenantsCardsSection = ({
         <div className="container mx-auto px-4">
           <div className="text-center mt-6 md:mt-16">
             <button
-              onClick={onContactClick}
-              className="bg-black w-auto text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
+              onClick={() => {
+                if (isMobile) {
+                  router.push("/app/auth");
+                } else {
+                  onContactClick?.();
+                }
+              }}
+              className="bg-black w-full sm:w-auto text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
             >
               {isMobile
                 ? t(tenantKeys.rentSection.ctaBtnMobile)
@@ -466,6 +481,7 @@ const GenerationRentSection = ({
   onContactClick?: () => void;
 }) => {
   const { t } = useTranslation();
+  const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -603,8 +619,14 @@ const GenerationRentSection = ({
 
           {/* CTA Button */}
           <button
-            onClick={onContactClick}
-            className="bg-black w-auto cursor-pointer text-white px-8 py-4 rounded-full font-semibold hover:bg-black/20 hover:text-black transition-colors mb-8"
+            onClick={() => {
+              if (isMobile) {
+                router.push("/app/auth");
+              } else {
+                onContactClick?.();
+              }
+            }}
+            className="bg-black w-full sm:w-auto cursor-pointer text-white px-8 py-4 rounded-full font-semibold hover:bg-black/20 hover:text-black transition-colors mb-8"
           >
             {isMobile
               ? t(tenantKeys.generation.ctaBtnMobile)

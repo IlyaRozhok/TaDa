@@ -2,13 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
 import RequestDemoModal from "./RequestDemoModal";
-import {
-  useI18n,
-  SUPPORTED_LANGUAGES,
-  getLanguageDisplayCode,
-} from "../contexts/I18nContext";
+import LanguageDropdown from "./LanguageDropdown";
 import { useTranslation } from "../hooks/useTranslation";
 import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
 import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
@@ -27,9 +22,6 @@ const Header = ({
   disabled = false,
 }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const { language, setLanguage } = useI18n();
-  const selectedLanguage = getLanguageDisplayCode(language);
   const [isRequestDemoOpen, setIsRequestDemoOpen] = useState(false);
   const [modalSource, setModalSource] = useState<
     | "tenant-contact"
@@ -40,21 +32,6 @@ const Header = ({
   const router = useRouter();
   const { t } = useTranslation();
 
-  // Close language dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".language-dropdown")) {
-        setIsLanguageOpen(false);
-      }
-    };
-
-    if (isLanguageOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isLanguageOpen]);
 
   // Close mobile menu when landing type changes
   useEffect(() => {
@@ -172,47 +149,7 @@ const Header = ({
                 <div className="hidden sm:block">{children}</div>
 
                 {/* Language Dropdown */}
-                <div className="relative language-dropdown">
-                  <button
-                    onClick={() =>
-                      !disabled && setIsLanguageOpen(!isLanguageOpen)
-                    }
-                    disabled={disabled}
-                    className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-white hover:text-gray-300 transition-colors rounded-lg w-14 cursor-pointer disabled:cursor-default disabled:hover:text-white"
-                  >
-                    <span className="min-w-[1.5rem] text-center">
-                      {selectedLanguage}
-                    </span>
-                    <ChevronDown
-                      className={`w-3 h-3 flex-shrink-0 transition-transform ${
-                        isLanguageOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {isLanguageOpen && (
-                    <div className="absolute right-0 top-full mt-6 rounded-xl shadow-lg bg-black/50 backdrop-blur-[10px] border-gray-200 min-w-[240px] z-50">
-                      <div className="max-h-80 overflow-y-auto rounded-xl py-1">
-                        {SUPPORTED_LANGUAGES.map((lang) => (
-                          <button
-                            key={lang.code}
-                            onClick={() => {
-                              setLanguage(lang.langCode);
-                              setIsLanguageOpen(false);
-                            }}
-                            className={`w-full text-left cursor-pointer px-4 py-2 text-sm transition-colors bg-black/50 backdrop-blur-[10px] ${
-                              selectedLanguage === lang.code
-                                ? "bg-black font-semibold text-white hover:text-white hover:bg-black/80"
-                                : "text-gray-400 hover:bg-gray-100 hover:text-black"
-                            }`}
-                          >
-                            {lang.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <LanguageDropdown variant="dark" disabled={disabled} />
 
                 {/* Get Started CTA - navigates to auth */}
                 <button
