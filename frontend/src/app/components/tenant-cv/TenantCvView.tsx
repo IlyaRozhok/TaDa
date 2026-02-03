@@ -202,7 +202,7 @@ export function TenantCvView({
     : null;
 
   // Duration: API values → translation keys → t()
-  const durationLabel = preferences?.let_duration
+  const durationValues = preferences?.let_duration
     ? preferences.let_duration
         .split(",")
         .map((s) => {
@@ -210,8 +210,8 @@ export function TenantCvView({
           return key ? t(key) : s.trim();
         })
         .filter(Boolean)
-        .join(", ")
-    : null;
+    : [];
+  const durationLabel = durationValues.join(", ");
 
   // Building types for "Ready to move" section (localized)
   const buildingTypes = preferences?.building_types || [];
@@ -452,40 +452,63 @@ export function TenantCvView({
         {(readyLabel ||
           buildingTypesLabels.length > 0 ||
           readyMoveDateRange) && (
-          <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:flex-wrap">
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="mt-6 flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
               {/* Ready to move badge with green border and duration */}
               {readyLabel && (
-                <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-2 rounded-full border-[1.5px] border-green-500 bg-white w-full sm:w-fit">
-                  <Home className="w-4 h-4 text-gray-900" />
-                  <span className="font-medium text-gray-900">
-                    {readyLabel}
-                  </span>
-                  {durationLabel && (
-                    <>
-                      <span className="text-gray-900">-</span>
-                      <span className="text-gray-900">{durationLabel}</span>
-                    </>
-                  )}
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border-[1.5px] border-green-500 bg-white w-full sm:w-auto sm:min-w-0 sm:max-w-full">
+                  <Home className="w-4 h-4 text-gray-900 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 break-words">
+                      {readyLabel}
+                    </div>
+                    {durationValues.length > 0 && (
+                      <>
+                        {/* Mobile: each value on new line */}
+                        <div className="font-medium text-gray-900 text-sm mt-1.5 sm:hidden space-y-0.5">
+                          {durationValues.map((value, idx) => (
+                            <div key={idx} className="break-words">
+                              {value}
+                            </div>
+                          ))}
+                        </div>
+                        {/* Desktop: comma-separated */}
+                        <div className="font-medium text-gray-900 text-sm mt-1 hidden sm:block break-words">
+                          {durationLabel}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Building style preferences badge without green border */}
               {buildingTypesLabels.length > 0 && (
-                <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-2 rounded-full border-[1.5px] border-gray-300 bg-white w-full sm:w-fit">
-                  <Building2 className="w-4 h-4 text-gray-900" />
-                  <span className="font-medium text-gray-900">
-                    {buildingTypesLabels.join(", ")}
-                  </span>
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border-[1.5px] border-gray-300 bg-white w-full sm:w-auto sm:min-w-0 sm:max-w-full">
+                  <Building2 className="w-4 h-4 text-gray-900 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    {/* Mobile: each value on new line */}
+                    <div className="font-medium text-gray-900 sm:hidden space-y-0.5">
+                      {buildingTypesLabels.map((label, idx) => (
+                        <div key={idx} className="break-words">
+                          {label}
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop: comma-separated */}
+                    <span className="font-medium text-gray-900 hidden sm:inline break-words">
+                      {buildingTypesLabels.join(", ")}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Date range text on the right, aligned to container */}
+            {/* Date range text below badges */}
             {readyMoveDateRange && (
-              <span className="sm:ml-auto font-medium text-gray-900">
+              <div className="font-medium text-gray-900 break-words">
                 {readyMoveDateRange}
-              </span>
+              </div>
             )}
           </div>
         )}
