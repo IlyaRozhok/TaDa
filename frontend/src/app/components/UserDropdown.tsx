@@ -8,7 +8,8 @@ import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
-import { LogOut, Settings, Sliders, Mail } from "lucide-react";
+import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
+import { LogOut, Settings, Sliders, Mail, FileText } from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
@@ -98,6 +99,11 @@ export default function UserDropdown({
   const handlePreferences = () => {
     setIsOpen(false);
     router.push("/app/preferences");
+  };
+
+  const handleTenantCv = () => {
+    setIsOpen(false);
+    router.push("/app/tenant-cv");
   };
 
   const handleSupport = () => {
@@ -230,6 +236,14 @@ export default function UserDropdown({
                 >
                   <Sliders className="w-4 h-4 mr-3 text-white/80" />
                   {t(profileKeys.dropChangePreferences)}
+                </button>
+
+                <button
+                  onClick={handleTenantCv}
+                  className="flex cursor-pointer items-center w-full px-4 py-3 text-sm text-white hover:backdrop-blur-md rounded-lg font-medium"
+                >
+                  <FileText className="w-4 h-4 mr-3 text-white/80" />
+                  {t(tenantCvKeys.tenantCvButton)}
                 </button>
 
                 <hr className="my-2 border-white/10" />

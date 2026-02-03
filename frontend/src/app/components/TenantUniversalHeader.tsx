@@ -1,15 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
 import { selectUser } from "../store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { Heart, Settings, ArrowLeft, Shield } from "lucide-react";
+import { Settings, Shield, MoreVertical, User, FileText } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
+import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 
 interface TenantUniversalHeaderProps {
   preferencesCount?: number;
@@ -31,14 +32,44 @@ export default function TenantUniversalHeader({
   const router = useRouter();
   const user = useSelector(selectUser);
   const { t } = useTranslation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileMenuOpen]);
 
   const handleLogoClick = () => {
     const path = getRedirectPath(user);
     router.push(path);
   };
 
-  const handleFavouritesClick = () => {
-    router.push("/app/shortlist");
+  const handleMobileMenuClick = (path: string) => {
+    setIsMobileMenuOpen(false);
+    router.push(path);
   };
 
   return (
@@ -71,42 +102,36 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Preferences Button - Beautiful mobile design */}
+          {/* Preferences Button - visible only on desktop */}
           {showPreferencesButton && (
-            <button
-              onClick={() => router.push("/app/preferences")}
-              className="cursor-pointer flex items-center gap-1 sm:gap-2 px-3.5 sm:px-4 md:px-4 py-2 sm:py-2 bg-black hover:bg-gray-900 rounded-3xl transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap shadow-md hover:shadow-lg active:scale-95"
-            >
-              <Settings className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">
-                {t(tenantCvKeys.myPreferencesButton)}
-              </span>
-              {preferencesCount > 0 && (
-                <span className="bg-white/20 backdrop-blur-sm text-white text-[10px] sm:text-xs px-2 sm:px-2 py-0.5 sm:py-1 rounded-full font-semibold border border-white/30">
-                  {preferencesCount}%
+            <div className="hidden md:block">
+              <button
+                onClick={() => router.push("/app/preferences")}
+                className="cursor-pointer flex items-center gap-1 sm:gap-2 px-3.5 sm:px-4 md:px-4 py-2 sm:py-2 bg-black hover:bg-gray-900 rounded-3xl transition-all duration-200 text-xs sm:text-sm font-medium text-white whitespace-nowrap shadow-md hover:shadow-lg active:scale-95"
+              >
+                <Settings className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">
+                  {t(tenantCvKeys.myPreferencesButton)}
                 </span>
-              )}
-            </button>
+                {preferencesCount > 0 && (
+                  <span className="bg-white/20 backdrop-blur-sm text-white text-[10px] sm:text-xs px-2 sm:px-2 py-0.5 sm:py-1 rounded-full font-semibold border border-white/30">
+                    {preferencesCount}%
+                  </span>
+                )}
+              </button>
+            </div>
           )}
 
-          {/* Tenant CV Link */}
+          {/* Tenant CV Link - visible only on desktop */}
           {showTenantCvLink && (
-            <button
-              onClick={() => router.push("/app/tenant-cv")}
-              className="cursor-pointer px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
-            >
-              {t(tenantCvKeys.tenantCvButton)}
-            </button>
-          )}
-
-          {/* Favourites */}
-          {showFavouritesButton && (
-            <button
-              onClick={handleFavouritesClick}
-              className="p-1.5 sm:p-2 cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-            >
-              <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+            <div className="hidden md:block">
+              <button
+                onClick={() => router.push("/app/tenant-cv")}
+                className="cursor-pointer px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-black hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm md:text-base font-medium whitespace-nowrap"
+              >
+                {t(tenantCvKeys.tenantCvButton)}
+              </button>
+            </div>
           )}
 
           {/* Language Dropdown */}
@@ -122,8 +147,60 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* User Dropdown */}
-          <UserDropdown />
+          {/* Mobile Menu (3 dots) - visible only on mobile */}
+          <div className="relative md:hidden" ref={mobileMenuRef}>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Menu"
+            >
+              <MoreVertical className="w-5 h-5" />
+            </button>
+
+            {/* Mobile Menu Dropdown - styled like LanguageDropdown */}
+            {isMobileMenuOpen && (
+              <div
+                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
+                  boxShadow:
+                    "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+                }}
+              >
+                <div className="max-h-64 overflow-y-auto rounded-xl relative">
+                  <button
+                    onClick={() => handleMobileMenuClick("/app/profile")}
+                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                  >
+                    <User className="w-4 h-4 mr-3 flex-shrink-0" />
+                    {t(profileKeys.dropProfileSettings)}
+                  </button>
+
+                  <button
+                    onClick={() => handleMobileMenuClick("/app/preferences")}
+                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                  >
+                    <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
+                    {t(profileKeys.dropChangePreferences)}
+                  </button>
+
+                  <button
+                    onClick={() => handleMobileMenuClick("/app/tenant-cv")}
+                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                  >
+                    <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
+                    {t(tenantCvKeys.tenantCvButton)}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* User Dropdown - visible only on desktop */}
+          <div className="hidden md:block">
+            <UserDropdown />
+          </div>
         </div>
       </div>
     </nav>
