@@ -25,6 +25,8 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   const [imageSrc, setImageSrc] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
 
   const getMainImage = () => {
     if (property.media && property.media.length > 0) {
@@ -49,6 +51,29 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
     setIsLoaded(false);
     setHasError(false);
   }, [property.id]);
+
+  // Update tooltip position on scroll
+  useEffect(() => {
+    if (!tooltipPosition) return;
+
+    const updatePosition = () => {
+      if (badgeRef.current) {
+        const rect = badgeRef.current.getBoundingClientRect();
+        setTooltipPosition({
+          top: rect.bottom + 12,
+          left: rect.left,
+        });
+      }
+    };
+
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [tooltipPosition]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.currentTarget;
@@ -110,7 +135,44 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
 
       {/* Match Badge - Left Top */}
       {matchScore !== undefined && matchScore > 0 && (
-        <div className="absolute top-3 left-4 z-10 group/match">
+        <div 
+          ref={badgeRef}
+          className="absolute top-3 left-4 z-10 group/match"
+          onMouseEnter={() => {
+            if (badgeRef.current) {
+              const rect = badgeRef.current.getBoundingClientRect();
+              const tooltipWidth = 320; // w-80 = 320px
+              const tooltipMaxHeight = 600;
+              
+              // Calculate position
+              let left = rect.left;
+              let top = rect.bottom + 12;
+              
+              // Adjust if tooltip would go off screen
+              if (left + tooltipWidth > window.innerWidth) {
+                left = window.innerWidth - tooltipWidth - 16; // 16px margin
+              }
+              if (left < 16) {
+                left = 16;
+              }
+              
+              // Adjust if tooltip would go off bottom of screen
+              if (top + tooltipMaxHeight > window.innerHeight) {
+                top = rect.top - tooltipMaxHeight - 12; // Show above badge instead
+              }
+              
+              setTooltipPosition({ top, left });
+            }
+          }}
+          onMouseLeave={() => {
+            // Delay to allow moving mouse to tooltip
+            setTimeout(() => {
+              if (!badgeRef.current?.matches(':hover')) {
+                setTooltipPosition(null);
+              }
+            }, 100);
+          }}
+        >
           <div
             className={`min-w-[100px] bg-black/60 backdrop-blur-[3px] text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg relative transition-all duration-200 cursor-pointer hover:bg-black/75 hover:shadow-xl`}
           >
@@ -118,9 +180,19 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
           </div>
 
           {/* Glassmorphism tooltip with match details */}
-          {matchCategories && matchCategories.length > 0 ? (
+          {matchCategories && matchCategories.length > 0 && tooltipPosition ? (
             <div 
-              className="absolute left-0 top-full mt-3 w-80 max-h-[600px] bg-black/70 backdrop-blur-md text-white rounded-xl shadow-2xl opacity-0 invisible group-hover/match:opacity-100 group-hover/match:visible transition-all duration-200 pointer-events-none group-hover/match:pointer-events-auto z-[9999] border border-white/15 overflow-hidden"
+              className="fixed w-80 max-h-[600px] bg-black/70 backdrop-blur-md text-white rounded-xl shadow-2xl transition-all duration-200 pointer-events-auto z-[9999] border border-white/15 overflow-hidden"
+              style={{
+                top: `${tooltipPosition.top}px`,
+                left: `${tooltipPosition.left}px`,
+              }}
+              onMouseEnter={() => {
+                // Keep tooltip visible when hovering over it
+              }}
+              onMouseLeave={() => {
+                setTooltipPosition(null);
+              }}
             >
               {/* Header */}
               <div className="px-4 py-3 border-b border-white/10 flex-shrink-0">

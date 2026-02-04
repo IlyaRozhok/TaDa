@@ -78,7 +78,10 @@ export const DateInput: React.FC<DateInputProps> = ({
     if (!displayDate) return null;
 
     // Check if format matches DD.MM.YYYY (10 characters with dots)
-    if (displayDate.length !== 10 || !/^\d{2}\.\d{2}\.\d{4}$/.test(displayDate)) {
+    if (
+      displayDate.length !== 10 ||
+      !/^\d{2}\.\d{2}\.\d{4}$/.test(displayDate)
+    ) {
       // If format doesn't match, return special marker for invalid format
       return "INVALID_FORMAT";
     }
@@ -98,7 +101,14 @@ export const DateInput: React.FC<DateInputProps> = ({
       const yearNum = parseInt(year);
 
       // Basic range validation
-      if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > 2100) {
+      if (
+        dayNum < 1 ||
+        dayNum > 31 ||
+        monthNum < 1 ||
+        monthNum > 12 ||
+        yearNum < 1900 ||
+        yearNum > 2100
+      ) {
         return "INVALID_FORMAT";
       }
 
@@ -181,7 +191,7 @@ export const DateInput: React.FC<DateInputProps> = ({
             }
           }}
           className={cn(
-            "w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0",
+            "w-full px-6 pt-8 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0",
             "[&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden",
             "appearance-none",
             "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",

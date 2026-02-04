@@ -33,7 +33,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 }) => {
   const options = optionGroups
     ? [...new Set(optionGroups.flatMap((g) => g.options))]
-    : (optionsProp ?? []);
+    : optionsProp ?? [];
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
@@ -52,7 +52,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             options: g.options.filter((opt) => opt.toLowerCase().includes(q)),
           }))
           .filter((g) => g.options.length > 0)
-      : (optionGroups ?? []);
+      : optionGroups ?? [];
 
   const displayOptions = optionGroups ? undefined : filteredOptions;
   const displayOptionGroups = optionGroups ? filteredOptionGroups : undefined;
@@ -109,7 +109,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         {/* White Input */}
         <div
           onClick={handleToggle}
-          className={`relative w-full px-6 pt-8 pb-4 pr-12 rounded-3xl cursor-pointer flex items-center bg-gray-50 sm:bg-white border-0 h-[4.5rem] overflow-hidden ${
+          className={`relative w-full px-6 pt-8 pb-4 pr-12 rounded-4xl cursor-pointer flex items-center bg-gray-50 sm:bg-white border-0 h-[4.5rem] overflow-hidden ${
             isInitialized ? "transition-all duration-200" : ""
           }`}
         >

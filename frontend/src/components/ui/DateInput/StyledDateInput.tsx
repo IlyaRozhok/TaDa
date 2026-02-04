@@ -149,7 +149,7 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
               el.type = "text";
             }
           }}
-          className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0 appearance-none [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden ${
+          className={`w-full px-6 pt-8 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0 appearance-none [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden ${
             error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
           }`}
         />
