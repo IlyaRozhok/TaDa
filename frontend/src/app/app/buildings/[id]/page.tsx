@@ -1,27 +1,43 @@
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
+// import { useSelector, useDispatch } from "react-redux";
 import {
   buildingsAPI,
   propertiesAPI,
-  Building,
-  Property,
 } from "../../../lib/api";
-import {
-  addToShortlist,
-  removeFromShortlist,
-  selectShortlistProperties,
-} from "../../../store/slices/shortlistSlice";
-import { AppDispatch } from "../../../store/store";
-import {
-  selectUser,
-  selectIsAuthenticated,
-} from "../../../store/slices/authSlice";
+import { Property } from "../../../types";
+
+interface Building {
+  id: string;
+  name: string;
+  address: string;
+  number_of_units: number;
+  type_of_unit: string[];
+  logo?: string;
+  video?: string;
+  photos?: string[];
+  documents?: string;
+  operator_id: string | null;
+  amenities?: string[];
+  districts?: Array<{ label: string; destination?: number }>;
+  areas?: Array<{ label: string; destination?: number }>;
+  commute_times?: Array<{ label: string; destination?: number; method?: string }>;
+}
+// import {
+//   addToShortlist,
+//   removeFromShortlist,
+//   selectShortlistProperties,
+// } from "../../../store/slices/shortlistSlice";
+// import { AppDispatch } from "../../../store/store";
+// import {
+//   selectUser,
+//   selectIsAuthenticated,
+// } from "../../../store/slices/authSlice";
 import ImageGallery from "../../../components/ImageGallery";
-import { Button } from "../../../components/ui/Button";
-import { Heart, Share, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/shared/ui/Button/Button";
+import { Share, ChevronLeft, ChevronRight } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
@@ -31,8 +47,17 @@ type BuildingWithMedia = Building & {
   media?: Array<{
     id: string;
     url: string;
-    type: string;
+    type: "video" | "image";
     order_index: number;
+    property_id: string;
+    mime_type: string;
+    original_filename: string;
+    file_size: number;
+    uploaded_at: string;
+    created_at: string;
+    updated_at: string;
+    is_featured?: boolean;
+    room_type?: string;
   }>;
 };
 
@@ -40,9 +65,9 @@ export default function BuildingPublicPage() {
   const params = useParams();
   const id = params && typeof params.id === 'string' ? params.id : null;
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const user = useSelector(selectUser);
-  const isAuthenticated = useSelector(selectIsAuthenticated);
+  // const dispatch = useDispatch<AppDispatch>();
+  // const user = useSelector(selectUser);
+  // const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const [building, setBuilding] = useState<BuildingWithMedia | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -168,10 +193,7 @@ export default function BuildingPublicPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader
-          showBackButton={true}
-          onBackClick={() => router.back()}
-        />
+        <TenantUniversalHeader />
         <PropertyDetailSkeleton />
       </div>
     );
@@ -180,10 +202,7 @@ export default function BuildingPublicPage() {
   if (error || !building) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader
-          showBackButton={true}
-          onBackClick={() => router.back()}
-        />
+        <TenantUniversalHeader />
         <div className="max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-2 py-2">
           <div className="text-center py-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -203,10 +222,7 @@ export default function BuildingPublicPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <TenantUniversalHeader
-        showBackButton={true}
-        onBackClick={() => router.back()}
-      />
+      <TenantUniversalHeader />
 
       {/* Building Header */}
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -383,9 +399,9 @@ export default function BuildingPublicPage() {
                     <p className="text-xs text-gray-500 mb-1">Commute location</p>
                     <p className="text-sm font-medium text-black">
                       {building.districts && building.districts.length > 0 
-                        ? building.districts[0] 
+                        ? (typeof building.districts[0] === 'string' ? building.districts[0] : building.districts[0]?.label)
                         : building.areas && building.areas.length > 0 
-                        ? building.areas[0] 
+                        ? (typeof building.areas[0] === 'string' ? building.areas[0] : building.areas[0]?.label)
                         : 'Central London'}
                     </p>
                   </div>
@@ -393,9 +409,9 @@ export default function BuildingPublicPage() {
                     <p className="text-xs text-gray-500 mb-1">Secondary location (option)</p>
                     <p className="text-sm font-medium text-black">
                       {building.districts && building.districts.length > 1 
-                        ? building.districts[1] 
+                        ? (typeof building.districts[1] === 'string' ? building.districts[1] : building.districts[1]?.label)
                         : building.areas && building.areas.length > 1 
-                        ? building.areas[1] 
+                        ? (typeof building.areas[1] === 'string' ? building.areas[1] : building.areas[1]?.label)
                         : 'N/A'}
                     </p>
                   </div>

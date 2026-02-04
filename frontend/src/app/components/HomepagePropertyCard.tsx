@@ -1,18 +1,11 @@
+// DEPRECATED: Use PropertyCard from @/entities/property/ui instead
+// This is a compatibility wrapper that will be removed in a future version
+
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
+import React from "react";
+import PropertyCard from "@/entities/property/ui/PropertyCard";
 import { Property } from "../types";
-import { selectUser } from "../store/slices/authSlice";
-import {
-  addToShortlist,
-  removeFromShortlist,
-  selectShortlistProperties,
-} from "../store/slices/shortlistSlice";
-import { AppDispatch } from "../store/store";
-import { Heart, MapPin, Bed, Bath } from "lucide-react";
-import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
 
 interface HomepagePropertyCardProps {
   property: Property;
@@ -33,6 +26,19 @@ export default function HomepagePropertyCard({
   onImageLoad,
   isAuthenticated = false,
 }: HomepagePropertyCardProps) {
+  return (
+    <PropertyCard
+      property={property}
+      matchScore={matchScore}
+      onClick={onClick}
+      showShortlist={showShortlist}
+      imageLoaded={imageLoaded}
+      onImageLoad={onImageLoad}
+      isAuthenticated={isAuthenticated}
+      variant="homepage"
+    />
+  );
+}
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);

@@ -6,12 +6,16 @@ interface PropertyContentProps {
   property: Property;
   shortlistSuccess?: string | null;
   shortlistError?: string | null;
+  matchScore?: number;
+  matchCategories?: any[];
 }
 
 export const PropertyContent: React.FC<PropertyContentProps> = ({
   property,
   shortlistSuccess,
   shortlistError,
+  matchScore,
+  matchCategories, // eslint-disable-line @typescript-eslint/no-unused-vars
 }) => {
   const formatPrice = (price: number | string) => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
@@ -45,6 +49,11 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
             {formatPrice(property.price)}
             <span className="text-sm font-normal text-slate-500">/month</span>
           </p>
+          {matchScore !== undefined && (
+            <div className="flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+              <span>{Math.round(matchScore)}% match</span>
+            </div>
+          )}
         </div>
       </div>
 

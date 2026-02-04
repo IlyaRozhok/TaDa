@@ -1,20 +1,12 @@
+// DEPRECATED: Use PropertyCard from @/entities/property/ui instead
+// This is a compatibility wrapper that will be removed in a future version
+
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
+import PropertyCard from "@/entities/property/ui/PropertyCard";
 import { Property } from "../types";
 import { CategoryMatchResult } from "../lib/api";
-import { selectUser } from "../store/slices/authSlice";
-import {
-  addToShortlist,
-  removeFromShortlist,
-  selectShortlistProperties,
-} from "../store/slices/shortlistSlice";
-import { AppDispatch } from "../store/store";
-import { Heart, BedDouble, Bath, Move, Check, X } from "lucide-react";
-import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
-import ConfirmModal from "./ui/ConfirmModal";
 
 interface EnhancedPropertyCardProps {
   property: Property;
@@ -24,7 +16,7 @@ interface EnhancedPropertyCardProps {
   onImageLoad?: () => void;
   matchScore?: number;
   userPreferences?: any;
-  matchCategories?: CategoryMatchResult[]; // New: category breakdown from backend
+  matchCategories?: CategoryMatchResult[];
 }
 
 export default function EnhancedPropertyCard({
@@ -37,6 +29,20 @@ export default function EnhancedPropertyCard({
   userPreferences,
   matchCategories,
 }: EnhancedPropertyCardProps) {
+  return (
+    <PropertyCard
+      property={property}
+      onClick={onClick}
+      showShortlist={showShortlist}
+      imageLoaded={imageLoaded}
+      onImageLoad={onImageLoad}
+      matchScore={matchScore}
+      userPreferences={userPreferences}
+      matchCategories={matchCategories}
+      variant="enhanced"
+    />
+  );
+}
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);

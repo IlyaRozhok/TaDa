@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     ],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false, // Strict TypeScript checking enabled
   },
   experimental: {
     serverActions: {

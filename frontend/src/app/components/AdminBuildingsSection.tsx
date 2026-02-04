@@ -15,11 +15,12 @@ interface Building {
   name: string;
   address: string;
   number_of_units: number;
-  type_of_unit: string;
+  type_of_unit: string[];
   logo?: string;
   video?: string;
   photos?: string[];
   documents?: string;
+  operator_id: string | null;
 }
 
 interface AdminBuildingsSectionProps {

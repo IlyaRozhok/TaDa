@@ -7,24 +7,19 @@ import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { Upload, X, Camera, Loader2 } from "lucide-react";
 import { StepWrapper } from "../../../../app/components/preferences/step-components/StepWrapper";
-import { StepContainer } from "../../../../app/components/preferences/step-components/StepContainer";
-import { InputField } from "../../../../app/components/preferences/ui/InputField";
-import {
-  PhoneMaskInput,
-  DateInput,
-  Button,
-  CountryDropdown,
-} from "../../../../shared/ui";
+import { StepContainer } from "@/app/components/preferences/step-components/StepContainer";
+import { InputField } from "@/app/components/preferences/ui/InputField";
+import { PhoneMaskInput, DateInput, Button } from "@/shared/ui";
 import {
   getCountryByDialCode,
   getCountryByCode,
   getDefaultCountry,
-} from "../../../../shared/lib/countries";
-import { User, UpdateUserData } from "../../../../entities/user/model/types";
-import { buildFormDataFromUser } from "../../../../entities/user/lib/utils";
+} from "@/shared/lib/countries";
+import { User, UpdateUserData } from "@/entities/user/model/types";
+import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
-import { authAPI } from "../../../../app/lib/api";
-import { updateUser } from "../../../../app/store/slices/authSlice";
+import { authAPI } from "@/app/lib/api";
+import { updateUser } from "@/app/store/slices/authSlice";
 import { AvatarCropModal } from "./AvatarCropModal";
 
 interface ProfileFormProps {
@@ -35,7 +30,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [formData, setFormData] = useState<UpdateUserData>(() =>
-    buildFormDataFromUser(user),
+    buildFormDataFromUser(user)
   );
   const [phoneCountryCode, setPhoneCountryCode] = useState("GB"); // Default to GB for UK-based platform
   const [phoneNumberOnly, setPhoneNumberOnly] = useState(""); // Store phone number without country code

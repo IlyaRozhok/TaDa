@@ -23,74 +23,71 @@ export class MatchingCalculationService {
     // 1. Budget matching
     categories.push(this.matchBudget(property, preferences, weights.budget));
 
-    // 2. Availability/Dates matching
+    // 2. Location matching (areas, districts, metro) - HIGH PRIORITY
     categories.push(
-      this.matchAvailability(property, preferences, weights.availability),
+      this.matchLocation(property, preferences, weights.location),
     );
 
-    // 3. Deposit matching
-    categories.push(this.matchDeposit(property, preferences, weights.deposit));
+    // 3. Bedrooms matching
+    categories.push(
+      this.matchBedrooms(property, preferences, weights.bedrooms),
+    );
 
     // 4. Property type matching
     categories.push(
       this.matchPropertyType(property, preferences, weights.propertyType),
     );
 
-    // 5. Bedrooms matching
+    // 5. Availability/Dates matching
     categories.push(
-      this.matchBedrooms(property, preferences, weights.bedrooms),
+      this.matchAvailability(property, preferences, weights.availability),
     );
 
-    // 6. Bathrooms matching
-    categories.push(
-      this.matchBathrooms(property, preferences, weights.bathrooms),
-    );
-
-    // 7. Building style matching
-    categories.push(
-      this.matchBuildingStyle(property, preferences, weights.buildingStyle),
-    );
-
-    // 8. Duration matching
-    categories.push(
-      this.matchDuration(property, preferences, weights.duration),
-    );
-
-    // 9. Square meters matching
-    categories.push(
-      this.matchSquareMeters(property, preferences, weights.squareMeters),
-    );
-
-    // 10. Bills matching
-    categories.push(this.matchBills(property, preferences, weights.bills));
-
-    // 11. Tenant type matching
-    categories.push(
-      this.matchTenantType(property, preferences, weights.tenantType),
-    );
-
-    // 12. Pets matching
-    categories.push(this.matchPets(property, preferences, weights.pets));
-
-    // 13. Amenities matching
+    // 6. Amenities matching (includes outdoor space)
     categories.push(
       this.matchAmenities(property, preferences, weights.amenities),
     );
 
-    // 14. Outdoor space matching
+    // 7. Bathrooms matching
     categories.push(
-      this.matchOutdoorSpace(property, preferences, weights.outdoorSpace),
+      this.matchBathrooms(property, preferences, weights.bathrooms),
     );
 
-    // 15. Furnishing matching
+    // 8. Building style matching
+    categories.push(
+      this.matchBuildingStyle(property, preferences, weights.buildingStyle),
+    );
+
+    // 9. Lifestyle compatibility matching (NEW)
+    categories.push(
+      this.matchLifestyle(property, preferences, weights.lifestyle),
+    );
+
+    // 10. Duration matching
+    categories.push(
+      this.matchDuration(property, preferences, weights.duration),
+    );
+
+    // 11. Square meters matching
+    categories.push(
+      this.matchSquareMeters(property, preferences, weights.squareMeters),
+    );
+
+    // 12. Furnishing matching
     categories.push(
       this.matchFurnishing(property, preferences, weights.furnishing),
     );
 
-    // 16. Location matching
+    // 13. Smoking compatibility matching (NEW)
     categories.push(
-      this.matchLocation(property, preferences, weights.location),
+      this.matchSmoking(property, preferences, weights.smoking),
     );
+
+    // 14. Pets matching
+    categories.push(this.matchPets(property, preferences, weights.pets));
+
+    // 15. Bills matching
+    categories.push(this.matchBills(property, preferences, weights.bills));
 
     // Calculate totals - ONLY include categories where user has set a preference
     // Categories without preferences are excluded from the calculation
@@ -327,69 +324,6 @@ export class MatchingCalculationService {
     };
   }
 
-  /**
-   * 3. Deposit matching
-   */
-  private matchDeposit(
-    property: Property,
-    preferences: Preferences,
-    maxScore: number,
-  ): CategoryMatchResult {
-    const depositPref = preferences.deposit_preference;
-    const propertyDeposit = Number(property.deposit) || 0;
-
-    // No preference set - exclude from calculation
-    if (!depositPref) {
-      return {
-        category: "deposit",
-        match: false,
-        score: 0,
-        maxScore: 0,
-        reason: "No deposit preference",
-        details: propertyDeposit
-          ? `Deposit: £${propertyDeposit}`
-          : "No deposit required",
-        hasPreference: false,
-      };
-    }
-
-    // User doesn't want deposit
-    if (depositPref === "no") {
-      if (propertyDeposit === 0) {
-        return {
-          category: "deposit",
-          match: true,
-          score: maxScore,
-          maxScore,
-          reason: "No deposit required",
-          details: "Property has no deposit requirement",
-          hasPreference: true,
-        };
-      }
-      return {
-        category: "deposit",
-        match: false,
-        score: 0,
-        maxScore,
-        reason: "Deposit required",
-        details: `Property requires £${propertyDeposit} deposit`,
-        hasPreference: true,
-      };
-    }
-
-    // User accepts deposit
-    return {
-      category: "deposit",
-      match: true,
-      score: maxScore,
-      maxScore,
-      reason: "Deposit acceptable",
-      details: propertyDeposit
-        ? `Deposit: £${propertyDeposit}`
-        : "No deposit required",
-      hasPreference: true,
-    };
-  }
 
   /**
    * 4. Property type matching
@@ -912,75 +846,6 @@ export class MatchingCalculationService {
     };
   }
 
-  /**
-   * 11. Tenant type matching
-   */
-  private matchTenantType(
-    property: Property,
-    preferences: Preferences,
-    maxScore: number,
-  ): CategoryMatchResult {
-    const prefTypes = preferences.tenant_types || [];
-    const propertyTypes = property.tenant_types || [];
-
-    // No preference set - exclude from calculation
-    if (!prefTypes.length) {
-      return {
-        category: "tenantType",
-        match: false,
-        score: 0,
-        maxScore: 0,
-        reason: "No tenant type preference",
-        details: `Accepts: ${
-          propertyTypes.length ? propertyTypes.join(", ") : "All"
-        }`,
-        hasPreference: false,
-      };
-    }
-
-    // Property accepts all types
-    if (!propertyTypes.length) {
-      return {
-        category: "tenantType",
-        match: true,
-        score: maxScore,
-        maxScore,
-        reason: "Property accepts all tenant types",
-        details: "No tenant type restrictions",
-        hasPreference: true,
-      };
-    }
-
-    // Check for overlap
-    const normalizedPrefTypes = prefTypes.map((t) => t.toLowerCase());
-    const normalizedPropTypes = propertyTypes.map((t) => t.toLowerCase());
-    const overlap = normalizedPrefTypes.filter((t) =>
-      normalizedPropTypes.includes(t),
-    );
-
-    if (overlap.length > 0) {
-      const matchRatio = overlap.length / prefTypes.length;
-      return {
-        category: "tenantType",
-        match: true,
-        score: Math.round(maxScore * matchRatio),
-        maxScore,
-        reason: "Tenant type compatible",
-        details: `Matches: ${overlap.join(", ")}`,
-        hasPreference: true,
-      };
-    }
-
-    return {
-      category: "tenantType",
-      match: false,
-      score: 0,
-      maxScore,
-      reason: "Tenant type not accepted",
-      details: `Property accepts: ${propertyTypes.join(", ")}`,
-      hasPreference: true,
-    };
-  }
 
   /**
    * 12. Pets matching
@@ -1091,7 +956,8 @@ export class MatchingCalculationService {
   }
 
   /**
-   * 13. Amenities matching
+   * Amenities matching - IMPROVED
+   * Includes outdoor space features as part of amenities scoring
    */
   private matchAmenities(
     property: Property,
@@ -1101,8 +967,14 @@ export class MatchingCalculationService {
     const prefAmenities = preferences.amenities || [];
     const propertyAmenities = property.amenities || [];
 
+    // Check outdoor space preferences
+    const wantsOutdoor = preferences.outdoor_space === true;
+    const wantsBalcony = preferences.balcony === true;
+    const wantsTerrace = preferences.terrace === true;
+    const hasOutdoorPrefs = wantsOutdoor || wantsBalcony || wantsTerrace;
+
     // No preference set - exclude from calculation
-    if (!prefAmenities.length) {
+    if (!prefAmenities.length && !hasOutdoorPrefs) {
       return {
         category: "amenities",
         match: false,
@@ -1118,13 +990,53 @@ export class MatchingCalculationService {
       };
     }
 
-    // Normalize for comparison
-    const normalizedPref = prefAmenities.map((a) => a.toLowerCase());
-    const normalizedProp = propertyAmenities.map((a) => a.toLowerCase());
+    let totalRequested = prefAmenities.length;
+    let matchedCount = 0;
 
-    // Find matches
-    const matched = normalizedPref.filter((a) => normalizedProp.includes(a));
-    const matchRatio = matched.length / prefAmenities.length;
+    // Match regular amenities
+    if (prefAmenities.length > 0) {
+      const normalizedPref = prefAmenities.map((a) => a.toLowerCase());
+      const normalizedProp = propertyAmenities.map((a) => a.toLowerCase());
+      const matched = normalizedPref.filter((a) => normalizedProp.includes(a));
+      matchedCount += matched.length;
+    }
+
+    // Add outdoor space preferences to scoring
+    if (hasOutdoorPrefs) {
+      const outdoorFeatures = [];
+      if (wantsOutdoor) {
+        totalRequested++;
+        if (property.outdoor_space) {
+          matchedCount++;
+          outdoorFeatures.push("outdoor space");
+        }
+      }
+      if (wantsBalcony) {
+        totalRequested++;
+        if (property.balcony) {
+          matchedCount++;
+          outdoorFeatures.push("balcony");
+        }
+      }
+      if (wantsTerrace) {
+        totalRequested++;
+        if (property.terrace) {
+          matchedCount++;
+          outdoorFeatures.push("terrace");
+        }
+      }
+    }
+
+    const matchRatio = totalRequested > 0 ? matchedCount / totalRequested : 0;
+
+    // Build details
+    const details = [];
+    if (matchedCount > 0) {
+      details.push(`${matchedCount} of ${totalRequested} features available`);
+    }
+    if (property.outdoor_space) details.push("outdoor space");
+    if (property.balcony) details.push("balcony");
+    if (property.terrace) details.push("terrace");
 
     if (matchRatio === 1) {
       return {
@@ -1132,32 +1044,32 @@ export class MatchingCalculationService {
         match: true,
         score: maxScore,
         maxScore,
-        reason: "All amenities available",
-        details: `Has all ${prefAmenities.length} preferred amenities`,
+        reason: "All amenities & features available",
+        details: details.join(", "),
         hasPreference: true,
       };
     }
 
-    if (matchRatio >= 0.5) {
+    if (matchRatio >= 0.6) {
       return {
         category: "amenities",
         match: true,
         score: Math.round(maxScore * matchRatio),
         maxScore,
-        reason: "Most amenities available",
-        details: `Has ${matched.length} of ${prefAmenities.length} preferred amenities`,
+        reason: "Most amenities & features available",
+        details: details.length > 0 ? details.join(", ") : "Good match",
         hasPreference: true,
       };
     }
 
-    if (matched.length > 0) {
+    if (matchRatio > 0) {
       return {
         category: "amenities",
         match: false,
         score: Math.round(maxScore * matchRatio),
         maxScore,
-        reason: "Some amenities available",
-        details: `Has ${matched.length} of ${prefAmenities.length} preferred amenities`,
+        reason: "Some amenities & features available",
+        details: details.length > 0 ? details.join(", ") : "Partial match",
         hasPreference: true,
       };
     }
@@ -1167,91 +1079,275 @@ export class MatchingCalculationService {
       match: false,
       score: 0,
       maxScore,
-      reason: "Preferred amenities not available",
-      details: `Missing: ${prefAmenities.slice(0, 3).join(", ")}`,
+      reason: "Preferred amenities & features not available",
+      details: `Missing ${totalRequested} requested features`,
       hasPreference: true,
     };
   }
 
+
   /**
-   * 14. Outdoor space matching (outdoor_space, balcony, terrace)
+   * Lifestyle compatibility matching (NEW)
+   * Matches occupation, family_status with property tenant_types and characteristics
    */
-  private matchOutdoorSpace(
+  private matchLifestyle(
     property: Property,
     preferences: Preferences,
     maxScore: number,
   ): CategoryMatchResult {
-    const wantsOutdoor = preferences.outdoor_space === true;
-    const wantsBalcony = preferences.balcony === true;
-    const wantsTerrace = preferences.terrace === true;
+    const occupation = preferences.occupation;
+    const familyStatus = preferences.family_status;
+    const childrenCount = preferences.children_count;
+    const propertyTenantTypes = property.tenant_types || [];
+
+    const hasLifestylePrefs = occupation || familyStatus || childrenCount;
 
     // No preference set - exclude from calculation
-    if (!wantsOutdoor && !wantsBalcony && !wantsTerrace) {
+    if (!hasLifestylePrefs) {
       return {
-        category: "outdoorSpace",
+        category: "lifestyle",
         match: false,
         score: 0,
         maxScore: 0,
-        reason: "No outdoor space preference",
-        details: this.getOutdoorSpaceDetails(property),
+        reason: "No lifestyle preferences",
+        details: propertyTenantTypes.length
+          ? `Accepts: ${propertyTenantTypes.join(", ")}`
+          : "All tenant types accepted",
         hasPreference: false,
       };
     }
 
-    const hasOutdoor = property.outdoor_space === true;
-    const hasBalcony = property.balcony === true;
-    const hasTerrace = property.terrace === true;
-
-    let matchedFeatures = 0;
-    let requestedFeatures = 0;
-
-    if (wantsOutdoor) {
-      requestedFeatures++;
-      if (hasOutdoor) matchedFeatures++;
-    }
-    if (wantsBalcony) {
-      requestedFeatures++;
-      if (hasBalcony) matchedFeatures++;
-    }
-    if (wantsTerrace) {
-      requestedFeatures++;
-      if (hasTerrace) matchedFeatures++;
-    }
-
-    const matchRatio =
-      requestedFeatures > 0 ? matchedFeatures / requestedFeatures : 1;
-
-    if (matchRatio === 1) {
+    // Property accepts all types
+    if (!propertyTenantTypes.length) {
       return {
-        category: "outdoorSpace",
+        category: "lifestyle",
         match: true,
         score: maxScore,
         maxScore,
-        reason: "Outdoor space matches",
-        details: this.getOutdoorSpaceDetails(property),
+        reason: "Property accepts all lifestyles",
+        details: "No tenant type restrictions",
+        hasPreference: true,
+      };
+    }
+
+    // Map lifestyle preferences to tenant types
+    const normalizedTenantTypes = propertyTenantTypes.map((t) =>
+      t.toLowerCase(),
+    );
+    let matchScore = 0;
+    let totalChecks = 0;
+    const matchDetails: string[] = [];
+
+    // Check occupation compatibility
+    if (occupation) {
+      totalChecks++;
+      const occupationMap: { [key: string]: string[] } = {
+        student: ["student"],
+        "young-professional": ["corporateLets", "sharers"],
+        "freelancer-remote-worker": ["corporateLets", "sharers"],
+        "business-owner": ["corporateLets"],
+        "family-professional": ["family", "corporateLets"],
+        other: ["corporateLets", "sharers"],
+      };
+
+      const matchingTypes = occupationMap[occupation] || [];
+      const occupationMatches = matchingTypes.some((type) =>
+        normalizedTenantTypes.includes(type.toLowerCase()),
+      );
+
+      if (occupationMatches) {
+        matchScore++;
+        matchDetails.push("Occupation compatible");
+      }
+    }
+
+    // Check family status compatibility
+    if (familyStatus) {
+      totalChecks++;
+      const familyMap: { [key: string]: string[] } = {
+        "just-me": ["corporateLets", "sharers", "student"],
+        couple: ["corporateLets", "sharers"],
+        "couple-with-children": ["family"],
+        "single-parent": ["family"],
+        "friends-flatmates": ["sharers"],
+      };
+
+      const matchingTypes = familyMap[familyStatus] || [];
+      const familyMatches = matchingTypes.some((type) =>
+        normalizedTenantTypes.includes(type.toLowerCase()),
+      );
+
+      if (familyMatches) {
+        matchScore++;
+        matchDetails.push("Family status compatible");
+      }
+    }
+
+    // Check children compatibility
+    if (childrenCount && childrenCount !== "no") {
+      totalChecks++;
+      const hasFamily = normalizedTenantTypes.some((t) =>
+        ["family", "elder"].includes(t),
+      );
+
+      if (hasFamily) {
+        matchScore++;
+        matchDetails.push("Children welcome");
+      }
+    }
+
+    const matchRatio = totalChecks > 0 ? matchScore / totalChecks : 0;
+
+    if (matchRatio === 1) {
+      return {
+        category: "lifestyle",
+        match: true,
+        score: maxScore,
+        maxScore,
+        reason: "Perfect lifestyle match",
+        details: matchDetails.join(", "),
+        hasPreference: true,
+      };
+    }
+
+    if (matchRatio >= 0.5) {
+      return {
+        category: "lifestyle",
+        match: true,
+        score: Math.round(maxScore * matchRatio),
+        maxScore,
+        reason: "Good lifestyle compatibility",
+        details:
+          matchDetails.length > 0
+            ? matchDetails.join(", ")
+            : "Some criteria match",
         hasPreference: true,
       };
     }
 
     if (matchRatio > 0) {
       return {
-        category: "outdoorSpace",
+        category: "lifestyle",
         match: false,
         score: Math.round(maxScore * matchRatio),
         maxScore,
-        reason: "Partial outdoor space match",
-        details: this.getOutdoorSpaceDetails(property),
+        reason: "Partial lifestyle compatibility",
+        details:
+          matchDetails.length > 0
+            ? matchDetails.join(", ")
+            : "Limited compatibility",
         hasPreference: true,
       };
     }
 
     return {
-      category: "outdoorSpace",
+      category: "lifestyle",
       match: false,
       score: 0,
       maxScore,
-      reason: "No outdoor space available",
-      details: "Property has no outdoor space features",
+      reason: "Lifestyle not compatible",
+      details: `Property accepts: ${propertyTenantTypes.join(", ")}`,
+      hasPreference: true,
+    };
+  }
+
+  /**
+   * Smoking compatibility matching (NEW)
+   * Matches user's smoking preference with property smoking_area availability
+   */
+  private matchSmoking(
+    property: Property,
+    preferences: Preferences,
+    maxScore: number,
+  ): CategoryMatchResult {
+    const smokerPref = preferences.smoker;
+    const propertySmoking = property.smoking_area;
+
+    // No preference set - exclude from calculation
+    if (!smokerPref || smokerPref === "no-preference") {
+      return {
+        category: "smoking",
+        match: false,
+        score: 0,
+        maxScore: 0,
+        reason: "No smoking preference",
+        details: propertySmoking
+          ? "Smoking area available"
+          : "No smoking area",
+        hasPreference: false,
+      };
+    }
+
+    // User is a smoker
+    if (smokerPref === "yes") {
+      if (propertySmoking) {
+        return {
+          category: "smoking",
+          match: true,
+          score: maxScore,
+          maxScore,
+          reason: "Smoking area available",
+          details: "Property has designated smoking area",
+          hasPreference: true,
+        };
+      }
+      return {
+        category: "smoking",
+        match: false,
+        score: 0,
+        maxScore,
+        reason: "No smoking area",
+        details: "Property does not have smoking area",
+        hasPreference: true,
+      };
+    }
+
+    // User is non-smoker but okay with smoking area
+    if (smokerPref === "no-but-okay") {
+      return {
+        category: "smoking",
+        match: true,
+        score: maxScore,
+        maxScore,
+        reason: "Smoking policy acceptable",
+        details: propertySmoking
+          ? "Smoking area present but acceptable"
+          : "No smoking area",
+        hasPreference: true,
+      };
+    }
+
+    // User prefers non-smoking environment
+    if (smokerPref === "no" || smokerPref === "no-prefer-non-smoking") {
+      if (!propertySmoking) {
+        return {
+          category: "smoking",
+          match: true,
+          score: maxScore,
+          maxScore,
+          reason: "Non-smoking environment",
+          details: "Property has no smoking area (as preferred)",
+          hasPreference: true,
+        };
+      }
+      return {
+        category: "smoking",
+        match: false,
+        score: Math.round(maxScore * 0.3),
+        maxScore,
+        reason: "Smoking area present",
+        details: "Property has smoking area (not preferred)",
+        hasPreference: true,
+      };
+    }
+
+    return {
+      category: "smoking",
+      match: true,
+      score: maxScore,
+      maxScore,
+      reason: "Smoking policy acceptable",
+      details: "No strong smoking preference",
       hasPreference: true,
     };
   }
@@ -1335,7 +1431,8 @@ export class MatchingCalculationService {
   }
 
   /**
-   * 16. Location matching (metro stations, commute times)
+   * Location matching (areas, districts, metro stations) - IMPROVED
+   * Checks multiple location criteria with weighted scoring
    */
   private matchLocation(
     property: Property,
@@ -1345,6 +1442,7 @@ export class MatchingCalculationService {
     const prefAreas = preferences.preferred_areas || [];
     const prefDistricts = preferences.preferred_districts || [];
     const prefMetro = preferences.preferred_metro_stations || [];
+    const propertyAddress = property.address?.toLowerCase() || "";
     const propertyMetro = property.metro_stations || [];
 
     const hasAnyPreference =
@@ -1368,41 +1466,130 @@ export class MatchingCalculationService {
       };
     }
 
-    // Check metro station matches
-    let metroMatch = false;
-    if (prefMetro.length > 0 && propertyMetro.length > 0) {
-      const propMetroLabels = propertyMetro.map((m) => m.label?.toLowerCase());
-      const prefMetroNormalized = prefMetro.map((m) => m.toLowerCase());
-      metroMatch = prefMetroNormalized.some((pm) =>
-        propMetroLabels.some(
-          (pml) => pml?.includes(pm) || pm.includes(pml || ""),
-        ),
+    let matchedCriteria = 0;
+    let totalCriteria = 0;
+    const matchDetails: string[] = [];
+
+    // Check area matches (e.g., "West London", "Central")
+    if (prefAreas.length > 0) {
+      totalCriteria++;
+      const normalizedPrefAreas = prefAreas.map((a) => a.toLowerCase());
+      const areaMatch = normalizedPrefAreas.some(
+        (area) =>
+          propertyAddress.includes(area) ||
+          propertyMetro.some((m) => m.label?.toLowerCase().includes(area)),
       );
+      if (areaMatch) {
+        matchedCriteria++;
+        matchDetails.push("Area matches");
+      }
     }
 
-    if (metroMatch) {
+    // Check district/borough matches (e.g., "Camden", "Westminster")
+    if (prefDistricts.length > 0) {
+      totalCriteria++;
+      const normalizedPrefDistricts = prefDistricts.map((d) => d.toLowerCase());
+      const districtMatch = normalizedPrefDistricts.some(
+        (district) =>
+          propertyAddress.includes(district) ||
+          propertyMetro.some((m) => m.label?.toLowerCase().includes(district)),
+      );
+      if (districtMatch) {
+        matchedCriteria++;
+        matchDetails.push("District matches");
+      }
+    }
+
+    // Check metro station matches - most specific
+    if (prefMetro.length > 0) {
+      totalCriteria++;
+      if (propertyMetro.length > 0) {
+        const propMetroLabels = propertyMetro.map((m) =>
+          m.label?.toLowerCase(),
+        );
+        const prefMetroNormalized = prefMetro.map((m) => m.toLowerCase());
+
+        // Check for exact or partial metro matches
+        const exactMatch = prefMetroNormalized.some((pm) =>
+          propMetroLabels.some((pml) => pml === pm),
+        );
+
+        const partialMatch = prefMetroNormalized.some((pm) =>
+          propMetroLabels.some(
+            (pml) => pml?.includes(pm) || pm.includes(pml || ""),
+          ),
+        );
+
+        if (exactMatch) {
+          matchedCriteria += 1;
+          matchDetails.push("Metro station matches exactly");
+        } else if (partialMatch) {
+          matchedCriteria += 0.7; // Partial credit for similar metro names
+          matchDetails.push("Near preferred metro");
+        }
+      }
+    }
+
+    // Calculate match ratio
+    const matchRatio = totalCriteria > 0 ? matchedCriteria / totalCriteria : 0;
+
+    // Perfect match - all location criteria matched
+    if (matchRatio === 1) {
       return {
         category: "location",
         match: true,
         score: maxScore,
         maxScore,
-        reason: "Near preferred metro",
-        details: `Near: ${propertyMetro
-          .slice(0, 2)
-          .map((m) => m.label)
-          .join(", ")}`,
+        reason: "Perfect location match",
+        details: matchDetails.join(", "),
         hasPreference: true,
       };
     }
 
+    // Good match - most criteria matched
+    if (matchRatio >= 0.6) {
+      return {
+        category: "location",
+        match: true,
+        score: Math.round(maxScore * matchRatio),
+        maxScore,
+        reason: "Good location match",
+        details:
+          matchDetails.length > 0
+            ? matchDetails.join(", ")
+            : `Near: ${propertyMetro
+                .slice(0, 2)
+                .map((m) => m.label)
+                .join(", ")}`,
+        hasPreference: true,
+      };
+    }
+
+    // Partial match - some criteria matched
+    if (matchRatio > 0) {
+      return {
+        category: "location",
+        match: false,
+        score: Math.round(maxScore * matchRatio),
+        maxScore,
+        reason: "Partial location match",
+        details:
+          matchDetails.length > 0
+            ? matchDetails.join(", ")
+            : "Some location criteria match",
+        hasPreference: true,
+      };
+    }
+
+    // No match
     return {
       category: "location",
       match: false,
       score: 0,
       maxScore,
-      reason: "Location not ideal",
-      details: "Not near preferred locations",
-      hasPreference: hasAnyPreference,
+      reason: "Location doesn't match",
+      details: "Not in preferred areas or near preferred metro stations",
+      hasPreference: true,
     };
   }
 }

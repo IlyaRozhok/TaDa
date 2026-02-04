@@ -15,7 +15,7 @@ import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
 import { InputField } from "../preferences/ui/InputField";
 import { StyledDateInput } from "../../../shared/ui/DateInput/StyledDateInput";
-import { PhoneMaskInput, Button, CountryDropdown } from "../../../shared/ui";
+import { PhoneMaskInput, Button } from "../../../shared/ui";
 import {
   getCountryByDialCode,
   getCountryByCode,
@@ -23,6 +23,7 @@ import {
 } from "../../../shared/lib/countries";
 import { buildFormDataFromUser } from "../../../entities/user/lib/utils";
 import { User as UserType } from "../../../entities/user/model/types";
+import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
 
 interface UpdateUserData {
   first_name?: string;
@@ -99,14 +100,14 @@ export default function OnboardingProfileStep({
     if (user && currentStep === 4) {
       // Only get data from tenantProfile, not from user.full_name (which might be from Google)
       const tenantProfile = (user as UserType)?.tenantProfile;
-      
+
       // Extract saved data only from tenantProfile (database), ignore Google OAuth data
       const savedData = {
         first_name: tenantProfile?.first_name || "",
         last_name: tenantProfile?.last_name || "",
         address: tenantProfile?.address || "",
         phone: tenantProfile?.phone || "",
-        date_of_birth: tenantProfile?.date_of_birth 
+        date_of_birth: tenantProfile?.date_of_birth
           ? (() => {
               try {
                 const date = new Date(tenantProfile.date_of_birth);
@@ -242,7 +243,7 @@ export default function OnboardingProfileStep({
         [field]: value,
       }));
     },
-    [],
+    []
   );
 
   const handleSave = async () => {
@@ -282,17 +283,19 @@ export default function OnboardingProfileStep({
         dispatch(updateUser(userUpdate));
       } else {
         // Fallback: update with form data in tenantProfile structure
-        dispatch(updateUser({
-          tenantProfile: {
-            ...user?.tenantProfile,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            address: formData.address,
-            phone: formData.phone,
-            date_of_birth: formData.date_of_birth,
-            nationality: formData.nationality,
-          },
-        } as any));
+        dispatch(
+          updateUser({
+            tenantProfile: {
+              ...user?.tenantProfile,
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              address: formData.address,
+              phone: formData.phone,
+              date_of_birth: formData.date_of_birth,
+              nationality: formData.nationality,
+            },
+          } as any)
+        );
       }
 
       // Set isOnboarded to true after profile is saved
@@ -304,7 +307,7 @@ export default function OnboardingProfileStep({
       setError(
         error?.response?.data?.message ||
           error?.message ||
-          "Failed to save profile. Please try again.",
+          "Failed to save profile. Please try again."
       );
       return false;
     } finally {

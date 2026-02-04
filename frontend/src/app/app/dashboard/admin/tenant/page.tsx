@@ -1,37 +1,37 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useState, useEffect } from "react";
+// import { useSelector } from "react-redux";
 import {
   propertiesAPI,
-  matchingAPI,
-  Property,
-  MatchingResult,
+  // matchingAPI,
+  // Property,
+  // MatchingResult,
 } from "../../../../lib/api";
-import { selectUser } from "../../../../store/slices/authSlice";
-import PropertyCard from "../../../../components/PropertyCard";
+// import { selectUser } from "../../../../store/slices/authSlice";
+// import PropertyCard from "../../../../components/PropertyCard";
 import DashboardHeader from "../../../../components/DashboardHeader";
 import FeaturedPropertiesSlider from "../../../../components/FeaturedPropertiesSlider";
 import { useRouter } from "next/navigation";
 import {
   Home,
   Search,
-  TrendingUp,
+  // TrendingUp,
   Heart,
   Target,
-  Sparkles,
-  User,
+  // Sparkles,
+  // User,
   Shield,
 } from "lucide-react";
 import { waitForSessionManager } from "../../../../components/providers/SessionManager";
 
 function AdminTenantDashboard() {
-  const user = useSelector(selectUser);
+  // const user = useSelector(selectUser);
   const router = useRouter();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [matchedProperties, setMatchedProperties] = useState<MatchingResult[]>(
-    []
-  );
+  // const [properties, setProperties] = useState<Property[]>([]);
+  // const [matchedProperties, setMatchedProperties] = useState<MatchingResult[]>(
+  //   []
+  // );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +57,7 @@ function AdminTenantDashboard() {
       // Backend returns { data: properties[], total, page, totalPages }
       const propertiesData =
         responseData.data || responseData.properties || responseData || [];
-      setProperties(propertiesData.slice(0, 6));
+      // setProperties(propertiesData.slice(0, 6));
     } catch (err) {
       console.error("Error fetching properties:", err);
     }
@@ -65,18 +65,18 @@ function AdminTenantDashboard() {
 
   const fetchMatchedProperties = async () => {
     try {
-      const response = await matchingAPI.getDetailedMatches(3);
-      setMatchedProperties(response);
+      // const response = await matchingAPI.getDetailedMatches(3);
+      // setMatchedProperties(response);
     } catch (err) {
       console.error("Error fetching matched properties:", err);
       // If there's an error with detailed matches, set empty array to show "No matches yet"
-      setMatchedProperties([]);
+      // setMatchedProperties([]);
     }
   };
 
-  const handlePropertyClick = (property: Property) => {
-    router.push(`/app/properties/${property.id}`);
-  };
+  // const handlePropertyClick = (property: Property) => {
+  //   router.push(`/app/properties/${property.id}`);
+  // };
 
   if (loading) {
     return (

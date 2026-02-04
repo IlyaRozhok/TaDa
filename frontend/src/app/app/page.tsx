@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "../store/slices/authSlice";
 import Link from "next/link";
-import { Button } from "@/app/components/ui/Button";
+import { Button } from "@/shared/ui/Button/Button";
 import { ArrowRight, Home, Users, Search, Heart } from "lucide-react";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
 

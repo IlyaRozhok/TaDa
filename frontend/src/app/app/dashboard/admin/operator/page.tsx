@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, memo } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectUser,
@@ -14,7 +14,7 @@ import {
 } from "../../../../store/slices/operatorSlice";
 import DashboardHeader from "../../../../components/DashboardHeader";
 import {
-  Plus,
+  // Plus,
   Building2,
   Users,
   Eye,
@@ -134,7 +134,7 @@ function AdminOperatorDashboard() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
+  // const router = useRouter();
 
   // Используем оптимизированные хуки
   const operatorState = useOperatorDashboard();

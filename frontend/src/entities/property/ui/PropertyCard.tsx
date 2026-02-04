@@ -16,6 +16,12 @@ interface PropertyCardProps {
   onImageLoad?: () => void;
   hasTopRightBadge?: boolean; // Legacy prop for compatibility
   showFeaturedBadge?: boolean; // Show featured badge on bottom right
+  // Enhanced features
+  matchScore?: number;
+  matchCategories?: any[]; // Category breakdown from backend
+  userPreferences?: any;
+  isAuthenticated?: boolean;
+  variant?: "default" | "homepage" | "enhanced"; // Different visual variants
 }
 
 export default function PropertyCard({
@@ -26,6 +32,11 @@ export default function PropertyCard({
   onImageLoad,
   hasTopRightBadge = false, // eslint-disable-line @typescript-eslint/no-unused-vars
   showFeaturedBadge = false,
+  matchScore,
+  matchCategories,
+  userPreferences, // eslint-disable-line @typescript-eslint/no-unused-vars
+  isAuthenticated = false, // eslint-disable-line @typescript-eslint/no-unused-vars
+  variant = "default",
 }: PropertyCardProps) {
   const router = useRouter();
   const [shortlistSuccess, setShortlistSuccess] = useState<string | null>(null);
@@ -71,6 +82,8 @@ export default function PropertyCard({
         property={property}
         shortlistSuccess={shortlistSuccess}
         shortlistError={shortlistError}
+        matchScore={matchScore}
+        matchCategories={matchCategories}
       />
     </div>
   );

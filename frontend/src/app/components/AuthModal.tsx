@@ -11,7 +11,7 @@ import { redirectAfterLogin } from "../utils/simpleRedirect";
 import { useAuthContext } from "../contexts/AuthContext";
 import { ApiError } from "../types/api";
 import { Loader2, Eye, EyeOff, Mail, Lock, X } from "lucide-react";
-import { Button } from "./ui/Button";
+import { Button } from "@/shared/ui/Button/Button";
 import { useTranslation } from "../hooks/useTranslation";
 import { loginKeys } from "../lib/translationsKeys/loginTranslationKeys";
 

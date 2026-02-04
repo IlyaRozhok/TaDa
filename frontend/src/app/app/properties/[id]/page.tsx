@@ -22,7 +22,7 @@ import {
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
 import ImageGallery from "../../../components/ImageGallery";
-import { Button } from "../../../components/ui/Button";
+import { Button } from "@/shared/ui/Button/Button";
 import { Heart, Share, Check, X } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";

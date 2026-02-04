@@ -15,7 +15,7 @@ import {
   SelectField,
 } from "../../../../components/ui/FormField";
 import { LoadingPage } from "../../../../components/ui/LoadingSpinner";
-import { Button } from "../../../../components/ui/Button";
+import { Button } from "@/shared/ui/Button/Button";
 import { ArrowLeft, Save, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function EditPropertyPage() {
