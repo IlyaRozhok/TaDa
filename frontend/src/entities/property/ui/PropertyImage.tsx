@@ -64,8 +64,12 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
         const margin = 20; // Increased margin for better visibility
         const gap = 12;
         
+        // Estimate header height (usually 60-80px, using 80px to be safe)
+        const headerHeight = 80;
+        const topMargin = Math.max(margin, headerHeight + 8); // Ensure tooltip is below header
+        
         // Calculate available space
-        const availableHeight = window.innerHeight - margin * 2;
+        const availableHeight = window.innerHeight - topMargin - margin;
         const availableWidth = window.innerWidth - margin * 2;
         
         // Use the same positioning logic as onMouseEnter
@@ -98,32 +102,37 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
         
         // Calculate available space below and above badge
         const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
-        const spaceAbove = rect.top - margin;
+        const spaceAbove = rect.top - gap - topMargin; // Account for header
         
         // Prefer showing below badge if there's enough space
         if (spaceBelow >= Math.min(tooltipMaxHeight, availableHeight)) {
           top = rect.bottom + gap;
         } else if (spaceAbove >= Math.min(tooltipMaxHeight, availableHeight)) {
-          // Show above badge if there's more space above
-          top = rect.top - Math.min(tooltipMaxHeight, availableHeight) - gap;
+          // Show above badge if there's more space above (but ensure it's below header)
+          top = Math.max(topMargin, rect.top - Math.min(tooltipMaxHeight, availableHeight) - gap);
         } else {
           // Use available space, prefer below
           if (spaceBelow > spaceAbove) {
             top = rect.bottom + gap;
           } else {
-            top = Math.max(margin, rect.top - Math.min(tooltipMaxHeight, spaceAbove) - gap);
+            top = Math.max(topMargin, rect.top - Math.min(tooltipMaxHeight, spaceAbove) - gap);
           }
         }
         
-        // Ensure tooltip doesn't go off top edge
-        if (top < margin) {
-          top = margin;
+        // CRITICAL: Ensure tooltip doesn't go under header
+        if (top < topMargin) {
+          top = topMargin;
         }
         
         // Ensure tooltip doesn't go off bottom edge
         const maxTop = window.innerHeight - Math.min(tooltipMaxHeight, availableHeight) - margin;
         if (top > maxTop) {
           top = maxTop;
+        }
+        
+        // Final check: ensure tooltip is always below header
+        if (top < topMargin) {
+          top = topMargin;
         }
         
         // Calculate dynamic max height based on available space
@@ -216,8 +225,12 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
               const margin = 20; // Increased margin for better visibility
               const gap = 12;
               
+              // Estimate header height (usually 60-80px, using 80px to be safe)
+              const headerHeight = 80;
+              const topMargin = Math.max(margin, headerHeight + 8); // Ensure tooltip is below header
+              
               // Calculate available space
-              const availableHeight = window.innerHeight - margin * 2;
+              const availableHeight = window.innerHeight - topMargin - margin;
               const availableWidth = window.innerWidth - margin * 2;
               
               // Determine best horizontal position based on badge position
@@ -253,32 +266,37 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
               
               // Calculate available space below and above badge
               const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
-              const spaceAbove = rect.top - margin;
+              const spaceAbove = rect.top - gap - topMargin; // Account for header
               
               // Prefer showing below badge if there's enough space
               if (spaceBelow >= Math.min(tooltipMaxHeight, availableHeight)) {
                 top = rect.bottom + gap;
               } else if (spaceAbove >= Math.min(tooltipMaxHeight, availableHeight)) {
-                // Show above badge if there's more space above
-                top = rect.top - Math.min(tooltipMaxHeight, availableHeight) - gap;
+                // Show above badge if there's more space above (but ensure it's below header)
+                top = Math.max(topMargin, rect.top - Math.min(tooltipMaxHeight, availableHeight) - gap);
               } else {
                 // Use available space, prefer below
                 if (spaceBelow > spaceAbove) {
                   top = rect.bottom + gap;
                 } else {
-                  top = Math.max(margin, rect.top - Math.min(tooltipMaxHeight, spaceAbove) - gap);
+                  top = Math.max(topMargin, rect.top - Math.min(tooltipMaxHeight, spaceAbove) - gap);
                 }
               }
               
-              // Ensure tooltip doesn't go off top edge
-              if (top < margin) {
-                top = margin;
+              // CRITICAL: Ensure tooltip doesn't go under header
+              if (top < topMargin) {
+                top = topMargin;
               }
               
               // Ensure tooltip doesn't go off bottom edge
               const maxTop = window.innerHeight - Math.min(tooltipMaxHeight, availableHeight) - margin;
               if (top > maxTop) {
                 top = maxTop;
+              }
+              
+              // Final check: ensure tooltip is always below header
+              if (top < topMargin) {
+                top = topMargin;
               }
               
               // Calculate dynamic max height based on available space
@@ -308,7 +326,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
           {/* Glassmorphism tooltip with match details */}
           {matchCategories && matchCategories.length > 0 && tooltipPosition ? (
             <div 
-              className="fixed w-[280px] bg-black/70 backdrop-blur-md text-white rounded-lg shadow-2xl transition-all duration-200 pointer-events-auto z-[9999] border border-white/15 overflow-hidden"
+              className="fixed w-[280px] bg-black/70 backdrop-blur-md text-white rounded-lg shadow-2xl transition-all duration-200 pointer-events-auto z-[99999] border border-white/15 overflow-hidden"
               style={{
                 top: `${tooltipPosition.top}px`,
                 left: `${tooltipPosition.left}px`,
