@@ -436,33 +436,50 @@ export function transformFormDataForApi(
 export function transformApiDataForForm(
   apiData: Partial<PreferencesFormData>,
 ): PreferencesFormData {
+  console.log("🔄 Starting transformApiDataForForm with:", apiData);
+  
   const formData: PreferencesFormData = {
     ...apiData,
     // Ensure arrays are initialized to avoid uncontrolled inputs
     property_type_preferences: transformPropertyTypeAPIToUI(
-      apiData.property_types || [],
+      Array.isArray(apiData.property_types) ? apiData.property_types : [],
     ),
     rooms_preferences: [],
     bathrooms_preferences: [],
     furnishing_preferences: transformFurnishingAPIToUI(
-      apiData.furnishing || [],
+      Array.isArray(apiData.furnishing) ? apiData.furnishing : [],
     ),
     outdoor_space_preferences: [],
     building_style_preferences: transformBuildingTypeAPIToUI(
-      apiData.building_types || [],
+      Array.isArray(apiData.building_types) ? apiData.building_types : [],
     ),
     selected_duration: transformDurationAPIToUIArray(
       apiData.let_duration || "",
     ),
     selected_bills: transformBillsAPIToUI(apiData.bills || ""),
     tenant_type_preferences: transformTenantTypeAPIToUI(
-      apiData.tenant_types || [],
+      Array.isArray(apiData.tenant_types) ? apiData.tenant_types : [],
     ),
     pet_type_preferences: [],
     pet_additional_info: "",
-    amenities_preferences: apiData.amenities ?? [],
+    amenities_preferences: Array.isArray(apiData.amenities) ? apiData.amenities : [],
     additional_preferences: [],
   };
+
+  console.log("📝 Base form data created:", {
+    // Lifestyle preferences
+    occupation: formData.occupation,
+    family_status: formData.family_status,
+    children_count: formData.children_count,
+    // Transformed preferences
+    property_type_preferences: formData.property_type_preferences,
+    furnishing_preferences: formData.furnishing_preferences,
+    building_style_preferences: formData.building_style_preferences,
+    selected_duration: formData.selected_duration,
+    selected_bills: formData.selected_bills,
+    tenant_type_preferences: formData.tenant_type_preferences,
+    amenities_preferences: formData.amenities_preferences,
+  });
 
   // Outdoor space preferences - map to UI format
   formData.outdoor_space_preferences = transformOutdoorSpaceAPIToUI(
@@ -470,9 +487,11 @@ export function transformApiDataForForm(
     apiData.balcony,
     apiData.terrace,
   );
+  console.log("🏡 Outdoor space preferences:", formData.outdoor_space_preferences);
 
   // flexible_budget -> existing "Flexible" (move_in_flexibility)
   formData.move_in_flexibility = apiData.flexible_budget ? "flexible" : "";
+  console.log("💰 Move in flexibility:", formData.move_in_flexibility);
 
   // Pet preferences
   if (apiData.pets && apiData.pets.length > 0) {
@@ -485,32 +504,39 @@ export function transformApiDataForForm(
       // Capitalize first letter for UI display
       return petType.charAt(0).toUpperCase() + petType.slice(1);
     });
+    console.log("🐾 Pet preferences:", formData.pet_type_preferences, "additional info:", formData.pet_additional_info);
   } else {
-    // If no pets or pet_policy is false, set to "No pets"
+    // If no pets or pet_policy is false, set to empty arrays
     formData.pet_type_preferences = [];
     formData.pet_additional_info = "";
+    console.log("🐾 No pets found, setting empty arrays");
   }
 
   // number_of_pets roundtrip
   if (apiData.number_of_pets !== undefined) {
     formData.number_of_pets = apiData.number_of_pets as number | undefined;
+    console.log("🔢 Number of pets:", formData.number_of_pets);
   }
 
   // Additional preferences (smoking area, concierge)
+  formData.additional_preferences = [];
   if (apiData.smoking_area)
     formData.additional_preferences.push("smoking_area");
   if (apiData.is_concierge)
     formData.additional_preferences.push("is_concierge");
+  console.log("➕ Additional preferences:", formData.additional_preferences);
 
   // Transform bedrooms and bathrooms to UI format
-  if (apiData.bedrooms) {
+  if (apiData.bedrooms && apiData.bedrooms.length > 0) {
     formData.rooms_preferences = transformRoomsAPIToUI(apiData.bedrooms);
+    console.log("🛏️ Rooms preferences:", formData.rooms_preferences);
   }
 
-  if (apiData.bathrooms) {
+  if (apiData.bathrooms && apiData.bathrooms.length > 0) {
     formData.bathrooms_preferences = transformBathroomsAPIToUI(
       apiData.bathrooms,
     );
+    console.log("🚿 Bathrooms preferences:", formData.bathrooms_preferences);
   }
 
   // Smoker mapping back to UI strings
@@ -534,6 +560,8 @@ export function transformApiDataForForm(
   } else {
     formData.smoker = "";
   }
+  console.log("🚬 Smoker preference:", formData.smoker);
 
+  console.log("✅ Final transformed form data:", formData);
   return formData;
 }

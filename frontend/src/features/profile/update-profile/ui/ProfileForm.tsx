@@ -15,7 +15,8 @@ import {
   getCountryByCode,
   getDefaultCountry,
 } from "@/shared/lib/countries";
-import { User, UpdateUserData } from "@/entities/user/model/types";
+import { UpdateUserData } from "@/entities/user/model/types";
+import type { User } from "@/app/store/slices/authSlice";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
 import { authAPI } from "@/app/lib/api";

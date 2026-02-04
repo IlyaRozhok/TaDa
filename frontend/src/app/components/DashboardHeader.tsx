@@ -242,7 +242,7 @@ export default function DashboardHeader() {
                     />
 
                     {/* Admin-specific navigation moved here */}
-                    {userRole === "admin" && (
+                    {(userRole === "admin" || userRole === "operator") && (
                       <>
                         <hr className={styles.dropdownDivider} />
                         <DropdownItem

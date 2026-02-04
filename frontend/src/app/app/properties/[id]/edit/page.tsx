@@ -23,6 +23,7 @@ export default function EditPropertyPage() {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const {
     property,
@@ -367,6 +368,7 @@ export default function EditPropertyPage() {
                   <MediaManager
                     propertyId={property?.id || ""}
                     media={media}
+                    accessToken={accessToken || ""}
                     onMediaUpdate={handleMediaUpdate}
                     disabled={saving}
                     maxFiles={10}

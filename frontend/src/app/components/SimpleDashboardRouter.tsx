@@ -84,7 +84,7 @@ export default function SimpleDashboardRouter({
     // Check role if required
     if (requiredRole) {
       const userRole = user.role || "tenant";
-      const hasAccess = userRole === requiredRole || userRole === "admin";
+      const hasAccess = userRole === requiredRole || userRole === "admin" || (requiredRole === "admin" && userRole === "operator");
 
       console.log("🔍 Role check:", {
         userRole,

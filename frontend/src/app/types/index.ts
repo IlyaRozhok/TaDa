@@ -20,10 +20,12 @@ export interface Property {
   id: string;
   title: string;
   description: string;
+  apartment_number?: string;
   address?: string;
   lat?: number;
   lng?: number;
   property_type?: string;
+  building_type?: string;
   furnishing?: string;
   lifestyle_features?: string[];
   available_from?: string;
@@ -35,6 +37,7 @@ export interface Property {
   bathrooms: number;
   total_area?: number;
   living_area?: number;
+  square_meters?: number;
   floor?: number;
   total_floors?: number;
   year_built?: number;
@@ -46,6 +49,13 @@ export interface Property {
   created_at: string;
   updated_at: string;
   operator_id: string;
+  photos?: string[];
+  images?: string[];
+  media?: Array<{
+    id: string;
+    type: string;
+    url: string;
+  }>;
   // Geocoding fields
   formatted_address?: string;
   place_id?: string;

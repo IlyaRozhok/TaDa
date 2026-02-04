@@ -49,11 +49,6 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
             {formatPrice(property.price)}
             <span className="text-sm font-normal text-slate-500">/month</span>
           </p>
-          {matchScore !== undefined && (
-            <div className="flex items-center bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-              <span>{Math.round(matchScore)}% match</span>
-            </div>
-          )}
         </div>
       </div>
 

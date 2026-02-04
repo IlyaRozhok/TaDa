@@ -226,6 +226,7 @@ export class MatchingService {
   ): Promise<{
     property: Property;
     matchScore: number;
+    matchPercentage: number; // For consistency with API
     matchReasons: string[];
     perfectMatch: boolean;
     categories: {
@@ -235,6 +236,7 @@ export class MatchingService {
       maxScore: number;
       reason: string;
       details?: string;
+      hasPreference: boolean;
     }[];
   }[]> {
     const response = await this.getMatchesForUser(userId, { limit });
@@ -242,7 +244,8 @@ export class MatchingService {
     return Promise.all(
       response.results.map(async (result) => ({
         property: await this.updatePhotosUrls(result.property),
-        matchScore: result.matchPercentage,
+        matchScore: result.matchPercentage, // Legacy field
+        matchPercentage: result.matchPercentage, // New field
         matchReasons: result.categories
           .filter((c) => c.match)
           .map((c) => c.reason),

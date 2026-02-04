@@ -117,3 +117,5 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
     handleCloseRemoveModal,
   };
 };
+
+export default useShortlist;

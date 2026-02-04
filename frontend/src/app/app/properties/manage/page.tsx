@@ -9,6 +9,7 @@ import {
 } from "../../../store/slices/authSlice";
 import DashboardHeader from "../../../components/DashboardHeader";
 import { getUserRole } from "../../../utils/simpleRedirect";
+// import { Property } from "../../../types"; // Conflicts with local declaration
 import {
   ArrowLeft,
   Plus,
@@ -30,6 +31,7 @@ interface Property {
   title: string;
   description: string;
   address: string;
+  apartment_number?: string;
   price: number;
   bedrooms: number;
   bathrooms: number;
@@ -38,6 +40,7 @@ interface Property {
   lifestyle_features: string[];
   available_from: string;
   images: string[];
+  photos?: string[];
   is_btr: boolean;
   operator_id: string;
   created_at: string;

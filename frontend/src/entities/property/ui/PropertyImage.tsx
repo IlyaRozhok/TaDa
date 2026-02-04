@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import FeaturedBadge from "@/shared/ui/Badge/FeaturedBadge";
 import { Property } from "@/app/types";
 import { PROPERTY_PLACEHOLDER } from "@/app/utils/placeholders";
@@ -8,6 +8,9 @@ interface PropertyImageProps {
   imageLoaded: boolean;
   onImageLoad?: () => void;
   showFeaturedBadge?: boolean;
+  matchScore?: number;
+  matchCategories?: any[];
+  isAuthenticated?: boolean;
 }
 
 export const PropertyImage: React.FC<PropertyImageProps> = ({
@@ -15,6 +18,9 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   imageLoaded,
   onImageLoad,
   showFeaturedBadge = false,
+  matchScore,
+  matchCategories,
+  isAuthenticated = false,
 }) => {
   const [imageSrc, setImageSrc] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState(false);
@@ -101,6 +107,141 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
     <div className="relative h-48 bg-slate-100">
       {/* Featured Badge */}
       {showFeaturedBadge && <FeaturedBadge />}
+
+      {/* Match Badge - Left Top */}
+      {matchScore !== undefined && matchScore > 0 && (
+        <div className="absolute top-3 left-4 z-10 group/match">
+          <div
+            className={`min-w-[100px] bg-black/60 backdrop-blur-[3px] text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg relative transition-all duration-200 cursor-pointer hover:bg-black/75 hover:shadow-xl`}
+          >
+            {Math.round(matchScore)}% Match
+          </div>
+
+          {/* Glassmorphism tooltip with match details */}
+          {matchCategories && matchCategories.length > 0 ? (
+            <div 
+              className="absolute left-0 top-full mt-3 w-80 max-h-[600px] bg-black/70 backdrop-blur-md text-white rounded-xl shadow-2xl opacity-0 invisible group-hover/match:opacity-100 group-hover/match:visible transition-all duration-200 pointer-events-none group-hover/match:pointer-events-auto z-[9999] border border-white/15 overflow-hidden"
+            >
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-white/10 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">Match Breakdown</span>
+                  <span className="text-lg font-bold">{Math.round(matchScore)}%</span>
+                </div>
+              </div>
+              
+              {/* Scrollable content */}
+              <div 
+                className="max-h-[530px] overflow-y-auto px-4 pt-3 pb-4 space-y-2.5 custom-scrollbar"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+                }}
+              >
+                {matchCategories
+                  .filter((cat) => cat.hasPreference && cat.maxScore > 0)
+                  .map((cat) => {
+                    const scorePercentage = cat.maxScore > 0 
+                      ? Math.round((cat.score / cat.maxScore) * 100)
+                      : 0;
+                    return {
+                      ...cat,
+                      scorePercentage,
+                      isMatch: scorePercentage >= 80,
+                      isPartial: scorePercentage > 0 && scorePercentage < 80,
+                    };
+                  })
+                  .sort((a, b) => {
+                    // First: green (match) > yellow (partial) > grey (no match)
+                    if (a.isMatch && !b.isMatch) return -1;
+                    if (!a.isMatch && b.isMatch) return 1;
+                    if (a.isPartial && !b.isPartial && !a.isMatch && !b.isMatch) return -1;
+                    if (!a.isPartial && b.isPartial && !a.isMatch && !b.isMatch) return 1;
+                    // Within same group: sort by maxScore (higher first)
+                    return b.maxScore - a.maxScore;
+                  })
+                  .map((category, index) => {
+                    const categoryName = category.category || category.name || 'Unknown';
+                    const contribution = category.score;
+                    const weight = category.maxScore;
+                    const scorePercentage = category.scorePercentage;
+                    const isMatch = category.isMatch;
+                    const isPartial = category.isPartial;
+                    
+                    // Format category name
+                    const formattedName = categoryName
+                      .replace(/([A-Z])/g, ' $1')
+                      .trim()
+                      .split(' ')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                      .join(' ');
+                    
+                    // Check if this is the first item in a new group (for visual separators)
+                    const prevCategory = index > 0 ? matchCategories
+                      .filter((cat) => cat.hasPreference && cat.maxScore > 0)
+                      .map((cat) => {
+                        const scorePercentage = cat.maxScore > 0 
+                          ? Math.round((cat.score / cat.maxScore) * 100)
+                          : 0;
+                        return {
+                          ...cat,
+                          scorePercentage,
+                          isMatch: scorePercentage >= 80,
+                          isPartial: scorePercentage > 0 && scorePercentage < 80,
+                        };
+                      })
+                      .sort((a, b) => {
+                        if (a.isMatch && !b.isMatch) return -1;
+                        if (!a.isMatch && b.isMatch) return 1;
+                        if (a.isPartial && !b.isPartial && !a.isMatch && !b.isMatch) return -1;
+                        if (!a.isPartial && b.isPartial && !a.isMatch && !b.isMatch) return 1;
+                        return b.maxScore - a.maxScore;
+                      })[index - 1] : null;
+                    
+                    const showGroupSeparator = prevCategory && (
+                      (prevCategory.isMatch && !isMatch) ||
+                      (prevCategory.isPartial && !isPartial && !isMatch)
+                    );
+                    
+                    return (
+                      <React.Fragment key={index}>
+                        {showGroupSeparator && (
+                          <div className="pt-3 mt-3 -mx-4 px-4 border-t border-white/10" />
+                        )}
+                        <div className="group/item">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-white/80 font-medium">
+                              {formattedName}
+                            </span>
+                            <span className={`font-bold tabular-nums ${
+                              isMatch ? 'text-emerald-300' : 
+                              isPartial ? 'text-amber-300' : 
+                              'text-white/40'
+                            }`}>
+                              +{contribution.toFixed(1)}/{weight}
+                            </span>
+                          </div>
+                          <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className={`absolute left-0 top-0 h-full rounded-full transition-all duration-300 ${
+                                isMatch ? 'bg-emerald-400/70' : 
+                                isPartial ? 'bg-amber-400/70' : 
+                                'bg-white/20'
+                              }`}
+                              style={{ width: `${scorePercentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                {/* Extra spacing at the bottom to prevent cutoff */}
+                <div className="h-2" />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <img
         src={hasError && !isLoaded ? PROPERTY_PLACEHOLDER : displayImageUrl}
