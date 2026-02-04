@@ -16,6 +16,12 @@ interface PropertyCardProps {
   onImageLoad?: () => void;
   hasTopRightBadge?: boolean; // Legacy prop for compatibility
   showFeaturedBadge?: boolean; // Show featured badge on bottom right
+  // Enhanced features
+  matchScore?: number;
+  matchCategories?: any[]; // Category breakdown from backend
+  userPreferences?: any;
+  isAuthenticated?: boolean;
+  variant?: "default" | "homepage" | "enhanced"; // Different visual variants
 }
 
 export default function PropertyCard({
@@ -26,10 +32,18 @@ export default function PropertyCard({
   onImageLoad,
   hasTopRightBadge = false, // eslint-disable-line @typescript-eslint/no-unused-vars
   showFeaturedBadge = false,
+  matchScore,
+  matchCategories,
+  userPreferences, // eslint-disable-line @typescript-eslint/no-unused-vars
+  isAuthenticated: isAuthenticatedProp,
+  variant = "default",
 }: PropertyCardProps) {
   const router = useRouter();
   const [shortlistSuccess, setShortlistSuccess] = useState<string | null>(null);
   const [shortlistError, setShortlistError] = useState<string | null>(null);
+
+  // Default isAuthenticated based on matchScore presence and matchCategories
+  const isAuthenticated = isAuthenticatedProp ?? (matchScore !== undefined && matchScore > 0);
 
   const handleCardClick = () => {
     if (onClick) {
@@ -42,16 +56,21 @@ export default function PropertyCard({
   return (
     <div
       onClick={handleCardClick}
-      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 cursor-pointer group overflow-hidden"
+      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 cursor-pointer group overflow-visible"
     >
       {/* Image Section */}
-      <div className="relative">
-        <PropertyImage
-          property={property}
-          imageLoaded={imageLoaded}
-          onImageLoad={onImageLoad}
-          showFeaturedBadge={showFeaturedBadge}
-        />
+      <div className="relative overflow-visible rounded-t-xl">
+        <div className="overflow-hidden rounded-t-xl">
+          <PropertyImage
+            property={property}
+            imageLoaded={imageLoaded}
+            onImageLoad={onImageLoad}
+            showFeaturedBadge={showFeaturedBadge}
+            matchScore={matchScore}
+            matchCategories={matchCategories}
+            isAuthenticated={isAuthenticated}
+          />
+        </div>
 
         {/* Shortlist Button */}
         <ShortlistToggleButton
@@ -71,6 +90,8 @@ export default function PropertyCard({
         property={property}
         shortlistSuccess={shortlistSuccess}
         shortlistError={shortlistError}
+        matchScore={matchScore}
+        matchCategories={matchCategories}
       />
     </div>
   );

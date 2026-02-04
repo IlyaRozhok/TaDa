@@ -510,15 +510,6 @@ export interface MatchingResult {
 }
 
 // Category match result from backend
-export interface CategoryMatchResult {
-  category: string;
-  match: boolean;
-  score: number;
-  maxScore: number;
-  reason: string;
-  details?: string;
-}
-
 // Category match result from backend
 export interface CategoryMatchResult {
   category: string;

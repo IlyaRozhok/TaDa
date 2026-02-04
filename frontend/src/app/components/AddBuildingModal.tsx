@@ -426,7 +426,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           formData.operator_id.trim() !== ""
         ) {
           operatorIdValue = formData.operator_id.trim();
-        } else if (
+        } else         if (
+          formData.operator_id &&
           typeof formData.operator_id === "object" &&
           formData.operator_id !== null &&
           "id" in formData.operator_id

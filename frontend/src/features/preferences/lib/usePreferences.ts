@@ -270,19 +270,52 @@ export default function usePreferences(currentStepOffset: number = 0) {
 
   const loadExistingPreferences = async () => {
     try {
+      console.log("🔄 Loading existing preferences...");
       const response = await preferencesAPI.get();
 
       if (response.data) {
+        console.log("✅ API preferences loaded:", response.data);
         setState((prev) => ({ ...prev, existingPreferences: response.data }));
 
         // Transform API data to form format
         const formData = transformApiDataForForm(response.data);
+        console.log("🔄 Transformed form data:", formData);
 
-        // Populate form with transformed data
+        // First, restore draft from localStorage if it exists (lower priority)
+        let draftApplied = false;
+        if (typeof window !== "undefined") {
+          try {
+            const raw = localStorage.getItem(PREFERENCES_DRAFT_KEY);
+            if (raw) {
+              const draft = JSON.parse(raw) as Partial<PreferencesFormData>;
+              if (draft && typeof draft === "object") {
+                console.log("📝 Applying draft data first:", draft);
+                Object.keys(draft).forEach((key) => {
+                  const value = draft[key as keyof PreferencesFormData];
+                  if (value === null || value === undefined) return;
+                  if (
+                    key === "id" ||
+                    key === "user_id" ||
+                    key === "user" ||
+                    key === "created_at" ||
+                    key === "updated_at"
+                  )
+                    return;
+                  setValue(key as keyof PreferencesFormData, value);
+                });
+                draftApplied = true;
+              }
+            }
+          } catch (error) {
+            console.warn("⚠️ Failed to apply draft:", error);
+          }
+        }
+
+        // Then, populate form with API data (higher priority - will override draft)
         Object.keys(formData).forEach((key) => {
           const value = formData[key as keyof PreferencesFormData];
 
-          // Skip special fields (but allow empty arrays, false booleans, etc.)
+          // Skip special fields
           if (
             key === "id" ||
             key === "user_id" ||
@@ -293,60 +326,38 @@ export default function usePreferences(currentStepOffset: number = 0) {
             return;
           }
 
-          // Skip only null/undefined (but not empty arrays or false booleans)
-          if (value === null || value === undefined) {
-            return;
-          }
-
-          // Handle date fields
-          if ((key === "move_in_date" || key === "move_out_date") && value) {
-            const dateValue =
-              typeof value === "string" && value.includes("T")
-                ? value.split("T")[0]
-                : value;
-            setValue(key as keyof PreferencesFormData, dateValue);
-            return;
-          }
-
-          // Handle boolean fields (including false)
-          if (typeof value === "boolean") {
-            setValue(key as keyof PreferencesFormData, value);
-            return;
-          }
-
-          // Handle all other fields (including empty arrays)
-          setValue(key as keyof PreferencesFormData, value);
-        });
-      }
-
-      // Restore draft from localStorage so "back then return" shows last form state
-      if (typeof window !== "undefined") {
-        try {
-          const raw = localStorage.getItem(PREFERENCES_DRAFT_KEY);
-          if (raw) {
-            const draft = JSON.parse(raw) as Partial<PreferencesFormData>;
-            if (draft && typeof draft === "object") {
-              Object.keys(draft).forEach((key) => {
-                const value = draft[key as keyof PreferencesFormData];
-                if (value === null || value === undefined) return;
-                if (
-                  key === "id" ||
-                  key === "user_id" ||
-                  key === "user" ||
-                  key === "created_at" ||
-                  key === "updated_at"
-                )
-                  return;
-                setValue(key as keyof PreferencesFormData, value);
-              });
+          // Apply all values from API, including empty strings, empty arrays, and false booleans
+          // Only skip null and undefined values
+          if (value !== null && value !== undefined) {
+            // Handle date fields
+            if ((key === "move_in_date" || key === "move_out_date") && value) {
+              const dateValue =
+                typeof value === "string" && value.includes("T")
+                  ? value.split("T")[0]
+                  : value;
+              console.log(`📅 Setting date field ${key}:`, dateValue);
+              setValue(key as keyof PreferencesFormData, dateValue);
+              return;
             }
+
+            // Handle all other fields (including empty arrays, empty strings, and false booleans)
+            console.log(`📝 Setting field ${key}:`, value);
+            setValue(key as keyof PreferencesFormData, value);
+          } else {
+            console.log(`⏭️ Skipping null/undefined field ${key}`);
           }
-        } catch {
-          // Ignore invalid draft
+        });
+
+        if (draftApplied) {
+          console.log("📝 Draft was applied first, then overridden by API data where available");
         }
+      } else {
+        console.log("ℹ️ No preferences data in response");
       }
+
       hasAppliedInitialLoadRef.current = true;
-    } catch {
+    } catch (error) {
+      console.log("❌ Failed to load preferences from API:", error);
       // Check if this is a 404 (no preferences yet) or another error
       setState((prev) => ({ ...prev, existingPreferences: null }));
 
@@ -357,6 +368,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
           if (raw) {
             const draft = JSON.parse(raw) as Partial<PreferencesFormData>;
             if (draft && typeof draft === "object") {
+              console.log("📝 No API preferences, applying draft only:", draft);
               Object.keys(draft).forEach((key) => {
                 const value = draft[key as keyof PreferencesFormData];
                 if (value === null || value === undefined) return;
@@ -372,8 +384,8 @@ export default function usePreferences(currentStepOffset: number = 0) {
               });
             }
           }
-        } catch {
-          // Ignore invalid draft
+        } catch (draftError) {
+          console.warn("⚠️ Failed to apply draft on error:", draftError);
         }
       }
       hasAppliedInitialLoadRef.current = true;

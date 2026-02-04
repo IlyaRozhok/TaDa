@@ -1,1 +1,1 @@
-export { default as ShortlistToggleButton } from "./ShortlistToggleButton";
+export { ShortlistToggleButton } from "./ShortlistToggleButton";

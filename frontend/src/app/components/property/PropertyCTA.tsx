@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Button } from "../ui/Button";
+import { Button } from "@/shared/ui/Button/Button";
 import { Lock } from "lucide-react";
 
 export default function PropertyCTA() {

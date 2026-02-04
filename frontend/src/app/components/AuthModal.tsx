@@ -11,7 +11,7 @@ import { redirectAfterLogin } from "../utils/simpleRedirect";
 import { useAuthContext } from "../contexts/AuthContext";
 import { ApiError } from "../types/api";
 import { Loader2, Eye, EyeOff, Mail, Lock, X } from "lucide-react";
-import { Button } from "./ui/Button";
+import { Button } from "@/shared/ui/Button/Button";
 import { useTranslation } from "../hooks/useTranslation";
 import { loginKeys } from "../lib/translationsKeys/loginTranslationKeys";
 
@@ -163,8 +163,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   // Credentials Step
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Simple dark backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[3px]" />
+      {/* Blurred backdrop that shows the underlying page */}
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
       {/* Modal Container */}
       <div

@@ -13,7 +13,7 @@ import {
   OperatorProperty,
 } from "../../../store/slices/operatorSlice";
 import UniversalHeader from "../../../components/UniversalHeader";
-import { Plus, Building2, Users, Eye, BarChart3, X, Send } from "lucide-react";
+import { Building2, Users, Eye, BarChart3, X, Send } from "lucide-react";
 import Link from "next/link";
 import { AppDispatch } from "../../../store/store";
 import toast from "react-hot-toast";

@@ -9,6 +9,7 @@ import { selectUser } from "@/app/store/slices/authSlice";
 interface MatchedProperty {
   property: any; // Property type
   matchScore: number;
+  matchCategories?: any[]; // Category breakdown from backend
 }
 
 interface MatchedPropertyGridWithLoaderProps {
@@ -109,6 +110,7 @@ export default function MatchedPropertyGridWithLoader({
           key={match.property.id}
           property={match.property}
           matchScore={match.matchScore}
+          matchCategories={match.matchCategories || (match as any).categories}
           userPreferences={userPreferences}
           onClick={() => onPropertyClick?.(match.property)}
           showShortlist={showShortlist && user?.role === "tenant"}

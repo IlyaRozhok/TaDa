@@ -75,7 +75,7 @@ export class MatchingService {
 
       return null;
     } catch (error) {
-      console.error('Error extracting S3 key from URL:', url, error);
+      console.error("Error extracting S3 key from URL:", url, error);
       return null;
     }
   }
@@ -128,7 +128,11 @@ export class MatchingService {
 
     // Calculate match for each property
     const results: PropertyMatchResult[] = properties.map((property) =>
-      this.calculationService.calculateMatch(property, preferences, appliedWeights)
+      this.calculationService.calculateMatch(
+        property,
+        preferences,
+        appliedWeights
+      )
     );
 
     // Filter by minimum score
@@ -190,7 +194,11 @@ export class MatchingService {
       throw new NotFoundException("User preferences not found");
     }
 
-    return this.calculationService.calculateMatch(property, preferences, DEFAULT_WEIGHTS);
+    return this.calculationService.calculateMatch(
+      property,
+      preferences,
+      DEFAULT_WEIGHTS
+    );
   }
 
   /**
@@ -199,12 +207,14 @@ export class MatchingService {
   async getTopMatches(
     userId: string,
     limit: number = 20
-  ): Promise<{
-    property: Property;
-    matchScore: number;
-    matchReasons: string[];
-    perfectMatch: boolean;
-  }[]> {
+  ): Promise<
+    {
+      property: Property;
+      matchScore: number;
+      matchReasons: string[];
+      perfectMatch: boolean;
+    }[]
+  > {
     const response = await this.getMatchesForUser(userId, { limit });
 
     return response.results.map((result) => ({
@@ -223,26 +233,31 @@ export class MatchingService {
   async getDetailedMatches(
     userId: string,
     limit: number = 20
-  ): Promise<{
-    property: Property;
-    matchScore: number;
-    matchReasons: string[];
-    perfectMatch: boolean;
-    categories: {
-      category: string;
-      match: boolean;
-      score: number;
-      maxScore: number;
-      reason: string;
-      details?: string;
-    }[];
-  }[]> {
+  ): Promise<
+    {
+      property: Property;
+      matchScore: number;
+      matchPercentage: number; // For consistency with API
+      matchReasons: string[];
+      perfectMatch: boolean;
+      categories: {
+        category: string;
+        match: boolean;
+        score: number;
+        maxScore: number;
+        reason: string;
+        details?: string;
+        hasPreference: boolean;
+      }[];
+    }[]
+  > {
     const response = await this.getMatchesForUser(userId, { limit });
 
     return Promise.all(
       response.results.map(async (result) => ({
         property: await this.updatePhotosUrls(result.property),
-        matchScore: result.matchPercentage,
+        matchScore: result.matchPercentage, // Legacy field
+        matchPercentage: result.matchPercentage, // New field
         matchReasons: result.categories
           .filter((c) => c.match)
           .map((c) => c.reason),
@@ -313,7 +328,11 @@ export class MatchingService {
 
     // Calculate matches for all properties
     const matchResults: PropertyMatchResult[] = allProperties.map((property) =>
-      this.calculationService.calculateMatch(property, preferences, DEFAULT_WEIGHTS)
+      this.calculationService.calculateMatch(
+        property,
+        preferences,
+        DEFAULT_WEIGHTS
+      )
     );
 
     // Sort by match percentage (descending)
@@ -348,7 +367,11 @@ export class MatchingService {
     const parts: string[] = [];
 
     if (preferences.min_price || preferences.max_price) {
-      parts.push(`Budget: £${preferences.min_price || 0}-£${preferences.max_price || "∞"}`);
+      parts.push(
+        `Budget: £${preferences.min_price || 0}-£${
+          preferences.max_price || "∞"
+        }`
+      );
     }
 
     if (preferences.bedrooms?.length) {
@@ -366,4 +389,3 @@ export class MatchingService {
     return parts.length > 0 ? parts.join(" • ") : "No preferences set";
   }
 }
-

@@ -22,7 +22,7 @@ import {
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
 import ImageGallery from "../../../components/ImageGallery";
-import { Button } from "../../../components/ui/Button";
+import { Button } from "@/shared/ui/Button/Button";
 import { Heart, Share, Check, X } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
@@ -398,7 +398,7 @@ export default function PropertyPublicPage() {
       <TenantUniversalHeader showPreferencesButton={true} />
 
       {/* Header with title and actions */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:pt-20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">

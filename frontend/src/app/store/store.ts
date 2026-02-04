@@ -3,7 +3,7 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { apiSlice } from "./slices/apiSlice";
 import authSlice from "./slices/authSlice";
 import usersSlice from "./slices/usersSlice";
-import preferencesSlice from "./slices/preferencesSlice";
+import { preferencesReducer } from "@/features/preferences/model";
 import operatorSlice from "./slices/operatorSlice";
 import shortlistReducer from "./slices/shortlistSlice";
 
@@ -12,7 +12,7 @@ export const store = configureStore({
     [apiSlice.reducerPath]: apiSlice.reducer,
     auth: authSlice,
     users: usersSlice,
-    preferences: preferencesSlice,
+    preferences: preferencesReducer,
     operator: operatorSlice,
     shortlist: shortlistReducer,
   },

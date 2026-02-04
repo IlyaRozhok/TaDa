@@ -94,6 +94,7 @@ export default function MatchesPage() {
         const transformedMatches = matchesArray.map((match) => ({
           ...match,
           matchScore: match.matchPercentage || 0, // New field alias
+          matchCategories: match.categories || [], // Include categories for detailed breakdown
           matchReasons: match.categories
             ? match.categories
                 .filter((cat) => cat.hasPreference && cat.score > 0) // Only categories with preferences that matched
@@ -104,7 +105,9 @@ export default function MatchesPage() {
         setDetailedMatches(transformedMatches);
         console.log(
           "✅ Matches: Detailed matches loaded:",
-          matchesArray.length
+          matchesArray.length,
+          "First match:",
+          transformedMatches[0]
         );
       } catch (err) {
         console.error("❌ Matches: Error fetching matches:", err);

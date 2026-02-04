@@ -6,7 +6,7 @@ import { useDispatch } from "react-redux";
 import { setAuth } from "../../../store/slices/authSlice";
 import { fetchShortlist } from "../../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../../store/store";
-import { authAPI, usersAPI } from "../../../lib/api";
+import { authAPI } from "../../../lib/api";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
 
 function AuthCallbackContent() {
@@ -19,10 +19,10 @@ function AuthCallbackContent() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const token = searchParams.get("token");
-        const success = searchParams.get("success");
-        const needsRoleSelection = searchParams.get("needsRoleSelection");
-        const registrationId = searchParams.get("registrationId");
+        const token = searchParams?.get("token");
+        const success = searchParams?.get("success");
+        const needsRoleSelection = searchParams?.get("needsRoleSelection");
+        const registrationId = searchParams?.get("registrationId");
 
         console.log("🔍 Callback parameters:", {
           hasToken: !!token,
@@ -34,8 +34,8 @@ function AuthCallbackContent() {
         });
 
         // Handle OAuth errors
-        const oauthError = searchParams.get("error");
-        const errorDetails = searchParams.get("details");
+        const oauthError = searchParams?.get("error");
+        const errorDetails = searchParams?.get("details");
         
         if (oauthError) {
           console.error("❌ OAuth error detected:", { oauthError, errorDetails });
@@ -77,7 +77,7 @@ function AuthCallbackContent() {
           console.error("❌ Invalid callback parameters:", {
             token: !!token,
             success,
-            allParams: Object.fromEntries(searchParams.entries()),
+            allParams: searchParams ? Object.fromEntries(searchParams.entries()) : {},
           });
           setError("Неверные параметры авторизации. Попробуйте войти снова.");
           setLoading(false);
@@ -255,7 +255,7 @@ function AuthCallbackContent() {
                     accessToken: !!localStorage.getItem("accessToken"),
                     sessionExpiry: localStorage.getItem("sessionExpiry"),
                   },
-                  searchParams: Object.fromEntries(searchParams.entries()),
+                  searchParams: searchParams ? Object.fromEntries(searchParams.entries()) : {},
                   currentURL: window.location.href,
                   apiUrl: process.env.NEXT_PUBLIC_API_URL,
                 });

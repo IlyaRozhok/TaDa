@@ -33,6 +33,24 @@ html {
   }
 }
 
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -110,17 +128,21 @@ body {
 }
 
 /* Force white background for html and body */
-html, body {
+html,
+body {
   background-color: #ffffff !important;
 }
 
 /* Ensure no black backgrounds from any containers */
-#root, #__next {
+#root,
+#__next {
   background-color: #ffffff;
 }
 
 /* Ensure white background for all scrollable areas */
-html, body, #__next {
+html,
+body,
+#__next {
   background-color: #ffffff !important;
   min-height: 100vh;
 }

@@ -6,44 +6,43 @@ import { Preferences } from "../../../entities/preferences.entity";
  * Total should equal 100
  */
 export interface CategoryWeights {
-  budget: number;
-  availability: number;
-  deposit: number;
-  propertyType: number;
-  bedrooms: number;
-  bathrooms: number;
-  buildingStyle: number;
-  duration: number;
-  squareMeters: number;
-  bills: number;
-  tenantType: number;
-  pets: number;
-  amenities: number;
-  outdoorSpace: number;
-  furnishing: number;
-  location: number;
+  budget: number; // Price match
+  location: number; // Location, areas, districts, metro proximity
+  bedrooms: number; // Bedroom count
+  propertyType: number; // Property type match
+  availability: number; // Move-in date compatibility
+  amenities: number; // Amenities match (including outdoor space)
+  bathrooms: number; // Bathroom count
+  buildingStyle: number; // Building type
+  lifestyle: number; // Lifestyle compatibility (occupation, family status)
+  duration: number; // Let duration
+  squareMeters: number; // Size preference
+  furnishing: number; // Furnishing preference
+  smoking: number; // Smoking compatibility
+  pets: number; // Pet policy
+  bills: number; // Bills included
 }
 
 /**
  * Default category weights
+ * Optimized based on user priorities and real-world importance
  */
 export const DEFAULT_WEIGHTS: CategoryWeights = {
-  budget: 20, // Most important - price match
-  availability: 10, // Move-in date compatibility
-  deposit: 5, // Deposit preference
-  propertyType: 8, // Property type match
-  bedrooms: 10, // Bedroom count
-  bathrooms: 5, // Bathroom count
-  buildingStyle: 5, // Building type
-  duration: 5, // Let duration
-  squareMeters: 5, // Size preference
-  bills: 5, // Bills included
-  tenantType: 5, // Tenant type compatibility
-  pets: 5, // Pet policy
-  amenities: 5, // Amenities match
-  outdoorSpace: 4, // Outdoor space, balcony, terrace
-  furnishing: 2, // Furnishing preference
-  location: 1, // Location/metro proximity
+  budget: 20, // Most critical - affordability
+  location: 15, // Very important - proximity to work/preferred areas
+  bedrooms: 12, // Critical for space needs
+  propertyType: 10, // Important property characteristic
+  availability: 8, // Important for move-in planning
+  amenities: 8, // Important for lifestyle (includes outdoor space)
+  bathrooms: 5, // Important but flexible
+  buildingStyle: 5, // Preference-based
+  lifestyle: 4, // Family/occupation compatibility
+  duration: 4, // Contract flexibility
+  squareMeters: 3, // Size preference
+  furnishing: 2, // Nice to have
+  smoking: 2, // Health/lifestyle compatibility
+  pets: 1, // Specific need
+  bills: 1, // Financial detail
 };
 
 /**

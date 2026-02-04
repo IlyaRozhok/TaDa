@@ -6,12 +6,16 @@ interface PropertyContentProps {
   property: Property;
   shortlistSuccess?: string | null;
   shortlistError?: string | null;
+  matchScore?: number;
+  matchCategories?: any[];
 }
 
 export const PropertyContent: React.FC<PropertyContentProps> = ({
   property,
   shortlistSuccess,
   shortlistError,
+  matchScore,
+  matchCategories, // eslint-disable-line @typescript-eslint/no-unused-vars
 }) => {
   const formatPrice = (price: number | string) => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;

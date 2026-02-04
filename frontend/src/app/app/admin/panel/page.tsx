@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useState, useEffect } from "react";
+// import { useSelector } from "react-redux";
 import Link from "next/link";
-import {
-  selectUser,
-  selectIsAuthenticated,
-} from "../../../store/slices/authSlice";
+// import {
+//   selectUser,
+//   selectIsAuthenticated,
+// } from "../../../store/slices/authSlice";
 import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
-import { useDebounce } from "../../../hooks/useDebounce";
+// import { useDebounce } from "../../../hooks/useDebounce";
 import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
@@ -22,7 +22,7 @@ import EditUserModal from "../../../components/EditUserModal";
 import EditBuildingModal from "../../../components/EditBuildingModal";
 import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, X } from "lucide-react";
 import {
   bookingRequestsAPI,
   buildingsAPI,
@@ -38,12 +38,6 @@ import {
   Building2,
   Home,
   Calendar,
-  Eye,
-  Edit3,
-  Trash2,
-  Plus,
-  X,
-  Save,
   FileText,
   SlidersHorizontal,
   LayoutGrid,
@@ -70,16 +64,17 @@ interface Building {
   name: string;
   address: string;
   number_of_units: number;
-  type_of_unit: string;
+  type_of_unit: string[];
   logo?: string;
   video?: string;
   photos?: string[];
   documents?: string;
+  operator_id: string | null;
 }
 
 function AdminPanelContent() {
-  const user = useSelector(selectUser);
-  const isAuthenticated = useSelector(selectIsAuthenticated);
+  // const user = useSelector(selectUser);
+  // const isAuthenticated = useSelector(selectIsAuthenticated);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [users, setUsers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
@@ -110,7 +105,7 @@ function AdminPanelContent() {
   );
 
   // Debounced search term
-  const debouncedSearchTerm = useDebounce(searchTerm, 150);
+  // const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
   // Notification management
   const addNotification = (
@@ -814,10 +809,10 @@ function AdminPanelContent() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
-            onCopyId={(id, type) => {
+            onCopyId={(id, _type) => {
               addNotification(
                 "success",
-                `${type === "property" ? "Property" : "Building"} ID "${id}" copied to clipboard`,
+                `${_type === "property" ? "Property" : "Building"} ID "${id}" copied to clipboard`,
               );
             }}
           />
@@ -846,7 +841,7 @@ function AdminPanelContent() {
       activeSection === "buildings" ? (selectedItem as Building) : null;
     const user = activeSection === "users" ? (selectedItem as User) : null;
 
-    const handleCopyId = async (id: string, type: "building") => {
+    const handleCopyId = async (id: string, _type: "building") => {
       try {
         await navigator.clipboard.writeText(id);
         setCopiedId(id);
@@ -1183,10 +1178,10 @@ function AdminPanelContent() {
           isOpen={showModal === "view"}
           onClose={() => setShowModal(null)}
           property={selectedItem as Property}
-          onCopyId={(id, type) => {
+          onCopyId={(id, _type) => {
             addNotification(
               "success",
-              `${type === "property" ? "Property" : "Building"} ID "${id}" copied to clipboard`,
+              `${_type === "property" ? "Property" : "Building"} ID "${id}" copied to clipboard`,
             );
           }}
         />
