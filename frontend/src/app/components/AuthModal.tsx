@@ -163,8 +163,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   // Credentials Step
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Simple dark backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[3px]" />
+      {/* Blurred backdrop that shows the underlying page */}
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
       {/* Modal Container */}
       <div
