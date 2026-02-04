@@ -9,7 +9,7 @@ import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { LogOut, Settings, Sliders, Mail, FileText } from "lucide-react";
+import { LogOut, Settings, Sliders, Mail, FileText, Layers } from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
@@ -104,6 +104,11 @@ export default function UserDropdown({
   const handleTenantCv = () => {
     setIsOpen(false);
     router.push("/app/tenant-cv");
+  };
+
+  const handleUnits = () => {
+    setIsOpen(false);
+    router.push("/app/units");
   };
 
   const handleSupport = () => {
@@ -203,6 +208,14 @@ export default function UserDropdown({
                 >
                   <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
                   {t(tenantCvKeys.tenantCvButton)}
+                </button>
+
+                <button
+                  onClick={handleUnits}
+                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                >
+                  <Layers className="w-4 h-4 mr-3 flex-shrink-0" />
+                  Units
                 </button>
 
                 <hr className="my-1 border-white/10" />

@@ -9,18 +9,22 @@
 ## 🐛 Выявленные проблемы
 
 ### 1. **`matchCategories` не передавались в компоненты**
+
 - В `MatchedPropertyGridWithLoader` не передавалось поле `matchCategories`
 - Компонент не мог отобразить детальный breakdown по категориям
 
 ### 2. **`isAuthenticated` не определялся корректно**
+
 - В `PropertyCard` флаг `isAuthenticated` не вычислялся автоматически
 - Это приводило к отображению 0% для всех пользователей (старая логика для неавторизованных)
 
 ### 3. **Неправильная структура `category` в tooltip**
+
 - В `PropertyImage` tooltip использовал `category.name`, но API возвращает `category.category`
 - Tooltip не отображался корректно
 
 ### 4. **Отсутствие `matchPercentage` в API response**
+
 - В `getDetailedMatches` не было поля `matchPercentage` для обратной совместимости
 
 ---
@@ -107,6 +111,7 @@ const isAuthenticated = isAuthenticatedProp ?? (matchScore !== undefined && matc
 **Полностью переработан Match Badge и Tooltip:**
 
 #### Улучшения:
+
 - ✅ Убрана проверка `isAuthenticated` - теперь показывает matchScore всем авторизованным
 - ✅ Показывает badge только если `matchScore > 0`
 - ✅ Исправлена структура category: `category.category` вместо `category.name`
@@ -128,23 +133,43 @@ const isAuthenticated = isAuthenticatedProp ?? (matchScore !== undefined && matc
       .sort((a, b) => b.maxScore - a.maxScore)
       .slice(0, 6)
       .map((category, index) => {
-        const scorePercentage = category.maxScore > 0 
-          ? Math.round((category.score / category.maxScore) * 100)
-          : 0;
-        const categoryName = category.category || category.name || 'Unknown';
+        const scorePercentage =
+          category.maxScore > 0
+            ? Math.round((category.score / category.maxScore) * 100)
+            : 0;
+        const categoryName = category.category || category.name || "Unknown";
         const isMatch = category.match || scorePercentage >= 80;
-        
+
         return (
-          <div key={index} className="flex items-center justify-between text-xs">
+          <div
+            key={index}
+            className="flex items-center justify-between text-xs"
+          >
             <div className="flex items-center gap-2">
-              <span className={`text-lg ${isMatch ? 'text-green-600' : scorePercentage > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>
-                {isMatch ? '✓' : scorePercentage > 0 ? '○' : '✗'}
+              <span
+                className={`text-lg ${
+                  isMatch
+                    ? "text-green-600"
+                    : scorePercentage > 0
+                    ? "text-yellow-600"
+                    : "text-gray-400"
+                }`}
+              >
+                {isMatch ? "✓" : scorePercentage > 0 ? "○" : "✗"}
               </span>
               <span className="text-slate-700 capitalize font-medium">
-                {categoryName.replace(/([A-Z])/g, ' $1').trim()}
+                {categoryName.replace(/([A-Z])/g, " $1").trim()}
               </span>
             </div>
-            <span className={`font-bold ${isMatch ? 'text-green-700' : scorePercentage > 0 ? 'text-yellow-700' : 'text-gray-500'}`}>
+            <span
+              className={`font-bold ${
+                isMatch
+                  ? "text-green-700"
+                  : scorePercentage > 0
+                  ? "text-yellow-700"
+                  : "text-gray-500"
+              }`}
+            >
               {scorePercentage}%
             </span>
           </div>
@@ -157,6 +182,7 @@ const isAuthenticated = isAuthenticatedProp ?? (matchScore !== undefined && matc
 ### 6. **Frontend: Исправлены TypeScript ошибки**
 
 **`PropertyImage.tsx` wrapper:**
+
 ```typescript
 // До:
 export { default } from "@/entities/property/ui/PropertyImage";
@@ -170,11 +196,13 @@ export { PropertyImage as default } from "@/entities/property/ui/PropertyImage";
 ## 📊 Результат
 
 ### До исправления:
+
 - ❌ Match badge показывал **0%** для всех квартир
 - ❌ Tooltip не отображался или показывал неправильные данные
 - ❌ Не было визуальной индикации по категориям
 
 ### После исправления:
+
 - ✅ Match badge показывает **корректный процент** (например, 65%, 82%)
 - ✅ Tooltip отображается при наведении с **glassmorphism эффектом**
 - ✅ Категории показываются с **иконками** и **цветовой индикацией**:
@@ -189,6 +217,7 @@ export { PropertyImage as default } from "@/entities/property/ui/PropertyImage";
 ## 🎨 Пример отображения
 
 ### Match Badge:
+
 ```
 ┌─────────────────┐
 │  65% Match      │ ← Black badge with white text
@@ -196,6 +225,7 @@ export { PropertyImage as default } from "@/entities/property/ui/PropertyImage";
 ```
 
 ### Tooltip при наведении:
+
 ```
 ┌─────────────────────────────────────┐
 │ Match Details:                      │
@@ -220,6 +250,7 @@ export { PropertyImage as default } from "@/entities/property/ui/PropertyImage";
 - ✅ **Логирование:** Добавлен console.log для отладки в matches/page.tsx
 
 ### Рекомендуемое тестирование:
+
 1. Открыть страницу `/app/matches`
 2. Проверить, что badge показывает корректный процент (не 0%)
 3. Навести на badge - должен появиться tooltip с деталями
@@ -230,12 +261,14 @@ export { PropertyImage as default } from "@/entities/property/ui/PropertyImage";
 ## 📝 Заметки
 
 ### Улучшения дизайна:
+
 - Использован **glassmorphism** стиль (white/90 + backdrop-blur)
 - Добавлена **цветовая индикация** для быстрого восприятия
 - Категории **отсортированы по важности** (maxScore)
 - Название категорий **приведено в человеко-читаемый формат** (например, "budgetMatching" → "Budget Matching")
 
 ### Обратная совместимость:
+
 - Сохранены оба поля: `matchScore` (legacy) и `matchPercentage` (new)
 - Компоненты работают с обоими форматами данных
 

@@ -14,6 +14,7 @@ import {
   Shield,
   Users,
   Building2,
+  Layers,
 } from "lucide-react";
 import { selectUser } from "../store/slices/authSlice";
 import { logout } from "../store/slices/authSlice";
@@ -245,6 +246,12 @@ export default function DashboardHeader() {
                     {(userRole === "admin" || userRole === "operator") && (
                       <>
                         <hr className={styles.dropdownDivider} />
+                        <DropdownItem
+                          icon={<Layers className="w-4 h-4" />}
+                          label="Units"
+                          onClick={() => handleNavigation("/app/units")}
+                          color="text-slate-700 hover:text-slate-900"
+                        />
                         <DropdownItem
                           icon={<Shield className="w-4 h-4" />}
                           label="Admin Panel"

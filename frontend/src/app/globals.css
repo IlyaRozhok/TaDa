@@ -128,17 +128,21 @@ body {
 }
 
 /* Force white background for html and body */
-html, body {
+html,
+body {
   background-color: #ffffff !important;
 }
 
 /* Ensure no black backgrounds from any containers */
-#root, #__next {
+#root,
+#__next {
   background-color: #ffffff;
 }
 
 /* Ensure white background for all scrollable areas */
-html, body, #__next {
+html,
+body,
+#__next {
   background-color: #ffffff !important;
   min-height: 100vh;
 }

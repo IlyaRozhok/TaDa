@@ -25,7 +25,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   const [imageSrc, setImageSrc] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
 
   const getMainImage = () => {
@@ -59,10 +59,80 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
     const updatePosition = () => {
       if (badgeRef.current) {
         const rect = badgeRef.current.getBoundingClientRect();
-        setTooltipPosition({
-          top: rect.bottom + 12,
-          left: rect.left,
-        });
+        const tooltipWidth = 280; // Reduced from 320px for more compact design
+        const tooltipMaxHeight = 500; // Reduced from 600px
+        const margin = 20; // Increased margin for better visibility
+        const gap = 12;
+        
+        // Calculate available space
+        const availableHeight = window.innerHeight - margin * 2;
+        const availableWidth = window.innerWidth - margin * 2;
+        
+        // Use the same positioning logic as onMouseEnter
+        const badgeCenterX = rect.left + rect.width / 2;
+        const screenCenterX = window.innerWidth / 2;
+        
+        let left: number;
+        let top = rect.top;
+        
+        // If badge is on the left side of screen, show tooltip to the right
+        if (badgeCenterX < screenCenterX) {
+          left = rect.right + gap;
+          if (left + tooltipWidth > window.innerWidth - margin) {
+            left = rect.left - tooltipWidth - gap;
+          }
+        } else {
+          left = rect.left - tooltipWidth - gap;
+          if (left < margin) {
+            left = rect.right + gap;
+          }
+        }
+        
+        // Ensure tooltip stays within screen bounds (strict check)
+        if (left < margin) {
+          left = margin;
+        }
+        if (left + tooltipWidth > window.innerWidth - margin) {
+          left = window.innerWidth - tooltipWidth - margin;
+        }
+        
+        // Calculate available space below and above badge
+        const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
+        const spaceAbove = rect.top - margin;
+        
+        // Prefer showing below badge if there's enough space
+        if (spaceBelow >= Math.min(tooltipMaxHeight, availableHeight)) {
+          top = rect.bottom + gap;
+        } else if (spaceAbove >= Math.min(tooltipMaxHeight, availableHeight)) {
+          // Show above badge if there's more space above
+          top = rect.top - Math.min(tooltipMaxHeight, availableHeight) - gap;
+        } else {
+          // Use available space, prefer below
+          if (spaceBelow > spaceAbove) {
+            top = rect.bottom + gap;
+          } else {
+            top = Math.max(margin, rect.top - Math.min(tooltipMaxHeight, spaceAbove) - gap);
+          }
+        }
+        
+        // Ensure tooltip doesn't go off top edge
+        if (top < margin) {
+          top = margin;
+        }
+        
+        // Ensure tooltip doesn't go off bottom edge
+        const maxTop = window.innerHeight - Math.min(tooltipMaxHeight, availableHeight) - margin;
+        if (top > maxTop) {
+          top = maxTop;
+        }
+        
+        // Calculate dynamic max height based on available space
+        const calculatedMaxHeight = Math.min(
+          tooltipMaxHeight,
+          window.innerHeight - top - margin
+        );
+        
+        setTooltipPosition({ top, left, maxHeight: calculatedMaxHeight });
       }
     };
 
@@ -141,27 +211,83 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
           onMouseEnter={() => {
             if (badgeRef.current) {
               const rect = badgeRef.current.getBoundingClientRect();
-              const tooltipWidth = 320; // w-80 = 320px
-              const tooltipMaxHeight = 600;
+              const tooltipWidth = 280; // Reduced from 320px for more compact design
+              const tooltipMaxHeight = 500; // Reduced from 600px
+              const margin = 20; // Increased margin for better visibility
+              const gap = 12;
               
-              // Calculate position
-              let left = rect.left;
-              let top = rect.bottom + 12;
+              // Calculate available space
+              const availableHeight = window.innerHeight - margin * 2;
+              const availableWidth = window.innerWidth - margin * 2;
               
-              // Adjust if tooltip would go off screen
-              if (left + tooltipWidth > window.innerWidth) {
-                left = window.innerWidth - tooltipWidth - 16; // 16px margin
+              // Determine best horizontal position based on badge position
+              const badgeCenterX = rect.left + rect.width / 2;
+              const screenCenterX = window.innerWidth / 2;
+              
+              let left: number;
+              let top = rect.top;
+              
+              // If badge is on the left side of screen, show tooltip to the right
+              if (badgeCenterX < screenCenterX) {
+                left = rect.right + gap;
+                // If not enough space on right, show to the left
+                if (left + tooltipWidth > window.innerWidth - margin) {
+                  left = rect.left - tooltipWidth - gap;
+                }
+              } else {
+                // If badge is on the right side, show tooltip to the left
+                left = rect.left - tooltipWidth - gap;
+                // If not enough space on left, show to the right
+                if (left < margin) {
+                  left = rect.right + gap;
+                }
               }
-              if (left < 16) {
-                left = 16;
+              
+              // Ensure tooltip stays within screen bounds (strict check)
+              if (left < margin) {
+                left = margin;
+              }
+              if (left + tooltipWidth > window.innerWidth - margin) {
+                left = window.innerWidth - tooltipWidth - margin;
               }
               
-              // Adjust if tooltip would go off bottom of screen
-              if (top + tooltipMaxHeight > window.innerHeight) {
-                top = rect.top - tooltipMaxHeight - 12; // Show above badge instead
+              // Calculate available space below and above badge
+              const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
+              const spaceAbove = rect.top - margin;
+              
+              // Prefer showing below badge if there's enough space
+              if (spaceBelow >= Math.min(tooltipMaxHeight, availableHeight)) {
+                top = rect.bottom + gap;
+              } else if (spaceAbove >= Math.min(tooltipMaxHeight, availableHeight)) {
+                // Show above badge if there's more space above
+                top = rect.top - Math.min(tooltipMaxHeight, availableHeight) - gap;
+              } else {
+                // Use available space, prefer below
+                if (spaceBelow > spaceAbove) {
+                  top = rect.bottom + gap;
+                } else {
+                  top = Math.max(margin, rect.top - Math.min(tooltipMaxHeight, spaceAbove) - gap);
+                }
               }
               
-              setTooltipPosition({ top, left });
+              // Ensure tooltip doesn't go off top edge
+              if (top < margin) {
+                top = margin;
+              }
+              
+              // Ensure tooltip doesn't go off bottom edge
+              const maxTop = window.innerHeight - Math.min(tooltipMaxHeight, availableHeight) - margin;
+              if (top > maxTop) {
+                top = maxTop;
+              }
+              
+              // Calculate dynamic max height based on available space
+              const calculatedMaxHeight = Math.min(
+                tooltipMaxHeight,
+                window.innerHeight - top - margin
+              );
+              
+              setTooltipPosition({ top, left, maxHeight: calculatedMaxHeight });
             }
           }}
           onMouseLeave={() => {
@@ -182,10 +308,11 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
           {/* Glassmorphism tooltip with match details */}
           {matchCategories && matchCategories.length > 0 && tooltipPosition ? (
             <div 
-              className="fixed w-80 max-h-[600px] bg-black/70 backdrop-blur-md text-white rounded-xl shadow-2xl transition-all duration-200 pointer-events-auto z-[9999] border border-white/15 overflow-hidden"
+              className="fixed w-[280px] bg-black/70 backdrop-blur-md text-white rounded-lg shadow-2xl transition-all duration-200 pointer-events-auto z-[9999] border border-white/15 overflow-hidden"
               style={{
                 top: `${tooltipPosition.top}px`,
                 left: `${tooltipPosition.left}px`,
+                maxHeight: `${tooltipPosition.maxHeight}px`,
               }}
               onMouseEnter={() => {
                 // Keep tooltip visible when hovering over it
@@ -195,17 +322,18 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
               }}
             >
               {/* Header */}
-              <div className="px-4 py-3 border-b border-white/10 flex-shrink-0">
+              <div className="px-3 py-2 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold">Match Breakdown</span>
-                  <span className="text-lg font-bold">{Math.round(matchScore)}%</span>
+                  <span className="text-xs font-semibold">Match Breakdown</span>
+                  <span className="text-base font-bold">{Math.round(matchScore)}%</span>
                 </div>
               </div>
               
               {/* Scrollable content */}
               <div 
-                className="max-h-[530px] overflow-y-auto px-4 pt-3 pb-4 space-y-2.5 custom-scrollbar"
+                className="overflow-y-auto px-3 pt-2 pb-3 space-y-2 custom-scrollbar"
                 style={{
+                  maxHeight: `${(tooltipPosition.maxHeight || 500) - 45}px`, // Subtract header height (reduced)
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
                 }}
@@ -278,14 +406,14 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
                     return (
                       <React.Fragment key={index}>
                         {showGroupSeparator && (
-                          <div className="pt-3 mt-3 -mx-4 px-4 border-t border-white/10" />
+                          <div className="pt-2 mt-2 -mx-3 px-3 border-t border-white/10" />
                         )}
                         <div className="group/item">
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-white/80 font-medium">
+                          <div className="flex items-center justify-between text-[11px] mb-0.5">
+                            <span className="text-white/80 font-medium truncate pr-2">
                               {formattedName}
                             </span>
-                            <span className={`font-bold tabular-nums ${
+                            <span className={`font-bold tabular-nums flex-shrink-0 ${
                               isMatch ? 'text-emerald-300' : 
                               isPartial ? 'text-amber-300' : 
                               'text-white/40'
@@ -293,7 +421,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
                               +{contribution.toFixed(1)}/{weight}
                             </span>
                           </div>
-                          <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div className="relative h-1 bg-white/10 rounded-full overflow-hidden">
                             <div 
                               className={`absolute left-0 top-0 h-full rounded-full transition-all duration-300 ${
                                 isMatch ? 'bg-emerald-400/70' : 
@@ -308,7 +436,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
                     );
                   })}
                 {/* Extra spacing at the bottom to prevent cutoff */}
-                <div className="h-2" />
+                <div className="h-1" />
               </div>
             </div>
           ) : null}
