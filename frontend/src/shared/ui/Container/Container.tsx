@@ -20,7 +20,7 @@ export function Container({
   centered = true,
   padding = 'md',
   ...props
-}: ContainerProps): JSX.Element {
+}: ContainerProps): React.ReactElement {
   const baseClasses = 'w-full';
 
   const sizeClasses = {

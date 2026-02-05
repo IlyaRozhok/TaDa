@@ -2,15 +2,15 @@
 
 import React, { useRef, useState } from "react";
 import { useTranslation } from "../../../../app/hooks/useTranslation";
-import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
+import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { Upload, X, Camera, Loader2 } from "lucide-react";
 import { StepWrapper } from "../../../../app/components/preferences/step-components/StepWrapper";
 import { StepContainer } from "@/app/components/preferences/step-components/StepContainer";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput, Button } from "@/shared/ui";
-import { User } from "@/entities/user/model/types";
 import { useUserProfile } from "@/shared/hooks/useUserProfile";
+import type { User } from "@/app/store/slices/authSlice";
 import { AvatarCropModal } from "./AvatarCropModal";
 import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
 
@@ -68,7 +68,12 @@ export const SimpleProfileForm: React.FC<SimpleProfileFormProps> = ({
     }
   };
 
-  const handleCropComplete = (croppedFile: File, previewUrl: string) => {
+  const handleCropComplete = (croppedImageBlob: Blob) => {
+    // Create a File from the cropped blob
+    const croppedFile = new File([croppedImageBlob], "avatar.jpg", {
+      type: "image/jpeg",
+    });
+    const previewUrl = URL.createObjectURL(croppedImageBlob);
     setAvatarFile(croppedFile);
     setAvatarPreview(previewUrl);
     setShowCropModal(false);
@@ -101,7 +106,10 @@ export const SimpleProfileForm: React.FC<SimpleProfileFormProps> = ({
 
   return (
     <>
-      <StepWrapper>
+      <StepWrapper
+        title={t(wizardKeys.profile.title)}
+        description={t(wizardKeys.profile.subtitle)}
+      >
         <StepContainer>
           <div className="space-y-6">
             {/* Avatar Section */}
@@ -159,54 +167,54 @@ export const SimpleProfileForm: React.FC<SimpleProfileFormProps> = ({
             {/* Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
-                label={t(profileKeys.firstName)}
+                label={t(wizardKeys.profile.name)}
                 value={formData.first_name || ""}
-                onChange={(value) => handleInputChange("first_name", value)}
-                placeholder={t(profileKeys.firstNamePlaceholder)}
+                onChange={(e) => handleInputChange("first_name", e.target.value)}
+                placeholder={t(wizardKeys.profile.name)}
                 required
                 disabled={isLoading}
               />
 
               <InputField
-                label={t(profileKeys.lastName)}
+                label={t(wizardKeys.profile.lastName)}
                 value={formData.last_name || ""}
-                onChange={(value) => handleInputChange("last_name", value)}
-                placeholder={t(profileKeys.lastNamePlaceholder)}
+                onChange={(e) => handleInputChange("last_name", e.target.value)}
+                placeholder={t(wizardKeys.profile.lastName)}
                 required
                 disabled={isLoading}
               />
             </div>
 
             <InputField
-              label={t(profileKeys.address)}
+              label={t(wizardKeys.profile.address)}
               value={formData.address || ""}
-              onChange={(value) => handleInputChange("address", value)}
-              placeholder={t(profileKeys.addressPlaceholder)}
+              onChange={(e) => handleInputChange("address", e.target.value)}
+              placeholder={t(wizardKeys.profile.address)}
               disabled={isLoading}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t(profileKeys.phone)}
+                  {t(wizardKeys.profile.phone)}
                 </label>
                 <PhoneMaskInput
                   value={phoneNumberOnly}
                   countryCode={phoneCountryCode}
-                  onChange={handlePhoneChange}
-                  placeholder={t(profileKeys.phonePlaceholder)}
+                  onChange={(value) => handlePhoneChange(value || "", phoneCountryCode)}
+                  onCountryChange={(countryCode) => handlePhoneChange(phoneNumberOnly, countryCode)}
+                  placeholder={t(wizardKeys.profile.phone)}
                   disabled={isLoading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t(profileKeys.dateOfBirth)} *
-                </label>
                 <DateInput
-                  value={formData.date_of_birth || ""}
-                  onChange={(value) => handleInputChange("date_of_birth", value)}
-                  placeholder={t(profileKeys.dateOfBirthPlaceholder)}
+                  label={t(wizardKeys.profile.birth.title)}
+                  name="date_of_birth"
+                  value={formData.date_of_birth || null}
+                  onChange={(value) => handleInputChange("date_of_birth", value || "")}
+                  placeholder={t(wizardKeys.profile.birth.text)}
                   error={dateOfBirthError}
                   disabled={isLoading}
                 />
@@ -215,12 +223,12 @@ export const SimpleProfileForm: React.FC<SimpleProfileFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t(profileKeys.nationality)}
+                {t(wizardKeys.profile.nationality)}
               </label>
               <CountryDropdown
                 value={formData.nationality || ""}
                 onChange={(value) => handleInputChange("nationality", value)}
-                placeholder={t(profileKeys.nationalityPlaceholder)}
+                placeholder={t(wizardKeys.profile.nationality)}
                 disabled={isLoading}
               />
             </div>
@@ -232,7 +240,7 @@ export const SimpleProfileForm: React.FC<SimpleProfileFormProps> = ({
                 onClick={resetForm}
                 disabled={!hasChanges || isLoading}
               >
-                {t(wizardKeys.reset)}
+                Reset
               </Button>
               
               <Button
@@ -240,7 +248,7 @@ export const SimpleProfileForm: React.FC<SimpleProfileFormProps> = ({
                 disabled={!hasChanges || !validateForm() || isLoading}
                 loading={isSaving}
               >
-                {t(wizardKeys.save)}
+                {t(profileKeys.saveChangesBtn)}
               </Button>
             </div>
           </div>
@@ -250,12 +258,12 @@ export const SimpleProfileForm: React.FC<SimpleProfileFormProps> = ({
       {/* Avatar Crop Modal */}
       {showCropModal && imageToCrop && (
         <AvatarCropModal
-          imageUrl={imageToCrop}
-          onCropComplete={handleCropComplete}
-          onCancel={() => {
+          imageSrc={imageToCrop}
+          onClose={() => {
             setShowCropModal(false);
             setImageToCrop(null);
           }}
+          onCropComplete={handleCropComplete}
         />
       )}
     </>

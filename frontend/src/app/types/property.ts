@@ -62,6 +62,21 @@ export interface Pet {
   size?: "small" | "medium" | "large";
 }
 
+export interface PropertyMedia {
+  id: string;
+  property_id: string;
+  url: string;
+  s3_url?: string;
+  type: "image" | "video";
+  mime_type: string;
+  original_filename: string;
+  file_size: number;
+  order_index: number;
+  is_featured?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Property {
   id: string;
   apartment_number: string;
@@ -84,6 +99,7 @@ export interface Property {
   terrace: boolean;
   square_meters: number;
   photos: string[];
+  media?: PropertyMedia[];
   video?: string;
   documents?: string;
   operator_id: string;

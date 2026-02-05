@@ -38,16 +38,13 @@ export default function OnboardingIntroScreens({
   const currentStep = externalCurrentStep ? externalCurrentStep - 1 : 0;
 
   const currentScreen = INTRO_STEPS[currentStep];
+  if (!currentScreen) {
+    return null;
+  }
   const isLastStep = currentStep === INTRO_STEPS.length - 1;
 
-  const title =
-    "titleKey" in currentScreen
-      ? t(currentScreen.titleKey)
-      : currentScreen.title;
-  const description =
-    "subtitleKey" in currentScreen
-      ? t(currentScreen.subtitleKey)
-      : (currentScreen as { description: string }).description;
+  const title = t(currentScreen.titleKey);
+  const description = t(currentScreen.subtitleKey);
 
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center">

@@ -426,18 +426,21 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           formData.operator_id.trim() !== ""
         ) {
           operatorIdValue = formData.operator_id.trim();
-        } else         if (
-          formData.operator_id &&
-          typeof formData.operator_id === "object" &&
-          formData.operator_id !== null &&
-          "id" in formData.operator_id
-        ) {
-          // If somehow an object was passed, extract the ID
-          operatorIdValue = (formData.operator_id as any).id;
-          console.warn(
-            "⚠️ operator_id was an object, extracting ID:",
-            operatorIdValue,
-          );
+        } else {
+          const operatorIdObj = formData.operator_id;
+          // Check if it's an object with an 'id' property
+          if (typeof operatorIdObj === "object" && operatorIdObj !== null) {
+            // Use type assertion to check for 'id' property
+            const objWithId = operatorIdObj as { id?: unknown };
+            if (objWithId.id !== undefined && typeof objWithId.id === "string") {
+              // If somehow an object was passed, extract the ID
+              operatorIdValue = objWithId.id;
+              console.warn(
+                "⚠️ operator_id was an object, extracting ID:",
+                operatorIdValue,
+              );
+            }
+          }
         }
       }
 

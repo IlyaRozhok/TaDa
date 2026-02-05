@@ -23,7 +23,7 @@ export function AvatarUpload({
   onAvatarChange,
   isUploading = false,
   disabled = false,
-}: AvatarUploadProps): JSX.Element {
+}: AvatarUploadProps): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -51,7 +51,9 @@ export function AvatarUpload({
     setShowCropModal(true);
   }, []);
 
-  const handleCropComplete = useCallback((croppedFile: File) => {
+  const handleCropComplete = useCallback((croppedBlob: Blob) => {
+    // Convert Blob to File
+    const croppedFile = new File([croppedBlob], 'avatar.jpg', { type: croppedBlob.type || 'image/jpeg' });
     setAvatarPreview(URL.createObjectURL(croppedFile));
     onAvatarChange(croppedFile);
     setShowCropModal(false);
@@ -143,10 +145,9 @@ export function AvatarUpload({
       {/* Crop Modal */}
       {showCropModal && imageToCrop && (
         <AvatarCropModal
-          isOpen={showCropModal}
-          imageUrl={imageToCrop}
+          imageSrc={imageToCrop}
+          onClose={handleCropCancel}
           onCropComplete={handleCropComplete}
-          onCancel={handleCropCancel}
         />
       )}
     </div>

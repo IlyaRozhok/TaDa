@@ -11,7 +11,8 @@ export * from "./Button/Button";
 // Form components
 export * from "./Input/Input";
 export * from "./Textarea/Textarea";
-export * from "./CountryDropdown/CountryDropdown";
+export { default as CountryDropdown } from "./CountryDropdown/CountryDropdown";
+export type { CountryDropdownProps } from "./CountryDropdown/CountryDropdown";
 export * from "./PhoneMaskInput";
 export * from "./DateInput";
 export * from "./FormField/FormField";

@@ -18,7 +18,7 @@ interface LocationStepProps {
   onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
 }
 
-const AREAS = AREA_OPTIONS;
+const AREAS = [...AREA_OPTIONS];
 
 const DISTRICT_OPTION_GROUPS = DISTRICTS_BY_AREA.map((g) => ({
   label: g.area,

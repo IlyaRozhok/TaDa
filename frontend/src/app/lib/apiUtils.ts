@@ -17,7 +17,7 @@ export const handleApiError = (error: AxiosError): ApiError => {
   console.error("API Error:", {
     status: error.response?.status,
     url: error.config?.url,
-    message: error.response?.data?.message || error.message,
+    message: (error.response?.data as any)?.message || (error as any).message,
   });
 
   // Handle different types of errors

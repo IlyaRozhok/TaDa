@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 // Debounce hook for expensive operations
 export function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -19,7 +19,7 @@ export function useDebounce<T>(value: T, delay: number): T {
 
 // Throttle hook for frequent events
 export function useThrottle<T>(value: T, limit: number): T {
-  const [throttledValue, setThrottledValue] = React.useState<T>(value);
+  const [throttledValue, setThrottledValue] = useState<T>(value);
   const lastRan = useRef(Date.now());
 
   useEffect(() => {
@@ -58,8 +58,8 @@ export function useStableMemo<T>(
 export function useIntersectionObserver(
   options: IntersectionObserverInit = {}
 ) {
-  const [isIntersecting, setIsIntersecting] = React.useState(false);
-  const [hasIntersected, setHasIntersected] = React.useState(false);
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [hasIntersected, setHasIntersected] = useState(false);
   const elementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export function useVirtualScrolling<T>(
   containerHeight: number,
   overscan: number = 5
 ) {
-  const [scrollTop, setScrollTop] = React.useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
 
   const visibleRange = useMemo(() => {
     const start = Math.floor(scrollTop / itemHeight);
@@ -157,8 +157,8 @@ export function useCleanupEffect(
 export function useAsyncState<T>(
   initialState: T
 ): [T, (value: T | ((prev: T) => T)) => void, boolean] {
-  const [state, setState] = React.useState<T>(initialState);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [state, setState] = useState<T>(initialState);
+  const [isLoading, setIsLoading] = useState(false);
 
   const setAsyncState = useCallback(async (value: T | ((prev: T) => T)) => {
     setIsLoading(true);
@@ -208,9 +208,9 @@ export function usePreload<T>(
   loader: () => Promise<T>,
   deps: React.DependencyList = []
 ) {
-  const [data, setData] = React.useState<T | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<Error | null>(null);
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     setIsLoading(true);

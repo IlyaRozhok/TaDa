@@ -27,7 +27,6 @@ export const PersonalPreferencesStep: React.FC<
               key={hobby.value}
               label={hobby.label}
               value={hobby.value}
-              icon={hobby.icon}
               isSelected={formData.hobbies?.includes(hobby.value) || false}
               onClick={(value) => onToggle("hobbies", value)}
               className="p-4 text-center"

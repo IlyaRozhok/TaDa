@@ -15,7 +15,7 @@ const examplePreferencesUIData: Partial<PreferencesFormData> = {
   building_style_preferences: ["BTR", "Co-living", "Professional Management"],
 
   // Duration (UI format)
-  selected_duration: "Short term (1–6 months)",
+  selected_duration: ["Short term (1–6 months)"],
 
   // Bills (UI format)
   selected_bills: "Include",

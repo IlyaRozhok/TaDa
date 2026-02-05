@@ -24,7 +24,7 @@ export function Stack({
   justify = 'start',
   wrap = false,
   ...props
-}: StackProps): JSX.Element {
+}: StackProps): React.ReactElement {
   const isHorizontal = direction === 'horizontal';
 
   const baseClasses = cn(
@@ -74,10 +74,10 @@ export function Stack({
 }
 
 // Convenience components
-export function HStack(props: Omit<StackProps, 'direction'>): JSX.Element {
+export function HStack(props: Omit<StackProps, 'direction'>): React.ReactElement {
   return <Stack {...props} direction="horizontal" />;
 }
 
-export function VStack(props: Omit<StackProps, 'direction'>): JSX.Element {
+export function VStack(props: Omit<StackProps, 'direction'>): React.ReactElement {
   return <Stack {...props} direction="vertical" />;
 }

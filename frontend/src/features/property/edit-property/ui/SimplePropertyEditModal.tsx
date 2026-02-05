@@ -26,7 +26,7 @@ export function SimplePropertyEditModal({
   isOpen,
   onClose,
   onSave,
-}: SimplePropertyEditModalProps): JSX.Element | null {
+}: SimplePropertyEditModalProps): React.ReactElement | null {
   const {
     data,
     currentSection,

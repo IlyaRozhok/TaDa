@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/authSlice";
 import { useTranslation } from "../../hooks/useTranslation";
 import { wizardKeys } from "../../lib/translationsKeys/wizardTranslationKeys";
-import { profileKeys } from "../../lib/translationsKeys/profileTranslationKeys";
+import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
 import { InputField } from "../preferences/ui/InputField";
@@ -76,64 +76,55 @@ export default function SimpleOnboardingProfileStep({
   const loading = externalLoading || isLoading || isSaving;
 
   return (
-    <StepWrapper>
-      <StepContainer
-        title={t(wizardKeys.profileStepTitle)}
-        subtitle={t(wizardKeys.profileStepSubtitle)}
-        currentStep={currentStep}
-        totalSteps={totalSteps}
-      >
+    <StepWrapper
+      title={t(wizardKeys.profile.title)}
+      description={t(wizardKeys.profile.subtitle)}
+    >
+      <StepContainer>
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField
-              label={t(profileKeys.firstName)}
+              label={t(wizardKeys.profile.name)}
               value={formData.first_name || ""}
-              onChange={(value) => handleInputChange("first_name", value)}
-              placeholder={t(profileKeys.firstNamePlaceholder)}
+              onChange={(e) => handleInputChange("first_name", e.target.value)}
               required
               disabled={loading}
             />
 
             <InputField
-              label={t(profileKeys.lastName)}
+              label={t(wizardKeys.profile.lastName)}
               value={formData.last_name || ""}
-              onChange={(value) => handleInputChange("last_name", value)}
-              placeholder={t(profileKeys.lastNamePlaceholder)}
+              onChange={(e) => handleInputChange("last_name", e.target.value)}
               required
               disabled={loading}
             />
           </div>
 
           <InputField
-            label={t(profileKeys.address)}
+            label={t(wizardKeys.profile.address)}
             value={formData.address || ""}
-            onChange={(value) => handleInputChange("address", value)}
-            placeholder={t(profileKeys.addressPlaceholder)}
+            onChange={(e) => handleInputChange("address", e.target.value)}
             disabled={loading}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t(profileKeys.phone)}
-              </label>
               <PhoneMaskInput
                 value={phoneNumberOnly}
                 countryCode={phoneCountryCode}
-                onChange={handlePhoneChange}
-                placeholder={t(profileKeys.phonePlaceholder)}
+                onChange={(value) => handlePhoneChange(value || "", phoneCountryCode)}
+                onCountryChange={(countryCode) => handlePhoneChange(phoneNumberOnly, countryCode)}
+                label={t(wizardKeys.profile.phone)}
                 disabled={loading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t(profileKeys.dateOfBirth)} *
-              </label>
               <StyledDateInput
                 value={formData.date_of_birth || ""}
                 onChange={(value) => handleInputChange("date_of_birth", value)}
-                placeholder={t(profileKeys.dateOfBirthPlaceholder)}
+                label={t(wizardKeys.profile.birth.title)}
+                placeholder={t(wizardKeys.profile.birth.text)}
                 error={dateOfBirthError}
                 disabled={loading}
               />
@@ -141,13 +132,11 @@ export default function SimpleOnboardingProfileStep({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t(profileKeys.nationality)}
-            </label>
             <CountryDropdown
               value={formData.nationality || ""}
               onChange={(value) => handleInputChange("nationality", value)}
-              placeholder={t(profileKeys.nationalityPlaceholder)}
+              label="Nationality"
+              placeholder={t(wizardKeys.profile.nationality)}
               disabled={loading}
             />
           </div>
@@ -159,7 +148,7 @@ export default function SimpleOnboardingProfileStep({
               loading={loading}
               size="lg"
             >
-              {onNext ? t(wizardKeys.next) : t(wizardKeys.complete)}
+              {onNext ? t(onboardingKeys.bottom.nextButton) : t(onboardingKeys.bottom.finishButton)}
             </Button>
           </div>
         </div>

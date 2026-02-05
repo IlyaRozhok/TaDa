@@ -94,7 +94,7 @@ const ImageGallery = memo(function ImageGallery({
             alt={`${alt} - Image ${selectedImage + 1}`}
             fill
             sizes="100vw"
-            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+            className="object-cover w-full h-full transition-transform duration-500"
             onError={handleImageError}
             loading="lazy"
             quality={90}
@@ -158,7 +158,7 @@ const ImageGallery = memo(function ImageGallery({
                 alt={`${alt} - Thumbnail ${index + 1}`}
                 fill
                 sizes="(max-width: 640px) 25vw, (max-width: 1024px) 16vw, 12vw"
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                className="object-cover transition-transform duration-300"
                 onError={handleImageError}
                 loading="lazy"
               />

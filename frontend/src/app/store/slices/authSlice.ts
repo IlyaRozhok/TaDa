@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { authLogger } from "../../services/authLogger";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   role: string;
@@ -215,10 +215,10 @@ const authSlice = createSlice({
       if (!state.user) return;
 
       const payload = action.payload;
-      const currentTenant = state.user.tenantProfile || {};
-      const currentOperator = state.user.operatorProfile || {};
+      const currentTenant = state.user.tenantProfile;
+      const currentOperator = state.user.operatorProfile;
 
-      const tenantProfileFields: (keyof typeof currentTenant)[] = [
+      const tenantProfileFields: Array<keyof NonNullable<User["tenantProfile"]>> = [
         "first_name",
         "last_name",
         "full_name",
@@ -229,7 +229,7 @@ const authSlice = createSlice({
         "occupation",
       ];
 
-      const operatorProfileFields: (keyof typeof currentOperator)[] = [
+      const operatorProfileFields: Array<keyof NonNullable<User["operatorProfile"]>> = [
         "full_name",
         "phone",
         "business_address",
@@ -238,10 +238,12 @@ const authSlice = createSlice({
       const nextTenant =
         payload.tenantProfile || payload.operatorProfile
           ? {
+              id: currentTenant?.id || payload.tenantProfile?.id || "",
+              full_name: currentTenant?.full_name || payload.tenantProfile?.full_name || "",
               ...currentTenant,
               ...(payload.tenantProfile ?? {}),
-            }
-          : { ...currentTenant };
+            } as User["tenantProfile"]
+          : currentTenant;
 
       tenantProfileFields.forEach((key) => {
         if (key in payload) {
@@ -253,10 +255,12 @@ const authSlice = createSlice({
       const nextOperator =
         payload.operatorProfile || payload.tenantProfile
           ? {
+              id: currentOperator?.id || payload.operatorProfile?.id || "",
+              full_name: currentOperator?.full_name || payload.operatorProfile?.full_name || "",
               ...currentOperator,
               ...(payload.operatorProfile ?? {}),
-            }
-          : { ...currentOperator };
+            } as User["operatorProfile"]
+          : currentOperator;
 
       operatorProfileFields.forEach((key) => {
         if (key in payload) {
@@ -265,7 +269,7 @@ const authSlice = createSlice({
         }
       });
 
-      const updatedUser = {
+      const updatedUser: User = {
         ...state.user,
         ...payload,
         // Update avatar_url if provided
@@ -273,8 +277,8 @@ const authSlice = createSlice({
           payload.avatar_url !== undefined
             ? payload.avatar_url
             : state.user.avatar_url,
-        tenantProfile: nextTenant,
-        operatorProfile: nextOperator,
+        tenantProfile: nextTenant as User["tenantProfile"],
+        operatorProfile: nextOperator as User["operatorProfile"],
       };
 
       // Recompute isOnboarded after profile update

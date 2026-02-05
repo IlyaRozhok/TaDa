@@ -99,7 +99,7 @@ export default function OnboardingProfileStep({
   useEffect(() => {
     if (user && currentStep === 4) {
       // Only get data from tenantProfile, not from user.full_name (which might be from Google)
-      const tenantProfile = (user as UserType)?.tenantProfile;
+      const tenantProfile = (user as unknown as UserType)?.tenantProfile;
 
       // Extract saved data only from tenantProfile (database), ignore Google OAuth data
       const savedData = {

@@ -335,9 +335,8 @@ export function transformFormDataForApi(
   }
 
   // number_of_pets passthrough
-  if (formData.number_of_pets !== undefined) {
-    apiData.number_of_pets =
-      formData.number_of_pets === "" ? null : formData.number_of_pets;
+  if (formData.number_of_pets !== undefined && formData.number_of_pets !== null) {
+    apiData.number_of_pets = formData.number_of_pets;
   }
 
   // Amenities: Step 7 stores admin names (Gym, Co-working, ...) – pass through to API
@@ -375,7 +374,7 @@ export function transformFormDataForApi(
       const value = formData[field];
       if (typeof value === "string") {
         const parsed = parseInt(value, 10);
-        apiData[field] = isNaN(parsed) ? undefined : parsed;
+        (apiData as any)[field] = isNaN(parsed) ? undefined : parsed;
       }
     }
   });
@@ -419,9 +418,7 @@ export function transformFormDataForApi(
       const value = formData[field];
       if (typeof value === "string") {
         const parsed = parseInt(value, 10);
-        apiData[field] = isNaN(parsed)
-          ? undefined
-          : (parsed as PreferencesFormData[typeof field]);
+        (apiData as any)[field] = isNaN(parsed) ? undefined : parsed;
       }
     }
   });
@@ -544,18 +541,20 @@ export function transformApiDataForForm(
   // Backend: "no" -> UI: "non-smoker"
   // Backend: null/empty/other -> UI: ""
   if (apiData.smoker !== undefined && apiData.smoker !== null) {
-    if (apiData.smoker === "yes" || apiData.smoker === true) {
+    const smokerValue = apiData.smoker as string | boolean;
+    if (smokerValue === "yes" || smokerValue === true) {
       formData.smoker = "smoker";
-    } else if (apiData.smoker === "no" || apiData.smoker === false) {
+    } else if (smokerValue === "no" || smokerValue === false) {
       formData.smoker = "non-smoker";
-    } else {
+    } else if (typeof smokerValue === "string") {
       // Handle other backend values or pass through if already UI format
-      const smokerStr = String(apiData.smoker);
-      if (smokerStr === "smoker" || smokerStr === "non-smoker") {
-        formData.smoker = smokerStr;
+      if (smokerValue === "smoker" || smokerValue === "non-smoker") {
+        formData.smoker = smokerValue;
       } else {
         formData.smoker = "";
       }
+    } else {
+      formData.smoker = "";
     }
   } else {
     formData.smoker = "";

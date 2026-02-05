@@ -32,7 +32,7 @@ export function PhoneInput({
   error,
   disabled = false,
   required = false,
-}: PhoneInputProps): JSX.Element {
+}: PhoneInputProps): React.ReactElement {
   const [countryCode, setCountryCode] = useState('GB'); // Default to GB
   const [phoneNumberOnly, setPhoneNumberOnly] = useState('');
 

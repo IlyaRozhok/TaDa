@@ -6,7 +6,7 @@ import {
   COUNTRIES,
   getCountryByName,
   type Country,
-} from "../../lib/countries";
+} from "@/shared/lib/countries";
 
 export interface CountryDropdownProps {
   /** Current selected country name */

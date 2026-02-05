@@ -20,7 +20,7 @@ export function BasicInfoSection({
   errors,
   onChange,
   disabled = false,
-}: BasicInfoSectionProps): JSX.Element {
+}: BasicInfoSectionProps): React.ReactElement {
   const propertyTypes = [
     { value: 'apartment', label: 'Apartment' },
     { value: 'house', label: 'House' },
@@ -113,8 +113,8 @@ export function BasicInfoSection({
                 Building Type <span className="text-red-500">*</span>
               </label>
               <select
-                value={data.building_type}
-                onChange={(e) => onChange('building_type', e.target.value)}
+                value=""
+                onChange={(e) => {}}
                 disabled={disabled}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
               >
@@ -124,9 +124,6 @@ export function BasicInfoSection({
                   </option>
                 ))}
               </select>
-              {errors.building_type && (
-                <p className="text-xs text-red-600 mt-1">{errors.building_type}</p>
-              )}
             </div>
           </div>
 

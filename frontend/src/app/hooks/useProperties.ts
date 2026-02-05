@@ -76,10 +76,11 @@ export const propertyFilters = {
   ): Property[] => {
     if (!tenantTypes || tenantTypes.length === 0) return properties;
     return properties.filter((property) => {
-      if (!property.tenant_types || property.tenant_types.length === 0)
+      const propertyTenantTypes = (property as any).tenant_types as string[] | undefined;
+      if (!propertyTenantTypes || propertyTenantTypes.length === 0)
         return false;
       return tenantTypes.some((tenantType) =>
-        property.tenant_types!.includes(tenantType)
+        propertyTenantTypes.includes(tenantType)
       );
     });
   },
@@ -88,9 +89,10 @@ export const propertyFilters = {
   byAmenities: (properties: Property[], amenities?: string[]): Property[] => {
     if (!amenities || amenities.length === 0) return properties;
     return properties.filter((property) => {
-      if (!property.amenities || property.amenities.length === 0) return false;
+      const propertyAmenities = (property as any).amenities as string[] | undefined;
+      if (!propertyAmenities || propertyAmenities.length === 0) return false;
       return amenities.every((amenity) =>
-        property.amenities!.some((propAmenity) =>
+        propertyAmenities.some((propAmenity) =>
           propAmenity.toLowerCase().includes(amenity.toLowerCase())
         )
       );
@@ -358,16 +360,16 @@ export const useProperties = (): UsePropertiesReturn => {
   );
 
   const fetchPropertyById = useCallback(
-    async (id: string, isPublic = false) => {
+    async (id: string, isPublic = false): Promise<Property> => {
       try {
         setLoading(true);
         setError(null);
 
-        const property = isPublic
+        const response = isPublic
           ? await propertiesAPI.getByIdPublic(id)
           : await propertiesAPI.getById(id);
 
-        return property;
+        return response.data;
       } catch (err: unknown) {
         console.error("Error fetching property:", err);
         const errorMessage =

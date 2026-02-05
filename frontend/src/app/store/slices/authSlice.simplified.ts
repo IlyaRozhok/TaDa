@@ -257,7 +257,7 @@ const selectAuthState = createSliceSelector<AuthState>("auth");
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
-export const selectIsOnboarded = (state: RootState) => state.auth.isOnboarded;
+export const selectIsOnboarded = (state: RootState): boolean => state.auth.user?.isOnboarded ?? false;
 export const selectAuthLoading = createLoadingSelector(selectAuthState);
 export const selectAuthError = createErrorSelector(selectAuthState);
 
@@ -274,9 +274,9 @@ export const selectIsProfileComplete = (state: RootState) => {
   return isProfileComplete(state.auth.user);
 };
 
-export const selectTokenExpiry = (state: RootState) => state.auth.tokenExpiry;
+export const selectTokenExpiry = (state: RootState) => state.auth.sessionExpiry;
 export const selectIsTokenExpired = (state: RootState) => {
-  const expiry = state.auth.tokenExpiry;
+  const expiry = state.auth.sessionExpiry;
   return expiry ? Date.now() >= expiry : true;
 };
 

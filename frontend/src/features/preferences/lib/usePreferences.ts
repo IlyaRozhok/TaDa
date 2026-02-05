@@ -25,8 +25,8 @@ export default function usePreferences(currentStepOffset: number = 0) {
   const scrollPositionRef = useRef<number>(0);
   const hasCheckedAuthRef = useRef<boolean>(false);
   const [sessionInitialized, setSessionInitialized] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const draftSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const hasAppliedInitialLoadRef = useRef(false);
   const pendingFieldRef = useRef<{
     field: keyof PreferencesFormData;

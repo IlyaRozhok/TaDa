@@ -33,6 +33,7 @@ export interface Property {
   type?: PropertyType;
   status?: PropertyStatus;
   price: number;
+  deposit?: number;
   bedrooms: number;
   bathrooms: number;
   total_area?: number;
@@ -50,12 +51,6 @@ export interface Property {
   updated_at: string;
   operator_id: string;
   photos?: string[];
-  images?: string[];
-  media?: Array<{
-    id: string;
-    type: string;
-    url: string;
-  }>;
   // Geocoding fields
   formatted_address?: string;
   place_id?: string;
@@ -70,7 +65,6 @@ export interface Property {
   media?: PropertyMedia[];
   // Deprecated: will be removed in favor of media
   images?: string[];
-  photos?: string[];
   operator?: { id: string; full_name: string; roles: string[]; email: string };
 }
 
@@ -78,11 +72,13 @@ export interface PropertyMedia {
   id: string;
   property_id: string;
   url: string;
+  s3_url?: string;
   type: "image" | "video";
   mime_type: string;
   original_filename: string;
   file_size: number;
   order_index: number;
+  is_featured?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +88,9 @@ export interface UploadResponse {
   key: string;
   message?: string;
 }
+
+// Re-export Preferences from shared types
+export type { Preferences } from "../../shared/types/preferences";
 
 export interface CreatePropertyRequest {
   title: string;

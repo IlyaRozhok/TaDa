@@ -64,7 +64,8 @@ export const addCrudCases = <T extends StateWithLoading, Item>(
     builder.addCase(thunks.update.fulfilled, (state, action) => {
       const items = (state as any)[itemsKey] as Item[];
       if (Array.isArray(items)) {
-        const index = items.findIndex((item: any) => item.id === action.payload.id);
+        const payload = action.payload as any;
+        const index = items.findIndex((item: any) => (item as any).id === payload.id);
         if (index !== -1) {
           items[index] = action.payload;
         }

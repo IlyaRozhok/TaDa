@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Button } from "../ui/Button";
+import { Button } from "../../../shared/ui";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 
 interface OnboardingStepProps {

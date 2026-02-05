@@ -23,7 +23,7 @@ export function BasicProfileFields({
   onFieldChange,
   errors = {},
   disabled = false,
-}: BasicProfileFieldsProps): JSX.Element {
+}: BasicProfileFieldsProps): React.ReactElement {
   return (
     <div className="space-y-6">
       {/* Name Fields */}
@@ -31,7 +31,7 @@ export function BasicProfileFields({
         <InputField
           label="First Name"
           value={formData.first_name || ''}
-          onChange={(value) => onFieldChange('first_name', value)}
+          onChange={(e) => onFieldChange('first_name', e.target.value)}
           placeholder="Enter your first name"
           required
           disabled={disabled}
@@ -41,7 +41,7 @@ export function BasicProfileFields({
         <InputField
           label="Last Name"
           value={formData.last_name || ''}
-          onChange={(value) => onFieldChange('last_name', value)}
+          onChange={(e) => onFieldChange('last_name', e.target.value)}
           placeholder="Enter your last name"
           required
           disabled={disabled}
@@ -54,7 +54,7 @@ export function BasicProfileFields({
         label="Email Address"
         type="email"
         value={formData.email || ''}
-        onChange={(value) => onFieldChange('email', value)}
+        onChange={(e) => onFieldChange('email', e.target.value)}
         placeholder="Enter your email address"
         required
         disabled={disabled}
@@ -65,35 +65,29 @@ export function BasicProfileFields({
       <InputField
         label="Address"
         value={formData.address || ''}
-        onChange={(value) => onFieldChange('address', value)}
+        onChange={(e) => onFieldChange('address', e.target.value)}
         placeholder="Enter your address"
         disabled={disabled}
         error={errors.address}
-        multiline
-        rows={3}
       />
 
       {/* Date of Birth */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Date of Birth
-        </label>
-        <DateInput
-          value={formData.date_of_birth || ''}
-          onChange={(value) => onFieldChange('date_of_birth', value)}
-          placeholder="Select your date of birth"
-          disabled={disabled}
-          error={errors.date_of_birth}
-          maxDate={new Date()} // Can't be in the future
-          yearRange={[1950, new Date().getFullYear() - 16]} // Min age 16
-        />
-      </div>
+      <DateInput
+        label="Date of Birth"
+        name="date_of_birth"
+        value={formData.date_of_birth || null}
+        onChange={(value) => onFieldChange('date_of_birth', value)}
+        placeholder="Select your date of birth"
+        disabled={disabled}
+        error={errors.date_of_birth}
+        maxDate={new Date().toISOString().split('T')[0]} // Can't be in the future
+      />
 
       {/* Nationality */}
       <InputField
         label="Nationality"
         value={formData.nationality || ''}
-        onChange={(value) => onFieldChange('nationality', value)}
+          onChange={(e) => onFieldChange('nationality', e.target.value)}
         placeholder="Enter your nationality"
         disabled={disabled}
         error={errors.nationality}
@@ -103,7 +97,7 @@ export function BasicProfileFields({
       <InputField
         label="Occupation"
         value={formData.occupation || ''}
-        onChange={(value) => onFieldChange('occupation', value)}
+          onChange={(e) => onFieldChange('occupation', e.target.value)}
         placeholder="Enter your occupation"
         disabled={disabled}
         error={errors.occupation}

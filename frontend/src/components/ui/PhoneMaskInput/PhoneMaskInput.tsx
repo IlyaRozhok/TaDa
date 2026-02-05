@@ -3,13 +3,13 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { InputMask, InputMaskChangeEvent } from "primereact/inputmask";
 import { ChevronDown, Search } from "lucide-react";
-import { getPhoneMask } from "../../lib/phoneMasks";
+import { getPhoneMask } from "@/shared/lib/phoneMasks";
 import {
   COUNTRIES,
   getCountryByCode,
   getDefaultCountry,
   type Country,
-} from "../../lib/countries";
+} from "@/shared/lib/countries";
 
 export interface PhoneMaskInputProps {
   /** Country code (ISO 3166-1 alpha-2, e.g., "US", "GB", "FR") */

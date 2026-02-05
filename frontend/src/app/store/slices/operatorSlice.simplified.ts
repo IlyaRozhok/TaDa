@@ -183,13 +183,13 @@ export const selectOperatorLoading = createLoadingSelector(selectOperatorState);
 export const selectOperatorError = createErrorSelector(selectOperatorState);
 
 // Data selectors
-export const selectBuildings = createItemsSelector(selectOperatorState, "buildings");
-export const selectProperties = createItemsSelector(selectOperatorState, "properties");
-export const selectTenants = createItemsSelector(selectOperatorState, "tenants");
+export const selectBuildings = createItemsSelector<OperatorState, Building>(selectOperatorState, "buildings");
+export const selectProperties = createItemsSelector<OperatorState, Property>(selectOperatorState, "properties");
+export const selectTenants = createItemsSelector<OperatorState, User>(selectOperatorState, "tenants");
 
 // Item by ID selectors
-export const selectBuildingById = createItemByIdSelector(selectBuildings);
-export const selectPropertyById = createItemByIdSelector(selectProperties);
+export const selectBuildingById = createItemByIdSelector<RootState, Building>(selectBuildings);
+export const selectPropertyById = createItemByIdSelector<RootState, Property>(selectProperties);
 
 // Filtered selectors
 export const selectPropertiesByBuildingId = (buildingId: string) =>
@@ -203,13 +203,14 @@ export const selectBuildingsCount = createCountSelector(selectBuildings);
 export const selectPropertiesCount = createCountSelector(selectProperties);
 export const selectTenantsCount = createCountSelector(selectTenants);
 
-// Stats selector
-export const selectOperatorStats = (state: RootState) => state.operator.stats;
+// Stats selector - commented out as stats doesn't exist in actual OperatorState
+// export const selectOperatorStats = (state: RootState) => state.operator.stats;
 
 // Complex computed selectors
 export const selectOccupancyRate = (state: RootState) => {
-  const stats = selectOperatorStats(state);
-  return stats?.occupancyRate || 0;
+  // const stats = selectOperatorStats(state);
+  // return stats?.occupancyRate || 0;
+  return 0; // Placeholder - stats not available in actual OperatorState
 };
 
 export const selectBuildingsWithPropertyCount = (state: RootState) => {

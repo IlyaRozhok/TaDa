@@ -28,7 +28,7 @@ export class ApiResponseHandler {
       return {
         data,
         success: true,
-        message: response.data?.message,
+        message: (response.data as any)?.message,
       };
     } catch (error: any) {
       const apiError = handleApiError(error);
@@ -59,7 +59,7 @@ export class ApiResponseHandler {
       return {
         data: responseData.data || [],
         success: true,
-        message: responseData.message,
+        message: (responseData as any).message,
         pagination: {
           currentPage: responseData.currentPage || 1,
           totalPages: responseData.totalPages || 1,
@@ -95,7 +95,7 @@ export class ApiResponseHandler {
       return {
         data: Array.isArray(data) ? data : [],
         success: true,
-        message: response.data?.message,
+        message: (response.data as any)?.message,
       };
     } catch (error: any) {
       const apiError = handleApiError(error);

@@ -10,13 +10,15 @@ import { StepWrapper } from "../../../../app/components/preferences/step-compone
 import { StepContainer } from "@/app/components/preferences/step-components/StepContainer";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput, Button } from "@/shared/ui";
+import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
 import {
   getCountryByDialCode,
   getCountryByCode,
   getDefaultCountry,
 } from "@/shared/lib/countries";
 import { UpdateUserData } from "@/entities/user/model/types";
-import type { User } from "@/app/store/slices/authSlice";
+import type { User as AuthUser } from "@/app/store/slices/authSlice";
+import type { User } from "@/entities/user/model/types";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
 import { authAPI } from "@/app/lib/api";
@@ -24,14 +26,41 @@ import { updateUser } from "@/app/store/slices/authSlice";
 import { AvatarCropModal } from "./AvatarCropModal";
 
 interface ProfileFormProps {
-  user: User | null;
+  user: AuthUser | null;
 }
 
 export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  
+  // Convert AuthUser to entities User format
+  const adaptUser = (authUser: AuthUser | null): User | null => {
+    if (!authUser) return null;
+    
+    return {
+      id: authUser.id,
+      email: authUser.email,
+      role: authUser.role as 'tenant' | 'operator', // Type assertion since we know it should be valid
+      full_name: authUser.full_name,
+      avatar_url: authUser.avatar_url,
+      tenantProfile: authUser.role === 'tenant' && authUser.tenantProfile ? {
+        ...authUser.tenantProfile,
+        user_id: authUser.id, // Add missing user_id
+        date_of_birth: typeof authUser.tenantProfile.date_of_birth === 'string' 
+          ? authUser.tenantProfile.date_of_birth 
+          : authUser.tenantProfile.date_of_birth?.toISOString().split('T')[0] || undefined,
+      } : undefined,
+      operatorProfile: authUser.role === 'operator' && authUser.operatorProfile ? {
+        ...authUser.operatorProfile,
+        user_id: authUser.id, // Add missing user_id
+      } : undefined,
+    };
+  };
+  
+  const adaptedUser = adaptUser(user);
+  
   const [formData, setFormData] = useState<UpdateUserData>(() =>
-    buildFormDataFromUser(user)
+    buildFormDataFromUser(adaptedUser)
   );
   const [phoneCountryCode, setPhoneCountryCode] = useState("GB"); // Default to GB for UK-based platform
   const [phoneNumberOnly, setPhoneNumberOnly] = useState(""); // Store phone number without country code
@@ -67,13 +96,13 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   // Update form data when user changes and parse phone number once
   useEffect(() => {
     if (user?.id) {
-      const newFormData = buildFormDataFromUser(user);
+      const newFormData = buildFormDataFromUser(adaptedUser);
       setFormData(newFormData);
 
       // Parse phone number only when user data changes
       parsePhoneNumber(newFormData.phone || "");
     }
-  }, [user, parsePhoneNumber]);
+  }, [adaptedUser, parsePhoneNumber]);
 
   // Validate form - check if all required fields are filled
   const validateForm = useCallback((): boolean => {
@@ -107,12 +136,12 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
 
   // Track changes to enable/disable save button
   useEffect(() => {
-    const initialData = buildFormDataFromUser(user);
+    const initialData = buildFormDataFromUser(adaptedUser);
     const hasFormChanges =
       JSON.stringify(formData) !== JSON.stringify(initialData);
     // Also check if avatar file is selected
     setHasChanges(hasFormChanges || avatarFile !== null);
-  }, [formData, user, avatarFile]);
+  }, [formData, adaptedUser, avatarFile]);
 
   // Cleanup preview URL when component unmounts or avatar changes
   useEffect(() => {

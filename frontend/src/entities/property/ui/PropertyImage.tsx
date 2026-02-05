@@ -464,7 +464,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
       <img
         src={hasError && !isLoaded ? PROPERTY_PLACEHOLDER : displayImageUrl}
         alt={property.title}
-        className={`w-full h-full object-cover group-hover:scale-105 transition-opacity duration-300 ${
+        className={`w-full h-full object-cover transition-opacity duration-300 ${
           imageLoaded || isLoaded ? "opacity-100" : "opacity-0"
         }`}
         onLoad={handleImageLoad}

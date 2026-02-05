@@ -306,7 +306,7 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                     <img
                       src={photo}
                       alt={`Property photo ${index + 1}`}
-                      className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                      className="w-full h-48 object-cover transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                   </a>

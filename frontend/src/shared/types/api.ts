@@ -47,6 +47,7 @@ export interface ApiRequestConfig {
   timeout?: number;
   retries?: number;
   cache?: boolean;
+  params?: Record<string, unknown>;
 }
 
 // Upload types

@@ -116,7 +116,7 @@ export class BaseApiClient {
       message: error.message || 'An unexpected error occurred',
       code: error.code || 'UNKNOWN_ERROR',
       statusCode: error.response?.status || 0,
-      details: error.response?.data || {},
+      details: (error.response?.data as Record<string, unknown>) || {},
     };
 
     // Handle specific error formats from backend

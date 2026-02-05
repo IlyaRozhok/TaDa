@@ -183,8 +183,8 @@ export function useAdminActions(
       onNotification("success", `Request ${status} successfully`);
       
       // Refresh requests data
-      const requestsResponse = await bookingRequestsAPI.getAll();
-      onDataUpdate.updateRequests(requestsResponse.data);
+      const requestsResponse = await bookingRequestsAPI.list();
+      onDataUpdate.updateRequests(Array.isArray(requestsResponse) ? requestsResponse : requestsResponse.data || []);
     } catch (error) {
       console.error("Error updating request status:", error);
       onNotification("error", "Failed to update request status");

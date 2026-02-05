@@ -74,7 +74,7 @@ const FeaturedPropertyCard: React.FC<PropertyCardProps> = ({
           width={800}
           height={400}
           quality={100}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover transition-transform duration-300"
         />
 
         {/* Badges in top right corner */}

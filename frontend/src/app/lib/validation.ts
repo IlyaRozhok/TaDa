@@ -210,7 +210,7 @@ export const validatePassword = (password: string): boolean => {
 };
 
 export const validatePostcode = (postcode: string): boolean => {
-  return commonRules.primary_postcode.pattern.test(postcode);
+  return preferencesValidationRules.primary_postcode.pattern.test(postcode);
 };
 
 export const validatePriceRange = (

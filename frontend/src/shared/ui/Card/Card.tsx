@@ -20,7 +20,7 @@ export function Card({
   padding = 'md',
   rounded = 'md',
   ...props
-}: CardProps): JSX.Element {
+}: CardProps): React.ReactElement {
   const baseClasses = 'bg-white transition-colors';
 
   const variantClasses = {
@@ -66,7 +66,7 @@ export function CardHeader({
   children,
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
+}: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div
       className={cn('pb-3 border-b border-gray-200', className)}
@@ -81,7 +81,7 @@ export function CardContent({
   children,
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
+}: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div className={cn('py-3', className)} {...props}>
       {children}
@@ -93,7 +93,7 @@ export function CardFooter({
   children,
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
+}: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div
       className={cn('pt-3 border-t border-gray-200', className)}

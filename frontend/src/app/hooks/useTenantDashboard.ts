@@ -5,7 +5,6 @@ import {
   propertiesAPI,
   preferencesAPI,
   matchingAPI,
-  PropertyMatchResult,
   CategoryMatchResult,
 } from "../lib/api";
 import { selectUser } from "../store/slices/authSlice";

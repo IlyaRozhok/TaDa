@@ -19,7 +19,7 @@ interface UseUserProfileOptions {
 export const useUserProfile = (user: User | null, options: UseUserProfileOptions = {}) => {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState<UpdateUserData>(() =>
-    buildFormDataFromUser(user)
+    buildFormDataFromUser(user as any)
   );
   const [phoneCountryCode, setPhoneCountryCode] = useState("GB");
   const [phoneNumberOnly, setPhoneNumberOnly] = useState("");
@@ -60,7 +60,7 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
   // Update form data when user changes
   useEffect(() => {
     if (user) {
-      const newFormData = buildFormDataFromUser(user);
+      const newFormData = buildFormDataFromUser(user as any);
       setFormData(newFormData);
       setHasChanges(false);
     }
@@ -96,7 +96,7 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
 
     const date = new Date(dateString);
     const today = new Date();
-    const age = today.getFullYear() - date.getFullYear();
+    let age = today.getFullYear() - date.getFullYear();
     const monthDiff = today.getMonth() - date.getMonth();
 
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
@@ -138,7 +138,7 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
 
     try {
       const response = await authAPI.updateProfile(formData);
-      dispatch(updateUser(response.user));
+      dispatch(updateUser((response as any).user || response));
       setHasChanges(false);
       options.onSuccess?.();
       return true;
@@ -155,7 +155,7 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
 
   const resetForm = useCallback(() => {
     if (user) {
-      const resetData = buildFormDataFromUser(user);
+      const resetData = buildFormDataFromUser(user as any);
       setFormData(resetData);
       setHasChanges(false);
       setDateOfBirthError(null);

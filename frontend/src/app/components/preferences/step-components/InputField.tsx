@@ -89,7 +89,7 @@ export const InputField: React.FC<InputFieldProps> = ({
       {shouldUseMask ? (
         <IMaskInput
           mask={phoneMask}
-          value={value || ""}
+          value={String(value || "")}
           onAccept={(newValue: string) => {
             const processedValue =
               type === "number" ? Number(newValue) : newValue;

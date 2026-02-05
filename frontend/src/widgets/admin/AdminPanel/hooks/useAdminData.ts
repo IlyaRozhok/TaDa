@@ -76,8 +76,8 @@ export function useAdminData() {
   const loadRequests = async () => {
     setIsLoadingRequests(true);
     try {
-      const response = await bookingRequestsAPI.getAll();
-      setRequests(response.data);
+      const response = await bookingRequestsAPI.list();
+      setRequests(Array.isArray(response) ? response : response.data || []);
     } catch (error) {
       console.error("Error loading requests:", error);
     } finally {

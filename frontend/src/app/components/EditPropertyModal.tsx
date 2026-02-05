@@ -784,7 +784,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     // Validate building_id - required only if building_type is set and not "private_landlord"
     const isBuildingRequired =
       formData.building_type &&
-      formData.building_type !== "" &&
       formData.building_type !== "private_landlord";
 
     if (isBuildingRequired && !formData.building_id) {
@@ -955,7 +954,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         }
         propertyData.operator_id = formData.operator_id;
         propertyData.building_id = null; // Explicitly set to null for private landlord
-      } else if (formData.building_type && formData.building_type !== "") {
+      } else if (formData.building_type) {
         // If building_type is set and not private_landlord, building_id must be provided
         if (!formData.building_id || formData.building_id === "") {
           throw new Error("Please select a building");

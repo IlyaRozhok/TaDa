@@ -5,12 +5,10 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
+import { PreferencesFormData } from "@/entities/preferences/model/preferences";
 
 interface CompleteProfileStepProps {
-  formData: {
-    hobbies?: string[];
-    [key: string]: unknown;
-  };
+  formData: PreferencesFormData;
   onUpdate: (field: string, value: unknown) => void;
   onToggle: (category: string, value: string) => void;
 }

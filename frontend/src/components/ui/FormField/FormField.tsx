@@ -138,7 +138,7 @@ export function InputField({
       ) : shouldUseMask ? (
         <IMaskInput
           mask={phoneMask}
-          value={value || ""}
+          value={String(value || "")}
           onAccept={(newValue: string) => {
             const event = {
               target: { value: newValue },

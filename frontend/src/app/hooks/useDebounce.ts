@@ -33,7 +33,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   delay: number
 ): T {
   const callbackRef = useRef(callback);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Update callback ref when callback changes
   useEffect(() => {
@@ -78,8 +78,8 @@ export function useDebouncedApiCall<T extends (...args: any[]) => Promise<any>>(
   delay: number = 300
 ) {
   const [loading, setLoading] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const cancelRef = useRef<() => void>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const cancelRef = useRef<() => void | undefined>(undefined);
 
   const debouncedCall = useCallback(
     async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>> | null> => {
@@ -88,7 +88,7 @@ export function useDebouncedApiCall<T extends (...args: any[]) => Promise<any>>(
         cancelRef.current();
       }
 
-      return new Promise((resolve, reject) => {
+      return new Promise<Awaited<ReturnType<T>> | null>((resolve, reject) => {
         // Clear previous timeout
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);

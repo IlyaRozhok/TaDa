@@ -55,7 +55,7 @@ export default function AuthPage() {
             setAuth({
               user,
               accessToken: token,
-            }),
+            })
           );
           localStorage.setItem("user", JSON.stringify(user));
 
@@ -124,7 +124,7 @@ export default function AuthPage() {
             {/* Close Button */}
             <button
               onClick={() => router.push("/")}
-              className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
+              className="absolute top-4 cursor-pointer right-4 text-white/80 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
               aria-label="Close"
             >
               <X className="w-5 h-5" />

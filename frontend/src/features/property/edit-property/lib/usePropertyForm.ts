@@ -36,28 +36,24 @@ export function usePropertyForm({
       title: '',
       description: '',
       property_type: 'apartment',
-      building_type: 'residential',
+      status: 'draft',
       furnishing: 'unfurnished',
       bills: 'excluded',
-      rent: 0,
+      price: 0,
       deposit: 0,
+      let_duration: 'flexible',
       available_from: '',
-      available_to: '',
       bedrooms: 1,
       bathrooms: 1,
-      size_sqm: 0,
       floor: 0,
       total_floors: 0,
       address: '',
       postcode: '',
       city: '',
       country: 'UK',
-      latitude: 0,
-      longitude: 0,
       amenities: [],
       media: [],
-      documents: [],
-      tenant_preferences: {},
+      operator_id: '',
     } as PropertyFormData;
   });
 
@@ -74,7 +70,6 @@ export function usePropertyForm({
       { field: 'title', required: true, minLength: 3, maxLength: 100 },
       { field: 'description', required: true, minLength: 10, maxLength: 1000 },
       { field: 'property_type', required: true },
-      { field: 'building_type', required: true },
     ],
     location: [
       { field: 'address', required: true, minLength: 5 },
@@ -85,11 +80,11 @@ export function usePropertyForm({
     details: [
       { field: 'bedrooms', required: true, custom: (value) => value > 0 ? null : 'Must be at least 1' },
       { field: 'bathrooms', required: true, custom: (value) => value > 0 ? null : 'Must be at least 1' },
-      { field: 'size_sqm', required: true, custom: (value) => value > 0 ? null : 'Must be greater than 0' },
+      { field: 'area', required: false, custom: (value) => !value || value > 0 ? null : 'Must be greater than 0' },
     ],
     pricing: [
-      { field: 'rent', required: true, custom: (value) => value > 0 ? null : 'Rent must be greater than 0' },
-      { field: 'available_from', required: true },
+      { field: 'price', required: true, custom: (value) => value > 0 ? null : 'Price must be greater than 0' },
+      { field: 'available_from', required: false },
     ],
   };
 

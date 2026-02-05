@@ -14,7 +14,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
   const LazyComponent = lazy(importFn);
   
   if (displayName) {
-    LazyComponent.displayName = `Lazy(${displayName})`;
+    (LazyComponent as any).displayName = `Lazy(${displayName})`;
   }
   
   return LazyComponent;
@@ -35,70 +35,74 @@ export function preloadComponent<T extends ComponentType<any>>(
 
 /**
  * Create lazy route components with consistent loading
+ * NOTE: Commented out - pages are located in app/app/ not pages/
+ * These functions are not currently used in the codebase
  */
-export const createLazyRoute = {
-  /**
-   * Dashboard pages
-   */
-  dashboard: () => createLazyComponent(
-    () => import('@/pages/dashboard'),
-    'DashboardPage'
-  ),
+// export const createLazyRoute = {
+//   /**
+//    * Dashboard pages
+//    */
+//   dashboard: () => createLazyComponent(
+//     () => import('@/pages/dashboard'),
+//     'DashboardPage'
+//   ),
 
-  /**
-   * Property pages
-   */
-  propertyDetails: () => createLazyComponent(
-    () => import('@/pages/property-details'),
-    'PropertyDetailsPage'
-  ),
+//   /**
+//    * Property pages
+//    */
+//   propertyDetails: () => createLazyComponent(
+//     () => import('@/pages/property-details'),
+//     'PropertyDetailsPage'
+//   ),
 
-  propertySearch: () => createLazyComponent(
-    () => import('@/pages/property-search'),
-    'PropertySearchPage'
-  ),
+//   propertySearch: () => createLazyComponent(
+//     () => import('@/pages/property-search'),
+//     'PropertySearchPage'
+//   ),
 
-  /**
-   * Auth pages
-   */
-  login: () => createLazyComponent(
-    () => import('@/pages/auth/login'),
-    'LoginPage'
-  ),
+//   /**
+//    * Auth pages
+//    */
+//   login: () => createLazyComponent(
+//     () => import('@/pages/auth/login'),
+//     'LoginPage'
+//   ),
 
-  register: () => createLazyComponent(
-    () => import('@/pages/auth/register'),
-    'RegisterPage'
-  ),
+//   register: () => createLazyComponent(
+//     () => import('@/pages/auth/register'),
+//     'RegisterPage'
+//   ),
 
-  /**
-   * Admin pages
-   */
-  adminPanel: () => createLazyComponent(
-    () => import('@/pages/admin/panel'),
-    'AdminPanelPage'
-  ),
-};
+//   /**
+//    * Admin pages
+//    */
+//   adminPanel: () => createLazyComponent(
+//     () => import('@/pages/admin/panel'),
+//     'AdminPanelPage'
+//   ),
+// };
 
 /**
  * Create lazy modals
+ * NOTE: Commented out - modals may not exist at these paths
+ * These functions are not currently used in the codebase
  */
-export const createLazyModal = {
-  propertyDetails: () => createLazyComponent(
-    () => import('@/widgets/modals/property-details'),
-    'PropertyDetailsModal'
-  ),
+// export const createLazyModal = {
+//   propertyDetails: () => createLazyComponent(
+//     () => import('@/widgets/modals/property-details'),
+//     'PropertyDetailsModal'
+//   ),
 
-  editProfile: () => createLazyComponent(
-    () => import('@/widgets/modals/edit-profile'),
-    'EditProfileModal'
-  ),
+//   editProfile: () => createLazyComponent(
+//     () => import('@/widgets/modals/edit-profile'),
+//     'EditProfileModal'
+//   ),
 
-  addProperty: () => createLazyComponent(
-    () => import('@/widgets/modals/add-property'),
-    'AddPropertyModal'
-  ),
-};
+//   addProperty: () => createLazyComponent(
+//     () => import('@/widgets/modals/add-property'),
+//     'AddPropertyModal'
+//   ),
+// };
 
 /**
  * Intersection Observer for lazy loading images/components
