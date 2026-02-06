@@ -145,7 +145,6 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
           placeholder={placeholder}
           inputRef={(el) => {
             if (el) {
-              // Ensure input type is text to hide calendar picker on desktop
               el.type = "text";
             }
           }}
