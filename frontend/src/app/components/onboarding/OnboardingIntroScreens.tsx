@@ -47,19 +47,16 @@ export default function OnboardingIntroScreens({
   const description = t(currentScreen.subtitleKey);
 
   return (
-    <div className="w-full flex-1 flex flex-col items-center justify-center">
-      {/* Main Content */}
-      <div className="flex flex-col items-center justify-center w-full max-w-2xl px-4 sm:px-6 lg:px-8 text-center">
-        {/* Title */}
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black mb-3 sm:mb-4 max-w-2xl">
-          {title}
-        </h1>
+    <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* Title */}
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black mb-3 sm:mb-4 max-w-2xl mx-auto">
+        {title}
+      </h1>
 
-        {/* Description */}
-        <p className="text-sm sm:text-base text-gray-600 max-w-md leading-relaxed">
-          {description}
-        </p>
-      </div>
+      {/* Description */}
+      <p className="text-sm sm:text-base text-gray-600 max-w-md leading-relaxed mx-auto">
+        {description}
+      </p>
     </div>
   );
 }

@@ -23,17 +23,13 @@ import Footer from "./Footer";
 import Header from "./Header";
 import { useTranslation } from "../hooks/useTranslation";
 import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
+import { onboardingKeys } from "../lib/translationsKeys/onboardingTranslationKeys";
 
 // Tenant-focused hero section with background image
-const TenantsHeroSection = ({
-  onContactClick,
-}: {
-  onContactClick?: () => void;
-}) => {
+const TenantsHeroSection = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Force a small delay to ensure transition is visible on first load
@@ -43,18 +39,6 @@ const TenantsHeroSection = ({
     }, 1);
 
     return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    // Detect mobile on mount and resize
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm breakpoint
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return (
@@ -97,21 +81,13 @@ const TenantsHeroSection = ({
             {t(tenantKeys.hero.subtitle)}
           </p>
 
-          {/* CTA Button */}
+          {/* CTA Button - same behaviour as header "Get started" */}
           <div className="pt-4">
             <button
-              onClick={() => {
-                if (isMobile) {
-                  router.push("/app/auth");
-                } else {
-                  onContactClick?.();
-                }
-              }}
+              onClick={() => router.push("/app/auth")}
               className="bg-white text-black w-full sm:w-auto hover:text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-black transition-colors shadow-lg cursor-pointer"
             >
-              {isMobile
-                ? t(tenantKeys.hero.ctaBtnMobile)
-                : t(tenantKeys.hero.ctaBtn)}
+              {t(onboardingKeys.headerCtaGetStarted)}
             </button>
           </div>
         </div>
@@ -199,26 +175,9 @@ const TenantsHeroSection = ({
   );
 };
 
-const TenantsCardsSection = ({
-  onContactClick,
-}: {
-  onContactClick?: () => void;
-}) => {
+const TenantsCardsSection = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    // Detect mobile on mount and resize
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm breakpoint
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   const cards = [
     {
@@ -280,22 +239,14 @@ const TenantsCardsSection = ({
         {/* Responsive Cards Display */}
         <ResponsiveCardsDisplay cards={cards} />
 
-        {/* Contact Us Button */}
+        {/* CTA Button - same behaviour as header "Get started" */}
         <div className="container mx-auto px-4">
           <div className="text-center mt-6 md:mt-16">
             <button
-              onClick={() => {
-                if (isMobile) {
-                  router.push("/app/auth");
-                } else {
-                  onContactClick?.();
-                }
-              }}
+              onClick={() => router.push("/app/auth")}
               className="bg-black w-full sm:w-auto text-white px-12 py-4 rounded-full font-semibold text-lg hover:bg-gray-200 hover:text-black transition-colors cursor-pointer"
             >
-              {isMobile
-                ? t(tenantKeys.rentSection.ctaBtnMobile)
-                : t(tenantKeys.rentSection.ctaBtn)}
+              {t(onboardingKeys.headerCtaGetStarted)}
             </button>
           </div>
         </div>

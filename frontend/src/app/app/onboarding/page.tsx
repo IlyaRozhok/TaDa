@@ -15,6 +15,7 @@ import {
 import { preferencesAPI } from "../../lib/api";
 import OnboardingProfileStep from "../../components/onboarding/OnboardingProfileStep";
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
+import OnboardingIntroCenteredWrapper from "../../components/onboarding/OnboardingIntroCenteredWrapper";
 import NewPreferencesPage from "../../components/preferences/NewPreferencesPage";
 import UserDropdown from "../../components/UserDropdown";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
@@ -275,15 +276,17 @@ export default function OnboardingPage() {
         {/* Onboarding Header */}
         <OnboardingHeader />
 
-        {/* Main Content */}
-        <div className="min-h-[calc(100vh-120px)] flex items-center justify-center pb-24">
-          <div className="w-full max-w-4xl mx-auto px-1 sm:px-1.5 lg:px-2">
-            <OnboardingIntroScreens
-              onComplete={handleIntroComplete}
-              currentStep={state.currentStep}
-              totalSteps={TOTAL_ONBOARDING_STEPS}
-            />
-          </div>
+        {/* Main Content - strictly centered in the container */}
+        <div className="min-h-[calc(100vh-120px)] flex flex-col pb-24">
+          <OnboardingIntroCenteredWrapper className="px-1 sm:px-1.5 lg:px-2">
+            <div className="w-full max-w-4xl mx-auto">
+              <OnboardingIntroScreens
+                onComplete={handleIntroComplete}
+                currentStep={state.currentStep}
+                totalSteps={TOTAL_ONBOARDING_STEPS}
+              />
+            </div>
+          </OnboardingIntroCenteredWrapper>
         </div>
 
         {/* Unified Bottom Navigation for intro phase */}
