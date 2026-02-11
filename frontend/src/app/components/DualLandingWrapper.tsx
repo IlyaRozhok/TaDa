@@ -26,7 +26,7 @@ import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
 import { onboardingKeys } from "../lib/translationsKeys/onboardingTranslationKeys";
 
 // Tenant-focused hero section with background image
-const TenantsHeroSection = () => {
+const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void }) => {
   const { t } = useTranslation();
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -175,7 +175,7 @@ const TenantsHeroSection = () => {
   );
 };
 
-const TenantsCardsSection = () => {
+const TenantsCardsSection = ({ onContactClick }: { onContactClick?: () => void }) => {
   const { t } = useTranslation();
   const router = useRouter();
 

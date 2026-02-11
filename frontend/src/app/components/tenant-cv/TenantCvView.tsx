@@ -720,7 +720,7 @@ export function TenantCvView({
           <div className="grid md:grid-cols-2 gap-6">
             <div className="md:col-span-2 bg-white">
               <SectionTitle title={t(tenantCvKeys.aboutMe)} />
-              <p className="text-gray-800 leading-relaxed">
+              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                 {hasAbout ? aboutText : "Not provided"}
               </p>
             </div>
