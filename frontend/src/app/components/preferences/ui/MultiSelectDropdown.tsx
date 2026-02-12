@@ -168,7 +168,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
                         placeholder="Search..."
-                        className="flex-1 min-w-0 bg-transparent text-white placeholder:text-white/50 text-sm outline-none"
+                        className="flex-1 min-w-0 bg-transparent text-white placeholder:text-white/50 text-base outline-none"
                       />
                     </div>
                   </div>

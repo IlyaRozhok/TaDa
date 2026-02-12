@@ -187,7 +187,7 @@ export default function CountryDropdown({
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onClick={(e) => e.stopPropagation()}
                       placeholder="Search country..."
-                      className="w-full pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none"
+                      className="w-full pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 text-base focus:outline-none"
                     />
                   </div>
                 </div>

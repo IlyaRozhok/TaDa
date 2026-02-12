@@ -276,8 +276,8 @@ export default function OnboardingPage() {
         {/* Onboarding Header */}
         <OnboardingHeader />
 
-        {/* Main Content - strictly centered in the container */}
-        <div className="min-h-[calc(100vh-120px)] flex flex-col pb-24">
+        {/* Main Content - strictly centered in the visible area (above fixed footer) */}
+        <div className="min-h-[calc(100vh-120px-72px)] flex flex-col">
           <OnboardingIntroCenteredWrapper className="px-1 sm:px-1.5 lg:px-2">
             <div className="w-full max-w-4xl mx-auto">
               <OnboardingIntroScreens

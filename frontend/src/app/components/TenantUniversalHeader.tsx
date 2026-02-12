@@ -7,7 +7,7 @@ import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
 import { selectUser, selectIsOnboarded } from "../store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { Settings, Shield, MoreVertical, User, FileText } from "lucide-react";
+import { Settings, Shield, MoreHorizontal, User, FileText } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
@@ -152,7 +152,7 @@ export default function TenantUniversalHeader({
               className="p-2 cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Menu"
             >
-              <MoreVertical className="w-5 h-5" />
+              <MoreHorizontal className="w-5 h-5" />
             </button>
 
             {/* Mobile Menu Dropdown - styled like LanguageDropdown */}
