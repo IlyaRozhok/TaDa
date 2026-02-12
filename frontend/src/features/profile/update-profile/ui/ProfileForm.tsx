@@ -93,16 +93,17 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
     setPhoneNumberOnly(phoneNumber.slice(country.dialCode.length));
   }, []);
 
-  // Update form data when user changes and parse phone number once
+  // Update form data when user identity changes (stable deps to avoid update loop)
   useEffect(() => {
     if (user?.id) {
-      const newFormData = buildFormDataFromUser(adaptedUser);
+      const adapted = adaptUser(user);
+      const newFormData = buildFormDataFromUser(adapted);
       setFormData(newFormData);
 
       // Parse phone number only when user data changes
       parsePhoneNumber(newFormData.phone || "");
     }
-  }, [adaptedUser, parsePhoneNumber]);
+  }, [user?.id, parsePhoneNumber]);
 
   // Validate form - check if all required fields are filled
   const validateForm = useCallback((): boolean => {
@@ -134,14 +135,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   // Track form validity
   const isFormValid = validateForm();
 
-  // Track changes to enable/disable save button
+  // Track changes to enable/disable save button (do not depend on adaptedUser - new ref every render causes loop)
   useEffect(() => {
-    const initialData = buildFormDataFromUser(adaptedUser);
+    if (!user?.id) return;
+    const initialData = buildFormDataFromUser(adaptUser(user));
     const hasFormChanges =
       JSON.stringify(formData) !== JSON.stringify(initialData);
-    // Also check if avatar file is selected
     setHasChanges(hasFormChanges || avatarFile !== null);
-  }, [formData, adaptedUser, avatarFile]);
+  }, [formData, user?.id, avatarFile]);
 
   // Cleanup preview URL when component unmounts or avatar changes
   useEffect(() => {

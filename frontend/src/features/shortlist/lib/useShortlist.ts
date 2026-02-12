@@ -17,13 +17,11 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
   const [success, setSuccess] = useState<string | null>(null);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
-  // Check if property is in shortlist from Redux state
+  // Sync local state with Redux shortlist (do not depend on isShortlisted to avoid update loop)
   useEffect(() => {
     const isInShortlist = shortlistProperties.some((p) => p.id === property.id);
-    if (isInShortlist !== isShortlisted) {
-      setIsShortlisted(isInShortlist);
-    }
-  }, [shortlistProperties, property.id, isShortlisted]);
+    setIsShortlisted(isInShortlist);
+  }, [shortlistProperties, property.id]);
 
   const handleAddToShortlist = async () => {
     setError(null);

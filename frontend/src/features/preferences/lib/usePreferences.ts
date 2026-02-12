@@ -157,12 +157,12 @@ export default function usePreferences(currentStepOffset: number = 0) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Preserve scroll position on re-renders
+  // Restore scroll position when step changes (avoid running on every render to prevent update loop)
   useEffect(() => {
     if (scrollPositionRef.current > 0) {
       window.scrollTo(0, scrollPositionRef.current);
     }
-  });
+  }, [state.step]);
 
   // Save current step to localStorage (only for onboarding, not for standalone preferences)
   useEffect(() => {

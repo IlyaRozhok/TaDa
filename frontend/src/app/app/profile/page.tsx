@@ -61,7 +61,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader
-          showPreferencesButton={false}
+          showPreferencesButton={true}
         />
         <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
           <div className="py-16 text-center text-gray-600">
@@ -78,7 +78,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader
-          showPreferencesButton={false}
+          showPreferencesButton={true}
         />
         <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
           <div className="py-16 text-center text-red-600">
@@ -93,7 +93,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
-        showPreferencesButton={false}
+        showPreferencesButton={true}
       />
 
       <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">

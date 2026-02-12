@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
-import { selectUser } from "../store/slices/authSlice";
+import { selectUser, selectIsOnboarded } from "../store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { Settings, Shield, MoreVertical, User, FileText } from "lucide-react";
 import UserDropdown from "./UserDropdown";
@@ -37,6 +37,7 @@ export default function TenantUniversalHeader({
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
   const user = useSelector(selectUser);
+  const isOnboarded = useSelector(selectIsOnboarded);
   const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -108,6 +109,29 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
+          {/* Tenant: Preferences & Tenant CV in header on desktop after onboarding */}
+          {isOnboarded && (
+            <div className="hidden md:flex items-center gap-2 lg:gap-3">
+              {showPreferencesButton && (
+                <button
+                  onClick={() => router.push("/app/preferences")}
+                  className="flex items-center gap-2 text-sm font-medium text-white-700 bg-black py-1.5 px-2 rounded-3xl hover:text-white transition-colors cursor-pointer"
+                >
+                  <Settings className="w-4 h-4 flex-shrink-0" />
+                  {t(profileKeys.dropChangePreferences)}
+                </button>
+              )}
+              {showTenantCvLink && (
+                <button
+                  onClick={() => router.push("/app/tenant-cv")}
+                  className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                >
+                  {t(tenantCvKeys.tenantCvButton)}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Language Dropdown */}
           <LanguageDropdown variant="default" />
 
@@ -171,9 +195,9 @@ export default function TenantUniversalHeader({
             )}
           </div>
 
-          {/* User Dropdown - visible only on desktop */}
+          {/* User Dropdown - visible only on desktop; hide Preferences & Tenant CV when shown in header */}
           <div className="hidden md:block">
-            <UserDropdown />
+            <UserDropdown hidePreferencesAndTenantCv={isOnboarded} />
           </div>
         </div>
       </div>

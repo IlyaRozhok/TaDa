@@ -9,14 +9,17 @@ import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { LogOut, Settings, Sliders, Mail, FileText, Layers } from "lucide-react";
+import { LogOut, Sliders, Mail, FileText, Layers } from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
+  /** When true, Preferences and Tenant CV are not shown (e.g. they are in the header) */
+  hidePreferencesAndTenantCv?: boolean;
 }
 
 export default function UserDropdown({
   simplified = false,
+  hidePreferencesAndTenantCv = false,
 }: UserDropdownProps) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -190,33 +193,38 @@ export default function UserDropdown({
                   onClick={handleSettings}
                   className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
                 >
-                  <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
                   {t(profileKeys.dropProfileSettings)}
                 </button>
 
-                <button
-                  onClick={handlePreferences}
-                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
-                >
-                  <Sliders className="w-4 h-4 mr-3 flex-shrink-0" />
-                  {t(profileKeys.dropChangePreferences)}
-                </button>
+                {!hidePreferencesAndTenantCv && (
+                  <>
+                    <button
+                      onClick={handlePreferences}
+                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    >
+                      <Sliders className="w-4 h-4 mr-3 flex-shrink-0" />
+                      {t(profileKeys.dropChangePreferences)}
+                    </button>
 
-                <button
-                  onClick={handleTenantCv}
-                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
-                >
-                  <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
-                  {t(tenantCvKeys.tenantCvButton)}
-                </button>
+                    <button
+                      onClick={handleTenantCv}
+                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    >
+                      <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
+                      {t(tenantCvKeys.tenantCvButton)}
+                    </button>
+                  </>
+                )}
 
-                <button
-                  onClick={handleUnits}
-                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
-                >
-                  <Layers className="w-4 h-4 mr-3 flex-shrink-0" />
-                  Units
-                </button>
+                {user?.role === "admin" && (
+                  <button
+                    onClick={handleUnits}
+                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                  >
+                    <Layers className="w-4 h-4 mr-3 flex-shrink-0" />
+                    Units
+                  </button>
+                )}
 
                 <hr className="my-1 border-white/10" />
               </>

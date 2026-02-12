@@ -56,7 +56,7 @@ export default function RootLayout({
         <link
           rel="preload"
           as="image"
-          href="/bg.png"
+          href="/tenant-hero-bg.png"
           fetchPriority="high"
         />
         <link
