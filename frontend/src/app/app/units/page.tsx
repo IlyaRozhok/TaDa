@@ -29,7 +29,7 @@ function TenantDashboardContent() {
         />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
+        <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -91,7 +91,7 @@ function TenantDashboardContent() {
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
+      <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
         {/* Listed Properties Section */}
         <ListedPropertiesSection
           properties={state.properties}
@@ -177,7 +177,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
+        <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -201,7 +201,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
+        <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}

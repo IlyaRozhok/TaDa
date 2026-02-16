@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import FeaturedBadge from "@/shared/ui/Badge/FeaturedBadge";
 import { Property } from "@/app/types";
 import { PROPERTY_PLACEHOLDER } from "@/app/utils/placeholders";
@@ -208,7 +209,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   };
 
   return (
-    <div className="relative aspect-[4/3] min-h-[11rem] rounded-xl overflow-hidden bg-slate-200/80">
+    <div className="relative aspect-[16/10] min-h-[9rem] rounded-xl overflow-hidden bg-slate-200/80">
       {/* Featured Badge */}
       {showFeaturedBadge && <FeaturedBadge />}
 
@@ -323,84 +324,45 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
             {Math.round(matchScore)}% Match
           </div>
 
-          {/* Glassmorphism tooltip with match details */}
-          {matchCategories && matchCategories.length > 0 && tooltipPosition ? (
-            <div 
-              className="fixed w-[280px] bg-black/70 backdrop-blur-md text-white rounded-lg shadow-2xl transition-all duration-200 pointer-events-auto z-[99999] border border-white/15 overflow-hidden"
-              style={{
-                top: `${tooltipPosition.top}px`,
-                left: `${tooltipPosition.left}px`,
-                maxHeight: `${tooltipPosition.maxHeight}px`,
-              }}
-              onMouseEnter={() => {
-                // Keep tooltip visible when hovering over it
-              }}
-              onMouseLeave={() => {
-                setTooltipPosition(null);
-              }}
-            >
-              {/* Header */}
-              <div className="px-3 py-2 border-b border-white/10 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">Match Breakdown</span>
-                  <span className="text-base font-bold">{Math.round(matchScore)}%</span>
-                </div>
-              </div>
-              
-              {/* Scrollable content */}
-              <div 
-                className="overflow-y-auto px-3 pt-2 pb-3 space-y-2 custom-scrollbar"
-                style={{
-                  maxHeight: `${(tooltipPosition.maxHeight || 500) - 45}px`, // Subtract header height (reduced)
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
-                }}
-              >
-                {matchCategories
-                  .filter((cat) => cat.hasPreference && cat.maxScore > 0)
-                  .map((cat) => {
-                    const scorePercentage = cat.maxScore > 0 
-                      ? Math.round((cat.score / cat.maxScore) * 100)
-                      : 0;
-                    return {
-                      ...cat,
-                      scorePercentage,
-                      isMatch: scorePercentage >= 80,
-                      isPartial: scorePercentage > 0 && scorePercentage < 80,
-                    };
-                  })
-                  .sort((a, b) => {
-                    // First: green (match) > yellow (partial) > grey (no match)
-                    if (a.isMatch && !b.isMatch) return -1;
-                    if (!a.isMatch && b.isMatch) return 1;
-                    if (a.isPartial && !b.isPartial && !a.isMatch && !b.isMatch) return -1;
-                    if (!a.isPartial && b.isPartial && !a.isMatch && !b.isMatch) return 1;
-                    // Within same group: sort by maxScore (higher first)
-                    return b.maxScore - a.maxScore;
-                  })
-                  .map((category, index) => {
-                    const categoryName = category.category || category.name || 'Unknown';
-                    const contribution = category.score;
-                    const weight = category.maxScore;
-                    const scorePercentage = category.scorePercentage;
-                    const isMatch = category.isMatch;
-                    const isPartial = category.isPartial;
-                    
-                    // Format category name
-                    const formattedName = categoryName
-                      .replace(/([A-Z])/g, ' $1')
-                      .trim()
-                      .split(' ')
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                      .join(' ');
-                    
-                    // Check if this is the first item in a new group (for visual separators)
-                    const prevCategory = index > 0 ? matchCategories
+          {/* Glassmorphism tooltip with match details — rendered in portal so it stays above heart icon */}
+          {matchCategories && matchCategories.length > 0 && tooltipPosition && typeof document !== "undefined"
+            ? createPortal(
+                <div
+                  className="fixed w-[280px] bg-black/70 backdrop-blur-md text-white rounded-lg shadow-2xl transition-all duration-200 pointer-events-auto z-[99999] border border-white/15 overflow-hidden"
+                  style={{
+                    top: `${tooltipPosition.top}px`,
+                    left: `${tooltipPosition.left}px`,
+                    maxHeight: `${tooltipPosition.maxHeight}px`,
+                  }}
+                  onMouseEnter={() => {
+                    // Keep tooltip visible when hovering over it
+                  }}
+                  onMouseLeave={() => {
+                    setTooltipPosition(null);
+                  }}
+                >
+                  {/* Header */}
+                  <div className="px-3 py-2 border-b border-white/10 flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold">Match Breakdown</span>
+                      <span className="text-base font-bold">{Math.round(matchScore)}%</span>
+                    </div>
+                  </div>
+
+                  {/* Scrollable content */}
+                  <div
+                    className="overflow-y-auto px-3 pt-2 pb-3 space-y-2 custom-scrollbar"
+                    style={{
+                      maxHeight: `${(tooltipPosition.maxHeight || 500) - 45}px`,
+                      scrollbarWidth: "thin",
+                      scrollbarColor: "rgba(255, 255, 255, 0.2) transparent",
+                    }}
+                  >
+                    {matchCategories
                       .filter((cat) => cat.hasPreference && cat.maxScore > 0)
                       .map((cat) => {
-                        const scorePercentage = cat.maxScore > 0 
-                          ? Math.round((cat.score / cat.maxScore) * 100)
-                          : 0;
+                        const scorePercentage =
+                          cat.maxScore > 0 ? Math.round((cat.score / cat.maxScore) * 100) : 0;
                         return {
                           ...cat,
                           scorePercentage,
@@ -414,50 +376,108 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
                         if (a.isPartial && !b.isPartial && !a.isMatch && !b.isMatch) return -1;
                         if (!a.isPartial && b.isPartial && !a.isMatch && !b.isMatch) return 1;
                         return b.maxScore - a.maxScore;
-                      })[index - 1] : null;
-                    
-                    const showGroupSeparator = prevCategory && (
-                      (prevCategory.isMatch && !isMatch) ||
-                      (prevCategory.isPartial && !isPartial && !isMatch)
-                    );
-                    
-                    return (
-                      <React.Fragment key={index}>
-                        {showGroupSeparator && (
-                          <div className="pt-2 mt-2 -mx-3 px-3 border-t border-white/10" />
-                        )}
-                        <div className="group/item">
-                          <div className="flex items-center justify-between text-[11px] mb-0.5">
-                            <span className="text-white/80 font-medium truncate pr-2">
-                              {formattedName}
-                            </span>
-                            <span className={`font-bold tabular-nums flex-shrink-0 ${
-                              isMatch ? 'text-emerald-300' : 
-                              isPartial ? 'text-amber-300' : 
-                              'text-white/40'
-                            }`}>
-                              +{contribution.toFixed(1)}/{weight}
-                            </span>
-                          </div>
-                          <div className="relative h-1 bg-white/10 rounded-full overflow-hidden">
-                            <div 
-                              className={`absolute left-0 top-0 h-full rounded-full transition-all duration-300 ${
-                                isMatch ? 'bg-emerald-400/70' : 
-                                isPartial ? 'bg-amber-400/70' : 
-                                'bg-white/20'
-                              }`}
-                              style={{ width: `${scorePercentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      </React.Fragment>
-                    );
-                  })}
-                {/* Extra spacing at the bottom to prevent cutoff */}
-                <div className="h-1" />
-              </div>
-            </div>
-          ) : null}
+                      })
+                      .map((category, index) => {
+                        const categoryName = category.category || category.name || "Unknown";
+                        const contribution = category.score;
+                        const weight = category.maxScore;
+                        const scorePercentage = category.scorePercentage;
+                        const isMatch = category.isMatch;
+                        const isPartial = category.isPartial;
+
+                        const formattedName = categoryName
+                          .replace(/([A-Z])/g, " $1")
+                          .trim()
+                          .split(" ")
+                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                          .join(" ");
+
+                        const prevCategory =
+                          index > 0
+                            ? matchCategories
+                                .filter((cat) => cat.hasPreference && cat.maxScore > 0)
+                                .map((cat) => {
+                                  const scorePercentage =
+                                    cat.maxScore > 0
+                                      ? Math.round((cat.score / cat.maxScore) * 100)
+                                      : 0;
+                                  return {
+                                    ...cat,
+                                    scorePercentage,
+                                    isMatch: scorePercentage >= 80,
+                                    isPartial: scorePercentage > 0 && scorePercentage < 80,
+                                  };
+                                })
+                                .sort((a, b) => {
+                                  if (a.isMatch && !b.isMatch) return -1;
+                                  if (!a.isMatch && b.isMatch) return 1;
+                                  if (
+                                    a.isPartial &&
+                                    !b.isPartial &&
+                                    !a.isMatch &&
+                                    !b.isMatch
+                                  )
+                                    return -1;
+                                  if (
+                                    !a.isPartial &&
+                                    b.isPartial &&
+                                    !a.isMatch &&
+                                    !b.isMatch
+                                  )
+                                    return 1;
+                                  return b.maxScore - a.maxScore;
+                                })[index - 1]
+                            : null;
+
+                        const showGroupSeparator =
+                          prevCategory &&
+                          ((prevCategory.isMatch && !isMatch) ||
+                            (prevCategory.isPartial && !isPartial && !isMatch));
+
+                        return (
+                          <React.Fragment key={index}>
+                            {showGroupSeparator && (
+                              <div className="pt-2 mt-2 -mx-3 px-3 border-t border-white/10" />
+                            )}
+                            <div className="group/item">
+                              <div className="flex items-center justify-between text-[11px] mb-0.5">
+                                <span className="text-white/80 font-medium truncate pr-2">
+                                  {formattedName}
+                                </span>
+                                <span
+                                  className={`font-bold tabular-nums flex-shrink-0 ${
+                                    isMatch
+                                      ? "text-emerald-300"
+                                      : isPartial
+                                        ? "text-amber-300"
+                                        : "text-white/40"
+                                  }`}
+                                >
+                                  +{contribution.toFixed(1)}/{weight}
+                                </span>
+                              </div>
+                              <div className="relative h-1 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                  className={`absolute left-0 top-0 h-full rounded-full transition-all duration-300 ${
+                                    isMatch
+                                      ? "bg-emerald-400/70"
+                                      : isPartial
+                                        ? "bg-amber-400/70"
+                                        : "bg-white/20"
+                                  }`}
+                                  style={{ width: `${scorePercentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    <div className="h-1" />
+                  </div>
+                </div>,
+                document.body
+              )
+            : null}
         </div>
       )}
 

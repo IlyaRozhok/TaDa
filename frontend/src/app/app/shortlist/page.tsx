@@ -295,7 +295,7 @@ export default function ShortlistPage() {
     <div className="min-h-screen bg-slate-50">
       <TenantUniversalHeader />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
         {/* Header: title, subtitle, sort + show map */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
           <div>
