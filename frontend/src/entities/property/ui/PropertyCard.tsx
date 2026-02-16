@@ -56,7 +56,7 @@ export default function PropertyCard({
   return (
     <div
       onClick={handleCardClick}
-      className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 cursor-pointer group overflow-visible"
+      className="w-full min-w-0 bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 cursor-pointer group overflow-visible"
     >
       {/* Image Section */}
       <div className="relative overflow-visible rounded-t-xl">

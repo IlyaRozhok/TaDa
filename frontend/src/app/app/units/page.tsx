@@ -15,13 +15,16 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
-  const { state, loadProperties, clearError } = useTenantDashboard();
+  const { state, loadProperties, clearError, setSearchTerm } = useTenantDashboard();
 
   // Loading state
   if (!user || state.sessionLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader />
+        <TenantUniversalHeader
+          searchTerm={state.searchTerm}
+          onSearchChange={setSearchTerm}
+        />
 
         {/* Main Content */}
         <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">
@@ -78,7 +81,10 @@ function TenantDashboardContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      <TenantUniversalHeader />
+      <TenantUniversalHeader
+        searchTerm={state.searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
       {/* Main Content */}
       <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">

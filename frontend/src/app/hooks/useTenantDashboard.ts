@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Property } from "../types";
 import {
@@ -356,12 +356,15 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
     };
   }, [user, loadUserPreferences, loadProperties]);
 
-  // Handle debounced search
+  // Handle debounced search: when debounced value changes, reload list (skip initial mount – init already loads)
+  const isInitialMount = useRef(true);
   useEffect(() => {
-    if (debouncedSearchTerm !== state.searchTerm) {
-      setState((prev) => ({ ...prev, isSearchTriggered: true }));
-      loadProperties(debouncedSearchTerm, 1);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
+    setState((prev) => ({ ...prev, isSearchTriggered: true }));
+    loadProperties(debouncedSearchTerm, 1);
   }, [debouncedSearchTerm, loadProperties]);
 
   const setSearchTerm = useCallback((term: string) => {

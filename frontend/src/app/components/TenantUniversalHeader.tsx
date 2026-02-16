@@ -7,7 +7,14 @@ import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
 import { selectUser, selectIsOnboarded } from "../store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { Settings, Shield, MoreHorizontal, User, FileText } from "lucide-react";
+import {
+  Settings,
+  Shield,
+  MoreHorizontal,
+  User,
+  FileText,
+  Search,
+} from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
@@ -95,6 +102,23 @@ export default function TenantUniversalHeader({
             />
           </button>
         </div>
+
+        {/* Center: Search (only when onSearchChange provided) */}
+        {onSearchChange !== undefined && (
+          <div className="flex-1 min-w-0 max-w-md mx-2 sm:mx-4 flex">
+            <label className="relative flex items-center w-full">
+              <Search className="absolute left-3 w-4 h-4 text-gray-500 pointer-events-none" />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search property or type of property"
+                className="w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 py-2 text-sm border border-gray-400 rounded-3xl focus:bg-white focus:border-gray-300 focus:outline-none focus:ring-1 "
+                aria-label="Search property or type of property"
+              />
+            </label>
+          </div>
+        )}
 
         {/* Right: Icons - Adaptive layout */}
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 xl:gap-6 flex-shrink-0">

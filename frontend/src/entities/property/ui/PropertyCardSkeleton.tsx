@@ -4,7 +4,7 @@ import React from "react";
 
 export default function PropertyCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
+    <div className="w-full min-w-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
       {/* Image Section Skeleton */}
       <div className="relative h-48 bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_200%] animate-[shimmer_2s_infinite]">
         {/* Pulse animation overlay */}
