@@ -29,77 +29,92 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
   const areaSqm =
     property.square_meters ?? property.total_area ?? property.living_area;
 
+  const formatArea = (sqm: number) => {
+    const sqft = Math.round(sqm * 10.764);
+    return `${sqft} sq ft`;
+  };
+
+  const availabilityText = property.available_from
+    ? (() => {
+        const d = new Date(property.available_from);
+        const today = new Date();
+        if (d.toDateString() === today.toDateString()) {
+          return "Today";
+        }
+        return d.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+        });
+      })()
+    : "Available now";
+
+  const attributeParts: string[] = [];
+  if (property.is_btr) attributeParts.push("Built to rent");
+  if (property.property_type) {
+    attributeParts.push(
+      property.property_type
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase()),
+    );
+  }
+  if (property.furnishing) {
+    attributeParts.push(
+      property.furnishing.replace(/\b\w/g, (c) => c.toUpperCase()),
+    );
+  }
+
   return (
-    <div className="p-5">
-      {/* Title and Price */}
-      <div className="mb-2">
-        <h3 className="text-lg font-semibold text-slate-900 mb-1 line-clamp-1">
-          {property.title}
-        </h3>
-        <div className="flex items-center justify-between">
-          <p className="text-2xl font-bold text-slate-900">
-            {formatPrice(property.price)}
-            <span className="text-sm font-normal text-slate-500">/month</span>
-          </p>
+    <div className="p-4 sm:p-5">
+      {/* Title */}
+      <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
+        {property.title}
+      </h3>
+
+      {/* Address */}
+      {property.address && (
+        <div className="flex items-center text-gray-500 text-sm mb-2 line-clamp-1">
+          <span>{property.address}</span>
         </div>
-      </div>
+      )}
 
-      {/* Location */}
-      <div className="flex items-center text-slate-600 mb-2">
-        <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-        <span className="text-sm line-clamp-1">{property.address}</span>
-      </div>
-
-      {/* Property Details */}
-      <div className="flex items-center gap-3 text-sm text-slate-600">
+      {/* Features: Beds, Baths, Sq ft */}
+      <div className="flex items-center gap-4 text-sm text-gray-900 mb-2">
         <div className="flex items-center">
           <img src="/beds.svg" alt="" className={iconClass} />
           <span>
-            {property.bedrooms} bed{property.bedrooms !== 1 ? "s" : ""}
+            {property.bedrooms} Bed{property.bedrooms !== 1 ? "s" : ""}
           </span>
         </div>
         <div className="flex items-center">
           <img src="/baths.svg" alt="" className={iconClass} />
           <span>
-            {property.bathrooms} bath{property.bathrooms !== 1 ? "s" : ""}
+            {property.bathrooms} Bath{property.bathrooms !== 1 ? "s" : ""}
           </span>
         </div>
         {areaSqm != null && (
           <div className="flex items-center">
             <img src="/sqmeters.svg" alt="" className={iconClass} />
-            <span>{areaSqm} m²</span>
+            <span>{formatArea(areaSqm)}</span>
           </div>
         )}
       </div>
 
-      {/* Features */}
-      {property.lifestyle_features &&
-        property.lifestyle_features.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3">
-            {property.lifestyle_features.slice(0, 3).map((feature, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs"
-              >
-                {feature}
-              </span>
-            ))}
-            {property.lifestyle_features.length > 3 && (
-              <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs">
-                +{property.lifestyle_features.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
-
-      {/* Property Type (replaces Furnished/Unfurnished) */}
-      {property.property_type && (
-        <div className="mt-3">
-          <span className="text-sm text-slate-600 capitalize">
-            {property.property_type.replace(/_/g, " ")}
-          </span>
-        </div>
+      {/* Attributes: Built to rent • Type • Furnished */}
+      {attributeParts.length > 0 && (
+        <p className="text-sm text-gray-500 mb-2">
+          {attributeParts.join(" • ")}
+        </p>
       )}
+
+      {/* Price and availability */}
+      <div className="flex items-center gap-2 flex-wrap text-sm">
+        <span className="text-xl font-bold text-gray-900">
+          {formatPrice(property.price)}
+          <span className="text-sm font-normal text-gray-500">/ month</span>
+        </span>
+        <span className="text-gray-400">•</span>
+        <span className="text-gray-500">{availabilityText}</span>
+      </div>
     </div>
   );
 };

@@ -208,7 +208,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   };
 
   return (
-    <div className="relative h-48 rounded-xl overflow-hidden">
+    <div className="relative aspect-[4/3] min-h-[11rem] rounded-xl overflow-hidden bg-slate-200/80">
       {/* Featured Badge */}
       {showFeaturedBadge && <FeaturedBadge />}
 

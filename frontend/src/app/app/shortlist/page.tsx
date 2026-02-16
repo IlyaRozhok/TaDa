@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -21,8 +21,117 @@ import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import ShortlistPageSkeleton from "../../components/ui/ShortlistPageSkeleton";
-import { Heart, ArrowLeft, Trash2, RefreshCw } from "lucide-react";
+import { Heart, ChevronDown, Map } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
+import { Property } from "../../types";
+
+type SortOption =
+  | "bestMatch"
+  | "lowPrice"
+  | "highPrice"
+  | "lowDeposit"
+  | "highDeposit"
+  | "dateAdded";
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "bestMatch", label: "Best Match Score" },
+  { value: "lowPrice", label: "Low price" },
+  { value: "highPrice", label: "High Price" },
+  { value: "lowDeposit", label: "Low Deposit" },
+  { value: "highDeposit", label: "High Deposit" },
+  { value: "dateAdded", label: "Date Added" },
+];
+
+function SortDropdown({
+  sortBy,
+  onSortChange,
+}: {
+  sortBy: SortOption;
+  onSortChange: (sort: SortOption) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const currentLabel =
+    SORT_OPTIONS.find((opt) => opt.value === sortBy)?.label ??
+    "Best Match Score";
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+        aria-label="Sort by"
+      >
+        <span>{currentLabel}</span>
+        <ChevronDown
+          className={`w-4 h-4 flex-shrink-0 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 rounded-xl min-w-[200px] z-50 bg-white border border-gray-200 shadow-lg overflow-hidden">
+          {SORT_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onSortChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`block w-full cursor-pointer px-4 py-2.5 text-sm text-left transition-colors ${
+                sortBy === option.value
+                  ? "bg-gray-100 text-gray-900 font-semibold"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function sortProperties(properties: Property[], sortBy: SortOption): Property[] {
+  const copy = [...properties];
+  switch (sortBy) {
+    case "bestMatch":
+      return copy;
+    case "lowPrice":
+      return copy.sort((a, b) => (a.price || 0) - (b.price || 0));
+    case "highPrice":
+      return copy.sort((a, b) => (b.price || 0) - (a.price || 0));
+    case "lowDeposit":
+      return copy.sort((a, b) => (a.deposit || 0) - (b.deposit || 0));
+    case "highDeposit":
+      return copy.sort((a, b) => (b.deposit || 0) - (a.deposit || 0));
+    case "dateAdded":
+      return copy.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+    default:
+      return copy;
+  }
+}
 
 export default function ShortlistPage() {
   const router = useRouter();
@@ -30,6 +139,7 @@ export default function ShortlistPage() {
   const [sessionReady, setSessionReady] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearingShortlist, setClearingShortlist] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
 
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
@@ -37,6 +147,11 @@ export default function ShortlistPage() {
   const loading = useSelector(selectShortlistLoading);
   const error = useSelector(selectShortlistError);
   const count = useSelector(selectShortlistCount);
+
+  const sortedProperties = useMemo(
+    () => sortProperties(properties, sortBy),
+    [properties, sortBy]
+  );
 
   // Wait for session manager to initialize
   useEffect(() => {
@@ -180,59 +295,38 @@ export default function ShortlistPage() {
     <div className="min-h-screen bg-slate-50">
       <TenantUniversalHeader />
 
-      <div className="max-w-[98%] sm:max-w-[95%] lg:max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-1 py-1 sm:py-1.5 lg:py-2">
-        {/* Header */}
-        <div className="mb-1.5 sm:mb-2">
-          <button
-            onClick={() => router.push("/app/units")}
-            className="flex items-center text-slate-600 hover:text-slate-900 transition-colors mb-1 sm:mb-1.5 font-medium group"
-          >
-            <ArrowLeft className="w-1.25 h-1.25 mr-0.5 group-hover:-translate-x-1 transition-transform duration-200" />
-            Back to Dashboard
-          </button>
-
-          <div className="bg-white mt-10 rounded-lg sm:rounded-xl lg:rounded-2xl p-1 sm:p-1.5 lg:p-5 border-[0.7px] border-slate-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
-              <div className="flex items-center gap-1">
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">
-                    Your Shortlist
-                  </h1>
-                  <p className="text-sm sm:text-base text-slate-600">
-                    <span className="hidden sm:inline">
-                      Properties you've saved for later viewing{" "}
-                    </span>
-                    ({count} {count === 1 ? "property" : "properties"})
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-0.5 sm:gap-0.5">
-                <button
-                  onClick={handleRefresh}
-                  className="flex items-center gap-0.5 px-1 py-0.5 text-slate-600 cursor-pointer hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  Refresh
-                </button>
-
-                {properties.length > 0 && (
-                  <button
-                    onClick={handleClearShortlist}
-                    className="flex items-center gap-0.5 px-1 py-0.5 text-slate-600 border cursor-pointer hover:border-red-400 hover:text-red-400 rounded-lg transition-colors"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
+        {/* Header: title, subtitle, sort + show map */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Favourites
+            </h1>
+            <p className="text-gray-600">
+              Review and compare your saved properties to find the perfect match
+              {" – "}
+              {count} {count === 1 ? "property" : "properties"}
+            </p>
+          </div>
+          <div className="flex items-center gap-4 mt-4 sm:mt-0">
+            <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              aria-label="Show map"
+            >
+              <Map className="w-4 h-4" />
+              Show map
+            </button>
           </div>
         </div>
 
-        {/* Properties Grid */}
+        {/* Properties Grid – same cards as property list */}
         <PropertyGridWithLoader
-          properties={properties}
+          properties={sortedProperties}
           loading={loading}
           onPropertyClick={(property) => handlePropertyClick(property.id)}
+          showShortlist={true}
         />
 
         {!loading && properties.length === 0 && (
