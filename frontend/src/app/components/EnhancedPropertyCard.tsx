@@ -12,6 +12,8 @@ interface EnhancedPropertyCardProps {
   property: Property;
   onClick?: () => void;
   showShortlist?: boolean;
+  /** When true, shortlist heart is shown for any role (e.g. admin on units page). */
+  showShortlistForAllRoles?: boolean;
   imageLoaded?: boolean;
   onImageLoad?: () => void;
   matchScore?: number;
@@ -23,6 +25,7 @@ export default function EnhancedPropertyCard({
   property,
   onClick,
   showShortlist = true,
+  showShortlistForAllRoles = false,
   imageLoaded = true,
   onImageLoad,
   matchScore,
@@ -34,6 +37,7 @@ export default function EnhancedPropertyCard({
       property={property}
       onClick={onClick}
       showShortlist={showShortlist}
+      showShortlistForAllRoles={showShortlistForAllRoles}
       imageLoaded={imageLoaded}
       onImageLoad={onImageLoad}
       matchScore={matchScore}

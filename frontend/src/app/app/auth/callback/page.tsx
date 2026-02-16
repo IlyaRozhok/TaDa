@@ -137,8 +137,8 @@ function AuthCallbackContent() {
           })
         );
 
-        // Initialize shortlist for tenant users
-        if (profileResponse.data.user?.role === "tenant") {
+        // Initialize shortlist for tenant and admin users
+        if (profileResponse.data.user?.role === "tenant" || profileResponse.data.user?.role === "admin") {
           dispatch(fetchShortlist());
         }
 

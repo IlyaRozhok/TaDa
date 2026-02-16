@@ -113,7 +113,7 @@ export default function MatchedPropertyGridWithLoader({
           matchCategories={match.matchCategories || (match as any).categories}
           userPreferences={userPreferences}
           onClick={() => onPropertyClick?.(match.property)}
-          showShortlist={showShortlist && user?.role === "tenant"}
+          showShortlist={showShortlist && (user?.role === "tenant" || user?.role === "admin")}
           imageLoaded={
             allImagesLoaded || imagesLoaded[match.property.id] || false
           }

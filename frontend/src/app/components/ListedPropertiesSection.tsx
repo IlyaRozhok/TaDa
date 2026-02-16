@@ -40,6 +40,8 @@ interface ListedPropertiesSectionProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  /** When true, shortlist heart is shown on cards for any role (e.g. admin on units page). */
+  showShortlistForAllRoles?: boolean;
 }
 
 type SortOption =
@@ -150,6 +152,7 @@ export default function ListedPropertiesSection({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
+  showShortlistForAllRoles = false,
 }: ListedPropertiesSectionProps) {
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
@@ -261,6 +264,7 @@ export default function ListedPropertiesSection({
                   matchCategories={categories}
                   onClick={() => handlePropertyClick(property.id)}
                   showShortlist={true}
+                  showShortlistForAllRoles={showShortlistForAllRoles}
                 />
               ))}
           </div>

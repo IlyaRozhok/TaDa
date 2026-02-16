@@ -29,7 +29,7 @@ function TenantDashboardContent() {
         />
 
         {/* Main Content */}
-        <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -40,6 +40,7 @@ function TenantDashboardContent() {
             currentPage={1}
             totalPages={1}
             onPageChange={() => {}}
+            showShortlistForAllRoles={true}
           />
         </main>
       </div>
@@ -90,7 +91,7 @@ function TenantDashboardContent() {
       />
 
       {/* Main Content */}
-      <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
         {/* Listed Properties Section */}
         <ListedPropertiesSection
           properties={state.properties}
@@ -101,6 +102,7 @@ function TenantDashboardContent() {
           currentPage={state.currentPage}
           totalPages={state.totalPages}
           onPageChange={(page) => loadProperties(state.searchTerm, page)}
+          showShortlistForAllRoles={true}
         />
       </main>
     </div>
@@ -175,7 +177,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -186,6 +188,7 @@ export default function TenantUnitsPage() {
             currentPage={1}
             totalPages={1}
             onPageChange={() => {}}
+            showShortlistForAllRoles={true}
           />
         </main>
       </div>
@@ -198,7 +201,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -209,6 +212,7 @@ export default function TenantUnitsPage() {
             currentPage={1}
             totalPages={1}
             onPageChange={() => {}}
+            showShortlistForAllRoles={true}
           />
         </main>
       </div>

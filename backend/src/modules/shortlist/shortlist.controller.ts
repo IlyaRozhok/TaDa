@@ -41,7 +41,7 @@ export class ShortlistController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: "Only tenants can have shortlists",
+    description: "Shortlist is available only for tenant or admin roles",
   })
   async addToShortlist(
     @Request() req,
@@ -67,7 +67,7 @@ export class ShortlistController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: "Only tenants can have shortlists",
+    description: "Shortlist is available only for tenant or admin roles",
   })
   async removeFromShortlist(
     @Request() req,
@@ -90,7 +90,7 @@ export class ShortlistController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: "Only tenants can have shortlists",
+    description: "Shortlist is available only for tenant or admin roles",
   })
   async getUserShortlist(@Request() req): Promise<Property[]> {
     return await this.shortlistService.getUserShortlist(req.user.id);
@@ -137,7 +137,7 @@ export class ShortlistController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: "Only tenants can have shortlists",
+    description: "Shortlist is available only for tenant or admin roles",
   })
   async clearShortlist(@Request() req) {
     const result = await this.shortlistService.clearShortlist(req.user.id);

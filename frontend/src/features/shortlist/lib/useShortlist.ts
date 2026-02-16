@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import { AppDispatch } from "@/app/store/store";
 import {
   addToShortlist,
@@ -36,6 +37,7 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
       ).unwrap();
 
       setSuccess("Property added to shortlist");
+      toast.success("Property added to shortlist");
       setTimeout(() => setSuccess(null), 3000);
     } catch (error: unknown) {
       console.error("Error adding to shortlist:", error);
@@ -44,6 +46,7 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to add to shortlist";
       setError(errorMessage);
+      toast.error(errorMessage);
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
@@ -62,6 +65,7 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
       await dispatch(removeFromShortlist(property.id)).unwrap();
 
       setSuccess("Property removed from shortlist");
+      toast.success("Property removed from shortlist");
       setTimeout(() => setSuccess(null), 3000);
     } catch (error: unknown) {
       console.error("Error removing from shortlist:", error);
@@ -72,6 +76,7 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
           ? error.message
           : "Failed to remove from shortlist";
       setError(errorMessage);
+      toast.error(errorMessage);
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);

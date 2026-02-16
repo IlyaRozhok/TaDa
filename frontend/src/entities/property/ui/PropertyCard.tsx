@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { Property } from "@/app/types";
 import { PropertyImage } from "@/entities/property/ui/PropertyImage";
@@ -22,6 +22,8 @@ interface PropertyCardProps {
   userPreferences?: any;
   isAuthenticated?: boolean;
   variant?: "default" | "homepage" | "enhanced"; // Different visual variants
+  /** When true, shortlist heart is shown for any role (e.g. admin on units page). */
+  showShortlistForAllRoles?: boolean;
 }
 
 export default function PropertyCard({
@@ -37,10 +39,9 @@ export default function PropertyCard({
   userPreferences, // eslint-disable-line @typescript-eslint/no-unused-vars
   isAuthenticated: isAuthenticatedProp,
   variant = "default",
+  showShortlistForAllRoles = false,
 }: PropertyCardProps) {
   const router = useRouter();
-  const [shortlistSuccess, setShortlistSuccess] = useState<string | null>(null);
-  const [shortlistError, setShortlistError] = useState<string | null>(null);
 
   // Default isAuthenticated based on matchScore presence and matchCategories
   const isAuthenticated = isAuthenticatedProp ?? (matchScore !== undefined && matchScore > 0);
@@ -56,11 +57,11 @@ export default function PropertyCard({
   return (
     <div
       onClick={handleCardClick}
-      className="w-full min-w-0 bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 cursor-pointer group overflow-visible"
+      className="w-full min-w-0 rounded-xl transition-all duration-200 cursor-pointer group overflow-visible"
     >
       {/* Image Section */}
-      <div className="relative overflow-visible rounded-t-xl">
-        <div className="overflow-hidden rounded-t-xl">
+      <div className="relative overflow-visible rounded-xl">
+        <div className="overflow-hidden rounded-xl">
           <PropertyImage
             property={property}
             imageLoaded={imageLoaded}
@@ -76,10 +77,7 @@ export default function PropertyCard({
         <ShortlistToggleButton
           property={property}
           showShortlist={showShortlist}
-          onStatusChange={({ success, error }) => {
-            setShortlistSuccess(success);
-            setShortlistError(error);
-          }}
+          showForAllRoles={showShortlistForAllRoles}
         />
 
         <PropertyBadges property={property} />
@@ -88,8 +86,6 @@ export default function PropertyCard({
       {/* Content Section */}
       <PropertyContent
         property={property}
-        shortlistSuccess={shortlistSuccess}
-        shortlistError={shortlistError}
         matchScore={matchScore}
         matchCategories={matchCategories}
       />

@@ -1,19 +1,17 @@
 import React from "react";
-import { MapPin, Bed, Bath, Calendar } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Property } from "@/app/types";
+
+const iconClass = "w-4 h-4 mr-1 flex-shrink-0";
 
 interface PropertyContentProps {
   property: Property;
-  shortlistSuccess?: string | null;
-  shortlistError?: string | null;
   matchScore?: number;
   matchCategories?: any[];
 }
 
 export const PropertyContent: React.FC<PropertyContentProps> = ({
   property,
-  shortlistSuccess,
-  shortlistError,
   matchScore,
   matchCategories, // eslint-disable-line @typescript-eslint/no-unused-vars
 }) => {
@@ -28,19 +26,13 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
     }).format(numPrice);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
+  const areaSqm =
+    property.square_meters ?? property.total_area ?? property.living_area;
 
   return (
     <div className="p-5">
       {/* Title and Price */}
-      <div className="mb-3">
+      <div className="mb-2">
         <h3 className="text-lg font-semibold text-slate-900 mb-1 line-clamp-1">
           {property.title}
         </h3>
@@ -53,33 +45,31 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
       </div>
 
       {/* Location */}
-      <div className="flex items-center text-slate-600 mb-3">
+      <div className="flex items-center text-slate-600 mb-2">
         <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
         <span className="text-sm line-clamp-1">{property.address}</span>
       </div>
 
       {/* Property Details */}
-      <div className="flex items-center gap-4 text-sm text-slate-600">
+      <div className="flex items-center gap-3 text-sm text-slate-600">
         <div className="flex items-center">
-          <Bed className="w-4 h-4 mr-1" />
+          <img src="/beds.svg" alt="" className={iconClass} />
           <span>
             {property.bedrooms} bed{property.bedrooms !== 1 ? "s" : ""}
           </span>
         </div>
         <div className="flex items-center">
-          <Bath className="w-4 h-4 mr-1" />
+          <img src="/baths.svg" alt="" className={iconClass} />
           <span>
             {property.bathrooms} bath{property.bathrooms !== 1 ? "s" : ""}
           </span>
         </div>
-        <div className="flex items-center">
-          <Calendar className="w-4 h-4 mr-1" />
-          <span>
-            {property.available_from
-              ? formatDate(property.available_from)
-              : "Available now"}
-          </span>
-        </div>
+        {areaSqm != null && (
+          <div className="flex items-center">
+            <img src="/sqmeters.svg" alt="" className={iconClass} />
+            <span>{areaSqm} m²</span>
+          </div>
+        )}
       </div>
 
       {/* Features */}
@@ -102,30 +92,12 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
           </div>
         )}
 
-      {/* Furnishing */}
-      <div className="flex items-center justify-between mt-3">
-        <span className="text-sm text-slate-600 capitalize">
-          {property.furnishing}
-        </span>
-
-        {/* Operator Info */}
-        {property.operator && (
-          <span className="text-xs text-slate-500">
-            By {property.operator.full_name || property.operator.email}
+      {/* Property Type (replaces Furnished/Unfurnished) */}
+      {property.property_type && (
+        <div className="mt-3">
+          <span className="text-sm text-slate-600 capitalize">
+            {property.property_type.replace(/_/g, " ")}
           </span>
-        )}
-      </div>
-
-      {/* Status Messages */}
-      {(shortlistSuccess || shortlistError) && (
-        <div
-          className={`mt-3 p-2 rounded-md text-sm ${
-            shortlistSuccess
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-red-50 text-red-700 border border-red-200"
-          }`}
-        >
-          {shortlistSuccess || shortlistError}
         </div>
       )}
     </div>

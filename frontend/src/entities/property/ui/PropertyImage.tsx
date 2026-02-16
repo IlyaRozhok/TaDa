@@ -208,7 +208,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   };
 
   return (
-    <div className="relative h-48 bg-slate-100">
+    <div className="relative h-48 rounded-xl overflow-hidden">
       {/* Featured Badge */}
       {showFeaturedBadge && <FeaturedBadge />}
 
@@ -464,7 +464,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
       <img
         src={hasError && !isLoaded ? PROPERTY_PLACEHOLDER : displayImageUrl}
         alt={property.title}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
+        className={`w-full h-full object-cover rounded-xl transition-opacity duration-300 ${
           imageLoaded || isLoaded ? "opacity-100" : "opacity-0"
         }`}
         onLoad={handleImageLoad}

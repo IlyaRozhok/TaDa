@@ -229,7 +229,7 @@ export default function PropertyPublicPage() {
 
   // Check if property is in shortlist using Redux state (avoid API calls to prevent cycling)
   useEffect(() => {
-    if (!property || !isAuthenticated || !user || user.role !== "tenant") {
+    if (!property || !isAuthenticated || !user || (user.role !== "tenant" && user.role !== "admin")) {
       setIsInShortlist(false);
       return;
     }
@@ -271,8 +271,8 @@ export default function PropertyPublicPage() {
       return;
     }
 
-    if (user.role !== "tenant") {
-      toast.error("Only tenants can add properties to shortlist");
+    if (user.role !== "tenant" && user.role !== "admin") {
+      toast.error("Only tenants and admins can add properties to shortlist");
       return;
     }
 

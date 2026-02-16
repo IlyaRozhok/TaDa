@@ -27,9 +27,9 @@ export const fetchShortlist = createAsyncThunk(
       const state = getState() as { auth: { user: { role?: string } | null } };
       const user = state?.auth?.user;
 
-      if (!user || user.role !== "tenant") {
-        console.warn("Shortlist fetch blocked: user is not a tenant");
-        return []; // Return empty array for non-tenants
+      if (!user || (user.role !== "tenant" && user.role !== "admin")) {
+        console.warn("Shortlist fetch blocked: user is not a tenant or admin");
+        return []; // Return empty array for non-tenants/non-admins
       }
 
       const data = await shortlistAPI.getAll();
@@ -51,9 +51,9 @@ export const addToShortlist = createAsyncThunk(
       const state = getState() as { auth: { user: { role?: string } | null } };
       const user = state?.auth?.user;
 
-      if (!user || user.role !== "tenant") {
-        console.warn("Add to shortlist blocked: user is not a tenant");
-        return rejectWithValue("Only tenants can add properties to shortlist");
+      if (!user || (user.role !== "tenant" && user.role !== "admin")) {
+        console.warn("Add to shortlist blocked: user is not a tenant or admin");
+        return rejectWithValue("Only tenants and admins can add properties to shortlist");
       }
 
       const data = await shortlistAPI.add(propertyId);
@@ -75,10 +75,10 @@ export const removeFromShortlist = createAsyncThunk(
       const state = getState() as { auth: { user: { role?: string } | null } };
       const user = state?.auth?.user;
 
-      if (!user || user.role !== "tenant") {
-        console.warn("Remove from shortlist blocked: user is not a tenant");
+      if (!user || (user.role !== "tenant" && user.role !== "admin")) {
+        console.warn("Remove from shortlist blocked: user is not a tenant or admin");
         return rejectWithValue(
-          "Only tenants can remove properties from shortlist"
+          "Only tenants and admins can remove properties from shortlist"
         );
       }
 
@@ -101,9 +101,9 @@ export const clearShortlist = createAsyncThunk(
       const state = getState() as { auth: { user: { role?: string } | null } };
       const user = state?.auth?.user;
 
-      if (!user || user.role !== "tenant") {
-        console.warn("Clear shortlist blocked: user is not a tenant");
-        return rejectWithValue("Only tenants can clear shortlist");
+      if (!user || (user.role !== "tenant" && user.role !== "admin")) {
+        console.warn("Clear shortlist blocked: user is not a tenant or admin");
+        return rejectWithValue("Only tenants and admins can clear shortlist");
       }
 
       const data = await shortlistAPI.clear();
@@ -123,9 +123,9 @@ export const fetchShortlistCount = createAsyncThunk(
       const state = getState() as { auth: { user: { role?: string } | null } };
       const user = state?.auth?.user;
 
-      if (!user || user.role !== "tenant") {
-        console.warn("Shortlist count fetch blocked: user is not a tenant");
-        return 0; // Return 0 for non-tenants
+      if (!user || (user.role !== "tenant" && user.role !== "admin")) {
+        console.warn("Shortlist count fetch blocked: user is not a tenant or admin");
+        return 0; // Return 0 for non-tenants/non-admins
       }
 
       const count = await shortlistAPI.getCount();

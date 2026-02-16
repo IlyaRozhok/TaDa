@@ -59,8 +59,8 @@ export default function AuthPage() {
           );
           localStorage.setItem("user", JSON.stringify(user));
 
-          // Load shortlist for tenant users
-          if (user?.role === "tenant") {
+          // Load shortlist for tenant and admin users
+          if (user?.role === "tenant" || user?.role === "admin") {
             dispatch(fetchShortlist());
           }
 

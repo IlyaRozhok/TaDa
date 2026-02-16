@@ -108,8 +108,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           }),
         );
 
-        // Initialize shortlist for tenant users
-        if (loginResponse.data.user?.role === "tenant") {
+        // Initialize shortlist for tenant and admin users
+        if (loginResponse.data.user?.role === "tenant" || loginResponse.data.user?.role === "admin") {
           dispatch(fetchShortlist());
         }
 

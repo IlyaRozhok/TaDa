@@ -21,10 +21,9 @@ export class ShortlistService {
   ) {}
 
   /**
-   * Get tenant profile for a user
+   * Get tenant profile for a user (tenant or admin). Admins are allowed to use shortlist; profile is created on first use if missing.
    */
   private async getTenantProfile(userId: string): Promise<TenantProfile> {
-    // First check if user is a tenant
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ["tenantProfile"],
@@ -34,15 +33,22 @@ export class ShortlistService {
       throw new NotFoundException("User not found");
     }
 
-    if (user.role !== UserRole.Tenant) {
+    if (user.role !== UserRole.Tenant && user.role !== UserRole.Admin) {
       throw new BadRequestException("Only tenants can have shortlists");
     }
 
-    if (!user.tenantProfile) {
-      throw new NotFoundException("Tenant profile not found");
+    if (user.tenantProfile) {
+      return user.tenantProfile;
     }
 
-    return user.tenantProfile;
+    // Admin (or tenant without profile): create minimal tenant profile for shortlist storage
+    const tenantProfile = this.tenantProfileRepository.create({
+      userId: user.id,
+      full_name: user.full_name ?? undefined,
+      shortlisted_properties: [],
+    });
+    await this.tenantProfileRepository.save(tenantProfile);
+    return tenantProfile;
   }
 
   async addToShortlist(

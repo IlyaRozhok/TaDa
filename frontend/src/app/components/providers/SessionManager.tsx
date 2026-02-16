@@ -55,8 +55,8 @@ export default function SessionManager() {
             );
             console.log("Session restored for:", response.data.user.email);
 
-            // Initialize shortlist for tenant users
-            if (response.data.user.role === "tenant") {
+            // Initialize shortlist for tenant and admin users
+            if (response.data.user.role === "tenant" || response.data.user.role === "admin") {
               dispatch(fetchShortlist());
 
               // Check if tenant has preferences to set onboardingCompleted flag
