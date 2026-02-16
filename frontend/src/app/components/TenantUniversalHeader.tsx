@@ -14,6 +14,7 @@ import {
   User,
   FileText,
   Search,
+  Heart,
 } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
@@ -103,22 +104,39 @@ export default function TenantUniversalHeader({
           </button>
         </div>
 
-        {/* Center: Search (only when onSearchChange provided) */}
-        {onSearchChange !== undefined && (
-          <div className="flex-1 min-w-0 max-w-md mx-2 sm:mx-4 flex">
-            <label className="relative flex items-center w-full">
-              <Search className="absolute left-3 w-4 h-4 text-gray-500 pointer-events-none" />
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search property or type of property"
-                className="w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 py-2 text-sm border border-gray-400 rounded-3xl focus:bg-white focus:border-gray-300 focus:outline-none focus:ring-1 "
-                aria-label="Search property or type of property"
-              />
-            </label>
-          </div>
-        )}
+        {/* Center: Search + Preferences (Preferences immediately after search) */}
+        <div className="flex-1 min-w-0 flex items-center gap-2 sm:gap-3 mx-2 sm:mx-4">
+          {onSearchChange !== undefined && (
+            <div className="min-w-0 max-w-md flex-1 flex">
+              <label className="relative flex items-center w-full">
+                <Search className="absolute left-3 w-4 h-4 text-gray-500 pointer-events-none" />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder="Search property or type of property"
+                  className="w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-3xl focus:outline-0 focus:border-gray-400"
+                  aria-label="Search property or type of property"
+                />
+              </label>
+            </div>
+          )}
+          {isOnboarded && showPreferencesButton && (
+            <button
+              onClick={() => router.push("/app/preferences")}
+              className="hidden md:flex items-center gap-2 py-2 text-sm font-semibold text-gray-900 bg-white border border-gray-300 pl-3 pr-2 rounded-3xl hover:bg-gray-50 hover:border-gray-400 transition-colors cursor-pointer flex-shrink-0"
+            >
+              <Settings className="w-4 h-4 flex-shrink-0 text-black" />
+              <span>{t(profileKeys.dropChangePreferences)}</span>
+              <span
+                className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black text-white text-xs font-bold"
+                aria-label={`${preferencesCount} preferences filled`}
+              >
+                {preferencesCount}
+              </span>
+            </button>
+          )}
+        </div>
 
         {/* Right: Icons - Adaptive layout */}
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 xl:gap-6 flex-shrink-0">
@@ -133,24 +151,24 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Tenant: Preferences & Tenant CV in header on desktop after onboarding */}
-          {isOnboarded && (
+          {/* Tenant: Tenant CV then Favourites (heart) on desktop after onboarding; admin: Favourites only */}
+          {(isOnboarded || user?.role === "admin") && (
             <div className="hidden md:flex items-center gap-2 lg:gap-3">
-              {showPreferencesButton && (
-                <button
-                  onClick={() => router.push("/app/preferences")}
-                  className="flex items-center gap-2 text-sm font-medium text-white-700 bg-black py-1.5 px-2 rounded-3xl hover:text-white transition-colors cursor-pointer"
-                >
-                  <Settings className="w-4 h-4 flex-shrink-0" />
-                  {t(profileKeys.dropChangePreferences)}
-                </button>
-              )}
-              {showTenantCvLink && (
+              {showTenantCvLink && isOnboarded && (
                 <button
                   onClick={() => router.push("/app/tenant-cv")}
                   className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
                 >
                   {t(tenantCvKeys.tenantCvButton)}
+                </button>
+              )}
+              {showFavouritesButton && (
+                <button
+                  onClick={() => router.push("/app/shortlist")}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                  aria-label="Favourites / Shortlist"
+                >
+                  <Heart className="w-5 h-5" />
                 </button>
               )}
             </div>
@@ -214,6 +232,16 @@ export default function TenantUniversalHeader({
                     <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
                     {t(tenantCvKeys.tenantCvButton)}
                   </button>
+
+                  {showFavouritesButton && (isOnboarded || user?.role === "admin") && (
+                    <button
+                      onClick={() => handleMobileMenuClick("/app/shortlist")}
+                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    >
+                      <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
+                      {t(profileKeys.dropFavourites)}
+                    </button>
+                  )}
                 </div>
               </div>
             )}

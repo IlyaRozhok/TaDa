@@ -6,6 +6,8 @@ export const profileKeys = {
   dropProfileSettings: "profile.drop.profile.settings",
   /** Dropdown item "Change Preferences" */
   dropChangePreferences: "profile.drop.change.preferencing",
+  /** Dropdown item "Favourites" (shortlist) */
+  dropFavourites: "profile.drop.favourites",
   /** Dropdown item "Logout" */
   dropLogout: "profile.drop.logout",
   /** Description under Profile Settings title */

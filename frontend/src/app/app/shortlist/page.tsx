@@ -52,14 +52,19 @@ export default function ShortlistPage() {
     initializeSession();
   }, []);
 
-  // Fetch shortlist on component mount (only after session is ready)
+  // Fetch shortlist on component mount (tenant and admin can use shortlist)
   useEffect(() => {
-    if (sessionReady && isAuthenticated && user && user.role === "tenant") {
+    if (
+      sessionReady &&
+      isAuthenticated &&
+      user &&
+      (user.role === "tenant" || user.role === "admin")
+    ) {
       dispatch(fetchShortlist());
     }
   }, [dispatch, sessionReady, isAuthenticated, user]);
 
-  // Redirect if not authenticated or not a tenant (only after session is ready)
+  // Redirect if not authenticated or role cannot access shortlist (only after session is ready)
   useEffect(() => {
     if (!sessionReady) return; // Don't redirect until session is ready
 
@@ -68,7 +73,8 @@ export default function ShortlistPage() {
       return;
     }
 
-    if (user.role !== "tenant") {
+    // Tenant and admin can access shortlist; others go to dashboard
+    if (user.role !== "tenant" && user.role !== "admin") {
       router.push("/app/dashboard");
       return;
     }
@@ -114,9 +120,7 @@ export default function ShortlistPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <TenantUniversalHeader
-          showPreferencesButton={true}
-        />
+        <TenantUniversalHeader showPreferencesButton={true} />
         <ShortlistPageSkeleton />
       </div>
     );
@@ -126,9 +130,7 @@ export default function ShortlistPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <TenantUniversalHeader
-          showPreferencesButton={true}
-        />
+        <TenantUniversalHeader showPreferencesButton={true} />
         <div className="max-w-[98%] sm:max-w-[95%] lg:max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-1 py-1 sm:py-1.5 lg:py-2">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -189,7 +191,7 @@ export default function ShortlistPage() {
             Back to Dashboard
           </button>
 
-          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl p-1 sm:p-1.5 lg:p-2 border-[0.7px] border-slate-200">
+          <div className="bg-white mt-10 rounded-lg sm:rounded-xl lg:rounded-2xl p-1 sm:p-1.5 lg:p-5 border-[0.7px] border-slate-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
               <div className="flex items-center gap-1">
                 <div>
@@ -197,8 +199,10 @@ export default function ShortlistPage() {
                     Your Shortlist
                   </h1>
                   <p className="text-sm sm:text-base text-slate-600">
-                    <span className="hidden sm:inline">Properties you've saved for later viewing </span>({count}{" "}
-                    {count === 1 ? "property" : "properties"})
+                    <span className="hidden sm:inline">
+                      Properties you've saved for later viewing{" "}
+                    </span>
+                    ({count} {count === 1 ? "property" : "properties"})
                   </p>
                 </div>
               </div>

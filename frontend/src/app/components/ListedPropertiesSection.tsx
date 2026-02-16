@@ -57,6 +57,7 @@ interface SortDropdownProps {
 
 function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const sortOptions = [
     { value: "bestMatch" as const, label: "Best Match Score" },
@@ -71,32 +72,69 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
     sortOptions.find((opt) => opt.value === sortBy)?.label ||
     "Best Match Score";
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex text-slate-900 items-center gap-2 px-4 py-2 border border-gray-300 rounded-3xl bg-white hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+        aria-label="Sort by"
       >
-        <span className="font-medium">{currentLabel}</span>
-        <ChevronDown className="w-4 h-4" />
+        <span>{currentLabel}</span>
+        <ChevronDown
+          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-          {sortOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => {
-                onSortChange(option.value);
-                setIsOpen(false);
-              }}
-              className={`block w-full text-left px-4 py-3 text-sm hover:bg-gray-100 ${
-                sortBy === option.value ? "bg-gray-100 font-semibold" : ""
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div
+          className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-xl"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%), rgba(0, 0, 0, 0.65)",
+            boxShadow:
+              "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+          }}
+        >
+          <div className="max-h-64 overflow-y-auto rounded-xl relative">
+            {sortOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  onSortChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={`block w-full cursor-pointer px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
+                  sortBy === option.value
+                    ? "bg-white/18 text-white font-semibold"
+                    : "text-white hover:bg-white/12"
+                }`}
+                style={{
+                  backdropFilter:
+                    sortBy === option.value ? "blur(10px)" : undefined,
+                  fontWeight: sortBy === option.value ? 600 : undefined,
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -136,7 +174,7 @@ export default function ListedPropertiesSection({
   const sortedProperties = useMemo(() => {
     // Filter out any invalid properties (where property is undefined or null)
     const validProperties = properties.filter(
-      (item) => item && item.property && item.property.id
+      (item) => item && item.property && item.property.id,
     );
 
     if (validProperties.length === 0) {
@@ -146,23 +184,23 @@ export default function ListedPropertiesSection({
     switch (sortBy) {
       case "bestMatch":
         return validProperties.sort(
-          (a, b) => (b.matchScore || 0) - (a.matchScore || 0)
+          (a, b) => (b.matchScore || 0) - (a.matchScore || 0),
         );
       case "lowPrice":
         return validProperties.sort(
-          (a, b) => (a.property.price || 0) - (b.property.price || 0)
+          (a, b) => (a.property.price || 0) - (b.property.price || 0),
         );
       case "highPrice":
         return validProperties.sort(
-          (a, b) => (b.property.price || 0) - (a.property.price || 0)
+          (a, b) => (b.property.price || 0) - (a.property.price || 0),
         );
       case "lowDeposit":
         return validProperties.sort(
-          (a, b) => (a.property.deposit || 0) - (b.property.deposit || 0)
+          (a, b) => (a.property.deposit || 0) - (b.property.deposit || 0),
         );
       case "highDeposit":
         return validProperties.sort(
-          (a, b) => (b.property.deposit || 0) - (a.property.deposit || 0)
+          (a, b) => (b.property.deposit || 0) - (a.property.deposit || 0),
         );
       case "dateAdded":
         return validProperties.sort((a, b) => {
@@ -182,7 +220,7 @@ export default function ListedPropertiesSection({
   return (
     <section>
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Listed property

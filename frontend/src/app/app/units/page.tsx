@@ -15,7 +15,8 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
-  const { state, loadProperties, clearError, setSearchTerm } = useTenantDashboard();
+  const { state, loadProperties, clearError, setSearchTerm } =
+    useTenantDashboard();
 
   // Loading state
   if (!user || state.sessionLoading) {
@@ -24,10 +25,11 @@ function TenantDashboardContent() {
         <TenantUniversalHeader
           searchTerm={state.searchTerm}
           onSearchChange={setSearchTerm}
+          preferencesCount={state.preferencesFilledCount}
         />
 
         {/* Main Content */}
-        <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">
+        <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -84,10 +86,11 @@ function TenantDashboardContent() {
       <TenantUniversalHeader
         searchTerm={state.searchTerm}
         onSearchChange={setSearchTerm}
+        preferencesCount={state.preferencesFilledCount}
       />
 
       {/* Main Content */}
-      <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">
+      <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
         {/* Listed Properties Section */}
         <ListedPropertiesSection
           properties={state.properties}
@@ -172,7 +175,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-8">
+        <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -195,7 +198,7 @@ export default function TenantUnitsPage() {
         <TenantUniversalHeader />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-8">
+        <main className="px-16 pt-24 sm:pt-28 lg:pt-32 pb-8">
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}

@@ -26,6 +26,8 @@ interface DashboardState {
   error: string | null;
   totalCount: number;
   preferencesCount: number;
+  /** Number of preference fields that have a value (for badge display) */
+  preferencesFilledCount: number;
   sessionLoading: boolean;
   preferencesLoading: boolean;
   hasCompletePreferences: boolean;
@@ -55,6 +57,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
     error: null,
     totalCount: 0,
     preferencesCount: 0,
+    preferencesFilledCount: 0,
     sessionLoading: true,
     preferencesLoading: true,
     hasCompletePreferences: false,
@@ -280,6 +283,26 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       // Calculate percentage based on weighted score
       const preferencesPercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
 
+      // Count filled fields (one per logical field with a value) for badge display
+      let filledCount = 0;
+      if (loadedPreferences?.primary_postcode) filledCount += 1;
+      if (loadedPreferences?.min_price != null || loadedPreferences?.max_price != null) filledCount += 1;
+      if (loadedPreferences?.min_bedrooms != null) filledCount += 1;
+      if (loadedPreferences?.furnishing) filledCount += 1;
+      if (loadedPreferences?.let_duration) filledCount += 1;
+      if (loadedPreferences?.designer_furniture !== undefined && loadedPreferences?.designer_furniture !== null) filledCount += 1;
+      if (loadedPreferences?.house_shares) filledCount += 1;
+      if ((loadedPreferences?.convenience_features?.length ?? 0) > 0) filledCount += 1;
+      if (loadedPreferences?.ideal_living_environment) filledCount += 1;
+      if (loadedPreferences?.pets) filledCount += 1;
+      if (loadedPreferences?.smoker !== undefined && loadedPreferences?.smoker !== null) filledCount += 1;
+      if (loadedPreferences?.move_in_date) filledCount += 1;
+      if (loadedPreferences?.max_bedrooms != null) filledCount += 1;
+      if (loadedPreferences?.min_bathrooms != null || loadedPreferences?.max_bathrooms != null) filledCount += 1;
+      if ((loadedPreferences?.hobbies?.length ?? 0) > 0) filledCount += 1;
+      if (loadedPreferences?.additional_info) filledCount += 1;
+      if (loadedPreferences?.date_property_added) filledCount += 1;
+
       // Check if all required fields are filled (min 3 required fields)
       const isComplete = requiredFieldsCount >= 3;
 
@@ -287,6 +310,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
         ...prev,
         userPreferences: loadedPreferences,
         preferencesCount: preferencesPercentage, // Now returns percentage
+        preferencesFilledCount: filledCount,
         preferencesLoading: false,
         hasCompletePreferences: isComplete,
       }));
