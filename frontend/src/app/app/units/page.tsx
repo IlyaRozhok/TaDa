@@ -10,7 +10,6 @@ import {
 } from "../../store/slices/authSlice";
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
-import TenantPerfectMatchSection from "../../components/TenantPerfectMatchSection";
 import ListedPropertiesSection from "../../components/ListedPropertiesSection";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 
@@ -26,38 +25,6 @@ function TenantDashboardContent() {
 
         {/* Main Content */}
         <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">
-          {/* Perfect Match Section - show skeleton while loading preferences */}
-          {state.preferencesLoading ? (
-            <section className="bg-gray-50 rounded-xl sm:rounded-2xl lg:rounded-3xl px-1 sm:px-1.5 lg:px-6.25 py-1.5 sm:py-2 lg:py-3 mb-1 sm:mb-1.5 lg:mb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="animate-pulse">
-                    <div className="h-6 sm:h-8 lg:h-10 w-48 sm:w-72 lg:w-96 bg-gray-200 rounded mb-2 sm:mb-3 lg:mb-4"></div>
-                    <div className="h-3 sm:h-4 lg:h-5 w-full max-w-xl sm:max-w-2xl bg-gray-200 rounded mb-1 sm:mb-1.5 lg:mb-2"></div>
-                    <div className="h-3 sm:h-4 lg:h-5 w-3/4 max-w-xs sm:max-w-xl bg-gray-200 rounded mb-4 sm:mb-6 lg:mb-8"></div>
-                    <div className="h-8 sm:h-10 lg:h-12 w-32 sm:w-40 lg:w-48 bg-gray-200 rounded-2xl sm:rounded-3xl"></div>
-                  </div>
-                </div>
-
-                {/* Illustration Skeleton */}
-                <div className="hidden lg:block">
-                  <div className="animate-pulse">
-                    <div className="w-32 sm:w-48 lg:w-64 h-24 sm:h-36 lg:h-48 bg-gray-200 rounded-lg"></div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          ) : (
-            !state.hasCompletePreferences && (
-              <TenantPerfectMatchSection
-                hasPreferences={
-                  !!state.userPreferences && state.preferencesCount > 0
-                }
-                preferencesCount={state.preferencesCount}
-              />
-            )
-          )}
-
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -115,16 +82,6 @@ function TenantDashboardContent() {
 
       {/* Main Content */}
       <main className="max-w-[95%] sm:max-w-7xl mx-auto px-1 sm:px-1.5 lg:px-2 pt-20 sm:pt-24 lg:pt-24 pb-1 sm:pb-1.5 lg:pb-2">
-        {/* Perfect Match Section - only show if preferences are NOT complete and loaded */}
-        {!state.preferencesLoading && !state.hasCompletePreferences && (
-          <TenantPerfectMatchSection
-            hasPreferences={
-              !!state.userPreferences && state.preferencesCount > 0
-            }
-            preferencesCount={state.preferencesCount}
-          />
-        )}
-
         {/* Listed Properties Section */}
         <ListedPropertiesSection
           properties={state.properties}
@@ -210,27 +167,6 @@ export default function TenantUnitsPage() {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-8">
-          {/* Perfect Match Section Skeleton */}
-          <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="animate-pulse">
-                  <div className="h-10 w-96 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-5 w-full max-w-2xl bg-gray-200 rounded mb-2"></div>
-                  <div className="h-5 w-3/4 max-w-xl bg-gray-200 rounded mb-8"></div>
-                  <div className="h-12 w-48 bg-gray-200 rounded-3xl"></div>
-                </div>
-              </div>
-
-              {/* Illustration Skeleton */}
-              <div className="hidden lg:block">
-                <div className="animate-pulse">
-                  <div className="w-64 h-48 bg-gray-200 rounded-lg"></div>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
@@ -254,27 +190,6 @@ export default function TenantUnitsPage() {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-8">
-          {/* Perfect Match Section Skeleton */}
-          <section className="bg-gray-50 rounded-3xl px-25 py-12 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="animate-pulse">
-                  <div className="h-10 w-96 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-5 w-full max-w-2xl bg-gray-200 rounded mb-2"></div>
-                  <div className="h-5 w-3/4 max-w-xl bg-gray-200 rounded mb-8"></div>
-                  <div className="h-12 w-48 bg-gray-200 rounded-3xl"></div>
-                </div>
-              </div>
-
-              {/* Illustration Skeleton */}
-              <div className="hidden lg:block">
-                <div className="animate-pulse">
-                  <div className="w-64 h-48 bg-gray-200 rounded-lg"></div>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* Listed Properties Section */}
           <ListedPropertiesSection
             properties={[]}
