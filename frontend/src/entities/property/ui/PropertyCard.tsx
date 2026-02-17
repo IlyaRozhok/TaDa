@@ -43,8 +43,8 @@ export default function PropertyCard({
 }: PropertyCardProps) {
   const router = useRouter();
 
-  // Default isAuthenticated based on matchScore presence and matchCategories
-  const isAuthenticated = isAuthenticatedProp ?? (matchScore !== undefined && matchScore > 0);
+  // Default isAuthenticated based on matchScore presence (include 0% so badge shows when no preferences)
+  const isAuthenticated = isAuthenticatedProp ?? (matchScore !== undefined);
 
   const handleCardClick = () => {
     if (onClick) {

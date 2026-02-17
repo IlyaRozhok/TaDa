@@ -242,8 +242,8 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
       {/* Featured Badge */}
       {showFeaturedBadge && <FeaturedBadge />}
 
-      {/* Match Badge - Left Top */}
-      {matchScore !== undefined && matchScore > 0 && (
+      {/* Match Badge - Left Top (show 0% when no preferences or no match) */}
+      {matchScore !== undefined && (
         <div 
           ref={badgeRef}
           className="absolute top-3 left-4 z-10 group/match"
