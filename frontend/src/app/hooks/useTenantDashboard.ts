@@ -128,7 +128,10 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
         const matchedProperties: MatchedProperty[] = propertiesData
           .map((item: any) => ({
             property: item.property,
-            matchScore: item.matchScore || 0,
+            matchScore:
+              item.matchScore ??
+              item.matchPercentage ??
+              0,
             categories: item.categories || [],
           }))
           .filter((item: MatchedProperty) => item && item.property && item.property.id);

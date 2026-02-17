@@ -300,14 +300,10 @@ export class MatchingService {
     const limit = options.limit || 12;
     const search = options.search?.trim();
 
-    // Get user preferences
+    // Get user preferences (optional: without preferences we return properties with matchScore 0)
     const preferences = await this.preferencesRepository.findOne({
       where: { user_id: userId },
     });
-
-    if (!preferences) {
-      throw new NotFoundException("User preferences not found");
-    }
 
     // Build query for properties with search
     const queryBuilder = this.propertyRepository
@@ -326,31 +322,68 @@ export class MatchingService {
     // Get all properties matching search (before pagination)
     const allProperties = await queryBuilder.getMany();
 
-    // Calculate matches for all properties
-    const matchResults: PropertyMatchResult[] = allProperties.map((property) =>
-      this.calculationService.calculateMatch(
-        property,
-        preferences,
-        DEFAULT_WEIGHTS
-      )
-    );
+    let data: Array<{
+      property: Property;
+      matchScore: number;
+      categories: Array<{
+        category: string;
+        match: boolean;
+        score: number;
+        maxScore: number;
+        reason: string;
+        details?: string;
+        hasPreference: boolean;
+      }>;
+    }>;
 
-    // Sort by match percentage (descending)
-    matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
+    if (preferences) {
+      // Calculate matches for all properties
+      const matchResults: PropertyMatchResult[] = allProperties.map(
+        (property) =>
+          this.calculationService.calculateMatch(
+            property,
+            preferences,
+            DEFAULT_WEIGHTS
+          )
+      );
 
-    // Apply pagination after sorting
-    const total = matchResults.length;
-    const skip = (page - 1) * limit;
-    const paginatedResults = matchResults.slice(skip, skip + limit);
+      // Sort by match percentage (descending)
+      matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
-    // Transform to response format and update photo URLs
-    const data = await Promise.all(
-      paginatedResults.map(async (result) => ({
-        property: await this.updatePhotosUrls(result.property),
-        matchScore: result.matchPercentage,
-        categories: result.categories,
-      }))
-    );
+      const skip = (page - 1) * limit;
+      const paginatedResults = matchResults.slice(skip, skip + limit);
+
+      data = await Promise.all(
+        paginatedResults.map(async (result) => ({
+          property: await this.updatePhotosUrls(result.property),
+          matchScore: result.matchPercentage,
+          categories: result.categories,
+        }))
+      );
+    } else {
+      // No preferences: return properties with matchScore 0 (same shape as with matching, so frontend always uses this endpoint)
+      const totalCount = allProperties.length;
+      const skip = (page - 1) * limit;
+      const paginatedProperties = allProperties.slice(skip, skip + limit);
+
+      data = await Promise.all(
+        paginatedProperties.map(async (property) => ({
+          property: await this.updatePhotosUrls(property),
+          matchScore: 0,
+          categories: [] as Array<{
+            category: string;
+            match: boolean;
+            score: number;
+            maxScore: number;
+            reason: string;
+            details?: string;
+            hasPreference: boolean;
+          }>,
+        }))
+      );
+    }
+
+    const total = allProperties.length;
 
     return {
       data,
