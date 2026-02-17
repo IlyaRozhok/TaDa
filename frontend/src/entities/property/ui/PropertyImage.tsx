@@ -14,6 +14,8 @@ interface PropertyImageProps {
   isAuthenticated?: boolean;
 }
 
+const LAZY_ROOT_MARGIN = "200px";
+
 export const PropertyImage: React.FC<PropertyImageProps> = ({
   property,
   imageLoaded,
@@ -26,8 +28,10 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   const [imageSrc, setImageSrc] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isInView, setIsInView] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const getMainImage = () => {
     if (property.media && property.media.length > 0) {
@@ -51,7 +55,26 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
     setImageSrc("");
     setIsLoaded(false);
     setHasError(false);
+    setIsInView(false);
   }, [property.id]);
+
+  // Lazy-load: only set image src when card is in or near viewport
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting) {
+          setIsInView(true);
+        }
+      },
+      { rootMargin: LAZY_ROOT_MARGIN, threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Update tooltip position on scroll
   useEffect(() => {
@@ -208,8 +231,14 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
     }
   };
 
+  const effectiveImageUrl =
+    isInView ? (hasError && !isLoaded ? PROPERTY_PLACEHOLDER : displayImageUrl) : PROPERTY_PLACEHOLDER;
+
   return (
-    <div className="relative aspect-[16/10] min-h-[9rem] rounded-xl overflow-hidden bg-slate-200/80">
+    <div
+      ref={containerRef}
+      className="relative aspect-[16/10] min-h-[9rem] rounded-xl overflow-hidden bg-slate-200/80"
+    >
       {/* Featured Badge */}
       {showFeaturedBadge && <FeaturedBadge />}
 
@@ -482,7 +511,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
       )}
 
       <img
-        src={hasError && !isLoaded ? PROPERTY_PLACEHOLDER : displayImageUrl}
+        src={effectiveImageUrl}
         alt={property.title}
         className={`w-full h-full object-cover rounded-xl transition-opacity duration-300 ${
           imageLoaded || isLoaded ? "opacity-100" : "opacity-0"
@@ -492,10 +521,18 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
         loading="lazy"
       />
 
-      {/* Loading overlay when image is not loaded */}
+      {/* Image skeleton when not loaded (lazy or loading) */}
       {!imageLoaded && !isLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_200%] animate-[shimmer_2s_infinite]">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[slideIn_1.5s_infinite]"></div>
+        <div
+          className="absolute inset-0 rounded-xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_200%] animate-[shimmer_2s_infinite]"
+          aria-hidden
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[slideIn_1.5s_infinite]" />
+          {/* Skeleton blocks */}
+          <div className="absolute inset-0 flex flex-col justify-end gap-2 p-3">
+            <div className="h-8 w-3/4 max-w-[12rem] bg-slate-300/70 rounded-lg animate-pulse" />
+            <div className="h-4 w-1/2 max-w-[8rem] bg-slate-300/60 rounded animate-pulse" />
+          </div>
         </div>
       )}
     </div>
