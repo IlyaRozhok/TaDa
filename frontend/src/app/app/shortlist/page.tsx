@@ -20,7 +20,6 @@ import { AppDispatch } from "../../store/store";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import ShortlistPageSkeleton from "../../components/ui/ShortlistPageSkeleton";
 import { Heart, ChevronDown, Map } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { Property } from "../../types";
@@ -109,7 +108,10 @@ function SortDropdown({
   );
 }
 
-function sortProperties(properties: Property[], sortBy: SortOption): Property[] {
+function sortProperties(
+  properties: Property[],
+  sortBy: SortOption,
+): Property[] {
   const copy = [...properties];
   switch (sortBy) {
     case "bestMatch":
@@ -150,7 +152,7 @@ export default function ShortlistPage() {
 
   const sortedProperties = useMemo(
     () => sortProperties(properties, sortBy),
-    [properties, sortBy]
+    [properties, sortBy],
   );
 
   // Wait for session manager to initialize
@@ -231,16 +233,6 @@ export default function ShortlistPage() {
     dispatch(fetchShortlist());
   };
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <TenantUniversalHeader showPreferencesButton={true} />
-        <ShortlistPageSkeleton />
-      </div>
-    );
-  }
-
   // Show error state
   if (error) {
     return (
@@ -299,7 +291,7 @@ export default function ShortlistPage() {
         {/* Header: title, subtitle, sort + show map */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Favourites
             </h1>
             <p className="text-gray-600">
@@ -321,13 +313,19 @@ export default function ShortlistPage() {
           </div>
         </div>
 
-        {/* Properties Grid – same cards as property list */}
-        <PropertyGridWithLoader
-          properties={sortedProperties}
-          loading={loading}
-          onPropertyClick={(property) => handlePropertyClick(property.id)}
-          showShortlist={true}
-        />
+        {/* Properties Grid – same cards as property list (no skeleton on favourites) */}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <PropertyGridWithLoader
+            properties={sortedProperties}
+            loading={false}
+            onPropertyClick={(property) => handlePropertyClick(property.id)}
+            showShortlist={true}
+          />
+        )}
 
         {!loading && properties.length === 0 && (
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">

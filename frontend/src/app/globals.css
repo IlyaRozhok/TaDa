@@ -358,3 +358,8 @@ html {
   background: rgba(148, 163, 184, 0.5);
   border: 1px solid rgba(148, 163, 184, 0.4);
 }
+
+/* Glass toast (e.g. favourites) – close button is rendered by AppToaster */
+.toast-glass {
+  position: relative;
+}

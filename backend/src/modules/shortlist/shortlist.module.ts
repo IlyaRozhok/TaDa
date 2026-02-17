@@ -7,11 +7,13 @@ import { Property } from "../../entities/property.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { User } from "../../entities/user.entity";
 import { Shortlist } from "../../entities/shortlist.entity";
+import { S3Module } from "../../common/services/s3.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Property, Shortlist, TenantProfile, User]),
     ConfigModule,
+    S3Module,
   ],
   controllers: [ShortlistController],
   providers: [ShortlistService],
