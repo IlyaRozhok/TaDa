@@ -317,25 +317,17 @@ export default function ShortlistPage() {
         )}
 
         {!loading && properties.length === 0 && (
-          <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Heart className="w-10 h-10 text-slate-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">
-              Your shortlist is empty
-            </h3>
-            <p className="text-slate-600 mb-8 max-w-md mx-auto">
-              Start browsing properties and save the ones you're interested in.
-              They'll appear here for easy access later.
+          <div className="text-center py-12">
+            <p className="text-slate-600 mb-6">
+              Your shortlist is empty. Start browsing and save properties to see
+              them here.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => router.push("/app/units")}
-                className="bg-white border cursor-pointer border-slate-300 text-slate-700 px-8 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
-              >
-                Back to Dashboard
-              </button>
-            </div>
+            <button
+              onClick={() => router.push("/app/units")}
+              className="text-slate-700 font-medium hover:text-slate-900 underline underline-offset-2 cursor-pointer"
+            >
+              Back to Dashboard
+            </button>
           </div>
         )}
 
