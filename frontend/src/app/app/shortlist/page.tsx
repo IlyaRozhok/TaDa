@@ -300,17 +300,6 @@ export default function ShortlistPage() {
               {count} {count === 1 ? "property" : "properties"}
             </p>
           </div>
-          <div className="flex items-center gap-4 mt-4 sm:mt-0">
-            <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-              aria-label="Show map"
-            >
-              <Map className="w-4 h-4" />
-              Show map
-            </button>
-          </div>
         </div>
 
         {/* Properties Grid – same cards as property list (no skeleton on favourites) */}
