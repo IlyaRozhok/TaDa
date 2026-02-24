@@ -27,12 +27,18 @@ import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get("JWT_SECRET", "your-secret-key"),
-        signOptions: {
-          expiresIn: configService.get("JWT_ACCESS_EXPIRES_IN", "1d"),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get("JWT_SECRET");
+        if (!secret) {
+          throw new Error("JWT_SECRET environment variable is required but not set");
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: configService.get("JWT_ACCESS_EXPIRES_IN", "1d"),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     ConfigModule,

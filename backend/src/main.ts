@@ -3,12 +3,14 @@ import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
+import * as cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 import * as path from "path";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.use(helmet({ crossOriginResourcePolicy: false }));
+  app.use(cookieParser());
 
   app.use(require("express").json({ limit: "10mb" }));
   app.use(require("express").urlencoded({ limit: "10mb", extended: true }));

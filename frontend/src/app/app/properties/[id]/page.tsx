@@ -70,7 +70,7 @@ export default function PropertyPublicPage() {
   const [matchScore, setMatchScore] = useState<number | null>(null);
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchCategories, setMatchCategories] = useState<CategoryMatchResult[]>(
-    []
+    [],
   );
   const [showMatchTooltip, setShowMatchTooltip] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -229,14 +229,19 @@ export default function PropertyPublicPage() {
 
   // Check if property is in shortlist using Redux state (avoid API calls to prevent cycling)
   useEffect(() => {
-    if (!property || !isAuthenticated || !user || (user.role !== "tenant" && user.role !== "admin")) {
+    if (
+      !property ||
+      !isAuthenticated ||
+      !user ||
+      (user.role !== "tenant" && user.role !== "admin")
+    ) {
       setIsInShortlist(false);
       return;
     }
 
     // Check if current property is in shortlist from Redux state
     const isPropertyInShortlist = shortlistProperties.some(
-      (shortlistProperty) => shortlistProperty.id === property.id
+      (shortlistProperty) => shortlistProperty.id === property.id,
     );
     setIsInShortlist(isPropertyInShortlist);
   }, [property, isAuthenticated, user, shortlistProperties]);
@@ -289,7 +294,7 @@ export default function PropertyPublicPage() {
           addToShortlist({
             propertyId: id as string,
             property: property || undefined,
-          })
+          }),
         ).unwrap();
         setIsInShortlist(true);
         toast.success("Added to shortlist");
@@ -398,7 +403,7 @@ export default function PropertyPublicPage() {
       <TenantUniversalHeader showPreferencesButton={true} />
 
       {/* Header with title and actions */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:pt-20">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 sm:pt-20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
@@ -484,11 +489,6 @@ export default function PropertyPublicPage() {
                       ) : null}
                     </div>
                   )}
-
-                  {/* Photo counter */}
-                  <div className="absolute top-1 sm:top-1 right-1 sm:right-1 bg-black/80 text-white px-0.75 py-0.25 rounded-lg text-xs sm:text-sm font-medium">
-                    1 / {allImages.length}
-                  </div>
                 </div>
 
                 {/* Match Tooltip - positioned outside overflow-hidden container */}
@@ -700,7 +700,7 @@ export default function PropertyPublicPage() {
                           day: "numeric",
                           month: "long",
                           year: "numeric",
-                        }
+                        },
                       )
                     : "Not specified"}
                 </p>
@@ -723,8 +723,8 @@ export default function PropertyPublicPage() {
                   {hasBookingRequest
                     ? "Book requested"
                     : bookingLoading
-                    ? "Sending..."
-                    : "Book this apartment"}
+                      ? "Sending..."
+                      : "Book this apartment"}
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center mb-6">
@@ -817,9 +817,9 @@ export default function PropertyPublicPage() {
               property.amenities && property.amenities.length > 0
                 ? property.amenities
                 : property.lifestyle_features &&
-                  property.lifestyle_features.length > 0
-                ? property.lifestyle_features
-                : [];
+                    property.lifestyle_features.length > 0
+                  ? property.lifestyle_features
+                  : [];
 
             const visibleAmenities = showAllOffers
               ? allAmenities
@@ -844,9 +844,9 @@ export default function PropertyPublicPage() {
             property.amenities && property.amenities.length > 0
               ? property.amenities
               : property.lifestyle_features &&
-                property.lifestyle_features.length > 0
-              ? property.lifestyle_features
-              : [];
+                  property.lifestyle_features.length > 0
+                ? property.lifestyle_features
+                : [];
 
           const hiddenCount = allAmenitiesList.length - 9;
 

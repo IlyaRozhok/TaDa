@@ -18,16 +18,7 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
 
-    console.log("🔍 RolesGuard check:", {
-      requiredRoles,
-      user_id: user?.id,
-      user_role: user?.role,
-      user_roles: user?.roles,
-      user_email: user?.email,
-    });
-
     if (!user) {
-      console.log("❌ RolesGuard: No user in request");
       return false;
     }
 
@@ -38,21 +29,15 @@ export class RolesGuard implements CanActivate {
       (r) => String(r) === userRoleStr,
     );
     if (hasRequiredRole) {
-      console.log("✅ RolesGuard: User role matches", { user_role: user.role });
       return true;
     }
     if (Array.isArray(user.roles)) {
       const hasRole = requiredRoles.some((role) =>
         user.roles.some((ur) => String(ur) === String(role)),
       );
-      console.log("✅ RolesGuard: User roles check", {
-        user_roles: user.roles,
-        hasRole,
-      });
       return hasRole;
     }
 
-    console.log("❌ RolesGuard: User does not have required roles");
     return false;
   }
 }

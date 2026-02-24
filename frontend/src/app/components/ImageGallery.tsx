@@ -53,7 +53,7 @@ const ImageGallery = memo(function ImageGallery({
 
   const prevImage = () => {
     setSelectedImage(
-      (prev) => (prev - 1 + displayImages.length) % displayImages.length
+      (prev) => (prev - 1 + displayImages.length) % displayImages.length,
     );
   };
 
@@ -65,7 +65,9 @@ const ImageGallery = memo(function ImageGallery({
       if (e.key === "Escape") {
         setIsModalOpen(false);
       } else if (e.key === "ArrowLeft") {
-        setSelectedImage((prev) => (prev - 1 + displayImages.length) % displayImages.length);
+        setSelectedImage(
+          (prev) => (prev - 1 + displayImages.length) % displayImages.length,
+        );
       } else if (e.key === "ArrowRight") {
         setSelectedImage((prev) => (prev + 1) % displayImages.length);
       }
@@ -102,7 +104,7 @@ const ImageGallery = memo(function ImageGallery({
 
           {/* Image Counter */}
           {displayImages.length > 1 && (
-            <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-black/70 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium shadow-lg">
+            <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-black/70 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-3lg sm:rounded-3xl text-xs sm:text-sm font-medium shadow-lg">
               {selectedImage + 1} / {displayImages.length}
             </div>
           )}
@@ -134,7 +136,7 @@ const ImageGallery = memo(function ImageGallery({
           )}
 
           {/* Click to expand hint */}
-          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-3lg sm:rounded-3xl text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             Click to view fullscreen
           </div>
         </div>
@@ -184,16 +186,17 @@ const ImageGallery = memo(function ImageGallery({
 
       {/* Full Screen Modal - Liquid Glass Style */}
       {isModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-[9999] flex items-center justify-center"
           onClick={() => setIsModalOpen(false)}
           style={{
-            background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            background:
+              "linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
           }}
         >
-          <div 
+          <div
             className="relative w-full h-full max-w-7xl max-h-screen p-4 sm:p-6 lg:p-8"
             onClick={(e) => e.stopPropagation()}
           >
@@ -202,16 +205,16 @@ const ImageGallery = memo(function ImageGallery({
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-white rounded-full p-2.5 sm:p-3 transition-all duration-200 shadow-xl"
               style={{
-                background: 'rgba(0, 0, 0, 0.4)',
-                backdropFilter: 'blur(10px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: "rgba(0, 0, 0, 0.4)",
+                backdropFilter: "blur(10px) saturate(180%)",
+                WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)';
+                e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
+                e.currentTarget.style.background = "rgba(0, 0, 0, 0.4)";
               }}
               aria-label="Close gallery"
             >
@@ -244,18 +247,20 @@ const ImageGallery = memo(function ImageGallery({
                   }}
                   className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-all duration-200 shadow-xl"
                   style={{
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(10px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(10px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)';
-                    e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)";
+                    e.currentTarget.style.transform =
+                      "translateY(-50%) scale(1.1)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
-                    e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.4)";
+                    e.currentTarget.style.transform =
+                      "translateY(-50%) scale(1)";
                   }}
                   aria-label="Previous image"
                 >
@@ -268,18 +273,20 @@ const ImageGallery = memo(function ImageGallery({
                   }}
                   className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-all duration-200 shadow-xl"
                   style={{
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(10px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(10px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)';
-                    e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)";
+                    e.currentTarget.style.transform =
+                      "translateY(-50%) scale(1.1)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
-                    e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                    e.currentTarget.style.background = "rgba(0, 0, 0, 0.4)";
+                    e.currentTarget.style.transform =
+                      "translateY(-50%) scale(1)";
                   }}
                   aria-label="Next image"
                 >
@@ -287,18 +294,17 @@ const ImageGallery = memo(function ImageGallery({
                 </button>
 
                 {/* Modal Image Counter - Liquid Glass */}
-                <div 
+                <div
                   className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-medium shadow-xl"
                   style={{
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(10px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(10px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
                   }}
                 >
                   {selectedImage + 1} / {displayImages.length}
                 </div>
-
               </>
             )}
           </div>

@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   Res,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
@@ -24,38 +25,91 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post("register")
-  async register(@Body() registerDto: RegisterDto) {
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 5, ttl: 60000 } })
+  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.register(registerDto);
-    return result;
+    
+    // Set httpOnly cookies
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
+
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Return response without tokens (they're now in cookies)
+    return {
+      user: result.user,
+      message: "Registration successful"
+    };
   }
 
   @Post("login")
-  async login(@Body() loginDto: LoginDto) {
+  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 5, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginDto);
-    return result;
+    
+    // Set httpOnly cookies
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
+
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Return response without tokens (they're now in cookies)
+    return {
+      user: result.user,
+      message: "Login successful"
+    };
   }
 
   @Post("logout")
   @UseGuards(JwtAuthGuard)
-  async logout(@CurrentUser() user: User, @Req() req: Request) {
-    const token = req.headers.authorization?.split(" ")[1];
+  async logout(@CurrentUser() user: User, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    // Get token from cookie or header
+    const token = req.cookies?.access_token || req.headers.authorization?.split(" ")[1];
     if (token) {
       await this.authService.logout(user.id, token);
     }
+    
+    // Clear cookies
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+    
     return { message: "Logged out successfully" };
   }
 
   @Post("logout-all")
   @UseGuards(JwtAuthGuard)
-  async logoutAll(@CurrentUser() user: User) {
+  async logoutAll(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
     await this.authService.logoutAllDevices(user.id);
+    
+    // Clear cookies
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+    
     return { message: "Logged out from all devices successfully" };
   }
 
   @Post("logout-others")
   @UseGuards(JwtAuthGuard)
   async logoutOthers(@CurrentUser() user: User, @Req() req: Request) {
-    const currentToken = req.headers.authorization?.split(" ")[1];
+    const currentToken = req.cookies?.access_token || req.headers.authorization?.split(" ")[1];
     if (currentToken) {
       await this.authService.logoutOtherDevices(user.id, currentToken);
     }
@@ -71,16 +125,27 @@ export class AuthController {
 
   @Post("sessions/:sessionId/invalidate")
   @UseGuards(JwtAuthGuard)
-  async invalidateSession(@CurrentUser() user: User, @Req() req: Request) {
+  async invalidateSession(@CurrentUser() user: User, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const sessionId = req.params.sessionId;
     await this.authService.invalidateSession(user.id, sessionId);
+    
+    // If invalidating current session, clear cookies
+    const currentToken = req.cookies?.access_token || req.headers.authorization?.split(" ")[1];
+    const sessions = await this.authService.getUserSessions(user.id);
+    const currentSession = sessions.find(s => s.token === currentToken);
+    
+    if (currentSession && currentSession.id === sessionId) {
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+    }
+    
     return { message: "Session invalidated successfully" };
   }
 
   @Post("activity")
   @UseGuards(JwtAuthGuard)
   async updateActivity(@CurrentUser() user: User, @Req() req: Request) {
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = req.cookies?.access_token || req.headers.authorization?.split(" ")[1];
     if (token) {
       await this.authService.updateSessionActivity(user.id, token);
     }
@@ -105,12 +170,30 @@ export class AuthController {
 
   @Post("refresh")
   @UseGuards(JwtAuthGuard)
-  async refresh(@CurrentUser() user: User) {
-    return this.authService.refresh(user);
+  async refresh(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.refresh(user);
+    
+    // Set new httpOnly cookies
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
+
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return { message: "Tokens refreshed successfully" };
   }
 
   @Post("check-user")
   @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 10, ttl: 10000 }, long: { limit: 20, ttl: 60000 } })
   async checkUser(@Body("email") email: string) {
     const exists = await this.authService.checkUserExists(email);
     return { exists };
@@ -132,6 +215,7 @@ export class AuthController {
   // Google OAuth
   @Get("google")
   @UseGuards(AuthGuard("google"))
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
   async googleAuth() {
     // This endpoint will be handled by Passport Google Strategy
     // The actual logic is in the GoogleStrategy.validate method
@@ -140,6 +224,7 @@ export class AuthController {
 
   @Get("google/callback")
   @UseGuards(AuthGuard("google"))
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
   async googleCallback(@Req() req: Request, @Res() res: Response) {
     try {
       // Check for OAuth errors in query params
@@ -160,8 +245,24 @@ export class AuthController {
       const user = await this.authService.googleAuth(req.user);
       const tokens = await this.authService.generateTokens(user);
 
+      // Set httpOnly cookie instead of URL parameter
+      res.cookie('access_token', tokens.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      });
+
+      res.cookie('refresh_token', tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-      const callbackUrl = `${frontendUrl}/app/auth/callback?token=${tokens.accessToken}&success=true`;
+      // Pass token in URL so frontend can store it in localStorage (frontend expects token in query)
+      const callbackUrl = `${frontendUrl}/app/auth/callback?success=true&token=${encodeURIComponent(tokens.accessToken)}`;
       res.redirect(callbackUrl);
     } catch (error) {
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
