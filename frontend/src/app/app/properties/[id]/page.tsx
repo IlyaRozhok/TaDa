@@ -75,6 +75,7 @@ export default function PropertyPublicPage() {
   const [showMatchTooltip, setShowMatchTooltip] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [hasBookingRequest, setHasBookingRequest] = useState(false);
+  const [redirecting429, setRedirecting429] = useState(false);
 
   // Check if description needs truncation
   const needsTruncation = (text: string) => {
@@ -158,6 +159,19 @@ export default function PropertyPublicPage() {
           setError("No property data received from server");
         }
       } catch (err: unknown) {
+        const e = err as {
+          response?: { status?: number };
+          status?: number;
+          message?: string;
+        };
+        const status = e?.response?.status ?? e?.status;
+        const is429 =
+          status === 429 || (e?.message && String(e.message).includes("429"));
+        if (is429) {
+          toast.error("Too many requests. Please try again later.");
+          setRedirecting429(true);
+          return;
+        }
         setError((err as Error)?.message || "Failed to load property details");
       } finally {
         setLoading(false);
@@ -165,6 +179,16 @@ export default function PropertyPublicPage() {
     };
     fetchProperty();
   }, [id]);
+
+  // Redirect to properties list when rate-limited (429), after showing toast
+  useEffect(() => {
+    if (!redirecting429) return;
+    const t = setTimeout(() => {
+      router.push("/app/units");
+      setRedirecting429(false);
+    }, 100);
+    return () => clearTimeout(t);
+  }, [redirecting429, router]);
 
   // Load existing booking request for this tenant/property
   useEffect(() => {
@@ -287,7 +311,6 @@ export default function PropertyPublicPage() {
         // Use Redux action instead of direct API call
         await dispatch(removeFromShortlist(id as string)).unwrap();
         setIsInShortlist(false);
-        toast.success("Removed from shortlist");
       } else {
         // Use Redux action instead of direct API call
         await dispatch(
@@ -297,7 +320,6 @@ export default function PropertyPublicPage() {
           }),
         ).unwrap();
         setIsInShortlist(true);
-        toast.success("Added to shortlist");
       }
     } catch (error: unknown) {
       // Keep error logging for errors, as per best practice
@@ -341,7 +363,7 @@ export default function PropertyPublicPage() {
     }
   };
 
-  if (loading) {
+  if (loading || redirecting429) {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader showPreferencesButton={true} />
@@ -361,7 +383,7 @@ export default function PropertyPublicPage() {
             </h3>
             <p className="text-red-600 mb-8">{error}</p>
             <button
-              onClick={() => router.push("/app/properties")}
+              onClick={() => router.push("/app/units")}
               className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
             >
               Back to Properties
@@ -385,7 +407,7 @@ export default function PropertyPublicPage() {
               The requested property could not be found.
             </p>
             <button
-              onClick={() => router.push("/app/properties")}
+              onClick={() => router.push("/app/units")}
               className="bg-yellow-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors"
             >
               Back to Properties
@@ -411,7 +433,7 @@ export default function PropertyPublicPage() {
                 {property.title || "Property Title"}
               </h1>
               <button
-                className="flex items-center justify-center w-10 h-10 bg-white/90 hover:bg-white text-gray-600 transition-colors cursor-pointer rounded-lg shadow-md hover:shadow-lg"
+                className="flex items-center justify-center w-10 h-10 bg-white/90 hover:bg-white text-gray-600 transition-colors cursor-pointer rounded-lg"
                 aria-label="Share property"
               >
                 <Share className="w-5 h-5" />
@@ -419,7 +441,7 @@ export default function PropertyPublicPage() {
               <button
                 onClick={handleShortlistToggle}
                 disabled={shortlistLoading}
-                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all cursor-pointer shadow-md hover:shadow-lg ${
+                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all cursor-pointer ${
                   isInShortlist
                     ? "bg-red-500 hover:bg-red-600 text-white"
                     : "bg-white/90 hover:bg-white text-gray-600"
@@ -555,13 +577,6 @@ export default function PropertyPublicPage() {
                     </div>
                   ))}
                 </div> */}
-
-                {/* See all photos button */}
-                {allImages.length > 1 && (
-                  <button className="text-black text-sm sm:text-base font-medium underline hover:text-gray-600 mt-2 sm:mt-3 transition-colors">
-                    See all photo ({allImages.length})
-                  </button>
-                )}
               </>
             ) : (
               <div className="relative rounded-2xl overflow-hidden mb-4 h-96 flex items-center justify-center">
@@ -594,13 +609,13 @@ export default function PropertyPublicPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                 Details
               </h2>
-              <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
+              <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 text-center sm:p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
                   <div>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-2">
+                    <p className="text-xs sm:text-sm text-center text-gray-500 mb-2">
                       Property type
                     </p>
-                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg text-sm sm:text-base">
+                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base text-center">
                       {property.building_type === "btr"
                         ? "Built to rent"
                         : property.building_type || "Apartment"}
@@ -610,7 +625,7 @@ export default function PropertyPublicPage() {
                     <p className="text-xs sm:text-sm text-gray-500 mb-2">
                       Property type
                     </p>
-                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg text-sm sm:text-base">
+                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
                       {property.property_type || "Apartment"}
                     </p>
                   </div>
@@ -618,7 +633,7 @@ export default function PropertyPublicPage() {
                     <p className="text-xs sm:text-sm text-gray-500 mb-2">
                       Furnishing
                     </p>
-                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg text-sm sm:text-base">
+                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
                       {property.furnishing
                         ? property.furnishing.charAt(0).toUpperCase() +
                           property.furnishing.slice(1)
@@ -629,7 +644,7 @@ export default function PropertyPublicPage() {
                     <p className="text-xs sm:text-sm text-gray-500 mb-2">
                       Bedrooms
                     </p>
-                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg text-sm sm:text-base">
+                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
                       {property.bedrooms || "N/A"}
                     </p>
                   </div>
@@ -637,7 +652,7 @@ export default function PropertyPublicPage() {
                     <p className="text-xs sm:text-sm text-gray-500 mb-2">
                       Bathrooms
                     </p>
-                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg text-sm sm:text-base">
+                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
                       {property.bathrooms || "N/A"}
                     </p>
                   </div>
@@ -645,7 +660,7 @@ export default function PropertyPublicPage() {
                     <p className="text-xs sm:text-sm text-gray-500 mb-2">
                       Size
                     </p>
-                    <p className="font-semibold text-black bg-gray-100 px-3 py-2 rounded-lg text-sm sm:text-base">
+                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
                       {property.square_meters
                         ? `${Math.round(property.square_meters * 10.764)} sq ft`
                         : "N/A"}
@@ -661,7 +676,7 @@ export default function PropertyPublicPage() {
             <div className="sticky top-6">
               {/* Building info */}
               {property.building && (
-                <div className="flex items-start gap-3 mb-6 p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-start gap-3 mb-6 p-4">
                   <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
                     <div className="text-center leading-tight px-1">
                       <div>BUILDING</div>
@@ -670,7 +685,7 @@ export default function PropertyPublicPage() {
                   <div className="flex flex-col justify-start flex-1">
                     <div className="text-gray-600 text-sm mb-1">Building</div>
                     <button
-                      className="font-semibold text-black mb-1 hover:text-gray-700 transition-colors text-left"
+                      className="font-semibold text-2xl text-black mb-1 cursor-pointer hover:text-black/75 transition-colors text-left"
                       onClick={() =>
                         router.push(`/app/buildings/${property.building?.id}`)
                       }
@@ -690,9 +705,9 @@ export default function PropertyPublicPage() {
               )}
 
               {/* Availability */}
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-1">Available from</p>
-                <p className="text-base font-bold text-black">
+              <div className="mb-4 flex items-baseline font-semibold">
+                <p className="text-base text-black mb-1 px-4">Available from</p>
+                <p className="text-base text-black">
                   {property.available_from
                     ? new Date(property.available_from).toLocaleDateString(
                         "en-GB",
@@ -707,16 +722,18 @@ export default function PropertyPublicPage() {
               </div>
 
               {/* Price and booking */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
-                <div className="mb-4">
+              <div className="bg-white px-4">
+                <div className="mb-3 flex items-center">
                   <div className="text-3xl sm:text-4xl font-bold text-black mb-1">
                     £{Number(property.price || 0).toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600">Price per month</div>
+                  <div className="text-base text-gray-600 ml-5">
+                    Price per month
+                  </div>
                 </div>
 
                 <Button
-                  className="w-full bg-black hover:bg-gray-800 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold mb-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold mb-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleBookApartment}
                   disabled={bookingLoading || hasBookingRequest}
                 >
@@ -794,7 +811,7 @@ export default function PropertyPublicPage() {
                 {showTruncation && (
                   <button
                     onClick={() => setShowFullDescription(!showFullDescription)}
-                    className="text-black underline text-sm hover:text-gray-600 font-medium mt-2"
+                    className="text-black underline text-sm hover:text-black/85 font-medium mt-2"
                   >
                     {showFullDescription ? "Show less" : "More information"}
                   </button>

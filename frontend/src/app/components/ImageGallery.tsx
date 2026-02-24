@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { memo } from "react";
 import Image from "next/image";
@@ -21,6 +21,15 @@ const ImageGallery = memo(function ImageGallery({
 }: ImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Scroll thumbnail strip so the selected image is in view when changing via arrows
+  useEffect(() => {
+    const el = thumbRefs.current[selectedImage];
+    if (el) {
+      el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    }
+  }, [selectedImage]);
 
   // Use media URLs if available, otherwise fallback to images, then placeholder
   const getDisplayImages = (): string[] => {
@@ -88,7 +97,7 @@ const ImageGallery = memo(function ImageGallery({
       {/* Main Image */}
       <div className="relative">
         <div
-          className="bg-gray-200 rounded-lg sm:rounded-xl overflow-hidden cursor-pointer h-80 sm:h-96 md:h-[500px] lg:h-[600px] w-full relative group"
+          className="bg-gray-200 rounded-3xl sm:rounded-3xl overflow-hidden cursor-pointer h-80 sm:h-96 md:h-[300px] lg:h-[490px] w-full relative group"
           onClick={() => setIsModalOpen(true)}
         >
           <Image
@@ -117,7 +126,7 @@ const ImageGallery = memo(function ImageGallery({
                   e.stopPropagation();
                   prevImage();
                 }}
-                className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg z-10"
+                className="absolute left-3 cursor-pointer sm:left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg z-10"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -127,7 +136,7 @@ const ImageGallery = memo(function ImageGallery({
                   e.stopPropagation();
                   nextImage();
                 }}
-                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg z-10"
+                className="absolute right-3 cursor-pointer sm:right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-lg z-10"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -142,45 +151,38 @@ const ImageGallery = memo(function ImageGallery({
         </div>
       </div>
 
-      {/* Thumbnail Grid - Much Smaller */}
+      {/* Thumbnail strip - horizontal scroll, stays in sync with main image */}
       {displayImages.length > 1 && (
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1 sm:gap-1.5">
-          {displayImages.slice(0, 8).map((image, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedImage(index)}
-              className={`bg-gray-200 rounded overflow-hidden border transition-all relative group h-12 sm:h-14 md:h-16 w-full ${
-                selectedImage === index
-                  ? "border-black ring-1 ring-black/30"
-                  : "border-gray-300 hover:border-gray-500"
-              }`}
-            >
-              <Image
-                src={image}
-                alt={`${alt} - Thumbnail ${index + 1}`}
-                fill
-                sizes="(max-width: 640px) 25vw, (max-width: 1024px) 16vw, 12vw"
-                className="object-cover transition-transform duration-300"
-                onError={handleImageError}
-                loading="lazy"
-              />
-              {selectedImage === index && (
-                <div className="absolute inset-0 bg-black/10 pointer-events-none" />
-              )}
-            </button>
-          ))}
-          {displayImages.length > 8 && (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-gray-100 rounded overflow-hidden border border-gray-300 hover:border-gray-500 transition-all relative group flex items-center justify-center h-12 sm:h-14 md:h-16 w-full"
-            >
-              <div className="text-center">
-                <div className="text-[10px] sm:text-xs font-bold text-gray-700">
-                  +{displayImages.length - 8}
-                </div>
-              </div>
-            </button>
-          )}
+        <div className="overflow-x-auto overflow-y-hidden scroll-smooth py-1 -mx-1">
+          <div className="flex gap-1.5 sm:gap-2 min-w-0">
+            {displayImages.map((image, index) => (
+              <button
+                key={index}
+                ref={(el) => {
+                  thumbRefs.current[index] = el;
+                }}
+                onClick={() => setSelectedImage(index)}
+                className={`flex-shrink-0 bg-gray-200 cursor-pointer rounded-2xl overflow-hidden border transition-all relative group h-12 sm:h-14 md:h-16 w-16 sm:w-20 md:w-24 ${
+                  selectedImage === index
+                    ? "border-black ring-1 ring-black/30"
+                    : "border-gray-300 hover:border-gray-500"
+                }`}
+              >
+                <Image
+                  src={image}
+                  alt={`${alt} - Thumbnail ${index + 1}`}
+                  fill
+                  sizes="96px"
+                  className="object-cover transition-transform duration-300"
+                  onError={handleImageError}
+                  loading="lazy"
+                />
+                {selectedImage === index && (
+                  <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
