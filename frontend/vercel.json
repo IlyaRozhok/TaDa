@@ -5,6 +5,12 @@
       "maxDuration": 30
     }
   },
+  "rewrites": [
+    {
+      "source": "/next/static/:path*",
+      "destination": "/_next/static/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
