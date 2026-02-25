@@ -18,6 +18,7 @@ export type PublicPropertyResponse = {
     name: string;
     address?: string;
   } | null;
+  amenities?: string[];
 };
 
 export const toPublicProperty = (
@@ -64,5 +65,6 @@ export const toPublicProperty = (
           address: property.building.address || undefined,
         }
       : null,
+    amenities: Array.isArray(property.amenities) ? property.amenities : [],
   };
 };

@@ -606,65 +606,78 @@ export default function PropertyPublicPage() {
 
             {/* Details section under gallery */}
             <div className="mt-6 sm:mt-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-6">
                 Details
               </h2>
-              <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 text-center sm:p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-                  <div>
-                    <p className="text-xs sm:text-sm text-center text-gray-500 mb-2">
-                      Property type
+              <div className="bg-gray-50 rounded-xl sm:rounded-2xl py-3 px-3 sm:py-4 sm:px-4">
+                <div className="grid grid-cols-2 sm:grid-cols-[repeat(3,minmax(5.5rem,1fr))] lg:grid-cols-[repeat(6,minmax(5.5rem,1fr))] gap-x-3 gap-y-4 sm:gap-6">
+                  <div className="flex flex-col items-center justify-center min-w-[5rem] sm:min-w-0 py-1">
+                    <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
+                      Building Type
                     </p>
-                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base text-center">
+                    <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
                       {property.building_type === "btr"
                         ? "Built to rent"
                         : property.building_type || "Apartment"}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                      Property type
-                    </p>
-                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
-                      {property.property_type || "Apartment"}
-                    </p>
+                  <div className="flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0">
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
+                    <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
+                        Property type
+                      </p>
+                      <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
+                        {property.property_type || "Apartment"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                      Furnishing
-                    </p>
-                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
-                      {property.furnishing
-                        ? property.furnishing.charAt(0).toUpperCase() +
-                          property.furnishing.slice(1)
-                        : "Unfurnished"}
-                    </p>
+                  <div className="flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0">
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
+                    <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
+                        Furnishing
+                      </p>
+                      <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
+                        {property.furnishing
+                          ? property.furnishing.charAt(0).toUpperCase() +
+                            property.furnishing.slice(1)
+                          : "Unfurnished"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                      Bedrooms
-                    </p>
-                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
-                      {property.bedrooms || "N/A"}
-                    </p>
+                  <div className="flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0">
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
+                    <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
+                        Bedrooms
+                      </p>
+                      <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
+                        {property.bedrooms || "N/A"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                      Bathrooms
-                    </p>
-                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
-                      {property.bathrooms || "N/A"}
-                    </p>
+                  <div className="flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0">
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
+                    <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
+                        Bathrooms
+                      </p>
+                      <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
+                        {property.bathrooms || "N/A"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                      Size
-                    </p>
-                    <p className="font-semibold text-black px-3 py-2 rounded-lg text-sm sm:text-base">
-                      {property.square_meters
-                        ? `${Math.round(property.square_meters * 10.764)} sq ft`
-                        : "N/A"}
-                    </p>
+                  <div className="flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0">
+                    <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
+                    <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">Size</p>
+                      <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
+                        {property.square_meters
+                          ? `${Math.round(property.square_meters * 10.764)} sq ft`
+                          : "N/A"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -883,241 +896,6 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Accommodation Terms */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 border-t border-gray-200">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
-          Accommodation Terms
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Kings Cross Apartments accepts special requests — add them on the next
-          step
-        </p>
-
-        <div className="space-y-6">
-          {/* Check-in */}
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-black mb-1">Check-in</h3>
-              <div className="text-gray-700">
-                <p className="font-medium">From 4:00 PM</p>
-                <p className="text-sm mt-1">
-                  When registering for check-in, you must present a valid ID
-                  with photo and credit card.
-                </p>
-                <p className="text-sm mt-1">
-                  Please inform the administration in advance how many people
-                  will be arriving.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Check-out */}
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m10 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-black mb-1">Check-out</h3>
-              <div className="text-gray-700">
-                <p className="font-medium">Until 11:00 AM</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Cancellation/Prepayment */}
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-black mb-1">
-                Cancellation/Prepayment
-              </h3>
-              <div className="text-gray-700">
-                <p className="text-sm">
-                  Cancellation and prepayment policies vary depending on
-                  accommodation type.{" "}
-                  <button className="text-blue-600 underline hover:text-blue-800">
-                    Check accommodation dates
-                  </button>{" "}
-                  and familiarize yourself with the terms that apply to your
-                  desired option.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Children policy */}
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-black mb-1">Children policy</h3>
-              <div className="text-gray-700 space-y-3">
-                <p className="font-medium">Children accommodation policy</p>
-                <p className="text-sm">
-                  Children of all ages are allowed to stay.
-                </p>
-                <p className="text-sm">
-                  To see exact prices and occupancy information, please specify
-                  the number of children in your group and their ages when
-                  searching.
-                </p>
-                <div className="mt-4">
-                  <p className="font-medium text-sm mb-2">
-                    Crib and extra bed policy
-                  </p>
-                  <p className="text-sm">
-                    Extra beds and cribs are not provided.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Age restrictions */}
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-black mb-1">
-                No age restrictions
-              </h3>
-              <div className="text-gray-700">
-                <p className="text-sm">
-                  There are no age restrictions for check-in.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment system */}
-        <div className="mt-8 p-6 bg-gray-50 rounded-2xl border">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              <svg
-                className="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-black mb-1">
-                Payment system via Booking.com
-              </h3>
-              <div className="text-gray-700">
-                <p className="text-sm">
-                  Booking.com accepts payment for this reservation on behalf of
-                  the accommodation, but asks you to have cash on hand for any
-                  additional expenses on site.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Important notes */}
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold text-black mb-4">
-            * Important Notes
-          </h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Important information for guests of this accommodation option.
-          </p>
-
-          <div className="space-y-4 text-gray-700 text-sm">
-            <p>
-              When registering for check-in, you must present a valid ID with
-              photo and bank card. Please note that fulfilling special requests
-              is not guaranteed and may require additional payment.
-            </p>
-            <p>
-              Please inform Kings Cross Apartments in advance of your expected
-              arrival time. You can use the &quot;Special Requests&quot; field
-              when booking or contact the property directly — contact details
-              are provided in your booking confirmation.
-            </p>
-            <p>
-              Bachelor/bachelorette parties and similar events are not allowed
-              at this property.
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* See more apartments from this building */}
       {property.building && (
