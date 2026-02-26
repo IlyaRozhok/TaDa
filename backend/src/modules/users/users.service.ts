@@ -49,11 +49,8 @@ export class UsersService {
     search?: string;
     role?: string;
   }) {
-    const result = await this.userQueryService.findAllPaginated(params);
-    return {
-      ...result,
-      users: result.users.map(toUserResponse),
-    };
+    // Возвращаем "сырые" сущности, маппинг в DTO делается в контроллере
+    return this.userQueryService.findAllPaginated(params);
   }
 
   /**
@@ -168,7 +165,10 @@ export class UsersService {
    */
   async adminCreateUser(dto: CreateUserDto): Promise<User> {
     const created = await this.userAdminService.createUser(dto);
-    return created;
+
+    // Вернуть пользователя с загруженными профилями, чтобы маппер
+    // мог корректно отдать is_private_landlord и другие связанные поля
+    return this.userQueryService.findOneWithProfiles(created.id);
   }
 
   /**

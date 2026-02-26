@@ -11,6 +11,7 @@ interface AddUserModalProps {
     email: string;
     role: string;
     password: string;
+    is_private_landlord?: boolean;
   }) => Promise<void>;
   isLoading?: boolean;
 }
@@ -26,6 +27,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
     email: "",
     role: "tenant",
     password: "",
+    is_private_landlord: false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +39,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
         email: "",
         role: "tenant",
         password: "",
+        is_private_landlord: false,
       });
     }
   };
@@ -106,6 +109,29 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
               <option value="admin">Admin</option>
             </select>
           </div>
+
+          {formData.role === "operator" && (
+            <div className="flex items-center space-x-2">
+              <input
+                id="is_private_landlord"
+                type="checkbox"
+                checked={formData.is_private_landlord}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    is_private_landlord: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 rounded border-white/30 text-white focus:ring-white/50 bg-white/10"
+              />
+              <label
+                htmlFor="is_private_landlord"
+                className="text-sm font-medium text-white/90"
+              >
+                Private landlord
+              </label>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-white/90 mb-2">

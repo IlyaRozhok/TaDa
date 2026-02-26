@@ -16,6 +16,7 @@ interface User {
   role: string;
   status: string;
   created_at: string;
+  is_private_landlord?: boolean | null;
 }
 
 interface AdminUsersSectionProps {
@@ -132,6 +133,9 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                   Role
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Private LL
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
@@ -193,6 +197,21 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                       >
                         {user.role}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.role === "operator" ? (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            user.is_private_landlord
+                              ? "bg-green-100 text-green-800 border border-green-200"
+                              : "bg-gray-100 text-gray-700 border border-gray-200"
+                          }`}
+                        >
+                          {user.is_private_landlord ? "Yes" : "No"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span

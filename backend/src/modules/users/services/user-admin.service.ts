@@ -34,7 +34,13 @@ export class UserAdminService {
    * Создать пользователя администратором
    */
   async createUser(dto: CreateUserDto): Promise<User> {
-    const { email, password, role = UserRole.Tenant } = dto;
+    const {
+      full_name,
+      email,
+      password,
+      role = UserRole.Tenant,
+      is_private_landlord = false,
+    } = dto;
 
     // Проверить, что email уникален
     const existingUser = await this.userRepository.findOne({
@@ -54,6 +60,7 @@ export class UserAdminService {
     // Создать пользователя
     const user = this.userRepository.create({
       email: email.toLowerCase(),
+      full_name: full_name || null,
       password: hashedPassword,
       role: role as UserRole,
       status: UserStatus.Active,
@@ -65,7 +72,7 @@ export class UserAdminService {
     if (role === UserRole.Tenant) {
       await this.createTenantProfile(savedUser);
     } else if (role === UserRole.Operator) {
-      await this.createOperatorProfile(savedUser);
+      await this.createOperatorProfile(savedUser, is_private_landlord);
     }
 
     return savedUser;
@@ -85,6 +92,7 @@ export class UserAdminService {
     }
 
     // Обновить базовую информацию
+    if (dto.full_name !== undefined) user.full_name = dto.full_name;
     if (dto.email) user.email = dto.email.toLowerCase();
     if (dto.status) user.status = dto.status;
     if (dto.role) user.role = dto.role;
@@ -95,6 +103,18 @@ export class UserAdminService {
         dto.password,
         USER_CONSTANTS.PASSWORD_SALT_ROUNDS
       );
+    }
+
+    // Обновить признак частного лендлорда для оператора
+    if (dto.is_private_landlord !== undefined) {
+      if (user.role === UserRole.Operator) {
+        if (!user.operatorProfile) {
+          await this.createOperatorProfile(user, dto.is_private_landlord);
+        } else {
+          user.operatorProfile.is_private_landlord = dto.is_private_landlord;
+          await this.operatorProfileRepository.save(user.operatorProfile);
+        }
+      }
     }
 
     return this.userRepository.save(user);
@@ -197,7 +217,10 @@ export class UserAdminService {
   /**
    * Создать профиль оператора
    */
-  private async createOperatorProfile(user: User): Promise<void> {
+  private async createOperatorProfile(
+    user: User,
+    isPrivateLandlord: boolean = false
+  ): Promise<void> {
     const operatorProfile = this.operatorProfileRepository.create({
       userId: user.id,
       full_name: "",
@@ -216,6 +239,7 @@ export class UserAdminService {
       business_description: "",
       website: "",
       linkedin: "",
+      is_private_landlord: isPrivateLandlord,
     });
 
     await this.operatorProfileRepository.save(operatorProfile);

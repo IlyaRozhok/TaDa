@@ -9,6 +9,7 @@ interface User {
   full_name?: string;
   role: string;
   status: string;
+  is_private_landlord?: boolean | null;
 }
 
 interface EditUserModalProps {
@@ -21,6 +22,7 @@ interface EditUserModalProps {
       full_name: string;
       email: string;
       role: string;
+      is_private_landlord?: boolean;
     }
   ) => Promise<void>;
   isLoading?: boolean;
@@ -37,6 +39,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     full_name: "",
     email: "",
     role: "tenant",
+    is_private_landlord: false,
   });
 
   useEffect(() => {
@@ -45,6 +48,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         full_name: user.full_name || "",
         email: user.email,
         role: user.role,
+        is_private_landlord: user.is_private_landlord ?? false,
       });
     }
   }, [user, isOpen]);
@@ -121,6 +125,29 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               <option value="admin">Admin</option>
             </select>
           </div>
+
+          {formData.role === "operator" && (
+            <div className="flex items-center space-x-2">
+              <input
+                id="edit_is_private_landlord"
+                type="checkbox"
+                checked={formData.is_private_landlord}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    is_private_landlord: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 rounded border-white/30 text-white focus:ring-white/50 bg-white/10"
+              />
+              <label
+                htmlFor="edit_is_private_landlord"
+                className="text-sm font-medium text-white/90"
+              >
+                Private landlord
+              </label>
+            </div>
+          )}
 
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">
             <button

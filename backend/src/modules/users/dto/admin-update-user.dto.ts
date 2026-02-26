@@ -1,4 +1,10 @@
-import { IsEmail, IsEnum, IsOptional, IsString } from "class-validator";
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from "class-validator";
 import { UserRole, UserStatus } from "../../../entities/user.entity";
 
 export class AdminUpdateUserDto {
@@ -27,4 +33,8 @@ export class AdminUpdateUserDto {
   @IsOptional()
   @IsString()
   password?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  is_private_landlord?: boolean;
 }

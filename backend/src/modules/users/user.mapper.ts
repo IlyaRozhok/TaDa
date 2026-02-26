@@ -13,6 +13,7 @@ export type UserResponse = {
   email_verified: boolean;
   created_at: Date;
   updated_at: Date;
+  is_private_landlord?: boolean | null;
 };
 
 export const toUserResponse = (user: User): UserResponse => ({
@@ -32,4 +33,6 @@ export const toUserResponse = (user: User): UserResponse => ({
   email_verified: user.email_verified,
   created_at: user.created_at,
   updated_at: user.updated_at,
+  is_private_landlord:
+    (user as any).operatorProfile?.is_private_landlord ?? null,
 });

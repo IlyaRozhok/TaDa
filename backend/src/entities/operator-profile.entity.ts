@@ -53,6 +53,13 @@ export class OperatorProfile {
   business_address: string;
 
   @ApiProperty({
+    description: "Indicates if operator is a private landlord",
+    example: false,
+  })
+  @Column({ type: "boolean", default: false })
+  is_private_landlord: boolean;
+
+  @ApiProperty({
     description: "Company registration number",
     example: "12345678",
   })

@@ -57,6 +57,7 @@ interface User {
   role: string;
   status: string;
   created_at: string;
+  is_private_landlord?: boolean | null;
 }
 
 interface Building {
@@ -302,6 +303,7 @@ function AdminPanelContent() {
     email: string;
     role: string;
     password: string;
+    is_private_landlord?: boolean;
   }) => {
     setIsActionLoading(true);
     try {
@@ -312,12 +314,16 @@ function AdminPanelContent() {
         "Content-Type": "application/json",
       };
 
-      const body = {
+      const body: Record<string, any> = {
         full_name: data.full_name,
         email: data.email,
         role: data.role,
         password: data.password || "defaultPassword123",
       };
+
+      if (data.role === "operator") {
+        body.is_private_landlord = data.is_private_landlord ?? false;
+      }
 
       const response = await fetch(`${apiUrl}/users`, {
         method: "POST",
@@ -395,7 +401,12 @@ function AdminPanelContent() {
 
   const handleUpdateUser = async (
     id: string,
-    data: { full_name: string; email: string; role: string },
+    data: {
+      full_name: string;
+      email: string;
+      role: string;
+      is_private_landlord?: boolean;
+    },
   ) => {
     setIsActionLoading(true);
     try {
@@ -406,10 +417,20 @@ function AdminPanelContent() {
         "Content-Type": "application/json",
       };
 
+      const body: Record<string, any> = {
+        full_name: data.full_name,
+        email: data.email,
+        role: data.role,
+      };
+
+      if (data.role === "operator") {
+        body.is_private_landlord = data.is_private_landlord ?? false;
+      }
+
       const response = await fetch(`${apiUrl}/users/${id}`, {
         method: "PUT",
         headers,
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
