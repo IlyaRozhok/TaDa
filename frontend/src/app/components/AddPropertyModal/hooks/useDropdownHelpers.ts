@@ -28,19 +28,31 @@ export const useDropdownHelpers = (
   // Helper to check if fields are readonly (not private_landlord and has building selected)
   const isReadonly = (fieldName: string): boolean => {
     const inheritedFields = [
-      "tenant_type", "amenities", "is_concierge", "concierge_hours",
-      "pet_policy", "pets", "smoking_area", "metro_stations",
-      "commute_times", "local_essentials"
+      "tenant_types",
+      "amenities",
+      "is_concierge",
+      "concierge_hours",
+      "pet_policy",
+      "pets",
+      "smoking_area_prop",
+      "metro_stations",
+      "commute_times",
+      "local_essentials",
     ];
-    return formData.building_type !== "private_landlord" && 
-           formData.building_id && 
-           inheritedFields.includes(fieldName);
+    return (
+      formData.building_type !== "private_landlord" &&
+      !!formData.building_id &&
+      inheritedFields.includes(fieldName)
+    );
   };
 
   // Metro Stations helpers
   const addMetroStation = () => {
     updateFormData({
-      metro_stations: [...formData.metro_stations, { label: "", destination: 0 }]
+      metro_stations: [
+        ...formData.metro_stations,
+        { label: "", destination: undefined },
+      ],
     });
   };
 
@@ -60,7 +72,10 @@ export const useDropdownHelpers = (
   // Commute Times helpers
   const addCommuteTime = () => {
     updateFormData({
-      commute_times: [...formData.commute_times, { label: "", destination: 0 }]
+      commute_times: [
+        ...formData.commute_times,
+        { label: "", destination: undefined },
+      ],
     });
   };
 
@@ -80,7 +95,10 @@ export const useDropdownHelpers = (
   // Local Essentials helpers
   const addLocalEssential = () => {
     updateFormData({
-      local_essentials: [...formData.local_essentials, { label: "", destination: 0 }]
+      local_essentials: [
+        ...formData.local_essentials,
+        { label: "", destination: undefined },
+      ],
     });
   };
 
@@ -100,20 +118,22 @@ export const useDropdownHelpers = (
   // Pet helpers
   const addPet = () => {
     updateFormData({
-      pets: [...formData.pets, { type: "dog", size: "medium" }]
+      pets: [...(formData.pets || []), { type: "dog" as const }],
     });
   };
 
   const updatePet = (index: number, updates: Partial<Pet>) => {
-    const updated = formData.pets.map((pet, i) =>
-      i === index ? { ...pet, ...updates } : pet
+    const list = formData.pets || [];
+    const updated = list.map((pet, i) =>
+      i === index ? { ...pet, ...updates } : pet,
     );
     updateFormData({ pets: updated });
   };
 
   const removePet = (index: number) => {
+    const list = formData.pets || [];
     updateFormData({
-      pets: formData.pets.filter((_, i) => i !== index)
+      pets: list.filter((_, i) => i !== index),
     });
   };
 

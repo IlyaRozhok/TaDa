@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { buildingsAPI, usersAPI } from "../../../lib/api";
 import { Building, User } from "../types";
 
@@ -14,7 +14,8 @@ export const usePropertyData = (operators: User[] = []) => {
     const loadBuildings = async () => {
       try {
         const response = await buildingsAPI.getAll();
-        setBuildings(response.data);
+        const data = response?.data;
+        setBuildings(Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []);
       } catch (error) {
         console.error("Failed to load buildings:", error);
       }
@@ -23,14 +24,47 @@ export const usePropertyData = (operators: User[] = []) => {
     loadBuildings();
   }, []);
 
-  // Load operators when building_type changes to private_landlord
+  // Load operators (aligned with EditPropertyModal logic, but simplified for create flow)
   const loadOperators = async () => {
     if (operatorsLoaded) return;
 
     setOperatorsLoading(true);
     try {
-      const response = await usersAPI.getAll({ role: 'operator' });
-      setAvailableOperators(response.data);
+      // First try: API with role filter (preferred)
+      try {
+        const operatorsResponse = await usersAPI.getAll({ role: "operator" });
+        const raw =
+          operatorsResponse.data?.users ||
+          operatorsResponse.data?.data ||
+          operatorsResponse.data ||
+          [];
+
+        const list = Array.isArray(raw) ? raw : [];
+
+        if (list.length > 0) {
+          setAvailableOperators(list as User[]);
+          setOperatorsLoaded(true);
+          return;
+        }
+      } catch {
+        // ignore and fallback below
+      }
+
+      // Fallback: load all users, then filter by role on client
+      const allUsersResponse = await usersAPI.getAll();
+      const rawUsers =
+        allUsersResponse.data?.users ||
+        allUsersResponse.data?.data ||
+        allUsersResponse.data ||
+        [];
+
+      const allUsers: User[] = Array.isArray(rawUsers) ? rawUsers : [];
+      const onlyOperators = allUsers.filter(
+        (user) =>
+          (user as any).role === "operator" || (user as any).role === "Operator",
+      );
+
+      setAvailableOperators(onlyOperators);
       setOperatorsLoaded(true);
     } catch (error) {
       console.error("Failed to load operators:", error);
@@ -42,15 +76,19 @@ export const usePropertyData = (operators: User[] = []) => {
 
   // Use operators from props or load them if not available
   useEffect(() => {
-    if (operators && operators.length > 0) {
-      setAvailableOperators(operators);
+    const list = Array.isArray(operators) ? operators : [];
+    if (list.length > 0) {
+      setAvailableOperators(list);
       setOperatorsLoaded(true);
     }
   }, [operators]);
 
-  const findBuildingById = (buildingId: string): Building | null => {
-    return buildings.find(b => b.id === buildingId) || null;
-  };
+  const findBuildingById = useCallback(
+    (buildingId: string): Building | null => {
+      return buildings.find((b) => b.id === buildingId) || null;
+    },
+    [buildings],
+  );
 
   return {
     buildings,

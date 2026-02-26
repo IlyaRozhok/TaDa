@@ -55,37 +55,41 @@ export interface AddPropertyModalProps {
   operators?: User[];
 }
 
+/** Matches EditPropertyModal formData / API property shape */
 export interface PropertyFormData {
   title: string;
   apartment_number: string;
+  descriptions: string;
+  price: number | null;
+  deposit: number | null;
+  available_from: string | null;
+  bills: string;
+  property_type: string;
+  bedrooms: number | null;
+  bathrooms: number | null;
   building_type: string;
-  building_id: string;
-  operator_id: string;
-  address: string;
-  tenant_type: string[];
-  price: string;
-  security_deposit: string;
-  admin_fee: string;
-  description: string;
-  bedrooms: number;
-  bathrooms: number;
-  size_sqm: number;
-  floor: number;
+  luxury: boolean;
+  furnishing: string;
+  let_duration: string[];
+  floor: number | null;
+  outdoor_space: boolean;
   balcony: boolean;
   terrace: boolean;
+  square_meters: number | null;
+  photos: string[];
+  video: string;
+  documents: string;
+  building_id: string;
+  address: string;
+  tenant_types: string[];
   amenities: string[];
+  pets: Pet[] | null;
   is_concierge: boolean;
   concierge_hours: ConciergeHours | null;
   pet_policy: boolean;
-  pets: Pet[];
-  smoking_area: boolean;
+  smoking_area_prop: boolean;
   metro_stations: MetroStation[];
   commute_times: CommuteTime[];
   local_essentials: LocalEssential[];
-  available_from: string;
-  minimum_stay: number;
-  maximum_stay: number;
-  bills: string;
-  furnishing: string;
-  property_type: string;
+  operator_id: string;
 }

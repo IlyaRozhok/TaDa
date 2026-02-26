@@ -1,36 +1,32 @@
-import { useFormValidation, ValidationRules, commonRules } from "../../../hooks/useFormValidation";
+import {
+  useFormValidation,
+  ValidationRules,
+} from "../../../hooks/useFormValidation";
+import { PropertyFormData } from "../types";
 
-// Validation rules for property form
+// Validation rules aligned with Edit Property / API
 export const propertyValidationRules: ValidationRules = {
   title: {
     required: true,
     minLength: 3,
     maxLength: 100,
-    pattern: /^[a-zA-Z0-9\s\-'.,()]+$/,
   },
   apartment_number: {
     maxLength: 20,
-    pattern: /^[a-zA-Z0-9\-\/]+$/,
   },
-  description: {
-    maxLength: 1000,
+  descriptions: {
+    maxLength: 2000,
   },
   address: {
     required: true,
-    minLength: 10,
+    minLength: 5,
     maxLength: 200,
   },
   price: {
     required: true,
-    pattern: /^\d+(\.\d{1,2})?$/,
     min: 0,
   },
-  security_deposit: {
-    pattern: /^\d+(\.\d{1,2})?$/,
-    min: 0,
-  },
-  admin_fee: {
-    pattern: /^\d+(\.\d{1,2})?$/,
+  deposit: {
     min: 0,
   },
   bedrooms: {
@@ -43,21 +39,13 @@ export const propertyValidationRules: ValidationRules = {
     min: 0,
     max: 10,
   },
-  size_sqm: {
-    min: 1,
+  square_meters: {
+    min: 0,
     max: 1000,
   },
   floor: {
     min: -5,
     max: 100,
-  },
-  minimum_stay: {
-    min: 1,
-    max: 60,
-  },
-  maximum_stay: {
-    min: 1,
-    max: 60,
   },
   building_type: {
     required: true,
@@ -69,9 +57,6 @@ export const propertyValidationRules: ValidationRules = {
     required: true,
   },
   bills: {
-    required: true,
-  },
-  available_from: {
     required: true,
   },
 };

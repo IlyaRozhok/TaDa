@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
-import { AddPropertyModalProps } from "./types";
+import { AddPropertyModalProps, Pet } from "./types";
 import { usePropertyForm } from "./hooks/usePropertyForm";
 import { usePropertyValidation } from "./hooks/usePropertyValidation";
 import { usePropertyData } from "./hooks/usePropertyData";
@@ -10,11 +10,18 @@ import { usePropertyFiles } from "./hooks/usePropertyFiles";
 import { useDropdownHelpers } from "./hooks/useDropdownHelpers";
 import { BasicInfoSection } from "./components/BasicInfoSection";
 import { LocationSection } from "./components/LocationSection";
+import { PropertyDetailsSection } from "./components/PropertyDetailsSection";
+import { AmenitiesSection } from "./components/AmenitiesSection";
+import { ConciergePetsSmokingSection } from "./components/ConciergePetsSmokingSection";
+import { LocationDetailsSection } from "./components/LocationDetailsSection";
+import { MediaSection } from "./components/MediaSection";
 import { useLocalizedFormOptions } from "../../../shared/hooks/useLocalizedFormOptions";
 import {
   transformTenantTypeUIToAPI,
+  transformTenantTypeAPIToUI,
   transformDurationUIToAPIArray,
 } from "../../../shared/constants/mappings";
+import { propertiesAPI } from "../../lib/api";
 
 const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   isOpen,
@@ -58,6 +65,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   const { tenantTypeOptions } = useLocalizedFormOptions();
 
+  // Preload operators once so dropdown is ready when user selects Private Landlord
+  useEffect(() => {
+    loadOperators();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load operators when building_type changes to private_landlord
   useEffect(() => {
     if (formData.building_type === "private_landlord") {
@@ -72,13 +85,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         building_id: "",
         operator_id: "",
         address: "",
-        tenant_type: [],
+        tenant_types: [] as string[],
         amenities: [],
         is_concierge: false,
         concierge_hours: null,
         pet_policy: false,
-        pets: [],
-        smoking_area: false,
+        pets: null as Pet[] | null,
+        smoking_area_prop: false,
         metro_stations: [],
         commute_times: [],
         local_essentials: [],
@@ -106,23 +119,25 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   // Load building details and populate inherited fields when a building is selected
   useEffect(() => {
-    if (selectedBuilding && formData.building_type !== "private_landlord") {
-      const inheritedData = {
-        address: selectedBuilding.address,
-        tenant_type: selectedBuilding.tenant_type || [],
-        amenities: selectedBuilding.amenities || [],
-        is_concierge: selectedBuilding.is_concierge || false,
-        concierge_hours: selectedBuilding.concierge_hours || null,
-        pet_policy: selectedBuilding.pet_policy || false,
-        pets: selectedBuilding.pets || [],
-        smoking_area: selectedBuilding.smoking_area || false,
-        metro_stations: selectedBuilding.metro_stations || [],
-        commute_times: selectedBuilding.commute_times || [],
-        local_essentials: selectedBuilding.local_essentials || [],
-      };
-
-      updateFormData(inheritedData);
+    if (!selectedBuilding || formData.building_type === "private_landlord") {
+      return;
     }
+    const inheritedData = {
+      address: selectedBuilding.address ?? "",
+      tenant_types: transformTenantTypeAPIToUI(
+        selectedBuilding.tenant_type || [],
+      ),
+      amenities: selectedBuilding.amenities || [],
+      is_concierge: selectedBuilding.is_concierge ?? false,
+      concierge_hours: selectedBuilding.concierge_hours ?? null,
+      pet_policy: selectedBuilding.pet_policy ?? false,
+      pets: selectedBuilding.pets ?? null,
+      smoking_area_prop: selectedBuilding.smoking_area ?? false,
+      metro_stations: selectedBuilding.metro_stations || [],
+      commute_times: selectedBuilding.commute_times || [],
+      local_essentials: selectedBuilding.local_essentials || [],
+    };
+    updateFormData(inheritedData);
   }, [selectedBuilding, formData.building_type, updateFormData]);
 
   const handleClose = () => {
@@ -145,7 +160,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isLoading || isSubmitting) return;
 
     const isValid = validateAll(formData);
@@ -156,42 +171,89 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Transform data for API
-      const transformedData = {
-        ...formData,
-        tenant_type: transformTenantTypeUIToAPI(formData.tenant_type),
-        minimum_stay: transformDurationUIToAPIArray([formData.minimum_stay.toString()])[0],
-        maximum_stay: transformDurationUIToAPIArray([formData.maximum_stay.toString()])[0],
+      let uploadedPhotoUrls: string[] = [];
+      let uploadedVideoUrl = "";
+      let uploadedDocUrl = "";
+
+      if (photoFiles.length > 0) {
+        const photoResults = await propertiesAPI.uploadPhotos(photoFiles);
+        uploadedPhotoUrls = Array.isArray(photoResults)
+          ? photoResults.map((r: { url?: string }) => r.url).filter(Boolean)
+          : [];
+      }
+      if (videoFile) {
+        const videoResult = await propertiesAPI.uploadVideo(videoFile);
+        if (videoResult?.url) uploadedVideoUrl = videoResult.url;
+      }
+      if (documentFile) {
+        const docResult = await propertiesAPI.uploadDocuments(documentFile);
+        if (docResult?.url) uploadedDocUrl = docResult.url;
+      }
+
+      const normalizeNumber = (
+        value: number | null | undefined | string,
+      ): number | null => {
+        if (
+          value === null ||
+          value === undefined ||
+          value === "" ||
+          value === "0"
+        ) {
+          return null;
+        }
+        const num = Number(value);
+        return isNaN(num) || num < 0 ? null : num;
       };
 
-      // Create FormData for file uploads
-      const submitData = new FormData();
-      
-      // Add form data
-      Object.entries(transformedData).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          if (Array.isArray(value) || typeof value === 'object') {
-            submitData.append(key, JSON.stringify(value));
-          } else {
-            submitData.append(key, String(value));
-          }
-        }
-      });
+      const propertyData: any = {
+        title: formData.title?.trim() || "",
+        apartment_number: formData.apartment_number?.trim() || null,
+        descriptions: formData.descriptions?.trim() || null,
+        price: normalizeNumber(formData.price),
+        deposit: normalizeNumber(formData.deposit),
+        bedrooms: normalizeNumber(formData.bedrooms),
+        bathrooms: normalizeNumber(formData.bathrooms),
+        floor: normalizeNumber(formData.floor),
+        square_meters: normalizeNumber(formData.square_meters),
+        property_type: formData.property_type || null,
+        building_type: formData.building_type || null,
+        furnishing: formData.furnishing || null,
+        let_duration:
+          (formData.let_duration?.length ?? 0) > 0
+            ? transformDurationUIToAPIArray(formData.let_duration)
+            : null,
+        bills: formData.bills || null,
+        available_from: formData.available_from || null,
+        outdoor_space: formData.outdoor_space,
+        balcony: formData.balcony,
+        terrace: formData.terrace,
+        luxury: formData.luxury,
+        address: formData.address || null,
+        tenant_types: [
+          ...new Set(transformTenantTypeUIToAPI(formData.tenant_types || [])),
+        ],
+        amenities: formData.amenities || [],
+        is_concierge: formData.is_concierge,
+        concierge_hours: formData.concierge_hours || null,
+        pet_policy: formData.pet_policy,
+        pets: formData.pets || null,
+        smoking_area: formData.smoking_area_prop,
+        metro_stations: formData.metro_stations || [],
+        commute_times: formData.commute_times || [],
+        local_essentials: formData.local_essentials || [],
+        photos: [...(formData.photos || []), ...uploadedPhotoUrls],
+        video: uploadedVideoUrl || formData.video || null,
+        documents: uploadedDocUrl || formData.documents || null,
+      };
 
-      // Add files
-      photoFiles.forEach((file, index) => {
-        submitData.append(`photos`, file);
-      });
-
-      if (videoFile) {
-        submitData.append('video', videoFile);
+      if (formData.building_type === "private_landlord") {
+        propertyData.operator_id = formData.operator_id;
+        propertyData.building_id = null;
+      } else if (formData.building_type) {
+        propertyData.building_id = formData.building_id;
       }
 
-      if (documentFile) {
-        submitData.append('document', documentFile);
-      }
-
-      await onSubmit(submitData);
+      await onSubmit(propertyData);
       handleClose();
     } catch (error) {
       console.error("Failed to submit property:", error);
@@ -233,17 +295,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             touched={touched}
             availableOperators={availableOperators}
             operatorsLoading={operatorsLoading}
-            openDropdown={dropdownHelpers.openDropdown}
-            onFieldChange={handleFormFieldChange}
-            onFieldBlur={handleFieldBlur}
-            onToggleDropdown={dropdownHelpers.toggleDropdown}
-          />
-
-          {/* Location and Building */}
-          <LocationSection
-            formData={formData}
-            errors={errors}
-            touched={touched}
             buildings={buildings}
             openDropdown={dropdownHelpers.openDropdown}
             onFieldChange={handleFormFieldChange}
@@ -251,13 +302,88 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             onToggleDropdown={dropdownHelpers.toggleDropdown}
           />
 
-          {/* TODO: Add remaining sections */}
-          {/* - Property Details (bedrooms, bathrooms, size, floor) */}
-          {/* - Features (description, amenities, checkboxes) */}
-          {/* - Concierge Section */}
-          {/* - Pets Section */}
-          {/* - Location Details (metro, commute, local) */}
-          {/* - Media Section */}
+          {/* Location and pricing */}
+          <LocationSection
+            formData={formData}
+            errors={errors}
+            touched={touched}
+            openDropdown={dropdownHelpers.openDropdown}
+            onFieldChange={handleFormFieldChange}
+            onFieldBlur={handleFieldBlur}
+            onToggleDropdown={dropdownHelpers.toggleDropdown}
+          />
+
+          {/* Property details */}
+          <PropertyDetailsSection
+            formData={formData}
+            errors={errors}
+            touched={touched}
+            openDropdown={dropdownHelpers.openDropdown}
+            onFieldChange={handleFormFieldChange}
+            onFieldBlur={handleFieldBlur}
+            onToggleDropdown={dropdownHelpers.toggleDropdown}
+          />
+
+          {/* Amenities */}
+          <AmenitiesSection
+            formData={formData}
+            errors={errors}
+            openDropdown={dropdownHelpers.openDropdown}
+            onFieldChange={handleFormFieldChange}
+            onToggleDropdown={dropdownHelpers.toggleDropdown}
+          />
+
+          {/* Concierge, Pets, Smoking */}
+          <ConciergePetsSmokingSection
+            formData={formData}
+            openDropdown={dropdownHelpers.openDropdown}
+            onFieldChange={handleFormFieldChange}
+            onToggleDropdown={dropdownHelpers.toggleDropdown}
+            addPet={dropdownHelpers.addPet}
+            updatePet={dropdownHelpers.updatePet}
+            removePet={dropdownHelpers.removePet}
+          />
+
+          {/* Metro, Commute, Local Essentials */}
+          <LocationDetailsSection
+            formData={formData}
+            onFieldChange={handleFormFieldChange}
+            addMetroStation={dropdownHelpers.addMetroStation}
+            updateMetroStation={dropdownHelpers.updateMetroStation}
+            removeMetroStation={dropdownHelpers.removeMetroStation}
+            addCommuteTime={dropdownHelpers.addCommuteTime}
+            updateCommuteTime={dropdownHelpers.updateCommuteTime}
+            removeCommuteTime={dropdownHelpers.removeCommuteTime}
+            addLocalEssential={dropdownHelpers.addLocalEssential}
+            updateLocalEssential={dropdownHelpers.updateLocalEssential}
+            removeLocalEssential={dropdownHelpers.removeLocalEssential}
+          />
+
+          {/* Media */}
+          <MediaSection
+            photoInputRef={photoInputRef}
+            videoInputRef={videoInputRef}
+            documentInputRef={documentInputRef}
+            photoPreviews={photoPreviews}
+            videoPreview={videoPreview}
+            documentFile={documentFile}
+            onPhotoChange={handlePhotoUpload}
+            onRemovePhoto={removePhoto}
+            onVideoChange={(e) => {
+              if (e.target.files?.[0]) handleVideoUpload(e.target.files[0]);
+            }}
+            onDocumentChange={(e) => {
+              if (e.target.files?.[0]) handleDocumentUpload(e.target.files[0]);
+            }}
+            onClearVideo={() => {
+              handleVideoUpload(null);
+              if (videoInputRef.current) videoInputRef.current.value = "";
+            }}
+            onClearDocument={() => {
+              handleDocumentUpload(null);
+              if (documentInputRef.current) documentInputRef.current.value = "";
+            }}
+          />
 
           {/* Footer */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">

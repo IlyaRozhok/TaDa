@@ -101,8 +101,8 @@ export const Select: React.FC<SelectProps> = ({
           {placeholder}
         </option>
       )}
-      {options.map(option => (
-        <option key={option.value} value={option.value} className="bg-gray-800 text-white">
+      {options.map((option, index) => (
+        <option key={`${option.value}-${index}`} value={option.value} className="bg-gray-800 text-white">
           {option.label}
         </option>
       ))}
