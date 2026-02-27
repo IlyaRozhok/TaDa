@@ -282,7 +282,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-2xl font-bold text-white">Add New Property 2</h2>
+          <h2 className="text-2xl font-bold text-white">Add New Property</h2>
           <button
             onClick={handleClose}
             disabled={isLoading || isSubmitting}
@@ -413,7 +413,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               disabled={isLoading || isSubmitting}
               className="px-6 py-2 bg-white text-black rounded-lg hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-              <Save className="w-4 h-4" />
               <span>{isSubmitting ? "Saving..." : "Save Property"}</span>
             </button>
           </div>
