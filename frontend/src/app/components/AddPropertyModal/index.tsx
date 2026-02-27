@@ -35,19 +35,26 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   // Hooks
   const { formData, updateFormData, resetForm } = usePropertyForm();
-  const { errors, touched, validate, validateAll, setFieldTouched, clearErrors } = usePropertyValidation();
-  const { 
-    buildings, 
-    selectedBuilding, 
+  const {
+    errors,
+    touched,
+    validate,
+    validateAll,
+    setFieldTouched,
+    clearErrors,
+  } = usePropertyValidation();
+  const {
+    buildings,
+    selectedBuilding,
     setSelectedBuilding,
-    availableOperators, 
+    availableOperators,
     operatorsLoading,
     loadOperators,
-    findBuildingById 
+    findBuildingById,
   } = usePropertyData(operators);
-  const { 
-    photoFiles, 
-    videoFile, 
+  const {
+    photoFiles,
+    videoFile,
     documentFile,
     photoPreviews,
     videoPreview,
@@ -59,7 +66,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     removePhoto,
     handleVideoUpload,
     handleDocumentUpload,
-    resetFiles
+    resetFiles,
   } = usePropertyFiles();
   const dropdownHelpers = useDropdownHelpers(formData, updateFormData);
 
@@ -80,7 +87,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
   // When building_type changes, clear inherited fields and building_id/operator_id
   useEffect(() => {
-    if (prevBuildingType !== null && prevBuildingType !== formData.building_type) {
+    if (
+      prevBuildingType !== null &&
+      prevBuildingType !== formData.building_type
+    ) {
       const clearedData = {
         building_id: "",
         operator_id: "",
@@ -136,6 +146,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       metro_stations: selectedBuilding.metro_stations || [],
       commute_times: selectedBuilding.commute_times || [],
       local_essentials: selectedBuilding.local_essentials || [],
+      operator_id: selectedBuilding.operator_id,
     };
     updateFormData(inheritedData);
   }, [selectedBuilding, formData.building_type, updateFormData]);
@@ -251,6 +262,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         propertyData.building_id = null;
       } else if (formData.building_type) {
         propertyData.building_id = formData.building_id;
+        propertyData.operator_id =
+          selectedBuilding?.operator_id || formData.operator_id || null;
       }
 
       await onSubmit(propertyData);
@@ -269,7 +282,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-2xl font-bold text-white">Add New Property</h2>
+          <h2 className="text-2xl font-bold text-white">Add New Property 2</h2>
           <button
             onClick={handleClose}
             disabled={isLoading || isSubmitting}
