@@ -23,6 +23,7 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import { Heart, ChevronDown, Map } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { Property } from "../../types";
+import Footer from "../../components/Footer";
 
 type SortOption =
   | "bestMatch"
@@ -255,6 +256,7 @@ export default function ShortlistPage() {
             </button>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -262,11 +264,14 @@ export default function ShortlistPage() {
   // Show loading while session is initializing
   if (!sessionReady) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Initializing session...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600">Initializing session...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -274,11 +279,14 @@ export default function ShortlistPage() {
   // Show not authenticated state (only after session is ready)
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Redirecting to login...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600">Redirecting to login...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -349,6 +357,7 @@ export default function ShortlistPage() {
           loading={clearingShortlist}
         />
       </div>
+      <Footer />
     </div>
   );
 }

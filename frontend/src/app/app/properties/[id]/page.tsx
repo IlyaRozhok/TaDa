@@ -30,6 +30,7 @@ import PreferencePropertiesSection from "../../../components/PreferencePropertie
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import toast from "react-hot-toast";
+import Footer from "../../../components/Footer";
 
 type PropertyWithMedia = Property & {
   photos?: string[];
@@ -369,6 +370,7 @@ export default function PropertyPublicPage() {
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader showPreferencesButton={true} />
         <PropertyDetailSkeleton />
+        <Footer />
       </div>
     );
   }
@@ -391,6 +393,7 @@ export default function PropertyPublicPage() {
             </button>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -415,6 +418,7 @@ export default function PropertyPublicPage() {
             </button>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -916,6 +920,7 @@ export default function PropertyPublicPage() {
         currentPropertyId={property.id}
         currentOperatorId={property.operator?.id}
       />
+      <Footer />
     </div>
   );
 }

@@ -22,12 +22,23 @@ const ImageGallery = memo(function ImageGallery({
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const hasScrolledInitiallyRef = useRef(false);
 
-  // Scroll thumbnail strip so the selected image is in view when changing via arrows
+  // Scroll thumbnail strip so the selected image is in view when changing via arrows.
+  // Skip the very first render to avoid page jumping on initial load.
   useEffect(() => {
+    if (!hasScrolledInitiallyRef.current) {
+      hasScrolledInitiallyRef.current = true;
+      return;
+    }
+
     const el = thumbRefs.current[selectedImage];
     if (el) {
-      el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      el.scrollIntoView({
+        inline: "center",
+        block: "nearest",
+        behavior: "smooth",
+      });
     }
   }, [selectedImage]);
 
@@ -205,7 +216,7 @@ const ImageGallery = memo(function ImageGallery({
             {/* Close Button - top right */}
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-white rounded-full p-2.5 sm:p-3 transition-colors duration-200 shadow-xl cursor-pointer"
+              className="absolute top-4 sm:top-6 right-2 z-20 text-white rounded-full p-2.5 sm:p-3 transition-colors duration-200 shadow-xl cursor-pointer"
               style={{
                 background: "rgba(0, 0, 0, 0.4)",
                 backdropFilter: "blur(10px) saturate(180%)",
@@ -247,7 +258,7 @@ const ImageGallery = memo(function ImageGallery({
                     e.stopPropagation();
                     prevImage();
                   }}
-                  className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-colors duration-200 shadow-xl cursor-pointer"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-colors duration-200 shadow-xl cursor-pointer"
                   style={{
                     background: "rgba(0, 0, 0, 0.4)",
                     backdropFilter: "blur(10px) saturate(180%)",
@@ -269,7 +280,7 @@ const ImageGallery = memo(function ImageGallery({
                     e.stopPropagation();
                     nextImage();
                   }}
-                  className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-colors duration-200 shadow-xl cursor-pointer"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-colors duration-200 shadow-xl cursor-pointer"
                   style={{
                     background: "rgba(0, 0, 0, 0.4)",
                     backdropFilter: "blur(10px) saturate(180%)",

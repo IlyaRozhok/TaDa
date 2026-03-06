@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 // import { useSelector, useDispatch } from "react-redux";
 import { buildingsAPI, propertiesAPI } from "../../../lib/api";
@@ -44,6 +44,7 @@ import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleto
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import toast from "react-hot-toast";
+import Footer from "../../../components/Footer";
 
 type BuildingWithMedia = Building & {
   media?: Array<{
@@ -81,7 +82,9 @@ export default function BuildingPublicPage() {
   const priceStats = useMemo(() => {
     const prices = properties
       .map((p) => p.price)
-      .filter((price): price is number => typeof price === "number" && price > 0);
+      .filter(
+        (price): price is number => typeof price === "number" && price > 0,
+      );
 
     if (prices.length === 0) {
       return { min: null as number | null, max: null as number | null };
@@ -92,11 +95,6 @@ export default function BuildingPublicPage() {
       max: Math.max(...prices),
     };
   }, [properties]);
-
-  // Scroll to top when component mounts
-  useLayoutEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
 
   // Fetch building data
   useEffect(() => {
@@ -214,6 +212,7 @@ export default function BuildingPublicPage() {
         <div className="pt-16 sm:pt-20">
           <PropertyDetailSkeleton />
         </div>
+        <Footer />
       </div>
     );
   }
@@ -235,6 +234,7 @@ export default function BuildingPublicPage() {
             </Button>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -341,7 +341,7 @@ export default function BuildingPublicPage() {
                 {building.amenities?.includes("concierge") &&
                   " Среди удобств есть консьерж-зона и бесплатный Wi-Fi."}
               </p>
-              <button className="text-blue-600 hover:text-blue-700 font-medium mt-0.5 text-sm">
+              <button className="text-black cursor-pointer hover:text-gray-700 font-medium mt-0.5 text-sm">
                 More information
               </button>
             </div>
@@ -349,7 +349,7 @@ export default function BuildingPublicPage() {
 
           {/* What this place offers */}
           {displayedAmenities.length > 0 && (
-            <section className="py-4 sm:py-6 border-t border-gray-200">
+            <section className="py-4 sm:py-6">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
                 What this place offers
               </h2>
@@ -366,11 +366,11 @@ export default function BuildingPublicPage() {
               {building.amenities && building.amenities.length > 9 && (
                 <button
                   onClick={() => setShowAllOffers(!showAllOffers)}
-                  className="mt-1 px-1.5 py-0.75 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="mt-3 cursor-pointer px-4 py-2 text-black border border-gray-300 rounded-3xl text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
                   {showAllOffers
                     ? "Show less"
-                    : `See all offers (${building.amenities.length})`}
+                    : `See more (${building.amenities.length})`}
                 </button>
               )}
             </section>
@@ -378,7 +378,7 @@ export default function BuildingPublicPage() {
 
           {/* Listed properties */}
           {properties.length > 0 && (
-            <section className="py-4 sm:py-6 border-t border-gray-200">
+            <section className="py-4 sm:py-6">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div>
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
@@ -431,7 +431,7 @@ export default function BuildingPublicPage() {
           )}
 
           {/* Building location */}
-          <section className="py-4 sm:py-6 border-t border-gray-200">
+          <section className="py-4 sm:py-6">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
               Building location
             </h2>
@@ -441,7 +441,7 @@ export default function BuildingPublicPage() {
           </section>
 
           {/* Transport and placements */}
-          <section className="py-4 sm:py-6 border-t border-gray-200">
+          <section className="py-4 sm:py-6">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
               Transport and placements
             </h2>
@@ -462,7 +462,7 @@ export default function BuildingPublicPage() {
                         if (!building.address) return "N/A";
                         // Try to extract UK postcode (format: SW1A 1AA or SW1A1AA)
                         const postcodeMatch = building.address.match(
-                          /[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}/i
+                          /[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}/i,
                         );
                         if (postcodeMatch)
                           return postcodeMatch[0].toUpperCase();
@@ -481,10 +481,10 @@ export default function BuildingPublicPage() {
                           ? building.districts[0]
                           : building.districts[0]?.label
                         : building.areas && building.areas.length > 0
-                        ? typeof building.areas[0] === "string"
-                          ? building.areas[0]
-                          : building.areas[0]?.label
-                        : "Central London"}
+                          ? typeof building.areas[0] === "string"
+                            ? building.areas[0]
+                            : building.areas[0]?.label
+                          : "Central London"}
                     </p>
                   </div>
                   <div>
@@ -497,10 +497,10 @@ export default function BuildingPublicPage() {
                           ? building.districts[1]
                           : building.districts[1]?.label
                         : building.areas && building.areas.length > 1
-                        ? typeof building.areas[1] === "string"
-                          ? building.areas[1]
-                          : building.areas[1]?.label
-                        : "N/A"}
+                          ? typeof building.areas[1] === "string"
+                            ? building.areas[1]
+                            : building.areas[1]?.label
+                          : "N/A"}
                     </p>
                   </div>
                   <div>
@@ -549,7 +549,7 @@ export default function BuildingPublicPage() {
                   building.commute_times.length > 0 ? (
                     <>
                       {building.commute_times.find((ct) =>
-                        ct.label.toLowerCase().includes("walk")
+                        ct.label.toLowerCase().includes("walk"),
                       ) && (
                         <div>
                           <p className="text-xs text-gray-500 mb-1">
@@ -557,13 +557,13 @@ export default function BuildingPublicPage() {
                           </p>
                           <p className="text-sm font-medium text-black">
                             {building.commute_times.find((ct) =>
-                              ct.label.toLowerCase().includes("walk")
+                              ct.label.toLowerCase().includes("walk"),
                             )?.destination || "N/A"}
                           </p>
                         </div>
                       )}
                       {building.commute_times.find((ct) =>
-                        ct.label.toLowerCase().includes("cycl")
+                        ct.label.toLowerCase().includes("cycl"),
                       ) && (
                         <div>
                           <p className="text-xs text-gray-500 mb-1">
@@ -571,7 +571,7 @@ export default function BuildingPublicPage() {
                           </p>
                           <p className="text-sm font-medium text-black">
                             {building.commute_times.find((ct) =>
-                              ct.label.toLowerCase().includes("cycl")
+                              ct.label.toLowerCase().includes("cycl"),
                             )?.destination || "N/A"}
                           </p>
                         </div>
@@ -613,6 +613,7 @@ export default function BuildingPublicPage() {
           </section>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
