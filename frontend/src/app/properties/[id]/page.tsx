@@ -10,6 +10,7 @@ import PropertyLocation from "../../components/property/PropertyLocation";
 import PropertyCTA from "../../components/property/PropertyCTA";
 import AuthModal from "../../components/AuthModal";
 import PropertyDetailSkeleton from "../../components/ui/PropertyDetailSkeleton";
+import { PropertyPriceCard } from "@/entities/property/ui/PropertyPriceCard";
 
 export default function PublicPropertyDetailPage() {
   const { state, allImages, publishDate, setAuthModalOpen, retryLoad } =
@@ -50,69 +51,123 @@ export default function PublicPropertyDetailPage() {
         onSignUpClick={() => setAuthModalOpen(true)}
       />
 
-      <PropertyHero
-        property={state.property}
-        allImages={allImages}
-        onGalleryClick={() => setAuthModalOpen(true)}
-      />
+      {/* Two column layout with float */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Right sidebar first - floated right */}
+        <aside className="hidden lg:block lg:float-right lg:w-80 lg:ml-6">
+          <PropertyPriceCard property={state.property} />
+        </aside>
 
-      {/* Thumbnails */}
-      {allImages.length > 0 && state.property && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {allImages.slice(0, 8).map((src, idx) => (
-              <img
-                key={idx}
-                src={src}
-                alt={`${state.property?.title || "Property"} ${idx + 1}`}
-                className="h-28 w-44 object-cover rounded-xl border"
-              />
-            ))}
+        {/* Left content */}
+        <main className="lg:mr-96">
+          <PropertyHero
+            property={state.property}
+            allImages={allImages}
+            onGalleryClick={() => setAuthModalOpen(true)}
+          />
+
+          {/* Thumbnails */}
+          {allImages.length > 0 && state.property && (
+            <section className="mt-4">
+              <div className="flex gap-4 overflow-x-auto pb-2">
+                {allImages.slice(0, 8).map((src, idx) => (
+                  <img
+                    key={idx}
+                    src={src}
+                    alt={`${
+                      state.property?.title || "Property"
+                    } ${idx + 1}`}
+                    className="h-28 w-44 object-cover rounded-xl border"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <PropertyDetails property={state.property} />
+
+          {/* About */}
+          <section className="py-4">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              About appartment
+            </h2>
+            <p className="text-gray-700 leading-relaxed">
+              {state.property.description || "No description provided."}
+            </p>
+          </section>
+
+          <PropertyAmenities property={state.property} />
+          <PropertyLocation property={state.property} />
+
+          {/* Notes / Rules */}
+          <section className="py-8">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+              * Примечания
+            </h3>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 text-gray-700 leading-relaxed">
+              <p className="mb-3">
+                При регистрации заезда необходимо предъявить действительное
+                удостоверение личности с фотографией и банковскую карту.
+                Обработка выполнения особых пожеланий не гарантирована и может
+                потребовать дополнительной оплаты.
+              </p>
+              <p className="mb-3">
+                Пожалуйста, заранее сообщите предполагаемое время прибытия. Вы
+                можете использовать поле «Особые пожелания» при бронировании
+                или связаться с объектом размещения напрямую — контактные
+                данные указаны в вашем подтверждении бронирования.
+              </p>
+              <p>
+                В этом объекте нельзя устраивать вечеринки и другие подобные
+                мероприятия.
+              </p>
+            </div>
+          </section>
+
+          <PropertyCTA />
+
+          {/* Extra content to extend page height */}
+          <section className="py-8">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+              Other options from your preferences
+            </h3>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div key={item} className="bg-gray-50 rounded-xl p-6">
+                  <h4 className="text-lg font-semibold mb-2">
+                    Similar Property {item}
+                  </h4>
+                  <p className="text-gray-600">
+                    This is a similar property that matches your preferences.
+                    The right booking card should scroll with this content all the way down.
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* More content to test full scroll */}
+          <section className="py-8 pb-16">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+              Final Section - Test Bottom Scroll
+            </h3>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-8">
+              <p className="text-blue-800 font-semibold">
+                🎉 This is the bottom of the page! The right booking card should be visible here.
+              </p>
+            </div>
+          </section>
+
+          {/* Clear float */}
+          <div className="clear-both"></div>
+
+          {/* Mobile right column */}
+          <div className="lg:hidden mt-6">
+            <PropertyPriceCard property={state.property} />
           </div>
-        </section>
-      )}
+        </main>
+      </div>
 
-      <PropertyDetails property={state.property} />
-
-      {/* About */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-          About appartment
-        </h2>
-        <p className="text-gray-700 leading-relaxed">
-          {state.property.description || "No description provided."}
-        </p>
-      </section>
-
-      <PropertyAmenities property={state.property} />
-      <PropertyLocation property={state.property} />
-
-      {/* Notes / Rules */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-          * Примечания
-        </h3>
-        <div className="bg-white border border-gray-200 rounded-xl p-6 text-gray-700 leading-relaxed">
-          <p className="mb-3">
-            При регистрации заезда необходимо предъявить действительное
-            удостоверение личности с фотографией и банковскую карту. Обработка
-            выполнения особых пожеланий не гарантирована и может потребовать
-            дополнительной оплаты.
-          </p>
-          <p className="mb-3">
-            Пожалуйста, заранее сообщите предполагаемое время прибытия. Вы
-            можете использовать поле «Особые пожелания» при бронировании или
-            связаться с объектом размещения напрямую — контактные данные указаны
-            в вашем подтверждении бронирования.
-          </p>
-          <p>
-            В этом объекте нельзя устраивать вечеринки и другие подобные
-            мероприятия.
-          </p>
-        </div>
-      </section>
-
-      <PropertyCTA />
 
       {/* Auth Modal */}
       <AuthModal

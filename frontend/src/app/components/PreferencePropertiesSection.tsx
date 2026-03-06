@@ -72,7 +72,7 @@ const PreferencePropertiesSection: React.FC<
           Other options from your preferences
         </h2>
         <button
-          className="text-black text-sm underline hover:text-gray-600 font-medium"
+          className="text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium"
           onClick={() => router.push("/app/units")}
         >
           See more

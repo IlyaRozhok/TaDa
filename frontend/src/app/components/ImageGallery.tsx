@@ -202,10 +202,10 @@ const ImageGallery = memo(function ImageGallery({
             className="relative w-full h-full max-w-7xl max-h-screen p-4 sm:p-6 lg:p-8"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button - Liquid Glass */}
+            {/* Close Button - top right */}
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-white rounded-full p-2.5 sm:p-3 transition-all duration-200 shadow-xl"
+              className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-white rounded-full p-2.5 sm:p-3 transition-colors duration-200 shadow-xl cursor-pointer"
               style={{
                 background: "rgba(0, 0, 0, 0.4)",
                 backdropFilter: "blur(10px) saturate(180%)",
@@ -247,7 +247,7 @@ const ImageGallery = memo(function ImageGallery({
                     e.stopPropagation();
                     prevImage();
                   }}
-                  className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-all duration-200 shadow-xl"
+                  className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-colors duration-200 shadow-xl cursor-pointer"
                   style={{
                     background: "rgba(0, 0, 0, 0.4)",
                     backdropFilter: "blur(10px) saturate(180%)",
@@ -256,13 +256,9 @@ const ImageGallery = memo(function ImageGallery({
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)";
-                    e.currentTarget.style.transform =
-                      "translateY(-50%) scale(1.1)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "rgba(0, 0, 0, 0.4)";
-                    e.currentTarget.style.transform =
-                      "translateY(-50%) scale(1)";
                   }}
                   aria-label="Previous image"
                 >
@@ -273,7 +269,7 @@ const ImageGallery = memo(function ImageGallery({
                     e.stopPropagation();
                     nextImage();
                   }}
-                  className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-all duration-200 shadow-xl"
+                  className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 text-white rounded-full p-3 sm:p-4 transition-colors duration-200 shadow-xl cursor-pointer"
                   style={{
                     background: "rgba(0, 0, 0, 0.4)",
                     backdropFilter: "blur(10px) saturate(180%)",
@@ -282,13 +278,9 @@ const ImageGallery = memo(function ImageGallery({
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)";
-                    e.currentTarget.style.transform =
-                      "translateY(-50%) scale(1.1)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "rgba(0, 0, 0, 0.4)";
-                    e.currentTarget.style.transform =
-                      "translateY(-50%) scale(1)";
                   }}
                   aria-label="Next image"
                 >

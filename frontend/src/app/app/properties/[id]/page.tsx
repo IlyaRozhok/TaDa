@@ -28,6 +28,7 @@ import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
+import { DetailsCard } from "@/shared/ui/DetailsCard";
 import toast from "react-hot-toast";
 
 type PropertyWithMedia = Property & {
@@ -671,7 +672,9 @@ export default function PropertyPublicPage() {
                   <div className="flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0">
                     <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
                     <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">Size</p>
+                      <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
+                        Size
+                      </p>
                       <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
                         {property.square_meters
                           ? `${Math.round(property.square_meters * 10.764)} sq ft`
@@ -698,7 +701,7 @@ export default function PropertyPublicPage() {
                   <div className="flex flex-col justify-start flex-1">
                     <div className="text-gray-600 text-sm mb-1">Building</div>
                     <button
-                      className="font-semibold text-2xl text-black mb-1 cursor-pointer hover:text-black/75 transition-colors text-left"
+                      className="font-semibold text-2xl text-black mb-1 cursor-pointer hover:underline transition-colors text-left"
                       onClick={() =>
                         router.push(`/app/buildings/${property.building?.id}`)
                       }
@@ -836,11 +839,11 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* What this place offers */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 border-t border-gray-200">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
           What this place offers
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
           {(() => {
             // Get amenities from property
             const allAmenities =
@@ -884,11 +887,11 @@ export default function PropertyPublicPage() {
             hiddenCount > 0 && (
               <button
                 onClick={() => setShowAllOffers(!showAllOffers)}
-                className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
+                className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
               >
                 {showAllOffers
                   ? `Show less`
-                  : `See all offers (${allAmenitiesList.length})`}
+                  : `Show more (${allAmenitiesList.length})`}
               </button>
             )
           );
@@ -903,6 +906,8 @@ export default function PropertyPublicPage() {
           buildingId={property.building.id}
           buildingName={property.building.name}
           currentPropertyId={property.id}
+          operatorId={property.operator?.id}
+          operatorName={property.operator?.full_name}
         />
       )}
 

@@ -42,6 +42,7 @@ import { Share, ChevronLeft, ChevronRight } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
+import { DetailsCard } from "@/shared/ui/DetailsCard";
 import toast from "react-hot-toast";
 
 type BuildingWithMedia = Building & {
@@ -76,6 +77,21 @@ export default function BuildingPublicPage() {
   const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllOffers, setShowAllOffers] = useState(false);
+
+  const priceStats = useMemo(() => {
+    const prices = properties
+      .map((p) => p.price)
+      .filter((price): price is number => typeof price === "number" && price > 0);
+
+    if (prices.length === 0) {
+      return { min: null as number | null, max: null as number | null };
+    }
+
+    return {
+      min: Math.min(...prices),
+      max: Math.max(...prices),
+    };
+  }, [properties]);
 
   // Scroll to top when component mounts
   useLayoutEffect(() => {
@@ -195,7 +211,9 @@ export default function BuildingPublicPage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader />
-        <PropertyDetailSkeleton />
+        <div className="pt-16 sm:pt-20">
+          <PropertyDetailSkeleton />
+        </div>
       </div>
     );
   }
@@ -204,7 +222,7 @@ export default function BuildingPublicPage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader />
-        <div className="max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-2 py-2">
+        <div className="max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-2 pt-16 sm:pt-20 pb-2">
           <div className="text-center py-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Building not found
@@ -226,7 +244,7 @@ export default function BuildingPublicPage() {
       <TenantUniversalHeader />
 
       {/* Building Header */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-6 sm:pb-8">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
@@ -248,6 +266,48 @@ export default function BuildingPublicPage() {
               <Share className="w-1.25 h-1.25" />
             </Button>
           </div>
+        </div>
+
+        {/* Details summary (top block like property page) */}
+        <div className="mt-4 sm:mt-6">
+          <DetailsCard
+            title="Details"
+            titleSize="compact"
+            showDividers={true}
+            align="center"
+            gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+            items={[
+              {
+                label: "Price from",
+                value:
+                  priceStats.min !== null
+                    ? `£${priceStats.min.toLocaleString()} pcm`
+                    : "N/A",
+              },
+              {
+                label: "Property type",
+                value: building.type_of_unit?.length
+                  ? building.type_of_unit.join(", ")
+                  : "N/A",
+              },
+              {
+                label: "Units",
+                value: building.number_of_units
+                  ? building.number_of_units.toLocaleString()
+                  : "N/A",
+              },
+              {
+                label: "Amenities",
+                value: building.amenities?.length
+                  ? `${building.amenities.length} items`
+                  : "N/A",
+              },
+              {
+                label: "Listed",
+                value: properties.length ? `${properties.length} items` : "N/A",
+              },
+            ]}
+          />
         </div>
       </div>
 
@@ -461,14 +521,9 @@ export default function BuildingPublicPage() {
                       Minimum (£/Month)
                     </p>
                     <p className="text-sm font-medium text-black">
-                      {(() => {
-                        const pricesWithValues = properties
-                          .filter((p) => p.price && p.price > 0)
-                          .map((p) => p.price!);
-                        return pricesWithValues.length > 0
-                          ? Math.min(...pricesWithValues).toLocaleString()
-                          : "N/A";
-                      })()}
+                      {priceStats.min !== null
+                        ? priceStats.min.toLocaleString()
+                        : "N/A"}
                     </p>
                   </div>
                   <div>
@@ -476,14 +531,9 @@ export default function BuildingPublicPage() {
                       Maximum (£/Month)
                     </p>
                     <p className="text-sm font-medium text-black">
-                      {(() => {
-                        const pricesWithValues = properties
-                          .filter((p) => p.price && p.price > 0)
-                          .map((p) => p.price!);
-                        return pricesWithValues.length > 0
-                          ? Math.max(...pricesWithValues).toLocaleString()
-                          : "N/A";
-                      })()}
+                      {priceStats.max !== null
+                        ? priceStats.max.toLocaleString()
+                        : "N/A"}
                     </p>
                   </div>
                 </div>

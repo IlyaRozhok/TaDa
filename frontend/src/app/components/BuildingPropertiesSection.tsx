@@ -11,12 +11,16 @@ interface BuildingPropertiesSectionProps {
   buildingId: string;
   buildingName: string;
   currentPropertyId: string;
+  operatorId?: string;
+  operatorName?: string;
 }
 
 const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   buildingId,
   buildingName,
   currentPropertyId,
+  operatorId,
+  operatorName,
 }) => {
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -25,7 +29,9 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   useEffect(() => {
     const fetchBuildingProperties = async () => {
       try {
-        const response = await propertiesAPI.getAllPublic({ building_id: buildingId });
+        const response = await propertiesAPI.getAllPublic({
+          building_id: buildingId,
+        });
 
         // Handle API response format
         let allProperties = [];
@@ -52,16 +58,49 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
     }
   }, [buildingId, currentPropertyId]);
 
+  const getBuildingInitials = () => {
+    if (!buildingName) return "";
+    const words = buildingName.trim().split(/\s+/);
+    const initials = words
+      .slice(0, 3)
+      .map((word) => word[0]?.toUpperCase() || "");
+    return initials.join("");
+  };
+
   if (loading) {
     return (
       <section className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="mb-6">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-            More apartments from {buildingName}
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600">
-            Discover other available properties in this building
-          </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+              <span className="text-center leading-tight">
+                {getBuildingInitials()}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Property owner</p>
+              <button
+                type="button"
+                onClick={() => router.push(`/app/buildings/${buildingId}`)}
+                className="text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+              >
+                {buildingName}
+              </button>
+              {operatorName && (
+                <p className="text-sm text-gray-500">{operatorName}</p>
+              )}
+            </div>
+          </div>
+          <button
+            className="text-black text-sm underline hover:text-gray-600 font-medium"
+            onClick={() =>
+              operatorId
+                ? router.push(`/app/operators/${operatorId}`)
+                : router.push(`/app/buildings/${buildingId}`)
+            }
+          >
+            See more apartment from this owner
+          </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
@@ -78,13 +117,37 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
 
   return (
     <section className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-          More apartments from {buildingName}
-        </h2>
-        <p className="text-sm sm:text-base text-gray-600">
-          Discover other available properties in this building
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+            <span className="text-center leading-tight">
+              {getBuildingInitials()}
+            </span>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Property owner</p>
+            <button
+              type="button"
+              onClick={() => router.push(`/app/buildings/${buildingId}`)}
+              className="text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+            >
+              {buildingName}
+            </button>
+            {operatorName && (
+              <p className="text-sm text-gray-500">{operatorName}</p>
+            )}
+          </div>
+        </div>
+        <button
+          className="text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium"
+          onClick={() =>
+            operatorId
+              ? router.push(`/app/operators/${operatorId}`)
+              : router.push(`/app/buildings/${buildingId}`)
+          }
+        >
+          See more apartment from this owner
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -99,18 +162,8 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
           />
         ))}
       </div>
-
-      <div className="mt-6 text-center">
-        <button
-          onClick={() => router.push(`/app/buildings/${buildingId}`)}
-          className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
-        >
-          View all properties in {buildingName}
-        </button>
-      </div>
     </section>
   );
 };
 
 export default BuildingPropertiesSection;
-
