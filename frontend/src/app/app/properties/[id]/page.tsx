@@ -218,7 +218,12 @@ export default function PropertyPublicPage() {
   // Load match score for authenticated users
   useEffect(() => {
     const fetchMatchScore = async () => {
-      if (!id || !isAuthenticated || !user || user.role !== "tenant") {
+      if (
+        !id ||
+        !isAuthenticated ||
+        !user ||
+        (user.role !== "tenant" && user.role !== "admin")
+      ) {
         setMatchScore(null);
         return;
       }
@@ -492,7 +497,9 @@ export default function PropertyPublicPage() {
                   />
 
                   {/* Match indicator - same style as app/units */}
-                  {isAuthenticated && user?.role === "tenant" && (
+              {isAuthenticated &&
+                user &&
+                (user.role === "tenant" || user.role === "admin") && (
                     <div
                       className="absolute top-4 left-4 z-30"
                       onMouseEnter={() => setShowMatchTooltip(true)}
@@ -519,10 +526,11 @@ export default function PropertyPublicPage() {
                 </div>
 
                 {/* Match Tooltip - positioned outside overflow-hidden container */}
-                {isAuthenticated &&
-                  user?.role === "tenant" &&
-                  matchScore !== null &&
-                  showMatchTooltip && (
+            {isAuthenticated &&
+              user &&
+              (user.role === "tenant" || user.role === "admin") &&
+              matchScore !== null &&
+              showMatchTooltip && (
                     <div className="absolute top-[72px] left-4 w-80 bg-black/60 backdrop-blur-[3px] text-white rounded-lg p-4 shadow-xl z-[9999] pointer-events-none">
                       {/* Arrow */}
                       <div className="absolute -top-2 left-6">
