@@ -45,6 +45,7 @@ import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import toast from "react-hot-toast";
 import Footer from "../../../components/Footer";
+import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
 
 type BuildingWithMedia = Building & {
   media?: Array<{
@@ -95,6 +96,12 @@ export default function BuildingPublicPage() {
       max: Math.max(...prices),
     };
   }, [properties]);
+
+  const displayedPropertyIds = useMemo(
+    () => properties.slice(0, 3).map((p) => p.id),
+    [properties],
+  );
+  const { matchByPropertyId } = usePropertyMatches(displayedPropertyIds);
 
   // Fetch building data
   useEffect(() => {
@@ -416,15 +423,19 @@ export default function BuildingPublicPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-1.5">
-                  {properties.slice(0, 3).map((property) => (
-                    <EnhancedPropertyCard
-                      key={property.id}
-                      property={property}
-                      matchScore={0}
-                      onClick={() => handlePropertyClick(property.id)}
-                      showShortlist={true}
-                    />
-                  ))}
+                  {properties.slice(0, 3).map((property) => {
+                    const match = matchByPropertyId[property.id];
+                    return (
+                      <EnhancedPropertyCard
+                        key={property.id}
+                        property={property}
+                        matchScore={match?.matchScore}
+                        matchCategories={match?.matchCategories}
+                        onClick={() => handlePropertyClick(property.id)}
+                        showShortlist={true}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </section>

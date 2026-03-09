@@ -19,6 +19,7 @@ import {
 import { AppDispatch } from "../../store/store";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
+import { usePropertyMatches } from "../../hooks/usePropertyMatches";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { Heart, ChevronDown, Map } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
@@ -155,6 +156,12 @@ export default function ShortlistPage() {
     () => sortProperties(properties, sortBy),
     [properties, sortBy],
   );
+
+  const propertyIds = useMemo(
+    () => sortedProperties.map((p) => p.id),
+    [sortedProperties],
+  );
+  const { matchByPropertyId } = usePropertyMatches(propertyIds);
 
   // Wait for session manager to initialize
   useEffect(() => {
@@ -321,6 +328,7 @@ export default function ShortlistPage() {
             loading={false}
             onPropertyClick={(property) => handlePropertyClick(property.id)}
             showShortlist={true}
+            matchByPropertyId={matchByPropertyId}
           />
         )}
 

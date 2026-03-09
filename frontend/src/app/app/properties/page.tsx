@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PropertyFilters, SortOptions, PaginationOptions } from "../../lib/api";
 import { Property } from "../../types";
@@ -8,6 +8,7 @@ import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { useFilteredProperties } from "../../hooks/useProperties";
 import { useDebounce } from "../../hooks/useDebounce";
+import { usePropertyMatches } from "../../hooks/usePropertyMatches";
 import {
   Search,
   Filter,
@@ -81,7 +82,11 @@ export default function AllPropertiesPage() {
     fetchProperties();
   }, []); // Only load once on mount
 
-  // Filtering is now handled automatically by the useFilteredProperties hook
+  const propertyIds = useMemo(
+    () => paginatedProperties.map((p) => p.id),
+    [paginatedProperties],
+  );
+  const { matchByPropertyId } = usePropertyMatches(propertyIds);
 
   const handlePropertyClick = (property: Property) => {
     router.push(`/app/properties/${property.id}`);
@@ -370,6 +375,7 @@ export default function AllPropertiesPage() {
           properties={paginatedProperties}
           loading={loading}
           onPropertyClick={handlePropertyClick}
+          matchByPropertyId={matchByPropertyId}
         />
 
         {!loading && filteredProperties.length === 0 && (

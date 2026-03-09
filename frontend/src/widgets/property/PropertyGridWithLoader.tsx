@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Property } from "@/app/types";
 import PropertyCard from "@/entities/property/ui/PropertyCard";
 import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
+import type { MatchByPropertyId } from "@/app/hooks/usePropertyMatches";
 
 interface PropertyGridWithLoaderProps {
   properties: Property[];
@@ -12,6 +13,8 @@ interface PropertyGridWithLoaderProps {
   showShortlist?: boolean;
   className?: string;
   skeletonCount?: number;
+  /** When provided (e.g. from usePropertyMatches), cards show match score/categories for tenants. */
+  matchByPropertyId?: MatchByPropertyId;
 }
 
 export default function PropertyGridWithLoader({
@@ -21,6 +24,7 @@ export default function PropertyGridWithLoader({
   showShortlist = true,
   className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
   skeletonCount = 6,
+  matchByPropertyId,
 }: PropertyGridWithLoaderProps) {
   const [imagesLoaded, setImagesLoaded] = useState<{ [key: string]: boolean }>(
     {}
@@ -93,16 +97,21 @@ export default function PropertyGridWithLoader({
 
   return (
     <div className={className}>
-      {properties.map((property) => (
-        <PropertyCard
-          key={property.id}
-          property={property}
-          onClick={() => onPropertyClick?.(property)}
-          showShortlist={showShortlist}
-          imageLoaded={allImagesLoaded || imagesLoaded[property.id] || false}
-          onImageLoad={() => handleImageLoad(property.id)}
-        />
-      ))}
+      {properties.map((property) => {
+        const match = matchByPropertyId?.[property.id];
+        return (
+          <PropertyCard
+            key={property.id}
+            property={property}
+            onClick={() => onPropertyClick?.(property)}
+            showShortlist={showShortlist}
+            imageLoaded={allImagesLoaded || imagesLoaded[property.id] || false}
+            onImageLoad={() => handleImageLoad(property.id)}
+            matchScore={match?.matchScore}
+            matchCategories={match?.matchCategories}
+          />
+        );
+      })}
     </div>
   );
 }

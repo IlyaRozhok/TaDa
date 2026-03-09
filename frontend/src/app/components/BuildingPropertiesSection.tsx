@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { propertiesAPI } from "../lib/api";
 import { Property } from "../types";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import { usePropertyMatches } from "../hooks/usePropertyMatches";
 
 interface BuildingPropertiesSectionProps {
   buildingId: string;
@@ -25,6 +26,9 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const propertyIds = useMemo(() => properties.map((p) => p.id), [properties]);
+  const { matchByPropertyId } = usePropertyMatches(propertyIds);
 
   useEffect(() => {
     const fetchBuildingProperties = async () => {
@@ -151,16 +155,20 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {properties.map((property) => (
-          <EnhancedPropertyCard
-            key={property.id}
-            property={property}
-            matchScore={undefined}
-            onClick={() => router.push(`/app/properties/${property.id}`)}
-            showShortlist={true}
-            showShortlistForAllRoles={false}
-          />
-        ))}
+        {properties.map((property) => {
+          const match = matchByPropertyId[property.id];
+          return (
+            <EnhancedPropertyCard
+              key={property.id}
+              property={property}
+              matchScore={match?.matchScore}
+              matchCategories={match?.matchCategories}
+              onClick={() => router.push(`/app/properties/${property.id}`)}
+              showShortlist={true}
+              showShortlistForAllRoles={false}
+            />
+          );
+        })}
       </div>
     </section>
   );
