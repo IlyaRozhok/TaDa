@@ -497,40 +497,40 @@ export default function PropertyPublicPage() {
                   />
 
                   {/* Match indicator - same style as app/units */}
-              {isAuthenticated &&
-                user &&
-                (user.role === "tenant" || user.role === "admin") && (
-                    <div
-                      className="absolute top-4 left-4 z-30"
-                      onMouseEnter={() => setShowMatchTooltip(true)}
-                      onMouseLeave={() => setShowMatchTooltip(false)}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {matchLoading ? (
-                        <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
-                          <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                  {isAuthenticated &&
+                    user &&
+                    (user.role === "tenant" || user.role === "admin") && (
+                      <div
+                        className="absolute top-4 left-4 z-30"
+                        onMouseEnter={() => setShowMatchTooltip(true)}
+                        onMouseLeave={() => setShowMatchTooltip(false)}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {matchLoading ? (
+                          <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
+                            <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                            Loading...
                           </div>
-                          Loading...
-                        </div>
-                      ) : matchScore !== null ? (
-                        <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
-                          <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                        ) : matchScore !== null ? (
+                          <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
+                            <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                            {Math.round(matchScore)}% Match
                           </div>
-                          {Math.round(matchScore)}% Match
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
+                        ) : null}
+                      </div>
+                    )}
                 </div>
 
                 {/* Match Tooltip - positioned outside overflow-hidden container */}
-            {isAuthenticated &&
-              user &&
-              (user.role === "tenant" || user.role === "admin") &&
-              matchScore !== null &&
-              showMatchTooltip && (
+                {isAuthenticated &&
+                  user &&
+                  (user.role === "tenant" || user.role === "admin") &&
+                  matchScore !== null &&
+                  showMatchTooltip && (
                     <div className="absolute top-[72px] left-4 w-80 bg-black/60 backdrop-blur-[3px] text-white rounded-lg p-4 shadow-xl z-[9999] pointer-events-none">
                       {/* Arrow */}
                       <div className="absolute -top-2 left-6">
@@ -816,49 +816,83 @@ export default function PropertyPublicPage() {
 
       {/* About apartment */}
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-          About apartment
-        </h2>
-        <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
-          {(() => {
-            const description =
-              property.descriptions ||
-              property.description ||
-              "Spacious family home spread over three floors with a beautiful rear garden. Perfect for families, featuring multiple reception rooms and a modern kitchen extension.";
-            const showTruncation = needsTruncation(description);
+        <div className="w-full lg:w-2/3">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+            About apartment
+          </h2>
+          <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
+            {(() => {
+              const description =
+                property.descriptions ||
+                property.description ||
+                "Spacious family home spread over three floors with a beautiful rear garden. Perfect for families, featuring multiple reception rooms and a modern kitchen extension.";
+              const showTruncation = needsTruncation(description);
 
-            return (
-              <>
-                <div
-                  className={`${
-                    showTruncation && !showFullDescription ? "line-clamp-3" : ""
-                  } overflow-hidden`}
-                >
-                  {description}
-                </div>
-                {showTruncation && (
-                  <button
-                    onClick={() => setShowFullDescription(!showFullDescription)}
-                    className="text-black underline text-sm hover:text-black/85 font-medium mt-2"
+              return (
+                <>
+                  <div
+                    className={`${
+                      showTruncation && !showFullDescription
+                        ? "line-clamp-3"
+                        : ""
+                    } overflow-hidden`}
                   >
-                    {showFullDescription ? "Show less" : "More information"}
-                  </button>
-                )}
-              </>
-            );
-          })()}
+                    {description}
+                  </div>
+                  {showTruncation && (
+                    <button
+                      onClick={() =>
+                        setShowFullDescription(!showFullDescription)
+                      }
+                      className="text-black underline text-sm hover:text-black/85 font-medium mt-2"
+                    >
+                      {showFullDescription ? "Show less" : "More information"}
+                    </button>
+                  )}
+                </>
+              );
+            })()}
+          </div>
         </div>
       </div>
 
       {/* What this place offers */}
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-          What this place offers
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
+        <div className="w-full lg:w-2/3">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+            What this place offers
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
+            {(() => {
+              // Get amenities from property
+              const allAmenities =
+                property.amenities && property.amenities.length > 0
+                  ? property.amenities
+                  : property.lifestyle_features &&
+                      property.lifestyle_features.length > 0
+                    ? property.lifestyle_features
+                    : [];
+
+              const visibleAmenities = showAllOffers
+                ? allAmenities
+                : allAmenities.slice(0, 9);
+
+              return visibleAmenities.length > 0 ? (
+                visibleAmenities.map((amenity: string, i: number) => (
+                  <div key={i} className="flex items-center gap-2 sm:gap-3 py-2">
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-black">
+                      {formatAmenityName(amenity)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm">No amenities listed</p>
+              );
+            })()}
+          </div>
           {(() => {
-            // Get amenities from property
-            const allAmenities =
+            const allAmenitiesList =
               property.amenities && property.amenities.length > 0
                 ? property.amenities
                 : property.lifestyle_features &&
@@ -866,48 +900,22 @@ export default function PropertyPublicPage() {
                   ? property.lifestyle_features
                   : [];
 
-            const visibleAmenities = showAllOffers
-              ? allAmenities
-              : allAmenities.slice(0, 9);
+            const hiddenCount = allAmenitiesList.length - 9;
 
-            return visibleAmenities.length > 0 ? (
-              visibleAmenities.map((amenity: string, i: number) => (
-                <div key={i} className="flex items-center gap-2 sm:gap-3 py-2">
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
-                  <span className="text-sm sm:text-base text-black">
-                    {formatAmenityName(amenity)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-sm">No amenities listed</p>
+            return (
+              hiddenCount > 0 && (
+                <button
+                  onClick={() => setShowAllOffers(!showAllOffers)}
+                  className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
+                >
+                  {showAllOffers
+                    ? `Show less`
+                    : `Show more (${allAmenitiesList.length})`}
+                </button>
+              )
             );
           })()}
         </div>
-        {(() => {
-          const allAmenitiesList =
-            property.amenities && property.amenities.length > 0
-              ? property.amenities
-              : property.lifestyle_features &&
-                  property.lifestyle_features.length > 0
-                ? property.lifestyle_features
-                : [];
-
-          const hiddenCount = allAmenitiesList.length - 9;
-
-          return (
-            hiddenCount > 0 && (
-              <button
-                onClick={() => setShowAllOffers(!showAllOffers)}
-                className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
-              >
-                {showAllOffers
-                  ? `Show less`
-                  : `Show more (${allAmenitiesList.length})`}
-              </button>
-            )
-          );
-        })()}
       </div>
 
       {/* Accommodation Terms */}

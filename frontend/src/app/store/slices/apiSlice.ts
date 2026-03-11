@@ -69,6 +69,18 @@ export const apiSlice = createApi({
         params: criteria,
       }),
     }),
+    getMatchedPropertiesPaginated: builder.query<
+      any,
+      { page?: number; limit?: number; search?: string }
+    >({
+      query: ({ page = 1, limit = 12, search } = {}) => ({
+        url: "/matching/matched-properties",
+        params: { page, limit, search },
+      }),
+      providesTags: ["Property"],
+      // Keep matched properties cached a bit longer for smoother navigation
+      keepUnusedDataFor: 300,
+    }),
     getRecommendations: builder.query({
       query: () => "/matching/recommendations",
     }),
@@ -123,6 +135,7 @@ export const {
   useGetPropertyQuery,
   useCreatePropertyMutation,
   useGetMatchesQuery,
+  useGetMatchedPropertiesPaginatedQuery,
   useGetRecommendationsQuery,
   useAddToShortlistMutation,
   useRemoveFromShortlistMutation,

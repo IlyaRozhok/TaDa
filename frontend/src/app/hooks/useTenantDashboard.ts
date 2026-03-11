@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Property } from "../types";
 import {
   propertiesAPI,
@@ -8,6 +8,8 @@ import {
   CategoryMatchResult,
 } from "../lib/api";
 import { selectUser } from "../store/slices/authSlice";
+import { apiSlice } from "../store/slices/apiSlice";
+import type { AppDispatch } from "../store/store";
 import { useDebounce } from "./useDebounce";
 import { waitForSessionManager } from "../components/providers/SessionManager";
 
@@ -47,6 +49,7 @@ interface UseTenantDashboardReturn {
 
 export const useTenantDashboard = (): UseTenantDashboardReturn => {
   const user = useSelector(selectUser);
+  const dispatch = useDispatch<AppDispatch>();
 
   const [state, setState] = useState<DashboardState>({
     searchTerm: "",
@@ -112,15 +115,15 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
           return;
         }
 
-        // Use matched properties endpoint which calculates matching on backend
-        const response = await matchingAPI.getMatchedPropertiesWithPagination(
-          page,
-          12,
-          search
-        );
+        // Use matched properties endpoint via RTK Query, which provides caching
+        const responseData = await dispatch(
+          apiSlice.endpoints.getMatchedPropertiesPaginated.initiate({
+            page,
+            limit: 12,
+            search,
+          })
+        ).unwrap();
 
-        // Extract data from response
-        const responseData = response.data || response;
         const propertiesData = responseData.data || [];
         const totalCount = responseData.total || propertiesData.length;
 
@@ -187,7 +190,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
         }
       }
     },
-    []
+    [dispatch]
   );
 
   // Load user preferences
