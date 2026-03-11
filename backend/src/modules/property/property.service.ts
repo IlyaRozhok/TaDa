@@ -220,7 +220,14 @@ export class PropertyService {
     if (search) {
       const like = `%${search}%`;
       queryBuilder.andWhere(
-        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search)",
+        "(" +
+          "property.apartment_number ILIKE :search OR " +
+          "property.title ILIKE :search OR " +
+          "building.name ILIKE :search OR " +
+          "property.property_type ILIKE :search OR " +
+          "property.tenant_types::text ILIKE :search OR " +
+          "property.amenities::text ILIKE :search" +
+          ")",
         { search: like },
       );
     }

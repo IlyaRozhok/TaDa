@@ -44,9 +44,9 @@ const PreferencePropertiesSection: React.FC<
           return isDifferentProperty && isDifferentOperator;
         });
 
-        // Shuffle and take first 2
+        // Shuffle and take first 3
         const shuffled = otherProperties.sort(() => 0.5 - Math.random());
-        setProperties(shuffled.slice(0, 2));
+        setProperties(shuffled.slice(0, 3));
       } catch (error) {
         console.error("Error fetching preference properties:", error);
       } finally {
@@ -62,6 +62,7 @@ const PreferencePropertiesSection: React.FC<
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="h-6 bg-gray-200 rounded mb-6 w-64 animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <PropertyCardSkeleton />
           <PropertyCardSkeleton />
           <PropertyCardSkeleton />
         </div>

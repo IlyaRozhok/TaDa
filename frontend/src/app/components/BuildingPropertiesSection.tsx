@@ -49,7 +49,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
           return prop.id !== currentPropertyId;
         });
 
-        setProperties(buildingProperties.slice(0, 6));
+        setProperties(buildingProperties.slice(0, 3));
       } catch (error) {
         console.error("Error fetching building properties:", error);
       } finally {
@@ -107,7 +107,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
+          {Array.from({ length: 3 }).map((_, index) => (
             <PropertyCardSkeleton key={`skeleton-${index}`} />
           ))}
         </div>
