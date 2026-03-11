@@ -38,7 +38,10 @@ import {
   SlidersHorizontal,
   LayoutGrid,
 } from "lucide-react";
-import { useGetPropertiesQuery } from "../../../store/slices/apiSlice";
+import {
+  useGetPropertiesQuery,
+  useGetBookingRequestsQuery,
+} from "../../../store/slices/apiSlice";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
 
@@ -106,7 +109,6 @@ function AdminPanelContent() {
   const {
     data: propertiesQueryData,
     isLoading: isPropsQueryLoading,
-    isFetching: isPropsQueryFetching,
   } = useGetPropertiesQuery({});
 
   // Sync RTK Query data into local state used by the rest of the admin logic
@@ -118,6 +120,25 @@ function AdminPanelContent() {
       setProperties(list);
     }
   }, [propertiesQueryData]);
+
+  // Booking requests via RTK Query (5‑минутный кэш)
+  const {
+    data: bookingQueryData,
+    isLoading: isRequestsQueryLoading,
+    isFetching: isRequestsQueryFetching,
+  } = useGetBookingRequestsQuery(undefined, {
+    // Загружаем только когда открыт раздел Requests
+    skip: activeSection !== "requests",
+  });
+
+  useEffect(() => {
+    if (!bookingQueryData) return;
+    const list =
+      (bookingQueryData as any).data || bookingQueryData || [];
+    if (Array.isArray(list)) {
+      setRequests(list);
+    }
+  }, [bookingQueryData]);
 
   // Debounced search term
   // const debouncedSearchTerm = useDebounce(searchTerm, 150);
@@ -163,19 +184,12 @@ function AdminPanelContent() {
             const data = await response.json();
             setBuildings(data.data || data || []);
           }
-        } else if (activeSection === "requests") {
-          setIsLoadingRequests(true);
-          const data = await bookingRequestsAPI.list();
-          setRequests(data || []);
-          setIsLoadingRequests(false);
         }
       } catch (error) {
         console.error("Error loading data:", error);
         addNotification("error", "Failed to load data");
       } finally {
-        if (activeSection === "requests") {
-          setIsLoadingRequests(false);
-        }
+        // no-op for requests: RTK Query управляет своим loading
       }
     };
 
@@ -839,7 +853,7 @@ function AdminPanelContent() {
         return (
           <AdminRequestsSection
             requests={requests}
-            isLoading={isLoadingRequests}
+            isLoading={isRequestsQueryLoading && !requests.length}
             updatingId={updatingRequestId}
             onUpdateStatus={handleUpdateBookingStatus}
           />

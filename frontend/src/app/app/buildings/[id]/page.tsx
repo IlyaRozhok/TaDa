@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useLayoutEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 // import { useSelector, useDispatch } from "react-redux";
 import { Property } from "../../../types";
@@ -140,11 +140,6 @@ export default function BuildingPublicPage() {
     [properties],
   );
   const { matchByPropertyId } = usePropertyMatches(displayedPropertyIds);
-
-  // Force scroll to top on initial mount to avoid slight offset when navigating
-  useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-  }, []);
 
   // Get all images for gallery
   const allImages = useMemo(() => {

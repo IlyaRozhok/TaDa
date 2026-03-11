@@ -130,6 +130,14 @@ export const apiSlice = createApi({
       providesTags: ["User"],
     }),
 
+    // Booking requests (admin)
+    getBookingRequests: builder.query({
+      query: (status?: string) => ({
+        url: "/booking-requests",
+        params: status ? { status } : undefined,
+      }),
+    }),
+
     // Preferences endpoints
     getPreferences: builder.query({
       query: () => "/preferences",
@@ -171,6 +179,7 @@ export const {
   useRemoveFromShortlistMutation,
   useGetShortlistQuery,
   useGetTenantCvQuery,
+  useGetBookingRequestsQuery,
   useGetPreferencesQuery,
   useCreatePreferencesMutation,
   useUpdatePreferencesMutation,
