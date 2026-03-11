@@ -19,8 +19,8 @@ function TenantDashboardContent() {
   const { state, loadProperties, clearError, setSearchTerm } =
     useTenantDashboard();
 
-  // Loading state
-  if (!user || state.sessionLoading) {
+  // Loading state: показываем скелетоны ТОЛЬКО когда нет кэша
+  if (!user || (state.sessionLoading && !state.hydratedFromCache)) {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader

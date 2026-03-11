@@ -108,7 +108,8 @@ const ImageGallery = memo(function ImageGallery({
       {/* Main Image */}
       <div className="relative">
         <div
-          className="bg-gray-200 rounded-3xl sm:rounded-3xl overflow-hidden cursor-pointer h-80 sm:h-96 md:h-[300px] lg:h-[490px] w-full relative group"
+          className="bg-gray-200 rounded-3xl sm:rounded-3xl overflow-hidden cursor-pointer w-full relative group
+                     aspect-[16/9] sm:aspect-[16/9]"
           onClick={() => setIsModalOpen(true)}
         >
           <Image

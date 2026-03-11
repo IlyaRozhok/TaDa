@@ -280,59 +280,63 @@ export default function BuildingPublicPage() {
       {/* Main content: gallery + details */}
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 sm:gap-8">
-          {/* Gallery */}
+          {/* Gallery — centered, responsive width */}
           {allImages.length > 0 && (
-            <div className="mb-4 sm:mb-6">
-              <ImageGallery
-                media={building.media || []}
-                images={allImages}
-                alt={building.name || "Building"}
-              />
+            <div className="mb-4 sm:mb-6 flex justify-center">
+              <div className="w-full max-w-7xl">
+                <ImageGallery
+                  media={building.media || []}
+                  images={allImages}
+                  alt={building.name || "Building"}
+                />
+              </div>
             </div>
           )}
 
-          {/* Details summary under gallery */}
-          <div className="w-full">
-            <DetailsCard
-              title="Details"
-              titleSize="compact"
-              showDividers={true}
-              align="center"
-              gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
-              items={[
-                {
-                  label: "Price from",
-                  value:
-                    priceStats.min !== null
-                      ? `£${priceStats.min.toLocaleString()} pcm`
+          {/* Details summary under gallery, centered like on property */}
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-7xl">
+              <DetailsCard
+                title="Details"
+                titleSize="compact"
+                showDividers={true}
+                align="center"
+                gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+                items={[
+                  {
+                    label: "Price from",
+                    value:
+                      priceStats.min !== null
+                        ? `£${priceStats.min.toLocaleString()} pcm`
+                        : "N/A",
+                  },
+                  {
+                    label: "Property type",
+                    value: building.type_of_unit?.length
+                      ? building.type_of_unit.join(", ")
                       : "N/A",
-                },
-                {
-                  label: "Property type",
-                  value: building.type_of_unit?.length
-                    ? building.type_of_unit.join(", ")
-                    : "N/A",
-                },
-                {
-                  label: "Units",
-                  value: building.number_of_units
-                    ? building.number_of_units.toLocaleString()
-                    : "N/A",
-                },
-                {
-                  label: "Amenities",
-                  value: building.amenities?.length
-                    ? `${building.amenities.length} items`
-                    : "N/A",
-                },
-                {
-                  label: "Listed",
-                  value: properties.length
-                    ? `${properties.length} items`
-                    : "N/A",
-                },
-              ]}
-            />
+                  },
+                  {
+                    label: "Units",
+                    value: building.number_of_units
+                      ? building.number_of_units.toLocaleString()
+                      : "N/A",
+                  },
+                  {
+                    label: "Amenities",
+                    value: building.amenities?.length
+                      ? `${building.amenities.length} items`
+                      : "N/A",
+                  },
+                  {
+                    label: "Listed",
+                    value: properties.length
+                      ? `${properties.length} items`
+                      : "N/A",
+                  },
+                ]}
+              />
+            </div>
           </div>
 
           {/* About building */}

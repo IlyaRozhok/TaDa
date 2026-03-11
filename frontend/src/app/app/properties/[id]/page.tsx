@@ -4,13 +4,11 @@ import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  propertiesAPI,
-  Property,
   matchingAPI,
   bookingRequestsAPI,
   CategoryMatchResult,
 } from "../../../lib/api";
-import { PropertyMedia } from "../../../types";
+import type { Property, PropertyMedia } from "../../../types";
 import {
   addToShortlist,
   removeFromShortlist,
@@ -21,6 +19,7 @@ import {
   selectUser,
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
+import { useGetPublicPropertyQuery } from "../../../store/slices/apiSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Heart, Share, Check, X } from "lucide-react";
@@ -61,9 +60,6 @@ export default function PropertyPublicPage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const shortlistProperties = useSelector(selectShortlistProperties);
-
-  const [property, setProperty] = useState<PropertyWithMedia | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInShortlist, setIsInShortlist] = useState(false);
   const [shortlistLoading, setShortlistLoading] = useState(false);
@@ -140,47 +136,49 @@ export default function PropertyPublicPage() {
     };
   }, []);
 
+  // Load property via RTK Query (with cache across navigations)
+  const {
+    data: propertyData,
+    isLoading,
+    isFetching,
+    error: queryError,
+  } = useGetPublicPropertyQuery(id as string, {
+    skip: !id,
+  });
+
+  // Normalize property data directly from RTK Query (no промежуточного null-состояния)
+  const property: PropertyWithMedia | null = useMemo(() => {
+    if (!propertyData) return null;
+    const normalized = (propertyData as any).data || propertyData;
+    return normalized as PropertyWithMedia;
+  }, [propertyData]);
+
+  // Handle errors (including 429) from RTK Query
   useEffect(() => {
-    const fetchProperty = async () => {
-      if (!id) {
-        setError("Property ID is missing");
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await propertiesAPI.getByIdPublic(id as string);
+    if (!queryError) return;
 
-        // Extract data from response (might be response.data or direct response)
-        const propertyData = response.data || response;
+    // RTK Query error can be FetchBaseQueryError | SerializedError
+    const err = queryError as any;
+    const status =
+      typeof err?.status === "number"
+        ? err.status
+        : err?.data?.statusCode ?? err?.originalStatus;
+    const message =
+      err?.data?.message ||
+      err?.error ||
+      (typeof err?.message === "string" ? err.message : undefined);
 
-        if (propertyData) {
-          setProperty(propertyData);
-        } else {
-          setError("No property data received from server");
-        }
-      } catch (err: unknown) {
-        const e = err as {
-          response?: { status?: number };
-          status?: number;
-          message?: string;
-        };
-        const status = e?.response?.status ?? e?.status;
-        const is429 =
-          status === 429 || (e?.message && String(e.message).includes("429"));
-        if (is429) {
-          toast.error("Too many requests. Please try again later.");
-          setRedirecting429(true);
-          return;
-        }
-        setError((err as Error)?.message || "Failed to load property details");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProperty();
-  }, [id]);
+    const is429 =
+      status === 429 || (message && String(message).includes("429"));
+
+    if (is429) {
+      toast.error("Too many requests. Please try again later.");
+      setRedirecting429(true);
+      return;
+    }
+
+    setError(message || "Failed to load property details");
+  }, [queryError]);
 
   // Redirect to properties list when rate-limited (429), after showing toast
   useEffect(() => {
@@ -370,7 +368,9 @@ export default function PropertyPublicPage() {
     }
   };
 
-  if (loading || redirecting429) {
+  // Skeleton: показываем только при первом загрузочном запросе (isLoading)
+  // При возврате назад из кэша будет isFetching, но isLoading=false — скелетон не показываем.
+  if ((isLoading && !property) || redirecting429) {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader showPreferencesButton={true} />
@@ -403,7 +403,12 @@ export default function PropertyPublicPage() {
     );
   }
 
-  if (!property) {
+  // "Not found" состояние показываем только когда:
+  // - нет локального property
+  // - нет данных из RTK Query
+  // - запрос не в процессе (isLoading/isFetching)
+  // иначе возможен мерцание (например, при возврате из кэша).
+  if (!property && !propertyData && !isLoading && !isFetching) {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader showPreferencesButton={true} />
@@ -428,7 +433,7 @@ export default function PropertyPublicPage() {
     );
   }
 
-  const publishDate = new Date(property.created_at || Date.now());
+  const publishDate = new Date(property?.created_at || Date.now());
 
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: "auto" }}>

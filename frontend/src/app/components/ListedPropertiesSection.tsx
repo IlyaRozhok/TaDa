@@ -42,6 +42,8 @@ interface ListedPropertiesSectionProps {
   onPageChange?: (page: number) => void;
   /** When true, shortlist heart is shown on cards for any role (e.g. admin on units page). */
   showShortlistForAllRoles?: boolean;
+  /** When true, image-level skeletons are disabled (useful when hydrating from cache on back nav). */
+  disableImageSkeleton?: boolean;
 }
 
 type SortOption =
@@ -262,6 +264,7 @@ export default function ListedPropertiesSection({
                   matchScore={matchScore || 0}
                   userPreferences={userPreferences}
                   matchCategories={categories}
+                  imageLoaded={true}
                   onClick={() => handlePropertyClick(property.id)}
                   showShortlist={true}
                   showShortlistForAllRoles={showShortlistForAllRoles}

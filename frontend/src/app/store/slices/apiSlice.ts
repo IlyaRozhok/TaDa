@@ -53,6 +53,10 @@ export const apiSlice = createApi({
       query: (id) => `/properties/${id}`,
       providesTags: ["Property"],
     }),
+    getPublicProperty: builder.query({
+      query: (id) => `/properties/public/${id}`,
+      providesTags: ["Property"],
+    }),
     createProperty: builder.mutation({
       query: (formData) => ({
         url: "/properties",
@@ -133,6 +137,7 @@ export const {
   useGetProfileQuery,
   useGetPropertiesQuery,
   useGetPropertyQuery,
+  useGetPublicPropertyQuery,
   useCreatePropertyMutation,
   useGetMatchesQuery,
   useGetMatchedPropertiesPaginatedQuery,

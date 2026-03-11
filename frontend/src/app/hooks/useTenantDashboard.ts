@@ -36,6 +36,8 @@ interface DashboardState {
   currentPage: number;
   totalPages: number;
   isSearchTriggered: boolean;
+  /** True when first render of this hook was hydrated from RTK Query cache (used to skip UI loaders on back nav). */
+  hydratedFromCache: boolean;
 }
 
 interface UseTenantDashboardReturn {
@@ -103,6 +105,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       currentPage: 1,
       totalPages,
       isSearchTriggered: false,
+      hydratedFromCache: !!cachedData,
     };
   });
 
