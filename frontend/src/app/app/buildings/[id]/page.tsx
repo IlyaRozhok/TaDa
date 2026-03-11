@@ -246,7 +246,7 @@ export default function BuildingPublicPage() {
       <TenantUniversalHeader />
 
       {/* Building Header */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-6 sm:pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-6 sm:pb-8">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
@@ -272,65 +272,61 @@ export default function BuildingPublicPage() {
       </div>
 
       {/* Main content: gallery + details */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 sm:gap-8">
-          {/* Gallery — centered, responsive width */}
+          {/* Gallery — same width as page container */}
           {allImages.length > 0 && (
-            <div className="mb-4 sm:mb-6 flex justify-center">
-              <div className="w-full max-w-7xl">
-                <ImageGallery
-                  media={building.media || []}
-                  images={allImages}
-                  alt={building.name || "Building"}
-                />
-              </div>
+            <div className="mb-4 sm:mb-6">
+              <ImageGallery
+                media={building.media || []}
+                images={allImages}
+                alt={building.name || "Building"}
+              />
             </div>
           )}
 
-          {/* Details summary under gallery, centered like on property */}
-          <div className="w-full flex justify-start">
-            <div className="w-full max-w-7xl">
-              <DetailsCard
-                title="Details"
-                titleSize="compact"
-                showDividers={true}
-                align="center"
-                gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
-                items={[
-                  {
-                    label: "Price from",
-                    value:
-                      priceStats.min !== null
-                        ? `£${priceStats.min.toLocaleString()} pcm`
-                        : "N/A",
-                  },
-                  {
-                    label: "Property type",
-                    value: building.type_of_unit?.length
-                      ? building.type_of_unit.join(", ")
+          {/* Details summary under gallery, same container width */}
+          <div className="w-full">
+            <DetailsCard
+              title="Details"
+              titleSize="compact"
+              showDividers={true}
+              align="center"
+              gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+              items={[
+                {
+                  label: "Price from",
+                  value:
+                    priceStats.min !== null
+                      ? `£${priceStats.min.toLocaleString()} pcm`
                       : "N/A",
-                  },
-                  {
-                    label: "Units",
-                    value: building.number_of_units
-                      ? building.number_of_units.toLocaleString()
-                      : "N/A",
-                  },
-                  {
-                    label: "Amenities",
-                    value: building.amenities?.length
-                      ? `${building.amenities.length} items`
-                      : "N/A",
-                  },
-                  {
-                    label: "Listed",
-                    value: properties.length
-                      ? `${properties.length} items`
-                      : "N/A",
-                  },
-                ]}
-              />
-            </div>
+                },
+                {
+                  label: "Property type",
+                  value: building.type_of_unit?.length
+                    ? building.type_of_unit.join(", ")
+                    : "N/A",
+                },
+                {
+                  label: "Units",
+                  value: building.number_of_units
+                    ? building.number_of_units.toLocaleString()
+                    : "N/A",
+                },
+                {
+                  label: "Amenities",
+                  value: building.amenities?.length
+                    ? `${building.amenities.length} items`
+                    : "N/A",
+                },
+                {
+                  label: "Listed",
+                  value: properties.length
+                    ? `${properties.length} items`
+                    : "N/A",
+                },
+              ]}
+            />
           </div>
 
           {/* About building */}
