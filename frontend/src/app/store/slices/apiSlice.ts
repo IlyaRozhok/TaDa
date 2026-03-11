@@ -19,7 +19,8 @@ export const apiSlice = createApi({
   refetchOnMountOrArgChange: false,
   refetchOnFocus: false,
   refetchOnReconnect: false,
-  keepUnusedDataFor: 60,
+  // Keep all server state cached for 5 minutes by default
+  keepUnusedDataFor: 300,
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation({
@@ -56,6 +57,21 @@ export const apiSlice = createApi({
     getPublicProperty: builder.query({
       query: (id) => `/properties/public/${id}`,
       providesTags: ["Property"],
+    }),
+    getPublicBuilding: builder.query({
+      query: (id) => `/buildings/public/${id}`,
+      providesTags: ["Property"],
+    }),
+    getPublicBuildingProperties: builder.query<
+      any,
+      { building_id: string }
+    >({
+      query: ({ building_id }) => ({
+        url: "/properties/public/all",
+        params: { building_id },
+      }),
+      providesTags: ["Property"],
+      keepUnusedDataFor: 300,
     }),
     createProperty: builder.mutation({
       query: (formData) => ({
@@ -107,6 +123,13 @@ export const apiSlice = createApi({
       providesTags: ["Shortlist"],
     }),
 
+    // Tenant CV (current user's CV)
+    getTenantCv: builder.query({
+      query: () => "/tenant-cv/current",
+      // Tie CV to User tag so it can be invalidated together if needed
+      providesTags: ["User"],
+    }),
+
     // Preferences endpoints
     getPreferences: builder.query({
       query: () => "/preferences",
@@ -138,6 +161,8 @@ export const {
   useGetPropertiesQuery,
   useGetPropertyQuery,
   useGetPublicPropertyQuery,
+  useGetPublicBuildingQuery,
+  useGetPublicBuildingPropertiesQuery,
   useCreatePropertyMutation,
   useGetMatchesQuery,
   useGetMatchedPropertiesPaginatedQuery,
@@ -145,6 +170,7 @@ export const {
   useAddToShortlistMutation,
   useRemoveFromShortlistMutation,
   useGetShortlistQuery,
+  useGetTenantCvQuery,
   useGetPreferencesQuery,
   useCreatePreferencesMutation,
   useUpdatePreferencesMutation,

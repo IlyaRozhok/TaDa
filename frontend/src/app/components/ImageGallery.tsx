@@ -21,6 +21,7 @@ const ImageGallery = memo(function ImageGallery({
 }: ImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMainImageLoaded, setIsMainImageLoaded] = useState(false);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const hasScrolledInitiallyRef = useRef(false);
 
@@ -119,9 +120,20 @@ const ImageGallery = memo(function ImageGallery({
             sizes="100vw"
             className="object-cover w-full h-full transition-transform duration-500"
             onError={handleImageError}
+            onLoadingComplete={() => setIsMainImageLoaded(true)}
             loading="lazy"
             quality={90}
           />
+
+          {/* Main image skeleton – показываем только пока основное изображение реально грузится */}
+          {!isMainImageLoaded && displayImages[selectedImage] !== PROPERTY_PLACEHOLDER && (
+            <div
+              className="absolute inset-0 pointer-events-none rounded-3xl sm:rounded-3xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_200%] animate-[shimmer_2s_infinite]"
+              aria-hidden
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[slideIn_1.5s_infinite]" />
+            </div>
+          )}
 
           {/* Image Counter */}
           {displayImages.length > 1 && (

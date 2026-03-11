@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useLayoutEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 // import { useSelector, useDispatch } from "react-redux";
-import { buildingsAPI, propertiesAPI } from "../../../lib/api";
 import { Property } from "../../../types";
 
 interface Building {
@@ -46,6 +45,10 @@ import { DetailsCard } from "@/shared/ui/DetailsCard";
 import toast from "react-hot-toast";
 import Footer from "../../../components/Footer";
 import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
+import {
+  useGetPublicBuildingQuery,
+  useGetPublicBuildingPropertiesQuery,
+} from "../../../store/slices/apiSlice";
 
 type BuildingWithMedia = Building & {
   media?: Array<{
@@ -69,16 +72,51 @@ export default function BuildingPublicPage() {
   const params = useParams();
   const id = params && typeof params.id === "string" ? params.id : null;
   const router = useRouter();
-  // const dispatch = useDispatch<AppDispatch>();
-  // const user = useSelector(selectUser);
-  // const isAuthenticated = useSelector(selectIsAuthenticated);
-
-  const [building, setBuilding] = useState<BuildingWithMedia | null>(null);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllOffers, setShowAllOffers] = useState(false);
+
+  // Load building via RTK Query (with cache across navigations)
+  const {
+    data: buildingData,
+    isLoading: isBuildingLoading,
+    isFetching: isBuildingFetching,
+    error: buildingError,
+  } = useGetPublicBuildingQuery(id as string, {
+    skip: !id,
+  });
+
+  const building: BuildingWithMedia | null = useMemo(() => {
+    if (!buildingData) return null;
+    const normalized = (buildingData as any).data || buildingData;
+    return normalized as BuildingWithMedia;
+  }, [buildingData]);
+
+  // Load building properties via RTK Query (also cached)
+  const {
+    data: propertiesData,
+    isLoading: isPropsLoading,
+    isFetching: isPropsFetching,
+  } = useGetPublicBuildingPropertiesQuery(
+    { building_id: id as string },
+    { skip: !id },
+  );
+
+  const properties: Property[] = useMemo(() => {
+    if (!propertiesData) return [];
+    const raw = (propertiesData as any).data || propertiesData;
+    return Array.isArray(raw) ? (raw as Property[]) : [];
+  }, [propertiesData]);
+
+  // Derive error from RTK Query
+  useEffect(() => {
+    if (!buildingError) return;
+    const err = buildingError as any;
+    const message =
+      err?.data?.message ||
+      err?.error ||
+      (typeof err?.message === "string" ? err.message : undefined);
+    setError(message || "Failed to load building");
+  }, [buildingError]);
 
   const priceStats = useMemo(() => {
     const prices = properties
@@ -103,51 +141,10 @@ export default function BuildingPublicPage() {
   );
   const { matchByPropertyId } = usePropertyMatches(displayedPropertyIds);
 
-  // Fetch building data
-  useEffect(() => {
-    const fetchBuilding = async () => {
-      if (!id || typeof id !== "string") {
-        setError("Invalid building ID");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await buildingsAPI.getByIdPublic(id);
-        setBuilding(response.data || response);
-      } catch (err: any) {
-        console.error("Error fetching building:", err);
-        setError(err.message || "Failed to load building");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBuilding();
-  }, [id]);
-
-  // Fetch building properties
-  useEffect(() => {
-    const fetchProperties = async () => {
-      if (!id || typeof id !== "string") return;
-
-      try {
-        setPropertiesLoading(true);
-        const response = await propertiesAPI.getAllPublic({ building_id: id });
-        const propertiesData = response.data?.data || response.data || [];
-        setProperties(Array.isArray(propertiesData) ? propertiesData : []);
-      } catch (err: any) {
-        console.error("Error fetching building properties:", err);
-      } finally {
-        setPropertiesLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, [id]);
+  // Force scroll to top on initial mount to avoid slight offset when navigating
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
 
   // Get all images for gallery
   const allImages = useMemo(() => {
@@ -212,7 +209,9 @@ export default function BuildingPublicPage() {
     router.push(`/app/properties/${propertyId}`);
   };
 
-  if (loading) {
+  // Основной скелетон показываем только на самом первом запросе,
+  // когда нет ни building, ни данных из кэша.
+  if ((isBuildingLoading && !building) || (isBuildingFetching && !building)) {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader />
@@ -224,7 +223,8 @@ export default function BuildingPublicPage() {
     );
   }
 
-  if (error || !building) {
+  // "not found" / ошибка — только когда нет building и запрос не в процессе
+  if ((error || !building) && !isBuildingLoading && !isBuildingFetching) {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader />
@@ -274,7 +274,6 @@ export default function BuildingPublicPage() {
             </Button>
           </div>
         </div>
-
       </div>
 
       {/* Main content: gallery + details */}
@@ -294,7 +293,7 @@ export default function BuildingPublicPage() {
           )}
 
           {/* Details summary under gallery, centered like on property */}
-          <div className="w-full flex justify-center">
+          <div className="w-full flex justify-start">
             <div className="w-full max-w-7xl">
               <DetailsCard
                 title="Details"
@@ -419,7 +418,7 @@ export default function BuildingPublicPage() {
                 )}
               </div>
 
-              {propertiesLoading ? (
+              {isPropsLoading && !properties.length ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-1.5">
                   {Array.from({ length: 3 }).map((_, index) => (
                     <div

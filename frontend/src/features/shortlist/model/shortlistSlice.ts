@@ -18,18 +18,32 @@ const initialState: ShortlistState = {
   count: 0,
 };
 
+const SHORTLIST_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 // Async thunks
 export const fetchShortlist = createAsyncThunk(
   "shortlist/fetchShortlist",
   async (_, { rejectWithValue, getState }) => {
     try {
       // Check user role before making API call
-      const state = getState() as { auth: { user: { role?: string } | null } };
+      const state = getState() as {
+        auth: { user: { role?: string } | null };
+        shortlist: ShortlistState;
+      };
       const user = state?.auth?.user;
 
       if (!user || (user.role !== "tenant" && user.role !== "admin")) {
         console.warn("Shortlist fetch blocked: user is not a tenant or admin");
         return []; // Return empty array for non-tenants/non-admins
+      }
+
+      // Client-side cache: if мы уже грузили shortlist < 5 минут назад, просто вернём существующие данные
+      if (
+        state.shortlist.lastFetch &&
+        Date.now() - state.shortlist.lastFetch < SHORTLIST_CACHE_TTL_MS &&
+        state.shortlist.properties.length > 0
+      ) {
+        return state.shortlist.properties;
       }
 
       const data = await shortlistAPI.getAll();
@@ -157,6 +171,14 @@ const shortlistSlice = createSlice({
     // Fetch shortlist
     builder
       .addCase(fetchShortlist.pending, (state) => {
+        // Если кэш ещё свежий, не включаем лоадер, чтобы не мигал спиннер при возврате на страницу
+        if (
+          state.lastFetch &&
+          Date.now() - state.lastFetch < SHORTLIST_CACHE_TTL_MS &&
+          state.properties.length > 0
+        ) {
+          return;
+        }
         state.loading = true;
         state.error = null;
       })

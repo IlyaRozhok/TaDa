@@ -23,11 +23,7 @@ import EditBuildingModal from "../../../components/EditBuildingModal";
 import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
 import { Copy, Check, X } from "lucide-react";
-import {
-  bookingRequestsAPI,
-  buildingsAPI,
-  propertiesAPI,
-} from "../../../lib/api";
+import { bookingRequestsAPI, buildingsAPI, propertiesAPI } from "../../../lib/api";
 import { Property } from "../../../types/property";
 import {
   BookingRequest,
@@ -42,6 +38,7 @@ import {
   SlidersHorizontal,
   LayoutGrid,
 } from "lucide-react";
+import { useGetPropertiesQuery } from "../../../store/slices/apiSlice";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
 
@@ -105,6 +102,23 @@ function AdminPanelContent() {
     null,
   );
 
+  // Admin properties list via RTK Query (with 5-minute cache)
+  const {
+    data: propertiesQueryData,
+    isLoading: isPropsQueryLoading,
+    isFetching: isPropsQueryFetching,
+  } = useGetPropertiesQuery({});
+
+  // Sync RTK Query data into local state used by the rest of the admin logic
+  useEffect(() => {
+    if (!propertiesQueryData) return;
+    const list =
+      (propertiesQueryData as any).data || propertiesQueryData || [];
+    if (Array.isArray(list)) {
+      setProperties(list);
+    }
+  }, [propertiesQueryData]);
+
   // Debounced search term
   // const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
@@ -148,23 +162,6 @@ function AdminPanelContent() {
           if (response.ok) {
             const data = await response.json();
             setBuildings(data.data || data || []);
-          }
-        } else if (activeSection === "properties") {
-          const response = await fetch(`${apiUrl}/properties`, { headers });
-          if (response.ok) {
-            const data = await response.json();
-            const propertiesList = data.data || data || [];
-            console.log("📋 Загружены properties:", {
-              count: propertiesList.length,
-              firstProperty: propertiesList[0]
-                ? {
-                    id: propertiesList[0].id,
-                    video: propertiesList[0].video,
-                    videoType: typeof propertiesList[0].video,
-                  }
-                : null,
-            });
-            setProperties(propertiesList);
           }
         } else if (activeSection === "requests") {
           setIsLoadingRequests(true);
@@ -823,7 +820,7 @@ function AdminPanelContent() {
             properties={properties}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            searchLoading={false}
+            searchLoading={isPropsQueryLoading && !properties.length}
             sort={sort}
             setSort={setSort}
             onView={handleView}
