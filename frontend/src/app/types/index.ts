@@ -72,6 +72,9 @@ export interface PropertyMedia {
   id: string;
   property_id: string;
   url: string;
+  /** Optional optimized URLs for different sizes (if backend provides them) */
+  thumbnail_url?: string;
+  medium_url?: string;
   s3_url?: string;
   type: "image" | "video";
   mime_type: string;

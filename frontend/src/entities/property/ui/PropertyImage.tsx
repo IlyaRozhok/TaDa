@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import FeaturedBadge from "@/shared/ui/Badge/FeaturedBadge";
-import { Property } from "@/app/types";
+import { Property, PropertyMedia } from "@/app/types";
 import { PROPERTY_PLACEHOLDER } from "@/app/utils/placeholders";
 
 interface PropertyImageProps {
@@ -33,10 +33,18 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
   const badgeRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const getOptimizedMediaUrl = (media: PropertyMedia) => {
+    // Prefer backend-provided thumbnails/mediums when available
+    if (media.thumbnail_url) return media.thumbnail_url;
+    if (media.medium_url) return media.medium_url;
+    // Fallback to main URL (current behaviour)
+    return media.url;
+  };
+
   const getMainImage = () => {
     if (property.media && property.media.length > 0) {
       const featuredImage = property.media?.[0];
-      return featuredImage ? featuredImage.url : property.media[0].url;
+      return featuredImage ? getOptimizedMediaUrl(featuredImage) : getOptimizedMediaUrl(property.media[0]);
     }
     if (property.images && property.images.length > 0) {
       return property.images[0];

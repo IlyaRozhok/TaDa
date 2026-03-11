@@ -314,8 +314,8 @@ export class MatchingService {
     if (search) {
       const searchPattern = `%${search}%`;
       queryBuilder.andWhere(
-        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search)",
-        { search: searchPattern }
+        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)",
+        { search: searchPattern },
       );
     }
 

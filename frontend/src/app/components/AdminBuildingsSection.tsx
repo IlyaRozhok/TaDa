@@ -7,6 +7,7 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 import CopyableId from "./CopyableId";
 
@@ -297,6 +298,16 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center space-x-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/app/buildings/${building.id}`, "_blank");
+                          }}
+                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                          title="Open public building page"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

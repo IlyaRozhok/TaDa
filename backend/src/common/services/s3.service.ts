@@ -191,11 +191,11 @@ export class S3Service {
   /**
    * Generate presigned URL for secure access
    * @param key - S3 object key
-   * @param expiresIn - URL expiration time in seconds (default: 1 hour)
+   * @param expiresIn - URL expiration time in seconds (default: 24 hours)
    */
   async getPresignedUrl(
     key: string,
-    expiresIn: number = 3600
+    expiresIn: number = 86400
   ): Promise<string> {
     // Check if in dev mode - return local URL
     if (this.isDevMode) {

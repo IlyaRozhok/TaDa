@@ -73,6 +73,20 @@ export class PropertyMedia {
   @Column("int", { default: 0 })
   order_index: number;
 
+  @ApiProperty({
+    description: "Optional thumbnail-sized URL (optimized for cards)",
+    required: false,
+  })
+  @Column({ nullable: true })
+  thumbnail_url?: string | null;
+
+  @ApiProperty({
+    description: "Optional medium-sized URL (optimized for galleries)",
+    required: false,
+  })
+  @Column({ nullable: true })
+  medium_url?: string | null;
+
   @ApiProperty({ description: "Media creation date" })
   @CreateDateColumn()
   created_at: Date;

@@ -9,7 +9,7 @@ import {
 } from "../lib/api";
 import { selectUser } from "../store/slices/authSlice";
 import { apiSlice } from "../store/slices/apiSlice";
-import type { AppDispatch } from "../store/store";
+import type { AppDispatch, RootState } from "../store/store";
 import { useDebounce } from "./useDebounce";
 import { waitForSessionManager } from "../components/providers/SessionManager";
 
@@ -51,22 +51,59 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
   const user = useSelector(selectUser);
   const dispatch = useDispatch<AppDispatch>();
 
-  const [state, setState] = useState<DashboardState>({
-    searchTerm: "",
-    properties: [],
-    matchedProperties: [],
-    userPreferences: null,
-    loading: false,
-    error: null,
-    totalCount: 0,
-    preferencesCount: 0,
-    preferencesFilledCount: 0,
-    sessionLoading: true,
-    preferencesLoading: true,
-    hasCompletePreferences: false,
-    currentPage: 1,
-    totalPages: 1,
-    isSearchTriggered: false,
+  // Seed initial state from RTK Query cache when available
+  const cachedInitial = useSelector((state: RootState) =>
+    apiSlice.endpoints.getMatchedPropertiesPaginated.select({
+      page: 1,
+      limit: 12,
+      search: "",
+    })(state),
+  );
+
+  const [state, setState] = useState<DashboardState>(() => {
+    const cachedData = cachedInitial?.data;
+
+    let initialMatched: MatchedProperty[] = [];
+    let totalCount = 0;
+    let totalPages = 1;
+
+    if (cachedData && Array.isArray(cachedData.data)) {
+      const propertiesData = cachedData.data;
+      totalCount = cachedData.total || propertiesData.length;
+      totalPages = cachedData.totalPages || Math.ceil(totalCount / 12);
+
+      initialMatched = propertiesData
+        .map((item: any) => ({
+          property: item.property,
+          matchScore:
+            item.matchScore ??
+            item.matchPercentage ??
+            0,
+          categories: item.categories || [],
+        }))
+        .filter(
+          (item: MatchedProperty) =>
+            item && item.property && item.property.id,
+        );
+    }
+
+    return {
+      searchTerm: "",
+      properties: initialMatched,
+      matchedProperties: initialMatched,
+      userPreferences: null,
+      loading: !cachedData, // если есть кэш – сразу без скелетона
+      error: null,
+      totalCount,
+      preferencesCount: 0,
+      preferencesFilledCount: 0,
+      sessionLoading: true,
+      preferencesLoading: true,
+      hasCompletePreferences: false,
+      currentPage: 1,
+      totalPages,
+      isSearchTriggered: false,
+    };
   });
 
   // Debounced search

@@ -275,47 +275,6 @@ export default function BuildingPublicPage() {
           </div>
         </div>
 
-        {/* Details summary (top block like property page) */}
-        <div className="mt-4 sm:mt-6">
-          <DetailsCard
-            title="Details"
-            titleSize="compact"
-            showDividers={true}
-            align="center"
-            gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
-            items={[
-              {
-                label: "Price from",
-                value:
-                  priceStats.min !== null
-                    ? `£${priceStats.min.toLocaleString()} pcm`
-                    : "N/A",
-              },
-              {
-                label: "Property type",
-                value: building.type_of_unit?.length
-                  ? building.type_of_unit.join(", ")
-                  : "N/A",
-              },
-              {
-                label: "Units",
-                value: building.number_of_units
-                  ? building.number_of_units.toLocaleString()
-                  : "N/A",
-              },
-              {
-                label: "Amenities",
-                value: building.amenities?.length
-                  ? `${building.amenities.length} items`
-                  : "N/A",
-              },
-              {
-                label: "Listed",
-                value: properties.length ? `${properties.length} items` : "N/A",
-              },
-            ]}
-          />
-        </div>
       </div>
 
       {/* Main content: gallery + details */}
@@ -332,8 +291,52 @@ export default function BuildingPublicPage() {
             </div>
           )}
 
+          {/* Details summary under gallery */}
+          <div className="w-full">
+            <DetailsCard
+              title="Details"
+              titleSize="compact"
+              showDividers={true}
+              align="center"
+              gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+              items={[
+                {
+                  label: "Price from",
+                  value:
+                    priceStats.min !== null
+                      ? `£${priceStats.min.toLocaleString()} pcm`
+                      : "N/A",
+                },
+                {
+                  label: "Property type",
+                  value: building.type_of_unit?.length
+                    ? building.type_of_unit.join(", ")
+                    : "N/A",
+                },
+                {
+                  label: "Units",
+                  value: building.number_of_units
+                    ? building.number_of_units.toLocaleString()
+                    : "N/A",
+                },
+                {
+                  label: "Amenities",
+                  value: building.amenities?.length
+                    ? `${building.amenities.length} items`
+                    : "N/A",
+                },
+                {
+                  label: "Listed",
+                  value: properties.length
+                    ? `${properties.length} items`
+                    : "N/A",
+                },
+              ]}
+            />
+          </div>
+
           {/* About building */}
-          <section className="py-4 sm:py-6">
+          <section className="py-4 sm:py-6 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
               About building
             </h2>
@@ -356,7 +359,7 @@ export default function BuildingPublicPage() {
 
           {/* What this place offers */}
           {displayedAmenities.length > 0 && (
-            <section className="py-4 sm:py-6">
+            <section className="py-4 sm:py-6 w-full">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
                 What this place offers
               </h2>
@@ -385,7 +388,7 @@ export default function BuildingPublicPage() {
 
           {/* Listed properties */}
           {properties.length > 0 && (
-            <section className="py-4 sm:py-6">
+            <section className="py-4 sm:py-6 w-full">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div>
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
@@ -442,7 +445,7 @@ export default function BuildingPublicPage() {
           )}
 
           {/* Building location */}
-          <section className="py-4 sm:py-6">
+          <section className="py-4 sm:py-6 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
               Building location
             </h2>
@@ -452,7 +455,7 @@ export default function BuildingPublicPage() {
           </section>
 
           {/* Transport and placements */}
-          <section className="py-4 sm:py-6">
+          <section className="py-4 sm:py-10 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
               Transport and placements
             </h2>
