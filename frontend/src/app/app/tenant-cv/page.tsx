@@ -20,7 +20,7 @@ export default function TenantCvPage() {
     isLoading,
     isFetching,
     error: cvQueryError,
-  } = useGetTenantCvQuery();
+  } = useGetTenantCvQuery(undefined);
 
   // Normalize and store data in local state (so existing view API не меняется)
   useEffect(() => {
