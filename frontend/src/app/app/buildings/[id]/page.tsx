@@ -337,8 +337,9 @@ export default function BuildingPublicPage() {
             <div className="text-sm sm:text-base text-black leading-relaxed">
               <p>
                 {building.name} — это{" "}
-                {building.type_of_unit?.join(", ").toLowerCase() ||
-                  "апартаменты"}{" "}
+                {building.type_of_unit && building.type_of_unit.length
+                  ? building.type_of_unit.join(", ").toLowerCase()
+                  : "апартаменты"}{" "}
                 в центре города Лондон, расположенные в {building.address}.
                 {building.number_of_units &&
                   ` В здании ${building.number_of_units} единиц.`}
