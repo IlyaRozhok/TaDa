@@ -22,12 +22,13 @@ import {
 import { useGetPublicPropertyQuery } from "../../../store/slices/apiSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
-import { Heart, Share, Check, X } from "lucide-react";
+import { Heart, Share } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
+import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
 import toast from "react-hot-toast";
 import Footer from "../../../components/Footer";
 
@@ -70,7 +71,6 @@ export default function PropertyPublicPage() {
   const [matchCategories, setMatchCategories] = useState<CategoryMatchResult[]>(
     [],
   );
-  const [showMatchTooltip, setShowMatchTooltip] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [hasBookingRequest, setHasBookingRequest] = useState(false);
   const [redirecting429, setRedirecting429] = useState(false);
@@ -501,82 +501,18 @@ export default function PropertyPublicPage() {
                     alt={property.title || "Property"}
                   />
 
-                  {/* Match indicator - same style as app/units */}
+                  {/* Match indicator - reuse same breakdown tooltip as cards */}
                   {isAuthenticated &&
                     user &&
-                    (user.role === "tenant" || user.role === "admin") && (
-                      <div
-                        className="absolute top-4 left-4 z-30"
-                        onMouseEnter={() => setShowMatchTooltip(true)}
-                        onMouseLeave={() => setShowMatchTooltip(false)}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {matchLoading ? (
-                          <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
-                            <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                              <div className="w-2 h-2 bg-white rounded-full"></div>
-                            </div>
-                            Loading...
-                          </div>
-                        ) : matchScore !== null ? (
-                          <div className="flex items-center backdrop-blur-[3px] gap-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg cursor-pointer bg-black/60 text-white">
-                            <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                              <div className="w-2 h-2 bg-white rounded-full"></div>
-                            </div>
-                            {Math.round(matchScore)}% Match
-                          </div>
-                        ) : null}
-                      </div>
+                    (user.role === "tenant" || user.role === "admin") &&
+                    !matchLoading &&
+                    matchScore !== null && (
+                      <MatchBadgeTooltip
+                        matchScore={matchScore}
+                        matchCategories={matchCategories}
+                      />
                     )}
                 </div>
-
-                {/* Match Tooltip - positioned outside overflow-hidden container */}
-                {isAuthenticated &&
-                  user &&
-                  (user.role === "tenant" || user.role === "admin") &&
-                  matchScore !== null &&
-                  showMatchTooltip && (
-                    <div className="absolute top-[72px] left-4 w-80 bg-black/60 backdrop-blur-[3px] text-white rounded-lg p-4 shadow-xl z-[9999] pointer-events-none">
-                      {/* Arrow */}
-                      <div className="absolute -top-2 left-6">
-                        <div className="w-4 h-4 bg-black/60 rotate-45"></div>
-                      </div>
-
-                      <h3 className="text-base font-semibold text-white mb-3">
-                        Why this matches?
-                      </h3>
-
-                      <div className="space-y-2">
-                        {matchCategories
-                          .filter((cat) => cat.maxScore > 0)
-                          .sort((a, b) => b.maxScore - a.maxScore)
-                          .slice(0, 6)
-                          .map((cat, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                              <div className="flex-shrink-0 mt-0.5">
-                                {cat.match ? (
-                                  <Check className="w-4 h-4 text-green-400" />
-                                ) : (
-                                  <X className="w-4 h-4 text-red-400" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-white text-xs leading-relaxed">
-                                  {cat.details || cat.reason}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-
-                      {matchCategories.filter((cat) => cat.maxScore > 0)
-                        .length === 0 && (
-                        <p className="text-gray-300 text-sm">
-                          No specific matching criteria available
-                        </p>
-                      )}
-                    </div>
-                  )}
 
                 {/* Preview carousel - 2x2 grid */}
                 {/* <div className="grid grid-cols-2 gap-2 max-w-[200px] mb-4">
