@@ -204,7 +204,6 @@ export class PreferencesService {
       pets: null,
       number_of_pets: null,
       amenities: [],
-      smoking_area: null,
       hobbies: [],
       ideal_living_environment: [],
       smoker: null,

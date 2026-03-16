@@ -135,15 +135,6 @@ export class Property {
 
   @ApiProperty({
     description:
-      "Smoking area availability (inherited from building or custom)",
-    example: false,
-    required: false,
-  })
-  @Column({ type: "boolean", nullable: true })
-  smoking_area?: boolean;
-
-  @ApiProperty({
-    description:
       "Metro stations with travel times (inherited from building or custom)",
     example: [{ label: "Oxford Circus", destination: 5 }],
     type: "json",

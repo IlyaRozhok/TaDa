@@ -62,7 +62,6 @@ export class BuildingService {
       amenities: createBuildingDto.amenities || [],
       pet_policy: createBuildingDto.pet_policy ?? false,
       pets: createBuildingDto.pets || null,
-      smoking_area: createBuildingDto.smoking_area ?? false,
       tenant_type: createBuildingDto.tenant_type || ["family"],
     };
 
@@ -173,8 +172,6 @@ export class BuildingService {
       updateData.pet_policy = updateBuildingDto.pet_policy;
     if (updateBuildingDto.pets !== undefined)
       updateData.pets = updateBuildingDto.pets;
-    if (updateBuildingDto.smoking_area !== undefined)
-      updateData.smoking_area = updateBuildingDto.smoking_area;
     if (updateBuildingDto.tenant_type !== undefined)
       updateData.tenant_type = updateBuildingDto.tenant_type;
 
@@ -209,8 +206,6 @@ export class BuildingService {
       inheritedFieldsUpdates.amenities = updateBuildingDto.amenities;
     if (updateBuildingDto.pet_policy !== undefined)
       inheritedFieldsUpdates.pet_policy = updateBuildingDto.pet_policy;
-    if (updateBuildingDto.smoking_area !== undefined)
-      inheritedFieldsUpdates.smoking_area = updateBuildingDto.smoking_area;
 
     if (Object.keys(inheritedFieldsUpdates).length > 0) {
       await this.propertyRepository

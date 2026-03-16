@@ -1245,7 +1245,7 @@ export class MatchingCalculationService {
 
   /**
    * Smoking compatibility matching (NEW)
-   * Matches user's smoking preference with property smoking_area availability
+   * Matches user's smoking preference with property context (no dedicated smoking_area flag)
    */
   private matchSmoking(
     property: Property,
@@ -1253,7 +1253,7 @@ export class MatchingCalculationService {
     maxScore: number,
   ): CategoryMatchResult {
     const smokerPref = preferences.smoker;
-    const propertySmoking = property.smoking_area;
+    const propertySmoking = false;
 
     // No preference set - exclude from calculation
     if (!smokerPref || smokerPref === "no-preference") {
@@ -1263,9 +1263,7 @@ export class MatchingCalculationService {
         score: 0,
         maxScore: 0,
         reason: "No smoking preference",
-        details: propertySmoking
-          ? "Smoking area available"
-          : "No smoking area",
+        details: "Smoking policy not specified",
         hasPreference: false,
       };
     }

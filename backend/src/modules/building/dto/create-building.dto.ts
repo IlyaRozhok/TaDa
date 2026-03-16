@@ -256,15 +256,6 @@ export class CreateBuildingDto {
   pets?: PetDto[] | null;
 
   @ApiProperty({
-    description: "Whether building has smoking area",
-    example: false,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  smoking_area?: boolean;
-
-  @ApiProperty({
     description: "Types of tenants the building is designed for",
     example: ["family", "student"],
     type: [String],

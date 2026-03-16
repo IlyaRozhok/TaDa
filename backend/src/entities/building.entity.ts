@@ -192,14 +192,6 @@ export class Building {
   pets: Pet[] | null;
 
   @ApiProperty({
-    description: "Whether building has smoking area",
-    example: false,
-    default: false,
-  })
-  @Column({ type: "boolean", default: false })
-  smoking_area: boolean;
-
-  @ApiProperty({
     description: "Types of tenants the building is designed for",
     example: ["family", "student"],
     type: [String],

@@ -17,7 +17,6 @@ export type BuildingResponse = Pick<
   | "amenities"
   | "pet_policy"
   | "pets"
-  | "smoking_area"
   | "tenant_type"
   | "operator_id"
   | "created_at"
@@ -40,7 +39,6 @@ export const toBuildingResponse = (building: Building): BuildingResponse => ({
   amenities: building.amenities || [],
   pet_policy: building.pet_policy,
   pets: building.pets,
-  smoking_area: building.smoking_area,
   tenant_type: building.tenant_type || [],
   operator_id: building.operator_id,
   created_at: building.created_at,

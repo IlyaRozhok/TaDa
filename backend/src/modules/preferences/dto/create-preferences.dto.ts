@@ -372,14 +372,6 @@ export class CreatePreferencesDto {
   @IsString({ each: true })
   amenities?: string[];
 
-  @ApiPropertyOptional({
-    description: "Whether smoking area is preferred",
-    example: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  smoking_area?: boolean;
-
   // ==================== STEP 8: HOBBIES ====================
 
   @ApiPropertyOptional({

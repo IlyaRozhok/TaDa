@@ -106,9 +106,6 @@ export const assignPropertyOptionals = (
   if (dto.pet_policy !== undefined) {
     target.pet_policy = dto.pet_policy;
   }
-  if (dto.smoking_area !== undefined) {
-    target.smoking_area = dto.smoking_area;
-  }
   if (dto.metro_stations !== undefined) {
     target.metro_stations = dto.metro_stations;
   }

@@ -191,16 +191,6 @@ export class CreatePropertyDto {
 
   @ApiProperty({
     description:
-      "Smoking area availability (inherited from building or custom)",
-    example: false,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  smoking_area?: boolean;
-
-  @ApiProperty({
-    description:
       "Metro stations with travel times (inherited from building or custom)",
     example: [{ label: "Oxford Circus", destination: 5 }],
     type: [MetroStationDto],

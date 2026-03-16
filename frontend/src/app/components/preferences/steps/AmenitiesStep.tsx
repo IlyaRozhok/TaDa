@@ -6,43 +6,27 @@ import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { PreferencesFormData } from "@/app/types/preferences";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
+import { AMENITIES_VALUES } from "@/shared/constants/amenities";
 
 interface AmenitiesStepProps {
   formData: PreferencesFormData;
   onToggle: (category: keyof PreferencesFormData, value: string) => void;
 }
 
-/** Section 1: title wizard.step7.des.text1, options des.text1–text10 (values for API unchanged). */
-const SECTION1_VALUES = [
-  "Gym",
-  "Co-working",
-  "Meeting rooms",
-  "Lounge",
-  "Cinema",
-  "Roof terrace",
-  "Courtyard",
-  "Parking",
-  "Bike storage",
-  "Parcel room",
-];
+// Section 1: title wizard.step7.des.text1, options amenities.name1–10.
+const SECTION1_VALUES = AMENITIES_VALUES.slice(0, 10);
 
-/** Section 2: title wizard.step7.des.text2, options amenities.name11–15. */
-const SECTION2_VALUES = [
-  "Maintenance",
-  "Events calendar",
-  "Pet areas",
-  "Kids' room",
-  "Garden",
-];
+// Section 2: title wizard.step7.des.text2, options amenities.name11–15.
+const SECTION2_VALUES = AMENITIES_VALUES.slice(10, 15);
 
-/** Section 3: title wizard.step7.des.text3, options amenities.name16–18. */
-const SECTION3_VALUES = ["Reading", "Music", "Art"];
+// Section 3: title wizard.step7.des.text3, options amenities.name16–18.
+const SECTION3_VALUES = AMENITIES_VALUES.slice(15, 18);
 
-/** Section 4: title wizard.step7.des.text4, options amenities.name19–20. */
-const SECTION4_VALUES = ["Hiking", "Cooking"];
+// Section 4: title wizard.step7.des.text4, options amenities.name19–20.
+const SECTION4_VALUES = AMENITIES_VALUES.slice(18, 20);
 
-/** Section 5: title wizard.step7.des.text5, options amenities.name21–22. */
-const SECTION5_VALUES = ["Travel", "Sport"];
+// Section 5: title wizard.step7.des.text5, options amenities.name21–22.
+const SECTION5_VALUES = AMENITIES_VALUES.slice(20, 22);
 
 export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
   formData,

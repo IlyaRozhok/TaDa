@@ -322,15 +322,6 @@ export class Preferences {
   @Column({ type: "jsonb", nullable: true, default: [] })
   amenities?: string[];
 
-  @ApiProperty({
-    description:
-      "Whether smoking area is preferred (matches Property.smoking_area)",
-    example: false,
-    required: false,
-  })
-  @Column({ type: "boolean", nullable: true })
-  smoking_area?: boolean;
-
   // ==================== STEP 8: HOBBIES ====================
 
   @ApiProperty({

@@ -56,7 +56,6 @@ export class PropertyService {
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
       propertyData.amenities = createPropertyDto.amenities || [];
       propertyData.pet_policy = createPropertyDto.pet_policy;
-      propertyData.smoking_area = createPropertyDto.smoking_area;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
       propertyData.pets = createPropertyDto.pets || null;
     } else if (building) {
@@ -68,7 +67,6 @@ export class PropertyService {
       propertyData.tenant_types = building.tenant_type || [];
       propertyData.amenities = building.amenities || [];
       propertyData.pet_policy = building.pet_policy;
-      propertyData.smoking_area = building.smoking_area;
       propertyData.metro_stations = building.metro_stations || [];
       propertyData.pets = building.pets || null;
     } else {
@@ -80,7 +78,6 @@ export class PropertyService {
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
       propertyData.amenities = createPropertyDto.amenities || [];
       propertyData.pet_policy = createPropertyDto.pet_policy;
-      propertyData.smoking_area = createPropertyDto.smoking_area;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
       propertyData.pets = createPropertyDto.pets || null;
     }
@@ -131,7 +128,6 @@ export class PropertyService {
           updateData.tenant_types = building.tenant_type || [];
           updateData.amenities = building.amenities || [];
           updateData.pet_policy = building.pet_policy;
-          updateData.smoking_area = building.smoking_area;
           updateData.metro_stations = building.metro_stations || [];
           updateData.pets = building.pets || null;
         }
@@ -159,7 +155,6 @@ export class PropertyService {
       updateData.tenant_types = building.tenant_type || [];
       updateData.amenities = building.amenities || [];
       updateData.pet_policy = building.pet_policy;
-      updateData.smoking_area = building.smoking_area;
       updateData.metro_stations = building.metro_stations || [];
       updateData.pets = building.pets || null;
     }

@@ -1,3 +1,5 @@
+import { AMENITIES_VALUES } from "./amenities";
+
 /**
  * Shared constants for admin forms (Building and Property creation/editing)
  * These should be used instead of hardcoded arrays in components
@@ -16,41 +18,24 @@ export const TENANT_TYPE_OPTIONS = [
 // Same categories and values as preferences Step 7 (AmenitiesStep) for consistency.
 export const AMENITIES_BY_CATEGORY = [
   {
-    title: "Facilities & Workspace",
-    values: [
-      "Gym",
-      "Co-working",
-      "Meeting rooms",
-      "Lounge",
-      "Cinema",
-      "Roof terrace",
-      "Courtyard",
-      "Parking",
-      "Bike storage",
-      "Parcel room",
-    ],
+    title: "Work & Practical",
+    values: [...AMENITIES_VALUES.slice(0, 10)],
   },
   {
-    title: "Services & Community",
-    values: [
-      "Maintenance",
-      "Events calendar",
-      "Pet areas",
-      "Kids' room",
-      "Garden",
-    ],
+    title: "Services & Extras",
+    values: [...AMENITIES_VALUES.slice(10, 15)],
   },
   {
-    title: "Lifestyle & Culture",
-    values: ["Reading", "Music", "Art"],
+    title: "Safety & Access",
+    values: [...AMENITIES_VALUES.slice(15, 18)],
   },
   {
-    title: "Outdoor & Activities",
-    values: ["Hiking", "Cooking"],
+    title: "Pets",
+    values: [...AMENITIES_VALUES.slice(18, 20)],
   },
   {
-    title: "Wellbeing & Sport",
-    values: ["Travel", "Sport"],
+    title: "Family",
+    values: [...AMENITIES_VALUES.slice(20, 22)],
   },
 ] as const;
 
