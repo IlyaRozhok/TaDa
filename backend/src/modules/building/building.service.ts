@@ -60,8 +60,6 @@ export class BuildingService {
       areas: createBuildingDto.areas || [],
       districts: createBuildingDto.districts || [],
       amenities: createBuildingDto.amenities || [],
-      is_concierge: createBuildingDto.is_concierge ?? false,
-      concierge_hours: createBuildingDto.concierge_hours || null,
       pet_policy: createBuildingDto.pet_policy ?? false,
       pets: createBuildingDto.pets || null,
       smoking_area: createBuildingDto.smoking_area ?? false,
@@ -171,10 +169,6 @@ export class BuildingService {
       updateData.districts = updateBuildingDto.districts;
     if (updateBuildingDto.amenities !== undefined)
       updateData.amenities = updateBuildingDto.amenities;
-    if (updateBuildingDto.is_concierge !== undefined)
-      updateData.is_concierge = updateBuildingDto.is_concierge;
-    if (updateBuildingDto.concierge_hours !== undefined)
-      updateData.concierge_hours = updateBuildingDto.concierge_hours;
     if (updateBuildingDto.pet_policy !== undefined)
       updateData.pet_policy = updateBuildingDto.pet_policy;
     if (updateBuildingDto.pets !== undefined)
@@ -213,8 +207,6 @@ export class BuildingService {
       inheritedFieldsUpdates.tenant_types = updateBuildingDto.tenant_type;
     if (updateBuildingDto.amenities !== undefined)
       inheritedFieldsUpdates.amenities = updateBuildingDto.amenities;
-    if (updateBuildingDto.is_concierge !== undefined)
-      inheritedFieldsUpdates.is_concierge = updateBuildingDto.is_concierge;
     if (updateBuildingDto.pet_policy !== undefined)
       inheritedFieldsUpdates.pet_policy = updateBuildingDto.pet_policy;
     if (updateBuildingDto.smoking_area !== undefined)

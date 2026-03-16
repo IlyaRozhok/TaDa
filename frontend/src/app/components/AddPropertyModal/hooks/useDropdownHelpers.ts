@@ -30,8 +30,6 @@ export const useDropdownHelpers = (
     const inheritedFields = [
       "tenant_types",
       "amenities",
-      "is_concierge",
-      "concierge_hours",
       "pet_policy",
       "pets",
       "smoking_area_prop",

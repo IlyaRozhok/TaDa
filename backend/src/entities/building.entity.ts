@@ -172,22 +172,6 @@ export class Building {
   amenities: string[];
 
   @ApiProperty({
-    description: "Whether building has concierge service",
-    example: true,
-  })
-  @Column({ type: "boolean" })
-  is_concierge: boolean;
-
-  @ApiProperty({
-    description: "Concierge operating hours (if available)",
-    example: { from: 8, to: 22 },
-    required: false,
-    type: "json",
-  })
-  @Column({ type: "jsonb", nullable: true })
-  concierge_hours: ConciergeHours | null;
-
-  @ApiProperty({
     description: "Pet policy - are pets allowed",
     example: false,
     default: false,

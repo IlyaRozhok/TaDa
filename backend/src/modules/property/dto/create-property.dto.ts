@@ -147,15 +147,6 @@ export class CreatePropertyDto {
   @IsString()
   building_type?: string;
 
-  @ApiProperty({
-    description: "Whether the property is luxury",
-    example: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  luxury?: boolean;
-
   // Inherited fields from building
   @ApiProperty({
     description: "Property address (inherited from building or custom)",
@@ -188,16 +179,6 @@ export class CreatePropertyDto {
   @IsArray()
   @IsString({ each: true })
   amenities?: string[];
-
-  @ApiProperty({
-    description:
-      "Whether property has concierge (inherited from building or custom)",
-    example: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  is_concierge?: boolean;
 
   @ApiProperty({
     description: "Pet policy (inherited from building or custom)",
@@ -259,18 +240,6 @@ export class CreatePropertyDto {
 
   @ApiProperty({
     description:
-      "Concierge operating hours (inherited from building or custom)",
-    example: { from: 8, to: 22 },
-    type: ConciergeHoursDto,
-    required: false,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => ConciergeHoursDto)
-  concierge_hours?: ConciergeHoursDto;
-
-  @ApiProperty({
-    description:
       "Allowed pet types and sizes (inherited from building or custom)",
     example: [{ type: "dog", size: "small" }],
     type: [PetDto],
@@ -308,15 +277,6 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsNumber()
   square_meters?: number;
-
-  @ApiProperty({
-    description: "Has outdoor space",
-    example: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  outdoor_space?: boolean;
 
   @ApiProperty({
     description: "Has balcony",

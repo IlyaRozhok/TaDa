@@ -206,18 +206,7 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
       </div>
 
       {/* Checkboxes */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <label className="flex items-center space-x-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={formData.outdoor_space}
-            onChange={(e) =>
-              onFieldChange("outdoor_space", e.target.checked)
-            }
-            className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
-          />
-          <span className="text-sm text-white/90">Outdoor Space</span>
-        </label>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <label className="flex items-center space-x-2 cursor-pointer">
           <input
             type="checkbox"
@@ -235,15 +224,6 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
             className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
           />
           <span className="text-sm text-white/90">Terrace</span>
-        </label>
-        <label className="flex items-center space-x-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={formData.luxury}
-            onChange={(e) => onFieldChange("luxury", e.target.checked)}
-            className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
-          />
-          <span className="text-sm text-white/90">Luxury</span>
         </label>
       </div>
     </div>

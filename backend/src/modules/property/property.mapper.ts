@@ -55,9 +55,6 @@ export const assignPropertyOptionals = (
     target.square_meters = dto.square_meters;
   }
 
-  if (dto.outdoor_space !== undefined) {
-    target.outdoor_space = dto.outdoor_space;
-  }
 
   if (dto.balcony !== undefined) {
     target.balcony = dto.balcony;
@@ -95,9 +92,6 @@ export const assignPropertyOptionals = (
     target.documents = dto.documents;
   }
 
-  if (dto.luxury !== undefined) {
-    target.luxury = dto.luxury;
-  }
 
   // inherited/array fields
   if (dto.address !== undefined) {
@@ -108,9 +102,6 @@ export const assignPropertyOptionals = (
   }
   if (dto.amenities !== undefined) {
     target.amenities = dto.amenities;
-  }
-  if (dto.is_concierge !== undefined) {
-    target.is_concierge = dto.is_concierge;
   }
   if (dto.pet_policy !== undefined) {
     target.pet_policy = dto.pet_policy;
@@ -126,9 +117,6 @@ export const assignPropertyOptionals = (
   }
   if (dto.local_essentials !== undefined) {
     target.local_essentials = dto.local_essentials;
-  }
-  if (dto.concierge_hours !== undefined) {
-    target.concierge_hours = dto.concierge_hours;
   }
   if (dto.pets !== undefined) {
     target.pets = dto.pets;

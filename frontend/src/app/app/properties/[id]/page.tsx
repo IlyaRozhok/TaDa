@@ -19,7 +19,10 @@ import {
   selectUser,
   selectIsAuthenticated,
 } from "../../../store/slices/authSlice";
-import { useGetPublicPropertyQuery } from "../../../store/slices/apiSlice";
+import {
+  useGetPublicPropertyQuery,
+  useGetPublicBuildingQuery,
+} from "../../../store/slices/apiSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Heart, Share } from "lucide-react";
@@ -153,6 +156,27 @@ export default function PropertyPublicPage() {
     return normalized as PropertyWithMedia;
   }, [propertyData]);
 
+  // Load building media for gallery (append building photos after property photos)
+  const {
+    data: buildingData,
+  } = useGetPublicBuildingQuery(property?.building?.id as string, {
+    skip: !property?.building?.id,
+  });
+
+  const buildingWithMedia = useMemo(() => {
+    if (!buildingData) return null;
+    const normalized = (buildingData as any).data || buildingData;
+    return normalized as {
+      media?: Array<{
+        id: string;
+        url: string;
+        type?: "video" | "image";
+        order_index?: number;
+      }>;
+      photos?: string[];
+    };
+  }, [buildingData]);
+
   // Handle errors (including 429) from RTK Query
   useEffect(() => {
     if (!queryError) return;
@@ -275,29 +299,87 @@ export default function PropertyPublicPage() {
     setIsInShortlist(isPropertyInShortlist);
   }, [property, isAuthenticated, user, shortlistProperties]);
 
+  const buildingGalleryImages: string[] = useMemo(() => {
+    const images: string[] = [];
+
+    if (buildingWithMedia?.media && buildingWithMedia.media.length > 0) {
+      buildingWithMedia.media
+        .filter((item) => item.type === "image" || !item.type)
+        .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+        .forEach((item) => {
+          if (item.url) images.push(item.url);
+        });
+    }
+
+    if (buildingWithMedia?.photos && buildingWithMedia.photos.length > 0) {
+      buildingWithMedia.photos.forEach((photo) => {
+        if (photo && !images.includes(photo)) {
+          images.push(photo);
+        }
+      });
+    }
+
+    return images;
+  }, [buildingWithMedia]);
+
+  const propertyLegacyImages: string[] = useMemo(() => {
+    if (!property) return [];
+    return [...(property.images || []), ...(property.photos || [])];
+  }, [property]);
+
+  const combinedLegacyImages: string[] = useMemo(
+    () => [...propertyLegacyImages, ...buildingGalleryImages],
+    [propertyLegacyImages, buildingGalleryImages],
+  );
+
+  const combinedMedia: PropertyMedia[] = useMemo(() => {
+    const baseMedia = property?.media || [];
+
+    if (!buildingWithMedia?.media || buildingWithMedia.media.length === 0) {
+      return baseMedia;
+    }
+
+    const maxOrderIndex =
+      baseMedia.length > 0
+        ? Math.max(...baseMedia.map((m) => m.order_index || 0))
+        : 0;
+
+    const buildingMediaAsProperty: PropertyMedia[] = buildingWithMedia.media
+      .filter((item) => item.type === "image" || !item.type)
+      .map((item, index) => ({
+        id: item.id,
+        property_id: property?.id || "",
+        url: item.url,
+        s3_url: undefined,
+        type: "image",
+        mime_type: "",
+        original_filename: "",
+        file_size: 0,
+        order_index: (item.order_index ?? maxOrderIndex + index + 1) || 0,
+        is_featured: false,
+        created_at: "",
+        updated_at: "",
+      }));
+
+    return [...baseMedia, ...buildingMediaAsProperty];
+  }, [property?.media, property?.id, buildingWithMedia]);
+
   const allImages: string[] = useMemo(() => {
-    if (!property) {
+    if (!property && buildingGalleryImages.length === 0) {
       return [];
     }
 
-    // Use property.media for images
-    const mediaArray = property.media || [];
+    const mediaArray = combinedMedia || [];
 
     const mediaUrls = mediaArray
-      .map((m: PropertyMedia) => {
-        const url = m.url;
-        return url;
-      })
+      .map((m: PropertyMedia) => m.url)
       .filter(Boolean);
 
-    const legacy = property.images || [];
-    const photos = property.photos || [];
+    const allUrls = [...mediaUrls, ...combinedLegacyImages];
 
-    const allUrls = [...mediaUrls, ...legacy, ...photos];
-
-    // Only return real property images, no fallbacks
+    // Only return real images, no fallbacks
     return allUrls;
-  }, [property]);
+  }, [property, combinedMedia, combinedLegacyImages, buildingGalleryImages]);
 
   const handleShortlistToggle = async () => {
     if (!isAuthenticated || !user) {
@@ -493,11 +575,8 @@ export default function PropertyPublicPage() {
                 {/* Main image */}
                 <div className="relative rounded-lg sm:rounded-xl lg:rounded-2xl overflow-hidden mb-1 sm:mb-1.5 lg:mb-1">
                   <ImageGallery
-                    media={property.media || []}
-                    images={[
-                      ...(property.images || []),
-                      ...(property.photos || []),
-                    ]}
+                    media={combinedMedia}
+                    images={combinedLegacyImages}
                     alt={property.title || "Property"}
                   />
 

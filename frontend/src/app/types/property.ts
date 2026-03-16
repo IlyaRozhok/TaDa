@@ -10,7 +10,6 @@ export enum PropertyType {
 export enum BuildingType {
   ProfessionalManagement = "professional_management",
   BTR = "btr",
-  Luxury = "luxury",
   CoLiving = "co_living",
   StudentAccommodation = "student_accommodation",
   RetirementHome = "retirement_home",
@@ -90,11 +89,9 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   building_type: BuildingType;
-  luxury?: boolean;
   furnishing: Furnishing;
   let_duration: LetDuration;
   floor: number;
-  outdoor_space: boolean;
   balcony: boolean;
   terrace: boolean;
   square_meters: number;
@@ -110,8 +107,6 @@ export interface Property {
   address?: string;
   tenant_types?: string[];
   amenities?: string[];
-  is_concierge?: boolean;
-  concierge_hours?: ConciergeHours | null;
   pet_policy?: boolean;
   pets?: Pet[] | null;
   smoking_area?: boolean;

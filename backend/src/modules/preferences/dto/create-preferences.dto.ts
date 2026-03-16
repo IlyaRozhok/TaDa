@@ -255,14 +255,6 @@ export class CreatePreferencesDto {
   furnishing?: string[];
 
   @ApiPropertyOptional({
-    description: "Whether outdoor space is preferred",
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  outdoor_space?: boolean;
-
-  @ApiPropertyOptional({
     description: "Whether balcony is preferred",
     example: true,
   })
@@ -379,14 +371,6 @@ export class CreatePreferencesDto {
   @IsArray()
   @IsString({ each: true })
   amenities?: string[];
-
-  @ApiPropertyOptional({
-    description: "Whether concierge is preferred",
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  is_concierge?: boolean;
 
   @ApiPropertyOptional({
     description: "Whether smoking area is preferred",

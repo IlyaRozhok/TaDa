@@ -44,7 +44,6 @@ export class PropertyService {
     const propertyData: Partial<Property> = {
       title: createPropertyDto.title,
       photos: createPropertyDto.photos || [],
-      luxury: createPropertyDto.luxury || false,
     };
 
     // Handle building vs private landlord logic
@@ -56,11 +55,9 @@ export class PropertyService {
       propertyData.address = createPropertyDto.address;
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
       propertyData.amenities = createPropertyDto.amenities || [];
-      propertyData.is_concierge = createPropertyDto.is_concierge;
       propertyData.pet_policy = createPropertyDto.pet_policy;
       propertyData.smoking_area = createPropertyDto.smoking_area;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
-      propertyData.concierge_hours = createPropertyDto.concierge_hours || null;
       propertyData.pets = createPropertyDto.pets || null;
     } else if (building) {
       // Normal case - link to building and inherit fields
@@ -70,11 +67,9 @@ export class PropertyService {
       propertyData.address = building.address;
       propertyData.tenant_types = building.tenant_type || [];
       propertyData.amenities = building.amenities || [];
-      propertyData.is_concierge = building.is_concierge;
       propertyData.pet_policy = building.pet_policy;
       propertyData.smoking_area = building.smoking_area;
       propertyData.metro_stations = building.metro_stations || [];
-      propertyData.concierge_hours = building.concierge_hours || null;
       propertyData.pets = building.pets || null;
     } else {
       // No building provided - use authenticated user as operator
@@ -84,11 +79,9 @@ export class PropertyService {
       propertyData.address = createPropertyDto.address;
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
       propertyData.amenities = createPropertyDto.amenities || [];
-      propertyData.is_concierge = createPropertyDto.is_concierge;
       propertyData.pet_policy = createPropertyDto.pet_policy;
       propertyData.smoking_area = createPropertyDto.smoking_area;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
-      propertyData.concierge_hours = createPropertyDto.concierge_hours || null;
       propertyData.pets = createPropertyDto.pets || null;
     }
 
@@ -137,11 +130,9 @@ export class PropertyService {
           updateData.address = building.address;
           updateData.tenant_types = building.tenant_type || [];
           updateData.amenities = building.amenities || [];
-          updateData.is_concierge = building.is_concierge;
           updateData.pet_policy = building.pet_policy;
           updateData.smoking_area = building.smoking_area;
           updateData.metro_stations = building.metro_stations || [];
-          updateData.concierge_hours = building.concierge_hours || null;
           updateData.pets = building.pets || null;
         }
       }
@@ -167,11 +158,9 @@ export class PropertyService {
       updateData.address = building.address;
       updateData.tenant_types = building.tenant_type || [];
       updateData.amenities = building.amenities || [];
-      updateData.is_concierge = building.is_concierge;
       updateData.pet_policy = building.pet_policy;
       updateData.smoking_area = building.smoking_area;
       updateData.metro_stations = building.metro_stations || [];
-      updateData.concierge_hours = building.concierge_hours || null;
       updateData.pets = building.pets || null;
     }
 

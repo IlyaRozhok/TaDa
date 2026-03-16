@@ -968,7 +968,7 @@ export class MatchingCalculationService {
     const propertyAmenities = property.amenities || [];
 
     // Check outdoor space preferences
-    const wantsOutdoor = preferences.outdoor_space === true;
+    const wantsOutdoor = false;
     const wantsBalcony = preferences.balcony === true;
     const wantsTerrace = preferences.terrace === true;
     const hasOutdoorPrefs = wantsOutdoor || wantsBalcony || wantsTerrace;
@@ -1001,16 +1001,9 @@ export class MatchingCalculationService {
       matchedCount += matched.length;
     }
 
-    // Add outdoor space preferences to scoring
+    // Add outdoor space preferences to scoring (balcony/terrace only)
     if (hasOutdoorPrefs) {
       const outdoorFeatures = [];
-      if (wantsOutdoor) {
-        totalRequested++;
-        if (property.outdoor_space) {
-          matchedCount++;
-          outdoorFeatures.push("outdoor space");
-        }
-      }
       if (wantsBalcony) {
         totalRequested++;
         if (property.balcony) {
@@ -1034,7 +1027,6 @@ export class MatchingCalculationService {
     if (matchedCount > 0) {
       details.push(`${matchedCount} of ${totalRequested} features available`);
     }
-    if (property.outdoor_space) details.push("outdoor space");
     if (property.balcony) details.push("balcony");
     if (property.terrace) details.push("terrace");
 
@@ -1354,7 +1346,6 @@ export class MatchingCalculationService {
 
   private getOutdoorSpaceDetails(property: Property): string {
     const features = [];
-    if (property.outdoor_space) features.push("Outdoor space");
     if (property.balcony) features.push("Balcony");
     if (property.terrace) features.push("Terrace");
     return features.length ? features.join(", ") : "No outdoor space";

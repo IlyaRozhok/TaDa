@@ -236,25 +236,6 @@ export class CreateBuildingDto {
   amenities?: string[];
 
   @ApiProperty({
-    description: "Whether building has concierge service",
-    example: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  is_concierge?: boolean;
-
-  @ApiProperty({
-    description: "Concierge operating hours (if available)",
-    type: ConciergeHoursDto,
-    required: false,
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => ConciergeHoursDto)
-  concierge_hours?: ConciergeHoursDto | null;
-
-  @ApiProperty({
     description: "Pet policy - are pets allowed",
     example: false,
     required: false,

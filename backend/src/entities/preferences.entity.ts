@@ -214,15 +214,6 @@ export class Preferences {
   furnishing?: string[];
 
   @ApiProperty({
-    description:
-      "Whether outdoor space is preferred (matches Property.outdoor_space)",
-    example: true,
-    required: false,
-  })
-  @Column({ type: "boolean", nullable: true })
-  outdoor_space?: boolean;
-
-  @ApiProperty({
     description: "Whether balcony is preferred (matches Property.balcony)",
     example: true,
     required: false,
@@ -330,15 +321,6 @@ export class Preferences {
   })
   @Column({ type: "jsonb", nullable: true, default: [] })
   amenities?: string[];
-
-  @ApiProperty({
-    description:
-      "Whether concierge is preferred (matches Property.is_concierge)",
-    example: true,
-    required: false,
-  })
-  @Column({ type: "boolean", nullable: true })
-  is_concierge?: boolean;
 
   @ApiProperty({
     description:

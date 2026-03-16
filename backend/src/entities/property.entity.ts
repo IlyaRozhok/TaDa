@@ -97,14 +97,6 @@ export class Property {
   @Column({ nullable: true })
   building_type?: string;
 
-  @ApiProperty({
-    description: "Whether the property is luxury",
-    example: true,
-    required: false,
-  })
-  @Column({ type: "boolean", default: false })
-  luxury?: boolean;
-
   // Inherited fields from building
   @ApiProperty({
     description: "Property address (inherited from building or custom)",
@@ -132,15 +124,6 @@ export class Property {
   })
   @Column({ type: "jsonb", nullable: true, default: [] })
   amenities?: string[];
-
-  @ApiProperty({
-    description:
-      "Whether property has concierge (inherited from building or custom)",
-    example: true,
-    required: false,
-  })
-  @Column({ type: "boolean", nullable: true })
-  is_concierge?: boolean;
 
   @ApiProperty({
     description: "Pet policy (inherited from building or custom)",
@@ -191,16 +174,6 @@ export class Property {
 
   @ApiProperty({
     description:
-      "Concierge operating hours (inherited from building or custom)",
-    example: { from: 8, to: 22 },
-    type: "json",
-    required: false,
-  })
-  @Column({ type: "jsonb", nullable: true })
-  concierge_hours?: ConciergeHours | null;
-
-  @ApiProperty({
-    description:
       "Allowed pet types and sizes (inherited from building or custom)",
     example: [{ type: "dog", size: "small" }],
     type: "json",
@@ -232,14 +205,6 @@ export class Property {
   })
   @Column("decimal", { precision: 10, scale: 2, nullable: true })
   square_meters?: number;
-
-  @ApiProperty({
-    description: "Has outdoor space",
-    example: true,
-    required: false,
-  })
-  @Column({ type: "boolean", default: false })
-  outdoor_space?: boolean;
 
   @ApiProperty({
     description: "Has balcony",
