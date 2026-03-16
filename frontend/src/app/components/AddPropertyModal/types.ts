@@ -31,8 +31,6 @@ export interface Building {
   operator_id: string;
   tenant_type?: string[];
   amenities?: string[];
-  is_concierge?: boolean;
-  concierge_hours?: ConciergeHours | null;
   pet_policy?: boolean;
   pets?: Pet[] | null;
   smoking_area?: boolean;
@@ -71,8 +69,10 @@ export interface PropertyFormData {
   furnishing: string;
   let_duration: string[];
   floor: number | null;
+  outdoor_space: boolean;
   balcony: boolean;
   terrace: boolean;
+  luxury: boolean;
   square_meters: number | null;
   photos: string[];
   video: string;

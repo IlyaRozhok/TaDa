@@ -92,8 +92,10 @@ export interface Property {
   furnishing: Furnishing;
   let_duration: LetDuration;
   floor: number;
+  outdoor_space?: boolean;
   balcony: boolean;
   terrace: boolean;
+  luxury?: boolean;
   square_meters: number;
   photos: string[];
   media?: PropertyMedia[];

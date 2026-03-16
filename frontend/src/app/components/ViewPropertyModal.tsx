@@ -387,32 +387,7 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
             </div>
           )}
 
-          {/* Concierge Information */}
-          {property.is_concierge && (
-            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Concierge Service
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-white/70">Available:</span>
-                  <span className="font-medium text-white">Yes</span>
-                </div>
-                {property.concierge_hours && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/70">Hours:</span>
-                    <span className="font-medium text-white">
-                      {property.concierge_hours.from != null &&
-                      property.concierge_hours.to != null
-                        ? `${property.concierge_hours.from}:00 - ${property.concierge_hours.to}:00`
-                        : "N/A"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Concierge Information removed (field deprecated in backend) */}
 
           {/* Pet Policy */}
           {property.pet_policy !== undefined && (
