@@ -31,6 +31,8 @@ export interface Building {
   operator_id: string;
   tenant_type?: string[];
   amenities?: string[];
+  is_concierge?: boolean;
+  concierge_hours?: ConciergeHours | null;
   pet_policy?: boolean;
   pets?: Pet[] | null;
   smoking_area?: boolean;
