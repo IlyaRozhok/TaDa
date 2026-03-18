@@ -102,6 +102,12 @@ export const useFormValidation = (rules: ValidationRules) => {
       const newErrors: ValidationErrors = {};
       const newTouched: { [field: string]: boolean } = {};
 
+      if (!formData || typeof formData !== "object") {
+        setErrors({});
+        setTouched({});
+        return false;
+      }
+
       Object.keys(rules).forEach((field) => {
         newTouched[field] = true;
         const error = validateField(field, formData[field], formData);

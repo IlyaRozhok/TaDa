@@ -35,8 +35,8 @@ export class BookingRequestController {
   constructor(private readonly bookingRequestService: BookingRequestService) {}
 
   @Post()
-  @Roles(UserRole.Tenant)
-  @ApiOperation({ summary: "Create a booking request (tenant)" })
+  @Roles(UserRole.Tenant, UserRole.Admin)
+  @ApiOperation({ summary: "Create a booking request (tenant or admin)" })
   @ApiResponse({ status: 201, description: "Booking request created" })
   async create(
     @Body() dto: CreateBookingRequestDto,
@@ -56,8 +56,8 @@ export class BookingRequestController {
   }
 
   @Get("me")
-  @Roles(UserRole.Tenant)
-  @ApiOperation({ summary: "List my booking requests (tenant)" })
+  @Roles(UserRole.Tenant, UserRole.Admin)
+  @ApiOperation({ summary: "List my booking requests (tenant or admin)" })
   @ApiResponse({ status: 200, description: "Booking requests retrieved" })
   async findMine(
     @Request() req,

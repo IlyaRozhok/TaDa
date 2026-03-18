@@ -259,7 +259,12 @@ export default function PropertyPublicPage() {
   // Load existing booking request for this tenant/property
   useEffect(() => {
     const loadBookingRequest = async () => {
-      if (!isAuthenticated || !user || user.role !== "tenant" || !id) {
+      if (
+        !isAuthenticated ||
+        !user ||
+        (user.role !== "tenant" && user.role !== "admin") ||
+        !id
+      ) {
         setHasBookingRequest(false);
         return;
       }
@@ -518,9 +523,39 @@ export default function PropertyPublicPage() {
       }
     }
 
+    const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+    if (
+      bookingMoveInDate === "INVALID_FORMAT" ||
+      bookingMoveOutDate === "INVALID_FORMAT"
+    ) {
+      setBookingSubmitError("Please enter valid dates (DD.MM.YYYY)");
+      return;
+    }
+    const dateFrom =
+      bookingMoveInDate && isoDate.test(bookingMoveInDate)
+        ? bookingMoveInDate
+        : undefined;
+    const dateTo =
+      bookingMoveOutDate && isoDate.test(bookingMoveOutDate)
+        ? bookingMoveOutDate
+        : undefined;
+    if (bookingMoveInDate && !dateFrom) {
+      setBookingSubmitError("Please enter a valid move-in date");
+      return;
+    }
+    if (bookingMoveOutDate && !dateTo) {
+      setBookingSubmitError("Please enter a valid move-out date");
+      return;
+    }
+
     try {
       setBookingLoading(true);
-      await bookingRequestsAPI.create(property.id);
+      await bookingRequestsAPI.create(property.id, {
+        email: email || undefined,
+        phone_number: hasPhone ? bookingPhone.trim() : undefined,
+        date_from: dateFrom,
+        date_to: dateTo,
+      });
       setHasBookingRequest(true);
       setIsBookingModalOpen(false);
       notify.success(t(listingNotificationKeys.viewingRequestSentMessage));
@@ -1305,6 +1340,7 @@ export default function PropertyPublicPage() {
 
               <div className="mt-auto">
                 <Button
+                  type="button"
                   className="relative bottom-[-20] w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleSendBookingRequest}
                   disabled={bookingLoading || hasBookingRequest}

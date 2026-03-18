@@ -26,6 +26,33 @@ export class BookingRequestService {
     dto: CreateBookingRequestDto,
     tenantId: string
   ): Promise<BookingRequest> {
+    const email = dto.email?.trim() || null;
+    const phone = dto.phone_number?.trim() || null;
+    if (!email && !phone) {
+      throw new BadRequestException("email or phone_number is required");
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new BadRequestException("Invalid email address");
+    }
+
+    let dateFrom: Date | null = null;
+    let dateTo: Date | null = null;
+    if (dto.date_from) {
+      dateFrom = new Date(dto.date_from + "T00:00:00.000Z");
+      if (Number.isNaN(dateFrom.getTime())) {
+        throw new BadRequestException("Invalid date_from");
+      }
+    }
+    if (dto.date_to) {
+      dateTo = new Date(dto.date_to + "T00:00:00.000Z");
+      if (Number.isNaN(dateTo.getTime())) {
+        throw new BadRequestException("Invalid date_to");
+      }
+    }
+    if (dateFrom && dateTo && dateTo < dateFrom) {
+      throw new BadRequestException("date_to must be on or after date_from");
+    }
+
     const property = await this.propertyRepository.findOne({
       where: { id: dto.property_id },
     });
@@ -41,6 +68,10 @@ export class BookingRequestService {
 
     if (existing) {
       existing.status = BookingRequestStatus.New;
+      existing.email = email;
+      existing.phone_number = phone;
+      existing.date_from = dateFrom;
+      existing.date_to = dateTo;
       return this.bookingRequestRepository.save(existing);
     }
 
@@ -48,6 +79,10 @@ export class BookingRequestService {
       property_id: dto.property_id,
       tenant_id: tenantId,
       status: BookingRequestStatus.New,
+      email,
+      phone_number: phone,
+      date_from: dateFrom,
+      date_to: dateTo,
     });
 
     const saved = await this.bookingRequestRepository.save(request);

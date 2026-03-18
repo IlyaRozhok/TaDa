@@ -41,6 +41,22 @@ export class BookingRequest {
   @Column("uuid")
   tenant_id: string;
 
+  @ApiProperty({ description: "Preferred move-in date from the form", required: false })
+  @Column({ type: "date", nullable: true })
+  date_from: Date | null;
+
+  @ApiProperty({ description: "Preferred move-out date from the form", required: false })
+  @Column({ type: "date", nullable: true })
+  date_to: Date | null;
+
+  @ApiProperty({ description: "Contact email from the booking form", required: false })
+  @Column({ type: "varchar", nullable: true })
+  email: string | null;
+
+  @ApiProperty({ description: "Contact phone from the booking form", required: false })
+  @Column({ type: "varchar", nullable: true })
+  phone_number: string | null;
+
   @ApiProperty({
     description: "Current booking status",
     enum: BookingRequestStatus,

@@ -194,10 +194,36 @@ export const residentialComplexesAPI = {
 };
 
 export const bookingRequestsAPI = {
-  create: (propertyId: string) =>
-    api
-      .post("/booking-requests", { property_id: propertyId })
-      .then((res) => res.data ?? res),
+  create: (
+    propertyId: string,
+    body?: {
+      email?: string;
+      phone_number?: string;
+      date_from?: string | null;
+      date_to?: string | null;
+    },
+  ) => {
+    const b = body ?? {};
+    return api
+      .post("/booking-requests", {
+        property_id: propertyId,
+        ...(b.email != null && b.email !== "" ? { email: b.email } : {}),
+        ...(b.phone_number != null && b.phone_number !== ""
+          ? { phone_number: b.phone_number }
+          : {}),
+        ...(b.date_from &&
+        typeof b.date_from === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(b.date_from)
+          ? { date_from: b.date_from }
+          : {}),
+        ...(b.date_to &&
+        typeof b.date_to === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(b.date_to)
+          ? { date_to: b.date_to }
+          : {}),
+      })
+      .then((res) => res.data ?? res);
+  },
   list: (status?: string) =>
     api
       .get("/booking-requests", {

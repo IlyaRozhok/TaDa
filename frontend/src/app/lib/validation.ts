@@ -74,6 +74,10 @@ export const validateForm = (
 ): ValidationResult => {
   const errors: Record<string, string> = {};
 
+  if (!data || typeof data !== "object") {
+    return { isValid: false, errors: {} };
+  }
+
   Object.keys(rules).forEach((fieldName) => {
     const fieldRules = rules[fieldName];
     const value = data[fieldName];
