@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { InputMask, InputMaskChangeEvent } from "primereact/inputmask";
 import { ChevronDown, Search } from "lucide-react";
 import { getPhoneMask } from "../../lib/phoneMasks";
@@ -123,18 +123,18 @@ export default function PhoneMaskInput({
     <div className={`relative ${className}`}>
       <div className="relative flex">
         {/* Country Code Selector - Fixed Width */}
-        <div className="relative w-36 flex-shrink-0">
+        <div className="relative min-w-[11rem] max-w-[13rem] flex-shrink-0">
           <button
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center cursor-pointer justify-between px-3 py-4 bg-white rounded-l-4xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center cursor-pointer justify-between gap-2 px-5 py-4 bg-white rounded-l-4xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed text-left"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg flex-shrink-0">
-                {selectedCountry.flag}
+            <div className="min-w-0 flex-1">
+              <span className="block text-xs font-medium text-gray-700 truncate leading-tight">
+                {selectedCountry.name}
               </span>
-              <span className="text-sm font-medium text-gray-700 truncate">
+              <span className="block text-xs text-gray-500 mt-0.5">
                 {selectedCountry.dialCode}
               </span>
             </div>
@@ -192,7 +192,7 @@ export default function PhoneMaskInput({
                             key={country.code}
                             type="button"
                             onClick={() => handleCountryChange(country)}
-                            className={`w-full px-5 py-3 text-left transition-all duration-200 flex items-center gap-3 ${
+                            className={`w-full px-5 py-3 text-left transition-all duration-200 flex cursor-pointer items-center gap-3 ${
                               selectedCountry.code === country.code
                                 ? "bg-white/18 text-white"
                                 : "text-white hover:bg-white/12"
@@ -204,7 +204,6 @@ export default function PhoneMaskInput({
                                   : undefined,
                             }}
                           >
-                            <span className="text-lg">{country.flag}</span>
                             <div className="flex-1 min-w-0">
                               <div
                                 className="text-sm font-semibold truncate"

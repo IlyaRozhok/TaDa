@@ -1085,12 +1085,12 @@ export default function PropertyPublicPage() {
               <h3 className="text-2xl sm:text-3xl font-bold text-black mb-1">
                 Request a viewing
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 mb-">
                 Select your preferred contact method
               </p>
 
               <div className="space-y-4 flex-1">
-                <div>
+                <div className="mt-12">
                   <PhoneMaskInput
                     className="w-full min-h-[72px]"
                     countryCode={bookingPhoneCountryCode}
@@ -1184,7 +1184,7 @@ export default function PropertyPublicPage() {
 
               <div className="mt-auto">
                 <Button
-                  className="relative bottom-[-100] w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="relative bottom-[-50] w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleSendBookingRequest}
                   disabled={bookingLoading || hasBookingRequest}
                 >
