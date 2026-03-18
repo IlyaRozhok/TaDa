@@ -23,23 +23,19 @@ export const AMENITIES_BY_CATEGORY = [
   },
   {
     title: "Services & Extras",
-    values: [...AMENITIES_VALUES.slice(10, 15)],
+    values: [...AMENITIES_VALUES.slice(10, 16)],
   },
   {
     title: "Safety & Access",
-    values: [...AMENITIES_VALUES.slice(15, 18)],
+    values: [...AMENITIES_VALUES.slice(16, 19)],
   },
   {
     title: "Pets",
-    values: [...AMENITIES_VALUES.slice(18, 20)],
+    values: [...AMENITIES_VALUES.slice(19, 21)],
   },
   {
     title: "Family",
-    values: [...AMENITIES_VALUES.slice(20, 22)],
-  },
-  {
-    title: "Smoking",
-    values: [...AMENITIES_VALUES.slice(22, 23)],
+    values: [...AMENITIES_VALUES.slice(21, 23)],
   },
 ] as const;
 

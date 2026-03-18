@@ -168,6 +168,7 @@ export const wizardKeys = {
       "amenities.name13",
       "amenities.name14",
       "amenities.name15",
+      preferencesAmenityKeys.smokingArea,
     ],
     section3Options: [
       "amenities.name16",
@@ -176,7 +177,6 @@ export const wizardKeys = {
     ],
     section4Options: ["amenities.name19", "amenities.name20"],
     section5Options: ["amenities.name21", "amenities.name22"],
-    section6Options: [preferencesAmenityKeys.smokingArea],
   },
   step8: {
     title: "wizard.step8.title",

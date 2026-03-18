@@ -1,5 +1,5 @@
 // Canonical list of amenities values used across preferences and admin forms.
-// Items 1–22: wizard step 7 amenities.name1–22; item 23: preferences.amenities.smoking.area.
+// 1–10: work; 11–16: services (incl. Smoking area → preferences.amenities.smoking.area); 17–22: rest.
 export const AMENITIES_VALUES = [
   "Co-working spaces", // 1
   "Meeting rooms", // 2
@@ -16,14 +16,14 @@ export const AMENITIES_VALUES = [
   "Cleaning services", // 13
   "Laundry services", // 14
   "Short-stay rentals", // 15
-  "24/7 security", // 16
-  "Keyless entry", // 17
-  "CCTV", // 18
-  "Dog wash station", // 19
-  "Pet daycare", // 20
-  "Kids playroom", // 21
-  "Nursery area", // 22
-  "Smoking area", // 23 — label: preferences.amenities.smoking.area
+  "Smoking area", // 16 — label: preferences.amenities.smoking.area
+  "24/7 security", // 17
+  "Keyless entry", // 18
+  "CCTV", // 19
+  "Dog wash station", // 20
+  "Pet daycare", // 21
+  "Kids playroom", // 22
+  "Nursery area", // 23
 ] as const;
 
 /** Localazy key by stored amenity string (when not using wizard amenities.name*). */
