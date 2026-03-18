@@ -32,7 +32,10 @@ import PreferencePropertiesSection from "../../../components/PreferencePropertie
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
-import toast from "react-hot-toast";
+import { notify } from "@/shared/lib/notify";
+import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
+import { getCountryByCode, getDefaultCountry } from "@/shared/lib/countries";
+import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
 
 type PropertyWithMedia = Property & {
@@ -76,6 +79,23 @@ export default function PropertyPublicPage() {
   );
   const [bookingLoading, setBookingLoading] = useState(false);
   const [hasBookingRequest, setHasBookingRequest] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingInlineError, setBookingInlineError] = useState<string | null>(
+    null,
+  );
+  const [bookingSubmitError, setBookingSubmitError] = useState<string | null>(
+    null,
+  );
+  const [bookingPhoneCountryCode, setBookingPhoneCountryCode] = useState("GB");
+  const [bookingPhoneNumberOnly, setBookingPhoneNumberOnly] = useState("");
+  const [bookingPhone, setBookingPhone] = useState("");
+  const [bookingEmail, setBookingEmail] = useState("");
+  const [bookingPhoneError, setBookingPhoneError] = useState<
+    string | undefined
+  >(undefined);
+  const [bookingEmailError, setBookingEmailError] = useState<
+    string | undefined
+  >(undefined);
   const [redirecting429, setRedirecting429] = useState(false);
 
   // Check if description needs truncation
@@ -157,11 +177,12 @@ export default function PropertyPublicPage() {
   }, [propertyData]);
 
   // Load building media for gallery (append building photos after property photos)
-  const {
-    data: buildingData,
-  } = useGetPublicBuildingQuery(property?.building?.id as string, {
-    skip: !property?.building?.id,
-  });
+  const { data: buildingData } = useGetPublicBuildingQuery(
+    property?.building?.id as string,
+    {
+      skip: !property?.building?.id,
+    },
+  );
 
   const buildingWithMedia = useMemo(() => {
     if (!buildingData) return null;
@@ -186,7 +207,7 @@ export default function PropertyPublicPage() {
     const status =
       typeof err?.status === "number"
         ? err.status
-        : err?.data?.statusCode ?? err?.originalStatus;
+        : (err?.data?.statusCode ?? err?.originalStatus);
     const message =
       err?.data?.message ||
       err?.error ||
@@ -196,7 +217,7 @@ export default function PropertyPublicPage() {
       status === 429 || (message && String(message).includes("429"));
 
     if (is429) {
-      toast.error("Too many requests. Please try again later.");
+      notify.error("Too many requests. Please try again later.");
       setRedirecting429(true);
       return;
     }
@@ -383,12 +404,12 @@ export default function PropertyPublicPage() {
 
   const handleShortlistToggle = async () => {
     if (!isAuthenticated || !user) {
-      toast.error("Please login to add properties to shortlist");
+      notify.error("Please login to add properties to shortlist");
       return;
     }
 
     if (user.role !== "tenant" && user.role !== "admin") {
-      toast.error("Only tenants and admins can add properties to shortlist");
+      notify.error("Only tenants and admins can add properties to shortlist");
       return;
     }
 
@@ -412,43 +433,112 @@ export default function PropertyPublicPage() {
       // Keep error logging for errors, as per best practice
       // But if you want to remove all console usage, comment out the next line:
       // console.error("Shortlist error:", error);
-      toast.error((error as Error)?.message || "Failed to update shortlist");
+      notify.error((error as Error)?.message || "Failed to update shortlist");
     } finally {
       setShortlistLoading(false);
     }
   };
 
-  const handleBookApartment = async () => {
+  const handleBookApartment = () => {
     if (!property) {
       return;
     }
 
     if (!isAuthenticated || !user) {
-      toast.error("Please login as a tenant to book");
       router.push("/auth/login");
       return;
     }
 
-    if (user.role !== "tenant") {
-      toast.error("Only tenant accounts can book apartments");
+    if (user.role !== "tenant" && user.role !== "admin") {
+      setBookingInlineError(
+        "Only tenant and admin accounts can book apartments",
+      );
       return;
+    }
+
+    setBookingInlineError(null);
+    setBookingSubmitError(null);
+    setBookingPhone("");
+    setBookingPhoneCountryCode("GB");
+    setBookingPhoneNumberOnly("");
+    setBookingEmail("");
+    setBookingPhoneError(undefined);
+    setBookingEmailError(undefined);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleSendBookingRequest = async () => {
+    if (!property) {
+      return;
+    }
+
+    const email = bookingEmail.trim();
+    const phoneDigits = bookingPhone.replace(/\D/g, "");
+    const hasPhone = phoneDigits.length > 0;
+
+    setBookingPhoneError(undefined);
+    setBookingEmailError(undefined);
+    setBookingSubmitError(null);
+
+    if (!email && !hasPhone) {
+      const message = "Please enter your email or phone number";
+      setBookingPhoneError(message);
+      setBookingEmailError(message);
+      return;
+    }
+
+    if (email) {
+      const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!isValidEmail) {
+        setBookingEmailError("Please enter a valid email address");
+        return;
+      }
     }
 
     try {
       setBookingLoading(true);
       await bookingRequestsAPI.create(property.id);
-      toast.success("Request sent. Our team will contact you shortly.");
       setHasBookingRequest(true);
+      setIsBookingModalOpen(false);
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
         err?.message ||
         "Failed to send booking request";
-      toast.error(message);
+      setBookingSubmitError(message);
     } finally {
       setBookingLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isBookingModalOpen) {
+      return;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsBookingModalOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    // Prevent layout shift caused by scrollbar disappearance.
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, [isBookingModalOpen]);
 
   // Skeleton: показываем только при первом загрузочном запросе (isLoading)
   // При возврате назад из кэша будет isFetching, но isLoading=false — скелетон не показываем.
@@ -791,6 +881,11 @@ export default function PropertyPublicPage() {
                       ? "Sending..."
                       : "Book this apartment"}
                 </Button>
+                {bookingInlineError && (
+                  <p className="text-sm text-red-600 text-center mb-3">
+                    {bookingInlineError}
+                  </p>
+                )}
 
                 <p className="text-xs text-gray-500 text-center mb-6">
                   You won&apos;t be charged yet, only after reservation and
@@ -899,7 +994,10 @@ export default function PropertyPublicPage() {
 
               return visibleAmenities.length > 0 ? (
                 visibleAmenities.map((amenity: string, i: number) => (
-                  <div key={i} className="flex items-center gap-2 sm:gap-3 py-2">
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 sm:gap-3 py-2"
+                  >
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-black">
                       {formatAmenityName(amenity)}
@@ -956,6 +1054,143 @@ export default function PropertyPublicPage() {
         currentPropertyId={property.id}
         currentOperatorId={property.operator?.id}
       />
+
+      {isBookingModalOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Request a viewing"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsBookingModalOpen(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-xl min-h-[540px] rounded-3xl bg-[#F9FAFC] shadow-2xl">
+            <div className="relative px-10 pt-12 pb-12 flex flex-col">
+              <button
+                type="button"
+                onClick={() => setIsBookingModalOpen(false)}
+                className="absolute right-4 top-4 h-9 w-9 rounded-full bg-black/5 hover:bg-black/10 transition-colors cursor-pointer flex items-center justify-center text-black"
+                aria-label="Close"
+              >
+                <span className="text-xl leading-none">×</span>
+              </button>
+
+              <div className="flex items-center mb-4">
+                <img src="/black-logo.svg" alt="TADA Logo" className="h-7" />
+              </div>
+
+              <h3 className="text-2xl sm:text-3xl font-bold text-black mb-1">
+                Request a viewing
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Select your preferred contact method
+              </p>
+
+              <div className="space-y-4 flex-1">
+                <div>
+                  <PhoneMaskInput
+                    className="w-full min-h-[72px]"
+                    countryCode={bookingPhoneCountryCode}
+                    onCountryChange={(code) => {
+                      setBookingPhoneCountryCode(code);
+                      const country =
+                        getCountryByCode(code) || getDefaultCountry();
+                      const fullPhone = bookingPhoneNumberOnly
+                        ? `${country.dialCode} ${bookingPhoneNumberOnly}`.trim()
+                        : "";
+                      setBookingPhone(fullPhone);
+                      if (bookingPhoneError) setBookingPhoneError(undefined);
+                    }}
+                    value={bookingPhoneNumberOnly}
+                    onChange={(value) => {
+                      const next = value ?? "";
+                      setBookingPhoneNumberOnly(next);
+                      const country =
+                        getCountryByCode(bookingPhoneCountryCode) ||
+                        getDefaultCountry();
+                      const fullPhone = next
+                        ? `${country.dialCode} ${next}`.trim()
+                        : "";
+                      setBookingPhone(fullPhone);
+                      if (bookingPhoneError) setBookingPhoneError(undefined);
+                    }}
+                    label="Phone"
+                    // Use floating label instead of native placeholder to avoid overlap.
+                    placeholder=""
+                    disabled={bookingLoading}
+                    inputMaskProps={{
+                      className: [
+                        "bg-white",
+                        "text-gray-900 text-base",
+                        "placeholder-gray-500",
+                        "focus:outline-none focus:ring-0",
+                        "outline-none",
+                        "pt-10 pb-5 min-h-[72px]",
+                        bookingPhoneError
+                          ? "ring-2 ring-red-400 focus:ring-red-500"
+                          : "",
+                      ].join(" "),
+                    }}
+                  />
+                  <div className="min-h-5 mt-1 px-6">
+                    {bookingPhoneError ? (
+                      <p className="text-sm text-red-600">
+                        {bookingPhoneError}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div>
+                  <InputField
+                    label="Email"
+                    type="email"
+                    value={bookingEmail}
+                    onChange={(e) => {
+                      setBookingEmail(e.target.value);
+                      if (bookingEmailError) setBookingEmailError(undefined);
+                    }}
+                    disabled={bookingLoading}
+                    error={bookingEmailError}
+                    className={
+                      bookingEmailError
+                        ? "ring-2 ring-red-400 focus:ring-red-500"
+                        : ""
+                    }
+                  />
+                  <div className="min-h-5 mt-1 px-6">
+                    {bookingEmailError ? (
+                      <p className="text-sm text-red-600">
+                        {bookingEmailError}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {bookingSubmitError && (
+                <p className="text-sm text-red-600 mt-3 text-center">
+                  {bookingSubmitError}
+                </p>
+              )}
+
+              <div className="mt-auto">
+                <Button
+                  className="w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  onClick={handleSendBookingRequest}
+                  disabled={bookingLoading || hasBookingRequest}
+                >
+                  {bookingLoading ? "Sending..." : "Send request"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

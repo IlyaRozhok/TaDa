@@ -8,7 +8,7 @@ import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
 import { MapPin, Phone, Globe, Mail } from "lucide-react";
 import { useDebounce } from "../../../hooks/useDebounce";
-import toast from "react-hot-toast";
+import { notify } from "@/shared/lib/notify";
 
 export default function OperatorPropertiesPage() {
   const { id } = useParams();
@@ -75,7 +75,7 @@ export default function OperatorPropertiesPage() {
       } catch (err) {
         console.error("Error fetching operator properties:", err);
         setError("Failed to load operator properties");
-        toast.error("Failed to load operator properties");
+        notify.error("Failed to load operator properties");
       } finally {
         setLoading(false);
       }

@@ -42,7 +42,7 @@ import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
-import toast from "react-hot-toast";
+import { notify } from "@/shared/lib/notify";
 import Footer from "../../../components/Footer";
 import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
 import {
@@ -193,9 +193,9 @@ export default function BuildingPublicPage() {
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href);
-        toast.success("Link copied to clipboard!");
+        notify.success("Link copied to clipboard!");
       } catch (err) {
-        toast.error("Failed to copy link");
+        notify.error("Failed to copy link");
       }
     }
   };

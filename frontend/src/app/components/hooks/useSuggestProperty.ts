@@ -6,7 +6,7 @@ import {
   clearErrors,
   TenantRow,
 } from "../../store/slices/operatorSlice";
-import toast from "react-hot-toast";
+import { notify } from "@/shared/lib/notify";
 
 export function useSuggestProperty() {
   const dispatch = useDispatch<AppDispatch>();
@@ -26,11 +26,11 @@ export function useSuggestProperty() {
         await dispatch(
           suggestProperty({ tenantId: selectedTenant.id, propertyId })
         ).unwrap();
-        toast.success("Property suggested successfully!");
+        notify.success("Property suggested successfully!");
         setShowSuggestModal(false);
         setSelectedTenant(null);
       } catch (error) {
-        toast.error(error as string);
+        notify.error(String(error));
       }
     },
     [selectedTenant, dispatch]

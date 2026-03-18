@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AppDispatch } from "../../../../store/store";
-import toast from "react-hot-toast";
+import { notify } from "@/shared/lib/notify";
 import { useOperatorDashboard } from "../../../../components/hooks/useOperatorDashboard";
 import { useSuggestProperty } from "../../../../components/hooks/useSuggestProperty";
 
@@ -150,7 +150,7 @@ function AdminOperatorDashboard() {
   useEffect(() => {
     if (operatorState.error) {
       console.error("Operator dashboard error:", operatorState.error);
-      toast.error(`Dashboard error: ${operatorState.error}`);
+      notify.error(`Dashboard error: ${operatorState.error}`);
       dispatch(clearErrors());
     }
   }, [operatorState.error, dispatch]);

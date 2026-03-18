@@ -58,7 +58,7 @@ export default function PhoneMaskInput({
   inputMaskProps,
 }: PhoneMaskInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
-    () => getCountryByCode(initialCountryCode) || getDefaultCountry()
+    () => getCountryByCode(initialCountryCode) || getDefaultCountry(),
   );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -98,7 +98,7 @@ export default function PhoneMaskInput({
     (country) =>
       country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       country.dialCode.includes(searchQuery) ||
-      country.code.toLowerCase().includes(searchQuery.toLowerCase())
+      country.code.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Focus search input when dropdown opens
@@ -128,7 +128,7 @@ export default function PhoneMaskInput({
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center cursor-pointer justify-between px-3 py-4 bg-gray-50 sm:bg-white border-0 rounded-l-3xl hover:bg-gray-100 sm:hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center cursor-pointer justify-between px-3 py-4 bg-white rounded-l-3xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-lg flex-shrink-0">
@@ -166,7 +166,7 @@ export default function PhoneMaskInput({
                 >
                   <div className="relative z-10">
                     {/* Search Input */}
-                    <div className="p-3 border-b border-gray-200/20">
+                    <div className="p-3">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
                         <input
@@ -176,7 +176,7 @@ export default function PhoneMaskInput({
                           onChange={(e) => setSearchQuery(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
                           placeholder="Search country..."
-                          className="w-full pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/50 text-base focus:outline-none"
+                          className="w-full pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg text-white placeholder-white/50 text-base focus:outline-none"
                         />
                       </div>
                     </div>
@@ -249,9 +249,9 @@ export default function PhoneMaskInput({
               required={required}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              slotChar="_"
+              slotChar=""
               unmask={false}
-              className={`w-full px-6 pt-8 pb-4 rounded-r-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0 ${
+              className={`w-full px-6 pt-8 pb-4 rounded-r-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400  ${
                 error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
               } ${inputMaskProps?.className || ""}`}
               {...inputMaskProps}
@@ -261,8 +261,8 @@ export default function PhoneMaskInput({
             <label
               className={`absolute left-6 pointer-events-none transition-all duration-200 ${
                 isFocused || hasValue
-                  ? "top-3 text-xs text-gray-500"
-                  : "top-1/2 -translate-y-1/2 text-base text-gray-400"
+                  ? "top-3 text-xs text-gray-600"
+                  : "top-1/2 -translate-y-1/2 text-base text-gray-500"
               }`}
             >
               {label}
