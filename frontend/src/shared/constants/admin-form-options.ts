@@ -37,6 +37,10 @@ export const AMENITIES_BY_CATEGORY = [
     title: "Family",
     values: [...AMENITIES_VALUES.slice(20, 22)],
   },
+  {
+    title: "Smoking",
+    values: [...AMENITIES_VALUES.slice(22, 23)],
+  },
 ] as const;
 
 /** Flat list of all amenities (for backward compatibility and simple dropdowns). */

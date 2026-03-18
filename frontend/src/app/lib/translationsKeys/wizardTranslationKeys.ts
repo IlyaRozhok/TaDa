@@ -1,3 +1,5 @@
+import { preferencesAmenityKeys } from "./preferencesAmenityKeys";
+
 /**
  * Translation keys for onboarding wizard (Complete Your Profile, preferences steps, etc.).
  * Use with useTranslation: t(wizardKeys.profile.title), etc.
@@ -174,6 +176,7 @@ export const wizardKeys = {
     ],
     section4Options: ["amenities.name19", "amenities.name20"],
     section5Options: ["amenities.name21", "amenities.name22"],
+    section6Options: [preferencesAmenityKeys.smokingArea],
   },
   step8: {
     title: "wizard.step8.title",

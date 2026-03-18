@@ -15,6 +15,8 @@ import {
   transformTenantTypeAPIToUI,
 } from "../../shared/constants/mappings";
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
+import { translateAmenityStoredLabel } from "../../shared/constants/amenities";
+import { useTranslation } from "../hooks/useTranslation";
 
 interface Building {
   id: string;
@@ -122,6 +124,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const { tenantTypeOptions } = useLocalizedFormOptions();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<BuildingFormData>({
@@ -1720,7 +1723,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                           key={amenity}
                           className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
                         >
-                          {amenity}
+                          {translateAmenityStoredLabel(amenity, t)}
                           <button
                             type="button"
                             className="ml-1 text-white/70 hover:text-white"
@@ -1786,7 +1789,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                               readOnly
                               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <span>{amenity}</span>
+                            <span>{translateAmenityStoredLabel(amenity, t)}</span>
                           </div>
                         ))}
                       </div>

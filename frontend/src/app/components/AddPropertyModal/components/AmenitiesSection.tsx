@@ -1,6 +1,8 @@
 import React from "react";
 import { PropertyFormData } from "../types";
 import { AMENITIES_BY_CATEGORY } from "../../../../shared/constants/admin-form-options";
+import { translateAmenityStoredLabel } from "../../../../shared/constants/amenities";
+import { useTranslation } from "../../../hooks/useTranslation";
 
 interface AmenitiesSectionProps {
   formData: PropertyFormData;
@@ -16,6 +18,7 @@ export const AmenitiesSection: React.FC<AmenitiesSectionProps> = ({
   onFieldChange,
   onToggleDropdown,
 }) => {
+  const { t } = useTranslation();
   const isReadonly =
     formData.building_type !== "private_landlord" && !!formData.building_id;
 
@@ -50,7 +53,7 @@ export const AmenitiesSection: React.FC<AmenitiesSectionProps> = ({
                   key={amenity}
                   className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
                 >
-                  {amenity}
+                  {translateAmenityStoredLabel(amenity, t)}
                   {!isReadonly && (
                     <button
                       type="button"
@@ -107,7 +110,7 @@ export const AmenitiesSection: React.FC<AmenitiesSectionProps> = ({
                       readOnly
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>{amenity}</span>
+                    <span>{translateAmenityStoredLabel(amenity, t)}</span>
                   </div>
                 ))}
               </div>

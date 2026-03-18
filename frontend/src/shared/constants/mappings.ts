@@ -585,6 +585,7 @@ const AMENITY_DISPLAY_TO_KEY: Record<string, string> = {
   Cooking: "amenities.name1",
   Travel: "amenities.name1",
   Sport: "amenities.name1",
+  "Smoking area": "preferences.amenities.smoking.area",
 };
 
 export function getPropertyTypeTranslationKey(

@@ -28,6 +28,9 @@ const SECTION4_VALUES = AMENITIES_VALUES.slice(18, 20);
 // Section 5: title wizard.step7.des.text5, options amenities.name21–22.
 const SECTION5_VALUES = AMENITIES_VALUES.slice(20, 22);
 
+// Section 6: title wizard.step7.des.text6; label preferences.amenities.smoking.area.
+const SECTION6_VALUES = AMENITIES_VALUES.slice(22, 23);
+
 export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
   formData,
   onToggle,
@@ -40,6 +43,7 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
   const section3LabelKeys = k.section3Options;
   const section4LabelKeys = k.section4Options;
   const section5LabelKeys = k.section5Options;
+  const section6LabelKeys = k.section6Options;
 
   return (
     <StepWrapper title={t(k.title)} description={t(k.subtitle)}>
@@ -115,6 +119,22 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
             <SelectionButton
               key={value}
               label={t(section5LabelKeys[i])}
+              value={value}
+              isSelected={
+                formData.amenities_preferences?.includes(value) ?? false
+              }
+              onClick={() => onToggle("amenities_preferences", value)}
+            />
+          ))}
+        </div>
+
+        {/* Section 6: smoking area — preferences.amenities.smoking.area */}
+        <StepHeader title={t(k.des.text6)} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch mb-6">
+          {SECTION6_VALUES.map((value, i) => (
+            <SelectionButton
+              key={value}
+              label={t(section6LabelKeys[i])}
               value={value}
               isSelected={
                 formData.amenities_preferences?.includes(value) ?? false

@@ -21,6 +21,8 @@ import {
 import type { User } from "../store/slices/authSlice";
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
 import { AMENITIES_BY_CATEGORY } from "../../shared/constants/admin-form-options";
+import { translateAmenityStoredLabel } from "../../shared/constants/amenities";
+import { useTranslation } from "../hooks/useTranslation";
 import {
   transformTenantTypeUIToAPI,
   transformTenantTypeAPIToUI,
@@ -86,6 +88,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   isLoading = false,
   operators = [],
 }) => {
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -1920,7 +1923,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         key={amenity}
                         className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
                       >
-                        {amenity}
+                        {translateAmenityStoredLabel(amenity, t)}
                         {!isFieldReadonly && (
                           <button
                             type="button"
@@ -1981,7 +1984,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                             readOnly
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span>{amenity}</span>
+                          <span>{translateAmenityStoredLabel(amenity, t)}</span>
                         </div>
                       ))}
                     </div>

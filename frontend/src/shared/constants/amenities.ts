@@ -1,5 +1,5 @@
 // Canonical list of amenities values used across preferences and admin forms.
-// Order must match wizard step 7 translations (amenities.name1–22).
+// Items 1–22: wizard step 7 amenities.name1–22; item 23: preferences.amenities.smoking.area.
 export const AMENITIES_VALUES = [
   "Co-working spaces", // 1
   "Meeting rooms", // 2
@@ -23,5 +23,21 @@ export const AMENITIES_VALUES = [
   "Pet daycare", // 20
   "Kids playroom", // 21
   "Nursery area", // 22
+  "Smoking area", // 23 — label: preferences.amenities.smoking.area
 ] as const;
+
+/** Localazy key by stored amenity string (when not using wizard amenities.name*). */
+export const AMENITY_LABEL_I18N_KEY: Partial<
+  Record<(typeof AMENITIES_VALUES)[number], string>
+> = {
+  "Smoking area": "preferences.amenities.smoking.area", // sync with preferencesAmenityKeys.smokingArea
+};
+
+export function translateAmenityStoredLabel(
+  storedValue: string,
+  t: (key: string) => string,
+): string {
+  const key = AMENITY_LABEL_I18N_KEY[storedValue as keyof typeof AMENITY_LABEL_I18N_KEY];
+  return key ? t(key) : storedValue;
+}
 

@@ -37,6 +37,11 @@ import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
 import { getCountryByCode, getDefaultCountry } from "@/shared/lib/countries";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
+import { useTranslation } from "../../../hooks/useTranslation";
+import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
+import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
+import { DateInput } from "@/shared/ui/DateInput/DateInput";
 
 type PropertyWithMedia = Property & {
   photos?: string[];
@@ -64,6 +69,7 @@ export default function PropertyPublicPage() {
   const id = params && typeof params.id === "string" ? params.id : null;
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const shortlistProperties = useSelector(selectShortlistProperties);
@@ -96,6 +102,12 @@ export default function PropertyPublicPage() {
   const [bookingEmailError, setBookingEmailError] = useState<
     string | undefined
   >(undefined);
+  const [bookingMoveInDate, setBookingMoveInDate] = useState<string | null>(
+    null,
+  );
+  const [bookingMoveOutDate, setBookingMoveOutDate] = useState<string | null>(
+    null,
+  );
   const [redirecting429, setRedirecting429] = useState(false);
 
   // Check if description needs truncation
@@ -464,6 +476,8 @@ export default function PropertyPublicPage() {
     setBookingEmail("");
     setBookingPhoneError(undefined);
     setBookingEmailError(undefined);
+    setBookingMoveInDate(null);
+    setBookingMoveOutDate(null);
     setIsBookingModalOpen(true);
   };
 
@@ -1060,14 +1074,14 @@ export default function PropertyPublicPage() {
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
           role="dialog"
           aria-modal="true"
-          aria-label="Request a viewing"
+          aria-label={t(listingPropertyKeys.viewingRequest.title)}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setIsBookingModalOpen(false);
             }
           }}
         >
-          <div className="w-md max-w-xl min-h-[540px] rounded-4xl bg-[#F9FAFC] shadow-2xl">
+          <div className="w-full max-w-xl min-h-[540px] rounded-4xl bg-[#F9FAFC] shadow-2xl">
             <div className="relative px-8 pt-8 pb-12 flex flex-col">
               <button
                 type="button"
@@ -1083,14 +1097,14 @@ export default function PropertyPublicPage() {
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-bold text-black mb-1">
-                Request a viewing
+                {t(listingPropertyKeys.viewingRequest.title)}
               </h3>
-              <p className="text-sm text-gray-600 mb-">
-                Select your preferred contact method
+              <p className="text-sm text-gray-600 mb-4">
+                {t(listingPropertyKeys.viewingRequest.contactMethod)}
               </p>
 
               <div className="space-y-4 flex-1">
-                <div className="mt-12">
+                <div className="mt-10">
                   <PhoneMaskInput
                     className="w-full min-h-[72px]"
                     countryCode={bookingPhoneCountryCode}
@@ -1117,7 +1131,7 @@ export default function PropertyPublicPage() {
                       setBookingPhone(fullPhone);
                       if (bookingPhoneError) setBookingPhoneError(undefined);
                     }}
-                    label="Phone"
+                    label={t(wizardKeys.profile.phone)}
                     // Use floating label instead of native placeholder to avoid overlap.
                     placeholder=""
                     disabled={bookingLoading}
@@ -1137,7 +1151,7 @@ export default function PropertyPublicPage() {
                       ].join(" "),
                     }}
                   />
-                  <div className="min-h-5 mt-1 px-6">
+                  <div className="mt-1 px-6">
                     {bookingPhoneError ? (
                       <p className="text-sm text-red-600">
                         {bookingPhoneError}
@@ -1148,7 +1162,7 @@ export default function PropertyPublicPage() {
 
                 <div>
                   <InputField
-                    label="Email"
+                    label={t(generalKeys.modalForm.emailLabel)}
                     type="email"
                     value={bookingEmail}
                     onChange={(e) => {
@@ -1166,13 +1180,62 @@ export default function PropertyPublicPage() {
                       .filter(Boolean)
                       .join(" ")}
                   />
-                  <div className="min-h-5 mt-1 px-6">
+                  <div className=" mt-1 px-6">
                     {bookingEmailError ? (
                       <p className="text-sm text-red-600">
                         {bookingEmailError}
                       </p>
                     ) : null}
                   </div>
+                </div>
+
+                <div className="space-y-4">
+                  <DateInput
+                    label={t(wizardKeys.step2.move.from.title)}
+                    name="booking_move_in_date"
+                    value={bookingMoveInDate}
+                    onChange={(date) => {
+                      setBookingMoveInDate(date || null);
+                      if (bookingMoveOutDate && date) {
+                        const out = new Date(bookingMoveOutDate);
+                        const inn = new Date(date);
+                        if (
+                          !isNaN(out.getTime()) &&
+                          !isNaN(inn.getTime()) &&
+                          out < inn
+                        ) {
+                          setBookingMoveOutDate(null);
+                        }
+                      }
+                    }}
+                    minDate={new Date().toISOString().split("T")[0]}
+                    placeholder={t(wizardKeys.profile.birth.text)}
+                    disabled={bookingLoading}
+                    className="[&_input]:!bg-white"
+                  />
+                  <DateInput
+                    label={t(wizardKeys.step2.move.to.title)}
+                    name="booking_move_out_date"
+                    value={bookingMoveOutDate}
+                    onChange={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const moveIn = bookingMoveInDate
+                        ? new Date(bookingMoveInDate)
+                        : today;
+                      moveIn.setHours(0, 0, 0, 0);
+                      const selected = date ? new Date(date) : null;
+                      const minDate = moveIn > today ? moveIn : today;
+                      if (selected && selected < minDate) return;
+                      setBookingMoveOutDate(date || null);
+                    }}
+                    minDate={
+                      bookingMoveInDate ||
+                      new Date().toISOString().split("T")[0]
+                    }
+                    disabled={bookingLoading}
+                    className="[&_input]:!bg-white"
+                  />
                 </div>
               </div>
 
@@ -1184,11 +1247,13 @@ export default function PropertyPublicPage() {
 
               <div className="mt-auto">
                 <Button
-                  className="relative bottom-[-50] w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="relative bottom-[-20] w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleSendBookingRequest}
                   disabled={bookingLoading || hasBookingRequest}
                 >
-                  {bookingLoading ? "Sending..." : "Send request"}
+                  {bookingLoading
+                    ? "Sending..."
+                    : t(listingPropertyKeys.viewingRequest.submit)}
                 </Button>
               </div>
             </div>
