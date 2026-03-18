@@ -1,13 +1,17 @@
 /**
  * Basic Profile Fields Component
- * 
+ *
  * Handles basic profile information fields (name, email, address, etc.).
  * Separated from main ProfileForm for better organization.
  */
 
-import React from 'react';
+"use client";
 
-import { DateInput } from '@/shared/ui';
+import React from "react";
+
+import { DateInput } from "@/shared/ui";
+import { useTranslation } from "@/app/hooks/useTranslation";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from '@/app/components/preferences/ui/InputField';
 import { UpdateUserData } from '@/entities/user/model/types';
 
@@ -24,6 +28,8 @@ export function BasicProfileFields({
   errors = {},
   disabled = false,
 }: BasicProfileFieldsProps): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       {/* Name Fields */}
@@ -77,7 +83,7 @@ export function BasicProfileFields({
         name="date_of_birth"
         value={formData.date_of_birth || null}
         onChange={(value) => onFieldChange('date_of_birth', value)}
-        placeholder="Select your date of birth"
+        placeholder={t(wizardKeys.profile.birth.text)}
         disabled={disabled}
         error={errors.date_of_birth}
         maxDate={new Date().toISOString().split('T')[0]} // Can't be in the future

@@ -15,6 +15,7 @@ import enTranslations from "../../translations/en.json";
 import esTranslations from "../../translations/es.json";
 import frTranslations from "../../translations/fr.json";
 import hiTranslations from "../../translations/hi.json";
+import itTranslations from "../../translations/it.json";
 import plTranslations from "../../translations/pl.json";
 import ruTranslations from "../../translations/ru.json";
 import trTranslations from "../../translations/tr.json";
@@ -28,6 +29,7 @@ type LanguageCode =
   | "es"
   | "fr"
   | "hi"
+  | "it"
   | "pl"
   | "ru"
   | "tr"
@@ -58,6 +60,7 @@ const LANGUAGE_MAP: Record<string, LanguageCode> = {
   ES: "es",
   FR: "fr",
   HI: "hi",
+  IT: "it",
   PL: "pl",
   RU: "ru",
   TR: "tr",
@@ -73,6 +76,7 @@ const LANGUAGE_DISPLAY_MAP: Record<LanguageCode, string> = {
   es: "ES",
   fr: "FR",
   hi: "HI",
+  it: "IT",
   pl: "PL",
   ru: "RU",
   tr: "TR",
@@ -88,6 +92,7 @@ const PRELOADED_TRANSLATIONS: Record<LanguageCode, Translations> = {
   es: esTranslations as Translations,
   fr: frTranslations as Translations,
   hi: hiTranslations as Translations,
+  it: itTranslations as Translations,
   pl: plTranslations as Translations,
   ru: ruTranslations as Translations,
   tr: trTranslations as Translations,
@@ -176,6 +181,7 @@ export function isValidLanguageCode(code: string): code is LanguageCode {
     "es",
     "fr",
     "hi",
+    "it",
     "pl",
     "ru",
     "tr",
@@ -210,6 +216,7 @@ export const SUPPORTED_LANGUAGES: Array<{
   { code: "ES", name: "Español", langCode: "es" },
   { code: "FR", name: "Français", langCode: "fr" },
   { code: "HI", name: "हिन्दी", langCode: "hi" },
+  { code: "IT", name: "Italiano", langCode: "it" },
   { code: "PL", name: "Polski", langCode: "pl" },
   { code: "RU", name: "Русский", langCode: "ru" },
   { code: "TR", name: "Türkçe", langCode: "tr" },

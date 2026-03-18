@@ -545,6 +545,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
             })()}
             error={dateOfBirthError || undefined}
             required
+            placeholder={t(wizardKeys.profile.birth.text)}
           />
         </div>
 
