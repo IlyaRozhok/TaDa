@@ -7,6 +7,8 @@ import { Property } from "../types";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
+import { useTranslation } from "../hooks/useTranslation";
+import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 
 interface PreferencePropertiesSectionProps {
   currentPropertyId: string;
@@ -17,6 +19,7 @@ const PreferencePropertiesSection: React.FC<
   PreferencePropertiesSectionProps
 > = ({ currentPropertyId, currentOperatorId }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,13 +77,13 @@ const PreferencePropertiesSection: React.FC<
     <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-black">
-          Other options from your preferences
+          {t(listingPropertyKeys.recommendations.title)}
         </h2>
         <button
           className="text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium"
           onClick={() => router.push("/app/units")}
         >
-          See more
+          {t(listingPropertyKeys.recommendations.seeMore)}
         </button>
       </div>
 

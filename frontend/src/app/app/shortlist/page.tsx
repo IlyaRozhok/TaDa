@@ -25,6 +25,11 @@ import { Heart, ChevronDown, Map } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { Property } from "../../types";
 import Footer from "../../components/Footer";
+import { useTranslation } from "../../hooks/useTranslation";
+import { favoritesKeys } from "../../lib/translationsKeys/favoritesTranslationKeys";
+import { listingPropertyKeys } from "../../lib/translationsKeys/listingPropertyTranslationKeys";
+import { formatListingResultsCountLabel } from "../../lib/formatListingResultsCount";
+import { getRedirectPath } from "../../utils/simpleRedirect";
 
 type SortOption =
   | "bestMatch"
@@ -139,6 +144,7 @@ function sortProperties(
 
 export default function ShortlistPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const [sessionReady, setSessionReady] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -307,12 +313,16 @@ export default function ShortlistPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Favourites
+              {t(favoritesKeys.title)}
             </h1>
             <p className="text-gray-600">
-              Review and compare your saved properties to find the perfect match
-              {" – "}
-              {count} {count === 1 ? "property" : "properties"}
+              {t(favoritesKeys.subtitle)}
+              <span className="ml-2 text-gray-900 font-medium">
+                {formatListingResultsCountLabel(
+                  t(listingPropertyKeys.resultsDescription),
+                  count,
+                )}
+              </span>
             </p>
           </div>
         </div>
@@ -333,16 +343,19 @@ export default function ShortlistPage() {
         )}
 
         {!loading && properties.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-slate-600 mb-6">
-              Your shortlist is empty. Start browsing and save properties to see
-              them here.
+          <div className="text-center py-12 max-w-md mx-auto">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              {t(favoritesKeys.emptyState.title)}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {t(favoritesKeys.emptyState.subtitle)}
             </p>
             <button
-              onClick={() => router.push("/app/units")}
-              className="text-slate-700 font-medium hover:text-slate-900 underline underline-offset-2 cursor-pointer"
+              type="button"
+              onClick={() => router.push(getRedirectPath(user))}
+              className="bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors cursor-pointer"
             >
-              Back to Dashboard
+              {t(favoritesKeys.emptyState.action)}
             </button>
           </div>
         )}

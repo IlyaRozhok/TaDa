@@ -7,6 +7,8 @@ import { Property } from "../types";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
+import { useTranslation } from "../hooks/useTranslation";
+import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 
 interface BuildingPropertiesSectionProps {
   buildingId: string;
@@ -24,6 +26,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   operatorName,
 }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,7 +85,9 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
               </span>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Property owner</p>
+              <p className="text-sm text-gray-600">
+                {t(listingPropertyKeys.building.label)}
+              </p>
               <button
                 type="button"
                 onClick={() => router.push(`/app/buildings/${buildingId}`)}
@@ -103,7 +108,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
                 : router.push(`/app/buildings/${buildingId}`)
             }
           >
-            See more apartment from this owner
+            {t(listingPropertyKeys.building.seeMoreApartments)}
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -129,7 +134,9 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
             </span>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Property owner</p>
+            <p className="text-sm text-gray-600">
+              {t(listingPropertyKeys.building.label)}
+            </p>
             <button
               type="button"
               onClick={() => router.push(`/app/buildings/${buildingId}`)}
@@ -150,7 +157,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
               : router.push(`/app/buildings/${buildingId}`)
           }
         >
-          See more apartment from this owner
+          {t(listingPropertyKeys.building.seeMoreApartments)}
         </button>
       </div>
 

@@ -8,21 +8,7 @@ import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
-
-/** Localazy: `{number}` / `{{number}}`, или без плейсхолдера — тогда показываем «• count …». */
-function listingResultsCountLabel(template: string, count: number): string {
-  const n = String(count);
-  const hasPlaceholder = /\{\{number\}\}|\{number\}/.test(template);
-  if (hasPlaceholder) {
-    const filled = template
-      .replace(/\{\{number\}\}/g, n)
-      .replace(/\{number\}/g, n)
-      .trim();
-    return filled.startsWith("•") ? filled : `• ${filled}`;
-  }
-  const suffix = template.trim();
-  return suffix ? `• ${n} ${suffix}` : `• ${n}`;
-}
+import { formatListingResultsCountLabel } from "../lib/formatListingResultsCount";
 
 interface ListedPropertiesSectionProps {
   properties: Array<{
@@ -71,27 +57,35 @@ type SortOption =
   | "highDeposit"
   | "dateAdded";
 
+const SORT_OPTION_ORDER: SortOption[] = [
+  "bestMatch",
+  "lowPrice",
+  "highPrice",
+  "lowDeposit",
+  "highDeposit",
+  "dateAdded",
+];
+
+const SORT_LABEL_KEY: Record<SortOption, string> = {
+  bestMatch: listingPropertyKeys.filter.bestMatch,
+  lowPrice: listingPropertyKeys.filter.lowPrice,
+  highPrice: listingPropertyKeys.filter.highPrice,
+  lowDeposit: listingPropertyKeys.filter.lowDeposit,
+  highDeposit: listingPropertyKeys.filter.highDeposit,
+  dateAdded: listingPropertyKeys.filter.dateAdded,
+};
+
 interface SortDropdownProps {
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
 }
 
 function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const sortOptions = [
-    { value: "bestMatch" as const, label: "Best Match Score" },
-    { value: "lowPrice" as const, label: "Low price" },
-    { value: "highPrice" as const, label: "High Price" },
-    { value: "lowDeposit" as const, label: "Low Deposit" },
-    { value: "highDeposit" as const, label: "High Deposit" },
-    { value: "dateAdded" as const, label: "Date Added" },
-  ];
-
-  const currentLabel =
-    sortOptions.find((opt) => opt.value === sortBy)?.label ||
-    "Best Match Score";
+  const currentLabel = t(SORT_LABEL_KEY[sortBy]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -134,25 +128,25 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
           }}
         >
           <div className="max-h-64 overflow-y-auto rounded-xl relative">
-            {sortOptions.map((option) => (
+            {SORT_OPTION_ORDER.map((value) => (
               <button
-                key={option.value}
+                key={value}
                 onClick={() => {
-                  onSortChange(option.value);
+                  onSortChange(value);
                   setIsOpen(false);
                 }}
                 className={`block w-full cursor-pointer px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg ${
-                  sortBy === option.value
+                  sortBy === value
                     ? "bg-white/18 text-white font-semibold"
                     : "text-white hover:bg-white/12"
                 }`}
                 style={{
                   backdropFilter:
-                    sortBy === option.value ? "blur(10px)" : undefined,
-                  fontWeight: sortBy === option.value ? 600 : undefined,
+                    sortBy === value ? "blur(10px)" : undefined,
+                  fontWeight: sortBy === value ? 600 : undefined,
                 }}
               >
-                {option.label}
+                {t(SORT_LABEL_KEY[value])}
               </button>
             ))}
           </div>
@@ -251,7 +245,7 @@ export default function ListedPropertiesSection({
           <p className="text-gray-600">
             {t(listingPropertyKeys.subtitle)}
             <span className="ml-2 text-gray-900 font-medium">
-              {listingResultsCountLabel(
+              {formatListingResultsCountLabel(
                 t(listingPropertyKeys.resultsDescription),
                 totalCount ?? 0,
               )}
@@ -310,11 +304,10 @@ export default function ListedPropertiesSection({
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No properties found
+                {t(listingPropertyKeys.emptyState.noResultsTitle)}
               </h3>
               <p className="text-gray-500">
-                Try adjusting your search terms or preferences to see more
-                results
+                {t(listingPropertyKeys.emptyState.noResultsSubtitle)}
               </p>
             </div>
           </div>

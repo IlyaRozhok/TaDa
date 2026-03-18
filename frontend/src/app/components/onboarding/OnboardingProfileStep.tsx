@@ -380,7 +380,7 @@ export default function OnboardingProfileStep({
             <div>
               <PhoneMaskInput
                 countryCode={phoneCountryCode}
-                label="Phone Number"
+                label={t(wizardKeys.profile.phone)}
                 value={phoneNumberOnly}
                 onChange={(value) => {
                   setPhoneNumberOnly(value || "");

@@ -339,7 +339,11 @@ export default function NewPreferencesPage({
                     : "bg-black text-white hover:bg-gray-800"
                 }`}
               >
-                {t(onboardingKeys.bottom.nextButton)}
+                {t(
+                  isLastStep
+                    ? onboardingKeys.bottom.doneButton
+                    : onboardingKeys.bottom.nextButton,
+                )}
               </button>
             </div>
           </div>

@@ -139,6 +139,7 @@ export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({
             minDate={
               formData.move_in_date || new Date().toISOString().split("T")[0]
             }
+            placeholder={t(wizardKeys.profile.birth.text)}
           />
         </div>
 

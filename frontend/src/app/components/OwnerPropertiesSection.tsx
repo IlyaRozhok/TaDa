@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { propertiesAPI } from "../lib/api";
 import { Property } from "../types";
+import { useTranslation } from "../hooks/useTranslation";
+import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 
 interface OwnerPropertiesSectionProps {
   operatorId: string;
@@ -15,6 +17,7 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
   operatorName,
   currentPropertyId,
 }) => {
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -89,7 +92,9 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
             </div>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Property owner</p>
+            <p className="text-sm text-gray-600">
+              {t(listingPropertyKeys.building.label)}
+            </p>
             <h2 className="text-xl font-semibold text-black">{operatorName}</h2>
           </div>
         </div>
@@ -99,7 +104,7 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
             (window.location.href = `/app/operators/${operatorId}`)
           }
         >
-          See more apartment from this owner
+          {t(listingPropertyKeys.building.seeMoreApartments)}
         </button>
       </div>
 

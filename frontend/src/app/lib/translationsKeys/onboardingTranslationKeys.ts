@@ -18,6 +18,8 @@ export const onboardingKeys = {
   bottom: {
     prevButton: "onboarding..prev.button",
     nextButton: "onboarding..next.button",
+    /** Last step in preferences (submit) */
+    doneButton: "onboarding..done.button",
     finishButton: "onboarding..finish.button",
     savingText: "onboarding..saving.text",
     stepText: "onboarding.step.text",

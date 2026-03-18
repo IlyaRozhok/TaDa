@@ -7,6 +7,8 @@ import Image from "next/image";
 
 import { PropertyMedia } from "../types";
 import { PROPERTY_PLACEHOLDER } from "../utils/placeholders";
+import { useTranslation } from "../hooks/useTranslation";
+import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 
 interface ImageGalleryProps {
   images?: string[]; // Deprecated: for backward compatibility
@@ -19,6 +21,7 @@ const ImageGallery = memo(function ImageGallery({
   media,
   alt,
 }: ImageGalleryProps) {
+  const { t } = useTranslation();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMainImageLoaded, setIsMainImageLoaded] = useState(false);
@@ -170,7 +173,7 @@ const ImageGallery = memo(function ImageGallery({
 
           {/* Click to expand hint */}
           <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-3lg sm:rounded-3xl text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            Click to view fullscreen
+            {t(listingPropertyKeys.gallery.viewFullscreen)}
           </div>
         </div>
       </div>

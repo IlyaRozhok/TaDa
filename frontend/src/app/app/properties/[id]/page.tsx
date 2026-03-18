@@ -38,10 +38,19 @@ import { getCountryByCode, getDefaultCountry } from "@/shared/lib/countries";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
 import { useTranslation } from "../../../hooks/useTranslation";
-import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
+import {
+  listingPropertyKeys,
+  listingNotificationKeys,
+  propertyDetailsKeys,
+} from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
 import { DateInput } from "@/shared/ui/DateInput/DateInput";
+import {
+  getBuildingTypeTranslationKey,
+  getPropertyTypeTranslationKey,
+  getFurnishingTranslationKey,
+} from "@/shared/constants/mappings";
 
 type PropertyWithMedia = Property & {
   photos?: string[];
@@ -514,6 +523,7 @@ export default function PropertyPublicPage() {
       await bookingRequestsAPI.create(property.id);
       setHasBookingRequest(true);
       setIsBookingModalOpen(false);
+      notify.success(t(listingNotificationKeys.viewingRequestSentMessage));
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
@@ -621,6 +631,56 @@ export default function PropertyPublicPage() {
 
   const publishDate = new Date(property?.created_at || Date.now());
 
+  const buildingTypeLabel = (() => {
+    const raw = property.building_type
+      ? String(property.building_type).toLowerCase()
+      : "";
+    const key = raw ? getBuildingTypeTranslationKey(raw) : undefined;
+    if (key) return t(key);
+    if (raw)
+      return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    return t(wizardKeys.step3.propertyTypeOptions[0]);
+  })();
+
+  const propertyTypeLabel = (() => {
+    const raw = property.property_type
+      ? String(property.property_type).toLowerCase()
+      : "";
+    const key = raw ? getPropertyTypeTranslationKey(raw) : undefined;
+    if (key) return t(key);
+    if (raw)
+      return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    return t(wizardKeys.step3.propertyTypeOptions[0]);
+  })();
+
+  const furnishingLabel = (() => {
+    const raw = property.furnishing
+      ? String(property.furnishing).toLowerCase()
+      : "";
+    const key = raw ? getFurnishingTranslationKey(raw) : undefined;
+    if (key) return t(key);
+    return t(wizardKeys.step3.furnishingCount[1]);
+  })();
+
+  const bedroomsLabel = (() => {
+    const n = property.bedrooms;
+    if (n == null || n === 0) return "N/A";
+    if (n >= 5) return t(wizardKeys.step3.roomsCount[4]);
+    return t(wizardKeys.step3.roomsCount[n - 1]);
+  })();
+
+  const bathroomsLabel = (() => {
+    const n = property.bathrooms;
+    if (n == null || n === 0) return "N/A";
+    if (n >= 4) return t(wizardKeys.step3.bathroomsCount[3]);
+    return t(wizardKeys.step3.bathroomsCount[n - 1]);
+  })();
+
+  const sizeLabel =
+    property.square_meters != null
+      ? `${Math.round(property.square_meters * 10.764)} ${t(listingPropertyKeys.card.sqFt)}`
+      : "N/A";
+
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: "auto" }}>
       <TenantUniversalHeader showPreferencesButton={true} />
@@ -662,7 +722,8 @@ export default function PropertyPublicPage() {
               </span>
               <span className="hidden sm:inline">•</span>
               <span className="text-xs sm:text-sm text-gray-500">
-                Publish date {publishDate.toLocaleDateString("en-GB")}
+                {t(listingPropertyKeys.details.listedOn)}{" "}
+                {publishDate.toLocaleDateString("en-GB")}
               </span>
             </div>
           </div>
@@ -744,28 +805,26 @@ export default function PropertyPublicPage() {
             {/* Details section under gallery */}
             <div className="mt-6 sm:mt-8">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-6">
-                Details
+                {t(listingPropertyKeys.details.sectionTitle)}
               </h2>
               <div className="bg-gray-50 rounded-xl sm:rounded-2xl py-3 px-3 sm:py-4 sm:px-4">
                 <div className="grid grid-cols-2 sm:grid-cols-[repeat(3,minmax(5.5rem,1fr))] lg:grid-cols-[repeat(6,minmax(5.5rem,1fr))] gap-x-3 gap-y-4 sm:gap-6">
                   <div className="flex flex-col items-center justify-center min-w-[5rem] sm:min-w-0 py-1">
                     <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
-                      Building Type
+                      {t(wizardKeys.step4.des.text1)}
                     </p>
                     <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
-                      {property.building_type === "btr"
-                        ? "Built to rent"
-                        : property.building_type || "Apartment"}
+                      {buildingTypeLabel}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0">
                     <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
                     <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
                       <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
-                        Property type
+                        {t(wizardKeys.step3.des.text1)}
                       </p>
                       <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
-                        {property.property_type || "Apartment"}
+                        {propertyTypeLabel}
                       </p>
                     </div>
                   </div>
@@ -773,13 +832,10 @@ export default function PropertyPublicPage() {
                     <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
                     <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
                       <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
-                        Furnishing
+                        {t(wizardKeys.step3.des.text4)}
                       </p>
                       <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
-                        {property.furnishing
-                          ? property.furnishing.charAt(0).toUpperCase() +
-                            property.furnishing.slice(1)
-                          : "Unfurnished"}
+                        {furnishingLabel}
                       </p>
                     </div>
                   </div>
@@ -787,10 +843,10 @@ export default function PropertyPublicPage() {
                     <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
                     <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
                       <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
-                        Bedrooms
+                        {t(wizardKeys.step3.des.text2)}
                       </p>
                       <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
-                        {property.bedrooms || "N/A"}
+                        {bedroomsLabel}
                       </p>
                     </div>
                   </div>
@@ -798,10 +854,10 @@ export default function PropertyPublicPage() {
                     <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
                     <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
                       <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
-                        Bathrooms
+                        {t(wizardKeys.step3.des.text3)}
                       </p>
                       <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
-                        {property.bathrooms || "N/A"}
+                        {bathroomsLabel}
                       </p>
                     </div>
                   </div>
@@ -809,12 +865,10 @@ export default function PropertyPublicPage() {
                     <div className="hidden sm:block h-8 w-px bg-gray-200 flex-shrink-0" />
                     <div className="flex flex-col items-center justify-center min-w-0 py-1 flex-1">
                       <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap">
-                        Size
+                        {t(wizardKeys.step3.des.text6)}
                       </p>
                       <p className="text-black rounded-lg text-sm sm:text-base text-center break-words">
-                        {property.square_meters
-                          ? `${Math.round(property.square_meters * 10.764)} sq ft`
-                          : "N/A"}
+                        {sizeLabel}
                       </p>
                     </div>
                   </div>
@@ -835,7 +889,9 @@ export default function PropertyPublicPage() {
                     </div>
                   </div>
                   <div className="flex flex-col justify-start flex-1">
-                    <div className="text-gray-600 text-sm mb-1">Building</div>
+                    <div className="text-gray-600 text-sm mb-1">
+                      {t(listingPropertyKeys.building.label)}
+                    </div>
                     <button
                       className="font-semibold text-2xl text-black mb-1 cursor-pointer hover:underline transition-colors text-left"
                       onClick={() =>
@@ -850,7 +906,7 @@ export default function PropertyPublicPage() {
                         router.push(`/app/buildings/${property.building?.id}`)
                       }
                     >
-                      See more about this building
+                      {t(listingPropertyKeys.building.seeMore)}
                     </button>
                   </div>
                 </div>
@@ -858,7 +914,9 @@ export default function PropertyPublicPage() {
 
               {/* Availability */}
               <div className="mb-4 flex items-baseline font-semibold">
-                <p className="text-base text-black mb-1 px-4">Available from</p>
+                <p className="text-base text-black mb-1 px-4">
+                  {t(listingPropertyKeys.availability.availableFrom)}
+                </p>
                 <p className="text-base text-black">
                   {property.available_from
                     ? new Date(property.available_from).toLocaleDateString(
@@ -880,7 +938,7 @@ export default function PropertyPublicPage() {
                     £{Number(property.price || 0).toLocaleString()}
                   </div>
                   <div className="text-base text-gray-600 ml-5">
-                    Price per month
+                    {t(propertyDetailsKeys.pcm)}
                   </div>
                 </div>
 
@@ -890,26 +948,26 @@ export default function PropertyPublicPage() {
                   disabled={bookingLoading || hasBookingRequest}
                 >
                   {hasBookingRequest
-                    ? "Book requested"
+                    ? t(listingPropertyKeys.pricing.bookRequested)
                     : bookingLoading
                       ? "Sending..."
-                      : "Book this apartment"}
+                      : t(propertyDetailsKeys.btn.book)}
                 </Button>
                 {bookingInlineError && (
                   <p className="text-sm text-red-600 text-center mb-3">
                     {bookingInlineError}
                   </p>
                 )}
-
+                {/* 
                 <p className="text-xs text-gray-500 text-center mb-6">
                   You won&apos;t be charged yet, only after reservation and
                   approve your form
-                </p>
+                </p> */}
 
                 {/* Payment breakdown */}
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   <h4 className="font-semibold text-black mb-4 text-sm sm:text-base">
-                    More about next payments
+                    {t(listingPropertyKeys.payments.breakdownTitle)}
                   </h4>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between items-center">
@@ -947,7 +1005,7 @@ export default function PropertyPublicPage() {
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-            About apartment
+            {t(listingPropertyKeys.description.sectionTitle)}
           </h2>
           <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
             {(() => {
@@ -989,7 +1047,7 @@ export default function PropertyPublicPage() {
       <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-            What this place offers
+            {t(listingPropertyKeys.keyFeatures.sectionTitle)}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
             {(() => {
@@ -1042,7 +1100,7 @@ export default function PropertyPublicPage() {
                 >
                   {showAllOffers
                     ? `Show less`
-                    : `Show more (${allAmenitiesList.length})`}
+                    : `${t(propertyDetailsKeys.showMoreBtn)} (${allAmenitiesList.length})`}
                 </button>
               )
             );
