@@ -1067,8 +1067,8 @@ export default function PropertyPublicPage() {
             }
           }}
         >
-          <div className="w-full max-w-xl min-h-[540px] rounded-3xl bg-[#F9FAFC] shadow-2xl">
-            <div className="relative px-10 pt-12 pb-12 flex flex-col">
+          <div className="w-md max-w-xl min-h-[540px] rounded-4xl bg-[#F9FAFC] shadow-2xl">
+            <div className="relative px-8 pt-8 pb-12 flex flex-col">
               <button
                 type="button"
                 onClick={() => setIsBookingModalOpen(false)}
@@ -1123,12 +1123,14 @@ export default function PropertyPublicPage() {
                     disabled={bookingLoading}
                     inputMaskProps={{
                       className: [
+                        "w-full",
+                        "rounded-r-4xl",
                         "bg-white",
                         "text-gray-900 text-base",
                         "placeholder-gray-500",
                         "focus:outline-none focus:ring-0",
                         "outline-none",
-                        "pt-10 pb-5 min-h-[72px]",
+                        "pt-10 pb-5 h-[72px]",
                         bookingPhoneError
                           ? "ring-2 ring-red-400 focus:ring-red-500"
                           : "",
@@ -1155,11 +1157,14 @@ export default function PropertyPublicPage() {
                     }}
                     disabled={bookingLoading}
                     error={bookingEmailError}
-                    className={
+                    className={[
+                      "!bg-white sm:!bg-white",
                       bookingEmailError
                         ? "ring-2 ring-red-400 focus:ring-red-500"
-                        : ""
-                    }
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   />
                   <div className="min-h-5 mt-1 px-6">
                     {bookingEmailError ? (
@@ -1179,7 +1184,7 @@ export default function PropertyPublicPage() {
 
               <div className="mt-auto">
                 <Button
-                  className="w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="relative bottom-[-100] w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleSendBookingRequest}
                   disabled={bookingLoading || hasBookingRequest}
                 >

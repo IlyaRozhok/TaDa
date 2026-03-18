@@ -128,7 +128,7 @@ export default function PhoneMaskInput({
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center cursor-pointer justify-between px-3 py-4 bg-white rounded-l-3xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center cursor-pointer justify-between px-3 py-4 bg-white rounded-l-4xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-lg flex-shrink-0">
@@ -251,7 +251,7 @@ export default function PhoneMaskInput({
               onBlur={() => setIsFocused(false)}
               slotChar=""
               unmask={false}
-              className={`w-full px-6 pt-8 pb-4 rounded-r-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400  ${
+              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400  ${
                 error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
               } ${inputMaskProps?.className || ""}`}
               {...inputMaskProps}
