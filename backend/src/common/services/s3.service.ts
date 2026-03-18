@@ -193,6 +193,26 @@ export class S3Service {
    * @param key - S3 object key
    * @param expiresIn - URL expiration time in seconds (default: 24 hours)
    */
+  /**
+   * Re-sign GET URL for objects under our key prefix. Avatar URLs in DB are presigned and expire (~24h);
+   * after expiry S3 returns XML errors in the browser.
+   */
+  async refreshAvatarUrl(storedUrl: string | null): Promise<string | null> {
+    if (!storedUrl) return null;
+    if (this.isDevMode) return storedUrl;
+    try {
+      const u = new URL(storedUrl);
+      let pathname = u.pathname.replace(/^\//, "");
+      pathname = decodeURIComponent(pathname);
+      if (pathname.includes("..")) return storedUrl;
+      const prefixBase = this.keyPrefix.replace(/\/$/, "");
+      if (!pathname.startsWith(`${prefixBase}/`)) return storedUrl;
+      return await this.getPresignedUrl(pathname);
+    } catch {
+      return storedUrl;
+    }
+  }
+
   async getPresignedUrl(
     key: string,
     expiresIn: number = 86400

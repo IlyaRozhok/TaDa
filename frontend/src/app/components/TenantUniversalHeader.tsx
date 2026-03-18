@@ -19,6 +19,7 @@ import {
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
+import { headerKeys } from "@/app/lib/translationsKeys/headerTranslationKeys";
 
 interface TenantUniversalHeaderProps {
   preferencesCount?: number;
@@ -114,9 +115,9 @@ export default function TenantUniversalHeader({
                   type="search"
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  placeholder="Search property or type of property"
+                  placeholder={t(headerKeys.searchPlaceholder)}
                   className="w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-3xl focus:outline-0 focus:border-gray-400"
-                  aria-label="Search property or type of property"
+                  aria-label={t(headerKeys.searchPlaceholder)}
                 />
               </label>
             </div>

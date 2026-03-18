@@ -7,19 +7,21 @@ import { UpdateTenantCvDto } from "./dto/update-tenant-cv.dto";
 import { TenantCvResponseDto } from "./dto/tenant-cv-response.dto";
 import { UserQueryService } from "../users/services/user-query.service";
 import { buildTenantCvResponse } from "./tenant-cv.mapper";
+import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
 export class TenantCvService {
   constructor(
     @InjectRepository(TenantCv)
     private readonly tenantCvRepository: Repository<TenantCv>,
-    private readonly userQueryService: UserQueryService
+    private readonly userQueryService: UserQueryService,
+    private readonly s3Service: S3Service
   ) {}
 
   async getForUser(userId: string): Promise<TenantCvResponseDto> {
     const user = await this.userQueryService.findOneWithProfiles(userId);
     const cv = await this.findCvByUserId(userId);
-    return buildTenantCvResponse(user, cv);
+    return this.withRefreshedAvatarUrl(buildTenantCvResponse(user, cv));
   }
 
   async getByShareUuid(shareUuid: string): Promise<TenantCvResponseDto> {
@@ -32,7 +34,7 @@ export class TenantCvService {
     }
 
     const user = await this.userQueryService.findOneWithProfiles(cv.user_id);
-    return buildTenantCvResponse(user, cv);
+    return this.withRefreshedAvatarUrl(buildTenantCvResponse(user, cv));
   }
 
   async updateForUser(
@@ -51,7 +53,20 @@ export class TenantCvService {
 
     await this.tenantCvRepository.save(cv);
 
-    return buildTenantCvResponse(user, cv);
+    return this.withRefreshedAvatarUrl(buildTenantCvResponse(user, cv));
+  }
+
+  private async withRefreshedAvatarUrl(
+    dto: TenantCvResponseDto
+  ): Promise<TenantCvResponseDto> {
+    const raw = dto.profile?.avatar_url;
+    if (!raw) return dto;
+    const fresh = await this.s3Service.refreshAvatarUrl(raw);
+    if (!fresh || fresh === raw) return dto;
+    return {
+      ...dto,
+      profile: { ...dto.profile, avatar_url: fresh },
+    };
   }
 
   async ensureShareUuid(userId: string): Promise<{ share_uuid: string }> {

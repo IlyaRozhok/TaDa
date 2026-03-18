@@ -1,6 +1,13 @@
+"use client";
+
 import React from "react";
-import { MapPin } from "lucide-react";
 import { Property } from "@/app/types";
+import { useTranslation } from "@/app/hooks/useTranslation";
+import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
+import {
+  getPropertyTypeTranslationKey,
+  getFurnishingTranslationKey,
+} from "@/shared/constants/mappings";
 
 const iconClass = "w-4 h-4 mr-1 flex-shrink-0";
 
@@ -15,6 +22,9 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
   matchScore,
   matchCategories, // eslint-disable-line @typescript-eslint/no-unused-vars
 }) => {
+  const { t } = useTranslation();
+  const k = listingPropertyKeys.card;
+
   const formatPrice = (price: number | string) => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
     if (isNaN(numPrice)) return "£0";
@@ -29,10 +39,8 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
   const areaSqm =
     property.square_meters ?? property.total_area ?? property.living_area;
 
-  const formatArea = (sqm: number) => {
-    const sqft = Math.round(sqm * 10.764);
-    return `${sqft} sq ft`;
-  };
+  const formatAreaSqm = (sqm: number) =>
+    `${Math.round(sqm)} ${t(k.sqFt)}`.trim();
 
   const availabilityText = property.available_from
     ? (() => {
@@ -51,15 +59,17 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
   const attributeParts: string[] = [];
   if (property.is_btr) attributeParts.push("Built to rent");
   if (property.property_type) {
+    const raw = String(property.property_type).toLowerCase();
+    const typeKey = getPropertyTypeTranslationKey(raw);
     attributeParts.push(
-      property.property_type
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase()),
+      typeKey ? t(typeKey) : raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     );
   }
   if (property.furnishing) {
+    const raw = String(property.furnishing).toLowerCase();
+    const furKey = getFurnishingTranslationKey(raw);
     attributeParts.push(
-      property.furnishing.replace(/\b\w/g, (c) => c.toUpperCase()),
+      furKey ? t(furKey) : raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     );
   }
 
@@ -82,19 +92,19 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
         <div className="flex items-center">
           <img src="/beds.svg" alt="" className={iconClass} />
           <span>
-            {property.bedrooms} Bed{property.bedrooms !== 1 ? "s" : ""}
+            {property.bedrooms} {t(k.beds)}
           </span>
         </div>
         <div className="flex items-center">
           <img src="/baths.svg" alt="" className={iconClass} />
           <span>
-            {property.bathrooms} Bath{property.bathrooms !== 1 ? "s" : ""}
+            {property.bathrooms} {t(k.bath)}
           </span>
         </div>
         {areaSqm != null && (
           <div className="flex items-center">
             <img src="/sqmeters.svg" alt="" className={iconClass} />
-            <span>{formatArea(areaSqm)}</span>
+            <span>{formatAreaSqm(areaSqm)}</span>
           </div>
         )}
       </div>
@@ -110,7 +120,9 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
       <div className="flex items-center gap-2 flex-wrap text-sm">
         <span className="text-xl font-bold text-gray-900">
           {formatPrice(property.price)}
-          <span className="text-sm font-normal text-gray-500">/ month</span>
+          <span className="text-sm font-normal text-gray-500">
+            {t(k.priceMonth)}
+          </span>
         </span>
         <span className="text-gray-400">•</span>
         <span className="text-gray-500">{availabilityText}</span>

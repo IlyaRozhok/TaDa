@@ -6,6 +6,23 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Property, Preferences } from "../types";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import { useTranslation } from "../hooks/useTranslation";
+import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
+
+/** Localazy: `{number}` / `{{number}}`, или без плейсхолдера — тогда показываем «• count …». */
+function listingResultsCountLabel(template: string, count: number): string {
+  const n = String(count);
+  const hasPlaceholder = /\{\{number\}\}|\{number\}/.test(template);
+  if (hasPlaceholder) {
+    const filled = template
+      .replace(/\{\{number\}\}/g, n)
+      .replace(/\{number\}/g, n)
+      .trim();
+    return filled.startsWith("•") ? filled : `• ${filled}`;
+  }
+  const suffix = template.trim();
+  return suffix ? `• ${n} ${suffix}` : `• ${n}`;
+}
 
 interface ListedPropertiesSectionProps {
   properties: Array<{
@@ -157,6 +174,7 @@ export default function ListedPropertiesSection({
   showShortlistForAllRoles = false,
 }: ListedPropertiesSectionProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -228,13 +246,15 @@ export default function ListedPropertiesSection({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Listed property
+            {t(listingPropertyKeys.title)}
           </h2>
           <p className="text-gray-600">
-            After you log in, our service gives you the best results tailored to
-            your preferences
+            {t(listingPropertyKeys.subtitle)}
             <span className="ml-2 text-gray-900 font-medium">
-              • {totalCount} items
+              {listingResultsCountLabel(
+                t(listingPropertyKeys.resultsDescription),
+                totalCount ?? 0,
+              )}
             </span>
           </p>
         </div>

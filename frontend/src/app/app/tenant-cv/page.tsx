@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { TenantCvView } from "../../components/tenant-cv/TenantCvView";
-import { tenantCvAPI } from "../../lib/api";
 import { TenantCvResponse } from "../../types/tenantCv";
-import { useGetTenantCvQuery } from "../../store/slices/apiSlice";
+import {
+  useGetTenantCvQuery,
+  useCreateTenantCvShareMutation,
+} from "../../store/slices/apiSlice";
 
 export default function TenantCvPage() {
   const [data, setData] = useState<TenantCvResponse | null>(null);
@@ -21,6 +23,19 @@ export default function TenantCvPage() {
     isFetching,
     error: cvQueryError,
   } = useGetTenantCvQuery(undefined);
+
+  const [createShare] = useCreateTenantCvShareMutation();
+
+  function extractShareUuid(body: unknown): string | undefined {
+    if (!body || typeof body !== "object") return undefined;
+    const o = body as Record<string, unknown>;
+    if (typeof o.share_uuid === "string") return o.share_uuid;
+    const inner = o.data;
+    if (inner && typeof inner === "object" && typeof (inner as { share_uuid?: string }).share_uuid === "string") {
+      return (inner as { share_uuid: string }).share_uuid;
+    }
+    return undefined;
+  }
 
   // Normalize and store data in local state (so existing view API не меняется)
   useEffect(() => {
@@ -48,21 +63,57 @@ export default function TenantCvPage() {
   }, [cvQueryError]);
 
   const handleShare = async () => {
+    let copied = false;
     try {
       setShareLoading(true);
-      const response = await tenantCvAPI.createShare();
-      const uuid = response.data?.share_uuid;
-      if (uuid && typeof window !== "undefined") {
-        const url = `${window.location.origin}/cv/${uuid}`;
-        setShareUrl(url);
-        await navigator.clipboard?.writeText(url);
-        setShareMessage("Share link copied to clipboard");
+      const result = await createShare().unwrap();
+      const uuid = extractShareUuid(result);
+      if (!uuid || typeof window === "undefined") {
+        setShareMessage("Unable to generate share link");
+        return;
       }
-    } catch (err) {
-      setShareMessage("Unable to generate share link");
+      const url = `${window.location.origin}/cv/${uuid}`;
+      setShareUrl(url);
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(url);
+          copied = true;
+        }
+      } catch {
+        // Safari often rejects Clipboard API even after a click; fall back below
+      }
+      if (!copied) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = url;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          copied = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch {
+          copied = false;
+        }
+      }
+      setShareMessage(
+        copied
+          ? "Share link copied to clipboard"
+          : `Copy this link: ${url}`
+      );
+    } catch (e: unknown) {
+      const msg =
+        e &&
+        typeof e === "object" &&
+        "data" in e &&
+        (e as { data?: { message?: string } }).data?.message;
+      setShareMessage(
+        typeof msg === "string" ? msg : "Unable to generate share link",
+      );
     } finally {
       setShareLoading(false);
-      setTimeout(() => setShareMessage(null), 2500);
+      setTimeout(() => setShareMessage(null), copied ? 2500 : 5000);
     }
   };
 
