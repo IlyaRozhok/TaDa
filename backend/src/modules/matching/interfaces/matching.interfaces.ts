@@ -12,9 +12,11 @@ export interface CategoryWeights {
   propertyType: number; // Property type match
   availability: number; // Move-in date compatibility
   amenities: number; // Amenities match (including outdoor space)
+  occupation: number; // Occupation compatibility with tenant types
+  familyStatus: number; // Family status compatibility
+  children: number; // Children compatibility with property
   bathrooms: number; // Bathroom count
   buildingStyle: number; // Building type
-  lifestyle: number; // Lifestyle compatibility (occupation, family status)
   duration: number; // Let duration
   squareMeters: number; // Size preference
   furnishing: number; // Furnishing preference
@@ -26,21 +28,24 @@ export interface CategoryWeights {
 /**
  * Default category weights
  * Optimized based on user priorities and real-world importance
+ * Enhanced lifestyle factors (occupation, family status, children) now total 15 points
  */
 export const DEFAULT_WEIGHTS: CategoryWeights = {
-  budget: 20, // Most critical - affordability
+  budget: 18, // Most critical - affordability (reduced from 20)
   location: 15, // Very important - proximity to work/preferred areas
   bedrooms: 12, // Critical for space needs
   propertyType: 10, // Important property characteristic
   availability: 8, // Important for move-in planning
   amenities: 8, // Important for lifestyle (includes outdoor space)
-  bathrooms: 5, // Important but flexible
-  buildingStyle: 5, // Preference-based
-  lifestyle: 4, // Family/occupation compatibility
-  duration: 4, // Contract flexibility
-  squareMeters: 3, // Size preference
-  furnishing: 2, // Nice to have
-  smoking: 2, // Health/lifestyle compatibility
+  occupation: 6, // NEW - Occupation compatibility with tenant types
+  familyStatus: 5, // NEW - Family status compatibility  
+  children: 4, // NEW - Children compatibility with property
+  bathrooms: 4, // Important but flexible (reduced from 5)
+  buildingStyle: 4, // Preference-based (reduced from 5)
+  duration: 3, // Contract flexibility (reduced from 4)
+  squareMeters: 2, // Size preference (reduced from 3)
+  furnishing: 1, // Nice to have (reduced from 2)
+  smoking: 1, // Health/lifestyle compatibility (reduced from 2)
   pets: 1, // Specific need
   bills: 1, // Financial detail
 };

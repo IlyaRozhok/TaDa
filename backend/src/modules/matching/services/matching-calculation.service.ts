@@ -58,35 +58,45 @@ export class MatchingCalculationService {
       this.matchBuildingStyle(property, preferences, weights.buildingStyle),
     );
 
-    // 9. Lifestyle compatibility matching (NEW)
+    // 9. Occupation compatibility matching (ENHANCED)
     categories.push(
-      this.matchLifestyle(property, preferences, weights.lifestyle),
+      this.matchOccupation(property, preferences, weights.occupation),
     );
 
-    // 10. Duration matching
+    // 10. Family status compatibility matching (ENHANCED)
+    categories.push(
+      this.matchFamilyStatus(property, preferences, weights.familyStatus),
+    );
+
+    // 11. Children compatibility matching (ENHANCED)
+    categories.push(
+      this.matchChildren(property, preferences, weights.children),
+    );
+
+    // 12. Duration matching
     categories.push(
       this.matchDuration(property, preferences, weights.duration),
     );
 
-    // 11. Square meters matching
+    // 13. Square meters matching
     categories.push(
       this.matchSquareMeters(property, preferences, weights.squareMeters),
     );
 
-    // 12. Furnishing matching
+    // 14. Furnishing matching
     categories.push(
       this.matchFurnishing(property, preferences, weights.furnishing),
     );
 
-    // 13. Smoking compatibility matching (NEW)
+    // 15. Smoking compatibility matching
     categories.push(
       this.matchSmoking(property, preferences, weights.smoking),
     );
 
-    // 14. Pets matching
+    // 16. Pets matching
     categories.push(this.matchPets(property, preferences, weights.pets));
 
-    // 15. Bills matching
+    // 17. Bills matching
     categories.push(this.matchBills(property, preferences, weights.bills));
 
     // Calculate totals - ONLY include categories where user has set a preference
@@ -1079,32 +1089,28 @@ export class MatchingCalculationService {
 
 
   /**
-   * Lifestyle compatibility matching (NEW)
-   * Matches occupation, family_status with property tenant_types and characteristics
+   * Occupation compatibility matching (ENHANCED)
+   * Matches user's occupation with property tenant types
    */
-  private matchLifestyle(
+  private matchOccupation(
     property: Property,
     preferences: Preferences,
     maxScore: number,
   ): CategoryMatchResult {
     const occupation = preferences.occupation;
-    const familyStatus = preferences.family_status;
-    const childrenCount = preferences.children_count;
     const propertyTenantTypes = property.tenant_types || [];
 
-    const hasLifestylePrefs = occupation || familyStatus || childrenCount;
-
     // No preference set - exclude from calculation
-    if (!hasLifestylePrefs) {
+    if (!occupation) {
       return {
-        category: "lifestyle",
+        category: "occupation",
         match: false,
         score: 0,
         maxScore: 0,
-        reason: "No lifestyle preferences",
+        reason: "No occupation preference",
         details: propertyTenantTypes.length
-          ? `Accepts: ${propertyTenantTypes.join(", ")}`
-          : "All tenant types accepted",
+          ? `Property accepts: ${propertyTenantTypes.join(", ")}`
+          : "All occupations accepted",
         hasPreference: false,
       };
     }
@@ -1112,135 +1118,402 @@ export class MatchingCalculationService {
     // Property accepts all types
     if (!propertyTenantTypes.length) {
       return {
-        category: "lifestyle",
+        category: "occupation",
         match: true,
         score: maxScore,
         maxScore,
-        reason: "Property accepts all lifestyles",
+        reason: "Property accepts all occupations",
         details: "No tenant type restrictions",
         hasPreference: true,
       };
     }
 
-    // Map lifestyle preferences to tenant types
-    const normalizedTenantTypes = propertyTenantTypes.map((t) =>
-      t.toLowerCase(),
-    );
-    let matchScore = 0;
-    let totalChecks = 0;
-    const matchDetails: string[] = [];
+    // Enhanced occupation mapping with more nuanced scoring
+    const normalizedTenantTypes = propertyTenantTypes.map((t) => t.toLowerCase());
+    const occupationMap: { [key: string]: { primary: string[], secondary?: string[], score?: number } } = {
+      student: { 
+        primary: ["student"], 
+        secondary: ["sharers"], 
+        score: 1.0 
+      },
+      "young-professional": { 
+        primary: ["corporateLets", "sharers"], 
+        secondary: ["student"], 
+        score: 1.0 
+      },
+      "freelancer-remote-worker": { 
+        primary: ["corporateLets", "sharers"], 
+        secondary: ["student"], 
+        score: 1.0 
+      },
+      "business-owner": { 
+        primary: ["corporateLets"], 
+        secondary: ["sharers"], 
+        score: 1.0 
+      },
+      "family-professional": { 
+        primary: ["family", "corporateLets"], 
+        secondary: ["sharers"], 
+        score: 1.0 
+      },
+      other: { 
+        primary: ["corporateLets", "sharers"], 
+        secondary: ["student"], 
+        score: 1.0 
+      },
+    };
 
-    // Check occupation compatibility
-    if (occupation) {
-      totalChecks++;
-      const occupationMap: { [key: string]: string[] } = {
-        student: ["student"],
-        "young-professional": ["corporateLets", "sharers"],
-        "freelancer-remote-worker": ["corporateLets", "sharers"],
-        "business-owner": ["corporateLets"],
-        "family-professional": ["family", "corporateLets"],
-        other: ["corporateLets", "sharers"],
-      };
-
-      const matchingTypes = occupationMap[occupation] || [];
-      const occupationMatches = matchingTypes.some((type) =>
-        normalizedTenantTypes.includes(type.toLowerCase()),
-      );
-
-      if (occupationMatches) {
-        matchScore++;
-        matchDetails.push("Occupation compatible");
-      }
-    }
-
-    // Check family status compatibility
-    if (familyStatus) {
-      totalChecks++;
-      const familyMap: { [key: string]: string[] } = {
-        "just-me": ["corporateLets", "sharers", "student"],
-        couple: ["corporateLets", "sharers"],
-        "couple-with-children": ["family"],
-        "single-parent": ["family"],
-        "friends-flatmates": ["sharers"],
-      };
-
-      const matchingTypes = familyMap[familyStatus] || [];
-      const familyMatches = matchingTypes.some((type) =>
-        normalizedTenantTypes.includes(type.toLowerCase()),
-      );
-
-      if (familyMatches) {
-        matchScore++;
-        matchDetails.push("Family status compatible");
-      }
-    }
-
-    // Check children compatibility
-    if (childrenCount && childrenCount !== "no") {
-      totalChecks++;
-      const hasFamily = normalizedTenantTypes.some((t) =>
-        ["family", "elder"].includes(t),
-      );
-
-      if (hasFamily) {
-        matchScore++;
-        matchDetails.push("Children welcome");
-      }
-    }
-
-    const matchRatio = totalChecks > 0 ? matchScore / totalChecks : 0;
-
-    if (matchRatio === 1) {
+    const occupationConfig = occupationMap[occupation];
+    if (!occupationConfig) {
       return {
-        category: "lifestyle",
+        category: "occupation",
+        match: false,
+        score: 0,
+        maxScore,
+        reason: "Unknown occupation type",
+        details: `Occupation: ${occupation}`,
+        hasPreference: true,
+      };
+    }
+
+    // Check primary matches (perfect compatibility)
+    const primaryMatch = occupationConfig.primary.some((type) =>
+      normalizedTenantTypes.includes(type.toLowerCase()),
+    );
+
+    if (primaryMatch) {
+      return {
+        category: "occupation",
         match: true,
         score: maxScore,
         maxScore,
-        reason: "Perfect lifestyle match",
-        details: matchDetails.join(", "),
+        reason: "Perfect occupation match",
+        details: `${occupation} is ideal for this property type`,
         hasPreference: true,
       };
     }
 
-    if (matchRatio >= 0.5) {
-      return {
-        category: "lifestyle",
-        match: true,
-        score: Math.round(maxScore * matchRatio),
-        maxScore,
-        reason: "Good lifestyle compatibility",
-        details:
-          matchDetails.length > 0
-            ? matchDetails.join(", ")
-            : "Some criteria match",
-        hasPreference: true,
-      };
+    // Check secondary matches (good compatibility)
+    if (occupationConfig.secondary) {
+      const secondaryMatch = occupationConfig.secondary.some((type) =>
+        normalizedTenantTypes.includes(type.toLowerCase()),
+      );
+
+      if (secondaryMatch) {
+        return {
+          category: "occupation",
+          match: true,
+          score: Math.round(maxScore * 0.7),
+          maxScore,
+          reason: "Good occupation compatibility",
+          details: `${occupation} can work well with this property`,
+          hasPreference: true,
+        };
+      }
     }
 
-    if (matchRatio > 0) {
+    return {
+      category: "occupation",
+      match: false,
+      score: 0,
+      maxScore,
+      reason: "Occupation not compatible",
+      details: `${occupation} doesn't match property tenant types: ${propertyTenantTypes.join(", ")}`,
+      hasPreference: true,
+    };
+  }
+
+  /**
+   * Family status compatibility matching (ENHANCED)
+   * Matches user's family situation with property tenant types
+   */
+  private matchFamilyStatus(
+    property: Property,
+    preferences: Preferences,
+    maxScore: number,
+  ): CategoryMatchResult {
+    const familyStatus = preferences.family_status;
+    const propertyTenantTypes = property.tenant_types || [];
+
+    // No preference set - exclude from calculation
+    if (!familyStatus) {
       return {
-        category: "lifestyle",
+        category: "familyStatus",
         match: false,
-        score: Math.round(maxScore * matchRatio),
+        score: 0,
+        maxScore: 0,
+        reason: "No family status preference",
+        details: propertyTenantTypes.length
+          ? `Property accepts: ${propertyTenantTypes.join(", ")}`
+          : "All family situations accepted",
+        hasPreference: false,
+      };
+    }
+
+    // Property accepts all types
+    if (!propertyTenantTypes.length) {
+      return {
+        category: "familyStatus",
+        match: true,
+        score: maxScore,
         maxScore,
-        reason: "Partial lifestyle compatibility",
-        details:
-          matchDetails.length > 0
-            ? matchDetails.join(", ")
-            : "Limited compatibility",
+        reason: "Property accepts all family situations",
+        details: "No family restrictions",
+        hasPreference: true,
+      };
+    }
+
+    // Enhanced family status mapping with priority scoring
+    const normalizedTenantTypes = propertyTenantTypes.map((t) => t.toLowerCase());
+    const familyMap: { [key: string]: { primary: string[], secondary?: string[] } } = {
+      "just-me": { 
+        primary: ["corporateLets", "sharers"], 
+        secondary: ["student"] 
+      },
+      couple: { 
+        primary: ["corporateLets", "sharers"], 
+        secondary: ["family"] 
+      },
+      "couple-with-children": { 
+        primary: ["family"], 
+        secondary: ["corporateLets"] 
+      },
+      "single-parent": { 
+        primary: ["family"], 
+        secondary: [] 
+      },
+      "friends-flatmates": { 
+        primary: ["sharers"], 
+        secondary: ["corporateLets", "student"] 
+      },
+    };
+
+    const familyConfig = familyMap[familyStatus];
+    if (!familyConfig) {
+      return {
+        category: "familyStatus",
+        match: false,
+        score: 0,
+        maxScore,
+        reason: "Unknown family status",
+        details: `Family status: ${familyStatus}`,
+        hasPreference: true,
+      };
+    }
+
+    // Check primary matches (ideal compatibility)
+    const primaryMatch = familyConfig.primary.some((type) =>
+      normalizedTenantTypes.includes(type.toLowerCase()),
+    );
+
+    if (primaryMatch) {
+      return {
+        category: "familyStatus",
+        match: true,
+        score: maxScore,
+        maxScore,
+        reason: "Perfect family status match",
+        details: `Property is ideal for ${familyStatus.replace("-", " ")}`,
+        hasPreference: true,
+      };
+    }
+
+    // Check secondary matches (acceptable compatibility)
+    if (familyConfig.secondary && familyConfig.secondary.length > 0) {
+      const secondaryMatch = familyConfig.secondary.some((type) =>
+        normalizedTenantTypes.includes(type.toLowerCase()),
+      );
+
+      if (secondaryMatch) {
+        return {
+          category: "familyStatus",
+          match: true,
+          score: Math.round(maxScore * 0.6),
+          maxScore,
+          reason: "Acceptable family compatibility",
+          details: `Property can accommodate ${familyStatus.replace("-", " ")}`,
+          hasPreference: true,
+        };
+      }
+    }
+
+    return {
+      category: "familyStatus",
+      match: false,
+      score: 0,
+      maxScore,
+      reason: "Family status not compatible",
+      details: `${familyStatus.replace("-", " ")} doesn't match property types: ${propertyTenantTypes.join(", ")}`,
+      hasPreference: true,
+    };
+  }
+
+  /**
+   * Children compatibility matching (ENHANCED)
+   * Matches user's children situation with property family-friendliness
+   */
+  private matchChildren(
+    property: Property,
+    preferences: Preferences,
+    maxScore: number,
+  ): CategoryMatchResult {
+    const childrenCount = preferences.children_count;
+    const propertyTenantTypes = property.tenant_types || [];
+    const propertyChildren = property.children || [];
+
+    // No preference set - exclude from calculation
+    if (!childrenCount) {
+      return {
+        category: "children",
+        match: false,
+        score: 0,
+        maxScore: 0,
+        reason: "No children preference specified",
+        details: propertyTenantTypes.length
+          ? `Property accepts: ${propertyTenantTypes.join(", ")}`
+          : "Children policy not specified",
+        hasPreference: false,
+      };
+    }
+
+    // User has no children
+    if (childrenCount === "no") {
+      return {
+        category: "children",
+        match: true,
+        score: maxScore,
+        maxScore,
+        reason: "No children - compatible with all properties",
+        details: "No children restrictions apply",
+        hasPreference: true,
+      };
+    }
+
+    // Property accepts all types
+    if (!propertyTenantTypes.length) {
+      return {
+        category: "children",
+        match: true,
+        score: maxScore,
+        maxScore,
+        reason: "Property accepts families with children",
+        details: "No family restrictions",
+        hasPreference: true,
+      };
+    }
+
+    // Check if property is family-friendly
+    const normalizedTenantTypes = propertyTenantTypes.map((t) => t.toLowerCase());
+    const isFamilyFriendly = normalizedTenantTypes.some((t) =>
+      ["family", "elder"].includes(t),
+    );
+
+    if (!isFamilyFriendly) {
+      return {
+        category: "children",
+        match: false,
+        score: 0,
+        maxScore,
+        reason: "Property not suitable for children",
+        details: `Property types (${propertyTenantTypes.join(", ")}) don't typically accept children`,
+        hasPreference: true,
+      };
+    }
+
+    // Enhanced children matching based on property's children acceptance
+    const userChildrenNum = this.parseChildrenCount(childrenCount);
+    
+    // Check if property explicitly accepts children
+    if (propertyChildren.length === 0) {
+      // Family-friendly but no specific children policy - assume acceptable
+      return {
+        category: "children",
+        match: true,
+        score: Math.round(maxScore * 0.7),
+        maxScore,
+        reason: "Family-friendly property",
+        details: "Property accepts families (children policy not specified)",
+        hasPreference: true,
+      };
+    }
+
+    // Check if property explicitly says no children
+    if (propertyChildren.includes("no")) {
+      return {
+        category: "children",
+        match: false,
+        score: 0,
+        maxScore,
+        reason: "Property doesn't accept children",
+        details: "Property explicitly excludes children",
+        hasPreference: true,
+      };
+    }
+
+    // Find the maximum number of children the property accepts
+    const propertyMaxChildren = Math.max(
+      ...propertyChildren.map(c => this.parseChildrenCount(c))
+    );
+
+    // Perfect match - property specifically accommodates this number of children
+    if (propertyChildren.includes(childrenCount as any)) {
+      return {
+        category: "children",
+        match: true,
+        score: maxScore,
+        maxScore,
+        reason: "Perfect children count match",
+        details: `Property specifically accepts ${childrenCount.replace("yes-", "").replace("-", " ")}`,
+        hasPreference: true,
+      };
+    }
+
+    // Good match - property can accommodate this number of children
+    if (propertyMaxChildren >= userChildrenNum) {
+      return {
+        category: "children",
+        match: true,
+        score: Math.round(maxScore * 0.9),
+        maxScore,
+        reason: "Children count compatible",
+        details: `Property can accommodate ${childrenCount.replace("yes-", "").replace("-", " ")}`,
+        hasPreference: true,
+      };
+    }
+
+    // Partial match - property has fewer children capacity than needed
+    if (propertyMaxChildren > 0 && userChildrenNum > propertyMaxChildren) {
+      return {
+        category: "children",
+        match: false,
+        score: Math.round(maxScore * 0.3),
+        maxScore,
+        reason: "Limited children capacity",
+        details: `Property accepts fewer children than you have`,
         hasPreference: true,
       };
     }
 
     return {
-      category: "lifestyle",
-      match: false,
-      score: 0,
+      category: "children",
+      match: true,
+      score: Math.round(maxScore * 0.8),
       maxScore,
-      reason: "Lifestyle not compatible",
-      details: `Property accepts: ${propertyTenantTypes.join(", ")}`,
+      reason: "Children welcome",
+      details: "Property is family-friendly",
       hasPreference: true,
     };
+  }
+
+  /**
+   * Helper method to parse children count strings into numbers
+   */
+  private parseChildrenCount(childrenCount: string): number {
+    if (!childrenCount || childrenCount === "no") return 0;
+    if (childrenCount.includes("1-child")) return 1;
+    if (childrenCount.includes("2-children")) return 2;
+    if (childrenCount.includes("3-plus")) return 3;
+    return 0;
   }
 
   /**
