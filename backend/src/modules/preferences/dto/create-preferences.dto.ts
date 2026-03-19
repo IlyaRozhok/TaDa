@@ -11,6 +11,9 @@ import {
   IsBoolean,
   IsNumber,
   ValidateNested,
+  registerDecorator,
+  ValidationArguments,
+  ValidationOptions,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { Pet, PetType, PetSize } from "../../../entities/building.entity";
@@ -31,71 +34,103 @@ class PetDto implements Pet {
   size?: PetSize;
 }
 
+const OCCUPATION_VALUES = [
+  "student",
+  "young-professional",
+  "freelancer-remote-worker",
+  "business-owner",
+  "family-professional",
+  "other",
+] as const;
+
+const FAMILY_STATUS_VALUES = [
+  "just-me",
+  "couple",
+  "couple-with-children",
+  "single-parent",
+  "friends-flatmates",
+] as const;
+
+const CHILDREN_COUNT_VALUES = [
+  "no",
+  "yes-1-child",
+  "yes-2-children",
+  "yes-3-plus-children",
+] as const;
+
+const isValidMultiSelectCsv = (
+  value: unknown,
+  allowedValues: readonly string[],
+): boolean => {
+  if (value === undefined || value === null || value === "") return true;
+  if (typeof value !== "string") return false;
+
+  const selectedValues = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return selectedValues.every((item) => allowedValues.includes(item));
+};
+
+function IsMultiSelectCsv(
+  allowedValues: readonly string[],
+  validationOptions?: ValidationOptions,
+) {
+  return (object: object, propertyName: string) => {
+    registerDecorator({
+      name: "isMultiSelectCsv",
+      target: object.constructor,
+      propertyName,
+      constraints: [allowedValues],
+      options: validationOptions,
+      validator: {
+        validate(value: unknown, args: ValidationArguments) {
+          const [allowed] = args.constraints as [readonly string[]];
+          return isValidMultiSelectCsv(value, allowed);
+        },
+      },
+    });
+  };
+}
+
 export class CreatePreferencesDto {
   // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
 
   @ApiPropertyOptional({
     description: "User occupation/professional status",
     example: "young-professional",
-    enum: [
-      "student",
-      "young-professional",
-      "freelancer-remote-worker",
-      "business-owner",
-      "family-professional",
-      "other",
-    ],
+    enum: OCCUPATION_VALUES,
   })
   @IsOptional()
-  @IsIn([
-    "student",
-    "young-professional",
-    "freelancer-remote-worker",
-    "business-owner",
-    "family-professional",
-    "other",
-    "",
-    null,
-  ])
+  @IsMultiSelectCsv(OCCUPATION_VALUES, {
+    message:
+      "occupation must be a comma-separated list of valid occupation values",
+  })
   occupation?: string;
 
   @ApiPropertyOptional({
     description: "Family status - who will live in the property",
     example: "couple",
-    enum: [
-      "just-me",
-      "couple",
-      "couple-with-children",
-      "single-parent",
-      "friends-flatmates",
-    ],
+    enum: FAMILY_STATUS_VALUES,
   })
   @IsOptional()
-  @IsIn([
-    "just-me",
-    "couple",
-    "couple-with-children",
-    "single-parent",
-    "friends-flatmates",
-    "",
-    null,
-  ])
+  @IsMultiSelectCsv(FAMILY_STATUS_VALUES, {
+    message:
+      "family_status must be a comma-separated list of valid family status values",
+  })
   family_status?: string;
 
   @ApiPropertyOptional({
     description: "Number of children",
     example: "no",
-    enum: ["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"],
+    enum: CHILDREN_COUNT_VALUES,
   })
   @IsOptional()
-  @IsIn([
-    "no",
-    "yes-1-child",
-    "yes-2-children",
-    "yes-3-plus-children",
-    "",
-    null,
-  ])
+  @IsMultiSelectCsv(CHILDREN_COUNT_VALUES, {
+    message:
+      "children_count must be a comma-separated list of valid children count values",
+  })
   children_count?: string;
 
   // ==================== KYC & REFERENCING ====================
