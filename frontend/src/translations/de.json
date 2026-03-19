@@ -326,6 +326,8 @@
   "property.type.name4": "Penthouse",
   "property.type.name5": "Zimmer mit eigenem Bad",
   "property.type.name6": "Zimmer",
+  "property.view.booking.date.from": "Bevorzugter Termin ab",
+  "property.view.booking.date.to": "Bevorzugter Termin für die Besichtigung",
   "rental.duration.name1": "Kurzfristig (1–6 Monate)",
   "rental.duration.name2": "Mittelfristig (6–12 Monate)",
   "rental.duration.name3": "Langfristig (12+ Monate)",

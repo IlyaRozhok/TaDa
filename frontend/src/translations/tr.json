@@ -326,6 +326,8 @@
   "property.type.name4": "Çatı katı",
   "property.type.name5": "En-suite oda",
   "property.type.name6": "Oda",
+  "property.view.booking.date.from": "Tercih edilen izleme tarihi",
+  "property.view.booking.date.to": "Tercih edilen izleme tarihi",
   "rental.duration.name1": "Kısa vadeli (1–6 ay)",
   "rental.duration.name2": "Orta vadeli (6–12 ay)",
   "rental.duration.name3": "Uzun vadeli (12 ay ve üzeri)",

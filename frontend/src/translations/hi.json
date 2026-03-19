@@ -326,6 +326,8 @@
   "property.type.name4": "सायबान",
   "property.type.name5": "इनसुईट रूम",
   "property.type.name6": "कमरा",
+  "property.view.booking.date.from": "देखने की पसंदीदा तिथि से",
+  "property.view.booking.date.to": "देखने की पसंदीदा तिथि",
   "rental.duration.name1": "अल्पकालिक (1-6 महीने)",
   "rental.duration.name2": "मध्यम अवधि (6-12 महीने)",
   "rental.duration.name3": "लंबी अवधि (12+ महीने)",

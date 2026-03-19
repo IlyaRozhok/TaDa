@@ -326,6 +326,8 @@
   "property.type.name4": "顶层公寓",
   "property.type.name5": "带独立卫浴的房间",
   "property.type.name6": "房间",
+  "property.view.booking.date.from": "首选观看日期从",
+  "property.view.booking.date.to": "希望的观看日期为",
   "rental.duration.name1": "短期（1–6个月）",
   "rental.duration.name2": "中期（6–12个月）",
   "rental.duration.name3": "长期（12个月以上）",

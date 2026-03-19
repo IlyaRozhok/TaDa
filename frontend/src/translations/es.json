@@ -326,6 +326,8 @@
   "property.type.name4": "Ático",
   "property.type.name5": "Habitación con baño privado",
   "property.type.name6": "Habitación",
+  "property.view.booking.date.from": "Fecha preferida para ver desde",
+  "property.view.booking.date.to": "Fecha preferida para ver",
   "rental.duration.name1": "Corto plazo (1-6 meses)",
   "rental.duration.name2": "Mediano plazo (6-12 meses)",
   "rental.duration.name3": "A largo plazo (más de 12 meses)",

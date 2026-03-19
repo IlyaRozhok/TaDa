@@ -326,6 +326,8 @@
   "property.type.name4": "Пентхаус",
   "property.type.name5": "Номер с ванной комнатой",
   "property.type.name6": "Комната",
+  "property.view.booking.date.from": "Желаемая дата просмотра с",
+  "property.view.booking.date.to": "Желаемая дата просмотра:",
   "rental.duration.name1": "Краткосрочный (1–6 месяцев)",
   "rental.duration.name2": "Среднесрочный (6–12 месяцев)",
   "rental.duration.name3": "Долгосрочный (12+ месяцев)",

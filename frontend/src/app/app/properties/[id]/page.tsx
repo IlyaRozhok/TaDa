@@ -1284,7 +1284,7 @@ export default function PropertyPublicPage() {
 
                 <div className="space-y-4">
                   <DateInput
-                    label={t(wizardKeys.step2.move.from.title)}
+                    label={t(listingPropertyKeys.viewingRequest.date.from)}
                     name="booking_move_in_date"
                     value={bookingMoveInDate}
                     onChange={(date) => {
@@ -1307,7 +1307,7 @@ export default function PropertyPublicPage() {
                     className="[&_input]:!bg-white"
                   />
                   <DateInput
-                    label={t(wizardKeys.step2.move.to.title)}
+                    label={t(listingPropertyKeys.viewingRequest.date.to)}
                     name="booking_move_out_date"
                     value={bookingMoveOutDate}
                     onChange={(date) => {
@@ -1326,6 +1326,7 @@ export default function PropertyPublicPage() {
                       bookingMoveInDate ||
                       new Date().toISOString().split("T")[0]
                     }
+                    placeholder={t(wizardKeys.profile.birth.text)}
                     disabled={bookingLoading}
                     className="[&_input]:!bg-white"
                   />

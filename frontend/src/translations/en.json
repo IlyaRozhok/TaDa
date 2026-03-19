@@ -326,6 +326,8 @@
   "property.type.name4": "Penthouse",
   "property.type.name5": "En-suite room",
   "property.type.name6": "Room",
+  "property.view.booking.date.from": "Preferred viewing date from",
+  "property.view.booking.date.to": "Preferred viewing date to",
   "rental.duration.name1": "Short term (1–6 months)",
   "rental.duration.name2": "Medium term (6–12 months)",
   "rental.duration.name3": "Long term (12+ months)",

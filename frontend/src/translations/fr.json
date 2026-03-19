@@ -326,6 +326,8 @@
   "property.type.name4": "Penthouse",
   "property.type.name5": "Chambre avec salle de bain privée",
   "property.type.name6": "Chambre",
+  "property.view.booking.date.from": "Date de visionnage souhaitée à partir du",
+  "property.view.booking.date.to": "Date de visionnage souhaitée :",
   "rental.duration.name1": "Court terme (1 à 6 mois)",
   "rental.duration.name2": "Moyen terme (6 à 12 mois)",
   "rental.duration.name3": "Long terme (12 mois et plus)",
