@@ -30,9 +30,9 @@ export interface Pet {
 
 export interface PreferencesFormData {
   // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
-  occupation?: string;
-  family_status?: string;
-  children_count?: string;
+  occupation?: string[] | string;
+  family_status?: string[] | string;
+  children_count?: string[] | string;
 
   // ==================== KYC & REFERENCING ====================
   kyc_status?: string;
@@ -214,6 +214,26 @@ export function transformFormDataForApi(
   formData: PreferencesFormData,
 ): Partial<PreferencesFormData> {
   const apiData: Partial<PreferencesFormData> = { ...formData };
+  const serializeMultiSelect = (values: unknown): string | undefined => {
+    if (!Array.isArray(values)) return undefined;
+    const normalized = values
+      .map((value) => value?.toString().trim())
+      .filter((value): value is string => Boolean(value));
+    return normalized.length > 0 ? normalized.join(",") : "";
+  };
+
+  const serializedOccupation = serializeMultiSelect(formData.occupation);
+  if (serializedOccupation !== undefined) {
+    apiData.occupation = serializedOccupation;
+  }
+  const serializedFamilyStatus = serializeMultiSelect(formData.family_status);
+  if (serializedFamilyStatus !== undefined) {
+    apiData.family_status = serializedFamilyStatus;
+  }
+  const serializedChildrenCount = serializeMultiSelect(formData.children_count);
+  if (serializedChildrenCount !== undefined) {
+    apiData.children_count = serializedChildrenCount;
+  }
 
   // flexible_budget: derive from existing "Flexible" (move_in_flexibility)
   apiData.flexible_budget = formData.move_in_flexibility === "flexible";
@@ -462,6 +482,26 @@ export function transformApiDataForForm(
     amenities_preferences: Array.isArray(apiData.amenities) ? apiData.amenities : [],
     additional_preferences: [],
   };
+
+  const parseMultiSelect = (
+    value: unknown,
+  ): PreferencesFormData["occupation"] => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => item?.toString().trim())
+        .filter((item): item is string => Boolean(item));
+    }
+    if (typeof value === "string") {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+  formData.occupation = parseMultiSelect(apiData.occupation);
+  formData.family_status = parseMultiSelect(apiData.family_status);
+  formData.children_count = parseMultiSelect(apiData.children_count);
 
   console.log("📝 Base form data created:", {
     // Lifestyle preferences

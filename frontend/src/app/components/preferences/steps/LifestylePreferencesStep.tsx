@@ -3,7 +3,7 @@ import { useTranslation } from "../../../hooks/useTranslation";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
-import { GlassmorphismDropdown } from "../ui/GlassmorphismDropdown";
+import { SelectionButton } from "../step-components/SelectionButton";
 import { PreferencesFormData } from "@/entities/preferences/model/preferences";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { Briefcase, Users, Baby } from "lucide-react";
@@ -73,6 +73,27 @@ export const LifestylePreferencesStep: React.FC<
   );
 
   const isValid = (): boolean => true;
+  const toggleMultiValue = (
+    field: "occupation" | "family_status" | "children_count",
+    value: string,
+  ) => {
+    const current = (formData[field] as string[] | undefined) || [];
+
+    if (field === "children_count") {
+      const next = current.includes(value)
+        ? current.filter((item) => item !== value)
+        : value === "no"
+          ? ["no"]
+          : [...current.filter((item) => item !== "no"), value];
+      onUpdate(field, next);
+      return;
+    }
+
+    const next = current.includes(value)
+      ? current.filter((item) => item !== value)
+      : [...current, value];
+    onUpdate(field, next);
+  };
 
   useEffect(() => {
     if (onValidationChange) {
@@ -91,35 +112,57 @@ export const LifestylePreferencesStep: React.FC<
         <StepHeader title={t(k.des.text1)} />
 
         <div className="space-y-6">
-          <GlassmorphismDropdown
-            label={t(k.field1.title)}
-            value={formData.occupation || ""}
-            options={occupationOptions}
-            onChange={(value) => onUpdate("occupation", value as string)}
-            placeholder={t(k.field1.title)}
-            icon={<Briefcase className="w-5 h-5 text-white" />}
-            noPreferenceValue=""
-          />
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-gray-900">
+              {t(k.field1.title)}
+            </h4>
+            {occupationOptions.map((option) => (
+              <SelectionButton
+                key={option.value}
+                label={option.label}
+                value={option.value}
+                icon={Briefcase}
+                isSelected={(formData.occupation || []).includes(option.value)}
+                onClick={(value) => toggleMultiValue("occupation", value)}
+              />
+            ))}
+          </div>
 
-          <GlassmorphismDropdown
-            label={t(k.field2.title)}
-            value={formData.family_status || ""}
-            options={familyStatusOptions}
-            onChange={(value) => onUpdate("family_status", value as string)}
-            placeholder={t(k.field2.title)}
-            icon={<Users className="w-5 h-5 text-white" />}
-            noPreferenceValue=""
-          />
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-gray-900">
+              {t(k.field2.title)}
+            </h4>
+            {familyStatusOptions.map((option) => (
+              <SelectionButton
+                key={option.value}
+                label={option.label}
+                value={option.value}
+                icon={Users}
+                isSelected={(formData.family_status || []).includes(
+                  option.value,
+                )}
+                onClick={(value) => toggleMultiValue("family_status", value)}
+              />
+            ))}
+          </div>
 
-          <GlassmorphismDropdown
-            label={t(k.field3.title)}
-            value={formData.children_count || ""}
-            options={childrenOptions}
-            onChange={(value) => onUpdate("children_count", value as string)}
-            placeholder={t(k.field3.title)}
-            icon={<Baby className="w-5 h-5 text-white" />}
-            noPreferenceValue=""
-          />
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-gray-900">
+              {t(k.field3.title)}
+            </h4>
+            {childrenOptions.map((option) => (
+              <SelectionButton
+                key={option.value}
+                label={option.label}
+                value={option.value}
+                icon={Baby}
+                isSelected={(formData.children_count || []).includes(
+                  option.value,
+                )}
+                onClick={(value) => toggleMultiValue("children_count", value)}
+              />
+            ))}
+          </div>
         </div>
       </StepContainer>
     </StepWrapper>

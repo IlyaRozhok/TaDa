@@ -23,6 +23,7 @@ import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOpti
 import { AMENITIES_BY_CATEGORY } from "../../shared/constants/admin-form-options";
 import { translateAmenityStoredLabel } from "../../shared/constants/amenities";
 import { useTranslation } from "../hooks/useTranslation";
+import { wizardKeys } from "../lib/translationsKeys/wizardTranslationKeys";
 import {
   transformTenantTypeUIToAPI,
   transformTenantTypeAPIToUI,
@@ -69,7 +70,34 @@ interface Building {
   metro_stations?: MetroStation[];
   commute_times?: CommuteTime[];
   local_essentials?: LocalEssential[];
+  family_status?: string[];
+  occupation?: string[];
+  children?: string[];
 }
+
+const OCCUPATION_VALUES = [
+  "student",
+  "young-professional",
+  "freelancer-remote-worker",
+  "business-owner",
+  "family-professional",
+  "other",
+];
+
+const FAMILY_STATUS_VALUES = [
+  "just-me",
+  "couple",
+  "couple-with-children",
+  "single-parent",
+  "friends-flatmates",
+];
+
+const CHILDREN_VALUES = [
+  "no",
+  "yes-1-child",
+  "yes-2-children",
+  "yes-3-plus-children",
+];
 
 interface EditPropertyModalProps {
   isOpen: boolean;
@@ -116,6 +144,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     address: "",
     tenant_types: [] as string[],
     amenities: [] as string[],
+    family_status: [] as string[],
+    occupation: [] as string[],
+    children: [] as string[],
     pets: null as Pet[] | null,
     pet_policy: false,
     smoking_area_prop: false,
@@ -240,6 +271,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           parseArray(property.tenant_types),
         ),
         amenities: parseArray(property.amenities),
+        family_status: parseArray((property as any).family_status),
+        occupation: parseArray((property as any).occupation),
+        children: parseArray((property as any).children),
         pets: property.pets
           ? Array.isArray(property.pets)
             ? property.pets
@@ -458,6 +492,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         address: "",
         tenant_types: [],
         amenities: [],
+        family_status: [],
+        occupation: [],
+        children: [],
         pet_policy: false,
         pets: null,
         smoking_area_prop: false,
@@ -479,6 +516,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         address: "",
         tenant_types: [],
         amenities: [],
+        family_status: [],
+        occupation: [],
+        children: [],
         pet_policy: false,
         pets: null,
         smoking_area_prop: false,
@@ -525,6 +565,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 building.tenant_type || [],
               ),
               amenities: building.amenities || [],
+              family_status: building.family_status || [],
+              occupation: building.occupation || [],
+              children: building.children || [],
               pet_policy: building.pet_policy || false,
               pets: building.pets || null,
               smoking_area_prop: building.smoking_area || false,
@@ -628,6 +671,19 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   // Helper to check if fields are readonly (not private_landlord and has building selected)
   const isFieldReadonly =
     formData.building_type !== "private_landlord" && !!formData.building_id;
+  const occupationOptions = OCCUPATION_VALUES.map((value, i) => ({
+    value,
+    label: t(wizardKeys.step8.occupationOptions[i]),
+  }));
+  const familyStatusOptions = FAMILY_STATUS_VALUES.map((value, i) => ({
+    value,
+    label: t(wizardKeys.step8.familyStatusOptions[i]),
+  }));
+  const childrenOptions = CHILDREN_VALUES.map((value, i) => ({
+    value,
+    label: t(wizardKeys.step8.childrenStatusOptions[i]),
+  }));
+  const hasNoChildrenSelected = (formData.children || []).includes("no");
 
   // Metro Stations helpers
   const addMetroStation = () => {
@@ -915,6 +971,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           ...new Set(transformTenantTypeUIToAPI(formData.tenant_types || [])),
         ],
         amenities: formData.amenities || [],
+        family_status: formData.family_status || [],
+        occupation: formData.occupation || [],
+        children: formData.children || [],
         pet_policy: formData.pet_policy,
         pets: formData.pets || null,
         smoking_area: formData.smoking_area_prop,
@@ -1479,6 +1538,276 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                         <span>{option.label}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Occupation{" "}
+                {isFieldReadonly && (
+                  <span className="text-white/50 text-xs">(from building)</span>
+                )}
+              </label>
+              <div className="relative" data-dropdown>
+                <div
+                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
+                    isFieldReadonly
+                      ? "opacity-60 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                  onClick={() => !isFieldReadonly && toggleDropdown("occupation")}
+                >
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {(formData.occupation || []).length > 0 ? (
+                      (formData.occupation || []).map((value) => {
+                        const option = occupationOptions.find(
+                          (opt) => opt.value === value,
+                        );
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                          >
+                            {option?.label ?? value}
+                            {!isFieldReadonly && (
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    occupation: (formData.occupation || []).filter(
+                                      (v) => v !== value,
+                                    ),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-white/50">Select occupations...</span>
+                    )}
+                  </div>
+                </div>
+                {!isFieldReadonly && openDropdown === "occupation" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {occupationOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                        onClick={() => {
+                          const current = formData.occupation || [];
+                          const next = current.includes(option.value)
+                            ? current.filter((v) => v !== option.value)
+                            : [...current, option.value];
+                          setFormData({ ...formData, occupation: next });
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={(formData.occupation || []).includes(
+                            option.value,
+                          )}
+                          readOnly
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{option.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Family Status{" "}
+                {isFieldReadonly && (
+                  <span className="text-white/50 text-xs">(from building)</span>
+                )}
+              </label>
+              <div className="relative" data-dropdown>
+                <div
+                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
+                    isFieldReadonly
+                      ? "opacity-60 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                  onClick={() =>
+                    !isFieldReadonly && toggleDropdown("family_status")
+                  }
+                >
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {(formData.family_status || []).length > 0 ? (
+                      (formData.family_status || []).map((value) => {
+                        const option = familyStatusOptions.find(
+                          (opt) => opt.value === value,
+                        );
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                          >
+                            {option?.label ?? value}
+                            {!isFieldReadonly && (
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    family_status: (
+                                      formData.family_status || []
+                                    ).filter((v) => v !== value),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-white/50">
+                        Select family statuses...
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!isFieldReadonly && openDropdown === "family_status" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {familyStatusOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                        onClick={() => {
+                          const current = formData.family_status || [];
+                          const next = current.includes(option.value)
+                            ? current.filter((v) => v !== option.value)
+                            : [...current, option.value];
+                          setFormData({ ...formData, family_status: next });
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={(formData.family_status || []).includes(
+                            option.value,
+                          )}
+                          readOnly
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{option.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Children{" "}
+                {isFieldReadonly && (
+                  <span className="text-white/50 text-xs">(from building)</span>
+                )}
+              </label>
+              <div className="relative" data-dropdown>
+                <div
+                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
+                    isFieldReadonly
+                      ? "opacity-60 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                  onClick={() => !isFieldReadonly && toggleDropdown("children")}
+                >
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {(formData.children || []).length > 0 ? (
+                      (formData.children || []).map((value) => {
+                        const option = childrenOptions.find(
+                          (opt) => opt.value === value,
+                        );
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                          >
+                            {option?.label ?? value}
+                            {!isFieldReadonly && (
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    children: (formData.children || []).filter(
+                                      (v) => v !== value,
+                                    ),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-white/50">
+                        Select children statuses...
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!isFieldReadonly && openDropdown === "children" && (
+                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {childrenOptions.map((option) => {
+                      const isNoOption = option.value === "no";
+                      const isDisabled = hasNoChildrenSelected && !isNoOption;
+                      return (
+                        <div
+                          key={option.value}
+                          className={`px-4 py-2 text-white flex items-center space-x-2 ${
+                            isDisabled
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:bg-white/20 cursor-pointer"
+                          }`}
+                          onClick={() => {
+                            if (isDisabled) return;
+                            const current = formData.children || [];
+                            const next = current.includes(option.value)
+                              ? current.filter((v) => v !== option.value)
+                              : option.value === "no"
+                                ? ["no"]
+                                : [
+                                    ...current.filter((v) => v !== "no"),
+                                    option.value,
+                                  ];
+                            setFormData({ ...formData, children: next });
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(formData.children || []).includes(
+                              option.value,
+                            )}
+                            disabled={isDisabled}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -2212,41 +2541,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 )}
               </div>
             )}
-          </div>
-
-          {/* Smoking Area */}
-          <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Other{" "}
-              {isFieldReadonly && (
-                <span className="text-white/50 text-xs">(from building)</span>
-              )}
-            </h4>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="smoking_area_property_edit"
-                checked={formData.smoking_area_prop}
-                onChange={(e) =>
-                  !isFieldReadonly &&
-                  setFormData({
-                    ...formData,
-                    smoking_area_prop: e.target.checked,
-                  })
-                }
-                disabled={isFieldReadonly}
-                className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
-                  isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-              />
-              <label
-                htmlFor="smoking_area_property_edit"
-                className="text-sm font-medium text-white/90"
-              >
-                Has Smoking Area
-              </label>
-            </div>
           </div>
 
           {/* Metro Stations */}

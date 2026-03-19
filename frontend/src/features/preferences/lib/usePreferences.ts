@@ -76,9 +76,9 @@ export default function usePreferences(currentStepOffset: number = 0) {
   } = useForm<PreferencesFormData>({
     defaultValues: {
       // Step 1 - Lifestyle Preferences
-      occupation: "",
-      family_status: "",
-      children_count: "",
+      occupation: [],
+      family_status: [],
+      children_count: [],
       // Step 2 - Location
       preferred_areas: [],
       preferred_districts: [],

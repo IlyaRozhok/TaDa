@@ -37,6 +37,9 @@ export interface Building {
   metro_stations?: MetroStation[];
   commute_times?: CommuteTime[];
   local_essentials?: LocalEssential[];
+  family_status?: string[];
+  occupation?: string[];
+  children?: string[];
 }
 
 export interface User {
@@ -81,6 +84,9 @@ export interface PropertyFormData {
   address: string;
   tenant_types: string[];
   amenities: string[];
+  family_status: string[];
+  occupation: string[];
+  children: string[];
   pets: Pet[] | null;
   pet_policy: boolean;
   smoking_area_prop: boolean;

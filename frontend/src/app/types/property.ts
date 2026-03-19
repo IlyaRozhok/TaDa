@@ -109,6 +109,9 @@ export interface Property {
   address?: string;
   tenant_types?: string[];
   amenities?: string[];
+  family_status?: string[];
+  occupation?: string[];
+  children?: string[];
   pet_policy?: boolean;
   pets?: Pet[] | null;
   smoking_area?: boolean;

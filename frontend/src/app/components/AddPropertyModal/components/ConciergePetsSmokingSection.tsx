@@ -241,36 +241,6 @@ export const ConciergePetsSmokingSection: React.FC<
         )}
       </div>
 
-      {/* Smoking */}
-      <div className="space-y-4">
-        <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-          Other{" "}
-          {isReadonly && (
-            <span className="text-white/50 text-xs">(from building)</span>
-          )}
-        </h4>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="smoking_area_add"
-            checked={formData.smoking_area_prop}
-            onChange={(e) =>
-              !isReadonly &&
-              onFieldChange("smoking_area_prop", e.target.checked)
-            }
-            disabled={isReadonly}
-            className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
-              isReadonly ? "opacity-60 cursor-not-allowed" : ""
-            }`}
-          />
-          <label
-            htmlFor="smoking_area_add"
-            className="text-sm font-medium text-white/90"
-          >
-            Has Smoking Area
-          </label>
-        </div>
-      </div>
     </div>
   );
 };

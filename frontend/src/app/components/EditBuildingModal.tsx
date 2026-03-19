@@ -681,13 +681,8 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         buildingData.amenities = formData.amenities;
       }
       // Boolean fields - always include, even if false
-      buildingData.is_concierge = formData.is_concierge;
       buildingData.pet_policy = formData.pet_policy;
       buildingData.smoking_area = formData.smoking_area;
-
-      if (formData.concierge_hours) {
-        buildingData.concierge_hours = formData.concierge_hours;
-      }
       if (formData.pets && formData.pets.length > 0) {
         buildingData.pets = formData.pets;
       }
@@ -2153,78 +2148,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             </div>
           </div>
 
-          {/* Concierge */}
-          <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Concierge
-            </h4>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="is_concierge"
-                checked={formData.is_concierge}
-                onChange={(e) =>
-                  setFormData({ ...formData, is_concierge: e.target.checked })
-                }
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="is_concierge"
-                className="text-sm font-medium text-white/90"
-              >
-                Has Concierge Service
-              </label>
-            </div>
-
-            {formData.is_concierge && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
-                <div>
-                  <label className="block text-sm font-medium text-white/90 mb-2">
-                    Opening Hour (0-23)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="23"
-                    value={formData.concierge_hours?.from || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        concierge_hours: {
-                          from: parseInt(e.target.value) || 0,
-                          to: formData.concierge_hours?.to || 22,
-                        },
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white/90 mb-2">
-                    Closing Hour (0-23)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="23"
-                    value={formData.concierge_hours?.to || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        concierge_hours: {
-                          from: formData.concierge_hours?.from || 8,
-                          to: parseInt(e.target.value) || 22,
-                        },
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Pets */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
@@ -2406,31 +2329,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                 </button>
               </div>
             )}
-          </div>
-
-          {/* Smoking Area */}
-          <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Other
-            </h4>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="smoking_area"
-                checked={formData.smoking_area}
-                onChange={(e) =>
-                  setFormData({ ...formData, smoking_area: e.target.checked })
-                }
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="smoking_area"
-                className="text-sm font-medium text-white/90"
-              >
-                Has Smoking Area
-              </label>
-            </div>
           </div>
 
           {/* Metro Stations */}

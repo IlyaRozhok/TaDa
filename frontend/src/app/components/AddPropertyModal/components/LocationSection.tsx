@@ -2,6 +2,32 @@ import React from "react";
 import { FormField, Input, Select } from "../../FormField";
 import { PropertyFormData } from "../types";
 import { useLocalizedFormOptions } from "../../../../shared/hooks/useLocalizedFormOptions";
+import { useTranslation } from "../../../hooks/useTranslation";
+import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
+
+const OCCUPATION_VALUES = [
+  "student",
+  "young-professional",
+  "freelancer-remote-worker",
+  "business-owner",
+  "family-professional",
+  "other",
+];
+
+const FAMILY_STATUS_VALUES = [
+  "just-me",
+  "couple",
+  "couple-with-children",
+  "single-parent",
+  "friends-flatmates",
+];
+
+const CHILDREN_VALUES = [
+  "no",
+  "yes-1-child",
+  "yes-2-children",
+  "yes-3-plus-children",
+];
 
 interface LocationSectionProps {
   formData: PropertyFormData;
@@ -22,6 +48,7 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
   onFieldBlur,
   onToggleDropdown,
 }) => {
+  const { t } = useTranslation();
   const {
     propertyTypeOptions,
     furnishingOptions,
@@ -32,6 +59,19 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
 
   const isReadonly =
     formData.building_type !== "private_landlord" && !!formData.building_id;
+  const occupationOptions = OCCUPATION_VALUES.map((value, i) => ({
+    value,
+    label: t(wizardKeys.step8.occupationOptions[i]),
+  }));
+  const familyStatusOptions = FAMILY_STATUS_VALUES.map((value, i) => ({
+    value,
+    label: t(wizardKeys.step8.familyStatusOptions[i]),
+  }));
+  const childrenOptions = CHILDREN_VALUES.map((value, i) => ({
+    value,
+    label: t(wizardKeys.step8.childrenStatusOptions[i]),
+  }));
+  const hasNoChildrenSelected = (formData.children || []).includes("no");
 
   return (
     <div className="space-y-4">
@@ -246,6 +286,248 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
           )}
         </div>
       </FormField>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FormField label="Occupation">
+          <div className="relative" data-dropdown>
+            <div
+              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
+                isReadonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              onClick={() => !isReadonly && onToggleDropdown("occupation")}
+            >
+              <div className="flex flex-wrap gap-1 flex-1">
+                {(formData.occupation || []).length > 0 ? (
+                  (formData.occupation || []).map((value) => {
+                    const option = occupationOptions.find(
+                      (opt) => opt.value === value,
+                    );
+                    return (
+                      <span
+                        key={value}
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                      >
+                        {option?.label ?? value}
+                        {!isReadonly && (
+                          <button
+                            type="button"
+                            className="ml-1 text-white/70 hover:text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onFieldChange(
+                                "occupation",
+                                (formData.occupation || []).filter(
+                                  (v) => v !== value,
+                                ),
+                              );
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="text-white/50">Select occupations...</span>
+                )}
+              </div>
+            </div>
+            {!isReadonly && openDropdown === "occupation" && (
+              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {occupationOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                    onClick={() => {
+                      const current = formData.occupation || [];
+                      const next = current.includes(option.value)
+                        ? current.filter((v) => v !== option.value)
+                        : [...current, option.value];
+                      onFieldChange("occupation", next);
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={(formData.occupation || []).includes(option.value)}
+                      readOnly
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{option.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </FormField>
+
+        <FormField label="Family Status">
+          <div className="relative" data-dropdown>
+            <div
+              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
+                isReadonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              onClick={() => !isReadonly && onToggleDropdown("family_status")}
+            >
+              <div className="flex flex-wrap gap-1 flex-1">
+                {(formData.family_status || []).length > 0 ? (
+                  (formData.family_status || []).map((value) => {
+                    const option = familyStatusOptions.find(
+                      (opt) => opt.value === value,
+                    );
+                    return (
+                      <span
+                        key={value}
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                      >
+                        {option?.label ?? value}
+                        {!isReadonly && (
+                          <button
+                            type="button"
+                            className="ml-1 text-white/70 hover:text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onFieldChange(
+                                "family_status",
+                                (formData.family_status || []).filter(
+                                  (v) => v !== value,
+                                ),
+                              );
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="text-white/50">
+                    Select family statuses...
+                  </span>
+                )}
+              </div>
+            </div>
+            {!isReadonly && openDropdown === "family_status" && (
+              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {familyStatusOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                    onClick={() => {
+                      const current = formData.family_status || [];
+                      const next = current.includes(option.value)
+                        ? current.filter((v) => v !== option.value)
+                        : [...current, option.value];
+                      onFieldChange("family_status", next);
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={(formData.family_status || []).includes(
+                        option.value,
+                      )}
+                      readOnly
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{option.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </FormField>
+
+        <FormField label="Children">
+          <div className="relative" data-dropdown>
+            <div
+              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
+                isReadonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              onClick={() => !isReadonly && onToggleDropdown("children")}
+            >
+              <div className="flex flex-wrap gap-1 flex-1">
+                {(formData.children || []).length > 0 ? (
+                  (formData.children || []).map((value) => {
+                    const option = childrenOptions.find(
+                      (opt) => opt.value === value,
+                    );
+                    return (
+                      <span
+                        key={value}
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                      >
+                        {option?.label ?? value}
+                        {!isReadonly && (
+                          <button
+                            type="button"
+                            className="ml-1 text-white/70 hover:text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onFieldChange(
+                                "children",
+                                (formData.children || []).filter(
+                                  (v) => v !== value,
+                                ),
+                              );
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="text-white/50">
+                    Select children statuses...
+                  </span>
+                )}
+              </div>
+            </div>
+            {!isReadonly && openDropdown === "children" && (
+              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {childrenOptions.map((option) => {
+                  const isNoOption = option.value === "no";
+                  const isDisabled = hasNoChildrenSelected && !isNoOption;
+                  return (
+                    <div
+                      key={option.value}
+                      className={`px-4 py-2 text-white flex items-center space-x-2 ${
+                        isDisabled
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-white/20 cursor-pointer"
+                      }`}
+                      onClick={() => {
+                        if (isDisabled) return;
+                        const current = formData.children || [];
+                        const next = current.includes(option.value)
+                          ? current.filter((v) => v !== option.value)
+                          : option.value === "no"
+                            ? ["no"]
+                            : [
+                                ...current.filter((v) => v !== "no"),
+                                option.value,
+                              ];
+                        onFieldChange("children", next);
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(formData.children || []).includes(option.value)}
+                        disabled={isDisabled}
+                        readOnly
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{option.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </FormField>
+      </div>
 
       {/* Let Duration (multi-select) */}
       <FormField

@@ -103,6 +103,15 @@ export const assignPropertyOptionals = (
   if (dto.amenities !== undefined) {
     target.amenities = dto.amenities;
   }
+  if (dto.family_status !== undefined) {
+    target.family_status = dto.family_status;
+  }
+  if (dto.occupation !== undefined) {
+    target.occupation = dto.occupation;
+  }
+  if (dto.children !== undefined) {
+    target.children = dto.children;
+  }
   if (dto.pet_policy !== undefined) {
     target.pet_policy = dto.pet_policy;
   }

@@ -176,22 +176,28 @@ export function TenantCvView({
       })()
     : null;
 
-  const childrenCount = preferences?.children_count;
-  const childrenLabel = childrenCount
-    ? (() => {
-        const key = getChildrenCountTranslationKey(childrenCount);
-        return key ? t(key) : null;
-      })()
-    : null;
+  const parseMultiValue = (value?: string | null) =>
+    (value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
 
-  const familyStatus = preferences?.family_status;
-  const marriedLabel =
-    familyStatus === "couple" || familyStatus === "couple-with-children"
-      ? (() => {
-          const key = getFamilyStatusTranslationKey(familyStatus);
-          return key ? t(key) : "Married";
-        })()
-      : null;
+  const childrenLabels = parseMultiValue(preferences?.children_count)
+    .map((value) => {
+      const key = getChildrenCountTranslationKey(value);
+      return key ? t(key) : value;
+    })
+    .filter(Boolean);
+  const childrenLabel = childrenLabels.length > 0 ? childrenLabels.join(", ") : null;
+
+  const familyLabels = parseMultiValue(preferences?.family_status)
+    .filter((value) => value === "couple" || value === "couple-with-children")
+    .map((value) => {
+      const key = getFamilyStatusTranslationKey(value);
+      return key ? t(key) : "Married";
+    })
+    .filter(Boolean);
+  const marriedLabel = familyLabels.length > 0 ? familyLabels.join(", ") : null;
 
   // Ready label without date
   const readyLabel = meta.headline || t(tenantCvKeys.readyToMove);

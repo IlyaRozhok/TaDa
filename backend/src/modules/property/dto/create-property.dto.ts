@@ -10,6 +10,11 @@ import {
   IsNotEmpty,
 } from "class-validator";
 import { Type } from "class-transformer";
+import {
+  BuildingChildrenCount,
+  BuildingFamilyStatus,
+  BuildingOccupation,
+} from "../../../entities/building.entity";
 
 class MetroStationDto {
   @IsString()
@@ -179,6 +184,58 @@ export class CreatePropertyDto {
   @IsArray()
   @IsString({ each: true })
   amenities?: string[];
+
+  @ApiProperty({
+    description:
+      "Target family statuses for this property (inherited from building or custom)",
+    example: ["couple", "couple-with-children"],
+    type: [String],
+    enum: [
+      "just-me",
+      "couple",
+      "couple-with-children",
+      "single-parent",
+      "friends-flatmates",
+    ],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  family_status?: BuildingFamilyStatus[];
+
+  @ApiProperty({
+    description:
+      "Target occupations for this property (inherited from building or custom)",
+    example: ["student", "young-professional"],
+    type: [String],
+    enum: [
+      "student",
+      "young-professional",
+      "freelancer-remote-worker",
+      "business-owner",
+      "family-professional",
+      "other",
+    ],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  occupation?: BuildingOccupation[];
+
+  @ApiProperty({
+    description:
+      "Target children statuses for this property (inherited from building or custom)",
+    example: ["no", "yes-1-child"],
+    type: [String],
+    enum: ["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  children?: BuildingChildrenCount[];
 
   @ApiProperty({
     description: "Pet policy (inherited from building or custom)",

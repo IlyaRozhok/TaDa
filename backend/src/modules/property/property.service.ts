@@ -55,6 +55,9 @@ export class PropertyService {
       propertyData.address = createPropertyDto.address;
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
       propertyData.amenities = createPropertyDto.amenities || [];
+      propertyData.family_status = createPropertyDto.family_status || [];
+      propertyData.occupation = createPropertyDto.occupation || [];
+      propertyData.children = createPropertyDto.children || [];
       propertyData.pet_policy = createPropertyDto.pet_policy;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
       propertyData.pets = createPropertyDto.pets || null;
@@ -66,6 +69,9 @@ export class PropertyService {
       propertyData.address = building.address;
       propertyData.tenant_types = building.tenant_type || [];
       propertyData.amenities = building.amenities || [];
+      propertyData.family_status = building.family_status || [];
+      propertyData.occupation = building.occupation || [];
+      propertyData.children = building.children || [];
       propertyData.pet_policy = building.pet_policy;
       propertyData.metro_stations = building.metro_stations || [];
       propertyData.pets = building.pets || null;
@@ -77,6 +83,9 @@ export class PropertyService {
       propertyData.address = createPropertyDto.address;
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
       propertyData.amenities = createPropertyDto.amenities || [];
+      propertyData.family_status = createPropertyDto.family_status || [];
+      propertyData.occupation = createPropertyDto.occupation || [];
+      propertyData.children = createPropertyDto.children || [];
       propertyData.pet_policy = createPropertyDto.pet_policy;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
       propertyData.pets = createPropertyDto.pets || null;
@@ -127,6 +136,9 @@ export class PropertyService {
           updateData.address = building.address;
           updateData.tenant_types = building.tenant_type || [];
           updateData.amenities = building.amenities || [];
+          updateData.family_status = building.family_status || [];
+          updateData.occupation = building.occupation || [];
+          updateData.children = building.children || [];
           updateData.pet_policy = building.pet_policy;
           updateData.metro_stations = building.metro_stations || [];
           updateData.pets = building.pets || null;
@@ -154,6 +166,9 @@ export class PropertyService {
       updateData.address = building.address;
       updateData.tenant_types = building.tenant_type || [];
       updateData.amenities = building.amenities || [];
+      updateData.family_status = building.family_status || [];
+      updateData.occupation = building.occupation || [];
+      updateData.children = building.children || [];
       updateData.pet_policy = building.pet_policy;
       updateData.metro_stations = building.metro_stations || [];
       updateData.pets = building.pets || null;

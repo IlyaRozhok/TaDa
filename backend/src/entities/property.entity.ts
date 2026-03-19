@@ -14,8 +14,10 @@ import {
   MetroStation,
   CommuteTime,
   LocalEssential,
-  ConciergeHours,
   Pet,
+  BuildingFamilyStatus,
+  BuildingOccupation,
+  BuildingChildrenCount,
 } from "./building.entity";
 
 @Entity("properties")
@@ -162,6 +164,36 @@ export class Property {
   })
   @Column({ type: "jsonb", nullable: true, default: [] })
   local_essentials?: LocalEssential[];
+
+  @ApiProperty({
+    description:
+      "Target family statuses for this property (inherited from building or custom)",
+    example: ["couple", "couple-with-children"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  family_status?: BuildingFamilyStatus[];
+
+  @ApiProperty({
+    description:
+      "Target occupations for this property (inherited from building or custom)",
+    example: ["student", "young-professional"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  occupation?: BuildingOccupation[];
+
+  @ApiProperty({
+    description:
+      "Target children statuses for this property (inherited from building or custom)",
+    example: ["no", "yes-1-child"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  children?: BuildingChildrenCount[];
 
   @ApiProperty({
     description:
