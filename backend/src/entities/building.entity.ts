@@ -32,6 +32,27 @@ export type PetSize = "small" | "medium" | "large";
 
 export type PetType = "dog" | "cat" | "other";
 
+export type BuildingOccupation =
+  | "student"
+  | "young-professional"
+  | "freelancer-remote-worker"
+  | "business-owner"
+  | "family-professional"
+  | "other";
+
+export type BuildingFamilyStatus =
+  | "just-me"
+  | "couple"
+  | "couple-with-children"
+  | "single-parent"
+  | "friends-flatmates";
+
+export type BuildingChildrenCount =
+  | "no"
+  | "yes-1-child"
+  | "yes-2-children"
+  | "yes-3-plus-children";
+
 export interface MetroStation {
   label: string;
   destination: number; // time in minutes
@@ -200,6 +221,52 @@ export class Building {
   })
   @Column({ type: "jsonb", nullable: true, default: ["family"] })
   tenant_type: TenantType[];
+
+  @ApiProperty({
+    description:
+      "Target family statuses for this building (matches preferences family status values)",
+    example: ["couple", "couple-with-children"],
+    type: [String],
+    enum: [
+      "just-me",
+      "couple",
+      "couple-with-children",
+      "single-parent",
+      "friends-flatmates",
+    ],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  family_status: BuildingFamilyStatus[];
+
+  @ApiProperty({
+    description:
+      "Target occupations for this building (matches preferences occupation values)",
+    example: ["student", "young-professional"],
+    type: [String],
+    enum: [
+      "student",
+      "young-professional",
+      "freelancer-remote-worker",
+      "business-owner",
+      "family-professional",
+      "other",
+    ],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  occupation: BuildingOccupation[];
+
+  @ApiProperty({
+    description:
+      "Target children statuses for this building (matches preferences children status values)",
+    example: ["no", "yes-1-child"],
+    type: [String],
+    enum: ["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  children: BuildingChildrenCount[];
 
   @ApiProperty({ description: "Building creation date" })
   @CreateDateColumn()

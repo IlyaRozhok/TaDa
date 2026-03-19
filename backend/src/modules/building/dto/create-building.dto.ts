@@ -18,7 +18,14 @@ import {
   IsNotEmpty,
 } from "class-validator";
 import { Type } from "class-transformer";
-import { UnitType, TenantType, Pet } from "../../../entities/building.entity";
+import {
+  UnitType,
+  TenantType,
+  Pet,
+  BuildingFamilyStatus,
+  BuildingOccupation,
+  BuildingChildrenCount,
+} from "../../../entities/building.entity";
 
 // Custom validator for HTTPS URLs
 function IsHttpsUrl(validationOptions?: any) {
@@ -268,4 +275,75 @@ export class CreateBuildingDto {
     each: true,
   })
   tenant_type?: TenantType[];
+
+  @ApiProperty({
+    description:
+      "Target family statuses (matches preferences family status dropdown)",
+    example: ["couple", "couple-with-children"],
+    type: [String],
+    enum: [
+      "just-me",
+      "couple",
+      "couple-with-children",
+      "single-parent",
+      "friends-flatmates",
+    ],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsEnum(
+    [
+      "just-me",
+      "couple",
+      "couple-with-children",
+      "single-parent",
+      "friends-flatmates",
+    ],
+    { each: true },
+  )
+  family_status?: BuildingFamilyStatus[];
+
+  @ApiProperty({
+    description: "Target occupations (matches preferences occupation dropdown)",
+    example: ["student", "young-professional"],
+    type: [String],
+    enum: [
+      "student",
+      "young-professional",
+      "freelancer-remote-worker",
+      "business-owner",
+      "family-professional",
+      "other",
+    ],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsEnum(
+    [
+      "student",
+      "young-professional",
+      "freelancer-remote-worker",
+      "business-owner",
+      "family-professional",
+      "other",
+    ],
+    { each: true },
+  )
+  occupation?: BuildingOccupation[];
+
+  @ApiProperty({
+    description: "Target children statuses (matches preferences children dropdown)",
+    example: ["no", "yes-1-child"],
+    type: [String],
+    enum: ["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsEnum(["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"], {
+    each: true,
+  })
+  children?: BuildingChildrenCount[];
 }

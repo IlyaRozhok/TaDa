@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { X, Save, Plus, Minus, Upload } from "lucide-react";
 import { buildingsAPI, usersAPI } from "../lib/api";
 import { FormField, Input, Select, Textarea } from "./FormField";
@@ -23,6 +23,7 @@ import {
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
 import { translateAmenityStoredLabel } from "../../shared/constants/amenities";
 import { useTranslation } from "../hooks/useTranslation";
+import { wizardKeys } from "../lib/translationsKeys/wizardTranslationKeys";
 
 const AREAS = AREA_OPTIONS;
 
@@ -59,6 +60,32 @@ interface AddBuildingModalProps {
   isLoading?: boolean;
 }
 
+const OCCUPATION_VALUES = [
+  "student",
+  "young-professional",
+  "freelancer-remote-worker",
+  "business-owner",
+  "family-professional",
+  "other",
+];
+
+const FAMILY_STATUS_VALUES = [
+  "just-me",
+  "couple",
+  "couple-with-children",
+  "single-parent",
+  "friends-flatmates",
+];
+
+const CHILDREN_VALUES = [
+  "no",
+  "yes-1-child",
+  "yes-2-children",
+  "yes-3-plus-children",
+];
+
+const NO_CHILDREN_VALUE = "no";
+
 const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   isOpen,
   onClose,
@@ -67,6 +94,30 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const { tenantTypeOptions } = useLocalizedFormOptions();
+  const occupationOptions = useMemo(
+    () =>
+      OCCUPATION_VALUES.map((value, i) => ({
+        value,
+        label: t(wizardKeys.step8.occupationOptions[i]),
+      })),
+    [t],
+  );
+  const familyStatusOptions = useMemo(
+    () =>
+      FAMILY_STATUS_VALUES.map((value, i) => ({
+        value,
+        label: t(wizardKeys.step8.familyStatusOptions[i]),
+      })),
+    [t],
+  );
+  const childrenOptions = useMemo(
+    () =>
+      CHILDREN_VALUES.map((value, i) => ({
+        value,
+        label: t(wizardKeys.step8.childrenStatusOptions[i]),
+      })),
+    [t],
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Validation rules for building form
@@ -136,8 +187,12 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     pets: null as Pet[] | null,
     smoking_area: false,
     tenant_type: [] as string[],
+    family_status: [] as string[],
+    occupation: [] as string[],
+    children: [] as string[],
     operator_id: null as string | null,
   });
+  const hasNoChildrenSelected = formData.children.includes(NO_CHILDREN_VALUE);
 
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -521,6 +576,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           ...new Set(transformTenantTypeUIToAPI(formData.tenant_type)),
         ];
       }
+      buildingData.family_status = [...new Set(formData.family_status || [])];
+      buildingData.occupation = [...new Set(formData.occupation || [])];
+      buildingData.children = [...new Set(formData.children || [])];
 
       console.log("📤 Submitting building data (Add):", {
         operator_id: buildingData.operator_id,
@@ -551,6 +609,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           pets: null,
           smoking_area: false,
           tenant_type: [] as string[],
+          family_status: [] as string[],
+          occupation: [] as string[],
+          children: [] as string[],
           operator_id: null,
         });
 
@@ -896,6 +957,285 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                           <span>{option.label}</span>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Occupation
+                </label>
+                <div className="relative" data-dropdown>
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white cursor-pointer min-h-[40px] flex items-center"
+                    onClick={() => toggleDropdown("occupation")}
+                  >
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {formData.occupation.length > 0 ? (
+                        formData.occupation.map((value) => {
+                          const option = occupationOptions.find(
+                            (opt) => opt.value === value,
+                          );
+                          return (
+                            <span
+                              key={value}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                            >
+                              {option?.label ?? value}
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    occupation: formData.occupation.filter(
+                                      (v) => v !== value,
+                                    ),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-white/50">Select occupations...</span>
+                      )}
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-white/70 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                  {openDropdown === "occupation" && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {occupationOptions.map((option) => (
+                        <div
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                          onClick={() => {
+                            const next = formData.occupation.includes(option.value)
+                              ? formData.occupation.filter(
+                                  (v) => v !== option.value,
+                                )
+                              : [...formData.occupation, option.value];
+                            setFormData({ ...formData, occupation: next });
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.occupation.includes(option.value)}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Family Status
+                </label>
+                <div className="relative" data-dropdown>
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white cursor-pointer min-h-[40px] flex items-center"
+                    onClick={() => toggleDropdown("family_status")}
+                  >
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {formData.family_status.length > 0 ? (
+                        formData.family_status.map((value) => {
+                          const option = familyStatusOptions.find(
+                            (opt) => opt.value === value,
+                          );
+                          return (
+                            <span
+                              key={value}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                            >
+                              {option?.label ?? value}
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    family_status: formData.family_status.filter(
+                                      (v) => v !== value,
+                                    ),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-white/50">
+                          Select family statuses...
+                        </span>
+                      )}
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-white/70 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                  {openDropdown === "family_status" && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {familyStatusOptions.map((option) => (
+                        <div
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
+                          onClick={() => {
+                            const next = formData.family_status.includes(
+                              option.value,
+                            )
+                              ? formData.family_status.filter(
+                                  (v) => v !== option.value,
+                                )
+                              : [...formData.family_status, option.value];
+                            setFormData({ ...formData, family_status: next });
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.family_status.includes(option.value)}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Children
+                </label>
+                <div className="relative" data-dropdown>
+                  <div
+                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white cursor-pointer min-h-[40px] flex items-center"
+                    onClick={() => toggleDropdown("children")}
+                  >
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {formData.children.length > 0 ? (
+                        formData.children.map((value) => {
+                          const option = childrenOptions.find(
+                            (opt) => opt.value === value,
+                          );
+                          return (
+                            <span
+                              key={value}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
+                            >
+                              {option?.label ?? value}
+                              <button
+                                type="button"
+                                className="ml-1 text-white/70 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFormData({
+                                    ...formData,
+                                    children: formData.children.filter(
+                                      (v) => v !== value,
+                                    ),
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-white/50">
+                          Select children statuses...
+                        </span>
+                      )}
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-white/70 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                  {openDropdown === "children" && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {childrenOptions.map((option) => {
+                        const isNoOption = option.value === NO_CHILDREN_VALUE;
+                        const isDisabled = hasNoChildrenSelected && !isNoOption;
+                        return (
+                        <div
+                          key={option.value}
+                          className={`px-4 py-2 text-white flex items-center space-x-2 ${
+                            isDisabled
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:bg-white/20 cursor-pointer"
+                          }`}
+                          onClick={() => {
+                            if (isDisabled) return;
+                            const next = formData.children.includes(option.value)
+                              ? formData.children.filter((v) => v !== option.value)
+                              : option.value === NO_CHILDREN_VALUE
+                                ? [NO_CHILDREN_VALUE]
+                                : [
+                                    ...formData.children.filter(
+                                      (v) => v !== NO_CHILDREN_VALUE,
+                                    ),
+                                    option.value,
+                                  ];
+                            setFormData({ ...formData, children: next });
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.children.includes(option.value)}
+                            disabled={isDisabled}
+                            readOnly
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

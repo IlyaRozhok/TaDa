@@ -63,6 +63,9 @@ export class BuildingService {
       pet_policy: createBuildingDto.pet_policy ?? false,
       pets: createBuildingDto.pets || null,
       tenant_type: createBuildingDto.tenant_type || ["family"],
+      family_status: createBuildingDto.family_status || [],
+      occupation: createBuildingDto.occupation || [],
+      children: createBuildingDto.children || [],
     };
 
     const building = this.buildingRepository.create(buildingData);
@@ -174,6 +177,12 @@ export class BuildingService {
       updateData.pets = updateBuildingDto.pets;
     if (updateBuildingDto.tenant_type !== undefined)
       updateData.tenant_type = updateBuildingDto.tenant_type;
+    if (updateBuildingDto.family_status !== undefined)
+      updateData.family_status = updateBuildingDto.family_status;
+    if (updateBuildingDto.occupation !== undefined)
+      updateData.occupation = updateBuildingDto.occupation;
+    if (updateBuildingDto.children !== undefined)
+      updateData.children = updateBuildingDto.children;
 
     if (operatorId !== undefined) {
       updateData.operator_id = operatorId;
