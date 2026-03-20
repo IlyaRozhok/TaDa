@@ -19,6 +19,16 @@ function TenantDashboardContent() {
   const { state, loadProperties, clearError, setSearchTerm } =
     useTenantDashboard();
 
+  const handlePageChange = (page: number) => {
+    // When switching pages we always move the user back to the top.
+    // Pagination doesn't trigger navigation, so the browser keeps the previous scroll position.
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+
+    void loadProperties(state.searchTerm, page);
+  };
+
   // Loading state: показываем скелетоны ТОЛЬКО когда нет кэша
   if (!user || (state.sessionLoading && !state.hydratedFromCache)) {
     return (
@@ -106,7 +116,7 @@ function TenantDashboardContent() {
           totalCount={state.totalCount}
           currentPage={state.currentPage}
           totalPages={state.totalPages}
-          onPageChange={(page) => loadProperties(state.searchTerm, page)}
+          onPageChange={handlePageChange}
           showShortlistForAllRoles={true}
         />
       </main>

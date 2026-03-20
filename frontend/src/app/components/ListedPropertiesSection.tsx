@@ -319,7 +319,7 @@ export default function ListedPropertiesSection({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-2 cursor-pointer border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 cursor-pointer border border-gray-300 rounded-4xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-5 h-5 text-gray-700" />
           </button>
@@ -329,7 +329,7 @@ export default function ListedPropertiesSection({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="p-2 border cursor-pointer border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 border cursor-pointer border-gray-300 rounded-4xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronRight className="w-5 h-5 text-gray-700" />
           </button>
