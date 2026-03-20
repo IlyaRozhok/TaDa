@@ -314,7 +314,7 @@ export default function ShortlistPage() {
       <TenantUniversalHeader />
 
       <div className="flex-1">
-        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8 flex flex-col flex-1">
+        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16 flex flex-col flex-1">
           {/* Header: title, subtitle (kept in DOM to keep height stable) */}
           <div
             className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 ${
