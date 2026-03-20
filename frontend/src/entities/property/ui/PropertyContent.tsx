@@ -62,14 +62,18 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
     const raw = String(property.property_type).toLowerCase();
     const typeKey = getPropertyTypeTranslationKey(raw);
     attributeParts.push(
-      typeKey ? t(typeKey) : raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      typeKey
+        ? t(typeKey)
+        : raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     );
   }
   if (property.furnishing) {
     const raw = String(property.furnishing).toLowerCase();
     const furKey = getFurnishingTranslationKey(raw);
     attributeParts.push(
-      furKey ? t(furKey) : raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      furKey
+        ? t(furKey)
+        : raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     );
   }
 
@@ -117,7 +121,7 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
       )}
 
       {/* Price and availability */}
-      <div className="flex items-center gap-2 flex-wrap text-sm">
+      <div className="flex items-baseline gap-2 flex-wrap text-sm">
         <span className="text-xl font-bold text-gray-900">
           {formatPrice(property.price)}
           <span className="text-sm font-normal text-gray-500">
@@ -130,6 +134,3 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
     </div>
   );
 };
-
-
-
