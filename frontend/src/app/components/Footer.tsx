@@ -91,6 +91,22 @@ const Footer = () => {
               <p className="text-gray-400 text-sm">
                 {t(generalKeys.footer.allRightsReserved)}
               </p>
+              <p className="text-gray-500 text-xs mt-2">
+                <span className="text-gray-600">•</span>{" "}
+                <a
+                  href="/terms"
+                  className="underline underline-offset-2 hover:text-white transition-colors"
+                >
+                  {t("settings.termsOfUse")}
+                </a>{" "}
+                <span className="text-gray-600">•</span>{" "}
+                <a
+                  href="/privacy"
+                  className="underline underline-offset-2 hover:text-white transition-colors"
+                >
+                  {t("settings.privacyPolicy")}
+                </a>
+              </p>
             </div>
 
             {/* Social Media (Mobile) & Location */}

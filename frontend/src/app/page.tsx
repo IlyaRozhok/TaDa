@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "./store/slices/authSlice";
@@ -11,6 +11,41 @@ import AuthModal from "./components/AuthModal";
 import DualLandingWrapper from "./components/DualLandingWrapper";
 import { Search, ChevronDown, MapPin } from "lucide-react";
 import { useDebounce } from "./hooks/useDebounce";
+
+type CookieConsentDecision = "accepted" | "rejected";
+
+const COOKIE_CONSENT_STORAGE_KEY = "tada_cookie_consent_v1";
+const COOKIE_CONSENT_COOKIE_KEY = "tada_cookie_consent";
+const COOKIE_CONSENT_MAX_AGE_DAYS = 365;
+
+function readCookieValue(name: string): string | null {
+  if (typeof document === "undefined") return null;
+
+  const encodedName = encodeURIComponent(name);
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${encodedName}=([^;]*)`),
+  );
+
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1] ?? "");
+  } catch {
+    return match[1] ?? null;
+  }
+}
+
+function writeCookieValue(name: string, value: string) {
+  if (typeof document === "undefined") return;
+
+  const maxAgeSeconds = COOKIE_CONSENT_MAX_AGE_DAYS * 24 * 60 * 60;
+  const isSecure = window.location.protocol === "https:";
+
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
+    value,
+  )}; max-age=${maxAgeSeconds}; path=/; SameSite=Lax${
+    isSecure ? "; Secure" : ""
+  }`;
+}
 
 // Mock match data for demonstration
 const generateMockMatchData = (propertyId: string) => {
@@ -43,8 +78,30 @@ export default function HomePage() {
   const [language] = useState("EN");
   const [sortBy] = useState("Best Match Score");
 
+  const [showCookieConsent, setShowCookieConsent] = useState(false);
+  const [cookieConsentChecked, setCookieConsentChecked] = useState(false);
+
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const persistCookieConsentDecision = useCallback(
+    (decision: CookieConsentDecision) => {
+      try {
+        window.localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, decision);
+      } catch {
+        // localStorage может быть недоступен (например, в приватном режиме)
+      }
+      writeCookieValue(COOKIE_CONSENT_COOKIE_KEY, decision);
+
+      // Хук для будущей логики загрузки cookie-зависимых скриптов
+      window.dispatchEvent(
+        new CustomEvent("tada:cookieConsentChanged", {
+          detail: { decision },
+        }),
+      );
+    },
+    [],
+  );
 
   // Auto-redirect authenticated users to their dashboard
   useEffect(() => {
@@ -53,6 +110,26 @@ export default function HomePage() {
       router.replace(`/app/units/`);
     }
   }, [isAuthenticated, user, router]);
+
+  // Show cookie consent popup only for undecided users on the landing.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (isAuthenticated) {
+      setShowCookieConsent(false);
+      setCookieConsentChecked(true);
+      return;
+    }
+
+    const localValue = window.localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY);
+    const cookieValue = readCookieValue(COOKIE_CONSENT_COOKIE_KEY);
+    const rawDecision = localValue ?? cookieValue;
+    const hasValidDecision =
+      rawDecision === "accepted" || rawDecision === "rejected";
+
+    setShowCookieConsent(!hasValidDecision);
+    setCookieConsentChecked(true);
+  }, [isAuthenticated]);
 
   // Filter properties based on search term
   useEffect(() => {
@@ -103,6 +180,28 @@ export default function HomePage() {
     // Reset modal state when opening
     setAuthModalOpen(true);
   };
+
+  const handleAcceptCookieConsent = useCallback(() => {
+    persistCookieConsentDecision("accepted");
+    setShowCookieConsent(false);
+  }, [persistCookieConsentDecision]);
+
+  const handleRejectCookieConsent = useCallback(() => {
+    // На этом шаге не делаем манипуляции скриптами, только фиксируем решение.
+    persistCookieConsentDecision("rejected");
+    setShowCookieConsent(false);
+  }, [persistCookieConsentDecision]);
+
+  useEffect(() => {
+    if (!showCookieConsent) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleRejectCookieConsent();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showCookieConsent, handleRejectCookieConsent]);
 
   // Show loading state while redirecting authenticated users
   if (isAuthenticated && user) {
@@ -336,6 +435,49 @@ export default function HomePage() {
             </div>
           </section>
         </>
+      )}
+
+      {/* Cookie consent popup (landing only) */}
+      {!isAuthenticated && cookieConsentChecked && showCookieConsent && (
+        <div className="fixed inset-x-0 bottom-6 z-[100] flex justify-end px-4">
+          <div
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby="cookie-consent-title"
+            className="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-gray-200"
+          >
+            <div className="p-6 sm:p-7">
+              <h2
+                id="cookie-consent-title"
+                className="text-xl font-semibold text-gray-900"
+              >
+                Cookies on TA-DA
+              </h2>
+              <p className="mt-2 text-gray-800">
+                We use cookies to make TA-DA work properly and improve your
+                experience.
+              </p>
+
+              <div className="mt-6 flex items-center gap-6 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleAcceptCookieConsent}
+                  className="bg-black cursor-pointer text-white px-10 py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                >
+                  Accept
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleRejectCookieConsent}
+                  className="text-gray-900 cursor-pointer font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 rounded-md px-2 py-1"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Auth Modal */}

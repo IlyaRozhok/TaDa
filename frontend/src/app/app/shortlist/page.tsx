@@ -147,6 +147,9 @@ export default function ShortlistPage() {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const [sessionReady, setSessionReady] = useState(false);
+  const [hasRequestedShortlist, setHasRequestedShortlist] = useState(false);
+  const [shortlistRequestInFlight, setShortlistRequestInFlight] =
+    useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearingShortlist, setClearingShortlist] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
@@ -157,6 +160,12 @@ export default function ShortlistPage() {
   const loading = useSelector(selectShortlistLoading);
   const error = useSelector(selectShortlistError);
   const count = useSelector(selectShortlistCount);
+
+  const isShortlistReady =
+    hasRequestedShortlist && !loading && !shortlistRequestInFlight;
+
+  const isEmptyShortlist = isShortlistReady && properties.length === 0;
+  const shouldShowShortlistHeader = isShortlistReady && properties.length > 0;
 
   const sortedProperties = useMemo(
     () => sortProperties(properties, sortBy),
@@ -191,7 +200,11 @@ export default function ShortlistPage() {
       user &&
       (user.role === "tenant" || user.role === "admin")
     ) {
-      dispatch(fetchShortlist());
+      setHasRequestedShortlist(true);
+      setShortlistRequestInFlight(true);
+      dispatch(fetchShortlist()).finally(() => {
+        setShortlistRequestInFlight(false);
+      });
     }
   }, [dispatch, sessionReady, isAuthenticated, user]);
 
@@ -217,7 +230,11 @@ export default function ShortlistPage() {
 
   const handleRefresh = () => {
     dispatch(clearError());
-    dispatch(fetchShortlist());
+    setHasRequestedShortlist(true);
+    setShortlistRequestInFlight(true);
+    dispatch(fetchShortlist()).finally(() => {
+      setShortlistRequestInFlight(false);
+    });
   };
 
   const handleClearShortlist = () => {
@@ -244,7 +261,11 @@ export default function ShortlistPage() {
 
   const handleRetry = () => {
     dispatch(clearError());
-    dispatch(fetchShortlist());
+    setHasRequestedShortlist(true);
+    setShortlistRequestInFlight(true);
+    dispatch(fetchShortlist()).finally(() => {
+      setShortlistRequestInFlight(false);
+    });
   };
 
   // Show error state
@@ -274,28 +295,12 @@ export default function ShortlistPage() {
     );
   }
 
-  // Show loading while session is initializing
-  if (!sessionReady) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-slate-600">Initializing session...</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   // Show not authenticated state (only after session is ready)
-  if (!isAuthenticated || !user) {
+  if (sessionReady && (!isAuthenticated || !user)) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-slate-600">Redirecting to login...</p>
           </div>
         </div>
@@ -305,79 +310,88 @@ export default function ShortlistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <TenantUniversalHeader />
 
-      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
-        {/* Header: title, subtitle, sort + show map */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {t(favoritesKeys.title)}
-            </h1>
-            <p className="text-gray-600">
-              {t(favoritesKeys.subtitle)}
-              <span className="ml-2 text-gray-900 font-medium">
-                {formatListingResultsCountLabel(
-                  t(listingPropertyKeys.resultsDescription),
-                  count,
-                )}
-              </span>
-            </p>
+      <div className="flex-1">
+        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8 flex flex-col flex-1">
+          {/* Header: title, subtitle (kept in DOM to keep height stable) */}
+          <div
+            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 ${
+              shouldShowShortlistHeader ? "" : "invisible"
+            }`}
+          >
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {t(favoritesKeys.title)}
+              </h1>
+              <p className="text-gray-600">
+                {t(favoritesKeys.subtitle)}
+                <span className="ml-2 text-gray-900 font-medium">
+                  {formatListingResultsCountLabel(
+                    t(listingPropertyKeys.resultsDescription),
+                    count,
+                  )}
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Properties Grid – same cards as property list (no skeleton on favourites) */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" />
+          {/* Content area with constant height */}
+          <div className="flex-1 min-h-[18rem] sm:min-h-[22rem] lg:min-h-[28rem] xl:min-h-[32rem] flex flex-col">
+            {isShortlistReady && properties.length > 0 && (
+              <div className="flex-1">
+                <PropertyGridWithLoader
+                  properties={sortedProperties}
+                  loading={false}
+                  onPropertyClick={(property) =>
+                    handlePropertyClick(property.id)
+                  }
+                  showShortlist={true}
+                  matchByPropertyId={matchByPropertyId}
+                />
+              </div>
+            )}
+
+            {isEmptyShortlist && (
+              <div className="flex-1 flex items-start justify-start">
+                <div className="text-center max-w-md mx-auto px-4">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                    {t(favoritesKeys.emptyState.title)}
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    {t(favoritesKeys.emptyState.subtitle)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push(getRedirectPath(user))}
+                    className="bg-black text-white px-6 py-3 rounded-4xl font-medium hover:bg-gray-800 transition-colors cursor-pointer"
+                  >
+                    {t(favoritesKeys.emptyState.action)}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <PropertyGridWithLoader
-            properties={sortedProperties}
-            loading={false}
-            onPropertyClick={(property) => handlePropertyClick(property.id)}
-            showShortlist={true}
-            matchByPropertyId={matchByPropertyId}
+
+          {/* Clear Shortlist Confirmation Modal */}
+          <ConfirmModal
+            isOpen={showClearModal}
+            onClose={handleCloseClearModal}
+            onConfirm={handleConfirmClear}
+            title="Clear Entire Shortlist"
+            message={`Are you sure you want to remove all ${count} ${
+              count === 1 ? "property" : "properties"
+            } from your shortlist? This action cannot be undone.`}
+            confirmText="Clear All"
+            cancelText="Keep Shortlist"
+            confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+            icon="heart"
+            loading={clearingShortlist}
           />
-        )}
-
-        {!loading && properties.length === 0 && (
-          <div className="text-center py-12 max-w-md mx-auto">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              {t(favoritesKeys.emptyState.title)}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {t(favoritesKeys.emptyState.subtitle)}
-            </p>
-            <button
-              type="button"
-              onClick={() => router.push(getRedirectPath(user))}
-              className="bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors cursor-pointer"
-            >
-              {t(favoritesKeys.emptyState.action)}
-            </button>
-          </div>
-        )}
-
-        {/* Tips Section */}
-
-        {/* Clear Shortlist Confirmation Modal */}
-        <ConfirmModal
-          isOpen={showClearModal}
-          onClose={handleCloseClearModal}
-          onConfirm={handleConfirmClear}
-          title="Clear Entire Shortlist"
-          message={`Are you sure you want to remove all ${count} ${
-            count === 1 ? "property" : "properties"
-          } from your shortlist? This action cannot be undone.`}
-          confirmText="Clear All"
-          cancelText="Keep Shortlist"
-          confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
-          icon="heart"
-          loading={clearingShortlist}
-        />
+        </div>
       </div>
+
       <Footer />
     </div>
   );

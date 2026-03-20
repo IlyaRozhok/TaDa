@@ -1014,18 +1014,11 @@ export default function PropertyPublicPage() {
                         £{(Number(property.price || 0) * 2).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Tada fee</span>
-                      <span className="text-gray-600">£142.5</span>
-                    </div>
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span className="font-semibold text-black">Total</span>
                       <span className="font-bold text-black text-base">
                         £
-                        {(
-                          Number(property.price || 0) * 2 +
-                          142.5
-                        ).toLocaleString()}
+                        {(Number(property.price || 0) * 2).toLocaleString()}
                       </span>
                     </div>
                   </div>
