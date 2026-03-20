@@ -141,8 +141,7 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
                     : "text-white hover:bg-white/12"
                 }`}
                 style={{
-                  backdropFilter:
-                    sortBy === value ? "blur(10px)" : undefined,
+                  backdropFilter: sortBy === value ? "blur(10px)" : undefined,
                   fontWeight: sortBy === value ? 600 : undefined,
                 }}
               >
@@ -239,7 +238,7 @@ export default function ListedPropertiesSection({
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl2xl font-bold text-gray-900 mb-2">
             {t(listingPropertyKeys.title)}
           </h2>
           <p className="text-gray-600">

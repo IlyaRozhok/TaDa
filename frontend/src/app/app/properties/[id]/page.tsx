@@ -615,7 +615,7 @@ export default function PropertyPublicPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader showPreferencesButton={true} />
-        <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-red-800 mb-4">
               Failed to Load Property
@@ -643,7 +643,7 @@ export default function PropertyPublicPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader showPreferencesButton={true} />
-        <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 py-8">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
             <h3 className="text-xl font-semibold text-yellow-800 mb-4">
               Property Not Found
@@ -721,7 +721,7 @@ export default function PropertyPublicPage() {
       <TenantUniversalHeader showPreferencesButton={true} />
 
       {/* Header with title and actions */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 sm:pt-20">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
@@ -766,7 +766,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Main content: gallery + sticky price card */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Left: Gallery with preview carousel */}
           <div className="lg:col-span-2 relative">
@@ -1037,7 +1037,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* About apartment */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.description.sectionTitle)}
@@ -1079,7 +1079,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* What this place offers */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.keyFeatures.sectionTitle)}

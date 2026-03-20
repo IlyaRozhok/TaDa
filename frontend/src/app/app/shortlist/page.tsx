@@ -252,7 +252,7 @@ export default function ShortlistPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <TenantUniversalHeader showPreferencesButton={true} />
-        <div className="max-w-[98%] sm:max-w-[95%] lg:max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-1 py-1 sm:py-1.5 lg:py-2">
+        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 py-1 sm:py-1.5 lg:py-2">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Heart className="w-6 h-6 text-red-600" />

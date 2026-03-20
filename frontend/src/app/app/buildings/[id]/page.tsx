@@ -210,7 +210,7 @@ export default function BuildingPublicPage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader />
-        <div className="pt-16 sm:pt-20">
+        <div className="pt-24 sm:pt-28 lg:pt-32">
           <PropertyDetailSkeleton />
         </div>
         <Footer />
@@ -223,7 +223,7 @@ export default function BuildingPublicPage() {
     return (
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader />
-        <div className="max-w-[92%] mx-auto px-1 sm:px-1.5 lg:px-2 pt-16 sm:pt-20 pb-2">
+        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
           <div className="text-center py-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Building not found
@@ -246,7 +246,7 @@ export default function BuildingPublicPage() {
       <TenantUniversalHeader />
 
       {/* Building Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-6 sm:pb-8">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-8">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
@@ -272,7 +272,7 @@ export default function BuildingPublicPage() {
       </div>
 
       {/* Main content: gallery + details */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="grid grid-cols-1 gap-6 sm:gap-8">
           {/* Gallery — same width as page container */}
           {allImages.length > 0 && (
