@@ -25,16 +25,6 @@ interface Building {
     method?: string;
   }>;
 }
-// import {
-//   addToShortlist,
-//   removeFromShortlist,
-//   selectShortlistProperties,
-// } from "../../../store/slices/shortlistSlice";
-// import { AppDispatch } from "../../../store/store";
-// import {
-//   selectUser,
-//   selectIsAuthenticated,
-// } from "../../../store/slices/authSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share, ChevronLeft, ChevronRight } from "lucide-react";
