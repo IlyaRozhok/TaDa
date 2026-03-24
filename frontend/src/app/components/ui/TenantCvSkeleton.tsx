@@ -4,7 +4,7 @@ import React from "react";
 
 export default function TenantCvSkeleton() {
   return (
-    <div className="animate-pulse">
+    <div className="animate-pulse pb-20">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-start gap-4">
           <div className="w-20 h-20 rounded-full bg-gray-200" />

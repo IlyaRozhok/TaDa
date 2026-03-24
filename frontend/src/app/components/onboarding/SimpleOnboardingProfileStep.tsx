@@ -74,12 +74,9 @@ export default function SimpleOnboardingProfileStep({
 
   const loading = externalLoading || isLoading || isSaving;
 
-  // Memoize the date change handler to prevent re-renders
+  // Simple date change handler
   const handleDateChangeCallback = useCallback((date: string | null) => {
     handleInputChange("date_of_birth", date || "");
-    if (date) {
-      validateDateOfBirth(date);
-    }
   }, [handleInputChange]);
 
   return (

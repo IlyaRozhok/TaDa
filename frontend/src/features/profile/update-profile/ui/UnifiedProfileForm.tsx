@@ -105,12 +105,9 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
   const hasAvatarChanges = avatarFile !== null;
   const showSaveButton = hasChanges || hasAvatarChanges;
 
-  // Memoize the date change handler to prevent re-renders
+  // Simple date change handler
   const handleDateChange = useCallback((date: string | null) => {
     handleInputChange("date_of_birth", date || "");
-    if (date) {
-      validateDateOfBirth(date);
-    }
   }, [handleInputChange]);
 
   // Show error state if user data is not available (don't show loading since parent handles it)

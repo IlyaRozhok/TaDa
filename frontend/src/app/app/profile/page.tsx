@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  // Don't memoize user - let useUnifiedProfile handle stability
+
   // Check auth and load profile once
   useEffect(() => {
     let isMounted = true;

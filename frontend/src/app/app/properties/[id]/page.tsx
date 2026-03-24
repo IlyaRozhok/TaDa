@@ -128,8 +128,6 @@ export default function PropertyPublicPage() {
     null,
   );
   const [bookingDescription, setBookingDescription] = useState("");
-  const [bookingDescriptionFocused, setBookingDescriptionFocused] =
-    useState(false);
   const [redirecting429, setRedirecting429] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -160,12 +158,13 @@ export default function PropertyPublicPage() {
   });
 
   const preferencesFilledCount = useMemo(() => {
-    const preferences =
-      (preferencesQueryData &&
-        typeof preferencesQueryData === "object" &&
-        "data" in preferencesQueryData
+    const preferences = (
+      preferencesQueryData &&
+      typeof preferencesQueryData === "object" &&
+      "data" in preferencesQueryData
         ? (preferencesQueryData as { data?: Record<string, unknown> }).data
-        : preferencesQueryData) as Record<string, unknown> | undefined;
+        : preferencesQueryData
+    ) as Record<string, unknown> | undefined;
 
     if (!preferences || typeof preferences !== "object") {
       return 0;
@@ -173,20 +172,32 @@ export default function PropertyPublicPage() {
 
     let filledCount = 0;
     if (preferences.primary_postcode) filledCount += 1;
-    if (preferences.min_price != null || preferences.max_price != null) filledCount += 1;
+    if (preferences.min_price != null || preferences.max_price != null)
+      filledCount += 1;
     if (preferences.min_bedrooms != null) filledCount += 1;
     if (preferences.furnishing) filledCount += 1;
     if (preferences.let_duration) filledCount += 1;
-    if (preferences.designer_furniture !== undefined && preferences.designer_furniture !== null) filledCount += 1;
+    if (
+      preferences.designer_furniture !== undefined &&
+      preferences.designer_furniture !== null
+    )
+      filledCount += 1;
     if (preferences.house_shares) filledCount += 1;
-    if (Array.isArray(preferences.convenience_features) && preferences.convenience_features.length > 0) filledCount += 1;
+    if (
+      Array.isArray(preferences.convenience_features) &&
+      preferences.convenience_features.length > 0
+    )
+      filledCount += 1;
     if (preferences.ideal_living_environment) filledCount += 1;
     if (preferences.pets) filledCount += 1;
-    if (preferences.smoker !== undefined && preferences.smoker !== null) filledCount += 1;
+    if (preferences.smoker !== undefined && preferences.smoker !== null)
+      filledCount += 1;
     if (preferences.move_in_date) filledCount += 1;
     if (preferences.max_bedrooms != null) filledCount += 1;
-    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null) filledCount += 1;
-    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0) filledCount += 1;
+    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null)
+      filledCount += 1;
+    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0)
+      filledCount += 1;
     if (preferences.additional_info) filledCount += 1;
     if (preferences.date_property_added) filledCount += 1;
 
@@ -576,7 +587,8 @@ export default function PropertyPublicPage() {
       .replace(/^\+\d{1,4}\s*/, "")
       .replace(/[^\d]/g, "");
     const countryDialCode =
-      getCountryByCode(nextCountryCode)?.dialCode || getDefaultCountry().dialCode;
+      getCountryByCode(nextCountryCode)?.dialCode ||
+      getDefaultCountry().dialCode;
     const fullPhone = numberOnly
       ? `${countryDialCode} ${numberOnly}`.trim()
       : normalizedPhone;
@@ -711,7 +723,9 @@ export default function PropertyPublicPage() {
     bookingLoading ||
     hasBookingRequest ||
     !bookingName.trim() ||
-    (!bookingEmail.trim() && bookingPhone.replace(/\D/g, "").length === 0);
+    (!bookingEmail.trim() && bookingPhone.replace(/\D/g, "").length === 0) ||
+    !bookingMoveInDate ||
+    !bookingMoveOutDate;
 
   // Skeleton: показываем только при первом загрузочном запросе (isLoading)
   // При возврате назад из кэша будет isFetching, но isLoading=false — скелетон не показываем.
@@ -1147,8 +1161,7 @@ export default function PropertyPublicPage() {
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span className="font-semibold text-black">Total</span>
                       <span className="font-bold text-black text-base">
-                        £
-                        {(Number(property.price || 0) * 2).toLocaleString()}
+                        £{(Number(property.price || 0) * 2).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1461,15 +1474,6 @@ export default function PropertyPublicPage() {
                     name="booking_move_out_date"
                     value={bookingMoveOutDate}
                     onChange={(date) => {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      const moveIn = bookingMoveInDate
-                        ? new Date(bookingMoveInDate)
-                        : today;
-                      moveIn.setHours(0, 0, 0, 0);
-                      const selected = date ? new Date(date) : null;
-                      const minDate = moveIn > today ? moveIn : today;
-                      if (selected && selected < minDate) return;
                       setBookingMoveOutDate(date || null);
                     }}
                     minDate={
@@ -1486,11 +1490,7 @@ export default function PropertyPublicPage() {
                   <div className="relative">
                     <label
                       htmlFor="booking-description"
-                      className={`absolute left-6 pointer-events-none transition-all duration-200 ${
-                        bookingDescriptionFocused || bookingDescription.length > 0
-                          ? "top-3 text-xs text-gray-500"
-                          : "top-1/3 translate-y-1 text-base text-gray-400"
-                      }`}
+                      className="absolute left-0 top-0 pointer-events-none text-xs text-gray-500"
                     >
                       Description
                     </label>
@@ -1498,11 +1498,9 @@ export default function PropertyPublicPage() {
                       id="booking-description"
                       value={bookingDescription}
                       onChange={(e) => setBookingDescription(e.target.value)}
-                      onFocus={() => setBookingDescriptionFocused(true)}
-                      onBlur={() => setBookingDescriptionFocused(false)}
                       disabled={bookingLoading}
                       rows={4}
-                      className="w-full px-6 pt-8 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white resize-none border-0 focus:ring-2 focus:ring-gray-300 disabled:opacity-60"
+                      className="w-full pt-5 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white resize-none border-0 disabled:opacity-60"
                     />
                   </div>
                 </div>

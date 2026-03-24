@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "../../../../app/hooks/useTranslation";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
@@ -34,30 +34,28 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   const dispatch = useDispatch();
   
   // Convert AuthUser to entities User format
-  const adaptUser = (authUser: AuthUser | null): User | null => {
-    if (!authUser) return null;
+  const adaptedUser = useMemo(() => {
+    if (!user) return null;
     
     return {
-      id: authUser.id,
-      email: authUser.email,
-      role: authUser.role as 'tenant' | 'operator', // Type assertion since we know it should be valid
-      full_name: authUser.full_name,
-      avatar_url: authUser.avatar_url,
-      tenantProfile: authUser.role === 'tenant' && authUser.tenantProfile ? {
-        ...authUser.tenantProfile,
-        user_id: authUser.id, // Add missing user_id
-        date_of_birth: typeof authUser.tenantProfile.date_of_birth === 'string' 
-          ? authUser.tenantProfile.date_of_birth 
-          : authUser.tenantProfile.date_of_birth?.toISOString().split('T')[0] || undefined,
+      id: user.id,
+      email: user.email,
+      role: user.role as 'tenant' | 'operator', // Type assertion since we know it should be valid
+      full_name: user.full_name,
+      avatar_url: user.avatar_url,
+      tenantProfile: user.role === 'tenant' && user.tenantProfile ? {
+        ...user.tenantProfile,
+        user_id: user.id, // Add missing user_id
+        date_of_birth: typeof user.tenantProfile.date_of_birth === 'string' 
+          ? user.tenantProfile.date_of_birth 
+          : user.tenantProfile.date_of_birth?.toISOString().split('T')[0] || undefined,
       } : undefined,
-      operatorProfile: authUser.role === 'operator' && authUser.operatorProfile ? {
-        ...authUser.operatorProfile,
-        user_id: authUser.id, // Add missing user_id
+      operatorProfile: user.role === 'operator' && user.operatorProfile ? {
+        ...user.operatorProfile,
+        user_id: user.id, // Add missing user_id
       } : undefined,
     };
-  };
-  
-  const adaptedUser = adaptUser(user);
+  }, [user?.id, user?.email, user?.role, user?.full_name, user?.avatar_url, user?.updated_at]);
   
   const [formData, setFormData] = useState<UpdateUserData>(() =>
     buildFormDataFromUser(adaptedUser)
@@ -95,15 +93,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
 
   // Update form data when user profile data changes
   useEffect(() => {
-    if (user?.id) {
-      const adapted = adaptUser(user);
-      const newFormData = buildFormDataFromUser(adapted);
+    if (user?.id && adaptedUser) {
+      const newFormData = buildFormDataFromUser(adaptedUser);
       setFormData(newFormData);
 
       // Parse phone number only when user data changes
       parsePhoneNumber(newFormData.phone || "");
     }
-  }, [user?.id, user?.updated_at, user?.tenantProfile, user?.operatorProfile, parsePhoneNumber]);
+  }, [user?.id, user?.updated_at, adaptedUser, parsePhoneNumber]);
 
   // Validate form - check if all required fields are filled
   const validateForm = useCallback((): boolean => {
@@ -142,7 +139,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
     const hasFormChanges =
       JSON.stringify(formData) !== JSON.stringify(initialData);
     setHasChanges(hasFormChanges || avatarFile !== null);
-  }, [formData, user?.id, user?.updated_at, user?.tenantProfile, user?.operatorProfile, avatarFile]);
+  }, [formData, user?.id, user?.updated_at, avatarFile]);
 
   // Cleanup preview URL when component unmounts or avatar changes
   useEffect(() => {

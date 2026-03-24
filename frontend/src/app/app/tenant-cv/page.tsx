@@ -58,12 +58,13 @@ export default function TenantCvPage() {
   });
 
   const preferencesFilledCount = useMemo(() => {
-    const preferences =
-      (preferencesQueryData &&
-        typeof preferencesQueryData === "object" &&
-        "data" in preferencesQueryData
+    const preferences = (
+      preferencesQueryData &&
+      typeof preferencesQueryData === "object" &&
+      "data" in preferencesQueryData
         ? (preferencesQueryData as { data?: Record<string, unknown> }).data
-        : preferencesQueryData) as Record<string, unknown> | undefined;
+        : preferencesQueryData
+    ) as Record<string, unknown> | undefined;
 
     if (!preferences || typeof preferences !== "object") {
       return 0;
@@ -71,20 +72,32 @@ export default function TenantCvPage() {
 
     let filledCount = 0;
     if (preferences.primary_postcode) filledCount += 1;
-    if (preferences.min_price != null || preferences.max_price != null) filledCount += 1;
+    if (preferences.min_price != null || preferences.max_price != null)
+      filledCount += 1;
     if (preferences.min_bedrooms != null) filledCount += 1;
     if (preferences.furnishing) filledCount += 1;
     if (preferences.let_duration) filledCount += 1;
-    if (preferences.designer_furniture !== undefined && preferences.designer_furniture !== null) filledCount += 1;
+    if (
+      preferences.designer_furniture !== undefined &&
+      preferences.designer_furniture !== null
+    )
+      filledCount += 1;
     if (preferences.house_shares) filledCount += 1;
-    if (Array.isArray(preferences.convenience_features) && preferences.convenience_features.length > 0) filledCount += 1;
+    if (
+      Array.isArray(preferences.convenience_features) &&
+      preferences.convenience_features.length > 0
+    )
+      filledCount += 1;
     if (preferences.ideal_living_environment) filledCount += 1;
     if (preferences.pets) filledCount += 1;
-    if (preferences.smoker !== undefined && preferences.smoker !== null) filledCount += 1;
+    if (preferences.smoker !== undefined && preferences.smoker !== null)
+      filledCount += 1;
     if (preferences.move_in_date) filledCount += 1;
     if (preferences.max_bedrooms != null) filledCount += 1;
-    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null) filledCount += 1;
-    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0) filledCount += 1;
+    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null)
+      filledCount += 1;
+    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0)
+      filledCount += 1;
     if (preferences.additional_info) filledCount += 1;
     if (preferences.date_property_added) filledCount += 1;
 
@@ -96,7 +109,11 @@ export default function TenantCvPage() {
     const o = body as Record<string, unknown>;
     if (typeof o.share_uuid === "string") return o.share_uuid;
     const inner = o.data;
-    if (inner && typeof inner === "object" && typeof (inner as { share_uuid?: string }).share_uuid === "string") {
+    if (
+      inner &&
+      typeof inner === "object" &&
+      typeof (inner as { share_uuid?: string }).share_uuid === "string"
+    ) {
       return (inner as { share_uuid: string }).share_uuid;
     }
     return undefined;
@@ -173,13 +190,16 @@ export default function TenantCvPage() {
         typeof e === "object" &&
         "data" in e &&
         (e as { data?: { message?: string } }).data?.message;
-      notify.error(typeof msg === "string" ? msg : "Unable to generate share link");
+      notify.error(
+        typeof msg === "string" ? msg : "Unable to generate share link",
+      );
     } finally {
       setShareLoading(false);
     }
   };
 
   const isInitialLoading = !sessionReady || (isLoading && !data);
+  const shouldShowLoadingSkeleton = isInitialLoading || (!error && !data);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -192,17 +212,17 @@ export default function TenantCvPage() {
 
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-18 pb-10 mt-6">
-          {isInitialLoading ? (
-            <div className="min-h-[55vh] transition-opacity duration-200">
+          {shouldShowLoadingSkeleton ? (
+            <div className="h-[calc(100vh-130px)] min-h-[520px] overflow-hidden">
               <TenantCvSkeleton />
             </div>
           ) : null}
-          {!isInitialLoading && error ? (
-            <div className="min-h-[55vh] flex items-center justify-center text-center text-red-600">
+          {!shouldShowLoadingSkeleton && error ? (
+            <div className="h-[calc(100vh-220px)] min-h-[520px] flex items-center justify-center text-center text-red-600">
               {error}
             </div>
           ) : null}
-          {!isInitialLoading && !error && data ? (
+          {!shouldShowLoadingSkeleton && !error && data ? (
             <div className="transition-opacity duration-300 opacity-100">
               <TenantCvView
                 data={data}
