@@ -11,6 +11,7 @@ import AuthModal from "./components/AuthModal";
 import DualLandingWrapper from "./components/DualLandingWrapper";
 import { Search, ChevronDown, MapPin } from "lucide-react";
 import { useDebounce } from "./hooks/useDebounce";
+import { useTranslation } from "./hooks/useTranslation";
 
 type CookieConsentDecision = "accepted" | "rejected";
 
@@ -68,6 +69,7 @@ export default function HomePage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
@@ -451,11 +453,10 @@ export default function HomePage() {
                 id="cookie-consent-title"
                 className="text-xl font-semibold text-gray-900"
               >
-                Cookies on TA-DA
+                {t("cookies.title")}
               </h2>
               <p className="mt-2 text-gray-800">
-                We use cookies to make TA-DA work properly and improve your
-                experience.
+                {t("cookies.description")}
               </p>
 
               <div className="mt-6 flex items-center gap-6 flex-wrap">
@@ -464,7 +465,7 @@ export default function HomePage() {
                   onClick={handleAcceptCookieConsent}
                   className="bg-black cursor-pointer text-white px-10 py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                 >
-                  Accept
+                  {t("cookies.button.accept")}
                 </button>
 
                 <button
@@ -472,7 +473,7 @@ export default function HomePage() {
                   onClick={handleRejectCookieConsent}
                   className="text-gray-900 cursor-pointer font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 rounded-md px-2 py-1"
                 >
-                  Reject
+                  {t("cookies.button.reject")}
                 </button>
               </div>
             </div>
