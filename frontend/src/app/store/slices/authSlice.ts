@@ -112,7 +112,6 @@ const authSlice = createSlice({
         user_id: user.id,
         user_email: user.email,
         user_role: user.role,
-        user_roles: user.roles,
         user_full_name: user.full_name,
         has_tenant_profile: !!user.tenantProfile,
         has_operator_profile: !!user.operatorProfile,

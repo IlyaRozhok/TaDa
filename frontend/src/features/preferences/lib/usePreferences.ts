@@ -232,7 +232,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
     }
 
     // Check if operator role
-    if (user.roles?.includes("operator")) {
+    if (user.role === "operator") {
       console.log("👷 User is operator, redirecting from usePreferences");
       router.push("/app/dashboard/operator");
       return;

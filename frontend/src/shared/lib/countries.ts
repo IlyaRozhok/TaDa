@@ -89,3 +89,28 @@ export function getCountryByName(name: string): Country | undefined {
   );
 }
 
+/**
+ * Parse a stored full phone number (e.g. "+380(93)399-91-81") into
+ * { country, nationalNumber } where nationalNumber is the part after the
+ * dial code, preserving any mask characters already in the string.
+ *
+ * Uses longest-dial-code-first matching so "+380" is preferred over "+38".
+ */
+export function parseStoredPhone(
+  fullPhone: string
+): { country: Country; nationalNumber: string } | null {
+  if (!fullPhone) return null;
+
+  const sorted = [...COUNTRIES].sort(
+    (a, b) => b.dialCode.length - a.dialCode.length
+  );
+
+  const match = sorted.find((c) => fullPhone.startsWith(c.dialCode));
+  if (!match) return null;
+
+  return {
+    country: match,
+    nationalNumber: fullPhone.slice(match.dialCode.length),
+  };
+}
+

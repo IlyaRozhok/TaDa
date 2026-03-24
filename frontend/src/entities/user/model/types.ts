@@ -62,4 +62,5 @@ export interface UpdateUserData {
   date_of_birth?: string;
   nationality?: string;
   avatar_url?: string;
+  occupation?: string;
 }

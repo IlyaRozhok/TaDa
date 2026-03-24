@@ -6,9 +6,9 @@ import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { authAPI } from "@/app/lib/api";
 import { updateUser } from "@/app/store/slices/authSlice";
 import {
-  getCountryByDialCode,
   getCountryByCode,
   getDefaultCountry,
+  parseStoredPhone,
 } from "@/shared/lib/countries";
 
 interface UseUserProfileOptions {
@@ -28,7 +28,7 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
   const [isLoading, setIsLoading] = useState(false);
   const [dateOfBirthError, setDateOfBirthError] = useState<string | null>(null);
 
-  // Helper function to parse phone number
+  // Helper function to parse a stored full phone number into country + national number
   const parsePhoneNumber = useCallback((phoneNumber: string) => {
     if (!phoneNumber) {
       setPhoneCountryCode("GB");
@@ -36,13 +36,11 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
       return;
     }
 
-    // Try to find country by dial code
-    const country = getCountryByDialCode(phoneNumber);
-    if (country) {
-      setPhoneCountryCode(country.code);
-      setPhoneNumberOnly(phoneNumber.replace(country.dialCode, ""));
+    const parsed = parseStoredPhone(phoneNumber);
+    if (parsed) {
+      setPhoneCountryCode(parsed.country.code);
+      setPhoneNumberOnly(parsed.nationalNumber);
     } else {
-      // Fallback to default country
       const defaultCountry = getDefaultCountry();
       setPhoneCountryCode(defaultCountry.code);
       setPhoneNumberOnly(phoneNumber);

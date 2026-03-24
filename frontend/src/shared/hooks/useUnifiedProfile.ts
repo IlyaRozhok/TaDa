@@ -6,9 +6,9 @@ import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { authAPI } from "@/app/lib/api";
 import { updateUser } from "@/app/store/slices/authSlice";
 import {
-  getCountryByDialCode,
   getCountryByCode,
   getDefaultCountry,
+  parseStoredPhone,
 } from "@/shared/lib/countries";
 
 interface UseUnifiedProfileOptions {
@@ -36,9 +36,9 @@ interface UseUnifiedProfileReturn {
 const parsePhone = (phoneNumber: string): { countryCode: string; numberOnly: string } => {
   if (!phoneNumber) return { countryCode: "GB", numberOnly: "" };
 
-  const country = getCountryByDialCode(phoneNumber);
-  if (country) {
-    return { countryCode: country.code, numberOnly: phoneNumber.replace(country.dialCode, "") };
+  const parsed = parseStoredPhone(phoneNumber);
+  if (parsed) {
+    return { countryCode: parsed.country.code, numberOnly: parsed.nationalNumber };
   }
 
   const defaultCountry = getDefaultCountry();

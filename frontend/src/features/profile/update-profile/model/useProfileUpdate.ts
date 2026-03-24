@@ -25,7 +25,7 @@ export const useProfileUpdate = (user: User | null) => {
         if (field === "email") {
           currentValue = user[field];
         } else if (field === "date_of_birth") {
-          const currentDate = profile?.date_of_birth;
+          const currentDate = profile && "date_of_birth" in profile ? profile.date_of_birth : undefined;
           if (currentDate) {
             try {
               const date = new Date(currentDate);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -12,6 +12,7 @@ import Footer from "../../components/Footer";
 import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/UnifiedProfileForm";
 import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
+import { useGetPreferencesQuery } from "../../store/slices/apiSlice";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,6 +20,57 @@ export default function ProfilePage() {
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [canFetchPreferences, setCanFetchPreferences] = useState(false);
+  const { data: preferencesQueryData } = useGetPreferencesQuery(undefined, {
+    skip: !canFetchPreferences,
+  });
+
+  const preferencesFilledCount = useMemo(() => {
+    const preferences = (
+      preferencesQueryData &&
+      typeof preferencesQueryData === "object" &&
+      "data" in preferencesQueryData
+        ? (preferencesQueryData as { data?: Record<string, unknown> }).data
+        : preferencesQueryData
+    ) as Record<string, unknown> | undefined;
+
+    if (!preferences || typeof preferences !== "object") {
+      return 0;
+    }
+
+    let filledCount = 0;
+    if (preferences.primary_postcode) filledCount += 1;
+    if (preferences.min_price != null || preferences.max_price != null)
+      filledCount += 1;
+    if (preferences.min_bedrooms != null) filledCount += 1;
+    if (preferences.furnishing) filledCount += 1;
+    if (preferences.let_duration) filledCount += 1;
+    if (
+      preferences.designer_furniture !== undefined &&
+      preferences.designer_furniture !== null
+    )
+      filledCount += 1;
+    if (preferences.house_shares) filledCount += 1;
+    if (
+      Array.isArray(preferences.convenience_features) &&
+      preferences.convenience_features.length > 0
+    )
+      filledCount += 1;
+    if (preferences.ideal_living_environment) filledCount += 1;
+    if (preferences.pets) filledCount += 1;
+    if (preferences.smoker !== undefined && preferences.smoker !== null)
+      filledCount += 1;
+    if (preferences.move_in_date) filledCount += 1;
+    if (preferences.max_bedrooms != null) filledCount += 1;
+    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null)
+      filledCount += 1;
+    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0)
+      filledCount += 1;
+    if (preferences.additional_info) filledCount += 1;
+    if (preferences.date_property_added) filledCount += 1;
+
+    return filledCount;
+  }, [preferencesQueryData]);
 
   // Don't memoize user - let useUnifiedProfile handle stability
 
@@ -33,8 +85,13 @@ export default function ProfilePage() {
           : null;
 
         if (!token) {
+          if (isMounted) setCanFetchPreferences(false);
           router.replace("/app/auth/login");
           return;
+        }
+
+        if (isMounted) {
+          setCanFetchPreferences(true);
         }
 
         // Capture current user state to avoid race conditions
@@ -72,6 +129,7 @@ export default function ProfilePage() {
       } catch (err) {
         console.error("Failed to fetch profile:", err);
         if (isMounted) {
+          setCanFetchPreferences(false);
           setHasError(true);
           if (err.response?.status === 401) {
             router.replace("/app/auth/login");
@@ -107,6 +165,7 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader
           showPreferencesButton={true}
+          preferencesCount={preferencesFilledCount}
         />
         <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
           <div className="py-16 text-center text-red-600">
@@ -123,6 +182,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
         showPreferencesButton={true}
+        preferencesCount={preferencesFilledCount}
       />
 
       <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">

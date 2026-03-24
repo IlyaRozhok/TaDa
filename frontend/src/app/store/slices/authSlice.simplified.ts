@@ -7,7 +7,7 @@ import type { RootState } from "../store";
 // Types
 interface TenantProfile {
   id: string;
-  full_name: string;
+  full_name?: string;
   first_name?: string;
   last_name?: string;
   address?: string;
@@ -18,7 +18,7 @@ interface TenantProfile {
   occupation?: string;
   industry?: string;
   work_style?: string;
-  lifestyle?: string;
+  lifestyle?: string[];
   pets?: string;
   smoker?: boolean;
   hobbies?: string;
@@ -28,7 +28,7 @@ interface TenantProfile {
 
 interface OperatorProfile {
   id: string;
-  full_name: string;
+  full_name?: string;
   company_name?: string;
   phone?: string;
   business_address?: string;
