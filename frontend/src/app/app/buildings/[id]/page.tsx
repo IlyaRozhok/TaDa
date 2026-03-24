@@ -65,6 +65,10 @@ export default function BuildingPublicPage() {
   const [error, setError] = useState<string | null>(null);
   const [showAllOffers, setShowAllOffers] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id]);
+
   // Load building via RTK Query (with cache across navigations)
   const {
     data: buildingData,
@@ -191,7 +195,7 @@ export default function BuildingPublicPage() {
   };
 
   const handlePropertyClick = (propertyId: string) => {
-    router.push(`/app/properties/${propertyId}`);
+    router.push(`/app/properties/${propertyId}`, { scroll: true });
   };
 
   // Основной скелетон показываем только на самом первом запросе,

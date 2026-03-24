@@ -178,7 +178,7 @@ export default function PropertyPublicPage() {
       clearTimeout(timer2);
       window.removeEventListener("pageshow", handlePageShow);
     };
-  }, []);
+  }, [id]);
 
   // Load property via RTK Query (with cache across navigations)
   const {
@@ -250,7 +250,7 @@ export default function PropertyPublicPage() {
   useEffect(() => {
     if (!redirecting429) return;
     const t = setTimeout(() => {
-      router.push("/app/units");
+      router.push("/app/units", { scroll: true });
       setRedirecting429(false);
     }, 100);
     return () => clearTimeout(t);
@@ -622,7 +622,7 @@ export default function PropertyPublicPage() {
             </h3>
             <p className="text-red-600 mb-8">{error}</p>
             <button
-              onClick={() => router.push("/app/units")}
+              onClick={() => router.push("/app/units", { scroll: true })}
               className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
             >
               Back to Properties
@@ -652,7 +652,7 @@ export default function PropertyPublicPage() {
               The requested property could not be found.
             </p>
             <button
-              onClick={() => router.push("/app/units")}
+              onClick={() => router.push("/app/units", { scroll: true })}
               className="bg-yellow-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors"
             >
               Back to Properties
@@ -930,7 +930,9 @@ export default function PropertyPublicPage() {
                     <button
                       className="font-semibold text-2xl text-black mb-1 cursor-pointer hover:underline transition-colors text-left"
                       onClick={() =>
-                        router.push(`/app/buildings/${property.building?.id}`)
+                        router.push(`/app/buildings/${property.building?.id}`, {
+                          scroll: true,
+                        })
                       }
                     >
                       {property.building?.name}
@@ -938,7 +940,9 @@ export default function PropertyPublicPage() {
                     <button
                       className="text-black text-sm underline text-left cursor-pointer font-medium hover:text-slate-700 transition-colors"
                       onClick={() =>
-                        router.push(`/app/buildings/${property.building?.id}`)
+                        router.push(`/app/buildings/${property.building?.id}`, {
+                          scroll: true,
+                        })
                       }
                     >
                       {t(listingPropertyKeys.building.seeMore)}
