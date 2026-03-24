@@ -45,6 +45,7 @@ export const useUnifiedProfile = (
   options: UseUnifiedProfileOptions = {}
 ): UseUnifiedProfileReturn => {
   const dispatch = useDispatch();
+  const { onSuccess, onError } = options;
   const [formData, setFormData] = useState<UpdateUserData>(() =>
     buildFormDataFromUser(user as any)
   );
@@ -76,20 +77,30 @@ export const useUnifiedProfile = (
     }
   }, []);
 
-  // Initialize phone parsing when user changes
-  useEffect(() => {
-    if (user?.tenantProfile?.phone || user?.operatorProfile?.phone) {
-      const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
-      parsePhoneNumber(phone);
-    }
-  }, [user, parsePhoneNumber]);
-
   // Update form data when user changes
   useEffect(() => {
     if (user) {
       const newFormData = buildFormDataFromUser(user as any);
       setFormData(newFormData);
       setHasChanges(false);
+      
+      // Parse phone number when user data changes
+      const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
+      if (phone) {
+        // Inline phone parsing to avoid dependency issues
+        const country = getCountryByDialCode(phone);
+        if (country) {
+          setPhoneCountryCode(country.code);
+          setPhoneNumberOnly(phone.replace(country.dialCode, ""));
+        } else {
+          const defaultCountry = getDefaultCountry();
+          setPhoneCountryCode(defaultCountry.code);
+          setPhoneNumberOnly(phone);
+        }
+      } else {
+        setPhoneCountryCode("GB");
+        setPhoneNumberOnly("");
+      }
     }
   }, [user?.id, user?.updated_at, user?.tenantProfile, user?.operatorProfile]);
 
@@ -173,18 +184,18 @@ export const useUnifiedProfile = (
       }
       
       setHasChanges(false);
-      options.onSuccess?.();
+      onSuccess?.();
       return true;
     } catch (error) {
       console.error("Failed to update profile:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to update profile";
-      options.onError?.(errorMessage);
+      onError?.(errorMessage);
       return false;
     } finally {
       setIsSaving(false);
       setIsLoading(false);
     }
-  }, [formData, validateForm, dispatch, options]);
+  }, [formData, validateForm, dispatch, onSuccess, onError]);
 
   const resetForm = useCallback(() => {
     if (user) {

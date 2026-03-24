@@ -9,7 +9,7 @@ import {
 } from "../../store/slices/authSlice";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import Footer from "../../components/Footer";
-import { ProfileForm } from "../../../features/profile/update-profile/ui/ProfileForm";
+import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/UnifiedProfileForm";
 import { authAPI } from "../../lib/api";
 
 export default function ProfilePage() {
@@ -100,7 +100,7 @@ export default function ProfilePage() {
       />
 
       <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
-        <ProfileForm user={user} />
+        <UnifiedProfileForm user={user} />
       </div>
       <Footer />
     </div>

@@ -9,7 +9,7 @@ import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { LogOut, Sliders, Mail, FileText, Layers } from "lucide-react";
+import { LogOut, Sliders, FileText, Layers } from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
@@ -181,17 +181,59 @@ export default function UserDropdown({
           className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
           style={{
             background:
-              "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
+              "linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(0, 0, 0, 0.78)",
             boxShadow:
-              "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+              "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.65), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.35), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.16), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.45)",
           }}
         >
           <div className="max-h-64 overflow-y-auto rounded-xl relative">
+            <div className="px-3 sm:px-4 py-3 border-b border-white/15">
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-medium text-white flex-shrink-0 overflow-hidden">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt="Profile"
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const initialsEl = parent.querySelector(
+                            ".dropdown-fallback-initials",
+                          );
+                          if (initialsEl) {
+                            (initialsEl as HTMLElement).style.display = "flex";
+                          }
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`dropdown-fallback-initials absolute inset-0 flex items-center justify-center ${
+                      user.avatar_url ? "hidden" : ""
+                    }`}
+                  >
+                    {initials}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-white/70 truncate">
+                    {user.email || "No email"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {!simplified && (
               <>
                 <button
                   onClick={handleSettings}
-                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
                 >
                   {t(profileKeys.dropProfileSettings)}
                 </button>
@@ -200,7 +242,7 @@ export default function UserDropdown({
                   <>
                     <button
                       onClick={handlePreferences}
-                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
                     >
                       <Sliders className="w-4 h-4 mr-3 flex-shrink-0" />
                       {t(profileKeys.dropChangePreferences)}
@@ -208,7 +250,7 @@ export default function UserDropdown({
 
                     <button
                       onClick={handleTenantCv}
-                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
                     >
                       <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
                       {t(tenantCvKeys.tenantCvButton)}
@@ -219,7 +261,7 @@ export default function UserDropdown({
                 {user?.role === "admin" && (
                   <button
                     onClick={handleUnits}
-                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
                   >
                     <Layers className="w-4 h-4 mr-3 flex-shrink-0" />
                     Units
@@ -232,7 +274,7 @@ export default function UserDropdown({
 
             <button
               onClick={handleLogout}
-              className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-red-400 hover:bg-white/12"
+              className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-red-300 hover:bg-white/14"
             >
               <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
               {t(profileKeys.dropLogout)}

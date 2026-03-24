@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 // import { useSelector, useDispatch } from "react-redux";
 import { Property } from "../../../types";
+import { waitForSessionManager } from "../../../components/providers/SessionManager";
 
 interface Building {
   id: string;
@@ -38,6 +39,7 @@ import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
 import {
   useGetPublicBuildingQuery,
   useGetPublicBuildingPropertiesQuery,
+  useGetPreferencesQuery,
 } from "../../../store/slices/apiSlice";
 
 type BuildingWithMedia = Building & {
@@ -64,6 +66,67 @@ export default function BuildingPublicPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [showAllOffers, setShowAllOffers] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeSession = async () => {
+      try {
+        await waitForSessionManager();
+      } catch {
+        // ignore; if session bootstrap fails, request will still run
+      } finally {
+        if (isMounted) {
+          setSessionReady(true);
+        }
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const { data: preferencesQueryData } = useGetPreferencesQuery(undefined, {
+    skip: !sessionReady,
+  });
+
+  const preferencesFilledCount = useMemo(() => {
+    const preferences =
+      (preferencesQueryData &&
+        typeof preferencesQueryData === "object" &&
+        "data" in preferencesQueryData
+        ? (preferencesQueryData as { data?: Record<string, unknown> }).data
+        : preferencesQueryData) as Record<string, unknown> | undefined;
+
+    if (!preferences || typeof preferences !== "object") {
+      return 0;
+    }
+
+    let filledCount = 0;
+    if (preferences.primary_postcode) filledCount += 1;
+    if (preferences.min_price != null || preferences.max_price != null) filledCount += 1;
+    if (preferences.min_bedrooms != null) filledCount += 1;
+    if (preferences.furnishing) filledCount += 1;
+    if (preferences.let_duration) filledCount += 1;
+    if (preferences.designer_furniture !== undefined && preferences.designer_furniture !== null) filledCount += 1;
+    if (preferences.house_shares) filledCount += 1;
+    if (Array.isArray(preferences.convenience_features) && preferences.convenience_features.length > 0) filledCount += 1;
+    if (preferences.ideal_living_environment) filledCount += 1;
+    if (preferences.pets) filledCount += 1;
+    if (preferences.smoker !== undefined && preferences.smoker !== null) filledCount += 1;
+    if (preferences.move_in_date) filledCount += 1;
+    if (preferences.max_bedrooms != null) filledCount += 1;
+    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null) filledCount += 1;
+    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0) filledCount += 1;
+    if (preferences.additional_info) filledCount += 1;
+    if (preferences.date_property_added) filledCount += 1;
+
+    return filledCount;
+  }, [preferencesQueryData]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -203,7 +266,7 @@ export default function BuildingPublicPage() {
   if ((isBuildingLoading && !building) || (isBuildingFetching && !building)) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader />
+        <TenantUniversalHeader preferencesCount={preferencesFilledCount} />
         <div className="pt-24 sm:pt-28 lg:pt-32">
           <PropertyDetailSkeleton />
         </div>
@@ -216,7 +279,7 @@ export default function BuildingPublicPage() {
   if ((error || !building) && !isBuildingLoading && !isBuildingFetching) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader />
+        <TenantUniversalHeader preferencesCount={preferencesFilledCount} />
         <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16">
           <div className="text-center py-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -237,7 +300,7 @@ export default function BuildingPublicPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <TenantUniversalHeader />
+      <TenantUniversalHeader preferencesCount={preferencesFilledCount} />
 
       {/* Building Header */}
       <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-6 sm:pb-8 lg:pb-10">
