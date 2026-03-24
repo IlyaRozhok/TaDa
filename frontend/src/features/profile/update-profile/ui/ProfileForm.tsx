@@ -27,6 +27,22 @@ import type { User as AuthUser } from "@/app/store/slices/authSlice";
 import type { User } from "@/entities/user/model/types";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
+
+const adaptUser = (u: AuthUser): User => ({
+  id: u.id,
+  email: u.email,
+  role: u.role as User["role"],
+  first_name: u.first_name,
+  last_name: u.last_name,
+  full_name: u.full_name,
+  address: u.address,
+  phone: u.phone,
+  date_of_birth: u.date_of_birth,
+  nationality: u.nationality,
+  avatar_url: u.avatar_url,
+  tenantProfile: u.tenantProfile,
+  operatorProfile: u.operatorProfile,
+});
 import { authAPI } from "@/app/lib/api";
 import { updateUser } from "@/app/store/slices/authSlice";
 import { AvatarCropModal } from "./AvatarCropModal";

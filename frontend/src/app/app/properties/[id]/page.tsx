@@ -37,8 +37,8 @@ import { notify } from "@/shared/lib/notify";
 import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
 import {
   getCountryByCode,
-  getCountryByDialCode,
   getDefaultCountry,
+  parseStoredPhone,
 } from "@/shared/lib/countries";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
@@ -574,24 +574,22 @@ export default function PropertyPublicPage() {
       user?.tenantProfile?.full_name ||
       user?.operatorProfile?.full_name ||
       "";
+    // Phone is now stored directly on user; fall back to profile fields for
+    // backwards compatibility with data saved before the migration.
     const profilePhone =
-      user?.tenantProfile?.phone || user?.operatorProfile?.phone || "";
+      user?.phone ||
+      user?.tenantProfile?.phone ||
+      user?.operatorProfile?.phone ||
+      "";
 
-    const normalizedPhone = profilePhone.trim();
-    const dialCodeMatch = normalizedPhone.match(/^\+\d{1,4}/);
-    const matchedCountry = dialCodeMatch
-      ? getCountryByDialCode(dialCodeMatch[0])
-      : undefined;
-    const nextCountryCode = matchedCountry?.code || "GB";
-    const numberOnly = normalizedPhone
-      .replace(/^\+\d{1,4}\s*/, "")
-      .replace(/[^\d]/g, "");
+    const parsed = parseStoredPhone(profilePhone.trim());
+    const nextCountryCode = parsed?.country.code || "GB";
+    const numberOnly = parsed?.nationalNumber || "";
     const countryDialCode =
-      getCountryByCode(nextCountryCode)?.dialCode ||
-      getDefaultCountry().dialCode;
+      getCountryByCode(nextCountryCode)?.dialCode || getDefaultCountry().dialCode;
     const fullPhone = numberOnly
-      ? `${countryDialCode} ${numberOnly}`.trim()
-      : normalizedPhone;
+      ? `${countryDialCode}${numberOnly}`
+      : profilePhone.trim();
 
     setBookingName(profileName.trim());
     setBookingPhoneCountryCode(nextCountryCode);

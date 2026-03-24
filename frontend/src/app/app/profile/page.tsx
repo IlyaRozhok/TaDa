@@ -13,6 +13,7 @@ import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/
 import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
 import { useGetPreferencesQuery } from "../../store/slices/apiSlice";
+import { waitForSessionManager } from "../../components/providers/SessionManager";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -20,9 +21,9 @@ export default function ProfilePage() {
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [canFetchPreferences, setCanFetchPreferences] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const { data: preferencesQueryData } = useGetPreferencesQuery(undefined, {
-    skip: !canFetchPreferences,
+    skip: !sessionReady,
   });
 
   const preferencesFilledCount = useMemo(() => {
@@ -80,18 +81,18 @@ export default function ProfilePage() {
     
     const initializeProfile = async () => {
       try {
+        await waitForSessionManager();
+
+        if (!isMounted) return;
+        setSessionReady(true);
+
         const token = typeof window !== "undefined" 
           ? localStorage.getItem("accessToken") 
           : null;
 
         if (!token) {
-          if (isMounted) setCanFetchPreferences(false);
           router.replace("/app/auth/login");
           return;
-        }
-
-        if (isMounted) {
-          setCanFetchPreferences(true);
         }
 
         // Capture current user state to avoid race conditions
@@ -129,7 +130,6 @@ export default function ProfilePage() {
       } catch (err) {
         console.error("Failed to fetch profile:", err);
         if (isMounted) {
-          setCanFetchPreferences(false);
           setHasError(true);
           if (err.response?.status === 401) {
             router.replace("/app/auth/login");
