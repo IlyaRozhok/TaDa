@@ -9,7 +9,7 @@ export default function ProfilePageSkeleton() {
     <>
       <TenantUniversalHeader showPreferencesButton={true} />
 
-      <div className="max-w-4xl mx-auto px-5 pb-32 pt-10 min-h-[calc(100vh-100px)]">
+      <div className="max-w-4xl mx-auto px-5 pb-32 pt-24 min-h-[calc(100vh)]">
         <div className="animate-pulse space-y-8">
           <div className="space-y-4">
             <div className="h-9 w-64 rounded bg-gray-200" />
