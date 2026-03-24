@@ -189,7 +189,7 @@ function AdminTenantDashboard() {
           </div>
 
           <button
-            onClick={() => router.push("/app/properties")}
+            onClick={() => router.push("/app/units")}
             className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 text-left"
           >
             <div className="flex items-center gap-4">

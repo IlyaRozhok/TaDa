@@ -56,7 +56,7 @@ export function getRedirectPath(user: any): string {
   // В зависимости от основной роли - на соответствующий дашборд
   switch (primaryRole) {
     case "admin":
-      return "/app/admin/panel";
+      return "/app/units";
     case "operator":
       return "/app/dashboard/operator";
     case "tenant":

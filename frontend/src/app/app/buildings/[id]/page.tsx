@@ -236,7 +236,7 @@ export default function BuildingPublicPage() {
       <TenantUniversalHeader />
 
       {/* Building Header */}
-      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16">
+      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-6 sm:pb-8 lg:pb-10">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
