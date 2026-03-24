@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "../../../../app/hooks/useTranslation";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
@@ -32,33 +38,49 @@ interface ProfileFormProps {
 export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  
+
   // Convert AuthUser to entities User format
   const adaptedUser = useMemo(() => {
     if (!user) return null;
-    
+
     return {
       id: user.id,
       email: user.email,
-      role: user.role as 'tenant' | 'operator', // Type assertion since we know it should be valid
+      role: user.role as "tenant" | "operator", // Type assertion since we know it should be valid
       full_name: user.full_name,
       avatar_url: user.avatar_url,
-      tenantProfile: user.role === 'tenant' && user.tenantProfile ? {
-        ...user.tenantProfile,
-        user_id: user.id, // Add missing user_id
-        date_of_birth: typeof user.tenantProfile.date_of_birth === 'string' 
-          ? user.tenantProfile.date_of_birth 
-          : user.tenantProfile.date_of_birth?.toISOString().split('T')[0] || undefined,
-      } : undefined,
-      operatorProfile: user.role === 'operator' && user.operatorProfile ? {
-        ...user.operatorProfile,
-        user_id: user.id, // Add missing user_id
-      } : undefined,
+      tenantProfile:
+        user.role === "tenant" && user.tenantProfile
+          ? {
+              ...user.tenantProfile,
+              user_id: user.id, // Add missing user_id
+              date_of_birth:
+                typeof user.tenantProfile.date_of_birth === "string"
+                  ? user.tenantProfile.date_of_birth
+                  : user.tenantProfile.date_of_birth
+                      ?.toISOString()
+                      .split("T")[0] || undefined,
+            }
+          : undefined,
+      operatorProfile:
+        user.role === "operator" && user.operatorProfile
+          ? {
+              ...user.operatorProfile,
+              user_id: user.id, // Add missing user_id
+            }
+          : undefined,
     };
-  }, [user?.id, user?.email, user?.role, user?.full_name, user?.avatar_url, user?.updated_at]);
-  
+  }, [
+    user?.id,
+    user?.email,
+    user?.role,
+    user?.full_name,
+    user?.avatar_url,
+    user?.updated_at,
+  ]);
+
   const [formData, setFormData] = useState<UpdateUserData>(() =>
-    buildFormDataFromUser(adaptedUser)
+    buildFormDataFromUser(adaptedUser),
   );
   const [phoneCountryCode, setPhoneCountryCode] = useState("GB"); // Default to GB for UK-based platform
   const [phoneNumberOnly, setPhoneNumberOnly] = useState(""); // Store phone number without country code
@@ -317,7 +339,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isSaving}
-                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-black text-white rounded-full text-xs sm:text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-tomato text-white rounded-full text-xs sm:text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                 >
                   <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {formData.avatar_url || avatarPreview

@@ -45,8 +45,7 @@ const parsePhone = (phoneNumber: string): { countryCode: string; numberOnly: str
   return { countryCode: defaultCountry.code, numberOnly: phoneNumber };
 };
 
-const getProfilePhone = (user: User): string =>
-  user.tenantProfile?.phone || user.operatorProfile?.phone || "";
+const getProfilePhone = (user: User): string => user.phone || "";
 
 export const useUnifiedProfile = (
   user: User | null,
@@ -79,20 +78,17 @@ export const useUnifiedProfile = (
   useEffect(() => {
     if (!user?.id) return;
 
-    // Build a key from the fields we care about so we only reset when the
-    // server data truly changed, not on every render.
-    const tp = user.tenantProfile;
-    const op = user.operatorProfile;
+    // Build a key from the profile fields that live in the users table.
+    // The effect only fires when these values actually change (e.g. after a save).
     const key = [
       user.id,
       user.updated_at,
-      tp?.first_name,
-      tp?.last_name,
-      tp?.address,
-      tp?.phone,
-      tp?.date_of_birth,
-      tp?.nationality,
-      op?.phone,
+      user.first_name,
+      user.last_name,
+      user.address,
+      user.phone,
+      user.date_of_birth,
+      user.nationality,
     ].join("|");
 
     if (initializedForRef.current === key) return;

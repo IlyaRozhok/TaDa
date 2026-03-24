@@ -156,16 +156,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser() user: User) {
     const fullUser = await this.authService.findUserWithProfile(user.id);
-    return {
-      user: {
-        ...fullUser,
-        full_name:
-          fullUser.full_name ||
-          fullUser.tenantProfile?.full_name ||
-          fullUser.operatorProfile?.full_name ||
-          null,
-      },
-    };
+    return { user: fullUser };
   }
 
   @Post("refresh")

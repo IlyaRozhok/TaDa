@@ -17,7 +17,6 @@ interface ProfileFormFieldsProps {
   onInputChange: (field: keyof UpdateUserData, value: string) => void;
   onPhoneChange: (phoneNumber: string, countryCode: string) => void;
   onDateChange: (date: string | null) => void;
-  showOccupation?: boolean;
   className?: string;
 }
 
@@ -29,7 +28,6 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
   onInputChange,
   onPhoneChange,
   onDateChange,
-  showOccupation = false,
   className = "",
 }) => {
   const { t } = useTranslation();
@@ -142,17 +140,6 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
         />
       </div>
 
-      {/* Occupation (optional, for certain contexts) */}
-      {showOccupation && (
-        <div className="mb-6">
-          <InputField
-            label="Occupation"
-            value={formData.occupation || ""}
-            onChange={(e) => onInputChange("occupation", e.target.value)}
-            type="text"
-          />
-        </div>
-      )}
     </div>
   );
 };

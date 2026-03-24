@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { useTranslation } from "../../../../app/hooks/useTranslation";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { Upload, X, Camera, Loader2 } from "lucide-react";
@@ -17,19 +23,24 @@ interface UnifiedProfileFormProps {
   user: User | null;
 }
 
-export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) => {
+export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
+  user,
+}) => {
   const { t } = useTranslation();
-  
+
   // Memoize options to prevent infinite re-renders
-  const profileOptions = useMemo(() => ({
-    onSuccess: () => {
-      // Profile saved successfully
-    },
-    onError: (error: string) => {
-      console.error("Failed to save profile:", error);
-    },
-  }), []);
-  
+  const profileOptions = useMemo(
+    () => ({
+      onSuccess: () => {
+        // Profile saved successfully
+      },
+      onError: (error: string) => {
+        console.error("Failed to save profile:", error);
+      },
+    }),
+    [],
+  );
+
   const {
     formData,
     phoneCountryCode,
@@ -66,7 +77,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
     }
 
     let success = false;
-    
+
     // Upload avatar first if file is selected
     if (avatarFile) {
       try {
@@ -75,7 +86,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
           uploadResponse?.avatar_url ||
           uploadResponse?.user?.avatar_url ||
           uploadResponse?.url;
-        
+
         if (avatarUrl) {
           handleInputChange("avatar_url", avatarUrl);
           // Cleanup preview
@@ -93,7 +104,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
 
     // Save profile data
     success = await saveProfile();
-    
+
     if (success && avatarFile) {
       // Reset avatar state after successful save
       setAvatarFile(null);
@@ -106,9 +117,12 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
   const showSaveButton = hasChanges || hasAvatarChanges;
 
   // Simple date change handler
-  const handleDateChange = useCallback((date: string | null) => {
-    handleInputChange("date_of_birth", date || "");
-  }, [handleInputChange]);
+  const handleDateChange = useCallback(
+    (date: string | null) => {
+      handleInputChange("date_of_birth", date || "");
+    },
+    [handleInputChange],
+  );
 
   // Show error state if user data is not available (don't show loading since parent handles it)
   if (!user?.id) {

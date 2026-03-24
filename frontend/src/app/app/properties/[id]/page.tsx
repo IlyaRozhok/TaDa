@@ -723,9 +723,11 @@ export default function PropertyPublicPage() {
     bookingLoading ||
     hasBookingRequest ||
     !bookingName.trim() ||
-    (!bookingEmail.trim() && bookingPhone.replace(/\D/g, "").length === 0) ||
-    !bookingMoveInDate ||
-    !bookingMoveOutDate;
+    !bookingEmail.trim() ||
+    bookingPhone.replace(/\D/g, "").length === 0 ||
+    (!bookingMoveInDate && !bookingMoveOutDate) ||
+    bookingMoveInDate === "INVALID_FORMAT" ||
+    bookingMoveOutDate === "INVALID_FORMAT";
 
   // Skeleton: показываем только при первом загрузочном запросе (isLoading)
   // При возврате назад из кэша будет isFetching, но isLoading=false — скелетон не показываем.

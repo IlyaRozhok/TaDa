@@ -86,14 +86,6 @@ export class UpdateUserDto {
   age_range?: string;
 
   @ApiPropertyOptional({
-    description: "User occupation",
-    example: "Software Engineer",
-  })
-  @IsOptional()
-  @IsString()
-  occupation?: string;
-
-  @ApiPropertyOptional({
     description: "Avatar URL",
     example: "https://example.com/avatar.jpg",
   })

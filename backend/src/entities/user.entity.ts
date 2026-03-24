@@ -109,12 +109,33 @@ export class User {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ApiProperty({
-    description: "User full name (for backward compatibility)",
-    example: "John Doe",
-  })
+  @ApiProperty({ description: "User full name", example: "John Doe" })
   @Column({ nullable: true })
   full_name: string;
+
+  @ApiProperty({ description: "First name", example: "John" })
+  @Column({ nullable: true })
+  first_name: string;
+
+  @ApiProperty({ description: "Last name", example: "Doe" })
+  @Column({ nullable: true })
+  last_name: string;
+
+  @ApiProperty({ description: "Current address", example: "123 Main St, London" })
+  @Column({ nullable: true })
+  address: string;
+
+  @ApiProperty({ description: "Phone number", example: "+447700900123" })
+  @Column({ nullable: true })
+  phone: string;
+
+  @ApiProperty({ description: "Date of birth", example: "1990-01-15" })
+  @Column({ type: "date", nullable: true })
+  date_of_birth: Date;
+
+  @ApiProperty({ description: "Nationality", example: "British" })
+  @Column({ nullable: true })
+  nationality: string;
 
   // Relations
   @OneToOne(() => Preferences, (preferences) => preferences.user, {
@@ -162,14 +183,4 @@ export class User {
     return null;
   }
 
-  // Computed property for phone from profiles
-  get phone(): string | null {
-    if (this.tenantProfile?.phone) {
-      return this.tenantProfile.phone;
-    }
-    if (this.operatorProfile?.phone) {
-      return this.operatorProfile.phone;
-    }
-    return null;
-  }
 }

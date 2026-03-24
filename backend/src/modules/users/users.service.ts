@@ -57,53 +57,48 @@ export class UsersService {
    * Обновить профиль пользователя
    */
   async updateProfile(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    // Build the first_name / last_name driven full_name
+    const firstName = updateUserDto.first_name;
+    const lastName  = updateUserDto.last_name;
+
+    // All profile fields now live directly in the users table
+    const updates: Partial<User> = {};
+
+    if (updateUserDto.email)                    updates.email      = updateUserDto.email.toLowerCase();
+    if (updateUserDto.avatar_url !== undefined)  updates.avatar_url = updateUserDto.avatar_url;
+    if (updateUserDto.status)                   updates.status     = updateUserDto.status;
+    if (firstName !== undefined)                updates.first_name = firstName;
+    if (lastName  !== undefined)                updates.last_name  = lastName;
+    if (updateUserDto.address !== undefined)    updates.address    = updateUserDto.address;
+    if (updateUserDto.phone !== undefined)      updates.phone      = updateUserDto.phone;
+    if (updateUserDto.nationality !== undefined) updates.nationality = updateUserDto.nationality;
+    if (updateUserDto.date_of_birth !== undefined) {
+      updates.date_of_birth = updateUserDto.date_of_birth
+        ? new Date(updateUserDto.date_of_birth)
+        : null;
+    }
+
+    // Keep full_name in sync
+    if (firstName !== undefined || lastName !== undefined) {
+      const currentUser = await this.userRepository.findOne({ where: { id }, select: ["first_name", "last_name"] });
+      const resolvedFirst = firstName ?? currentUser?.first_name ?? "";
+      const resolvedLast  = lastName  ?? currentUser?.last_name  ?? "";
+      updates.full_name = `${resolvedFirst} ${resolvedLast}`.trim() || null;
+    } else if (updateUserDto.full_name !== undefined) {
+      updates.full_name = updateUserDto.full_name;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await this.userRepository.update(id, updates);
+    }
+
+    // Keep tenant/operator profile in sync for preferences-related fields
     const user = await this.userQueryService.findOneWithProfiles(id);
 
-    const baseUpdates: Partial<User> = {};
-    if (updateUserDto.email) {
-      baseUpdates.email = updateUserDto.email.toLowerCase();
-    }
-    if (updateUserDto.status) {
-      baseUpdates.status = updateUserDto.status;
-    }
-    // Update avatar_url in base user entity
-    if (updateUserDto.avatar_url !== undefined) {
-      baseUpdates.avatar_url = updateUserDto.avatar_url;
-    }
-    // Update full_name in base user entity
-    if (updateUserDto.full_name !== undefined) {
-      baseUpdates.full_name = updateUserDto.full_name;
-    } else if (updateUserDto.first_name !== undefined || updateUserDto.last_name !== undefined) {
-      // Construct full_name from first_name and last_name if provided
-      const firstName = updateUserDto.first_name || user.tenantProfile?.first_name || user.operatorProfile?.first_name || '';
-      const lastName = updateUserDto.last_name || user.tenantProfile?.last_name || user.operatorProfile?.last_name || '';
-      baseUpdates.full_name = `${firstName} ${lastName}`.trim() || null;
-    }
-    if (Object.keys(baseUpdates).length > 0) {
-      await this.userRepository.update(id, baseUpdates);
-    }
-
-    // Обновить базовую информацию пользователя
-    if (updateUserDto.email) user.email = updateUserDto.email;
-    if (updateUserDto.status) user.status = updateUserDto.status;
-    if (updateUserDto.avatar_url !== undefined) {
-      user.avatar_url = updateUserDto.avatar_url;
-    }
-    if (baseUpdates.full_name !== undefined) {
-      user.full_name = baseUpdates.full_name;
-    }
-
-    // Обновить профиль в зависимости от роли
     if (user.role === UserRole.Tenant || user.role === UserRole.Admin) {
-      // Админы могут иметь tenant профиль для тестирования и использования платформы
       if (user.tenantProfile) {
-        await this.userProfileService.updateTenantProfile(user, updateUserDto);
-      } else if (user.role === UserRole.Admin) {
-        // Если у админа нет tenant профиля, создаем его
-        await this.userProfileService.createTenantProfileForUser(user.id, updateUserDto);
+        await this.userProfileService.syncTenantProfileFromUser(user);
       }
-
-      // Обновить предпочтения если нужно (только для tenant и admin)
       if (
         updateUserDto.pets !== undefined ||
         updateUserDto.smoker !== undefined ||
@@ -112,10 +107,11 @@ export class UsersService {
         await this.userProfileService.updatePreferences(user, updateUserDto);
       }
     } else if (user.role === UserRole.Operator) {
-      await this.userProfileService.updateOperatorProfile(user, updateUserDto);
+      if (user.operatorProfile) {
+        await this.userProfileService.syncOperatorProfileFromUser(user);
+      }
     }
 
-    // Return fresh entity with relations to reflect saved values
     return this.userQueryService.findOneWithProfiles(id);
   }
 

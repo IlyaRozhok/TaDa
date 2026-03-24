@@ -31,9 +31,19 @@ export class UserQueryService {
         "email",
         "role",
         "status",
+        "provider",
+        "google_id",
+        "email_verified",
         "created_at",
         "updated_at",
+        // Personal profile fields (stored in users table)
         "full_name",
+        "first_name",
+        "last_name",
+        "address",
+        "phone",
+        "date_of_birth",
+        "nationality",
         "avatar_url",
       ],
     });
@@ -42,7 +52,6 @@ export class UserQueryService {
       throw new NotFoundException("User not found");
     }
 
-    this.addPhoneToUser(user);
     return user;
   }
 
@@ -50,7 +59,7 @@ export class UserQueryService {
    * Найти пользователя по email
    */
   async findByEmail(email: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({
+    return this.userRepository.findOne({
       where: { email },
       relations: ["preferences", "tenantProfile", "operatorProfile"],
       select: [
@@ -58,18 +67,21 @@ export class UserQueryService {
         "email",
         "role",
         "status",
+        "provider",
+        "google_id",
+        "email_verified",
         "created_at",
         "updated_at",
         "full_name",
+        "first_name",
+        "last_name",
+        "address",
+        "phone",
+        "date_of_birth",
+        "nationality",
         "avatar_url",
       ],
     });
-
-    if (user) {
-      this.addPhoneToUser(user);
-    }
-
-    return user;
   }
 
   /**
@@ -132,9 +144,6 @@ export class UserQueryService {
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
-    // Добавить телефон к каждому пользователю
-    users.forEach((user) => this.addPhoneToUser(user));
-
     return {
       users,
       total,
@@ -165,11 +174,4 @@ export class UserQueryService {
     return user;
   }
 
-  /**
-   * Добавить телефон к объекту пользователя из профиля
-   */
-  private addPhoneToUser(user: User): void {
-    // Phone is now a computed property in User entity
-    // No need to manually assign it
-  }
 }

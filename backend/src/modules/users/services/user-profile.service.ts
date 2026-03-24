@@ -47,7 +47,6 @@ export class UserProfileService {
     if (updateUserDto.nationality !== undefined)
       profile.nationality = updateUserDto.nationality;
     if (updateUserDto.age_range !== undefined) profile.age_range = updateUserDto.age_range;
-    if (updateUserDto.occupation !== undefined) profile.occupation = updateUserDto.occupation;
     if (updateUserDto.industry !== undefined) profile.industry = updateUserDto.industry;
     if (updateUserDto.work_style !== undefined) profile.work_style = updateUserDto.work_style;
     if (updateUserDto.lifestyle !== undefined) profile.lifestyle = updateUserDto.lifestyle;
@@ -58,6 +57,31 @@ export class UserProfileService {
       profile.additional_info = updateUserDto.additional_info;
 
     await this.tenantProfileRepository.save(profile);
+  }
+
+  /** Mirror personal fields from users table → tenant_profiles (backward compat). */
+  async syncTenantProfileFromUser(user: User): Promise<void> {
+    if (!user.tenantProfile) return;
+    const profile = user.tenantProfile;
+    if (user.first_name !== undefined) profile.first_name = user.first_name;
+    if (user.last_name  !== undefined) profile.last_name  = user.last_name;
+    if (user.address    !== undefined) profile.address    = user.address;
+    if (user.phone      !== undefined) profile.phone      = user.phone;
+    if (user.nationality !== undefined) profile.nationality = user.nationality;
+    if (user.date_of_birth !== undefined) profile.date_of_birth = user.date_of_birth;
+    profile.full_name = user.full_name || profile.full_name;
+    await this.tenantProfileRepository.save(profile);
+  }
+
+  /** Mirror personal fields from users table → operator_profiles (backward compat). */
+  async syncOperatorProfileFromUser(user: User): Promise<void> {
+    if (!user.operatorProfile) return;
+    const profile = user.operatorProfile;
+    if (user.first_name !== undefined) (profile as any).first_name = user.first_name;
+    if (user.last_name  !== undefined) (profile as any).last_name  = user.last_name;
+    if (user.phone      !== undefined) profile.phone  = user.phone;
+    profile.full_name = user.full_name || profile.full_name;
+    await this.operatorProfileRepository.save(profile);
   }
 
   async createTenantProfileForUser(
@@ -74,7 +98,6 @@ export class UserProfileService {
       phone: updateUserDto.phone || "",
       date_of_birth: updateUserDto.date_of_birth ? new Date(updateUserDto.date_of_birth) : null,
       nationality: updateUserDto.nationality || "",
-      occupation: updateUserDto.occupation || "",
       industry: updateUserDto.industry || "",
       work_style: updateUserDto.work_style || "",
       lifestyle: updateUserDto.lifestyle || [],

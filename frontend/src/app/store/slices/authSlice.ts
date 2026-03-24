@@ -8,43 +8,47 @@ export interface User {
   status: string;
   created_at: string;
   updated_at: string;
-  // Google OAuth fields
+  // OAuth fields
   provider?: string;
   google_id?: string;
-  avatar_url?: string;
   email_verified?: boolean;
-  // Computed properties from getter methods
+  // Personal profile — stored directly in users table
+  first_name?: string;
+  last_name?: string;
   full_name?: string;
-  roles?: string[];
+  address?: string;
+  phone?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  avatar_url?: string;
   // Onboarding flags
   isOnboarded?: boolean;
   onboardingCompleted?: boolean;
-  // Profile data that might be included
+  // Nested profiles (onboarding-specific / backward compat)
   tenantProfile?: {
     id: string;
-    full_name: string;
+    userId?: string;
+    full_name?: string;
     first_name?: string;
     last_name?: string;
     address?: string;
-    age_range?: string;
     phone?: string;
     date_of_birth?: string | Date;
     nationality?: string;
     occupation?: string;
+    age_range?: string;
     industry?: string;
     work_style?: string;
-    lifestyle?: string;
-    pets?: string;
-    smoker?: boolean;
-    hobbies?: string;
+    lifestyle?: string[];
     ideal_living_environment?: string;
     additional_info?: string;
+    shortlisted_properties?: string[];
   };
   operatorProfile?: {
     id: string;
-    full_name: string;
-    company_name?: string;
+    full_name?: string;
     phone?: string;
+    company_name?: string;
     business_address?: string;
     years_experience?: number;
     operating_areas?: string[];
@@ -56,40 +60,19 @@ export interface User {
 export function isProfileComplete(user: User | null): boolean {
   if (!user) return false;
 
-  // Tenant and admin both use tenantProfile
-  if (user.role === "tenant" || user.role === "admin") {
-    const profile = user.tenantProfile;
-    if (!profile) return false;
+  // All roles: personal fields now live directly on the user object
+  const requiredFields = [
+    "first_name",
+    "last_name",
+    "address",
+    "phone",
+    "date_of_birth",
+    "nationality",
+  ] as const;
 
-    const requiredFields = [
-      "first_name",
-      "last_name",
-      "address",
-      "phone",
-      "date_of_birth",
-      "nationality",
-    ] as const;
-
-    for (const field of requiredFields) {
-      const value = profile[field];
-      if (!value || String(value).trim() === "") return false;
-    }
-
-    return true;
-  }
-
-  if (user.role === "operator") {
-    const profile = user.operatorProfile;
-    if (!profile) return false;
-
-    const requiredFields = ["full_name", "phone", "business_address"] as const;
-
-    for (const field of requiredFields) {
-      const value = profile[field];
-      if (!value || String(value).trim() === "") return false;
-    }
-
-    return true;
+  for (const field of requiredFields) {
+    const value = user[field];
+    if (!value || String(value).trim() === "") return false;
   }
 
   return true;

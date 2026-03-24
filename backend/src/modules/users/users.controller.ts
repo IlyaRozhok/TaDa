@@ -50,17 +50,8 @@ export class UsersController {
     type: User,
   })
   async getProfile(@Req() req: any) {
-    const fullUser = await this.usersService.findOne(req.user.id);
-    return {
-      user: {
-        ...fullUser,
-        full_name:
-          fullUser.full_name ||
-          fullUser.tenantProfile?.full_name ||
-          fullUser.operatorProfile?.full_name ||
-          null,
-      },
-    };
+    const user = await this.usersService.findOne(req.user.id);
+    return { user };
   }
 
   @Put("profile")
@@ -76,20 +67,8 @@ export class UsersController {
     @Req() req: Request & { user: User },
     @Body() updateUserDto: UpdateUserDto
   ) {
-    const user = await this.usersService.updateProfile(
-      req.user.id,
-      updateUserDto
-    );
-    return {
-      user: {
-        ...user,
-        full_name:
-          user.full_name ||
-          user.tenantProfile?.full_name ||
-          user.operatorProfile?.full_name ||
-          null,
-      },
-    };
+    const user = await this.usersService.updateProfile(req.user.id, updateUserDto);
+    return { user };
   }
 
   @Post("avatar")

@@ -51,9 +51,8 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
 
   // Initialize phone parsing when user changes
   useEffect(() => {
-    if (user?.tenantProfile?.phone || user?.operatorProfile?.phone) {
-      const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
-      parsePhoneNumber(phone);
+    if (user?.phone) {
+      parsePhoneNumber(user.phone);
     }
   }, [user, parsePhoneNumber]);
 
@@ -166,9 +165,7 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
       setHasChanges(false);
       setDateOfBirthError(null);
       
-      // Reset phone parsing
-      const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
-      parsePhoneNumber(phone);
+      parsePhoneNumber(user.phone || "");
     }
   }, [user, parsePhoneNumber]);
 
