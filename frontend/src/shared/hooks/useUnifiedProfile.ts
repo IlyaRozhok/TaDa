@@ -14,12 +14,9 @@ import {
 interface UseUnifiedProfileOptions {
   onSuccess?: () => void;
   onError?: (error: string) => void;
-  autoSave?: boolean; // For onboarding, we might want manual save
-  debounceMs?: number; // For auto-save functionality
 }
 
 interface UseUnifiedProfileReturn {
-  // Form state
   formData: UpdateUserData;
   phoneCountryCode: string;
   phoneNumberOnly: string;
@@ -27,189 +24,170 @@ interface UseUnifiedProfileReturn {
   isSaving: boolean;
   isLoading: boolean;
   dateOfBirthError: string | null;
-  
-  // Actions
   handleInputChange: (field: keyof UpdateUserData, value: string) => void;
   handlePhoneChange: (phoneNumber: string, countryCode: string) => void;
   validateDateOfBirth: (dateString: string) => boolean;
   validateForm: () => boolean;
   saveProfile: () => Promise<boolean>;
   resetForm: () => void;
-  
-  // Utilities
   parsePhoneNumber: (phoneNumber: string) => void;
 }
 
+const parsePhone = (phoneNumber: string): { countryCode: string; numberOnly: string } => {
+  if (!phoneNumber) return { countryCode: "GB", numberOnly: "" };
+
+  const country = getCountryByDialCode(phoneNumber);
+  if (country) {
+    return { countryCode: country.code, numberOnly: phoneNumber.replace(country.dialCode, "") };
+  }
+
+  const defaultCountry = getDefaultCountry();
+  return { countryCode: defaultCountry.code, numberOnly: phoneNumber };
+};
+
+const getProfilePhone = (user: User): string =>
+  user.tenantProfile?.phone || user.operatorProfile?.phone || "";
+
 export const useUnifiedProfile = (
-  user: User | null, 
+  user: User | null,
   options: UseUnifiedProfileOptions = {}
 ): UseUnifiedProfileReturn => {
   const dispatch = useDispatch();
   const { onSuccess, onError } = options;
-  const lastUserDataRef = useRef<string>('');
+
   const [formData, setFormData] = useState<UpdateUserData>(() =>
     buildFormDataFromUser(user as any)
   );
-  const [phoneCountryCode, setPhoneCountryCode] = useState("GB");
-  const [phoneNumberOnly, setPhoneNumberOnly] = useState("");
+  const [phoneCountryCode, setPhoneCountryCode] = useState(() => {
+    const phone = user ? getProfilePhone(user) : "";
+    return parsePhone(phone).countryCode;
+  });
+  const [phoneNumberOnly, setPhoneNumberOnly] = useState(() => {
+    const phone = user ? getProfilePhone(user) : "";
+    return parsePhone(phone).numberOnly;
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [dateOfBirthError, setDateOfBirthError] = useState<string | null>(null);
 
-  // Helper function to parse phone number
-  const parsePhoneNumber = useCallback((phoneNumber: string) => {
-    if (!phoneNumber) {
-      setPhoneCountryCode("GB");
-      setPhoneNumberOnly("");
-      return;
-    }
+  // Track which user snapshot we've already initialized from, to avoid
+  // resetting the form mid-edit when the parent re-renders with the same user.
+  const initializedForRef = useRef<string | null>(null);
 
-    // Try to find country by dial code
-    const country = getCountryByDialCode(phoneNumber);
-    if (country) {
-      setPhoneCountryCode(country.code);
-      setPhoneNumberOnly(phoneNumber.replace(country.dialCode, ""));
-    } else {
-      // Fallback to default country
-      const defaultCountry = getDefaultCountry();
-      setPhoneCountryCode(defaultCountry.code);
-      setPhoneNumberOnly(phoneNumber);
-    }
-  }, []);
-
-  // Initialize form data from user - only when user ID changes
+  // Re-initialize form when user data actually changes (e.g. after save).
   useEffect(() => {
     if (!user?.id) return;
-    
-    // Create a stable key for user data
-    const userDataKey = `${user.id}-${user.updated_at || ''}`;
-    
-    // Skip if we've already processed this exact user data
-    if (lastUserDataRef.current === userDataKey) {
-      return;
-    }
-    
-    // Mark as processed immediately to prevent re-runs
-    lastUserDataRef.current = userDataKey;
-    
-    try {
-      const newFormData = buildFormDataFromUser(user as any);
-      setFormData(newFormData);
-      setHasChanges(false);
-      
-      // Parse phone number
-      const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
-      if (phone) {
-        const country = getCountryByDialCode(phone);
-        if (country) {
-          setPhoneCountryCode(country.code);
-          setPhoneNumberOnly(phone.replace(country.dialCode, ""));
-        } else {
-          const defaultCountry = getDefaultCountry();
-          setPhoneCountryCode(defaultCountry.code);
-          setPhoneNumberOnly(phone);
-        }
-      } else {
-        setPhoneCountryCode("GB");
-        setPhoneNumberOnly("");
-      }
-    } catch (error) {
-      console.error("useUnifiedProfile: Error initializing form data:", error);
-    }
-  }, [user?.id, user?.updated_at]);
+
+    // Build a key from the fields we care about so we only reset when the
+    // server data truly changed, not on every render.
+    const tp = user.tenantProfile;
+    const op = user.operatorProfile;
+    const key = [
+      user.id,
+      user.updated_at,
+      tp?.first_name,
+      tp?.last_name,
+      tp?.address,
+      tp?.phone,
+      tp?.date_of_birth,
+      tp?.nationality,
+      op?.phone,
+    ].join("|");
+
+    if (initializedForRef.current === key) return;
+    initializedForRef.current = key;
+
+    const newFormData = buildFormDataFromUser(user as any);
+    setFormData(newFormData);
+    setHasChanges(false);
+    setDateOfBirthError(null);
+
+    const { countryCode, numberOnly } = parsePhone(getProfilePhone(user));
+    setPhoneCountryCode(countryCode);
+    setPhoneNumberOnly(numberOnly);
+  }, [user]);
+
+  const parsePhoneNumber = useCallback((phoneNumber: string) => {
+    const { countryCode, numberOnly } = parsePhone(phoneNumber);
+    setPhoneCountryCode(countryCode);
+    setPhoneNumberOnly(numberOnly);
+  }, []);
 
   const handleInputChange = useCallback((field: keyof UpdateUserData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
-    
-    // Clear date error when date changes
-    if (field === 'date_of_birth') {
-      setDateOfBirthError(null);
-    }
+    if (field === "date_of_birth") setDateOfBirthError(null);
   }, []);
 
   const handlePhoneChange = useCallback((phoneNumber: string, countryCode: string) => {
     setPhoneNumberOnly(phoneNumber);
     setPhoneCountryCode(countryCode);
-    
-    // Get country data and construct full phone number
     const country = getCountryByCode(countryCode);
     const fullPhone = country ? `${country.dialCode}${phoneNumber}` : phoneNumber;
-    
     setFormData(prev => ({ ...prev, phone: fullPhone }));
     setHasChanges(true);
   }, []);
 
-  // Pure validation function without side effects
-  const validateDateOfBirth = useCallback((dateString: string): { isValid: boolean; error: string | null } => {
+  const validateDateOfBirth = useCallback((dateString: string): boolean => {
     if (!dateString) {
-      return { isValid: false, error: "Date of birth is required" };
+      setDateOfBirthError("Date of birth is required");
+      return false;
     }
-
     const date = new Date(dateString);
     const today = new Date();
     let age = today.getFullYear() - date.getFullYear();
     const monthDiff = today.getMonth() - date.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
-      age--;
-    }
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) age--;
 
     if (age < 18) {
-      return { isValid: false, error: "You must be at least 18 years old" };
-    }
-
-    if (age > 100) {
-      return { isValid: false, error: "Please enter a valid date of birth" };
-    }
-
-    return { isValid: true, error: null };
-  }, []);
-
-  // Helper function to validate and set error
-  const validateAndSetDateError = useCallback((dateString: string): boolean => {
-    const validation = validateDateOfBirth(dateString);
-    setDateOfBirthError(validation.error);
-    return validation.isValid;
-  }, [validateDateOfBirth]);
-
-  const validateForm = useCallback((dataToValidate?: UpdateUserData): boolean => {
-    const data = dataToValidate || formData;
-    const { first_name, last_name, date_of_birth } = data;
-
-    if (!first_name?.trim()) return false;
-    if (!last_name?.trim()) return false;
-    if (!date_of_birth) return false;
-    
-    const dateValidation = validateDateOfBirth(date_of_birth);
-    return dateValidation.isValid;
-  }, [formData, validateDateOfBirth]);
-
-  const saveProfile = useCallback(async (): Promise<boolean> => {
-    if (!validateForm()) {
+      setDateOfBirthError("You must be at least 18 years old");
       return false;
     }
+    if (age > 100) {
+      setDateOfBirthError("Please enter a valid date of birth");
+      return false;
+    }
+    setDateOfBirthError(null);
+    return true;
+  }, []);
+
+  const validateForm = useCallback((): boolean => {
+    const { first_name, last_name, date_of_birth } = formData;
+    if (!first_name?.trim() || !last_name?.trim()) return false;
+    if (!date_of_birth) return false;
+
+    const date = new Date(date_of_birth);
+    const today = new Date();
+    let age = today.getFullYear() - date.getFullYear();
+    const monthDiff = today.getMonth() - date.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) age--;
+    return age >= 18 && age <= 100;
+  }, [formData]);
+
+  const saveProfile = useCallback(async (): Promise<boolean> => {
+    if (!validateForm()) return false;
 
     setIsSaving(true);
     setIsLoading(true);
 
     try {
-      // Use the unified API endpoint that returns complete user data
       const response = await authAPI.updateProfile(formData);
       const updatedUser = response.data?.user;
-      
+
       if (updatedUser) {
+        // Update Redux — updateUser will merge tenantProfile correctly
         dispatch(updateUser(updatedUser));
+        // Allow the useEffect above to pick up the new data by resetting the key
+        initializedForRef.current = null;
       }
-      
+
       setHasChanges(false);
       onSuccess?.();
       return true;
     } catch (error) {
-      console.error("Failed to update profile:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update profile";
-      onError?.(errorMessage);
+      const message = error instanceof Error ? error.message : "Failed to update profile";
+      onError?.(message);
       return false;
     } finally {
       setIsSaving(false);
@@ -218,33 +196,18 @@ export const useUnifiedProfile = (
   }, [formData, validateForm, dispatch, onSuccess, onError]);
 
   const resetForm = useCallback(() => {
-    if (user) {
-      const resetData = buildFormDataFromUser(user as any);
-      setFormData(resetData);
-      setHasChanges(false);
-      setDateOfBirthError(null);
-      
-      // Reset phone parsing
-      const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
-      if (phone) {
-        const country = getCountryByDialCode(phone);
-        if (country) {
-          setPhoneCountryCode(country.code);
-          setPhoneNumberOnly(phone.replace(country.dialCode, ""));
-        } else {
-          const defaultCountry = getDefaultCountry();
-          setPhoneCountryCode(defaultCountry.code);
-          setPhoneNumberOnly(phone);
-        }
-      } else {
-        setPhoneCountryCode("GB");
-        setPhoneNumberOnly("");
-      }
-    }
-  }, [user?.id, user?.updated_at]);
+    if (!user) return;
+    initializedForRef.current = null; // force re-init
+    const resetData = buildFormDataFromUser(user as any);
+    setFormData(resetData);
+    setHasChanges(false);
+    setDateOfBirthError(null);
+    const { countryCode, numberOnly } = parsePhone(getProfilePhone(user));
+    setPhoneCountryCode(countryCode);
+    setPhoneNumberOnly(numberOnly);
+  }, [user]);
 
   return {
-    // Form state
     formData,
     phoneCountryCode,
     phoneNumberOnly,
@@ -252,16 +215,12 @@ export const useUnifiedProfile = (
     isSaving,
     isLoading,
     dateOfBirthError,
-    
-    // Actions
     handleInputChange,
     handlePhoneChange,
-    validateDateOfBirth: validateAndSetDateError,
+    validateDateOfBirth,
     validateForm,
     saveProfile,
     resetForm,
-    
-    // Utilities
     parsePhoneNumber,
   };
 };

@@ -278,7 +278,6 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
           onInputChange={handleInputChange}
           onPhoneChange={handlePhoneChange}
           onDateChange={handleDateChange}
-          showOccupation={true}
         />
 
         {/* Save Button */}

@@ -56,12 +56,11 @@ export interface User {
 export function isProfileComplete(user: User | null): boolean {
   if (!user) return false;
 
-  // For tenant role, check tenantProfile
-  if (user.role === "tenant") {
+  // Tenant and admin both use tenantProfile
+  if (user.role === "tenant" || user.role === "admin") {
     const profile = user.tenantProfile;
     if (!profile) return false;
 
-    // Required fields for tenant profile
     const requiredFields = [
       "first_name",
       "last_name",
@@ -73,33 +72,26 @@ export function isProfileComplete(user: User | null): boolean {
 
     for (const field of requiredFields) {
       const value = profile[field];
-      if (!value || String(value).trim() === "") {
-        return false;
-      }
+      if (!value || String(value).trim() === "") return false;
     }
 
     return true;
   }
 
-  // For operator role, check operatorProfile
   if (user.role === "operator") {
     const profile = user.operatorProfile;
     if (!profile) return false;
 
-    // Required fields for operator profile
     const requiredFields = ["full_name", "phone", "business_address"] as const;
 
     for (const field of requiredFields) {
       const value = profile[field];
-      if (!value || String(value).trim() === "") {
-        return false;
-      }
+      if (!value || String(value).trim() === "") return false;
     }
 
     return true;
   }
 
-  // For admin or other roles, consider onboarded by default
   return true;
 }
 
@@ -215,73 +207,19 @@ const authSlice = createSlice({
       if (!state.user) return;
 
       const payload = action.payload;
-      const currentTenant = state.user.tenantProfile;
-      const currentOperator = state.user.operatorProfile;
 
-      const tenantProfileFields: Array<keyof NonNullable<User["tenantProfile"]>> = [
-        "first_name",
-        "last_name",
-        "full_name",
-        "address",
-        "phone",
-        "date_of_birth",
-        "nationality",
-        "occupation",
-      ];
-
-      const operatorProfileFields: Array<keyof NonNullable<User["operatorProfile"]>> = [
-        "full_name",
-        "phone",
-        "business_address",
-      ];
-
-      const nextTenant =
-        payload.tenantProfile || payload.operatorProfile
-          ? {
-              id: currentTenant?.id || payload.tenantProfile?.id || "",
-              full_name: currentTenant?.full_name || payload.tenantProfile?.full_name || "",
-              ...currentTenant,
-              ...(payload.tenantProfile ?? {}),
-            } as User["tenantProfile"]
-          : currentTenant;
-
-      tenantProfileFields.forEach((key) => {
-        if (key in payload) {
-          // @ts-expect-error indexed assignment
-          nextTenant[key] = payload[key as keyof User] as any;
-        }
-      });
-
-      const nextOperator =
-        payload.operatorProfile || payload.tenantProfile
-          ? {
-              id: currentOperator?.id || payload.operatorProfile?.id || "",
-              full_name: currentOperator?.full_name || payload.operatorProfile?.full_name || "",
-              ...currentOperator,
-              ...(payload.operatorProfile ?? {}),
-            } as User["operatorProfile"]
-          : currentOperator;
-
-      operatorProfileFields.forEach((key) => {
-        if (key in payload) {
-          // @ts-expect-error indexed assignment
-          nextOperator[key] = payload[key as keyof User] as any;
-        }
-      });
-
+      // Properly merge nested profiles - API always returns the full objects
       const updatedUser: User = {
         ...state.user,
         ...payload,
-        // Update avatar_url if provided
-        avatar_url:
-          payload.avatar_url !== undefined
-            ? payload.avatar_url
-            : state.user.avatar_url,
-        tenantProfile: nextTenant as User["tenantProfile"],
-        operatorProfile: nextOperator as User["operatorProfile"],
+        tenantProfile: payload.tenantProfile
+          ? { ...state.user.tenantProfile, ...payload.tenantProfile }
+          : state.user.tenantProfile,
+        operatorProfile: payload.operatorProfile
+          ? { ...state.user.operatorProfile, ...payload.operatorProfile }
+          : state.user.operatorProfile,
       };
 
-      // Recompute isOnboarded after profile update
       const onboarded = payload.isOnboarded ?? isProfileComplete(updatedUser);
       state.user = { ...updatedUser, isOnboarded: onboarded };
     },

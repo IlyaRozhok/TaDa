@@ -28,35 +28,61 @@ export class UserProfileService {
 
     const profile = user.tenantProfile;
 
-    // Update basic profile fields
-    if (updateUserDto.full_name) profile.full_name = updateUserDto.full_name;
+    // Update basic profile fields - allow empty strings and null values
+    if (updateUserDto.full_name !== undefined) profile.full_name = updateUserDto.full_name;
     if (updateUserDto.first_name !== undefined)
       profile.first_name = updateUserDto.first_name;
     if (updateUserDto.last_name !== undefined)
       profile.last_name = updateUserDto.last_name;
     if (updateUserDto.address !== undefined)
       profile.address = updateUserDto.address;
-    if (updateUserDto.phone) profile.phone = updateUserDto.phone;
-    if (
-      updateUserDto.date_of_birth &&
-      updateUserDto.date_of_birth.trim() !== ""
-    ) {
-      profile.date_of_birth = new Date(updateUserDto.date_of_birth);
+    if (updateUserDto.phone !== undefined) profile.phone = updateUserDto.phone;
+    if (updateUserDto.date_of_birth !== undefined) {
+      if (updateUserDto.date_of_birth && updateUserDto.date_of_birth.trim() !== "") {
+        profile.date_of_birth = new Date(updateUserDto.date_of_birth);
+      } else {
+        profile.date_of_birth = null;
+      }
     }
-    if (updateUserDto.nationality)
+    if (updateUserDto.nationality !== undefined)
       profile.nationality = updateUserDto.nationality;
-    if (updateUserDto.age_range) profile.age_range = updateUserDto.age_range;
-    if (updateUserDto.occupation) profile.occupation = updateUserDto.occupation;
-    if (updateUserDto.industry) profile.industry = updateUserDto.industry;
-    if (updateUserDto.work_style) profile.work_style = updateUserDto.work_style;
-    if (updateUserDto.lifestyle) profile.lifestyle = updateUserDto.lifestyle;
-    if (updateUserDto.ideal_living_environment) {
+    if (updateUserDto.age_range !== undefined) profile.age_range = updateUserDto.age_range;
+    if (updateUserDto.occupation !== undefined) profile.occupation = updateUserDto.occupation;
+    if (updateUserDto.industry !== undefined) profile.industry = updateUserDto.industry;
+    if (updateUserDto.work_style !== undefined) profile.work_style = updateUserDto.work_style;
+    if (updateUserDto.lifestyle !== undefined) profile.lifestyle = updateUserDto.lifestyle;
+    if (updateUserDto.ideal_living_environment !== undefined) {
       profile.ideal_living_environment = updateUserDto.ideal_living_environment;
     }
-    if (updateUserDto.additional_info)
+    if (updateUserDto.additional_info !== undefined)
       profile.additional_info = updateUserDto.additional_info;
 
     await this.tenantProfileRepository.save(profile);
+  }
+
+  async createTenantProfileForUser(
+    userId: string,
+    updateUserDto: UpdateUserDto
+  ): Promise<void> {
+    // Create new tenant profile for admin user
+    const newProfile = this.tenantProfileRepository.create({
+      userId: userId,
+      first_name: updateUserDto.first_name || "",
+      last_name: updateUserDto.last_name || "",
+      full_name: updateUserDto.full_name || "",
+      address: updateUserDto.address || "",
+      phone: updateUserDto.phone || "",
+      date_of_birth: updateUserDto.date_of_birth ? new Date(updateUserDto.date_of_birth) : null,
+      nationality: updateUserDto.nationality || "",
+      occupation: updateUserDto.occupation || "",
+      industry: updateUserDto.industry || "",
+      work_style: updateUserDto.work_style || "",
+      lifestyle: updateUserDto.lifestyle || [],
+      ideal_living_environment: updateUserDto.ideal_living_environment || "",
+      additional_info: updateUserDto.additional_info || "",
+    });
+
+    await this.tenantProfileRepository.save(newProfile);
   }
 
   async updateOperatorProfile(

@@ -11,6 +11,7 @@ import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import Footer from "../../components/Footer";
 import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/UnifiedProfileForm";
 import { authAPI } from "../../lib/api";
+import ProfilePageSkeleton from "./ProfilePageSkeleton";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -95,16 +96,7 @@ export default function ProfilePage() {
   if (typeof window === "undefined" || isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <TenantUniversalHeader
-          showPreferencesButton={true}
-        />
-        <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
-          <div className="py-16 text-center text-gray-600">
-            <div className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4" />
-            Loading profile...
-          </div>
-        </div>
-        <Footer />
+        <ProfilePageSkeleton />
       </div>
     );
   }

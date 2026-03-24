@@ -13,7 +13,7 @@ import {
   setOnboardingCompleted,
 } from "../../store/slices/authSlice";
 import { preferencesAPI } from "../../lib/api";
-import OnboardingProfileStep from "../../components/onboarding/OnboardingProfileStep";
+import SimpleOnboardingProfileStep from "../../components/onboarding/SimpleOnboardingProfileStep";
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
 import OnboardingIntroCenteredWrapper from "../../components/onboarding/OnboardingIntroCenteredWrapper";
 import NewPreferencesPage from "../../components/preferences/NewPreferencesPage";
@@ -357,7 +357,7 @@ export default function OnboardingPage() {
         {state.currentPhase === "profile" ? (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-24 pb-24 sm:pb-28 lg:pb-32">
             <div className="w-full">
-              <OnboardingProfileStep
+              <SimpleOnboardingProfileStep
                 onComplete={handleProfileComplete}
                 isLoading={state.isLoading}
                 onNext={handleProfileNext}

@@ -70,6 +70,15 @@ export class UsersService {
     if (updateUserDto.avatar_url !== undefined) {
       baseUpdates.avatar_url = updateUserDto.avatar_url;
     }
+    // Update full_name in base user entity
+    if (updateUserDto.full_name !== undefined) {
+      baseUpdates.full_name = updateUserDto.full_name;
+    } else if (updateUserDto.first_name !== undefined || updateUserDto.last_name !== undefined) {
+      // Construct full_name from first_name and last_name if provided
+      const firstName = updateUserDto.first_name || user.tenantProfile?.first_name || user.operatorProfile?.first_name || '';
+      const lastName = updateUserDto.last_name || user.tenantProfile?.last_name || user.operatorProfile?.last_name || '';
+      baseUpdates.full_name = `${firstName} ${lastName}`.trim() || null;
+    }
     if (Object.keys(baseUpdates).length > 0) {
       await this.userRepository.update(id, baseUpdates);
     }
@@ -80,12 +89,21 @@ export class UsersService {
     if (updateUserDto.avatar_url !== undefined) {
       user.avatar_url = updateUserDto.avatar_url;
     }
+    if (baseUpdates.full_name !== undefined) {
+      user.full_name = baseUpdates.full_name;
+    }
 
     // Обновить профиль в зависимости от роли
-    if (user.role === UserRole.Tenant) {
-      await this.userProfileService.updateTenantProfile(user, updateUserDto);
+    if (user.role === UserRole.Tenant || user.role === UserRole.Admin) {
+      // Админы могут иметь tenant профиль для тестирования и использования платформы
+      if (user.tenantProfile) {
+        await this.userProfileService.updateTenantProfile(user, updateUserDto);
+      } else if (user.role === UserRole.Admin) {
+        // Если у админа нет tenant профиля, создаем его
+        await this.userProfileService.createTenantProfileForUser(user.id, updateUserDto);
+      }
 
-      // Обновить предпочтения если нужно
+      // Обновить предпочтения если нужно (только для tenant и admin)
       if (
         updateUserDto.pets !== undefined ||
         updateUserDto.smoker !== undefined ||

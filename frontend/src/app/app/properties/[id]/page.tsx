@@ -1492,7 +1492,7 @@ export default function PropertyPublicPage() {
                       htmlFor="booking-description"
                       className="absolute left-0 top-0 pointer-events-none text-xs text-gray-500"
                     >
-                      Description
+                      {t(listingPropertyKeys.viewingRequest.notes)}
                     </label>
                     <textarea
                       id="booking-description"
@@ -1500,6 +1500,9 @@ export default function PropertyPublicPage() {
                       onChange={(e) => setBookingDescription(e.target.value)}
                       disabled={bookingLoading}
                       rows={4}
+                      placeholder={t(
+                        listingPropertyKeys.viewingRequest.notesPlaceholder,
+                      )}
                       className="w-full pt-5 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white resize-none border-0 disabled:opacity-60"
                     />
                   </div>

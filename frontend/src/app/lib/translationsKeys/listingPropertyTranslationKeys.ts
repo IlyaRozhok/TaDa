@@ -31,6 +31,8 @@ export const listingPropertyKeys = {
     title: "listing.property.viewingRequest.title",
     contactMethod: "listing.property.viewingRequest.contactMethod",
     submit: "listing.property.viewingRequest.submit",
+    notes: "listing.viewingRequest.notes",
+    notesPlaceholder: "listing.viewingRequest.notesPlaceholder",
     date: {
       from: "property.view.booking.date.from",
       to: "property.view.booking.date.to",

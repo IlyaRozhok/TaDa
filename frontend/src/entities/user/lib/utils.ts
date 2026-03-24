@@ -23,7 +23,7 @@ export const buildFormDataFromUser = (currentUser: User | null): UpdateUserData 
     return { first, last: rest.join(" ") };
   };
 
-  const profile = currentUser?.role === "tenant"
+  const profile = (currentUser?.role === "tenant" || currentUser?.role === "admin")
     ? currentUser.tenantProfile
     : currentUser.operatorProfile;
 
