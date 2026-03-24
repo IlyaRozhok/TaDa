@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/authSlice";
 import { useTranslation } from "../../hooks/useTranslation";
@@ -74,6 +74,14 @@ export default function SimpleOnboardingProfileStep({
 
   const loading = externalLoading || isLoading || isSaving;
 
+  // Memoize the date change handler to prevent re-renders
+  const handleDateChangeCallback = useCallback((date: string | null) => {
+    handleInputChange("date_of_birth", date || "");
+    if (date) {
+      validateDateOfBirth(date);
+    }
+  }, [handleInputChange]);
+
   return (
     <StepWrapper
       title={t(wizardKeys.profile.title)}
@@ -88,12 +96,7 @@ export default function SimpleOnboardingProfileStep({
             dateOfBirthError={dateOfBirthError}
             onInputChange={handleInputChange}
             onPhoneChange={handlePhoneChange}
-            onDateChange={(date) => {
-              handleInputChange("date_of_birth", date || "");
-              if (date) {
-                validateDateOfBirth(date);
-              }
-            }}
+            onDateChange={handleDateChangeCallback}
           />
 
           <div className="flex justify-end pt-6">

@@ -23,12 +23,19 @@ interface LanguageDropdownProps {
    * Whether the dropdown is disabled
    */
   disabled?: boolean;
+  /**
+   * Dropdown menu appearance:
+   * - "default": existing semi-transparent glass style
+   * - "units": darker glass style used on units filtering dropdown
+   */
+  menuVariant?: "default" | "units";
 }
 
 export default function LanguageDropdown({
   variant = "default",
   buttonClassName = "",
   disabled = false,
+  menuVariant = "default",
 }: LanguageDropdownProps) {
   const { language, setLanguage } = useI18n();
   const selectedLanguage = getLanguageDisplayCode(language);
@@ -53,9 +60,27 @@ export default function LanguageDropdown({
   // Base button classes
   const getButtonClasses = () => {
     if (variant === "dark") {
-      return `flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-white hover:text-gray-300 transition-colors rounded-lg w-14 cursor-pointer disabled:cursor-default disabled:hover:text-white ${buttonClassName}`;
+      return `flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-white transition-colors rounded-lg w-14 cursor-pointer disabled:cursor-default disabled:text-white ${buttonClassName}`;
     }
     return `flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${buttonClassName}`;
+  };
+
+  const getMenuStyle = () => {
+    if (menuVariant === "units") {
+      return {
+        background:
+          "linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(0, 0, 0, 0.78)",
+        boxShadow:
+          "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.65), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.35), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.16), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.45)",
+      };
+    }
+
+    return {
+      background:
+        "linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%), rgba(0, 0, 0, 0.65)",
+      boxShadow:
+        "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+    };
   };
 
   return (
@@ -81,12 +106,7 @@ export default function LanguageDropdown({
       {isLanguageOpen && (
         <div
           className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-xl"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%), rgba(0, 0, 0, 0.65)",
-            boxShadow:
-              "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
-          }}
+          style={getMenuStyle()}
         >
           <div className="max-h-64 overflow-y-auto rounded-xl relative">
             {SUPPORTED_LANGUAGES.map((lang) => (

@@ -57,6 +57,10 @@ export class BookingRequest {
   @Column({ type: "varchar", nullable: true })
   phone_number: string | null;
 
+  @ApiProperty({ description: "Description from the booking form", required: false })
+  @Column({ type: "text", nullable: true })
+  description: string | null;
+
   @ApiProperty({
     description: "Current booking status",
     enum: BookingRequestStatus,

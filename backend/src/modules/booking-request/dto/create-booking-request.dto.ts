@@ -27,4 +27,10 @@ export class CreateBookingRequestDto {
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "date_to must be YYYY-MM-DD" })
   date_to?: string;
+
+  @ApiPropertyOptional({ description: "Additional booking description" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  description?: string;
 }

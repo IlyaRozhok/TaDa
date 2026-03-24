@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { useTranslation } from "../../app/hooks/useTranslation";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from "@/app/components/preferences/ui/InputField";
@@ -34,7 +34,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const handlePhoneChange = (value: string) => {
+  const handlePhoneChange = useCallback((value: string) => {
     // Combine country code with phone number for storage
     const country = getCountryByCode(phoneCountryCode) || getDefaultCountry();
     if (value) {
@@ -46,18 +46,18 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
       onInputChange("phone", "");
     }
     onPhoneChange(value || "", phoneCountryCode);
-  };
+  }, [phoneCountryCode, onInputChange, onPhoneChange]);
 
-  const handleCountryChange = (countryCode: string) => {
+  const handleCountryChange = useCallback((countryCode: string) => {
     // Clear the phone input when country changes
     onPhoneChange("", countryCode);
     onInputChange("phone", "");
-  };
+  }, [onPhoneChange, onInputChange]);
 
-  const handleDateChange = (date: string | null) => {
+  const handleDateChange = useCallback((date: string | null) => {
     onInputChange("date_of_birth", date || "");
     onDateChange(date);
-  };
+  }, [onInputChange, onDateChange]);
 
   return (
     <div className={className}>

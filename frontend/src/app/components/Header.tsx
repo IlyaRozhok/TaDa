@@ -149,7 +149,11 @@ const Header = ({
                 <div className="hidden sm:block">{children}</div>
 
                 {/* Language Dropdown */}
-                <LanguageDropdown variant="default" disabled={disabled} />
+                <LanguageDropdown
+                  variant="dark"
+                  menuVariant="units"
+                  disabled={disabled}
+                />
 
                 {/* Get Started CTA - navigates to auth */}
                 <button

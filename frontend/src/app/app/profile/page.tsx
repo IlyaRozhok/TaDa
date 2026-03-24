@@ -21,41 +21,73 @@ export default function ProfilePage() {
 
   // Check auth and load profile once
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeProfile = async () => {
-      const token = typeof window !== "undefined" 
-        ? localStorage.getItem("accessToken") 
-        : null;
-
-      if (!token) {
-        router.replace("/app/auth/login");
-        return;
-      }
-
-      // If we already have user data, no need to fetch again
-      if (user?.id) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        const res = await authAPI.getProfile();
-        const fetchedUser = res.data;
-        dispatch(setAuth({ user: fetchedUser, accessToken: token }));
-        setHasError(false);
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-        setHasError(true);
-        if (err.response?.status === 401) {
+        const token = typeof window !== "undefined" 
+          ? localStorage.getItem("accessToken") 
+          : null;
+
+        if (!token) {
           router.replace("/app/auth/login");
           return;
         }
+
+        // Capture current user state to avoid race conditions
+        const currentUser = user;
+        
+        // If we already have user data, no need to fetch again
+        if (currentUser?.id) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        // Add a small delay to let SessionManager finish if it's running
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        if (!isMounted) return;
+
+        // Check again if user was loaded by SessionManager
+        const updatedUser = user;
+        if (updatedUser?.id) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        const res = await authAPI.getProfile();
+        const fetchedUser = res.data?.user || res.data;
+        
+        if (!fetchedUser || !fetchedUser.id) {
+          throw new Error("Invalid user data received from API");
+        }
+        
+        if (isMounted) {
+          dispatch(setAuth({ user: fetchedUser, accessToken: token }));
+          setHasError(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+        if (isMounted) {
+          setHasError(true);
+          if (err.response?.status === 401) {
+            router.replace("/app/auth/login");
+            return;
+          }
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initializeProfile();
-  }, [router, dispatch, user?.id]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [router, dispatch]);
 
   // Show loading state
   if (typeof window === "undefined" || isLoading) {

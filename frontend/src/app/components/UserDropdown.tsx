@@ -9,7 +9,7 @@ import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { LogOut, Sliders, FileText, Layers } from "lucide-react";
+import { Sliders, FileText } from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
@@ -263,7 +263,6 @@ export default function UserDropdown({
                     onClick={handleUnits}
                     className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
                   >
-                    <Layers className="w-4 h-4 mr-3 flex-shrink-0" />
                     Units
                   </button>
                 )}
@@ -276,7 +275,6 @@ export default function UserDropdown({
               onClick={handleLogout}
               className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-red-300 hover:bg-white/14"
             >
-              <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
               {t(profileKeys.dropLogout)}
             </button>
           </div>

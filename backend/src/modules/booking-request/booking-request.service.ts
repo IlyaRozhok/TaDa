@@ -28,6 +28,7 @@ export class BookingRequestService {
   ): Promise<BookingRequest> {
     const email = dto.email?.trim() || null;
     const phone = dto.phone_number?.trim() || null;
+    const description = dto.description?.trim() || null;
     if (!email && !phone) {
       throw new BadRequestException("email or phone_number is required");
     }
@@ -72,6 +73,7 @@ export class BookingRequestService {
       existing.phone_number = phone;
       existing.date_from = dateFrom;
       existing.date_to = dateTo;
+      existing.description = description;
       return this.bookingRequestRepository.save(existing);
     }
 
@@ -83,6 +85,7 @@ export class BookingRequestService {
       phone_number: phone,
       date_from: dateFrom,
       date_to: dateTo,
+      description,
     });
 
     const saved = await this.bookingRequestRepository.save(request);

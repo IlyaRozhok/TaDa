@@ -80,29 +80,33 @@ export const useUnifiedProfile = (
   // Update form data when user changes
   useEffect(() => {
     if (user) {
-      const newFormData = buildFormDataFromUser(user as any);
-      setFormData(newFormData);
-      setHasChanges(false);
-      
-      // Parse phone number when user data changes
-      const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
-      if (phone) {
-        // Inline phone parsing to avoid dependency issues
-        const country = getCountryByDialCode(phone);
-        if (country) {
-          setPhoneCountryCode(country.code);
-          setPhoneNumberOnly(phone.replace(country.dialCode, ""));
+      try {
+        const newFormData = buildFormDataFromUser(user as any);
+        setFormData(newFormData);
+        setHasChanges(false);
+        
+        // Parse phone number when user data changes
+        const phone = user.tenantProfile?.phone || user.operatorProfile?.phone || "";
+        if (phone) {
+          // Inline phone parsing to avoid dependency issues
+          const country = getCountryByDialCode(phone);
+          if (country) {
+            setPhoneCountryCode(country.code);
+            setPhoneNumberOnly(phone.replace(country.dialCode, ""));
+          } else {
+            const defaultCountry = getDefaultCountry();
+            setPhoneCountryCode(defaultCountry.code);
+            setPhoneNumberOnly(phone);
+          }
         } else {
-          const defaultCountry = getDefaultCountry();
-          setPhoneCountryCode(defaultCountry.code);
-          setPhoneNumberOnly(phone);
+          setPhoneCountryCode("GB");
+          setPhoneNumberOnly("");
         }
-      } else {
-        setPhoneCountryCode("GB");
-        setPhoneNumberOnly("");
+      } catch (error) {
+        console.error("useUnifiedProfile: Error building form data:", error);
       }
     }
-  }, [user?.id, user?.updated_at, user?.tenantProfile, user?.operatorProfile]);
+  }, [user?.id, user?.updated_at]);
 
   const handleInputChange = useCallback((field: keyof UpdateUserData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

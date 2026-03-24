@@ -201,6 +201,7 @@ export const bookingRequestsAPI = {
       phone_number?: string;
       date_from?: string | null;
       date_to?: string | null;
+      description?: string;
     },
   ) => {
     const b = body ?? {};
@@ -220,6 +221,9 @@ export const bookingRequestsAPI = {
         typeof b.date_to === "string" &&
         /^\d{4}-\d{2}-\d{2}$/.test(b.date_to)
           ? { date_to: b.date_to }
+          : {}),
+        ...(b.description != null && b.description.trim() !== ""
+          ? { description: b.description.trim() }
           : {}),
       })
       .then((res) => res.data ?? res);

@@ -17,6 +17,7 @@ export interface BookingRequest {
   tenant_id: string;
   date_from?: string | null;
   date_to?: string | null;
+  description?: string | null;
   email?: string | null;
   phone_number?: string | null;
   status: BookingRequestStatus;

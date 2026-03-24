@@ -127,6 +127,9 @@ export default function PropertyPublicPage() {
   const [bookingMoveOutDate, setBookingMoveOutDate] = useState<string | null>(
     null,
   );
+  const [bookingDescription, setBookingDescription] = useState("");
+  const [bookingDescriptionFocused, setBookingDescriptionFocused] =
+    useState(false);
   const [redirecting429, setRedirecting429] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -588,6 +591,7 @@ export default function PropertyPublicPage() {
     setBookingEmailError(undefined);
     setBookingMoveInDate(null);
     setBookingMoveOutDate(null);
+    setBookingDescription("");
     setIsBookingModalOpen(true);
   };
 
@@ -658,6 +662,7 @@ export default function PropertyPublicPage() {
         phone_number: hasPhone ? bookingPhone.trim() : undefined,
         date_from: dateFrom,
         date_to: dateTo,
+        description: bookingDescription.trim() || undefined,
       });
       setHasBookingRequest(true);
       setIsBookingModalOpen(false);
@@ -1282,7 +1287,7 @@ export default function PropertyPublicPage() {
 
       {isBookingModalOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-[60] overflow-y-auto bg-black/40 px-4 py-4 sm:py-6"
           role="dialog"
           aria-modal="true"
           aria-label={t(listingPropertyKeys.viewingRequest.title)}
@@ -1292,8 +1297,8 @@ export default function PropertyPublicPage() {
             }
           }}
         >
-          <div className="w-full max-w-xl min-h-[540px] rounded-4xl bg-[#F9FAFC] shadow-2xl">
-            <div className="relative px-8 pt-8 pb-12 flex flex-col">
+          <div className="w-full max-w-xl max-h-[92vh] rounded-4xl bg-[#F9FAFC] shadow-2xl overflow-hidden mx-auto my-auto">
+            <div className="relative px-8 pt-8 pb-12 flex flex-col max-h-[92vh] overflow-y-auto">
               <button
                 type="button"
                 onClick={() => setIsBookingModalOpen(false)}
@@ -1475,6 +1480,31 @@ export default function PropertyPublicPage() {
                     disabled={bookingLoading}
                     className="[&_input]:!bg-white"
                   />
+                </div>
+
+                <div className="bg-white rounded-3xl px-6 py-4">
+                  <div className="relative">
+                    <label
+                      htmlFor="booking-description"
+                      className={`absolute left-6 pointer-events-none transition-all duration-200 ${
+                        bookingDescriptionFocused || bookingDescription.length > 0
+                          ? "top-3 text-xs text-gray-500"
+                          : "top-1/3 translate-y-1 text-base text-gray-400"
+                      }`}
+                    >
+                      Description
+                    </label>
+                    <textarea
+                      id="booking-description"
+                      value={bookingDescription}
+                      onChange={(e) => setBookingDescription(e.target.value)}
+                      onFocus={() => setBookingDescriptionFocused(true)}
+                      onBlur={() => setBookingDescriptionFocused(false)}
+                      disabled={bookingLoading}
+                      rows={4}
+                      className="w-full px-6 pt-8 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white resize-none border-0 focus:ring-2 focus:ring-gray-300 disabled:opacity-60"
+                    />
+                  </div>
                 </div>
               </div>
 

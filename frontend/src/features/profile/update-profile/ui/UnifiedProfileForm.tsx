@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "../../../../app/hooks/useTranslation";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { Upload, X, Camera, Loader2 } from "lucide-react";
@@ -23,7 +23,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
   // Memoize options to prevent infinite re-renders
   const profileOptions = useMemo(() => ({
     onSuccess: () => {
-      console.log("Profile saved successfully");
+      // Profile saved successfully
     },
     onError: (error: string) => {
       console.error("Failed to save profile:", error);
@@ -105,17 +105,24 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
   const hasAvatarChanges = avatarFile !== null;
   const showSaveButton = hasChanges || hasAvatarChanges;
 
-  // Show loading state if user data is not available
+  // Memoize the date change handler to prevent re-renders
+  const handleDateChange = useCallback((date: string | null) => {
+    handleInputChange("date_of_birth", date || "");
+    if (date) {
+      validateDateOfBirth(date);
+    }
+  }, [handleInputChange]);
+
+  // Show error state if user data is not available (don't show loading since parent handles it)
   if (!user?.id) {
     return (
       <StepWrapper
         title={t(profileKeys.dropProfileSettings)}
-        description="Loading your profile information..."
+        description="Unable to load profile information"
       >
         <StepContainer>
           <div className="py-16 text-center text-gray-600">
-            <div className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4" />
-            Loading profile data...
+            <p>Unable to load profile data. Please refresh the page.</p>
           </div>
         </StepContainer>
       </StepWrapper>
@@ -273,12 +280,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({ user }) 
           dateOfBirthError={dateOfBirthError}
           onInputChange={handleInputChange}
           onPhoneChange={handlePhoneChange}
-          onDateChange={(date) => {
-            handleInputChange("date_of_birth", date || "");
-            if (date) {
-              validateDateOfBirth(date);
-            }
-          }}
+          onDateChange={handleDateChange}
           showOccupation={true}
         />
 
