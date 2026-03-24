@@ -146,11 +146,14 @@ export function useProfileForm(user: User | null): ProfileFormState & ProfileFor
         return;
       }
 
-      // Save to API
+      // Save to API (now returns complete user data)
       const response = await authAPI.updateProfile(formData);
+      const updatedUser = response.data?.user;
       
-      // Update Redux store
-      dispatch(updateUser(response.data));
+      if (updatedUser) {
+        // Update Redux store with complete user data
+        dispatch(updateUser(updatedUser));
+      }
       
       setHasChanges(false);
       setErrors({});

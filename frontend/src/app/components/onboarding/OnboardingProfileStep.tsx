@@ -22,7 +22,6 @@ import {
   getDefaultCountry,
 } from "../../../shared/lib/countries";
 import { buildFormDataFromUser } from "../../../entities/user/lib/utils";
-import { User as UserType } from "../../../entities/user/model/types";
 import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
 
 interface UpdateUserData {
@@ -93,47 +92,12 @@ export default function OnboardingProfileStep({
     setPhoneNumberOnly(phoneNumber.slice(country.dialCode.length));
   }, []);
 
-  // Fill form with saved user data when component mounts, user changes, or when returning to profile step
-  // Only use data from tenantProfile (saved in database), NOT from Google OAuth (full_name)
-  // Always reload data from Redux store when returning to this step to ensure saved data is displayed
+  // Fill form from a single source of truth (shared user -> form mapper).
+  // This keeps onboarding profile fields in sync with Header/Profile settings form.
   useEffect(() => {
     if (user && currentStep === 4) {
-      // Only get data from tenantProfile, not from user.full_name (which might be from Google)
-      const tenantProfile = (user as unknown as UserType)?.tenantProfile;
+      const savedData = buildFormDataFromUser(user as any);
 
-      // Extract saved data only from tenantProfile (database), ignore Google OAuth data
-      const savedData = {
-        first_name: tenantProfile?.first_name || "",
-        last_name: tenantProfile?.last_name || "",
-        address: tenantProfile?.address || "",
-        phone: tenantProfile?.phone || "",
-        date_of_birth: tenantProfile?.date_of_birth
-          ? (() => {
-              try {
-                const date = new Date(tenantProfile.date_of_birth);
-                if (!isNaN(date.getTime())) {
-                  return date.toISOString().split("T")[0];
-                }
-              } catch (error) {
-                console.warn("Error formatting date_of_birth:", error);
-              }
-              return "";
-            })()
-          : "",
-        nationality: tenantProfile?.nationality || "",
-      };
-
-      // Check if user has actual saved profile data (not just empty strings)
-      const hasSavedProfileData =
-        savedData.first_name ||
-        savedData.last_name ||
-        savedData.address ||
-        savedData.phone ||
-        savedData.date_of_birth ||
-        savedData.nationality;
-
-      // Always update form data when returning to this step, even if empty
-      // This ensures that saved data from the database is displayed, or form is reset if no data
       setFormData({
         first_name: savedData.first_name || "",
         last_name: savedData.last_name || "",
@@ -143,16 +107,13 @@ export default function OnboardingProfileStep({
         nationality: savedData.nationality || "",
       });
 
-      // Parse phone number if available
       if (savedData.phone) {
         parsePhoneNumber(savedData.phone);
       } else {
-        // Reset phone fields if no saved phone
         setPhoneCountryCode("GB");
         setPhoneNumberOnly("");
       }
 
-      // Validate age for existing date_of_birth
       if (savedData.date_of_birth) {
         const ageError = validateAge(savedData.date_of_birth);
         setDateOfBirthError(ageError);
@@ -262,8 +223,9 @@ export default function OnboardingProfileStep({
 
     try {
       const response = await authAPI.updateProfile(formData);
-      // Get updated user data from response
-      const updatedUser = response.data?.user || response.data;
+      // Prefer fresh /auth/me payload to avoid shape differences between endpoints.
+      const meResponse = await authAPI.getMe();
+      const updatedUser = meResponse.data?.user || response.data?.user || response.data;
 
       if (updatedUser) {
         // Update user with full data from server

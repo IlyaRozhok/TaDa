@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { TenantCvView } from "../../components/tenant-cv/TenantCvView";
 import { TenantCvResponse } from "../../types/tenantCv";
+import Footer from "../../components/Footer";
+import TenantCvSkeleton from "../../components/ui/TenantCvSkeleton";
+import { notify } from "@/shared/lib/notify";
+import { waitForSessionManager } from "../../components/providers/SessionManager";
 import {
   useGetTenantCvQuery,
   useCreateTenantCvShareMutation,
+  useGetPreferencesQuery,
 } from "../../store/slices/apiSlice";
 
 export default function TenantCvPage() {
@@ -14,17 +19,77 @@ export default function TenantCvPage() {
   const [error, setError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
-  const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeSession = async () => {
+      try {
+        await waitForSessionManager();
+      } catch {
+        // ignore; page will still continue with normal error handling
+      } finally {
+        if (isMounted) {
+          setSessionReady(true);
+        }
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Load tenant CV via RTK Query with 5‑минутным кэшем
   const {
     data: cvQueryData,
     isLoading,
-    isFetching,
     error: cvQueryError,
-  } = useGetTenantCvQuery(undefined);
+  } = useGetTenantCvQuery(undefined, {
+    skip: !sessionReady,
+  });
 
   const [createShare] = useCreateTenantCvShareMutation();
+  const { data: preferencesQueryData } = useGetPreferencesQuery(undefined, {
+    skip: !sessionReady,
+  });
+
+  const preferencesFilledCount = useMemo(() => {
+    const preferences =
+      (preferencesQueryData &&
+        typeof preferencesQueryData === "object" &&
+        "data" in preferencesQueryData
+        ? (preferencesQueryData as { data?: Record<string, unknown> }).data
+        : preferencesQueryData) as Record<string, unknown> | undefined;
+
+    if (!preferences || typeof preferences !== "object") {
+      return 0;
+    }
+
+    let filledCount = 0;
+    if (preferences.primary_postcode) filledCount += 1;
+    if (preferences.min_price != null || preferences.max_price != null) filledCount += 1;
+    if (preferences.min_bedrooms != null) filledCount += 1;
+    if (preferences.furnishing) filledCount += 1;
+    if (preferences.let_duration) filledCount += 1;
+    if (preferences.designer_furniture !== undefined && preferences.designer_furniture !== null) filledCount += 1;
+    if (preferences.house_shares) filledCount += 1;
+    if (Array.isArray(preferences.convenience_features) && preferences.convenience_features.length > 0) filledCount += 1;
+    if (preferences.ideal_living_environment) filledCount += 1;
+    if (preferences.pets) filledCount += 1;
+    if (preferences.smoker !== undefined && preferences.smoker !== null) filledCount += 1;
+    if (preferences.move_in_date) filledCount += 1;
+    if (preferences.max_bedrooms != null) filledCount += 1;
+    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null) filledCount += 1;
+    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0) filledCount += 1;
+    if (preferences.additional_info) filledCount += 1;
+    if (preferences.date_property_added) filledCount += 1;
+
+    return filledCount;
+  }, [preferencesQueryData]);
 
   function extractShareUuid(body: unknown): string | undefined {
     if (!body || typeof body !== "object") return undefined;
@@ -69,7 +134,7 @@ export default function TenantCvPage() {
       const result = await createShare().unwrap();
       const uuid = extractShareUuid(result);
       if (!uuid || typeof window === "undefined") {
-        setShareMessage("Unable to generate share link");
+        notify.error("Unable to generate share link");
         return;
       }
       const url = `${window.location.origin}/cv/${uuid}`;
@@ -97,56 +162,59 @@ export default function TenantCvPage() {
           copied = false;
         }
       }
-      setShareMessage(
-        copied
-          ? "Share link copied to clipboard"
-          : `Copy this link: ${url}`
-      );
+      if (copied) {
+        notify.success("Link copied to clipboard!");
+      } else {
+        notify.error(`Could not copy automatically. Use this link: ${url}`);
+      }
     } catch (e: unknown) {
       const msg =
         e &&
         typeof e === "object" &&
         "data" in e &&
         (e as { data?: { message?: string } }).data?.message;
-      setShareMessage(
-        typeof msg === "string" ? msg : "Unable to generate share link",
-      );
+      notify.error(typeof msg === "string" ? msg : "Unable to generate share link");
     } finally {
       setShareLoading(false);
-      setTimeout(() => setShareMessage(null), copied ? 2500 : 5000);
     }
   };
 
+  const isInitialLoading = !sessionReady || (isLoading && !data);
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <TenantUniversalHeader
         showPreferencesButton={true}
         showTenantCvLink={false}
         showFavouritesButton={false}
+        preferencesCount={preferencesFilledCount}
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-18 pb-10 mt-6">
-        {/* Показываем лоадер только на самом первом запросе, когда нет данных в кэше */}
-        {isLoading && !data && (
-          <div className="py-16 text-center text-gray-600">Loading CV...</div>
-        )}
-        {error && <div className="py-16 text-center text-red-600">{error}</div>}
-        {data && !isLoading ? (
-          <>
-            {shareMessage && (
-              <div className="mb-4 rounded-xl bg-black text-white px-4 py-3 text-sm">
-                {shareMessage}
-              </div>
-            )}
-            <TenantCvView
-              data={data}
-              shareUrl={shareUrl}
-              onShareClick={handleShare}
-              shareLoading={shareLoading}
-            />
-          </>
-        ) : null}
-      </div>
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-18 pb-10 mt-6">
+          {isInitialLoading ? (
+            <div className="min-h-[55vh] transition-opacity duration-200">
+              <TenantCvSkeleton />
+            </div>
+          ) : null}
+          {!isInitialLoading && error ? (
+            <div className="min-h-[55vh] flex items-center justify-center text-center text-red-600">
+              {error}
+            </div>
+          ) : null}
+          {!isInitialLoading && !error && data ? (
+            <div className="transition-opacity duration-300 opacity-100">
+              <TenantCvView
+                data={data}
+                shareUrl={shareUrl}
+                onShareClick={handleShare}
+                shareLoading={shareLoading}
+              />
+            </div>
+          ) : null}
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

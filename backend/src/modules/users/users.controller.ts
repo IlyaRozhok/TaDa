@@ -49,9 +49,18 @@ export class UsersController {
     description: "User profile retrieved successfully",
     type: User,
   })
-  async getProfile(@Req() req: any): Promise<User> {
-    const user = await this.usersService.findOne(req.user.id);
-    return toUserResponse(user) as any;
+  async getProfile(@Req() req: any) {
+    const fullUser = await this.usersService.findOne(req.user.id);
+    return {
+      user: {
+        ...fullUser,
+        full_name:
+          fullUser.full_name ||
+          fullUser.tenantProfile?.full_name ||
+          fullUser.operatorProfile?.full_name ||
+          null,
+      },
+    };
   }
 
   @Put("profile")
@@ -66,12 +75,21 @@ export class UsersController {
   async updateProfile(
     @Req() req: Request & { user: User },
     @Body() updateUserDto: UpdateUserDto
-  ): Promise<User> {
+  ) {
     const user = await this.usersService.updateProfile(
       req.user.id,
       updateUserDto
     );
-    return toUserResponse(user) as any;
+    return {
+      user: {
+        ...user,
+        full_name:
+          user.full_name ||
+          user.tenantProfile?.full_name ||
+          user.operatorProfile?.full_name ||
+          null,
+      },
+    };
   }
 
   @Post("avatar")

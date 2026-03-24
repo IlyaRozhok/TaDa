@@ -8,6 +8,7 @@ import {
   setAuth,
 } from "../../store/slices/authSlice";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
+import Footer from "../../components/Footer";
 import { ProfileForm } from "../../../features/profile/update-profile/ui/ProfileForm";
 import { authAPI } from "../../lib/api";
 
@@ -69,6 +70,7 @@ export default function ProfilePage() {
             Loading profile...
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -85,6 +87,7 @@ export default function ProfilePage() {
             Failed to load profile. Please refresh the page.
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -99,6 +102,7 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto px-5 pb-32 pt-10">
         <ProfileForm user={user} />
       </div>
+      <Footer />
     </div>
   );
 }

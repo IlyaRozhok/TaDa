@@ -128,12 +128,7 @@ export default function CountryDropdown({
             error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
           } disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed`}
         >
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            {selectedCountry && (
-              <span className="text-lg flex-shrink-0">
-                {selectedCountry.flag}
-              </span>
-            )}
+          <div className="flex items-center min-w-0 flex-1">
             <span className="truncate">
               {selectedCountry ? selectedCountry.name : placeholder}
             </span>
@@ -203,7 +198,7 @@ export default function CountryDropdown({
                         key={country.code}
                         type="button"
                         onClick={() => handleCountryChange(country)}
-                        className={`w-full px-5 py-3 text-left transition-all duration-200 flex items-center gap-3 ${
+                        className={`w-full px-5 py-3 text-left transition-all duration-200 flex items-center ${
                           selectedCountry?.code === country.code
                             ? "bg-white/18 text-white"
                             : "text-white hover:bg-white/12"
@@ -215,7 +210,6 @@ export default function CountryDropdown({
                               : undefined,
                         }}
                       >
-                        <span className="text-lg">{country.flag}</span>
                         <div className="flex-1 min-w-0">
                           <div
                             className="text-sm font-semibold truncate"

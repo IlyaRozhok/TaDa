@@ -362,7 +362,7 @@ export function TenantCvView({
     <div className="min-h-screen bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+        <div className="flex flex-col gap-6">
           <div className="flex flex-col items-start gap-4">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-xl font-semibold text-gray-700">
               {avatarUrl ? (
@@ -384,6 +384,22 @@ export function TenantCvView({
                   {badges.map((b) => (
                     <StatusBadge key={b.label} label={b.label} />
                   ))}
+                  {onShareClick && (
+                    <button
+                      onClick={onShareClick}
+                      disabled={shareLoading}
+                      className="inline-flex cursor-pointer items-center justify-center gap-2 px-4 py-2 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+                    >
+                      {shareLoading ? (
+                        <Info className="w-4 h-4 animate-pulse" />
+                      ) : (
+                        <Share className="w-4 h-4" />
+                      )}
+                      {shareLoading
+                        ? "Generating link..."
+                        : t(tenantCvKeys.shareButton)}
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-700">
@@ -431,24 +447,6 @@ export function TenantCvView({
             </div>
           </div>
 
-          <div className="flex flex-col items-end sm:items-end w-full sm:w-auto gap-3">
-            {onShareClick && (
-              <button
-                onClick={onShareClick}
-                disabled={shareLoading}
-                className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-3 px-2 py-1.5 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
-              >
-                {shareLoading ? (
-                  <Info className="w-4 h-4 animate-pulse" />
-                ) : (
-                  <Share className="w-4 h-4" />
-                )}
-                {shareLoading
-                  ? "Generating link..."
-                  : t(tenantCvKeys.shareButton)}
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Separator after lifestyle attributes */}

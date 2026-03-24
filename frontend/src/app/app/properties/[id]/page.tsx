@@ -34,7 +34,11 @@ import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
 import { notify } from "@/shared/lib/notify";
 import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
-import { getCountryByCode, getDefaultCountry } from "@/shared/lib/countries";
+import {
+  getCountryByCode,
+  getCountryByDialCode,
+  getDefaultCountry,
+} from "@/shared/lib/countries";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
 import { useTranslation } from "../../../hooks/useTranslation";
@@ -104,7 +108,11 @@ export default function PropertyPublicPage() {
   const [bookingPhoneCountryCode, setBookingPhoneCountryCode] = useState("GB");
   const [bookingPhoneNumberOnly, setBookingPhoneNumberOnly] = useState("");
   const [bookingPhone, setBookingPhone] = useState("");
+  const [bookingName, setBookingName] = useState("");
   const [bookingEmail, setBookingEmail] = useState("");
+  const [bookingNameError, setBookingNameError] = useState<string | undefined>(
+    undefined,
+  );
   const [bookingPhoneError, setBookingPhoneError] = useState<
     string | undefined
   >(undefined);
@@ -484,10 +492,35 @@ export default function PropertyPublicPage() {
 
     setBookingInlineError(null);
     setBookingSubmitError(null);
-    setBookingPhone("");
-    setBookingPhoneCountryCode("GB");
-    setBookingPhoneNumberOnly("");
-    setBookingEmail("");
+    const profileName =
+      user?.full_name ||
+      user?.tenantProfile?.full_name ||
+      user?.operatorProfile?.full_name ||
+      "";
+    const profilePhone =
+      user?.tenantProfile?.phone || user?.operatorProfile?.phone || "";
+
+    const normalizedPhone = profilePhone.trim();
+    const dialCodeMatch = normalizedPhone.match(/^\+\d{1,4}/);
+    const matchedCountry = dialCodeMatch
+      ? getCountryByDialCode(dialCodeMatch[0])
+      : undefined;
+    const nextCountryCode = matchedCountry?.code || "GB";
+    const numberOnly = normalizedPhone
+      .replace(/^\+\d{1,4}\s*/, "")
+      .replace(/[^\d]/g, "");
+    const countryDialCode =
+      getCountryByCode(nextCountryCode)?.dialCode || getDefaultCountry().dialCode;
+    const fullPhone = numberOnly
+      ? `${countryDialCode} ${numberOnly}`.trim()
+      : normalizedPhone;
+
+    setBookingName(profileName.trim());
+    setBookingPhoneCountryCode(nextCountryCode);
+    setBookingPhoneNumberOnly(numberOnly);
+    setBookingPhone(fullPhone);
+    setBookingEmail(user?.email?.trim() || "");
+    setBookingNameError(undefined);
     setBookingPhoneError(undefined);
     setBookingEmailError(undefined);
     setBookingMoveInDate(null);
@@ -500,13 +533,20 @@ export default function PropertyPublicPage() {
       return;
     }
 
+    const name = bookingName.trim();
     const email = bookingEmail.trim();
     const phoneDigits = bookingPhone.replace(/\D/g, "");
     const hasPhone = phoneDigits.length > 0;
 
+    setBookingNameError(undefined);
     setBookingPhoneError(undefined);
     setBookingEmailError(undefined);
     setBookingSubmitError(null);
+
+    if (!name) {
+      setBookingNameError("Please enter your name");
+      return;
+    }
 
     if (!email && !hasPhone) {
       const message = "Please enter your email or phone number";
@@ -598,6 +638,12 @@ export default function PropertyPublicPage() {
       document.body.style.paddingRight = prevPaddingRight;
     };
   }, [isBookingModalOpen]);
+
+  const isBookingSubmitDisabled =
+    bookingLoading ||
+    hasBookingRequest ||
+    !bookingName.trim() ||
+    (!bookingEmail.trim() && bookingPhone.replace(/\D/g, "").length === 0);
 
   // Skeleton: показываем только при первом загрузочном запросе (isLoading)
   // При возврате назад из кэша будет isFetching, но isLoading=false — скелетон не показываем.
@@ -1194,7 +1240,34 @@ export default function PropertyPublicPage() {
               </p>
 
               <div className="space-y-4 flex-1">
-                <div className="mt-10">
+                <div>
+                  <InputField
+                    label="Name"
+                    type="text"
+                    value={bookingName}
+                    onChange={(e) => {
+                      setBookingName(e.target.value);
+                      if (bookingNameError) setBookingNameError(undefined);
+                    }}
+                    disabled={bookingLoading}
+                    error={bookingNameError}
+                    className={[
+                      "!bg-white sm:!bg-white",
+                      bookingNameError
+                        ? "ring-2 ring-red-400 focus:ring-red-500"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  />
+                  <div className="mt-1 px-6">
+                    {bookingNameError ? (
+                      <p className="text-sm text-red-600">{bookingNameError}</p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="mt-2">
                   <PhoneMaskInput
                     className="w-full min-h-[72px]"
                     countryCode={bookingPhoneCountryCode}
@@ -1341,7 +1414,7 @@ export default function PropertyPublicPage() {
                   type="button"
                   className="relative bottom-[-20] w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleSendBookingRequest}
-                  disabled={bookingLoading || hasBookingRequest}
+                  disabled={isBookingSubmitDisabled}
                 >
                   {bookingLoading
                     ? "Sending..."

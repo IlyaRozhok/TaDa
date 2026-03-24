@@ -6,6 +6,20 @@ import { generalKeys } from "../lib/translationsKeys/generalKeys";
 
 const Footer = () => {
   const { t } = useTranslation();
+  const [isVisible, setIsVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsVisible(true);
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <footer className="bg-black text-white py-16">
       <div className="container mx-auto px-4">

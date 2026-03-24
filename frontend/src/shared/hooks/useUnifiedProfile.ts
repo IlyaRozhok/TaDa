@@ -11,12 +11,39 @@ import {
   getDefaultCountry,
 } from "@/shared/lib/countries";
 
-interface UseUserProfileOptions {
+interface UseUnifiedProfileOptions {
   onSuccess?: () => void;
   onError?: (error: string) => void;
+  autoSave?: boolean; // For onboarding, we might want manual save
+  debounceMs?: number; // For auto-save functionality
 }
 
-export const useUserProfile = (user: User | null, options: UseUserProfileOptions = {}) => {
+interface UseUnifiedProfileReturn {
+  // Form state
+  formData: UpdateUserData;
+  phoneCountryCode: string;
+  phoneNumberOnly: string;
+  hasChanges: boolean;
+  isSaving: boolean;
+  isLoading: boolean;
+  dateOfBirthError: string | null;
+  
+  // Actions
+  handleInputChange: (field: keyof UpdateUserData, value: string) => void;
+  handlePhoneChange: (phoneNumber: string, countryCode: string) => void;
+  validateDateOfBirth: (dateString: string) => boolean;
+  validateForm: () => boolean;
+  saveProfile: () => Promise<boolean>;
+  resetForm: () => void;
+  
+  // Utilities
+  parsePhoneNumber: (phoneNumber: string) => void;
+}
+
+export const useUnifiedProfile = (
+  user: User | null, 
+  options: UseUnifiedProfileOptions = {}
+): UseUnifiedProfileReturn => {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState<UpdateUserData>(() =>
     buildFormDataFromUser(user as any)
@@ -64,7 +91,7 @@ export const useUserProfile = (user: User | null, options: UseUserProfileOptions
       setFormData(newFormData);
       setHasChanges(false);
     }
-  }, [user]);
+  }, [user?.id, user?.updated_at, user?.tenantProfile, user?.operatorProfile]);
 
   const handleInputChange = useCallback((field: keyof UpdateUserData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

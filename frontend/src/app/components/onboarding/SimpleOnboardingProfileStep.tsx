@@ -8,11 +8,9 @@ import { wizardKeys } from "../../lib/translationsKeys/wizardTranslationKeys";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
-import { InputField } from "../preferences/ui/InputField";
-import { StyledDateInput } from "../../../shared/ui/DateInput/StyledDateInput";
-import { PhoneMaskInput, Button } from "../../../shared/ui";
-import { useUserProfile } from "../../../shared/hooks/useUserProfile";
-import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
+import { Button } from "../../../shared/ui";
+import { useUnifiedProfile } from "../../../shared/hooks/useUnifiedProfile";
+import { ProfileFormFields } from "../../../shared/components/ProfileFormFields";
 
 interface SimpleOnboardingProfileStepProps {
   onComplete: () => void;
@@ -46,9 +44,10 @@ export default function SimpleOnboardingProfileStep({
     dateOfBirthError,
     handleInputChange,
     handlePhoneChange,
+    validateDateOfBirth,
     validateForm,
     saveProfile,
-  } = useUserProfile(user, {
+  } = useUnifiedProfile(user, {
     onSuccess: onComplete,
     onError: (error) => console.error("Profile update error:", error),
   });
@@ -82,64 +81,20 @@ export default function SimpleOnboardingProfileStep({
     >
       <StepContainer>
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField
-              label={t(wizardKeys.profile.name)}
-              value={formData.first_name || ""}
-              onChange={(e) => handleInputChange("first_name", e.target.value)}
-              required
-              disabled={loading}
-            />
-
-            <InputField
-              label={t(wizardKeys.profile.lastName)}
-              value={formData.last_name || ""}
-              onChange={(e) => handleInputChange("last_name", e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <InputField
-            label={t(wizardKeys.profile.address)}
-            value={formData.address || ""}
-            onChange={(e) => handleInputChange("address", e.target.value)}
-            disabled={loading}
+          <ProfileFormFields
+            formData={formData}
+            phoneCountryCode={phoneCountryCode}
+            phoneNumberOnly={phoneNumberOnly}
+            dateOfBirthError={dateOfBirthError}
+            onInputChange={handleInputChange}
+            onPhoneChange={handlePhoneChange}
+            onDateChange={(date) => {
+              handleInputChange("date_of_birth", date || "");
+              if (date) {
+                validateDateOfBirth(date);
+              }
+            }}
           />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <PhoneMaskInput
-                value={phoneNumberOnly}
-                countryCode={phoneCountryCode}
-                onChange={(value) => handlePhoneChange(value || "", phoneCountryCode)}
-                onCountryChange={(countryCode) => handlePhoneChange(phoneNumberOnly, countryCode)}
-                label={t(wizardKeys.profile.phone)}
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <StyledDateInput
-                value={formData.date_of_birth || ""}
-                onChange={(value) => handleInputChange("date_of_birth", value)}
-                label={t(wizardKeys.profile.birth.title)}
-                placeholder={t(wizardKeys.profile.birth.text)}
-                error={dateOfBirthError}
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          <div>
-            <CountryDropdown
-              value={formData.nationality || ""}
-              onChange={(value) => handleInputChange("nationality", value)}
-              label="Nationality"
-              placeholder={t(wizardKeys.profile.nationality)}
-              disabled={loading}
-            />
-          </div>
 
           <div className="flex justify-end pt-6">
             <Button

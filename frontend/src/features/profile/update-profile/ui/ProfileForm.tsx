@@ -93,7 +93,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
     setPhoneNumberOnly(phoneNumber.slice(country.dialCode.length));
   }, []);
 
-  // Update form data when user identity changes (stable deps to avoid update loop)
+  // Update form data when user profile data changes
   useEffect(() => {
     if (user?.id) {
       const adapted = adaptUser(user);
@@ -103,7 +103,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
       // Parse phone number only when user data changes
       parsePhoneNumber(newFormData.phone || "");
     }
-  }, [user?.id, parsePhoneNumber]);
+  }, [user?.id, user?.updated_at, user?.tenantProfile, user?.operatorProfile, parsePhoneNumber]);
 
   // Validate form - check if all required fields are filled
   const validateForm = useCallback((): boolean => {
@@ -135,14 +135,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
   // Track form validity
   const isFormValid = validateForm();
 
-  // Track changes to enable/disable save button (do not depend on adaptedUser - new ref every render causes loop)
+  // Track changes to enable/disable save button
   useEffect(() => {
     if (!user?.id) return;
     const initialData = buildFormDataFromUser(adaptUser(user));
     const hasFormChanges =
       JSON.stringify(formData) !== JSON.stringify(initialData);
     setHasChanges(hasFormChanges || avatarFile !== null);
-  }, [formData, user?.id, avatarFile]);
+  }, [formData, user?.id, user?.updated_at, user?.tenantProfile, user?.operatorProfile, avatarFile]);
 
   // Cleanup preview URL when component unmounts or avatar changes
   useEffect(() => {
@@ -226,20 +226,22 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
         }
       }
 
-      // Update profile via API (including avatar_url if it was removed or changed)
+      // Update profile via API (now returns complete user data)
       const response = await authAPI.updateProfile(updateData);
-      const updatedUser = response.data;
+      const freshUser = response.data?.user;
 
-      // Refresh user data from server to get latest avatar_url
-      const meResponse = await authAPI.getMe();
-      const freshUser = meResponse.data?.user || updatedUser;
+      if (freshUser) {
+        // Update Redux store with the complete user data (including profiles)
+        dispatch(updateUser(freshUser));
 
-      // Update Redux store with the latest user data (including avatar_url)
-      dispatch(updateUser(freshUser));
+        // Update local form data with fresh user data
+        const adapted = adaptUser(freshUser);
+        const freshFormData = buildFormDataFromUser(adapted);
+        setFormData(freshFormData);
 
-      // Update local form data with fresh user data
-      const freshFormData = buildFormDataFromUser(freshUser);
-      setFormData(freshFormData);
+        // Re-parse phone number with fresh data
+        parsePhoneNumber(freshFormData.phone || "");
+      }
 
       // Reset changes state after successful save
       setHasChanges(false);

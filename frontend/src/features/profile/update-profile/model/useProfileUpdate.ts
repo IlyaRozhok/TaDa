@@ -54,10 +54,13 @@ export const useProfileUpdate = (user: User | null) => {
 
         const updateData: UpdateUserData = { [field]: value } as UpdateUserData;
 
-        // Update profile via API and refresh state with returned user
+        // Update profile via API (now returns complete user data)
         const response = await authAPI.updateProfile(updateData);
-        const updatedUser = response.data;
-        dispatch(updateUser(updatedUser));
+        const updatedUser = response.data?.user;
+        
+        if (updatedUser) {
+          dispatch(updateUser(updatedUser));
+        }
 
       } catch (error) {
         console.error(`Failed to save field ${field as string}:`, error);
