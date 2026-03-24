@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "@/app/hooks/useTranslation";
 import {
   PoundSterling,
   MapPin,
@@ -37,6 +38,7 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
   matchScore,
   matchCategories,
 }) => {
+  const { t } = useTranslation();
   const [tooltipPosition, setTooltipPosition] = useState<{
     top: number;
     left: number;
@@ -283,7 +285,9 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
             >
               <div className="px-4 py-3 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold">Match Breakdown</span>
+                  <span className="text-xs font-semibold">
+                    {t("matching.title.name")}
+                  </span>
                   <span className="text-base font-bold">
                     {Math.round(matchScore)}%
                   </span>
@@ -372,23 +376,23 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
 
                     // Enhanced category name formatting and icons for new lifestyle categories
                     const categoryNameMap: { [key: string]: string } = {
-                      occupation: "Occupation",
-                      familyStatus: "Family Status",
-                      children: "Children",
-                      propertyType: "Property Type",
-                      buildingStyle: "Building Style",
-                      squareMeters: "Square Meters",
-                      budget: "Budget",
-                      location: "Location",
-                      bedrooms: "Bedrooms",
-                      bathrooms: "Bathrooms",
-                      availability: "Availability",
-                      amenities: "Amenities",
-                      duration: "Duration",
-                      furnishing: "Furnishing",
+                      occupation: t("wizard.step8.title"),
+                      familyStatus: t("matching.family.status.title"),
+                      children: t("matching.сhildren.title"),
+                      propertyType: t("wizard.step3.des.text1"),
+                      buildingStyle: t("wizard.step4.des.text1"),
+                      squareMeters: t("matching.square.feet.title"),
+                      budget: t("matching.budget.title"),
+                      location: t("preferences.location"),
+                      bedrooms: t("matching.bedrooms.name"),
+                      bathrooms: t("wizard.step3.des.text3"),
+                      availability: t("matching.availability.title"),
+                      amenities: t("wizard.step7.title"),
+                      duration: t("wizard.step4.des.text2"),
+                      furnishing: t("wizard.step3.des.text4"),
                       smoking: "Smoking",
-                      pets: "Pets",
-                      bills: "Bills",
+                      pets: t("wizard.step7.des.text4"),
+                      bills: t("wizard.step4.des.text3"),
                     };
 
                     const categoryIconMap: { [key: string]: React.ReactNode } =
