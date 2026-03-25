@@ -107,7 +107,7 @@ export class AuthService {
     };
   }
 
-  async findUserWithProfile(userId: string): Promise<User> {
+  async findUserWithProfile(userId: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id: userId },
       relations: ["preferences", "tenantProfile", "operatorProfile"],
@@ -206,16 +206,16 @@ export class AuthService {
       email: tokenInfo.googleUserData.email,
       google_id: tokenInfo.googleUserData.google_id,
       full_name: tokenInfo.googleUserData.full_name,
-      avatar_url: tokenInfo.googleUserData.avatar_url,
+      avatar_url: tokenInfo.googleUserData.avatar_url ?? undefined,
       email_verified: tokenInfo.googleUserData.email_verified,
       provider: "google",
-      role: UserRole.Tenant, // Always tenant
+      role: UserRole.Tenant,
       status: UserStatus.Active,
     });
 
-    const savedUser = await this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    const savedUser = Array.isArray(saved) ? saved[0] : saved;
 
-    // Create tenant profile for all users
     await this.createTenantProfile(savedUser);
     await this.tenantCvService.ensureShareUuid(savedUser.id);
 
@@ -236,9 +236,9 @@ export class AuthService {
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
-      full_name: null,
+      full_name: undefined,
       phone: "",
-      date_of_birth: null,
+      date_of_birth: undefined,
       nationality: "",
       occupation: "",
       industry: "",
@@ -255,16 +255,16 @@ export class AuthService {
   private async createOperatorProfile(user: User): Promise<void> {
     const operatorProfile = this.operatorProfileRepository.create({
       userId: user.id,
-      full_name: null,
+      full_name: undefined,
       phone: "",
       company_name: "",
-      date_of_birth: null,
+      date_of_birth: undefined,
       nationality: "",
       business_address: "",
       company_registration: "",
       vat_number: "",
       license_number: "",
-      years_experience: null,
+      years_experience: undefined,
       operating_areas: [],
       property_types: [],
       services: [],

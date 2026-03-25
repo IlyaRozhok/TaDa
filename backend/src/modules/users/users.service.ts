@@ -75,7 +75,7 @@ export class UsersService {
     if (updateUserDto.date_of_birth !== undefined) {
       updates.date_of_birth = updateUserDto.date_of_birth
         ? new Date(updateUserDto.date_of_birth)
-        : null;
+        : undefined;
     }
 
     // Keep full_name in sync
@@ -83,7 +83,7 @@ export class UsersService {
       const currentUser = await this.userRepository.findOne({ where: { id }, select: ["first_name", "last_name"] });
       const resolvedFirst = firstName ?? currentUser?.first_name ?? "";
       const resolvedLast  = lastName  ?? currentUser?.last_name  ?? "";
-      updates.full_name = `${resolvedFirst} ${resolvedLast}`.trim() || null;
+      updates.full_name = `${resolvedFirst} ${resolvedLast}`.trim() || undefined;
     } else if (updateUserDto.full_name !== undefined) {
       updates.full_name = updateUserDto.full_name;
     }

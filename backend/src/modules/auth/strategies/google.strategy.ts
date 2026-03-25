@@ -46,17 +46,17 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
   ): Promise<any> {
     try {
       if (!profile || !profile.id) {
-        return done(new Error("Invalid profile data from Google"), null);
+        return done(new Error("Invalid profile data from Google"), false);
       }
 
       const { id, name, emails, photos } = profile;
 
       if (!emails || !emails.length || !emails[0].value) {
-        return done(new Error("No email found in Google profile"), null);
+        return done(new Error("No email found in Google profile"), false);
       }
 
       if (!name || (!name.givenName && !name.familyName)) {
-        return done(new Error("No name found in Google profile"), null);
+        return done(new Error("No name found in Google profile"), false);
       }
 
       const user = {
@@ -72,7 +72,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
 
       done(null, user);
     } catch (error) {
-      done(error, null);
+      done(error as Error, false);
     }
   }
 }

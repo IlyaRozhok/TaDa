@@ -36,7 +36,7 @@ export const assignPropertyOptionals = (
   if (dto.available_from !== undefined) {
     target.available_from = dto.available_from
       ? new Date(dto.available_from)
-      : null;
+      : undefined;
   }
 
   if (dto.building_type !== undefined) {

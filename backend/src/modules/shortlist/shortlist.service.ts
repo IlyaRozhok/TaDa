@@ -134,7 +134,7 @@ export class ShortlistService {
         try {
           const s3Key = this.extractS3KeyFromUrl(photoUrl);
           if (s3Key) {
-            return await this.s3Service.getPresignedUrl(s3Key);
+            return await this.s3Service.getPresignedUrl(s3Key) ?? photoUrl;
           }
           return photoUrl;
         } catch (error) {

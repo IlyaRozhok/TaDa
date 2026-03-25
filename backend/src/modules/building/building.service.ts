@@ -49,19 +49,19 @@ export class BuildingService {
       operator_id: operatorId,
 
       // Optional fields with defaults
-      address: createBuildingDto.address || null,
-      number_of_units: createBuildingDto.number_of_units ?? null,
+      address: createBuildingDto.address || undefined,
+      number_of_units: createBuildingDto.number_of_units ?? undefined,
       type_of_unit: createBuildingDto.type_of_unit || [],
-      logo: createBuildingDto.logo || null,
-      video: createBuildingDto.video || null,
+      logo: createBuildingDto.logo || undefined,
+      video: createBuildingDto.video || undefined,
       photos: createBuildingDto.photos || [],
-      documents: createBuildingDto.documents || null,
+      documents: createBuildingDto.documents || undefined,
       metro_stations: createBuildingDto.metro_stations || [],
       areas: createBuildingDto.areas || [],
       districts: createBuildingDto.districts || [],
       amenities: createBuildingDto.amenities || [],
       pet_policy: createBuildingDto.pet_policy ?? false,
-      pets: createBuildingDto.pets || null,
+      pets: createBuildingDto.pets || undefined,
       tenant_type: createBuildingDto.tenant_type || ["family"],
       family_status: createBuildingDto.family_status || [],
       occupation: createBuildingDto.occupation || [],
@@ -69,7 +69,8 @@ export class BuildingService {
     };
 
     const building = this.buildingRepository.create(buildingData);
-    const savedBuilding = await this.buildingRepository.save(building);
+    const saved = await this.buildingRepository.save(building);
+    const savedBuilding = Array.isArray(saved) ? saved[0] : saved;
 
     // Reload the building with relations to ensure we return the correct operator
     const reloadedBuilding = await this.buildingRepository.findOne({
@@ -185,7 +186,7 @@ export class BuildingService {
       updateData.children = updateBuildingDto.children;
 
     if (operatorId !== undefined) {
-      updateData.operator_id = operatorId;
+      updateData.operator_id = operatorId ?? undefined;
     }
 
     const updateQueryBuilder = this.buildingRepository
@@ -200,7 +201,7 @@ export class BuildingService {
       await this.propertyRepository
         .createQueryBuilder()
         .update(Property)
-        .set({ operator_id: operatorId })
+        .set({ operator_id: operatorId ?? undefined })
         .where("building_id = :buildingId", { buildingId: building.id })
         .execute();
     }
@@ -327,7 +328,7 @@ export class BuildingService {
       if (building.logo) {
         const logoKey = this.extractS3KeyFromUrl(building.logo);
         if (logoKey) {
-          building.logo = await this.s3Service.getPresignedUrl(logoKey);
+          building.logo = await this.s3Service.getPresignedUrl(logoKey) ?? building.logo;
         }
       }
 
@@ -335,7 +336,7 @@ export class BuildingService {
       if (building.video) {
         const videoKey = this.extractS3KeyFromUrl(building.video);
         if (videoKey) {
-          building.video = await this.s3Service.getPresignedUrl(videoKey);
+          building.video = await this.s3Service.getPresignedUrl(videoKey) ?? building.video;
         }
       }
 
@@ -344,7 +345,7 @@ export class BuildingService {
         const documentsKey = this.extractS3KeyFromUrl(building.documents);
         if (documentsKey) {
           building.documents =
-            await this.s3Service.getPresignedUrl(documentsKey);
+            await this.s3Service.getPresignedUrl(documentsKey) ?? building.documents;
         }
       }
 
@@ -359,7 +360,7 @@ export class BuildingService {
             try {
               const photoKey = this.extractS3KeyFromUrl(photoUrl);
               if (photoKey) {
-                return await this.s3Service.getPresignedUrl(photoKey);
+                return await this.s3Service.getPresignedUrl(photoKey) ?? photoUrl;
               }
               return photoUrl;
             } catch (error) {

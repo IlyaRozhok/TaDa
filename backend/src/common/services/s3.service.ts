@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
   S3Client,
@@ -17,6 +17,7 @@ export interface S3UploadResult {
 
 @Injectable()
 export class S3Service {
+  private readonly logger = new Logger(S3Service.name);
   private s3Client: S3Client;
   private bucketName: string;
   private keyPrefix: string;
@@ -56,8 +57,8 @@ export class S3Service {
     this.s3Client = new S3Client({
       region: region,
       credentials: {
-        accessKeyId: accessKeyId,
-        secretAccessKey: secretAccessKey,
+        accessKeyId: accessKeyId!,
+        secretAccessKey: secretAccessKey!,
       },
       forcePathStyle: false,
     });
@@ -127,39 +128,23 @@ export class S3Service {
 
       // Generate presigned URL for secure access
       const url = await this.getPresignedUrl(fullKey);
+      if (!url) {
+        throw new InternalServerErrorException('File uploaded but failed to generate access URL');
+      }
 
       return {
         url,
         key: fullKey,
       };
     } catch (error) {
-      console.error(`❌ S3 Upload Error for ${originalFilename}:`, error);
-      console.error(`❌ Error details:`, {
+      this.logger.error(`S3 upload failed for ${originalFilename}`, {
         message: error.message,
-        stack: error.stack,
-        name: error.name,
         code: error.code,
         bucket: this.bucketName,
-        region: this.configService.get<string>("AWS_REGION"),
-        keyPrefix: this.keyPrefix,
-        bucketFromEnv: this.configService.get<string>("AWS_S3_BUCKET")
+        key,
       });
 
-      // For PDF files, use fallback URL instead of throwing error
-      if (mimeType === 'application/pdf') {
-        const fallbackUrl = `https://fallback-s3.example.com/${this.keyPrefix}${key}`;
-        return {
-          url: fallbackUrl,
-          key: `${this.keyPrefix}${key}`,
-        };
-      }
-
-      // Fallback: return mock URL if S3 fails (for images/videos)
-      const fallbackUrl = `https://fallback-s3.example.com/${this.keyPrefix}${key}`;
-      return {
-        url: fallbackUrl,
-        key: `${this.keyPrefix}${key}`,
-      };
+      throw new InternalServerErrorException('File upload failed');
     }
   }
 
@@ -207,7 +192,7 @@ export class S3Service {
       if (pathname.includes("..")) return storedUrl;
       const prefixBase = this.keyPrefix.replace(/\/$/, "");
       if (!pathname.startsWith(`${prefixBase}/`)) return storedUrl;
-      return await this.getPresignedUrl(pathname);
+      return await this.getPresignedUrl(pathname) ?? storedUrl;
     } catch {
       return storedUrl;
     }
@@ -216,12 +201,11 @@ export class S3Service {
   async getPresignedUrl(
     key: string,
     expiresIn: number = 86400
-  ): Promise<string> {
+  ): Promise<string | null> {
     // Check if in dev mode - return local URL
     if (this.isDevMode) {
       const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
-      const localUrl = `${backendUrl}/uploads/${key}`;
-      return localUrl;
+      return `${backendUrl}/uploads/${key}`;
     }
 
     try {
@@ -230,20 +214,14 @@ export class S3Service {
         Key: key,
       });
 
-      const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-      return signedUrl;
+      return await getSignedUrl(this.s3Client, command, { expiresIn });
     } catch (error) {
-      console.error(`❌ Presigned URL Error for ${key}:`, error);
-      console.error(`❌ Presigned URL error details:`, {
+      this.logger.error(`Failed to generate presigned URL for ${key}`, {
         message: error.message,
         code: error.code,
-        name: error.name,
         bucket: this.bucketName,
-        region: this.configService.get<string>("AWS_REGION"),
-        bucketFromEnv: this.configService.get<string>("AWS_S3_BUCKET")
       });
-      // Return fallback URL
-      return `https://fallback-s3.example.com/${key}`;
+      return null;
     }
   }
 
