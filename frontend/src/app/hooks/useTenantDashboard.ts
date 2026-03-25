@@ -12,6 +12,7 @@ import { apiSlice } from "../store/slices/apiSlice";
 import type { AppDispatch, RootState } from "../store/store";
 import { useDebounce } from "./useDebounce";
 import { waitForSessionManager } from "../components/providers/SessionManager";
+import { store } from "../store/store";
 
 interface MatchedProperty {
   property: Property;
@@ -118,10 +119,15 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
-        // Check if token exists - if not, fallback to public endpoint
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          console.warn("⚠️ No token found, using public endpoint");
+        const raw = localStorage.getItem("accessToken");
+        const token = raw?.trim() ? raw : null;
+        const { user: authUser, isAuthenticated } = store.getState().auth;
+        const hasAuthSession =
+          !!token || (!!authUser?.id && isAuthenticated);
+
+        // No Bearer and no Redux session → public list only
+        if (!hasAuthSession) {
+          console.warn("⚠️ No auth session, using public endpoint");
           // Fallback to public endpoint if no token
           let response;
           try {
@@ -236,10 +242,14 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
   // Load user preferences
   const loadUserPreferences = useCallback(async () => {
     try {
-      // Check if token exists before making API call
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        console.warn("⚠️ No token found, skipping preferences load");
+      const raw = localStorage.getItem("accessToken");
+      const token = raw?.trim() ? raw : null;
+      const { user: authUser, isAuthenticated } = store.getState().auth;
+      const hasSession =
+        !!token || (!!authUser?.id && isAuthenticated);
+
+      if (!hasSession) {
+        console.warn("⚠️ No session, skipping preferences load");
         return;
       }
       const preferencesResponse = await preferencesAPI.get();
@@ -380,16 +390,18 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
 
         if (!isMounted) return;
 
-        // Small delay to ensure token is available
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         if (!isMounted) return;
 
-        // Check token before proceeding
-        const token = localStorage.getItem("accessToken");
+        const raw = localStorage.getItem("accessToken");
+        const token = raw?.trim() ? raw : null;
+        const { user: authUser, isAuthenticated } = store.getState().auth;
+        const hasSession =
+          !!token || (!!authUser?.id && isAuthenticated);
 
-        if (!token) {
-          console.warn("⚠️ No token found during dashboard initialization");
+        if (!hasSession) {
+          console.warn("⚠️ No session during dashboard initialization");
           setState((prev) => ({ ...prev, sessionLoading: false }));
           return;
         }
