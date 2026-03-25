@@ -54,10 +54,14 @@ export class UserRoleService {
       await queryRunner.commitTransaction();
 
       // Return updated user with relations
-      return await this.userRepository.findOne({
+      const updated = await this.userRepository.findOne({
         where: { id: userId },
         relations: ["tenantProfile", "operatorProfile", "preferences"],
       });
+      if (!updated) {
+        throw new NotFoundException("User not found after role update");
+      }
+      return updated;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

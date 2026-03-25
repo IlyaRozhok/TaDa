@@ -60,13 +60,14 @@ export class UserAdminService {
     // Создать пользователя
     const user = this.userRepository.create({
       email: email.toLowerCase(),
-      full_name: full_name || null,
+      full_name: full_name || undefined,
       password: hashedPassword,
       role: role as UserRole,
       status: UserStatus.Active,
     });
 
-    const savedUser = await this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    const savedUser = Array.isArray(saved) ? saved[0] : saved;
 
     // Создать профиль в зависимости от роли
     if (role === UserRole.Tenant) {
@@ -200,7 +201,7 @@ export class UserAdminService {
       userId: user.id,
       full_name: "",
       phone: "",
-      date_of_birth: null,
+      date_of_birth: undefined,
       nationality: "",
       occupation: "",
       industry: "",
@@ -226,13 +227,13 @@ export class UserAdminService {
       full_name: "",
       phone: "",
       company_name: "",
-      date_of_birth: null,
+      date_of_birth: undefined,
       nationality: "",
       business_address: "",
       company_registration: "",
       vat_number: "",
       license_number: "",
-      years_experience: null,
+      years_experience: undefined,
       operating_areas: [],
       property_types: [],
       services: [],

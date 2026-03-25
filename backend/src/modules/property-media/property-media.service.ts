@@ -33,10 +33,11 @@ export class PropertyMediaService {
     }
 
     const freshUrl = await this.s3Service.getPresignedUrl(media.s3_key);
-    media.url = freshUrl;
-    // For now use the same URL for thumbnail/medium; infra can later point these to resized variants
-    media.thumbnail_url = media.thumbnail_url || freshUrl;
-    media.medium_url = media.medium_url || freshUrl;
+    if (freshUrl) {
+      media.url = freshUrl;
+      media.thumbnail_url = media.thumbnail_url || freshUrl;
+      media.medium_url = media.medium_url || freshUrl;
+    }
 
     return media;
   }
@@ -53,10 +54,11 @@ export class PropertyMediaService {
     await Promise.all(
       media.map(async (item) => {
         const freshUrl = await this.s3Service.getPresignedUrl(item.s3_key);
-        item.url = freshUrl;
-        // Keep thumbnail/medium in sync unless they are explicitly set to something else
-        item.thumbnail_url = item.thumbnail_url || freshUrl;
-        item.medium_url = item.medium_url || freshUrl;
+        if (freshUrl) {
+          item.url = freshUrl;
+          item.thumbnail_url = item.thumbnail_url || freshUrl;
+          item.medium_url = item.medium_url || freshUrl;
+        }
       })
     );
 

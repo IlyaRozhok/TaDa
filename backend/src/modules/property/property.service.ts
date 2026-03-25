@@ -49,7 +49,7 @@ export class PropertyService {
     // Handle building vs private landlord logic
     if (createPropertyDto.building_type === "private_landlord") {
       // For private landlord, link directly to operator
-      propertyData.building_id = null;
+      propertyData.building_id = undefined;
       propertyData.operator_id = createPropertyDto.operator_id || userId;
       // Use provided values for inherited fields
       propertyData.address = createPropertyDto.address;
@@ -60,13 +60,13 @@ export class PropertyService {
       propertyData.children = createPropertyDto.children || [];
       propertyData.pet_policy = createPropertyDto.pet_policy;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
-      propertyData.pets = createPropertyDto.pets || null;
+      propertyData.pets = createPropertyDto.pets || undefined;
     } else if (building) {
       // Normal case - link to building and inherit fields
       propertyData.building_id = createPropertyDto.building_id;
-      propertyData.operator_id = building.operator_id;
+      propertyData.operator_id = building.operator_id ?? undefined;
       // Inherit fields from building
-      propertyData.address = building.address;
+      propertyData.address = building.address ?? undefined;
       propertyData.tenant_types = building.tenant_type || [];
       propertyData.amenities = building.amenities || [];
       propertyData.family_status = building.family_status || [];
@@ -77,7 +77,7 @@ export class PropertyService {
       propertyData.pets = building.pets || null;
     } else {
       // No building provided - use authenticated user as operator
-      propertyData.building_id = null;
+      propertyData.building_id = undefined;
       propertyData.operator_id = userId;
       // Use provided values for fields
       propertyData.address = createPropertyDto.address;
@@ -88,7 +88,7 @@ export class PropertyService {
       propertyData.children = createPropertyDto.children || [];
       propertyData.pet_policy = createPropertyDto.pet_policy;
       propertyData.metro_stations = createPropertyDto.metro_stations || [];
-      propertyData.pets = createPropertyDto.pets || null;
+      propertyData.pets = createPropertyDto.pets || undefined;
     }
 
     assignPropertyOptionals(propertyData, createPropertyDto);
@@ -113,7 +113,7 @@ export class PropertyService {
     ) {
       if (updatePropertyDto.building_type === "private_landlord") {
         // Unlink from building and link directly to operator
-        updateData.building_id = null;
+        updateData.building_id = undefined;
         if (updatePropertyDto.operator_id) {
           updateData.operator_id = updatePropertyDto.operator_id;
         }
@@ -131,9 +131,9 @@ export class PropertyService {
           }
 
           updateData.building_id = updatePropertyDto.building_id;
-          updateData.operator_id = building.operator_id;
+          updateData.operator_id = building.operator_id ?? undefined;
           // Re-inherit fields from building
-          updateData.address = building.address;
+          updateData.address = building.address ?? undefined;
           updateData.tenant_types = building.tenant_type || [];
           updateData.amenities = building.amenities || [];
           updateData.family_status = building.family_status || [];
@@ -141,7 +141,7 @@ export class PropertyService {
           updateData.children = building.children || [];
           updateData.pet_policy = building.pet_policy;
           updateData.metro_stations = building.metro_stations || [];
-          updateData.pets = building.pets || null;
+          updateData.pets = building.pets || undefined;
         }
       }
     }
@@ -160,10 +160,10 @@ export class PropertyService {
       }
 
       updateData.building_id = updatePropertyDto.building_id;
-      updateData.operator_id = building.operator_id;
+      updateData.operator_id = building.operator_id ?? undefined;
 
       // Re-inherit fields from new building
-      updateData.address = building.address;
+      updateData.address = building.address ?? undefined;
       updateData.tenant_types = building.tenant_type || [];
       updateData.amenities = building.amenities || [];
       updateData.family_status = building.family_status || [];
@@ -320,7 +320,7 @@ export class PropertyService {
       try {
         const videoKey = this.extractS3KeyFromUrl(property.video);
         if (videoKey) {
-          property.video = await this.s3Service.getPresignedUrl(videoKey);
+          property.video = await this.s3Service.getPresignedUrl(videoKey) ?? property.video;
         }
       } catch (error) {
         console.error(`Error updating video URL: ${property.video}`, error);
@@ -333,7 +333,7 @@ export class PropertyService {
         const documentsKey = this.extractS3KeyFromUrl(property.documents);
         if (documentsKey) {
           property.documents =
-            await this.s3Service.getPresignedUrl(documentsKey);
+            await this.s3Service.getPresignedUrl(documentsKey) ?? property.documents;
         }
       } catch (error) {
         console.error(
@@ -350,7 +350,7 @@ export class PropertyService {
           try {
             const s3Key = this.extractS3KeyFromUrl(photoUrl);
             if (s3Key) {
-              return await this.s3Service.getPresignedUrl(s3Key);
+              return await this.s3Service.getPresignedUrl(s3Key) ?? photoUrl;
             }
             return photoUrl;
           } catch (error) {

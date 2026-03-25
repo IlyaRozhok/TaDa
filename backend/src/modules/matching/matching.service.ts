@@ -42,12 +42,12 @@ export class MatchingService {
           const s3Key = this.extractS3KeyFromUrl(photoUrl);
           if (s3Key) {
             // Generate fresh presigned URL
-            return await this.s3Service.getPresignedUrl(s3Key);
+            return await this.s3Service.getPresignedUrl(s3Key) ?? photoUrl;
           }
-          return photoUrl; // Return original if can't extract key
+          return photoUrl;
         } catch (error) {
           console.error(`Failed to update photo URL: ${photoUrl}`, error);
-          return photoUrl; // Return original on error
+          return photoUrl;
         }
       })
     );

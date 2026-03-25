@@ -41,7 +41,7 @@ export class UserProfileService {
       if (updateUserDto.date_of_birth && updateUserDto.date_of_birth.trim() !== "") {
         profile.date_of_birth = new Date(updateUserDto.date_of_birth);
       } else {
-        profile.date_of_birth = null;
+        profile.date_of_birth = undefined as unknown as Date;
       }
     }
     if (updateUserDto.nationality !== undefined)
@@ -96,7 +96,7 @@ export class UserProfileService {
       full_name: updateUserDto.full_name || "",
       address: updateUserDto.address || "",
       phone: updateUserDto.phone || "",
-      date_of_birth: updateUserDto.date_of_birth ? new Date(updateUserDto.date_of_birth) : null,
+      date_of_birth: updateUserDto.date_of_birth ? new Date(updateUserDto.date_of_birth) : undefined,
       nationality: updateUserDto.nationality || "",
       industry: updateUserDto.industry || "",
       work_style: updateUserDto.work_style || "",

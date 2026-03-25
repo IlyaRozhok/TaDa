@@ -1013,7 +1013,7 @@ export class MatchingCalculationService {
 
     // Add outdoor space preferences to scoring (balcony/terrace only)
     if (hasOutdoorPrefs) {
-      const outdoorFeatures = [];
+      const outdoorFeatures: string[] = [];
       if (wantsBalcony) {
         totalRequested++;
         if (property.balcony) {
@@ -1033,7 +1033,7 @@ export class MatchingCalculationService {
     const matchRatio = totalRequested > 0 ? matchedCount / totalRequested : 0;
 
     // Build details
-    const details = [];
+    const details: string[] = [];
     if (matchedCount > 0) {
       details.push(`${matchedCount} of ${totalRequested} features available`);
     }
@@ -1616,7 +1616,7 @@ export class MatchingCalculationService {
   }
 
   private getOutdoorSpaceDetails(property: Property): string {
-    const features = [];
+    const features: string[] = [];
     if (property.balcony) features.push("Balcony");
     if (property.terrace) features.push("Terrace");
     return features.length ? features.join(", ") : "No outdoor space";

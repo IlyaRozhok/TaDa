@@ -17,6 +17,7 @@ import { LoginDto } from "./dto/login.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Auth } from "../../common/decorators/auth.decorator";
 import { User } from "../../entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
 
@@ -52,7 +53,7 @@ export class AuthController {
   }
 
   @Post("login")
-  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 5, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 5, ttl: 900000 } })
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginDto);
     
@@ -184,14 +185,14 @@ export class AuthController {
 
   @Post("check-user")
   @HttpCode(HttpStatus.OK)
-  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 10, ttl: 10000 }, long: { limit: 20, ttl: 60000 } })
+  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 5, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
   async checkUser(@Body("email") email: string) {
     const exists = await this.authService.checkUserExists(email);
     return { exists };
   }
 
   @Get("test-token")
-  @UseGuards(JwtAuthGuard)
+  @Auth("admin")
   async testToken(@CurrentUser() user: User) {
     return {
       message: "Token is valid",
@@ -252,8 +253,9 @@ export class AuthController {
       });
 
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-      // Pass token in URL so frontend can store it in localStorage (frontend expects token in query)
-      const callbackUrl = `${frontendUrl}/app/auth/callback?success=true&token=${encodeURIComponent(tokens.accessToken)}`;
+      // Token is already in httpOnly cookies — do NOT pass it in URL
+      // (query strings leak via browser history, Referer header, server logs)
+      const callbackUrl = `${frontendUrl}/app/auth/callback?success=true`;
       res.redirect(callbackUrl);
     } catch (error) {
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
@@ -263,6 +265,7 @@ export class AuthController {
   }
 
   @Get("google/config-check")
+  @Auth("admin")
   async checkGoogleConfig() {
     const clientID = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;

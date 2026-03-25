@@ -2,7 +2,6 @@ import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 
 export const typeOrmConfig = (env: NodeJS.ProcessEnv): TypeOrmModuleOptions => {
   const isDev = env.NODE_ENV === "development";
-  const isStage = env.NODE_ENV === "stage";
 
   return {
     type: "postgres",
@@ -12,9 +11,9 @@ export const typeOrmConfig = (env: NodeJS.ProcessEnv): TypeOrmModuleOptions => {
     password: env.DB_PASSWORD,
     database: env.DB_NAME,
     autoLoadEntities: true,
-    synchronize: isDev || isStage ? env.TYPEORM_SYNCHRONIZE === "true" : false,
+    synchronize: isDev ? env.TYPEORM_SYNCHRONIZE === "true" : false,
     logging: env.TYPEORM_LOGGING === "true",
-    migrationsRun: !isDev && !isStage,
+    migrationsRun: !isDev,
     migrations: ["dist/migrations/*.js"],
     ssl: env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
   };
