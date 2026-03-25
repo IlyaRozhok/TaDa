@@ -41,7 +41,6 @@ export class User {
     example: "user@example.com",
   })
   @Column({ unique: true })
-  @Index()
   email: string;
 
   @Exclude()
@@ -121,7 +120,10 @@ export class User {
   @Column({ nullable: true })
   last_name: string;
 
-  @ApiProperty({ description: "Current address", example: "123 Main St, London" })
+  @ApiProperty({
+    description: "Current address",
+    example: "123 Main St, London",
+  })
   @Column({ nullable: true })
   address: string;
 
@@ -182,5 +184,4 @@ export class User {
     }
     return null;
   }
-
 }
