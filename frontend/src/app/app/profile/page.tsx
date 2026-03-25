@@ -14,6 +14,7 @@ import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
 import { useGetPreferencesQuery } from "../../store/slices/apiSlice";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
+import { store } from "../../store/store";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -86,45 +87,53 @@ export default function ProfilePage() {
         if (!isMounted) return;
         setSessionReady(true);
 
-        const token = typeof window !== "undefined" 
-          ? localStorage.getItem("accessToken") 
-          : null;
+        const rawToken =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = rawToken?.trim() ? rawToken : null;
 
-        if (!token) {
+        // Fresh auth from store (avoid stale closure on `user` from first render).
+        // Cookie/httpOnly sessions often have no Bearer in localStorage but SessionManager
+        // already set user + isAuthenticated — do not send those users to /auth/login.
+        const { user: storeUser, isAuthenticated } = store.getState().auth;
+        const hasSession =
+          !!token || (!!storeUser?.id && isAuthenticated);
+
+        if (!hasSession) {
           router.replace("/app/auth/login");
           return;
         }
 
-        // Capture current user state to avoid race conditions
-        const currentUser = user;
-        
-        // If we already have user data, no need to fetch again
-        if (currentUser?.id) {
+        if (storeUser?.id) {
           if (isMounted) setIsLoading(false);
           return;
         }
 
-        // Add a small delay to let SessionManager finish if it's running
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
         if (!isMounted) return;
 
-        // Check again if user was loaded by SessionManager
-        const updatedUser = user;
-        if (updatedUser?.id) {
+        const { user: storeUserAfterWait } = store.getState().auth;
+        if (storeUserAfterWait?.id) {
           if (isMounted) setIsLoading(false);
           return;
         }
 
         const res = await authAPI.getProfile();
         const fetchedUser = res.data?.user || res.data;
-        
+
         if (!fetchedUser || !fetchedUser.id) {
           throw new Error("Invalid user data received from API");
         }
-        
+
         if (isMounted) {
-          dispatch(setAuth({ user: fetchedUser, accessToken: token }));
+          dispatch(
+            setAuth({
+              user: fetchedUser,
+              accessToken: token ?? "",
+            }),
+          );
           setHasError(false);
         }
       } catch (err) {

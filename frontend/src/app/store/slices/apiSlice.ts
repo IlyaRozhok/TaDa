@@ -3,6 +3,10 @@ import type { RootState } from "../store";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api",
+  // Match axios `withCredentials: true` so httpOnly/session cookies on the API
+  // origin are sent; otherwise GET /preferences has no Bearer (empty localStorage)
+  // and no cookie → 401.
+  credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.accessToken;
     if (token) {
