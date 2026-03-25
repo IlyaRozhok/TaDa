@@ -252,8 +252,8 @@ export class AuthController {
       });
 
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-      // Pass token in URL so frontend can store it in localStorage (frontend expects token in query)
-      const callbackUrl = `${frontendUrl}/app/auth/callback?success=true&token=${encodeURIComponent(tokens.accessToken)}`;
+      // Tokens are only in httpOnly cookies; frontend calls GET /api/auth/me with credentials
+      const callbackUrl = `${frontendUrl}/app/auth/callback?success=true`;
       res.redirect(callbackUrl);
     } catch (error) {
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";

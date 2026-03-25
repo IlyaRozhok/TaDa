@@ -19,13 +19,11 @@ function AuthCallbackContent() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const token = searchParams?.get("token");
         const success = searchParams?.get("success");
         const needsRoleSelection = searchParams?.get("needsRoleSelection");
         const registrationId = searchParams?.get("registrationId");
 
         console.log("🔍 Callback parameters:", {
-          hasToken: !!token,
           success,
           needsRoleSelection,
           hasRegistrationId: !!registrationId,
@@ -73,35 +71,21 @@ function AuthCallbackContent() {
           return;
         }
 
-        if (!token || success !== "true") {
+        // If backend still passes success flag, keep previous safety check.
+        // In cookie-based flow `success` may be omitted, so we only validate when it's present.
+        if (success && success !== "true") {
           console.error("❌ Invalid callback parameters:", {
-            token: !!token,
             success,
-            allParams: searchParams ? Object.fromEntries(searchParams.entries()) : {},
+            allParams: searchParams
+              ? Object.fromEntries(searchParams.entries())
+              : {},
           });
           setError("Неверные параметры авторизации. Попробуйте войти снова.");
           setLoading(false);
           return;
         }
 
-        console.log("🔍 Token received, storing and validating...", {
-          tokenStart: token.substring(0, 20) + "...",
-          tokenLength: token.length,
-        });
-
-        // Store the token
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem(
-          "sessionExpiry",
-          String(Date.now() + 24 * 60 * 60 * 1000)
-        ); // 24 hours
-
-        // Verify token was stored
-        const storedToken = localStorage.getItem("accessToken");
-        console.log("🔍 Token stored in localStorage:", !!storedToken);
-
-        console.log("🔍 Getting user profile...");
-        // Get user profile with explicit token in request
+        console.log("🔍 Getting user profile via /api/auth/me...");
         const profileResponse = await authAPI.getMe();
 
         console.log("🔍 Profile response:", {
@@ -133,7 +117,9 @@ function AuthCallbackContent() {
         dispatch(
           setAuth({
             user: profileResponse.data.user,
-            accessToken: token,
+            // Cookie-based auth: token is not read from the callback URL.
+            // Keep an empty string to satisfy the slice type, while axios won't send Authorization header.
+            accessToken: "",
           })
         );
 

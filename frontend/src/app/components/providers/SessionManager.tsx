@@ -34,15 +34,6 @@ export default function SessionManager() {
     const initSession = async () => {
       try {
         const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-          console.log("No token found");
-          setIsInitialized(true);
-          sessionManagerResolve?.();
-          return;
-        }
-
-        // Validate token with backend
         try {
           const response = await api.get("/auth/me");
 
@@ -50,7 +41,9 @@ export default function SessionManager() {
             dispatch(
               setAuth({
                 user: response.data.user,
-                accessToken: token,
+                // If we restored via cookie (no localStorage token),
+                // pass an empty string so axios won't send Authorization header.
+                accessToken: token ?? "",
               }),
             );
             console.log("Session restored for:", response.data.user.email);

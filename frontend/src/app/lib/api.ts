@@ -8,6 +8,9 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Required so httpOnly auth cookies set by the API origin are sent on XHR/fetch
+  // (e.g. localhost:3000 → localhost:5001 after Google OAuth redirect).
+  withCredentials: true,
 });
 
 // Request interceptor - add token to requests
