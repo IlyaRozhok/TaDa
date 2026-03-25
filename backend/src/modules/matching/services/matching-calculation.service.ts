@@ -669,6 +669,8 @@ export class MatchingCalculationService {
     const longTermVariants = [
       "long_term",
       "long-term",
+      "medium_term",
+      "medium-term",
       "12_months",
       "12-months",
     ];

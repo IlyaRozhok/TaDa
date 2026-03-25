@@ -133,24 +133,6 @@ export class CreatePreferencesDto {
   })
   children_count?: string;
 
-  // ==================== KYC & REFERENCING ====================
-
-  @ApiPropertyOptional({
-    description: "KYC status badge",
-    example: "pending",
-  })
-  @IsOptional()
-  @IsString()
-  kyc_status?: string;
-
-  @ApiPropertyOptional({
-    description: "Referencing status badge",
-    example: "pending",
-  })
-  @IsOptional()
-  @IsString()
-  referencing_status?: string;
-
   // ==================== STEP 1: LOCATION ====================
 
   @ApiPropertyOptional({
@@ -237,15 +219,6 @@ export class CreatePreferencesDto {
   @IsOptional()
   @IsBoolean()
   flexible_budget?: boolean;
-
-  @ApiPropertyOptional({
-    description: "Deposit preference",
-    example: "yes",
-    enum: ["yes", "no"],
-  })
-  @IsOptional()
-  @IsIn(["yes", "no", "", null])
-  deposit_preference?: string;
 
   // ==================== STEP 3: PROPERTY & ROOMS ====================
 
@@ -466,44 +439,10 @@ export class CreatePreferencesDto {
 
   // ==================== LEGACY FIELDS (for backward compatibility) ====================
 
-  @ApiPropertyOptional({ description: "Primary postcode (legacy)" })
-  @IsOptional()
-  @IsString()
-  primary_postcode?: string;
-
   @ApiPropertyOptional({ description: "Secondary location (legacy)" })
   @IsOptional()
   @IsString()
   secondary_location?: string;
-
-  @ApiPropertyOptional({ description: "Commute location (legacy)" })
-  @IsOptional()
-  @IsString()
-  commute_location?: string;
-
-  @ApiPropertyOptional({ description: "Commute time walk (legacy)" })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(120)
-  commute_time_walk?: number;
-
-  @ApiPropertyOptional({ description: "Commute time cycle (legacy)" })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(120)
-  commute_time_cycle?: number;
-
-  @ApiPropertyOptional({ description: "Commute time tube (legacy)" })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(120)
-  commute_time_tube?: number;
 
   @ApiPropertyOptional({ description: "Min bedrooms (legacy)" })
   @IsOptional()
@@ -537,66 +476,8 @@ export class CreatePreferencesDto {
   @Max(10)
   max_bathrooms?: number;
 
-  @ApiPropertyOptional({ description: "Property type array (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  property_type?: string[];
-
-  @ApiPropertyOptional({ description: "Building style (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  building_style?: string[];
-
   @ApiPropertyOptional({ description: "Designer furniture (legacy)" })
   @IsOptional()
   @IsBoolean()
   designer_furniture?: boolean;
-
-  @ApiPropertyOptional({ description: "House shares (legacy)" })
-  @IsOptional()
-  @IsString()
-  house_shares?: string;
-
-  @ApiPropertyOptional({ description: "Date property added (legacy)" })
-  @IsOptional()
-  @IsString()
-  date_property_added?: string;
-
-  @ApiPropertyOptional({ description: "Lifestyle features (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  lifestyle_features?: string[];
-
-  @ApiPropertyOptional({ description: "Social features (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  social_features?: string[];
-
-  @ApiPropertyOptional({ description: "Work features (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  work_features?: string[];
-
-  @ApiPropertyOptional({ description: "Convenience features (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  convenience_features?: string[];
-
-  @ApiPropertyOptional({ description: "Pet friendly features (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  pet_friendly_features?: string[];
-
-  @ApiPropertyOptional({ description: "Luxury features (legacy)" })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  luxury_features?: string[];
 }

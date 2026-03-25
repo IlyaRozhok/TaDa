@@ -135,9 +135,6 @@ export default function usePreferences(currentStepOffset: number = 0) {
       preferred_address: "",
       additional_info: "",
       // Legacy fields (for backward compatibility - only keeping used ones)
-      commute_time_walk: undefined,
-      commute_time_cycle: undefined,
-      commute_time_tube: undefined,
       min_bedrooms: undefined,
       max_bedrooms: undefined,
       min_bathrooms: undefined,

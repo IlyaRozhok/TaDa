@@ -77,14 +77,14 @@ export class PropertyMedia {
     description: "Optional thumbnail-sized URL (optimized for cards)",
     required: false,
   })
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   thumbnail_url?: string | null;
 
   @ApiProperty({
     description: "Optional medium-sized URL (optimized for galleries)",
     required: false,
   })
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   medium_url?: string | null;
 
   @ApiProperty({ description: "Media creation date" })

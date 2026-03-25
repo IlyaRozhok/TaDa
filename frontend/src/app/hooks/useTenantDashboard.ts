@@ -13,6 +13,7 @@ import type { AppDispatch, RootState } from "../store/store";
 import { useDebounce } from "./useDebounce";
 import { waitForSessionManager } from "../components/providers/SessionManager";
 import { store } from "../store/store";
+import { hasPreferencesLocationFilled } from "../../entities/preferences/model/preferences";
 
 interface MatchedProperty {
   property: Property;
@@ -260,9 +261,14 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       let maxPossibleScore = 0;
       let requiredFieldsCount = 0;
 
-      // Essential preferences (weight: 3) - Core requirements for basic matching
-      maxPossibleScore += 3; // primary_postcode
-      if (loadedPreferences?.primary_postcode) {
+      // Essential preferences (weight: 3) - location (preferred address / areas / metro)
+      maxPossibleScore += 3;
+      if (
+        loadedPreferences &&
+        hasPreferencesLocationFilled(
+          loadedPreferences as Record<string, unknown>,
+        )
+      ) {
         totalScore += 3;
         requiredFieldsCount++;
       }
@@ -290,16 +296,6 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
 
       maxPossibleScore += 2; // designer_furniture
       if (loadedPreferences?.designer_furniture !== undefined && loadedPreferences?.designer_furniture !== null) totalScore += 2;
-
-      maxPossibleScore += 2; // house_shares
-      if (loadedPreferences?.house_shares) totalScore += 2;
-
-      // Useful preferences (weight: 1.5) - Lifestyle and feature preferences
-      maxPossibleScore += 1.5; // convenience_features (array)
-      const convenienceCount = loadedPreferences?.convenience_features?.length || 0;
-      if (convenienceCount > 0) {
-        totalScore += Math.min(convenienceCount * 0.5, 1.5); // Up to 1.5 based on selections
-      }
 
       maxPossibleScore += 1.5; // ideal_living_environment
       if (loadedPreferences?.ideal_living_environment) totalScore += 1.5;
@@ -333,22 +329,23 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       maxPossibleScore += 1; // additional_info
       if (loadedPreferences?.additional_info) totalScore += 1;
 
-      maxPossibleScore += 1; // date_property_added
-      if (loadedPreferences?.date_property_added) totalScore += 1;
-
       // Calculate percentage based on weighted score
       const preferencesPercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
 
       // Count filled fields (one per logical field with a value) for badge display
       let filledCount = 0;
-      if (loadedPreferences?.primary_postcode) filledCount += 1;
+      if (
+        loadedPreferences &&
+        hasPreferencesLocationFilled(
+          loadedPreferences as Record<string, unknown>,
+        )
+      )
+        filledCount += 1;
       if (loadedPreferences?.min_price != null || loadedPreferences?.max_price != null) filledCount += 1;
       if (loadedPreferences?.min_bedrooms != null) filledCount += 1;
       if (loadedPreferences?.furnishing) filledCount += 1;
       if (loadedPreferences?.let_duration) filledCount += 1;
       if (loadedPreferences?.designer_furniture !== undefined && loadedPreferences?.designer_furniture !== null) filledCount += 1;
-      if (loadedPreferences?.house_shares) filledCount += 1;
-      if ((loadedPreferences?.convenience_features?.length ?? 0) > 0) filledCount += 1;
       if (loadedPreferences?.ideal_living_environment) filledCount += 1;
       if (loadedPreferences?.pets) filledCount += 1;
       if (loadedPreferences?.smoker !== undefined && loadedPreferences?.smoker !== null) filledCount += 1;
@@ -357,7 +354,6 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       if (loadedPreferences?.min_bathrooms != null || loadedPreferences?.max_bathrooms != null) filledCount += 1;
       if ((loadedPreferences?.hobbies?.length ?? 0) > 0) filledCount += 1;
       if (loadedPreferences?.additional_info) filledCount += 1;
-      if (loadedPreferences?.date_property_added) filledCount += 1;
 
       // Check if all required fields are filled (min 3 required fields)
       const isComplete = requiredFieldsCount >= 3;

@@ -164,12 +164,10 @@ export const propertyValidationRules = {
   },
 };
 
+const UK_POSTCODE_PATTERN = /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i;
+
 // User preferences validation rules
 export const preferencesValidationRules = {
-  primary_postcode: {
-    required: true,
-    pattern: /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/i,
-  },
   min_price: {
     required: true,
     min: 0,
@@ -214,7 +212,7 @@ export const validatePassword = (password: string): boolean => {
 };
 
 export const validatePostcode = (postcode: string): boolean => {
-  return preferencesValidationRules.primary_postcode.pattern.test(postcode);
+  return UK_POSTCODE_PATTERN.test(postcode);
 };
 
 export const validatePriceRange = (

@@ -403,16 +403,20 @@ function AdminOperatorDashboard() {
                                             : "+"}
                                         </div>
                                       )}
-                                      {tenant.preferences.property_type && (
+                                      {tenant.preferences.property_types &&
+                                        tenant.preferences.property_types
+                                          .length > 0 && (
                                         <div className="capitalize">
                                           Type:{" "}
-                                          {tenant.preferences.property_type}
+                                          {tenant.preferences.property_types.join(
+                                            ", ",
+                                          )}
                                         </div>
                                       )}
-                                      {tenant.preferences.primary_postcode && (
+                                      {tenant.preferences.preferred_address && (
                                         <div>
                                           Location:{" "}
-                                          {tenant.preferences.primary_postcode}
+                                          {tenant.preferences.preferred_address}
                                         </div>
                                       )}
                                     </div>

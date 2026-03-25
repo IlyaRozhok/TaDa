@@ -110,9 +110,12 @@ describe("Duration Transformations", () => {
     expect(transformDurationAPIToUI("any")).toBe("Flexible");
   });
 
-  test("should handle Medium term mapping to long_term", () => {
+  test("should map Medium term to medium_term for round-trip with Long term", () => {
     expect(transformDurationUIToAPI("Medium term (6–12 months)")).toBe(
-      "long_term",
+      "medium_term",
+    );
+    expect(transformDurationAPIToUI("medium_term")).toBe(
+      "Medium term (6–12 months)",
     );
   });
 });

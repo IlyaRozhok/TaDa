@@ -113,8 +113,7 @@ export class PreferencesService {
         `tenantProfile.full_name ILIKE :search 
          OR operatorProfile.full_name ILIKE :search 
          OR user.email ILIKE :search 
-         OR preferences.preferred_address ILIKE :search
-         OR preferences.primary_postcode ILIKE :search`,
+         OR preferences.preferred_address ILIKE :search`,
         { search: `%${search}%` }
       );
     }
@@ -187,7 +186,6 @@ export class PreferencesService {
       move_out_date: undefined,
       min_price: undefined,
       max_price: undefined,
-      deposit_preference: undefined,
       property_types: [],
       bedrooms: [],
       bathrooms: [],
@@ -209,27 +207,12 @@ export class PreferencesService {
       smoker: undefined,
       additional_info: undefined,
       // Legacy fields
-      primary_postcode: undefined,
       secondary_location: undefined,
-      commute_location: undefined,
-      commute_time_walk: undefined,
-      commute_time_cycle: undefined,
-      commute_time_tube: undefined,
       min_bedrooms: undefined,
       max_bedrooms: undefined,
       min_bathrooms: undefined,
       max_bathrooms: undefined,
-      property_type: [],
-      building_style: [],
       designer_furniture: undefined,
-      house_shares: undefined,
-      date_property_added: undefined,
-      lifestyle_features: [],
-      social_features: [],
-      work_features: [],
-      convenience_features: [],
-      pet_friendly_features: [],
-      luxury_features: [],
     };
 
     Object.assign(preferences, clearedPreferences);

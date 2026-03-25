@@ -55,14 +55,15 @@ export const TENANT_TYPE_API_TO_UI_MULTI: Record<string, string[]> = {
 
 export const DURATION_UI_TO_API: Record<string, string> = {
   "Short term (1–6 months)": "short_term",
-  "Medium term (6–12 months)": "long_term", // Medium term maps to long_term in API
+  "Medium term (6–12 months)": "medium_term",
   "Long term (12+ months)": "long_term",
   Flexible: "flexible",
 };
 
 export const DURATION_API_TO_UI: Record<string, string> = {
   short_term: "Short term (1–6 months)",
-  long_term: "Long term (12+ months)", // Default mapping for long_term
+  medium_term: "Medium term (6–12 months)",
+  long_term: "Long term (12+ months)",
   flexible: "Flexible",
   any: "Flexible", // Map any to Flexible
 };
@@ -549,6 +550,7 @@ const BUILDING_TYPE_API_TO_KEY: Record<string, string> = {
 
 const DURATION_API_TO_KEY: Record<string, string> = {
   short_term: "rental.duration.name1",
+  medium_term: "rental.duration.name2",
   long_term: "rental.duration.name3",
   flexible: "rental.duration.name4",
   any: "rental.duration.name4",

@@ -34,10 +34,6 @@ export interface PreferencesFormData {
   family_status?: string[] | string;
   children_count?: string[] | string;
 
-  // ==================== KYC & REFERENCING ====================
-  kyc_status?: string;
-  referencing_status?: string;
-
   // ==================== STEP 1: LOCATION ====================
   preferred_areas?: string[];
   preferred_districts?: string[];
@@ -93,9 +89,6 @@ export interface PreferencesFormData {
 
   // ==================== LEGACY FIELDS (for backward compatibility) ====================
   // Only keeping fields that are used in transformations or matching
-  commute_time_walk?: number;
-  commute_time_cycle?: number;
-  commute_time_tube?: number;
   min_bedrooms?: number;
   max_bedrooms?: number;
   min_bathrooms?: number;
@@ -167,15 +160,7 @@ export interface PreferencesStepProps {
   isLoading?: boolean;
 }
 
-export type PreferencesFeatureCategory =
-  | "lifestyle_features"
-  | "social_features"
-  | "work_features"
-  | "convenience_features"
-  | "pet_friendly_features"
-  | "luxury_features"
-  | "building_style"
-  | "amenities";
+export type PreferencesFeatureCategory = "amenities";
 
 export interface PreferencesState {
   loading: boolean;
@@ -382,23 +367,6 @@ export function transformFormDataForApi(
     apiData.is_concierge = normalizedAdditional.includes("is_concierge");
   }
 
-  // Normalize commute times: ensure numbers or undefined
-  const commuteFields: Array<keyof PreferencesFormData> = [
-    "commute_time_walk",
-    "commute_time_cycle",
-    "commute_time_tube",
-  ];
-
-  commuteFields.forEach((field) => {
-    if (formData[field] !== undefined) {
-      const value = formData[field];
-      if (typeof value === "string") {
-        const parsed = parseInt(value, 10);
-        (apiData as any)[field] = isNaN(parsed) ? undefined : parsed;
-      }
-    }
-  });
-
   // Smoker normalization (UI string -> backend string)
   // UI: "smoker" -> Backend: "yes"
   // UI: "non-smoker" -> Backend: "no"
@@ -603,4 +571,19 @@ export function transformApiDataForForm(
 
   console.log("✅ Final transformed form data:", formData);
   return formData;
+}
+
+/** True when any location preference is set (replaces legacy primary_postcode). */
+export function hasPreferencesLocationFilled(
+  preferences: Record<string, unknown>,
+): boolean {
+  const addr = preferences.preferred_address;
+  if (typeof addr === "string" && addr.trim()) return true;
+  const areas = preferences.preferred_areas;
+  if (Array.isArray(areas) && areas.length > 0) return true;
+  const districts = preferences.preferred_districts;
+  if (Array.isArray(districts) && districts.length > 0) return true;
+  const metro = preferences.preferred_metro_stations;
+  if (Array.isArray(metro) && metro.length > 0) return true;
+  return false;
 }

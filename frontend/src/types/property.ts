@@ -30,8 +30,9 @@ export enum Furnishing {
 
 export enum LetDuration {
   Any = 'any',
-  LongTerm = 'long_term',
   ShortTerm = 'short_term',
+  MediumTerm = 'medium_term',
+  LongTerm = 'long_term',
   Flexible = 'flexible',
 }
 

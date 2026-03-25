@@ -46,6 +46,7 @@ export enum BuildingType {
 
 export enum LetDuration {
   SHORT_TERM = "short_term",
+  MEDIUM_TERM = "medium_term",
   LONG_TERM = "long_term",
   FLEXIBLE = "flexible",
   SIX_MONTHS = "6_months",
@@ -165,15 +166,6 @@ export class Preferences {
   })
   @Column({ type: "boolean", nullable: true, default: false })
   flexible_budget?: boolean;
-
-  @ApiProperty({
-    description: "Deposit preference - whether tenant accepts deposit",
-    example: "yes",
-    enum: ["yes", "no"],
-    required: false,
-  })
-  @Column({ nullable: true })
-  deposit_preference?: string;
 
   // ==================== STEP 3: PROPERTY & ROOMS ====================
 
@@ -401,24 +393,6 @@ export class Preferences {
   @Column({ nullable: true })
   children_count?: string;
 
-  // ==================== KYC & REFERENCING ====================
-
-  @ApiProperty({
-    description: "KYC status badge",
-    example: "pending",
-    required: false,
-  })
-  @Column({ nullable: true })
-  kyc_status?: string | null;
-
-  @ApiProperty({
-    description: "Referencing status badge",
-    example: "pending",
-    required: false,
-  })
-  @Column({ nullable: true })
-  referencing_status?: string | null;
-
   // ==================== STEP 10: ABOUT YOU ====================
 
   @ApiProperty({
@@ -430,25 +404,9 @@ export class Preferences {
   additional_info?: string;
 
   // ==================== LEGACY FIELDS (for backward compatibility) ====================
-  // These will be deprecated but kept for migration purposes
-
-  @Column({ nullable: true })
-  primary_postcode?: string;
 
   @Column({ nullable: true })
   secondary_location?: string;
-
-  @Column({ nullable: true })
-  commute_location?: string;
-
-  @Column({ type: "int", nullable: true })
-  commute_time_walk?: number;
-
-  @Column({ type: "int", nullable: true })
-  commute_time_cycle?: number;
-
-  @Column({ type: "int", nullable: true })
-  commute_time_tube?: number;
 
   @Column({ type: "int", nullable: true })
   min_bedrooms?: number;
@@ -462,38 +420,8 @@ export class Preferences {
   @Column({ type: "int", nullable: true })
   max_bathrooms?: number;
 
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  property_type?: string[];
-
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  building_style?: string[];
-
   @Column({ type: "boolean", nullable: true })
   designer_furniture?: boolean;
-
-  @Column({ nullable: true })
-  house_shares?: string;
-
-  @Column({ nullable: true })
-  date_property_added?: string;
-
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  lifestyle_features?: string[];
-
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  social_features?: string[];
-
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  work_features?: string[];
-
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  convenience_features?: string[];
-
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  pet_friendly_features?: string[];
-
-  @Column({ type: "jsonb", nullable: true, default: [] })
-  luxury_features?: string[];
 
   // ==================== TIMESTAMPS ====================
 

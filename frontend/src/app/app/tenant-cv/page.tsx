@@ -13,6 +13,7 @@ import {
   useCreateTenantCvShareMutation,
   useGetPreferencesQuery,
 } from "../../store/slices/apiSlice";
+import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";
 
 export default function TenantCvPage() {
   const [data, setData] = useState<TenantCvResponse | null>(null);
@@ -71,7 +72,7 @@ export default function TenantCvPage() {
     }
 
     let filledCount = 0;
-    if (preferences.primary_postcode) filledCount += 1;
+    if (hasPreferencesLocationFilled(preferences)) filledCount += 1;
     if (preferences.min_price != null || preferences.max_price != null)
       filledCount += 1;
     if (preferences.min_bedrooms != null) filledCount += 1;
@@ -80,12 +81,6 @@ export default function TenantCvPage() {
     if (
       preferences.designer_furniture !== undefined &&
       preferences.designer_furniture !== null
-    )
-      filledCount += 1;
-    if (preferences.house_shares) filledCount += 1;
-    if (
-      Array.isArray(preferences.convenience_features) &&
-      preferences.convenience_features.length > 0
     )
       filledCount += 1;
     if (preferences.ideal_living_environment) filledCount += 1;
@@ -99,7 +94,6 @@ export default function TenantCvPage() {
     if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0)
       filledCount += 1;
     if (preferences.additional_info) filledCount += 1;
-    if (preferences.date_property_added) filledCount += 1;
 
     return filledCount;
   }, [preferencesQueryData]);

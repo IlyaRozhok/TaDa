@@ -97,7 +97,7 @@ export class Building {
     example: "123 Sunset Boulevard, London, SW1A 1AA",
     required: false,
   })
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   address: string | null;
 
   @ApiProperty({
@@ -152,7 +152,7 @@ export class Building {
     example: "https://s3.amazonaws.com/bucket/document.pdf",
     required: false,
   })
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   documents: string | null;
 
   @ApiProperty({

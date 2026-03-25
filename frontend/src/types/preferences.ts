@@ -9,7 +9,6 @@ export interface Preferences extends BaseEntity {
   user_id: ID;
   
   // Location preferences
-  primary_postcode?: string;
   secondary_locations?: string[];
   commute_location?: string;
   max_commute_time?: number; // in minutes

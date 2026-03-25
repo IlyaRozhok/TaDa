@@ -49,7 +49,7 @@ export class TenantCv {
     description: "Optional headline text displayed near move status",
     required: false,
   })
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   headline?: string | null;
 
   @ApiProperty({
@@ -80,7 +80,7 @@ export class TenantCv {
     example: "pending",
     required: false,
   })
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   kyc_status?: string | null;
 
   @ApiProperty({
@@ -88,7 +88,7 @@ export class TenantCv {
     example: "pending",
     required: false,
   })
-  @Column({ nullable: true })
+  @Column({ type: "varchar", nullable: true })
   referencing_status?: string | null;
 
   @ApiProperty({ description: "Creation timestamp" })

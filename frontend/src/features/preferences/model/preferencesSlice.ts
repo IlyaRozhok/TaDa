@@ -9,7 +9,10 @@ export interface PreferencesRow {
     email: string;
     roles: string[];
   };
-  primary_postcode?: string;
+  preferred_address?: string;
+  preferred_areas?: string[];
+  preferred_districts?: string[];
+  preferred_metro_stations?: string[];
   move_in_date?: string;
   min_price?: number;
   max_price?: number;
@@ -20,9 +23,6 @@ export interface PreferencesRow {
   furnishing?: string;
   let_duration?: string;
   designer_furniture?: boolean;
-  house_shares?: string;
-  date_property_added?: string;
-  convenience_features?: string[];
   hobbies?: string[];
   ideal_living_environment?: string;
   pets?: string;
@@ -408,12 +408,11 @@ const preferencesSlice = createSlice({
           if (index !== -1) {
             const clearedPreference = {
               ...state.preferences[index],
-              primary_postcode: null,
+              preferred_address: null,
+              preferred_areas: null,
+              preferred_districts: null,
+              preferred_metro_stations: null,
               secondary_location: null,
-              commute_location: null,
-              commute_time_walk: null,
-              commute_time_cycle: null,
-              commute_time_tube: null,
               move_in_date: null,
               min_price: null,
               max_price: null,
@@ -423,17 +422,9 @@ const preferencesSlice = createSlice({
               max_bathrooms: null,
               furnishing: null,
               let_duration: null,
-              property_type: null,
-              building_style: null,
+              property_types: null,
+              building_types: null,
               designer_furniture: null,
-              house_shares: null,
-              date_property_added: null,
-              lifestyle_features: null,
-              social_features: null,
-              work_features: null,
-              convenience_features: null,
-              pet_friendly_features: null,
-              luxury_features: null,
               hobbies: null,
               ideal_living_environment: null,
               pets: null,

@@ -26,10 +26,9 @@ export interface TenantRow {
     max_price?: number;
     min_bedrooms?: number;
     max_bedrooms?: number;
-    property_type?: string;
-    primary_postcode?: string;
+    property_types?: string[];
+    preferred_address?: string;
     secondary_location?: string;
-    lifestyle_features?: string[];
     furnishing?: string;
   };
 }
