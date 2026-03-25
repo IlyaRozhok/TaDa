@@ -94,7 +94,8 @@ export default function PropertyPublicPage() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showAllOffers, setShowAllOffers] = useState(false);
   const [matchScore, setMatchScore] = useState<number | null>(null);
-  const [matchLoading, setMatchLoading] = useState(false);
+  /** Start true so the gallery shows "Calculating..." until the first match response (avoids a flash of "—"). */
+  const [matchLoading, setMatchLoading] = useState(true);
   const [matchCategories, setMatchCategories] = useState<CategoryMatchResult[]>(
     [],
   );
@@ -379,16 +380,17 @@ export default function PropertyPublicPage() {
         (user.role !== "tenant" && user.role !== "admin")
       ) {
         setMatchScore(null);
+        setMatchCategories([]);
+        setMatchLoading(false);
         return;
       }
 
       try {
         setMatchLoading(true);
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          return;
-        }
-
+        setMatchScore(null);
+        setMatchCategories([]);
+        // Do not require localStorage token: session may be cookie-only (httpOnly);
+        // axios is configured with withCredentials and sends cookies to the API.
         const response = await matchingAPI.getPropertyMatch(id as string);
         const matchData = response.data || response;
 
@@ -924,12 +926,11 @@ export default function PropertyPublicPage() {
                   {/* Match indicator - reuse same breakdown tooltip as cards */}
                   {isAuthenticated &&
                     user &&
-                    (user.role === "tenant" || user.role === "admin") &&
-                    !matchLoading &&
-                    matchScore !== null && (
+                    (user.role === "tenant" || user.role === "admin") && (
                       <MatchBadgeTooltip
                         matchScore={matchScore}
                         matchCategories={matchCategories}
+                        loading={matchLoading}
                       />
                     )}
                 </div>

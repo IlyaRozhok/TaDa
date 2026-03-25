@@ -30,13 +30,17 @@ interface MatchCategory {
 }
 
 interface MatchBadgeTooltipProps {
-  matchScore?: number;
+  /** When undefined and not loading, the badge is hidden (e.g. property cards without match data). */
+  matchScore?: number | null;
   matchCategories?: MatchCategory[];
+  /** When true, shows a placeholder until match data is available (property detail page). */
+  loading?: boolean;
 }
 
 export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
   matchScore,
   matchCategories,
+  loading = false,
 }) => {
   const { t } = useTranslation();
   const [tooltipPosition, setTooltipPosition] = useState<{
@@ -153,11 +157,14 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
     };
   }, [tooltipPosition]);
 
-  if (matchScore === undefined) {
+  if (matchScore === undefined && !loading) {
     return null;
   }
 
   const handleMouseEnter = () => {
+    if (loading || matchScore === null || matchScore === undefined) {
+      return;
+    }
     if (!badgeRef.current) {
       return;
     }
@@ -256,7 +263,17 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
   };
 
   const hasCategories =
-    matchCategories && matchCategories.filter((c) => c.maxScore > 0).length > 0;
+    !loading &&
+    matchScore !== null &&
+    matchScore !== undefined &&
+    matchCategories &&
+    matchCategories.filter((c) => c.maxScore > 0).length > 0;
+
+  const badgeLabel = loading
+    ? "Calculating..."
+    : matchScore === null || matchScore === undefined
+      ? "—"
+      : `${Math.round(matchScore)}% Match`;
 
   return (
     <div
@@ -265,8 +282,18 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="min-w-[100px] bg-black/60 backdrop-blur-[3px] text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg relative transition-all duration-200 cursor-pointer hover:bg-black/75 hover:shadow-xl">
-        {Math.round(matchScore)}% Match
+      <div
+        className={`min-w-[100px] bg-black/60 backdrop-blur-[3px] text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg relative transition-all duration-200 ${
+          loading
+            ? "cursor-wait animate-pulse"
+            : matchScore === null
+              ? "cursor-default opacity-90"
+              : "cursor-pointer hover:bg-black/75 hover:shadow-xl"
+        }`}
+        aria-busy={loading}
+        aria-live="polite"
+      >
+        {badgeLabel}
       </div>
 
       {hasCategories &&
