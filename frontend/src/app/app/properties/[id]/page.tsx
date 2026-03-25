@@ -586,7 +586,8 @@ export default function PropertyPublicPage() {
     const nextCountryCode = parsed?.country.code || "GB";
     const numberOnly = parsed?.nationalNumber || "";
     const countryDialCode =
-      getCountryByCode(nextCountryCode)?.dialCode || getDefaultCountry().dialCode;
+      getCountryByCode(nextCountryCode)?.dialCode ||
+      getDefaultCountry().dialCode;
     const fullPhone = numberOnly
       ? `${countryDialCode}${numberOnly}`
       : profilePhone.trim();
@@ -861,7 +862,7 @@ export default function PropertyPublicPage() {
       />
 
       {/* Header with title and actions */}
-      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32">
+      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
@@ -906,7 +907,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Main content: gallery + sticky price card */}
-      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6">
+      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Left: Gallery with preview carousel */}
           <div className="lg:col-span-2 relative">
@@ -1173,7 +1174,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* About apartment */}
-      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.description.sectionTitle)}
@@ -1215,7 +1216,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* What this place offers */}
-      <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.keyFeatures.sectionTitle)}
