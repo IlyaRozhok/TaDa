@@ -403,7 +403,6 @@ export class Preferences {
   @Column({ type: "text", nullable: true })
   additional_info?: string;
 
-  // ==================== LEGACY FIELDS (for backward compatibility) ====================
 
   @Column({ nullable: true })
   secondary_location?: string;
