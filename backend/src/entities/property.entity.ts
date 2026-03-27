@@ -58,7 +58,7 @@ export class Property {
   @ApiProperty({
     description: "Property type",
     example: "apartment",
-    enum: ["apartment", "house", "studio", "penthouse", "duplex"],
+    enum: ["apartment", "house", "studio", "penthouse", "en-suite room", "room"],
     required: false,
   })
   @Column({ nullable: true })
@@ -67,7 +67,7 @@ export class Property {
   @ApiProperty({
     description: "Furnishing level",
     example: "furnished",
-    enum: ["furnished", "unfurnished", "partially_furnished"],
+    enum: ["furnished", "unfurnished", "part_furnished"],
     required: false,
   })
   @Column({ nullable: true })
@@ -76,7 +76,7 @@ export class Property {
   @ApiProperty({
     description: "Bills included",
     example: "included",
-    enum: ["included", "excluded", "some_included"],
+    enum: ["included", "excluded"],
     required: false,
   })
   @Column({ default: "excluded", nullable: true })
@@ -93,7 +93,7 @@ export class Property {
   @ApiProperty({
     description: "Building type",
     example: "residential",
-    enum: ["residential", "commercial", "mixed"],
+    enum: ["btr", "co_living", "professional_management", "private_landlord"],
     required: false,
   })
   @Column({ nullable: true })
