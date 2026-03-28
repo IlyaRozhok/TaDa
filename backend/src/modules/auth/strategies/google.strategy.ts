@@ -38,4 +38,19 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
     });
   }
 
+  async validate(
+    _accessToken: string,
+    _refreshToken: string,
+    profile: any,
+  ): Promise<any> {
+    const { id, name, emails, photos } = profile;
+    return {
+      google_id: id,
+      email: emails[0].value,
+      full_name: `${name.givenName} ${name.familyName}`.trim(),
+      avatar_url: photos?.[0]?.value ?? null,
+      email_verified: emails[0].verified ?? false,
+    };
+  }
+
 }
