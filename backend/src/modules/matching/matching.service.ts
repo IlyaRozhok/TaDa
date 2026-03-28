@@ -3,7 +3,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "../../entities/property.entity";
 import { Preferences } from "../../entities/preferences.entity";
-import { User } from "../../entities/user.entity";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { S3Service } from "../../common/services/s3.service";
 import {
@@ -21,7 +20,6 @@ export class MatchingService {
     private readonly propertyRepository: Repository<Property>,
     @InjectRepository(Preferences)
     private readonly preferencesRepository: Repository<Preferences>,
-    @InjectRepository(User)
     private readonly calculationService: MatchingCalculationService,
     private readonly s3Service: S3Service
   ) {}
