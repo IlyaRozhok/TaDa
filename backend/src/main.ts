@@ -29,10 +29,6 @@ async function bootstrap() {
 
   app.setGlobalPrefix("api");
 
-  app.useStaticAssets(path.join(__dirname, "..", "uploads"), {
-    prefix: "/uploads/",
-  });
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

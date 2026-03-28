@@ -1,10 +1,10 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User } from "../../../entities/user.entity";
+import { User } from "@/entities";
 import { Request } from "express";
 
 @Injectable()
@@ -35,29 +35,4 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
-    const { sub: userId } = payload;
-
-    if (!userId) {
-      throw new UnauthorizedException("Invalid token: no user ID");
-    }
-
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ["preferences", "tenantProfile", "operatorProfile"],
-      // Remove select to get all fields
-    });
-
-    if (!user) {
-      throw new UnauthorizedException("User not found");
-    }
-
-    // Ensure the user object has all necessary computed properties
-    const userWithComputedFields = {
-      ...user,
-      roles: user.roles, // This calls the getter
-    };
-
-    return userWithComputedFields;
-  }
 }

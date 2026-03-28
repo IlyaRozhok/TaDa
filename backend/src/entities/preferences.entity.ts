@@ -11,17 +11,6 @@ import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
 import { Pet } from "./building.entity";
 
-// Reuse enums from Property for compatibility
-export enum PropertyType {
-  APARTMENT = "apartment",
-  HOUSE = "house",
-  STUDIO = "studio",
-  PENTHOUSE = "penthouse",
-  DUPLEX = "duplex",
-  FLAT = "flat",
-  ROOM = "room",
-}
-
 export enum Furnishing {
   FURNISHED = "furnished",
   UNFURNISHED = "unfurnished",

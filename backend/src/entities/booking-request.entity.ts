@@ -27,7 +27,7 @@ export enum BookingRequestStatus {
 }
 
 @Entity("booking_requests")
-@Unique(["property_id", "tenant_id"])
+@Unique(["tenant_id", "property_id"])
 export class BookingRequest {
   @ApiProperty({ description: "Unique booking request identifier" })
   @PrimaryGeneratedColumn("uuid")

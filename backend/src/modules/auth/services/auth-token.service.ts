@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { User } from "../../../entities/user.entity";
 import { v4 as uuidv4 } from "uuid";
-import * as crypto from "crypto";
+import Redis from "ioredis";
+import { REDIS_CLIENT } from "../../../common/services/redis.module";
 
 export interface SessionData {
   id: string;
@@ -24,15 +25,16 @@ export interface TempGoogleToken {
   expiresAt: Date;
 }
 
+// Redis key TTLs (in seconds)
+const SESSION_TTL = 7 * 24 * 60 * 60; // 7 days — matches refresh token expiry
+const GOOGLE_TEMP_TOKEN_TTL = 10 * 60; // 10 minutes
+
 @Injectable()
 export class AuthTokenService {
-  // In-memory storage for sessions
-  private sessions = new Map<string, SessionData[]>();
-
-  // Temporary storage for Google OAuth role selection
-  private tempGoogleTokens = new Map<string, TempGoogleToken>();
-
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    @Inject(REDIS_CLIENT) private redis: Redis,
+  ) {}
 
   generateAccessToken(user: User): string {
     const payload = {
@@ -41,10 +43,9 @@ export class AuthTokenService {
       role: user.role,
       status: user.status,
     };
-    const token = this.jwtService.sign(payload, {
+    return this.jwtService.sign(payload, {
       expiresIn: "24h",
     });
-    return token;
   }
 
   generateRefreshToken(user: User): string {
@@ -52,34 +53,22 @@ export class AuthTokenService {
       sub: user.id,
       type: "refresh",
     };
-
     return this.jwtService.sign(payload, {
       expiresIn: "7d",
     });
   }
 
-  verifyToken(token: string): any {
-    try {
-      return this.jwtService.verify(token);
-    } catch (error) {
-      throw new Error("Invalid token");
-    }
+  // --- Session management (Redis-backed) ---
+
+  private sessionKey(userId: string): string {
+    return `sessions:${userId}`;
   }
 
-  generateTempToken(): string {
-    return uuidv4();
-  }
-
-  generateSecureToken(): string {
-    return crypto.randomBytes(32).toString("hex");
-  }
-
-  // Session management
-  createSession(
+  async createSession(
     userId: string,
     token: string,
-    deviceInfo?: string
-  ): SessionData {
+    deviceInfo?: string,
+  ): Promise<SessionData> {
     const session: SessionData = {
       id: uuidv4(),
       token,
@@ -88,116 +77,113 @@ export class AuthTokenService {
       createdAt: new Date(),
     };
 
-    const userSessions = this.sessions.get(userId) || [];
-    userSessions.push(session);
-    this.sessions.set(userId, userSessions);
+    // Store session as a hash field keyed by session ID
+    await this.redis.hset(
+      this.sessionKey(userId),
+      session.id,
+      JSON.stringify(session),
+    );
+    await this.redis.expire(this.sessionKey(userId), SESSION_TTL);
 
     return session;
   }
 
-  getUserSessions(userId: string): SessionData[] {
-    return this.sessions.get(userId) || [];
+  async getUserSessions(userId: string): Promise<SessionData[]> {
+    const raw = await this.redis.hgetall(this.sessionKey(userId));
+    return Object.values(raw).map((s) => {
+      const parsed = JSON.parse(s);
+      parsed.lastActivity = new Date(parsed.lastActivity);
+      parsed.createdAt = new Date(parsed.createdAt);
+      return parsed as SessionData;
+    });
   }
 
-  invalidateToken(userId: string, token: string): void {
-    const userSessions = this.sessions.get(userId) || [];
-    const filteredSessions = userSessions.filter(
-      (session) => session.token !== token
-    );
-    this.sessions.set(userId, filteredSessions);
-  }
-
-  invalidateAllUserTokens(userId: string): void {
-    this.sessions.delete(userId);
-  }
-
-  invalidateOtherUserTokens(userId: string, currentToken: string): void {
-    const userSessions = this.sessions.get(userId) || [];
-    const currentSession = userSessions.find(
-      (session) => session.token === currentToken
-    );
-    if (currentSession) {
-      this.sessions.set(userId, [currentSession]);
+  async invalidateToken(userId: string, token: string): Promise<void> {
+    const sessions = await this.getUserSessions(userId);
+    const session = sessions.find((s) => s.token === token);
+    if (session) {
+      await this.redis.hdel(this.sessionKey(userId), session.id);
     }
   }
 
-  invalidateSession(userId: string, sessionId: string): void {
-    const userSessions = this.sessions.get(userId) || [];
-    const filteredSessions = userSessions.filter(
-      (session) => session.id !== sessionId
-    );
-    this.sessions.set(userId, filteredSessions);
+  async invalidateAllUserTokens(userId: string): Promise<void> {
+    await this.redis.del(this.sessionKey(userId));
   }
 
-  updateSessionActivity(userId: string, token: string): void {
-    const userSessions = this.sessions.get(userId) || [];
-    const session = userSessions.find((s) => s.token === token);
+  async invalidateOtherUserTokens(
+    userId: string,
+    currentToken: string,
+  ): Promise<void> {
+    const sessions = await this.getUserSessions(userId);
+    const currentSession = sessions.find((s) => s.token === currentToken);
+    if (currentSession) {
+      // Delete the whole key, then re-add only the current session
+      await this.redis.del(this.sessionKey(userId));
+      await this.redis.hset(
+        this.sessionKey(userId),
+        currentSession.id,
+        JSON.stringify(currentSession),
+      );
+      await this.redis.expire(this.sessionKey(userId), SESSION_TTL);
+    }
+  }
+
+  async invalidateSession(userId: string, sessionId: string): Promise<void> {
+    await this.redis.hdel(this.sessionKey(userId), sessionId);
+  }
+
+  async updateSessionActivity(userId: string, token: string): Promise<void> {
+    const sessions = await this.getUserSessions(userId);
+    const session = sessions.find((s) => s.token === token);
     if (session) {
       session.lastActivity = new Date();
+      await this.redis.hset(
+        this.sessionKey(userId),
+        session.id,
+        JSON.stringify(session),
+      );
     }
   }
 
-  // Google OAuth temporary tokens
-  createTempGoogleToken(googleUserData: any): string {
+  // --- Temporary Google OAuth tokens (Redis-backed) ---
+
+  async createTempGoogleToken(
+    googleUserData: TempGoogleToken["googleUserData"],
+  ): Promise<string> {
     const tokenId = uuidv4();
-    const tempToken: TempGoogleToken = {
+    const token: TempGoogleToken = {
       id: tokenId,
-      googleUserData: {
-        google_id: googleUserData.google_id,
-        email: googleUserData.email,
-        full_name: googleUserData.full_name,
-        avatar_url: googleUserData.avatar_url || null,
-        email_verified: true,
-      },
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      googleUserData,
+      expiresAt: new Date(Date.now() + GOOGLE_TEMP_TOKEN_TTL * 1000),
     };
 
-    this.tempGoogleTokens.set(tokenId, tempToken);
+    await this.redis.set(
+      `google_temp:${tokenId}`,
+      JSON.stringify(token),
+      "EX",
+      GOOGLE_TEMP_TOKEN_TTL,
+    );
+
     return tokenId;
   }
 
-  getTempGoogleToken(tokenId: string): TempGoogleToken | null {
-    const token = this.tempGoogleTokens.get(tokenId);
-    if (!token) return null;
+  async getTempGoogleToken(tokenId: string): Promise<TempGoogleToken | null> {
+    const raw = await this.redis.get(`google_temp:${tokenId}`);
+    if (!raw) return null;
 
+    const token: TempGoogleToken = JSON.parse(raw);
+    token.expiresAt = new Date(token.expiresAt);
+
+    // Redis TTL handles expiry, but double-check just in case
     if (token.expiresAt < new Date()) {
-      this.tempGoogleTokens.delete(tokenId);
+      await this.redis.del(`google_temp:${tokenId}`);
       return null;
     }
 
     return token;
   }
 
-  removeTempGoogleToken(tokenId: string): void {
-    this.tempGoogleTokens.delete(tokenId);
-  }
-
-  getTempTokenInfo(tokenId: string): TempGoogleToken | null {
+  async getTempTokenInfo(tokenId: string): Promise<TempGoogleToken | null> {
     return this.getTempGoogleToken(tokenId);
-  }
-
-  // Cleanup expired tokens
-  cleanupExpiredTokens(): void {
-    const now = new Date();
-
-    // Cleanup temp Google tokens
-    for (const [tokenId, token] of this.tempGoogleTokens.entries()) {
-      if (token.expiresAt < now) {
-        this.tempGoogleTokens.delete(tokenId);
-      }
-    }
-
-    // Cleanup expired sessions
-    for (const [userId, sessions] of this.sessions.entries()) {
-      const activeSessions = sessions.filter(
-        (session) =>
-          session.lastActivity > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days
-      );
-      if (activeSessions.length === 0) {
-        this.sessions.delete(userId);
-      } else {
-        this.sessions.set(userId, activeSessions);
-      }
-    }
   }
 }

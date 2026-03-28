@@ -311,83 +311,11 @@ export class PropertyService {
     await this.propertyRepository.remove(property);
   }
 
-  /**
-   * Update media URLs (photos, video, documents) with fresh presigned URLs
-   */
   private async updatePhotosUrls(property: Property): Promise<Property> {
-    // Update video with presigned URL (same as building – required for playback in edit form)
-    if (property.video) {
-      try {
-        const videoKey = this.extractS3KeyFromUrl(property.video);
-        if (videoKey) {
-          property.video = await this.s3Service.getPresignedUrl(videoKey) ?? property.video;
-        }
-      } catch (error) {
-        console.error(`Error updating video URL: ${property.video}`, error);
-      }
-    }
-
-    // Update documents with presigned URL
-    if (property.documents) {
-      try {
-        const documentsKey = this.extractS3KeyFromUrl(property.documents);
-        if (documentsKey) {
-          property.documents =
-            await this.s3Service.getPresignedUrl(documentsKey) ?? property.documents;
-        }
-      } catch (error) {
-        console.error(
-          `Error updating documents URL: ${property.documents}`,
-          error,
-        );
-      }
-    }
-
-    // Update photos with presigned URLs
-    if (property.photos && property.photos.length > 0) {
-      const updatedPhotos = await Promise.all(
-        property.photos.map(async (photoUrl) => {
-          try {
-            const s3Key = this.extractS3KeyFromUrl(photoUrl);
-            if (s3Key) {
-              return await this.s3Service.getPresignedUrl(s3Key) ?? photoUrl;
-            }
-            return photoUrl;
-          } catch (error) {
-            console.error(`Error updating photo URL: ${photoUrl}`, error);
-            return photoUrl;
-          }
-        }),
-      );
-      property.photos = updatedPhotos;
-    }
-
-    return property;
-  }
-
-  /**
-   * Extract S3 key from S3 URL
-   */
-  private extractS3KeyFromUrl(url: string): string | null {
-    try {
-      // Handle both old and new bucket URLs
-      const patterns = [
-        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
-        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
-      ];
-
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-          return decodeURIComponent(match[1]);
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error(`Error extracting S3 key from URL: ${url}`, error);
-      return null;
-    }
+    return this.s3Service.refreshMediaUrls(property, {
+      singleFields: ["video", "documents"],
+      arrayFields: ["photos"],
+    });
   }
 
   /**

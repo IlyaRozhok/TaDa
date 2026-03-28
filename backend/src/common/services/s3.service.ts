@@ -272,4 +272,79 @@ export class S3Service {
   getFileType(mimeType: string): "image" | "video" {
     return mimeType.startsWith("image/") ? "image" : "video";
   }
+
+  /**
+   * Extract S3 key from a presigned or public S3 URL.
+   * Supports both production (tada-prod-media) and local dev (tada-media-bucket-local) bucket URLs.
+   */
+  extractS3KeyFromUrl(url: string): string | null {
+    try {
+      const patterns = [
+        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
+        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
+      ];
+
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return decodeURIComponent(match[1]);
+        }
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.warn(`Failed to extract S3 key from URL: ${url}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Refresh a single media URL with a fresh presigned URL.
+   * Returns the original URL as fallback if refresh fails.
+   */
+  async refreshUrl(url: string): Promise<string> {
+    try {
+      const key = this.extractS3KeyFromUrl(url);
+      if (key) {
+        return (await this.getPresignedUrl(key)) ?? url;
+      }
+      return url;
+    } catch {
+      return url;
+    }
+  }
+
+  /**
+   * Refresh all media URLs on an entity object.
+   * - `singleFields`: scalar string properties (e.g. video, documents, logo)
+   * - `arrayFields`: string[] properties (e.g. photos)
+   *
+   * Mutates and returns the same object for convenience.
+   */
+  async refreshMediaUrls<T extends Record<string, any>>(
+    entity: T,
+    options: { singleFields?: (keyof T)[]; arrayFields?: (keyof T)[] } = {},
+  ): Promise<T> {
+    const { singleFields = [], arrayFields = [] } = options;
+
+    // Refresh single-value fields (video, documents, logo, etc.)
+    for (const field of singleFields) {
+      const value = entity[field];
+      if (typeof value === "string" && value) {
+        (entity as any)[field] = await this.refreshUrl(value);
+      }
+    }
+
+    // Refresh array fields (photos, etc.)
+    for (const field of arrayFields) {
+      const value = entity[field];
+      if (Array.isArray(value) && value.length > 0) {
+        (entity as any)[field] = await Promise.all(
+          value.map((url: string) => this.refreshUrl(url)),
+        );
+      }
+    }
+
+    return entity;
+  }
 }

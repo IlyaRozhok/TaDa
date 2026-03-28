@@ -294,92 +294,11 @@ export class BuildingService {
     );
   }
 
-  /**
-   * Extract S3 key from S3 URL
-   */
-  private extractS3KeyFromUrl(url: string): string | null {
-    try {
-      // Handle both old and new bucket URLs
-      const patterns = [
-        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
-        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
-      ];
-
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-          return decodeURIComponent(match[1]);
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error(`Error extracting S3 key from URL: ${url}`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Update building media URLs with fresh presigned URLs
-   */
   private async updateBuildingMediaUrls(building: Building): Promise<Building> {
-    try {
-      // Update logo
-      if (building.logo) {
-        const logoKey = this.extractS3KeyFromUrl(building.logo);
-        if (logoKey) {
-          building.logo = await this.s3Service.getPresignedUrl(logoKey) ?? building.logo;
-        }
-      }
-
-      // Update video
-      if (building.video) {
-        const videoKey = this.extractS3KeyFromUrl(building.video);
-        if (videoKey) {
-          building.video = await this.s3Service.getPresignedUrl(videoKey) ?? building.video;
-        }
-      }
-
-      // Update documents
-      if (building.documents) {
-        const documentsKey = this.extractS3KeyFromUrl(building.documents);
-        if (documentsKey) {
-          building.documents =
-            await this.s3Service.getPresignedUrl(documentsKey) ?? building.documents;
-        }
-      }
-
-      // Update photos array
-      if (
-        building.photos &&
-        Array.isArray(building.photos) &&
-        building.photos.length > 0
-      ) {
-        const updatedPhotos = await Promise.all(
-          building.photos.map(async (photoUrl) => {
-            try {
-              const photoKey = this.extractS3KeyFromUrl(photoUrl);
-              if (photoKey) {
-                return await this.s3Service.getPresignedUrl(photoKey) ?? photoUrl;
-              }
-              return photoUrl;
-            } catch (error) {
-              console.error(
-                `Error updating building photo URL: ${photoUrl}`,
-                error,
-              );
-              return photoUrl;
-            }
-          }),
-        );
-        building.photos = updatedPhotos;
-      }
-
-      return building;
-    } catch (error) {
-      console.error("Error updating building media URLs:", error);
-      return building;
-    }
+    return this.s3Service.refreshMediaUrls(building, {
+      singleFields: ["logo", "video", "documents"],
+      arrayFields: ["photos"],
+    });
   }
 
   /**

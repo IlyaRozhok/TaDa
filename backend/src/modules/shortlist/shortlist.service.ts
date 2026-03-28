@@ -122,46 +122,10 @@ export class ShortlistService {
     };
   }
 
-  /**
-   * Update property photos with fresh presigned URLs (same as matching/property services)
-   */
   private async updatePhotosUrls(property: Property): Promise<Property> {
-    if (!property.photos || property.photos.length === 0) {
-      return property;
-    }
-    const updatedPhotos = await Promise.all(
-      property.photos.map(async (photoUrl) => {
-        try {
-          const s3Key = this.extractS3KeyFromUrl(photoUrl);
-          if (s3Key) {
-            return await this.s3Service.getPresignedUrl(s3Key) ?? photoUrl;
-          }
-          return photoUrl;
-        } catch (error) {
-          console.error(`Failed to update photo URL: ${photoUrl}`, error);
-          return photoUrl;
-        }
-      })
-    );
-    return { ...property, photos: updatedPhotos };
-  }
-
-  private extractS3KeyFromUrl(url: string): string | null {
-    try {
-      const patterns = [
-        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
-        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
-      ];
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-          return decodeURIComponent(match[1]);
-        }
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    return this.s3Service.refreshMediaUrls(property, {
+      arrayFields: ["photos"],
+    });
   }
 
   async getUserShortlist(userId: string): Promise<Property[]> {

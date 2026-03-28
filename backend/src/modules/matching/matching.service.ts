@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "../../entities/property.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { User } from "../../entities/user.entity";
@@ -22,62 +22,64 @@ export class MatchingService {
     @InjectRepository(Preferences)
     private readonly preferencesRepository: Repository<Preferences>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly calculationService: MatchingCalculationService,
     private readonly s3Service: S3Service
   ) {}
 
-  /**
-   * Update photos URLs with fresh presigned URLs
-   */
   private async updatePhotosUrls(property: Property): Promise<Property> {
-    if (!property.photos || property.photos.length === 0) {
-      return property;
-    }
-
-    const updatedPhotos = await Promise.all(
-      property.photos.map(async (photoUrl) => {
-        try {
-          // Extract S3 key from URL
-          const s3Key = this.extractS3KeyFromUrl(photoUrl);
-          if (s3Key) {
-            // Generate fresh presigned URL
-            return await this.s3Service.getPresignedUrl(s3Key) ?? photoUrl;
-          }
-          return photoUrl;
-        } catch (error) {
-          console.error(`Failed to update photo URL: ${photoUrl}`, error);
-          return photoUrl;
-        }
-      })
-    );
-
-    return { ...property, photos: updatedPhotos };
+    return this.s3Service.refreshMediaUrls(property, {
+      arrayFields: ["photos"],
+    });
   }
 
   /**
-   * Extract S3 key from S3 URL
+   * Build a query with SQL pre-filters based on user preferences.
+   * Uses generous ranges so partial matches are NOT excluded — the JS
+   * scoring engine handles exact scoring and partial credit.
    */
-  private extractS3KeyFromUrl(url: string): string | null {
-    try {
-      // Handle both old and new bucket URLs
-      const patterns = [
-        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
-        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
-      ];
-
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match) {
-          return decodeURIComponent(match[1]);
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error("Error extracting S3 key from URL:", url, error);
-      return null;
+  private applyPreFilters(
+    qb: SelectQueryBuilder<Property>,
+    preferences: Preferences,
+  ): SelectQueryBuilder<Property> {
+    // Budget filter (weight 18) — include 10% over max and 20% under min
+    // to keep partial-match candidates in the result set
+    if (preferences.max_price) {
+      const upperBound = Math.round(preferences.max_price * 1.1);
+      qb.andWhere(
+        "(property.price IS NULL OR property.price <= :upperBound)",
+        { upperBound },
+      );
     }
+    if (preferences.min_price) {
+      const lowerBound = Math.round(preferences.min_price * 0.8);
+      qb.andWhere(
+        "(property.price IS NULL OR property.price >= :lowerBound)",
+        { lowerBound },
+      );
+    }
+
+    // Bedrooms filter (weight 12) — include ±1 for close-match scoring
+    if (preferences.bedrooms && preferences.bedrooms.length > 0) {
+      const minBed = Math.max(0, Math.min(...preferences.bedrooms) - 1);
+      const maxBed = Math.max(...preferences.bedrooms) + 1;
+      qb.andWhere(
+        "(property.bedrooms IS NULL OR (property.bedrooms >= :minBed AND property.bedrooms <= :maxBed))",
+        { minBed, maxBed },
+      );
+    }
+
+    // Property type filter (weight 10) — exact match only, but keep NULLs
+    if (preferences.property_types && preferences.property_types.length > 0) {
+      const normalizedTypes = preferences.property_types.map((t) =>
+        t.toLowerCase().trim(),
+      );
+      qb.andWhere(
+        "(property.property_type IS NULL OR LOWER(property.property_type) IN (:...propertyTypes))",
+        { propertyTypes: normalizedTypes },
+      );
+    }
+
+    return qb;
   }
 
   /**
@@ -87,7 +89,6 @@ export class MatchingService {
     userId: string,
     options: MatchingOptions = {}
   ): Promise<MatchingResponse> {
-    // Get user preferences
     const preferences = await this.preferencesRepository.findOne({
       where: { user_id: userId },
     });
@@ -96,10 +97,14 @@ export class MatchingService {
       throw new NotFoundException("User preferences not found");
     }
 
-    // Get all available properties
-    const properties = await this.propertyRepository.find({
-      order: { created_at: "DESC" },
-    });
+    // Pre-filter in SQL, then score in JS
+    const qb = this.propertyRepository
+      .createQueryBuilder("property")
+      .orderBy("property.created_at", "DESC");
+
+    this.applyPreFilters(qb, preferences);
+
+    const properties = await qb.getMany();
 
     return this.calculateMatches(properties, preferences, options);
   }
@@ -117,10 +122,9 @@ export class MatchingService {
       minScore = 0,
       limit = 50,
       includePartialMatches = true,
-      minVisibleScore = 0, // Default: show all properties
+      minVisibleScore = 0,
     } = options;
 
-    // Merge custom weights with defaults
     const appliedWeights: CategoryWeights = {
       ...DEFAULT_WEIGHTS,
       ...weights,
@@ -138,15 +142,12 @@ export class MatchingService {
     // Filter by minimum score
     let filteredResults = results.filter((r) => r.matchPercentage >= minScore);
 
-    // Filter by minimum visible score threshold
-    // Properties below this threshold are hidden from results
     if (minVisibleScore > 0) {
       filteredResults = filteredResults.filter(
         (r) => r.matchPercentage >= minVisibleScore
       );
     }
 
-    // Optionally filter out partial matches
     if (!includePartialMatches) {
       filteredResults = filteredResults.filter((r) => r.isPerfectMatch);
     }
@@ -154,10 +155,8 @@ export class MatchingService {
     // Sort by match percentage (descending)
     filteredResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
-    // Apply limit
     const limitedResults = filteredResults.slice(0, limit);
 
-    // Generate preferences summary
     const summary = this.generatePreferencesSummary(preferences);
 
     return {
@@ -237,7 +236,7 @@ export class MatchingService {
     {
       property: Property;
       matchScore: number;
-      matchPercentage: number; // For consistency with API
+      matchPercentage: number;
       matchReasons: string[];
       perfectMatch: boolean;
       categories: {
@@ -256,8 +255,8 @@ export class MatchingService {
     return Promise.all(
       response.results.map(async (result) => ({
         property: await this.updatePhotosUrls(result.property),
-        matchScore: result.matchPercentage, // Legacy field
-        matchPercentage: result.matchPercentage, // New field
+        matchScore: result.matchPercentage,
+        matchPercentage: result.matchPercentage,
         matchReasons: result.categories
           .filter((c) => c.match)
           .map((c) => c.reason),
@@ -268,8 +267,9 @@ export class MatchingService {
   }
 
   /**
-   * Get matched properties with pagination and search
-   * This method calculates matching scores for all properties, then applies pagination
+   * Get matched properties with pagination and search.
+   * SQL pre-filters eliminate obviously non-matching properties before
+   * the JS scoring engine runs, avoiding loading ALL properties into memory.
    */
   async getMatchedPropertiesWithPagination(
     userId: string,
@@ -300,74 +300,37 @@ export class MatchingService {
     const limit = options.limit || 12;
     const search = options.search?.trim();
 
-    // Get user preferences (optional: without preferences we return properties with matchScore 0)
     const preferences = await this.preferencesRepository.findOne({
       where: { user_id: userId },
     });
 
-    // Build query for properties with search
-    const queryBuilder = this.propertyRepository
+    // Build base query with joins
+    const qb = this.propertyRepository
       .createQueryBuilder("property")
       .leftJoinAndSelect("property.building", "building")
       .leftJoinAndSelect("property.operator", "operator");
 
     if (search) {
       const searchPattern = `%${search}%`;
-      queryBuilder.andWhere(
+      qb.andWhere(
         "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)",
         { search: searchPattern },
       );
     }
 
-    // Get all properties matching search (before pagination)
-    const allProperties = await queryBuilder.getMany();
-
-    let data: Array<{
-      property: Property;
-      matchScore: number;
-      categories: Array<{
-        category: string;
-        match: boolean;
-        score: number;
-        maxScore: number;
-        reason: string;
-        details?: string;
-        hasPreference: boolean;
-      }>;
-    }>;
-
-    if (preferences) {
-      // Calculate matches for all properties
-      const matchResults: PropertyMatchResult[] = allProperties.map(
-        (property) =>
-          this.calculationService.calculateMatch(
-            property,
-            preferences,
-            DEFAULT_WEIGHTS
-          )
-      );
-
-      // Sort by match percentage (descending)
-      matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
-
+    if (!preferences) {
+      // No preferences — use DB-level pagination (no scoring needed)
+      const total = await qb.getCount();
       const skip = (page - 1) * limit;
-      const paginatedResults = matchResults.slice(skip, skip + limit);
 
-      data = await Promise.all(
-        paginatedResults.map(async (result) => ({
-          property: await this.updatePhotosUrls(result.property),
-          matchScore: result.matchPercentage,
-          categories: result.categories,
-        }))
-      );
-    } else {
-      // No preferences: return properties with matchScore 0 (same shape as with matching, so frontend always uses this endpoint)
-      const totalCount = allProperties.length;
-      const skip = (page - 1) * limit;
-      const paginatedProperties = allProperties.slice(skip, skip + limit);
+      const properties = await qb
+        .orderBy("property.created_at", "DESC")
+        .skip(skip)
+        .take(limit)
+        .getMany();
 
-      data = await Promise.all(
-        paginatedProperties.map(async (property) => ({
+      const data = await Promise.all(
+        properties.map(async (property) => ({
           property: await this.updatePhotosUrls(property),
           matchScore: 0,
           categories: [] as Array<{
@@ -381,9 +344,43 @@ export class MatchingService {
           }>,
         }))
       );
+
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
     }
 
-    const total = allProperties.length;
+    // Apply SQL pre-filters to narrow the candidate set
+    this.applyPreFilters(qb, preferences);
+
+    const candidates = await qb.getMany();
+
+    // Score remaining candidates in JS
+    const matchResults: PropertyMatchResult[] = candidates.map((property) =>
+      this.calculationService.calculateMatch(
+        property,
+        preferences,
+        DEFAULT_WEIGHTS
+      )
+    );
+
+    // Sort by match percentage (descending)
+    matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
+
+    const total = matchResults.length;
+    const skip = (page - 1) * limit;
+    const paginatedResults = matchResults.slice(skip, skip + limit);
+
+    const data = await Promise.all(
+      paginatedResults.map(async (result) => ({
+        property: await this.updatePhotosUrls(result.property),
+        matchScore: result.matchPercentage,
+        categories: result.categories,
+      }))
+    );
 
     return {
       data,

@@ -1,7 +1,5 @@
 import {
   Injectable,
-  UnauthorizedException,
-  ConflictException,
   BadRequestException,
   InternalServerErrorException,
 } from "@nestjs/common";
@@ -30,7 +28,6 @@ export class AuthService {
     @InjectRepository(OperatorProfile)
     private operatorProfileRepository: Repository<OperatorProfile>,
     @InjectRepository(Preferences)
-    private preferencesRepository: Repository<Preferences>,
     private authValidationService: AuthValidationService,
     private authTokenService: AuthTokenService,
     private tenantCvService: TenantCvService
@@ -65,10 +62,11 @@ export class AuthService {
       // Ensure tenant CV share link exists
       await this.tenantCvService.ensureShareUuid(savedUser.id);
 
-      // Generate tokens
+      // Generate tokens and create session
       const accessToken = this.authTokenService.generateAccessToken(savedUser);
       const refreshToken =
         this.authTokenService.generateRefreshToken(savedUser);
+      await this.authTokenService.createSession(savedUser.id, accessToken);
 
       return {
         user: toUserResponse(savedUser),
@@ -81,14 +79,14 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
 
     // Validate login credentials
     const user = await this.authValidationService.validateLogin(loginDto);
 
-    // Generate tokens
+    // Generate tokens and create session
     const accessToken = this.authTokenService.generateAccessToken(user);
     const refreshToken = this.authTokenService.generateRefreshToken(user);
+    await this.authTokenService.createSession(user.id, accessToken);
 
     return {
       user: toUserResponse(user),
@@ -100,6 +98,7 @@ export class AuthService {
   async refresh(user: User) {
     const accessToken = this.authTokenService.generateAccessToken(user);
     const refreshToken = this.authTokenService.generateRefreshToken(user);
+    await this.authTokenService.createSession(user.id, accessToken);
 
     return {
       access_token: accessToken,
@@ -225,6 +224,7 @@ export class AuthService {
   async generateTokens(user: User) {
     const accessToken = this.authTokenService.generateAccessToken(user);
     const refreshToken = this.authTokenService.generateRefreshToken(user);
+    await this.authTokenService.createSession(user.id, accessToken);
 
     return {
       accessToken,
