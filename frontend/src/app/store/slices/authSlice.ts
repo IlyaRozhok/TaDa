@@ -56,11 +56,9 @@ export interface User {
   };
 }
 
-// Utility function to check if user profile is complete
 export function isProfileComplete(user: User | null): boolean {
   if (!user) return false;
 
-  // All roles: personal fields now live directly on the user object
   const requiredFields = [
     "first_name",
     "last_name",
@@ -81,116 +79,50 @@ export function isProfileComplete(user: User | null): boolean {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  accessToken: string | null;
-  sessionExpiry: number | null;
 }
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  accessToken: null,
-  sessionExpiry: null,
 };
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setCredentials: (
-      state,
-      action: PayloadAction<{
-        user: User;
-        accessToken: string;
-      }>,
-    ) => {
-      const { user, accessToken } = action.payload;
-
-      // Compute isOnboarded based on profile completeness
+    setUser: (state, action: PayloadAction<{ user: User }>) => {
+      const { user } = action.payload;
       const onboarded = user.isOnboarded ?? isProfileComplete(user);
-
-      console.log("🔍 authSlice.setCredentials called with:", {
-        user_id: user.id,
-        user_email: user.email,
-        user_role: user.role,
-        user_full_name: user.full_name,
-        has_tenant_profile: !!user.tenantProfile,
-        has_operator_profile: !!user.operatorProfile,
-        isOnboarded: onboarded,
-      });
-
       state.user = { ...user, isOnboarded: onboarded };
-      state.accessToken = accessToken;
       state.isAuthenticated = true;
-
-      // Set session expiry to 7 days from now
-      state.sessionExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
-
-      // Store token and expiry in localStorage
-      if (typeof window !== "undefined") {
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("sessionExpiry", state.sessionExpiry.toString());
-      }
     },
     logout: (state) => {
       const userId = state.user?.id;
       const userEmail = state.user?.email;
 
-      console.log("🚪 LOGOUT ACTION CALLED", {
-        userId,
-        userEmail,
-        callStack: new Error().stack,
-      });
-
       state.user = null;
       state.isAuthenticated = false;
-      state.accessToken = null;
-      state.sessionExpiry = null;
 
-      // Clear localStorage (including onboarding and preferences draft so next login starts fresh)
+      // Clear app state and any stale auth keys left from the old localStorage-based flow
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionExpiry");
+        localStorage.removeItem("authCredentials");
         localStorage.removeItem("onboardingState");
         localStorage.removeItem("preferencesStep");
         localStorage.removeItem("preferencesDraft");
       }
 
-      // Log the logout event
       authLogger.info("User logged out", "logout", {
         user_id: userId,
         user_email: userEmail,
       });
-    },
-    setAuth: (
-      state,
-      action: PayloadAction<{
-        user: User;
-        accessToken: string;
-      }>,
-    ) => {
-      const { user, accessToken } = action.payload;
-
-      // Compute isOnboarded based on profile completeness
-      const onboarded = user.isOnboarded ?? isProfileComplete(user);
-
-      state.user = { ...user, isOnboarded: onboarded };
-      state.accessToken = accessToken;
-      state.isAuthenticated = true;
-
-      // Store in localStorage
-      if (typeof window !== "undefined") {
-        localStorage.setItem("accessToken", accessToken);
-        const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-        localStorage.setItem("sessionExpiry", expiry.toString());
-        state.sessionExpiry = expiry;
-      }
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (!state.user) return;
 
       const payload = action.payload;
 
-      // Properly merge nested profiles - API always returns the full objects
       const updatedUser: User = {
         ...state.user,
         ...payload,
@@ -219,9 +151,8 @@ const authSlice = createSlice({
 });
 
 export const {
-  setCredentials,
+  setUser,
   logout,
-  setAuth,
   updateUser,
   setIsOnboarded,
   setOnboardingCompleted,
@@ -233,10 +164,6 @@ export const selectAuth = (state: { auth: AuthState }) => state.auth;
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectIsAuthenticated = (state: { auth: AuthState }) =>
   state.auth.isAuthenticated;
-export const selectAccessToken = (state: { auth: AuthState }) =>
-  state.auth.accessToken;
-export const selectSessionExpiry = (state: { auth: AuthState }) =>
-  state.auth.sessionExpiry;
 export const selectIsOnboarded = (state: { auth: AuthState }) =>
   state.auth.user?.isOnboarded ?? false;
 export const selectOnboardingCompleted = (state: { auth: AuthState }) =>
