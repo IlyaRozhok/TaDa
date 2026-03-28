@@ -106,14 +106,8 @@ export default function ManagePropertiesPage() {
     try {
       setIsLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
       const response = await fetch(`${apiUrl}/properties/my-properties`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -133,16 +127,10 @@ export default function ManagePropertiesPage() {
     try {
       setIsLoadingTenants(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
       const response = await fetch(
         `${apiUrl}/properties/${propertyId}/interested-tenants`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: "include",
         },
       );
 
@@ -185,15 +173,9 @@ export default function ManagePropertiesPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
       const response = await fetch(`${apiUrl}/properties/${propertyId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       if (!response.ok) {

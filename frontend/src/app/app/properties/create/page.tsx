@@ -118,7 +118,6 @@ export default function CreatePropertyPage() {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -472,9 +471,9 @@ export default function CreatePropertyPage() {
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
       const response = await fetch(`${apiUrl}/properties`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify(formData),
       });
@@ -500,12 +499,9 @@ export default function CreatePropertyPage() {
       }
 
       // Step 2: Upload media files if any
-      if (selectedFiles.length > 0 && mediaUploadRef.current && accessToken) {
+      if (selectedFiles.length > 0 && mediaUploadRef.current) {
         try {
-          await mediaUploadRef.current.uploadFiles(
-            responseData.id,
-            accessToken,
-          );
+          await mediaUploadRef.current.uploadFiles(responseData.id);
         } catch (uploadError) {
           console.error("Media upload failed:", uploadError);
           // Property was created but media upload failed
@@ -532,7 +528,7 @@ export default function CreatePropertyPage() {
     }
   };
 
-  if (!user || !isAuthenticated || !accessToken) return null;
+  if (!user || !isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">

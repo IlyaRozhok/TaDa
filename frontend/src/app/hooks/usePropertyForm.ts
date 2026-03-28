@@ -32,7 +32,6 @@ export const usePropertyForm = (): UsePropertyFormReturn => {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const [property, setProperty] = useState<Property | null>(null);
   const [media, setMedia] = useState<PropertyMedia[]>([]);
@@ -59,7 +58,7 @@ export const usePropertyForm = (): UsePropertyFormReturn => {
   // Load property data
   useEffect(() => {
     const loadProperty = async () => {
-      if (!id || !accessToken) return;
+      if (!id) return;
 
       try {
         setLoading(true);
@@ -97,7 +96,7 @@ export const usePropertyForm = (): UsePropertyFormReturn => {
     };
 
     loadProperty();
-  }, [id, accessToken]);
+  }, [id]);
 
   const validateFormData = useCallback((): boolean => {
     const result = validateForm(formData, propertyValidationRules);

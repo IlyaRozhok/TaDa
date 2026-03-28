@@ -226,12 +226,6 @@ export default function OnboardingPage() {
       // Check if user already has preferences AND is onboarded
       // Only redirect if both conditions are met to avoid redirect loops
       try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          router.push("/app/auth/login");
-          return;
-        }
-
         const response = await preferencesAPI.get();
         if (response.data && response.data.id && onboardingCompleted) {
           // User has preferences AND completed full onboarding, redirect to tenant-cv

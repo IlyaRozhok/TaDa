@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setAuth } from "../store/slices/authSlice";
+import { setUser, logout as logoutAction } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 
 interface AuthUserData {
@@ -24,18 +24,8 @@ export function useAuth() {
 
     try {
       const response = await authAPI.login(data);
+      dispatch(setUser({ user: response.data.user }));
 
-      dispatch(
-        setAuth({
-          user: response.data.user,
-          accessToken: response.data.access_token,
-        })
-      );
-
-      localStorage.setItem("accessToken", response.data.access_token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-
-      // Redirect based on user role
       const userRole = response.data.user?.role;
       if (userRole === "tenant") {
         router.push("/app/units");
@@ -58,18 +48,8 @@ export function useAuth() {
 
     try {
       const response = await authAPI.register(data);
+      dispatch(setUser({ user: response.data.user }));
 
-      dispatch(
-        setAuth({
-          user: response.data.user,
-          accessToken: response.data.access_token,
-        })
-      );
-
-      localStorage.setItem("accessToken", response.data.access_token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-
-      // Redirect based on user role
       const userRole = response.data.user?.role;
       if (userRole === "tenant") {
         router.push("/app/units");
@@ -94,18 +74,7 @@ export function useAuth() {
 
     try {
       const response = await authAPI.register(data);
-
-      dispatch(
-        setAuth({
-          user: response.data.user,
-          accessToken: response.data.access_token,
-        })
-      );
-
-      localStorage.setItem("accessToken", response.data.access_token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-
-      // All new users are tenants, redirect to units page
+      dispatch(setUser({ user: response.data.user }));
       router.push("/app/units");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed");
@@ -116,9 +85,7 @@ export function useAuth() {
   };
 
   const logout = () => {
-    dispatch(setAuth({ user: null, accessToken: null }));
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
+    dispatch(logoutAction());
     router.push("/");
   };
 

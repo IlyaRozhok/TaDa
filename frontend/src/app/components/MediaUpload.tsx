@@ -27,7 +27,7 @@ interface MediaUploadProps {
 }
 
 export interface MediaUploadRef {
-  uploadFiles: (propertyId: string, accessToken: string) => Promise<void>;
+  uploadFiles: (propertyId: string) => Promise<void>;
 }
 
 const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
@@ -138,10 +138,7 @@ const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
     };
 
     // Function to upload files after property creation
-    const uploadFiles = async (
-      propertyId: string,
-      accessToken: string
-    ): Promise<void> => {
+    const uploadFiles = async (propertyId: string): Promise<void> => {
       if (mediaFiles.length === 0) return;
 
       // Mark all files as uploading
@@ -160,9 +157,7 @@ const MediaUpload = forwardRef<MediaUploadRef, MediaUploadProps>(
             }/properties/${propertyId}/media`,
             {
               method: "POST",
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
+              credentials: "include",
               body: formData,
             }
           );

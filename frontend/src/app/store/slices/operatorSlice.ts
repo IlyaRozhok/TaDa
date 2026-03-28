@@ -4,11 +4,6 @@ import {
   createSelector,
 } from "@reduxjs/toolkit";
 
-interface RootState {
-  auth: {
-    accessToken: string | null;
-  };
-}
 
 export interface DashboardCounts {
   propertiesCount: number;
@@ -83,22 +78,14 @@ const initialState: OperatorState = {
 // Async thunks
 export const fetchDashboardCounts = createAsyncThunk(
   "operator/fetchDashboardCounts",
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
-
       const response = await fetch(`${API_BASE_URL}/operator/dashboard`, {
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
@@ -128,22 +115,14 @@ export const fetchDashboardCounts = createAsyncThunk(
 
 export const fetchTenants = createAsyncThunk(
   "operator/fetchTenants",
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
-
       const response = await fetch(`${API_BASE_URL}/operator/tenants`, {
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
@@ -164,22 +143,14 @@ export const fetchTenants = createAsyncThunk(
 
 export const fetchOperatorProperties = createAsyncThunk(
   "operator/fetchOperatorProperties",
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
-
       const response = await fetch(`${API_BASE_URL}/operator/properties`, {
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
@@ -204,26 +175,18 @@ export const suggestProperty = createAsyncThunk(
   "operator/suggestProperty",
   async (
     { tenantId, propertyId }: { tenantId: string; propertyId: string },
-    { getState, rejectWithValue }
+    { rejectWithValue }
   ) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
-
       const response = await fetch(
         `${API_BASE_URL}/operator/suggest-property`,
         {
           method: "POST",
+          credentials: "include",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
