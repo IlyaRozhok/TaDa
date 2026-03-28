@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import {
-  setAuth,
+  setUser,
   logout,
   setOnboardingCompleted,
 } from "../../store/slices/authSlice";
@@ -15,7 +15,6 @@ import api, { preferencesAPI } from "../../lib/api";
 let sessionManagerPromise: Promise<void> | null = null;
 let sessionManagerResolve: (() => void) | null = null;
 
-// Create a global promise that resolves when SessionManager is ready
 if (typeof window !== "undefined") {
   sessionManagerPromise = new Promise((resolve) => {
     sessionManagerResolve = resolve;
@@ -33,53 +32,32 @@ export default function SessionManager() {
   useEffect(() => {
     const initSession = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
-        try {
-          const response = await api.get("/auth/me");
+        const response = await api.get("/auth/me");
 
-          if (response.data && response.data.user) {
-            dispatch(
-              setAuth({
-                user: response.data.user,
-                // If we restored via cookie (no localStorage token),
-                // pass an empty string so axios won't send Authorization header.
-                accessToken: token ?? "",
-              }),
-            );
-            console.log("Session restored for:", response.data.user.email);
+        if (response.data && response.data.user) {
+          dispatch(setUser({ user: response.data.user }));
+          console.log("Session restored for:", response.data.user.email);
 
-            // Initialize shortlist for tenant and admin users
-            if (response.data.user.role === "tenant" || response.data.user.role === "admin") {
-              dispatch(fetchShortlist());
+          if (response.data.user.role === "tenant" || response.data.user.role === "admin") {
+            dispatch(fetchShortlist());
 
-              // Check if tenant has preferences to set onboardingCompleted flag
-              // This is for backward compatibility with existing users
-              if (!response.data.user.onboardingCompleted) {
-                try {
-                  const prefsResponse = await preferencesAPI.get();
-                  if (prefsResponse.data && prefsResponse.data.id) {
-                    // User has preferences, mark onboarding as completed
-                    dispatch(setOnboardingCompleted(true));
-                  }
-                } catch (error: any) {
-                  // No preferences found - user needs to complete onboarding
-                  // onboardingCompleted remains false
+            if (!response.data.user.onboardingCompleted) {
+              try {
+                const prefsResponse = await preferencesAPI.get();
+                if (prefsResponse.data && prefsResponse.data.id) {
+                  dispatch(setOnboardingCompleted(true));
                 }
+              } catch {
+                // No preferences — user needs to complete onboarding
               }
             }
           }
-        } catch (error: any) {
-          console.log("Token validation failed:", error.response?.status);
-
-          // Clear invalid token
-          if (error.response?.status === 401) {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("sessionExpiry");
-            dispatch(logout());
-          }
         }
-      } catch (error) {
-        console.error("Session initialization error:", error);
+      } catch (error: any) {
+        console.log("Session check failed:", error.response?.status);
+        if (error.response?.status === 401) {
+          dispatch(logout());
+        }
       } finally {
         setIsInitialized(true);
         sessionManagerResolve?.();
@@ -89,6 +67,5 @@ export default function SessionManager() {
     initSession();
   }, [dispatch]);
 
-  // No loading UI - just manage session in background
   return null;
 }
