@@ -1,8 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useDispatch } from "react-redux";
-import { authAPI } from "../lib/api";
-import { redirectAfterLogin } from "../utils/simpleRedirect";
 
 // Total steps in unified onboarding flow:
 // Intro: 3 steps, Profile: 1 step, Preferences: 11 steps = 15 total
@@ -58,7 +54,6 @@ interface OnboardingState {
   isLoading: boolean;
   error: string;
   registeredUser: any;
-  registeredToken: string | null;
   currentPhase: OnboardingPhase;
 }
 
@@ -78,16 +73,12 @@ export const useOnboarding = (
   onComplete: () => void,
   isGoogleAuth: boolean = false,
 ): UseOnboardingReturn => {
-  const router = useRouter();
-  const dispatch = useDispatch();
-
   const persisted = getPersistedOnboardingState();
   const [state, setState] = useState<OnboardingState>(() => ({
     currentStep: persisted?.currentStep ?? 1,
     isLoading: false,
     error: "",
     registeredUser: null,
-    registeredToken: null,
     currentPhase: persisted?.currentPhase ?? "intro",
   }));
 
@@ -124,15 +115,7 @@ export const useOnboarding = (
   const handleComplete = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: "" }));
-
-      // If we have a registered user from Google auth, complete the flow
-      if (state.registeredUser && state.registeredToken) {
-        // Redirect to tenant dashboard
-        await redirectAfterLogin(state.registeredUser, router);
-      } else {
-        // Regular flow completion
-        onComplete();
-      }
+      onComplete();
     } catch (error: any) {
       console.error("Error completing onboarding:", error);
       setState((prev) => ({
@@ -142,16 +125,12 @@ export const useOnboarding = (
     } finally {
       setState((prev) => ({ ...prev, isLoading: false }));
     }
-  }, [state.registeredUser, state.registeredToken, onComplete, router]);
+  }, [onComplete]);
 
-  const handleSkip = useCallback(async () => {
+  const handleSkip = useCallback(() => {
     // Skip onboarding and go directly to dashboard
-    if (state.registeredUser && state.registeredToken) {
-      await redirectAfterLogin(state.registeredUser, router);
-    } else {
-      onComplete();
-    }
-  }, [state.registeredUser, state.registeredToken, onComplete, router]);
+    onComplete();
+  }, [onComplete]);
 
   const handleIntroComplete = useCallback(() => {
     setState((prev) => ({
@@ -172,15 +151,7 @@ export const useOnboarding = (
   const handlePreferencesComplete = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: "" }));
-
-      // If we have a registered user from Google auth, complete the flow
-      if (state.registeredUser && state.registeredToken) {
-        // Redirect to tenant dashboard
-        await redirectAfterLogin(state.registeredUser, router);
-      } else {
-        // Regular flow completion
-        onComplete();
-      }
+      onComplete();
     } catch (error: any) {
       console.error("Error completing onboarding:", error);
       setState((prev) => ({
@@ -190,7 +161,7 @@ export const useOnboarding = (
     } finally {
       setState((prev) => ({ ...prev, isLoading: false }));
     }
-  }, [state.registeredUser, state.registeredToken, onComplete, router]);
+  }, [onComplete]);
 
   return {
     state,

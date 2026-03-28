@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import {
   setUser,
@@ -27,7 +27,6 @@ export function waitForSessionManager(): Promise<void> {
 
 export default function SessionManager() {
   const dispatch = useDispatch<AppDispatch>();
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const initSession = async () => {
@@ -59,7 +58,6 @@ export default function SessionManager() {
           dispatch(logout());
         }
       } finally {
-        setIsInitialized(true);
         sessionManagerResolve?.();
       }
     };
