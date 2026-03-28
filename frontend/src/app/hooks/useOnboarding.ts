@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setAuth } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
 
@@ -128,13 +127,6 @@ export const useOnboarding = (
 
       // If we have a registered user from Google auth, complete the flow
       if (state.registeredUser && state.registeredToken) {
-        // Store the token
-        localStorage.setItem("accessToken", state.registeredToken);
-        localStorage.setItem(
-          "sessionExpiry",
-          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        );
-
         // Redirect to tenant dashboard
         await redirectAfterLogin(state.registeredUser, router);
       } else {
@@ -183,13 +175,6 @@ export const useOnboarding = (
 
       // If we have a registered user from Google auth, complete the flow
       if (state.registeredUser && state.registeredToken) {
-        // Store the token
-        localStorage.setItem("accessToken", state.registeredToken);
-        localStorage.setItem(
-          "sessionExpiry",
-          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        );
-
         // Redirect to tenant dashboard
         await redirectAfterLogin(state.registeredUser, router);
       } else {
