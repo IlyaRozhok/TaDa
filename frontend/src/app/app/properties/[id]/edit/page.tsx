@@ -367,7 +367,6 @@ export default function EditPropertyPage() {
                   <MediaManager
                     propertyId={property?.id || ""}
                     media={media}
-                    accessToken=""
                     onMediaUpdate={handleMediaUpdate}
                     disabled={saving}
                     maxFiles={10}

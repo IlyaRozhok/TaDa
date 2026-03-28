@@ -51,7 +51,6 @@ export default function AuthPage() {
         .then(async (response) => {
           const user = response.data.user;
           dispatch(setUser({ user }));
-          localStorage.setItem("user", JSON.stringify(user));
 
           // Load shortlist for tenant and admin users
           if (user?.role === "tenant" || user?.role === "admin") {

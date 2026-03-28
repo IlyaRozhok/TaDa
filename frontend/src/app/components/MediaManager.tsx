@@ -26,7 +26,6 @@ import {
 interface MediaManagerProps {
   propertyId: string;
   media: PropertyMedia[];
-  accessToken: string;
   onMediaUpdate: (updatedMedia: PropertyMedia[]) => void;
   disabled?: boolean;
   maxFiles?: number;
@@ -42,17 +41,10 @@ interface UploadingFile {
 export default function MediaManager({
   propertyId,
   media,
-  accessToken,
   onMediaUpdate,
   disabled = false,
   maxFiles = 10,
 }: MediaManagerProps) {
-  console.log("🎬 MediaManager props:", {
-    propertyId,
-    mediaCount: media?.length || 0,
-    accessToken: !!accessToken,
-    disabled,
-  });
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [message, setMessage] = useState<{

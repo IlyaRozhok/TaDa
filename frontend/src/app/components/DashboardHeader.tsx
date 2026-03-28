@@ -102,8 +102,6 @@ export default function DashboardHeader() {
 
   const handleLogout = () => {
     dispatch(logout());
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("sessionExpiry");
     router.push("/");
     setIsDropdownOpen(false);
   };
