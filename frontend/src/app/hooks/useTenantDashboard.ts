@@ -120,13 +120,10 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
-        const raw = localStorage.getItem("accessToken");
-        const token = raw?.trim() ? raw : null;
         const { user: authUser, isAuthenticated } = store.getState().auth;
-        const hasAuthSession =
-          !!token || (!!authUser?.id && isAuthenticated);
+        const hasAuthSession = !!authUser?.id && isAuthenticated;
 
-        // No Bearer and no Redux session → public list only
+        // No Redux session → public list only
         if (!hasAuthSession) {
           console.warn("⚠️ No auth session, using public endpoint");
           // Fallback to public endpoint if no token
@@ -243,11 +240,8 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
   // Load user preferences
   const loadUserPreferences = useCallback(async () => {
     try {
-      const raw = localStorage.getItem("accessToken");
-      const token = raw?.trim() ? raw : null;
       const { user: authUser, isAuthenticated } = store.getState().auth;
-      const hasSession =
-        !!token || (!!authUser?.id && isAuthenticated);
+      const hasSession = !!authUser?.id && isAuthenticated;
 
       if (!hasSession) {
         console.warn("⚠️ No session, skipping preferences load");
@@ -390,11 +384,8 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
 
         if (!isMounted) return;
 
-        const raw = localStorage.getItem("accessToken");
-        const token = raw?.trim() ? raw : null;
         const { user: authUser, isAuthenticated } = store.getState().auth;
-        const hasSession =
-          !!token || (!!authUser?.id && isAuthenticated);
+        const hasSession = !!authUser?.id && isAuthenticated;
 
         if (!hasSession) {
           console.warn("⚠️ No session during dashboard initialization");
