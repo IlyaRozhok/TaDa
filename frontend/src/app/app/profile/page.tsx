@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectUser,
-  setAuth,
+  setUser,
 } from "../../store/slices/authSlice";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import Footer from "../../components/Footer";
@@ -81,18 +81,10 @@ export default function ProfilePage() {
         if (!isMounted) return;
         setSessionReady(true);
 
-        const rawToken =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = rawToken?.trim() ? rawToken : null;
-
         // Fresh auth from store (avoid stale closure on `user` from first render).
-        // Cookie/httpOnly sessions often have no Bearer in localStorage but SessionManager
-        // already set user + isAuthenticated — do not send those users to /auth/login.
+        // SessionManager restores the session via cookie — no localStorage token needed.
         const { user: storeUser, isAuthenticated } = store.getState().auth;
-        const hasSession =
-          !!token || (!!storeUser?.id && isAuthenticated);
+        const hasSession = !!storeUser?.id && isAuthenticated;
 
         if (!hasSession) {
           router.replace("/app/auth/login");
@@ -122,12 +114,7 @@ export default function ProfilePage() {
         }
 
         if (isMounted) {
-          dispatch(
-            setAuth({
-              user: fetchedUser,
-              accessToken: token ?? "",
-            }),
-          );
+          dispatch(setUser({ user: fetchedUser }));
           setHasError(false);
         }
       } catch (err) {

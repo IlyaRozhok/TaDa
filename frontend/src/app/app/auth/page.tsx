@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { setAuth, selectIsAuthenticated } from "../../store/slices/authSlice";
+import { setUser, selectIsAuthenticated } from "../../store/slices/authSlice";
 import { fetchShortlist } from "../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../store/store";
 import { authAPI } from "../../lib/api";
@@ -43,20 +43,14 @@ export default function AuthPage() {
       // Clean up URL
       router.replace("/app/auth", undefined);
     } else if (token && success === "true") {
-      // Google auth successful
-      localStorage.setItem("accessToken", token);
+      // Google auth successful — token is now in httpOnly cookie; fetch user data
 
       // Get user data
       authAPI
         .getMe()
         .then(async (response) => {
           const user = response.data.user;
-          dispatch(
-            setAuth({
-              user,
-              accessToken: token,
-            })
-          );
+          dispatch(setUser({ user }));
           localStorage.setItem("user", JSON.stringify(user));
 
           // Load shortlist for tenant and admin users
@@ -70,7 +64,6 @@ export default function AuthPage() {
         .catch((err) => {
           console.error("Failed to get user data:", err);
           setError("Failed to complete authentication");
-          localStorage.removeItem("accessToken");
         });
 
       // Clean up URL
