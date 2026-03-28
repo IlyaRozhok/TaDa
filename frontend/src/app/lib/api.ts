@@ -13,37 +13,18 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor - add token to requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
-
 // Response interceptor - handle 401 errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Only handle 401 errors for actual API calls
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
 
-      // Don't logout on preferences, auth, or onboarding pages
       if (
         !currentPath.includes("/preferences") &&
         !currentPath.includes("/auth") &&
         !currentPath.includes("/onboarding")
       ) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionExpiry");
-        // Use dynamic import to avoid circular dependency
         import("../store/store").then(({ store }) => {
           store.dispatch(logout());
         });
@@ -356,7 +337,6 @@ export const propertiesAPI = {
   getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
   getPublic: (page: number = 1, limit: number = 12, search?: string) =>
     api.get("/properties/public", { params: { page, limit, search } }),
-  getMatched: () => api.get("/matching/matches"),
 
   // Media upload endpoints
   uploadPhotos: async (files: File[]) => {
@@ -576,6 +556,27 @@ export interface DetailedMatchingResultLegacy extends DetailedMatchingResult {
   matchReasons: string[]; // Computed from categories
 }
 
+// Category weights interface matching backend
+export interface CategoryWeights {
+  budget: number;
+  location: number;
+  bedrooms: number;
+  propertyType: number;
+  availability: number;
+  amenities: number;
+  occupation: number; // New lifestyle category
+  familyStatus: number; // New lifestyle category  
+  children: number; // New lifestyle category
+  bathrooms: number;
+  buildingStyle: number;
+  duration: number;
+  squareMeters: number;
+  furnishing: number;
+  smoking: number;
+  pets: number;
+  bills: number;
+}
+
 // Full matching response from backend
 export interface MatchingResponse {
   results: DetailedMatchingResult[];
@@ -584,7 +585,7 @@ export interface MatchingResponse {
     id: string;
     summary: string;
   };
-  appliedWeights: Record<string, number>;
+  appliedWeights: CategoryWeights;
 }
 
 export default api;
