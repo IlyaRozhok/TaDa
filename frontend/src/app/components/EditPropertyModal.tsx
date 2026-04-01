@@ -673,15 +673,15 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     formData.building_type !== "private_landlord" && !!formData.building_id;
   const occupationOptions = OCCUPATION_VALUES.map((value, i) => ({
     value,
-    label: t(wizardKeys.step8.occupationOptions[i]),
+    label: t(wizardKeys.step9.occupationOptions[i]),
   }));
   const familyStatusOptions = FAMILY_STATUS_VALUES.map((value, i) => ({
     value,
-    label: t(wizardKeys.step8.familyStatusOptions[i]),
+    label: t(wizardKeys.step9.familyStatusOptions[i]),
   }));
   const childrenOptions = CHILDREN_VALUES.map((value, i) => ({
     value,
-    label: t(wizardKeys.step8.childrenStatusOptions[i]),
+    label: t(wizardKeys.step9.childrenStatusOptions[i]),
   }));
   const hasNoChildrenSelected = (formData.children || []).includes("no");
 

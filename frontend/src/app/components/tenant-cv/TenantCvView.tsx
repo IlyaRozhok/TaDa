@@ -729,7 +729,7 @@ export function TenantCvView({
               </p>
             </div>
             <div className="bg-white">
-              <SectionTitle title={t(wizardKeys.step9.des.text1)} />
+              <SectionTitle title={t(wizardKeys.step10.des.text1)} />
               <div className="flex flex-wrap gap-2">
                 {hasHobbies ? (
                   localizedHobbiesList.map((label: string, idx: number) => (
