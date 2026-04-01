@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "@/app/hooks/useTranslation";
+import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import {
   PoundSterling,
   MapPin,
@@ -273,7 +274,7 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
     ? "Calculating..."
     : matchScore === null || matchScore === undefined
       ? "—"
-      : `${Math.round(matchScore)}% Match`;
+      : `${Math.round(matchScore)}% ${t(listingPropertyKeys.card.match)}`;
 
   return (
     <div

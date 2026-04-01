@@ -5,7 +5,14 @@
  */
 
 export const fontFamily = {
-  sans: ['Inter', 'system-ui', 'sans-serif'],
+  sans: [
+    'SF Pro Text',
+    'SF Pro Display',
+    '-apple-system',
+    'BlinkMacSystemFont',
+    'Helvetica Neue',
+    'sans-serif',
+  ],
   serif: ['Georgia', 'serif'],
   mono: ['Monaco', 'Consolas', 'monospace'],
 } as const;

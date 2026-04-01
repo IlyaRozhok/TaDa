@@ -12,7 +12,7 @@ export const generatePlaceholderSVG = (
       <rect width="${width}" height="${height}" fill="${bgColor}"/>
       <text x="${width / 2}" y="${
     height / 2
-  }" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="${textColor}">${text}</text>
+  }" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', sans-serif" font-size="16" fill="${textColor}">${text}</text>
     </svg>
   `;
 

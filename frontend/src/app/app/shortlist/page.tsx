@@ -314,26 +314,18 @@ export default function ShortlistPage() {
       <TenantUniversalHeader />
 
       <div className="flex-1">
-        <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16 flex flex-col flex-1">
+        <div className="max-w-[88rem] min-h-[100vh] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-28 flex flex-col flex-1">
           {/* Header: title, subtitle (kept in DOM to keep height stable) */}
           <div
-            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 ${
-              shouldShowShortlistHeader ? "" : "invisible"
+            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 ${
+              shouldShowShortlistHeader ? "" : "invisible hidden"
             }`}
           >
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {t(favoritesKeys.title)}
               </h1>
-              <p className="text-gray-600">
-                {t(favoritesKeys.subtitle)}
-                <span className="ml-2 text-gray-900 font-medium">
-                  {formatListingResultsCountLabel(
-                    t(listingPropertyKeys.resultsDescription),
-                    count,
-                  )}
-                </span>
-              </p>
+              <p className="text-gray-600">{t(favoritesKeys.subtitle)}</p>
             </div>
           </div>
 
@@ -354,7 +346,7 @@ export default function ShortlistPage() {
             )}
 
             {isEmptyShortlist && (
-              <div className="flex-1 flex items-start justify-start">
+              <div className="flex-1 flex items-center justify-center">
                 <div className="text-center max-w-md mx-auto px-4">
                   <h2 className="text-xl font-semibold text-gray-900 mb-2">
                     {t(favoritesKeys.emptyState.title)}

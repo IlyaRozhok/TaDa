@@ -14,6 +14,7 @@ export const listingPropertyKeys = {
     bath: "listing.property.card.bath",
     sqFt: "listing.property.card.sq.ft",
     priceMonth: "listing.property.card.price.month",
+    match: "listing.property.card.match",
   },
   filter: {
     bestMatch: "listing.property.filter.bestMatch",

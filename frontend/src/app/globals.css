@@ -8,12 +8,6 @@ html {
 
 /* Google Maps styles */
 
-/* SF Pro Font Family */
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-}
-
 /* Property Card Skeleton Animations */
 @keyframes shimmer {
   0% {
@@ -65,7 +59,9 @@ html {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans:
+    "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -118,7 +114,9 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", sans-serif;
   min-height: 100vh;
 }
 

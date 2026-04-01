@@ -250,7 +250,10 @@ export default function TenantUniversalHeader({
 
           {/* User Dropdown - visible only on desktop; hide Preferences & Tenant CV when shown in header */}
           <div className="hidden md:block">
-            <UserDropdown hidePreferencesAndTenantCv={isOnboarded} />
+            <UserDropdown
+              hidePreferences={isOnboarded}
+              hideTenantCv={!showTenantCvLink}
+            />
           </div>
         </div>
       </div>

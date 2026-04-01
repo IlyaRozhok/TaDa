@@ -9,17 +9,23 @@ import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { Sliders, FileText } from "lucide-react";
+import { Sliders, FileText, UserCog, Building2, LogOut } from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
   /** When true, Preferences and Tenant CV are not shown (e.g. they are in the header) */
   hidePreferencesAndTenantCv?: boolean;
+  /** Hide only Preferences action */
+  hidePreferences?: boolean;
+  /** Hide only Tenant CV action */
+  hideTenantCv?: boolean;
 }
 
 export default function UserDropdown({
   simplified = false,
   hidePreferencesAndTenantCv = false,
+  hidePreferences = false,
+  hideTenantCv = false,
 }: UserDropdownProps) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -131,6 +137,9 @@ export default function UserDropdown({
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const hasCompletedOnboarding = Boolean(
+    user.onboardingCompleted ?? user.isOnboarded,
+  );
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -235,19 +244,23 @@ export default function UserDropdown({
                   onClick={handleSettings}
                   className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
                 >
+                  <UserCog className="w-4 h-4 mr-3 flex-shrink-0" />
                   {t(profileKeys.dropProfileSettings)}
                 </button>
 
-                {!hidePreferencesAndTenantCv && (
-                  <>
-                    <button
-                      onClick={handlePreferences}
-                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
-                    >
-                      <Sliders className="w-4 h-4 mr-3 flex-shrink-0" />
-                      {t(profileKeys.dropChangePreferences)}
-                    </button>
+                {!hidePreferencesAndTenantCv && !hidePreferences && (
+                  <button
+                    onClick={handlePreferences}
+                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
+                  >
+                    <Sliders className="w-4 h-4 mr-3 flex-shrink-0" />
+                    {t(profileKeys.dropChangePreferences)}
+                  </button>
+                )}
 
+                {!hidePreferencesAndTenantCv &&
+                  !hideTenantCv &&
+                  hasCompletedOnboarding && (
                     <button
                       onClick={handleTenantCv}
                       className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
@@ -255,14 +268,14 @@ export default function UserDropdown({
                       <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
                       {t(tenantCvKeys.tenantCvButton)}
                     </button>
-                  </>
-                )}
+                  )}
 
                 {user?.role === "admin" && (
                   <button
                     onClick={handleUnits}
                     className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
                   >
+                    <Building2 className="w-4 h-4 mr-3 flex-shrink-0" />
                     Units
                   </button>
                 )}
@@ -275,6 +288,7 @@ export default function UserDropdown({
               onClick={handleLogout}
               className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-red-300 hover:bg-white/14"
             >
+              <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
               {t(profileKeys.dropLogout)}
             </button>
           </div>
