@@ -12,6 +12,7 @@ export interface CategoryWeights {
   propertyType: number; // Property type match
   availability: number; // Move-in date compatibility
   amenities: number; // Amenities match (including outdoor space)
+  propertyAmenities: number; // Apartment-level features match
   occupation: number; // Occupation compatibility with tenant types
   familyStatus: number; // Family status compatibility
   children: number; // Children compatibility with property
@@ -37,6 +38,7 @@ export const DEFAULT_WEIGHTS: CategoryWeights = {
   propertyType: 10, // Important property characteristic
   availability: 8, // Important for move-in planning
   amenities: 8, // Important for lifestyle (includes outdoor space)
+  propertyAmenities: 5, // Apartment-level features (kitchen, bathroom, storage, tech, access)
   occupation: 6, // NEW - Occupation compatibility with tenant types
   familyStatus: 5, // NEW - Family status compatibility  
   children: 4, // NEW - Children compatibility with property
