@@ -35,9 +35,8 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
         }
 
         const ownerProperties = allProperties.filter((prop: Property) => {
-          return (
-            prop.operator?.id === operatorId && prop.id !== currentPropertyId
-          );
+          const oid = prop.operator_id ?? prop.operator?.id;
+          return oid === operatorId && prop.id !== currentPropertyId;
         });
 
         setProperties(ownerProperties.slice(0, 2)); // Show only first 2

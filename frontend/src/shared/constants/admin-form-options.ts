@@ -20,23 +20,23 @@ export const TENANT_TYPE_OPTIONS = [
 export const AMENITIES_BY_CATEGORY = [
   {
     title: "Work & Practical",
-    values: [...AMENITIES_VALUES.slice(0, 10)],
+    values: [...AMENITIES_VALUES.slice(0, 9)],
   },
   {
     title: "Services & Extras",
-    values: [...AMENITIES_VALUES.slice(10, 16)],
+    values: [...AMENITIES_VALUES.slice(9, 15)],
   },
   {
     title: "Safety & Access",
-    values: [...AMENITIES_VALUES.slice(16, 19)],
+    values: [...AMENITIES_VALUES.slice(15, 18)],
   },
   {
     title: "Pets",
-    values: [...AMENITIES_VALUES.slice(19, 21)],
+    values: [...AMENITIES_VALUES.slice(18, 20)],
   },
   {
     title: "Family",
-    values: [...AMENITIES_VALUES.slice(21, 23)],
+    values: [...AMENITIES_VALUES.slice(20, 22)],
   },
 ] as const;
 

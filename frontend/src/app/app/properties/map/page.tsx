@@ -6,7 +6,7 @@ import { selectUser } from "../../../store/slices/authSlice";
 import TaDaMap from "../../../components/TaDaMap";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import { Property } from "../../../types";
-import { propertiesAPI } from "../../../lib/api";
+import { loadAllPublicPropertiesForBrowse } from "../../../hooks/useProperties";
 import { useRouter } from "next/navigation";
 import { geocodingService } from "../../../lib/geocoding";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -62,10 +62,7 @@ export default function PropertiesMapPage() {
         setIsLoading(true);
         setError(null);
 
-        const response = await propertiesAPI.getAll();
-
-
-        const propertiesData = response.data?.data || response.data || [];
+        const propertiesData = await loadAllPublicPropertiesForBrowse();
 
         if (propertiesData.length > 0) {
           console.log("Properties found, starting geocoding...");

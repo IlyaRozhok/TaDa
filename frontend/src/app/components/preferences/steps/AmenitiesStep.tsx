@@ -13,20 +13,20 @@ interface AmenitiesStepProps {
   onToggle: (category: keyof PreferencesFormData, value: string) => void;
 }
 
-// Section 1: title wizard.step7.des.text1, options amenities.name1–10.
-const SECTION1_VALUES = AMENITIES_VALUES.slice(0, 10);
+// Section 1: title wizard.step7.des.text1; labels amenities.name1–5 + name7–10 (name6 unused).
+const SECTION1_VALUES = AMENITIES_VALUES.slice(0, 9);
 
 // Section 2: services — amenities.name11–15 + preferences.amenities.smoking.area.
-const SECTION2_VALUES = AMENITIES_VALUES.slice(10, 16);
+const SECTION2_VALUES = AMENITIES_VALUES.slice(9, 15);
 
 // Section 3: safety — amenities.name16–18.
-const SECTION3_VALUES = AMENITIES_VALUES.slice(16, 19);
+const SECTION3_VALUES = AMENITIES_VALUES.slice(15, 18);
 
 // Section 4: pets — amenities.name19–20.
-const SECTION4_VALUES = AMENITIES_VALUES.slice(19, 21);
+const SECTION4_VALUES = AMENITIES_VALUES.slice(18, 20);
 
 // Section 5: family — amenities.name21–22.
-const SECTION5_VALUES = AMENITIES_VALUES.slice(21, 23);
+const SECTION5_VALUES = AMENITIES_VALUES.slice(20, 22);
 
 export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
   formData,
@@ -44,7 +44,7 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
   return (
     <StepWrapper title={t(k.title)} description={t(k.subtitle)}>
       <StepContainer>
-        {/* Section 1: title des.text1, options des.text1–text10 */}
+        {/* Section 1: title des.text1, options amenities.name1–9 */}
         <StepHeader title={t(k.des.text1)} />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch mb-6">
           {SECTION1_VALUES.map((value, i) => (

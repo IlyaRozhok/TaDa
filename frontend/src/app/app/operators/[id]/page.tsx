@@ -60,13 +60,20 @@ export default function OperatorPropertiesPage() {
           allProperties = response.data;
         }
 
-        // Filter properties by operator
-        const operatorProperties = allProperties.filter(
-          (prop: Property) => prop.operator?.id === id
-        );
+        // Filter properties by operator (public API exposes operator_id, not full operator)
+        const operatorProperties = allProperties.filter((prop: Property) => {
+          const oid = prop.operator_id ?? prop.operator?.id;
+          return oid === id;
+        });
 
         if (operatorProperties.length > 0) {
-          setOperator(operatorProperties[0].operator);
+          setOperator(
+            operatorProperties[0].operator ?? {
+              id: String(id),
+              full_name: "Operator",
+              email: "",
+            },
+          );
           setProperties(operatorProperties);
           setFilteredProperties(operatorProperties);
         } else {

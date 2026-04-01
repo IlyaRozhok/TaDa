@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -9,6 +9,7 @@ import {
   selectOnboardingCompleted,
 } from "../../store/slices/authSlice";
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
+import { usePropertyMatches } from "../../hooks/usePropertyMatches";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import ListedPropertiesSection from "../../components/ListedPropertiesSection";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
@@ -18,9 +19,34 @@ function TenantDashboardContent() {
   const user = useSelector(selectUser);
   const { state, loadProperties, clearError, setSearchTerm } =
     useTenantDashboard({
-      useMatchedProperties: true,
-      useFullCountForHeader: true,
+      // Full catalog — matching endpoint applies preference SQL filters and hides many listings.
+      useMatchedProperties: false,
+      useFullCountForHeader: false,
     });
+
+  const propertyIdsForMatches = useMemo(
+    () =>
+      state.matchedProperties
+        .map((m) => m.property?.id)
+        .filter((id): id is string => Boolean(id)),
+    [state.matchedProperties],
+  );
+
+  const { matchByPropertyId } = usePropertyMatches(propertyIdsForMatches);
+
+  const propertiesWithMatchScores = useMemo(() => {
+    return state.matchedProperties.map((m) => {
+      const id = m.property?.id;
+      if (!id) return m;
+      const extra = matchByPropertyId[id];
+      if (!extra) return m;
+      return {
+        ...m,
+        matchScore: extra.matchScore ?? m.matchScore ?? 0,
+        categories: extra.matchCategories ?? m.categories,
+      };
+    });
+  }, [state.matchedProperties, matchByPropertyId]);
 
   const handlePageChange = (page: number) => {
     // When switching pages we always move the user back to the top.
@@ -112,8 +138,8 @@ function TenantDashboardContent() {
       <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16">
         {/* Listed Properties Section */}
         <ListedPropertiesSection
-          properties={state.properties}
-          matchedProperties={state.matchedProperties}
+          properties={propertiesWithMatchScores}
+          matchedProperties={propertiesWithMatchScores}
           loading={state.loading}
           userPreferences={state.userPreferences}
           totalCount={state.totalCount}

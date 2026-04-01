@@ -76,11 +76,11 @@ export default function AllPropertiesPage() {
     paginationOptions
   );
 
-  // Load properties on component mount
+  // Load when auth role is known; refetch when fetchProperties identity changes (e.g. tenant vs operator)
   useEffect(() => {
     console.log("📡 Loading properties...");
     fetchProperties();
-  }, []); // Only load once on mount
+  }, [fetchProperties]);
 
   const propertyIds = useMemo(
     () => paginatedProperties.map((p) => p.id),

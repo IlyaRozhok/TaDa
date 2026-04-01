@@ -69,6 +69,11 @@ export const listingPropertyKeys = {
   },
   pricing: {
     bookRequested: "listing.property.pricing.bookRequested",
+    deposit: "listing.property.pricing.deposit",
+    wifi: "listing.property.pricing.wifi",
+    bills: "listing.property.pricing.bills",
+    included: "listing.property.pricing.included",
+    excluded: "listing.property.pricing.excluded",
   },
 };
 

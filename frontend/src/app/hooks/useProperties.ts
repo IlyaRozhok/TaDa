@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   propertiesAPI,
   Property,
@@ -12,7 +13,46 @@ import {
   PaginationOptions,
   PropertyQueryOptions,
 } from "../lib/api";
+import { selectUser } from "../store/slices/authSlice";
 import { useDebounce, useDebouncedApiCall } from "./useDebounce";
+
+/** GET /properties/public* returns { data, total, page, totalPages } */
+function extractPropertyListFromPublicResponse(response: {
+  data: unknown;
+}): Property[] {
+  const body = response.data;
+  if (Array.isArray(body)) return body;
+  if (body && typeof body === "object" && "data" in body) {
+    const inner = (body as { data: unknown }).data;
+    if (Array.isArray(inner)) return inner as Property[];
+  }
+  return [];
+}
+
+/**
+ * Loads every page of the public catalogue (limit 100 per request, API max).
+ * Used for browse views that filter/sort client-side (e.g. /app/properties).
+ */
+export async function loadAllPublicPropertiesForBrowse(): Promise<Property[]> {
+  const all: Property[] = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const response = await propertiesAPI.getAllPublic({
+      page,
+      limit: 100,
+    });
+    const body = response.data as {
+      data?: Property[];
+      totalPages?: number;
+    };
+    const chunk = extractPropertyListFromPublicResponse(response);
+    all.push(...chunk);
+    totalPages = body?.totalPages ?? 1;
+    page += 1;
+  } while (page <= totalPages);
+  return all;
+}
 
 // Pure helper functions for filtering, sorting, and pagination
 export const propertyFilters = {
@@ -300,6 +340,7 @@ interface UseMatchedPropertiesReturn {
 
 // Hook for general property operations
 export const useProperties = (): UsePropertiesReturn => {
+  const user = useSelector(selectUser);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -309,7 +350,7 @@ export const useProperties = (): UsePropertiesReturn => {
     useDebouncedApiCall(
       async (search: string, page: number = 1, limit: number = 12) => {
         const response = await propertiesAPI.getPublic(page, limit, search);
-        return response.data || [];
+        return extractPropertyListFromPublicResponse(response);
       },
       400 // 400ms delay to prevent cyclic requests
     );
@@ -319,12 +360,18 @@ export const useProperties = (): UsePropertiesReturn => {
       setLoading(true);
       setError(null);
 
-      const response = await propertiesAPI.getAll();
-      const responseData = response.data || response;
-      const propertiesData =
-        responseData.data || responseData.properties || responseData || [];
-
-      setProperties(Array.isArray(propertiesData) ? propertiesData : []);
+      const role = user?.role;
+      if (role === "admin" || role === "operator") {
+        const response = await propertiesAPI.getAll();
+        const responseData = response.data ?? response;
+        const propertiesData =
+          responseData.data || responseData.properties || responseData || [];
+        setProperties(Array.isArray(propertiesData) ? propertiesData : []);
+      } else {
+        // Tenants (and unauthenticated views): GET /properties is forbidden — use public catalogue.
+        const list = await loadAllPublicPropertiesForBrowse();
+        setProperties(list);
+      }
     } catch (err: unknown) {
       console.error("Error fetching properties:", err);
       setError(
@@ -333,7 +380,7 @@ export const useProperties = (): UsePropertiesReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.role]);
 
   const fetchPublicProperties = useCallback(
     async (page = 1, limit = 12, search?: string) => {
@@ -342,10 +389,10 @@ export const useProperties = (): UsePropertiesReturn => {
         setError(null);
 
         const response = await propertiesAPI.getPublic(page, limit, search);
-        const propertiesData = response.data || [];
+        const propertiesData = extractPropertyListFromPublicResponse(response);
 
-        setProperties(Array.isArray(propertiesData) ? propertiesData : []);
-        return Array.isArray(propertiesData) ? propertiesData : [];
+        setProperties(propertiesData);
+        return propertiesData;
       } catch (err: unknown) {
         console.error("Error fetching public properties:", err);
         setError(

@@ -153,13 +153,13 @@ export const wizardKeys = {
       text9: "wizard.step7.des.text9",
       text10: "wizard.step7.des.text10",
     },
+    /** First section: 9 options; skips amenities.name6 (Wi‑Fi included — removed from forms). */
     section1Options: [
       "amenities.name1",
       "amenities.name2",
       "amenities.name3",
       "amenities.name4",
       "amenities.name5",
-      "amenities.name6",
       "amenities.name7",
       "amenities.name8",
       "amenities.name9",

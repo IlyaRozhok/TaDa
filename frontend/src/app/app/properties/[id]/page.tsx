@@ -55,7 +55,9 @@ import {
   getBuildingTypeTranslationKey,
   getPropertyTypeTranslationKey,
   getFurnishingTranslationKey,
+  getAmenityDisplayTranslationKey,
 } from "@/shared/constants/mappings";
+import { getPropertyAmenityLabelKey } from "@/shared/constants/property-amenities";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 
@@ -77,7 +79,12 @@ type PropertyWithMedia = Property & {
   descriptions?: string;
   description?: string;
   amenities?: string[];
+  /** Apartment-level features (Localazy keys via getPropertyAmenityLabelKey). */
+  property_amenities?: string[];
   lifestyle_features?: string[];
+  deposit?: number | null;
+  /** Backend: "included" | "excluded" */
+  bills?: string | null;
 };
 
 export default function PropertyPublicPage() {
@@ -94,6 +101,7 @@ export default function PropertyPublicPage() {
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showAllOffers, setShowAllOffers] = useState(false);
+  const [showAllPropertyOffers, setShowAllPropertyOffers] = useState(false);
   const [matchScore, setMatchScore] = useState<number | null>(null);
   /** Start true so the gallery shows "Calculating..." until the first match response (avoids a flash of "—"). */
   const [matchLoading, setMatchLoading] = useState(true);
@@ -208,6 +216,16 @@ export default function PropertyPublicPage() {
   // Format amenity name (replace underscores with spaces, capitalize)
   const formatAmenityName = (name: string) => {
     return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  const labelBuildingAmenity = (amenity: string) => {
+    const key = getAmenityDisplayTranslationKey(amenity);
+    return key ? t(key) : formatAmenityName(amenity);
+  };
+
+  const labelPropertyAmenity = (value: string) => {
+    const key = getPropertyAmenityLabelKey(value);
+    return key ? t(key) : formatAmenityName(value);
   };
 
   // Scroll to top when component mounts - aggressive approach
@@ -1154,10 +1172,48 @@ export default function PropertyPublicPage() {
                         £{(Number(property.price || 0) * 2).toLocaleString()}
                       </span>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        {t(listingPropertyKeys.pricing.deposit)}
+                      </span>
+                      <span className="font-semibold text-black">
+                        £
+                        {Number(
+                          property.deposit != null ? property.deposit : 0,
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        {t(listingPropertyKeys.pricing.wifi)}
+                      </span>
+                      <span className="font-semibold text-black">
+                        {Array.isArray(property.property_amenities) &&
+                        property.property_amenities.includes("Wi-Fi")
+                          ? t(listingPropertyKeys.pricing.included)
+                          : t(listingPropertyKeys.pricing.excluded)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        {t(listingPropertyKeys.pricing.bills)}
+                      </span>
+                      <span className="font-semibold text-black">
+                        {property.bills === "included"
+                          ? t(listingPropertyKeys.pricing.included)
+                          : t(listingPropertyKeys.pricing.excluded)}
+                      </span>
+                    </div>
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span className="font-semibold text-black">Total</span>
                       <span className="font-bold text-black text-base">
-                        £{(Number(property.price || 0) * 2).toLocaleString()}
+                        £
+                        {(
+                          Number(property.price || 0) * 2 +
+                          Number(
+                            property.deposit != null ? property.deposit : 0,
+                          )
+                        ).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1210,15 +1266,19 @@ export default function PropertyPublicPage() {
         </div>
       </div>
 
-      {/* What this place offers */}
+      {/* What this place offers — building amenities + apartment features */}
       <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.keyFeatures.sectionTitle)}
           </h2>
+
+          {/* Building amenities (same labels as preferences / mappings) */}
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+            {t(wizardKeys.step8.title)}
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
             {(() => {
-              // Get amenities from property
               const allAmenities =
                 property.amenities && property.amenities.length > 0
                   ? property.amenities
@@ -1234,17 +1294,19 @@ export default function PropertyPublicPage() {
               return visibleAmenities.length > 0 ? (
                 visibleAmenities.map((amenity: string, i: number) => (
                   <div
-                    key={i}
+                    key={`b-${i}-${amenity}`}
                     className="flex items-center gap-2 sm:gap-3 py-2"
                   >
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-black">
-                      {formatAmenityName(amenity)}
+                      {labelBuildingAmenity(amenity)}
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">No amenities listed</p>
+                <p className="text-gray-500 text-sm col-span-full">
+                  No amenities listed
+                </p>
               );
             })()}
           </div>
@@ -1262,12 +1324,73 @@ export default function PropertyPublicPage() {
             return (
               hiddenCount > 0 && (
                 <button
+                  type="button"
                   onClick={() => setShowAllOffers(!showAllOffers)}
                   className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
                 >
                   {showAllOffers
                     ? `Show less`
                     : `${t(propertyDetailsKeys.showMoreBtn)} (${allAmenitiesList.length})`}
+                </button>
+              )
+            );
+          })()}
+
+          {/* Apartment-level property amenities (listing.features.* keys) */}
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mt-8 sm:mt-10 mb-3 sm:mb-4">
+            {t(wizardKeys.step7.title)}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
+            {(() => {
+              const allPropertyAmenities = Array.isArray(
+                property.property_amenities,
+              )
+                ? property.property_amenities
+                : [];
+
+              const visible = showAllPropertyOffers
+                ? allPropertyAmenities
+                : allPropertyAmenities.slice(0, 9);
+
+              return visible.length > 0 ? (
+                visible.map((item: string, i: number) => (
+                  <div
+                    key={`p-${i}-${item}`}
+                    className="flex items-center gap-2 sm:gap-3 py-2"
+                  >
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-black">
+                      {labelPropertyAmenity(item)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm col-span-full">
+                  No apartment features listed
+                </p>
+              );
+            })()}
+          </div>
+          {(() => {
+            const allPropertyAmenities = Array.isArray(
+              property.property_amenities,
+            )
+              ? property.property_amenities
+              : [];
+            const hiddenCount = allPropertyAmenities.length - 9;
+
+            return (
+              hiddenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowAllPropertyOffers(!showAllPropertyOffers)
+                  }
+                  className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
+                >
+                  {showAllPropertyOffers
+                    ? `Show less`
+                    : `${t(propertyDetailsKeys.showMoreBtn)} (${allPropertyAmenities.length})`}
                 </button>
               )
             );

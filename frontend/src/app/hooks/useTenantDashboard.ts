@@ -190,15 +190,15 @@ export const useTenantDashboard = (
           // Keep match-scored dataset, but show full inventory count in header when requested.
           if (useFullCountForHeader) {
             try {
-              const fullCountResponse = await propertiesAPI.getAll({
-                page: 1,
-                limit: 1,
+              const fullCountResponse = await propertiesAPI.getPublic(
+                1,
+                1,
                 search,
-              });
+              );
               const fullCount =
                 fullCountResponse.data?.total ??
-                (Array.isArray(fullCountResponse.data)
-                  ? fullCountResponse.data.length
+                (Array.isArray(fullCountResponse.data?.data)
+                  ? fullCountResponse.data.data.length
                   : undefined);
               if (typeof fullCount === "number" && fullCount >= 0) {
                 totalCount = fullCount;
@@ -208,11 +208,12 @@ export const useTenantDashboard = (
             }
           }
         } else {
-          // Units page should show full listing count, not preference-filtered matches.
-          const response = await propertiesAPI.getAll({ page, limit: 12, search });
+          // Full catalog: public paginated API (tenant-safe). GET /properties is admin/operator-only.
+          const response = await propertiesAPI.getPublic(page, 12, search);
           propertiesData = response.data?.data || response.data || [];
-          totalCount = response.data?.total || propertiesData.length;
-          totalPages = response.data?.totalPages || Math.ceil(totalCount / 12);
+          totalCount = response.data?.total ?? propertiesData.length;
+          totalPages =
+            response.data?.totalPages || Math.ceil(totalCount / 12);
         }
 
         // Transform to MatchedProperty format and filter out invalid items.

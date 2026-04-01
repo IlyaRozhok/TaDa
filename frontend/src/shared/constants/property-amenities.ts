@@ -7,18 +7,25 @@ export interface PropertyAmenitiesGroup {
 export const PROPERTY_AMENITIES_GROUPS: PropertyAmenitiesGroup[] = [
   {
     titleKey: "listing.features.access.title",
-    values: ["Floor level", "Secure entry system", "Bin storage area"],
+    values: ["Floor level", "Lift", "Secure entry system", "Bin storage area"],
     labelKeys: [
       "listing.features.access.floorLevel",
+      "listing.features.access.lift",
       "listing.features.access.secureEntry",
       "listing.features.access.binArea",
     ],
   },
   {
     titleKey: "listing.features.tech.title",
-    values: ["Fibre broadband", "USB / USB-C charging points", "Smart thermostat"],
+    values: [
+      "Fibre broadband",
+      "Wi-Fi",
+      "USB / USB-C charging points",
+      "Smart thermostat",
+    ],
     labelKeys: [
       "listing.features.tech.fibre",
+      "listing.property.pricing.wifi",
       "listing.features.tech.usb",
       "listing.features.tech.thermostat",
     ],
@@ -82,3 +89,16 @@ export const PROPERTY_AMENITIES_GROUPS: PropertyAmenitiesGroup[] = [
 export const PROPERTY_AMENITIES_VALUES: string[] = PROPERTY_AMENITIES_GROUPS.flatMap(
   (g) => g.values,
 );
+
+/** Localazy key for a stored DB value (same strings as preferences PropertyAmenitiesStep). */
+export function getPropertyAmenityLabelKey(
+  storedValue: string,
+): string | undefined {
+  for (const g of PROPERTY_AMENITIES_GROUPS) {
+    const idx = g.values.indexOf(storedValue);
+    if (idx !== -1) {
+      return g.labelKeys[idx];
+    }
+  }
+  return undefined;
+}
