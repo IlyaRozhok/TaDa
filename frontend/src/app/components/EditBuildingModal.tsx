@@ -111,16 +111,6 @@ interface MetroStation {
   destination: number;
 }
 
-interface CommuteTime {
-  label: string;
-  destination: number;
-}
-
-interface LocalEssential {
-  label: string;
-  destination: number;
-}
-
 interface ConciergeHours {
   from: number;
   to: number;
@@ -194,8 +184,8 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     photos: [] as string[],
     documents: "",
     metro_stations: [] as MetroStation[],
-    commute_times: [] as CommuteTime[],
-    local_essentials: [] as LocalEssential[],
+    commute_times: [] as Array<{ label: string; destination: number }>,
+    local_essentials: [] as Array<{ label: string; destination: number }>,
     amenities: [] as string[],
     is_concierge: false,
     concierge_hours: null as ConciergeHours | null,
@@ -737,63 +727,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       ...prev,
       metro_stations: prev.metro_stations.map((station, i) =>
         i === index ? { ...station, [field]: value } : station,
-      ),
-    }));
-  };
-
-  const addCommuteTime = () => {
-    setFormData((prev) => ({
-      ...prev,
-      commute_times: [...prev.commute_times, { label: "", destination: 0 }],
-    }));
-  };
-
-  const removeCommuteTime = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      commute_times: prev.commute_times.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateCommuteTime = (
-    index: number,
-    field: keyof CommuteTime,
-    value: string | number,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      commute_times: prev.commute_times.map((time, i) =>
-        i === index ? { ...time, [field]: value } : time,
-      ),
-    }));
-  };
-
-  const addLocalEssential = () => {
-    setFormData((prev) => ({
-      ...prev,
-      local_essentials: [
-        ...prev.local_essentials,
-        { label: "", destination: 0 },
-      ],
-    }));
-  };
-
-  const removeLocalEssential = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      local_essentials: prev.local_essentials.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateLocalEssential = (
-    index: number,
-    field: keyof LocalEssential,
-    value: string | number,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      local_essentials: prev.local_essentials.map((essential, i) =>
-        i === index ? { ...essential, [field]: value } : essential,
       ),
     }));
   };
@@ -2378,106 +2311,6 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
             >
               Add Metro Station
-            </button>
-          </div>
-
-          {/* Commute Times */}
-          <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Commute Times
-            </h4>
-
-            {formData.commute_times.map((time, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={time.label}
-                  onChange={(e) =>
-                    updateCommuteTime(index, "label", e.target.value)
-                  }
-                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  placeholder="Destination"
-                />
-                <input
-                  type="number"
-                  value={time.destination}
-                  onChange={(e) =>
-                    updateCommuteTime(
-                      index,
-                      "destination",
-                      parseInt(e.target.value) || 0,
-                    )
-                  }
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  placeholder="min"
-                  min="0"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeCommuteTime(index)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addCommuteTime}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-            >
-              Add Commute Time
-            </button>
-          </div>
-
-          {/* Local Essentials */}
-          <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Local Essentials
-            </h4>
-
-            {formData.local_essentials.map((essential, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={essential.label}
-                  onChange={(e) =>
-                    updateLocalEssential(index, "label", e.target.value)
-                  }
-                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  placeholder="Essential name"
-                />
-                <input
-                  type="number"
-                  value={essential.destination}
-                  onChange={(e) =>
-                    updateLocalEssential(
-                      index,
-                      "destination",
-                      parseInt(e.target.value) || 0,
-                    )
-                  }
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  placeholder="m"
-                  min="0"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeLocalEssential(index)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addLocalEssential}
-              className="flex items-center text-black gap-2 px-4 py-2 bg-gray-100 text-back rounded-md hover:bg-gray-200"
-            >
-              Add Local Essential
             </button>
           </div>
 

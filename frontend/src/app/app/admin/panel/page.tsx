@@ -23,7 +23,11 @@ import EditBuildingModal from "../../../components/EditBuildingModal";
 import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
 import { Copy, Check, X } from "lucide-react";
-import { bookingRequestsAPI, buildingsAPI, propertiesAPI } from "../../../lib/api";
+import {
+  bookingRequestsAPI,
+  buildingsAPI,
+  propertiesAPI,
+} from "../../../lib/api";
 import { Property } from "../../../types/property";
 import {
   BookingRequest,
@@ -106,16 +110,13 @@ function AdminPanelContent() {
   );
 
   // Admin properties list via RTK Query (with 5-minute cache)
-  const {
-    data: propertiesQueryData,
-    isLoading: isPropsQueryLoading,
-  } = useGetPropertiesQuery({});
+  const { data: propertiesQueryData, isLoading: isPropsQueryLoading } =
+    useGetPropertiesQuery({});
 
   // Sync RTK Query data into local state used by the rest of the admin logic
   useEffect(() => {
     if (!propertiesQueryData) return;
-    const list =
-      (propertiesQueryData as any).data || propertiesQueryData || [];
+    const list = (propertiesQueryData as any).data || propertiesQueryData || [];
     if (Array.isArray(list)) {
       setProperties(list);
     }
@@ -133,8 +134,7 @@ function AdminPanelContent() {
 
   useEffect(() => {
     if (!bookingQueryData) return;
-    const list =
-      (bookingQueryData as any).data || bookingQueryData || [];
+    const list = (bookingQueryData as any).data || bookingQueryData || [];
     if (Array.isArray(list)) {
       setRequests(list);
     }
@@ -172,13 +172,19 @@ function AdminPanelContent() {
         };
 
         if (activeSection === "users") {
-          const response = await fetch(`${apiUrl}/users`, { credentials: "include", headers });
+          const response = await fetch(`${apiUrl}/users`, {
+            credentials: "include",
+            headers,
+          });
           if (response.ok) {
             const data = await response.json();
             setUsers(data.users || data || []);
           }
         } else if (activeSection === "buildings") {
-          const response = await fetch(`${apiUrl}/buildings`, { credentials: "include", headers });
+          const response = await fetch(`${apiUrl}/buildings`, {
+            credentials: "include",
+            headers,
+          });
           if (response.ok) {
             const data = await response.json();
             setBuildings(data.data || data || []);
@@ -352,7 +358,10 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, { credentials: "include", headers });
+        const response = await fetch(`${apiUrl}/users`, {
+          credentials: "include",
+          headers,
+        });
         if (response.ok) {
           const usersData = await response.json();
           setUsers(usersData.users || usersData || []);
@@ -393,7 +402,10 @@ function AdminPanelContent() {
 
       // Reload buildings list
       if (activeSection === "buildings") {
-        const response = await fetch(`${apiUrl}/buildings`, { credentials: "include", headers });
+        const response = await fetch(`${apiUrl}/buildings`, {
+          credentials: "include",
+          headers,
+        });
         if (response.ok) {
           const buildingsData = await response.json();
           setBuildings(buildingsData.data || buildingsData || []);
@@ -454,7 +466,10 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, { credentials: "include", headers });
+        const response = await fetch(`${apiUrl}/users`, {
+          credentials: "include",
+          headers,
+        });
         if (response.ok) {
           const usersData = await response.json();
           const updatedUsers = usersData.users || usersData || [];
@@ -514,7 +529,10 @@ function AdminPanelContent() {
 
       // Refresh buildings list and update selectedItem
       if (activeSection === "buildings") {
-        const response = await fetch(`${apiUrl}/buildings`, { credentials: "include", headers });
+        const response = await fetch(`${apiUrl}/buildings`, {
+          credentials: "include",
+          headers,
+        });
         if (response.ok) {
           const buildingsData = await response.json();
           const updatedBuildings = buildingsData.data || buildingsData || [];
@@ -578,7 +596,10 @@ function AdminPanelContent() {
 
       // Reload properties
       if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, { credentials: "include", headers });
+        const response = await fetch(`${apiUrl}/properties`, {
+          credentials: "include",
+          headers,
+        });
         if (response.ok) {
           const data = await response.json();
           setProperties(data.data || data || []);
@@ -647,7 +668,10 @@ function AdminPanelContent() {
 
       // Refresh properties list
       if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, { credentials: "include", headers });
+        const response = await fetch(`${apiUrl}/properties`, {
+          credentials: "include",
+          headers,
+        });
         if (response.ok) {
           const propertiesData = await response.json();
           const updatedProperties = propertiesData.data || propertiesData || [];
@@ -711,7 +735,7 @@ function AdminPanelContent() {
       <nav className="space-y-4 p-4">
         <button
           onClick={() => setActiveSection("users")}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all cursor-pointer duration-200 cursor-pointer ${
             activeSection === "users"
               ? "bg-gray-100 text-black"
               : "text-black hover:bg-gray-50"
@@ -722,7 +746,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("buildings")}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
             activeSection === "buildings"
               ? "bg-gray-100 text-black"
               : "text-black hover:bg-gray-50"
@@ -733,7 +757,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("properties")}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
             activeSection === "properties"
               ? "bg-gray-100 text-black"
               : "text-black hover:bg-gray-50"
@@ -744,7 +768,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("requests")}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+          className={`w-full flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all duration-200 ${
             activeSection === "requests"
               ? "bg-gray-100 text-black"
               : "text-black hover:bg-gray-50"

@@ -103,6 +103,9 @@ export const assignPropertyOptionals = (
   if (dto.amenities !== undefined) {
     target.amenities = dto.amenities;
   }
+  if (dto.property_amenities !== undefined) {
+    target.property_amenities = dto.property_amenities;
+  }
   if (dto.family_status !== undefined) {
     target.family_status = dto.family_status;
   }

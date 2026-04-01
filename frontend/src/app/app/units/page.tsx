@@ -17,7 +17,10 @@ import Footer from "../../components/Footer";
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
   const { state, loadProperties, clearError, setSearchTerm } =
-    useTenantDashboard();
+    useTenantDashboard({
+      useMatchedProperties: true,
+      useFullCountForHeader: true,
+    });
 
   const handlePageChange = (page: number) => {
     // When switching pages we always move the user back to the top.

@@ -363,19 +363,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             removePet={dropdownHelpers.removePet}
           />
 
-          {/* Metro, Commute, Local Essentials */}
+          {/* Metro stations */}
           <LocationDetailsSection
             formData={formData}
-            onFieldChange={handleFormFieldChange}
             addMetroStation={dropdownHelpers.addMetroStation}
             updateMetroStation={dropdownHelpers.updateMetroStation}
             removeMetroStation={dropdownHelpers.removeMetroStation}
-            addCommuteTime={dropdownHelpers.addCommuteTime}
-            updateCommuteTime={dropdownHelpers.updateCommuteTime}
-            removeCommuteTime={dropdownHelpers.removeCommuteTime}
-            addLocalEssential={dropdownHelpers.addLocalEssential}
-            updateLocalEssential={dropdownHelpers.updateLocalEssential}
-            removeLocalEssential={dropdownHelpers.removeLocalEssential}
           />
 
           {/* Media */}

@@ -51,17 +51,27 @@ interface UseTenantDashboardReturn {
   clearError: () => void;
 }
 
-export const useTenantDashboard = (): UseTenantDashboardReturn => {
+interface UseTenantDashboardOptions {
+  useMatchedProperties?: boolean;
+  useFullCountForHeader?: boolean;
+}
+
+export const useTenantDashboard = (
+  options: UseTenantDashboardOptions = {},
+): UseTenantDashboardReturn => {
+  const { useMatchedProperties = true, useFullCountForHeader = false } = options;
   const user = useSelector(selectUser);
   const dispatch = useDispatch<AppDispatch>();
 
   // Seed initial state from RTK Query cache when available
   const cachedInitial = useSelector((state: RootState) =>
-    apiSlice.endpoints.getMatchedPropertiesPaginated.select({
-      page: 1,
-      limit: 12,
-      search: "",
-    })(state),
+    useMatchedProperties
+      ? apiSlice.endpoints.getMatchedPropertiesPaginated.select({
+          page: 1,
+          limit: 12,
+          search: "",
+        })(state)
+      : undefined,
   );
 
   const [state, setState] = useState<DashboardState>(() => {
@@ -159,28 +169,67 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
           return;
         }
 
-        // Use matched properties endpoint via RTK Query, which provides caching
-        const responseData = await dispatch(
-          apiSlice.endpoints.getMatchedPropertiesPaginated.initiate({
-            page,
-            limit: 12,
-            search,
-          })
-        ).unwrap();
+        let propertiesData: any[] = [];
+        let totalCount = 0;
+        let totalPages = 1;
 
-        const propertiesData = responseData.data || [];
-        const totalCount = responseData.total || propertiesData.length;
+        if (useMatchedProperties) {
+          // Use matched properties endpoint via RTK Query, which provides caching
+          const responseData = await dispatch(
+            apiSlice.endpoints.getMatchedPropertiesPaginated.initiate({
+              page,
+              limit: 12,
+              search,
+            }),
+          ).unwrap();
 
-        // Transform to MatchedProperty format and filter out invalid items
+          propertiesData = responseData.data || [];
+          totalCount = responseData.total || propertiesData.length;
+          totalPages = responseData.totalPages || Math.ceil(totalCount / 12);
+
+          // Keep match-scored dataset, but show full inventory count in header when requested.
+          if (useFullCountForHeader) {
+            try {
+              const fullCountResponse = await propertiesAPI.getAll({
+                page: 1,
+                limit: 1,
+                search,
+              });
+              const fullCount =
+                fullCountResponse.data?.total ??
+                (Array.isArray(fullCountResponse.data)
+                  ? fullCountResponse.data.length
+                  : undefined);
+              if (typeof fullCount === "number" && fullCount >= 0) {
+                totalCount = fullCount;
+              }
+            } catch (countError) {
+              console.warn("⚠️ Failed to fetch full properties count:", countError);
+            }
+          }
+        } else {
+          // Units page should show full listing count, not preference-filtered matches.
+          const response = await propertiesAPI.getAll({ page, limit: 12, search });
+          propertiesData = response.data?.data || response.data || [];
+          totalCount = response.data?.total || propertiesData.length;
+          totalPages = response.data?.totalPages || Math.ceil(totalCount / 12);
+        }
+
+        // Transform to MatchedProperty format and filter out invalid items.
         const matchedProperties: MatchedProperty[] = propertiesData
-          .map((item: any) => ({
-            property: item.property,
-            matchScore:
-              item.matchScore ??
-              item.matchPercentage ??
-              0,
-            categories: item.categories || [],
-          }))
+          .map((item: any) =>
+            useMatchedProperties
+              ? {
+                  property: item.property,
+                  matchScore: item.matchScore ?? item.matchPercentage ?? 0,
+                  categories: item.categories || [],
+                }
+              : {
+                  property: item,
+                  matchScore: 0,
+                  categories: [],
+                },
+          )
           .filter((item: MatchedProperty) => item && item.property && item.property.id);
 
         setState((prev) => ({
@@ -189,7 +238,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
           matchedProperties,
           totalCount,
           currentPage: page,
-          totalPages: responseData.totalPages || Math.ceil(totalCount / 12),
+          totalPages,
           loading: false,
         }));
       } catch (error: any) {
@@ -234,7 +283,7 @@ export const useTenantDashboard = (): UseTenantDashboardReturn => {
         }
       }
     },
-    [dispatch]
+    [dispatch, useMatchedProperties, useFullCountForHeader]
   );
 
   // Load user preferences

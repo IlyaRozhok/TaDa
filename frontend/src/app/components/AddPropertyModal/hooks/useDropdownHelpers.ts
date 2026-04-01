@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MetroStation, CommuteTime, LocalEssential, Pet, PropertyFormData } from "../types";
+import { MetroStation, Pet, PropertyFormData } from "../types";
 
 export const useDropdownHelpers = (
   formData: PropertyFormData,
@@ -37,8 +37,6 @@ export const useDropdownHelpers = (
       "pets",
       "smoking_area_prop",
       "metro_stations",
-      "commute_times",
-      "local_essentials",
     ];
     return (
       formData.building_type !== "private_landlord" &&
@@ -67,52 +65,6 @@ export const useDropdownHelpers = (
   const removeMetroStation = (index: number) => {
     updateFormData({
       metro_stations: formData.metro_stations.filter((_, i) => i !== index)
-    });
-  };
-
-  // Commute Times helpers
-  const addCommuteTime = () => {
-    updateFormData({
-      commute_times: [
-        ...formData.commute_times,
-        { label: "", destination: undefined },
-      ],
-    });
-  };
-
-  const updateCommuteTime = (index: number, updates: Partial<CommuteTime>) => {
-    const updated = formData.commute_times.map((time, i) =>
-      i === index ? { ...time, ...updates } : time
-    );
-    updateFormData({ commute_times: updated });
-  };
-
-  const removeCommuteTime = (index: number) => {
-    updateFormData({
-      commute_times: formData.commute_times.filter((_, i) => i !== index)
-    });
-  };
-
-  // Local Essentials helpers
-  const addLocalEssential = () => {
-    updateFormData({
-      local_essentials: [
-        ...formData.local_essentials,
-        { label: "", destination: undefined },
-      ],
-    });
-  };
-
-  const updateLocalEssential = (index: number, updates: Partial<LocalEssential>) => {
-    const updated = formData.local_essentials.map((essential, i) =>
-      i === index ? { ...essential, ...updates } : essential
-    );
-    updateFormData({ local_essentials: updated });
-  };
-
-  const removeLocalEssential = (index: number) => {
-    updateFormData({
-      local_essentials: formData.local_essentials.filter((_, i) => i !== index)
     });
   };
 
@@ -146,14 +98,6 @@ export const useDropdownHelpers = (
     addMetroStation,
     updateMetroStation,
     removeMetroStation,
-    // Commute times
-    addCommuteTime,
-    updateCommuteTime,
-    removeCommuteTime,
-    // Local essentials
-    addLocalEssential,
-    updateLocalEssential,
-    removeLocalEssential,
     // Pets
     addPet,
     updatePet,

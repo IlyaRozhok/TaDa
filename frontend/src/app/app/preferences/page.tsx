@@ -32,7 +32,7 @@ export default function PreferencesPageRoute() {
         showTenantCvLink={true}
       />
 
-      <NewPreferencesPage currentStepOffset={0} totalSteps={11} />
+      <NewPreferencesPage currentStepOffset={0} totalSteps={12} />
     </div>
   );
 }
