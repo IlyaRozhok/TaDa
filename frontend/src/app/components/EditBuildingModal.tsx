@@ -163,7 +163,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     () =>
       OCCUPATION_VALUES.map((value, i) => ({
         value,
-        label: t(wizardKeys.step8.occupationOptions[i]),
+        label: t(wizardKeys.step9.occupationOptions[i]),
       })),
     [t],
   );
@@ -171,7 +171,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     () =>
       FAMILY_STATUS_VALUES.map((value, i) => ({
         value,
-        label: t(wizardKeys.step8.familyStatusOptions[i]),
+        label: t(wizardKeys.step9.familyStatusOptions[i]),
       })),
     [t],
   );
@@ -179,7 +179,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     () =>
       CHILDREN_VALUES.map((value, i) => ({
         value,
-        label: t(wizardKeys.step8.childrenStatusOptions[i]),
+        label: t(wizardKeys.step9.childrenStatusOptions[i]),
       })),
     [t],
   );

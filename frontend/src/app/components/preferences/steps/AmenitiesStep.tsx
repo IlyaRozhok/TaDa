@@ -34,7 +34,7 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const k = wizardKeys.step7;
+  const k = wizardKeys.step8;
   const section1LabelKeys = k.section1Options;
   const section2LabelKeys = k.section2Options;
   const section3LabelKeys = k.section3Options;

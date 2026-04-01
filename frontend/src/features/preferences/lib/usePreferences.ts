@@ -123,6 +123,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       // Step 8 - Amenities
       amenities: [],
       amenities_preferences: [], // UI alias
+      property_amenities_preferences: [], // UI alias for property_amenities
       is_concierge: false,
       smoking_area: false,
       additional_preferences: [], // UI alias

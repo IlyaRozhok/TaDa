@@ -33,7 +33,7 @@ export const LivingEnvironmentStep: React.FC<LivingEnvironmentStepProps> = ({
   onUpdate,
 }) => {
   const { t } = useTranslation();
-  const k = wizardKeys.step10;
+  const k = wizardKeys.step11;
 
   const handleIdealLivingToggle = (value: string) => {
     const current = formData.ideal_living_environment || [];

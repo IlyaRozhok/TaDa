@@ -84,6 +84,7 @@ export interface PropertyFormData {
   address: string;
   tenant_types: string[];
   amenities: string[];
+  property_amenities: string[];
   family_status: string[];
   occupation: string[];
   children: string[];

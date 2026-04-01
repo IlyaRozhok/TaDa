@@ -136,6 +136,9 @@ export const wizardKeys = {
     optionalText: "wizard.text.optional",
   },
   step7: {
+    title: "appartment.included.title",
+  },
+  step8: {
     title: "wizard.step7.title",
     subtitle: "wizard.step7.subtitle",
     des: {
@@ -178,7 +181,7 @@ export const wizardKeys = {
     section4Options: ["amenities.name19", "amenities.name20"],
     section5Options: ["amenities.name21", "amenities.name22"],
   },
-  step8: {
+  step9: {
     title: "wizard.step8.title",
     subtitle: "wizard.step8.subtitle",
     des: { text1: "wizard.step8.des.text1" },
@@ -207,7 +210,7 @@ export const wizardKeys = {
       "children.status.name4",
     ],
   },
-  step9: {
+  step10: {
     title: "wizard.step9.title",
     subtitle: "wizard.step9.subtitle",
     des: {
@@ -274,7 +277,7 @@ export const wizardKeys = {
       "creative.cultural.name10",
     ],
   },
-  step10: {
+  step11: {
     title: "wizard.step10.title",
     subtitle: "wizard.step10.subtitle",
     des: {
@@ -292,7 +295,7 @@ export const wizardKeys = {
     ],
     smokerAnswerOptions: ["smoker.answer.name1", "smoker.answer.name2"],
   },
-  step11: {
+  step12: {
     title: "wizard.step11.title",
     subtitle: "wizard.step11.subtitle",
     des: {

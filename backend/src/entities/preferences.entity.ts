@@ -303,6 +303,17 @@ export class Preferences {
   @Column({ type: "jsonb", nullable: true, default: [] })
   amenities?: string[];
 
+  // ==================== STEP 7b: PROPERTY AMENITIES (apartment-level features) ====================
+
+  @ApiProperty({
+    description: "Preferred apartment-level features (kitchen, bathroom, storage, etc.)",
+    example: ["Dishwasher", "Rainfall shower", "Fibre broadband"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  property_amenities?: string[];
+
   // ==================== STEP 8: HOBBIES ====================
 
   @ApiProperty({

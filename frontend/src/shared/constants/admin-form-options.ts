@@ -1,4 +1,5 @@
 import { AMENITIES_VALUES } from "./amenities";
+import { PROPERTY_AMENITIES_GROUPS } from "./property-amenities";
 
 /**
  * Shared constants for admin forms (Building and Property creation/editing)
@@ -42,6 +43,12 @@ export const AMENITIES_BY_CATEGORY = [
 /** Flat list of all amenities (for backward compatibility and simple dropdowns). */
 export const AMENITIES_OPTIONS: readonly string[] =
   AMENITIES_BY_CATEGORY.flatMap((s) => s.values);
+
+// ==================== PROPERTY AMENITIES (apartment-level features) ====================
+export const PROPERTY_AMENITIES_BY_CATEGORY = PROPERTY_AMENITIES_GROUPS.map((g) => ({
+  titleKey: g.titleKey,
+  values: g.values,
+}));
 
 // ==================== BUILDING UNIT TYPES (Type of Unit) ====================
 // Same 6 options as preferences Step 3 (Property type). Form stores UI strings; save/load via mappings.

@@ -128,6 +128,15 @@ export class Property {
   amenities?: string[];
 
   @ApiProperty({
+    description: "Apartment-level features (kitchen, bathroom, storage, tech, access)",
+    example: ["Dishwasher", "Rainfall shower", "Fibre broadband"],
+    type: [String],
+    required: false,
+  })
+  @Column({ type: "jsonb", nullable: true, default: [] })
+  property_amenities?: string[];
+
+  @ApiProperty({
     description: "Pet policy (inherited from building or custom)",
     example: true,
     required: false,

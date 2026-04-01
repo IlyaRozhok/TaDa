@@ -83,7 +83,7 @@ export const CompleteProfileStep: React.FC<CompleteProfileStepProps> = ({
   onToggle,
 }) => {
   const { t } = useTranslation();
-  const k = wizardKeys.step9;
+  const k = wizardKeys.step10;
 
   return (
     <StepWrapper title={t(k.title)} description={t(k.subtitle)}>

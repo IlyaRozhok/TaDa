@@ -73,6 +73,7 @@ export interface PreferencesFormData {
 
   // ==================== STEP 7: AMENITIES ====================
   amenities?: string[]; // matches Property.amenities
+  property_amenities?: string[]; // matches Property.property_amenities (apartment-level features)
   is_concierge?: boolean; // matches Property.is_concierge
   smoking_area?: boolean; // matches Property.smoking_area
 
@@ -108,6 +109,7 @@ export interface PreferencesFormData {
   pet_type_preferences?: string[]; // UI field, transformed to pets[]
   pet_additional_info?: string; // UI field for pet additional info, stored in pets[].customType
   amenities_preferences?: string[]; // UI alias for amenities
+  property_amenities_preferences?: string[]; // UI alias for property_amenities
   additional_preferences?: string[]; // UI field for smoking_area and is_concierge
 }
 
@@ -179,6 +181,7 @@ export interface PropertyMatchCriteria {
   building_type?: string;
   tenant_types?: string[];
   amenities?: string[];
+  property_amenities?: string[];
   is_concierge?: boolean;
   pet_policy?: boolean;
   smoking_area?: boolean;
@@ -349,6 +352,10 @@ export function transformFormDataForApi(
     apiData.amenities = formData.amenities_preferences;
   }
 
+  if (formData.property_amenities_preferences !== undefined) {
+    apiData.property_amenities = formData.property_amenities_preferences;
+  }
+
   // Additional preferences transformation (smoking area, concierge) with normalization
   const normalizeAdditional = (s: string) => {
     const lower = s?.toString().toLowerCase();
@@ -448,6 +455,9 @@ export function transformApiDataForForm(
     pet_type_preferences: [],
     pet_additional_info: "",
     amenities_preferences: Array.isArray(apiData.amenities) ? apiData.amenities : [],
+    property_amenities_preferences: Array.isArray(apiData.property_amenities)
+      ? apiData.property_amenities
+      : [],
     additional_preferences: [],
   };
 

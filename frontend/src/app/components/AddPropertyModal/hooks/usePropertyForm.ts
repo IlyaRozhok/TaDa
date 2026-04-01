@@ -28,6 +28,7 @@ const initialFormData: PropertyFormData = {
   address: "",
   tenant_types: [],
   amenities: [],
+  property_amenities: [],
   family_status: [],
   occupation: [],
   children: [],

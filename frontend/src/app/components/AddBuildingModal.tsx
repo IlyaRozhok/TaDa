@@ -98,7 +98,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     () =>
       OCCUPATION_VALUES.map((value, i) => ({
         value,
-        label: t(wizardKeys.step8.occupationOptions[i]),
+        label: t(wizardKeys.step9.occupationOptions[i]),
       })),
     [t],
   );
@@ -106,7 +106,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     () =>
       FAMILY_STATUS_VALUES.map((value, i) => ({
         value,
-        label: t(wizardKeys.step8.familyStatusOptions[i]),
+        label: t(wizardKeys.step9.familyStatusOptions[i]),
       })),
     [t],
   );
@@ -114,7 +114,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     () =>
       CHILDREN_VALUES.map((value, i) => ({
         value,
-        label: t(wizardKeys.step8.childrenStatusOptions[i]),
+        label: t(wizardKeys.step9.childrenStatusOptions[i]),
       })),
     [t],
   );

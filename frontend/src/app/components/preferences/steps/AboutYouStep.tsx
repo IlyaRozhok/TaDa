@@ -18,7 +18,7 @@ export const AboutYouStep: React.FC<AboutYouStepProps> = ({
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const k = wizardKeys.step11;
+  const k = wizardKeys.step12;
 
   const isValid = (): boolean => true;
 

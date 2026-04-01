@@ -45,7 +45,7 @@ export const LifestylePreferencesStep: React.FC<
   LifestylePreferencesStepProps
 > = ({ formData, onUpdate, onValidationChange }) => {
   const { t } = useTranslation();
-  const k = wizardKeys.step8;
+  const k = wizardKeys.step9;
 
   const occupationOptions = useMemo(
     () =>

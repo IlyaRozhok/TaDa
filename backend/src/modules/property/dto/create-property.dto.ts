@@ -186,6 +186,17 @@ export class CreatePropertyDto {
   amenities?: string[];
 
   @ApiProperty({
+    description: "Apartment-level features (kitchen, bathroom, storage, tech, access)",
+    example: ["Dishwasher", "Rainfall shower", "Fibre broadband"],
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  property_amenities?: string[];
+
+  @ApiProperty({
     description:
       "Target family statuses for this property (inherited from building or custom)",
     example: ["couple", "couple-with-children"],

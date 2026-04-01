@@ -23,6 +23,7 @@ import {
   CompleteProfileStep,
   LivingEnvironmentStep,
 } from "./steps";
+import { PropertyAmenitiesStep } from "./steps/PropertyAmenitiesStep";
 import {
   BUILDING_STYLE_OPTIONS,
   LIFESTYLE_OPTIONS,
@@ -245,19 +246,21 @@ export default function NewPreferencesPage({
       case 6:
         return <PetsStep {...stepProps} />;
       case 7:
-        return <AmenitiesStep {...stepProps} />;
+        return <PropertyAmenitiesStep {...stepProps} />;
       case 8:
+        return <AmenitiesStep {...stepProps} />;
+      case 9:
         return (
           <LifestylePreferencesStep
             {...stepProps}
             onValidationChange={setIsCurrentStepValid}
           />
         );
-      case 9:
-        return <CompleteProfileStep {...stepProps} />;
       case 10:
-        return <LivingEnvironmentStep {...stepProps} />;
+        return <CompleteProfileStep {...stepProps} />;
       case 11:
+        return <LivingEnvironmentStep {...stepProps} />;
+      case 12:
         return (
           <AboutYouStep
             {...stepProps}
