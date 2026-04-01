@@ -380,6 +380,18 @@ export class CreatePreferencesDto {
   @IsString({ each: true })
   amenities?: string[];
 
+  // ==================== STEP 7b: PROPERTY AMENITIES (apartment-level features) ====================
+
+  @ApiPropertyOptional({
+    description: "Preferred apartment-level features (kitchen, bathroom, storage, etc.)",
+    example: ["Dishwasher", "Rainfall shower", "Fibre broadband"],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  property_amenities?: string[];
+
   // ==================== STEP 8: HOBBIES ====================
 
   @ApiPropertyOptional({
