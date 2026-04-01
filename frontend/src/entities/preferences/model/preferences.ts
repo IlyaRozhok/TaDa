@@ -73,6 +73,7 @@ export interface PreferencesFormData {
 
   // ==================== STEP 7: AMENITIES ====================
   amenities?: string[]; // matches Property.amenities
+  property_amenities?: string[]; // matches Property.property_amenities (apartment-level features)
   is_concierge?: boolean; // matches Property.is_concierge
   smoking_area?: boolean; // matches Property.smoking_area
 
@@ -180,6 +181,7 @@ export interface PropertyMatchCriteria {
   building_type?: string;
   tenant_types?: string[];
   amenities?: string[];
+  property_amenities?: string[];
   is_concierge?: boolean;
   pet_policy?: boolean;
   smoking_area?: boolean;
