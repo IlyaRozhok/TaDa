@@ -547,6 +547,9 @@ secrets/
 *.xml
 *.yaml
 
+# Worktrees
+.worktrees/
+
 # Specific to this project
 backend/database/init/
 backend/session_test_cookies.txt
