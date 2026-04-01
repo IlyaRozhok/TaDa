@@ -1,24 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import type { RootState } from "@/app/store/store";
 
-// Helper to get token from state
-export const getTokenFromState = (state: RootState): string | null => {
-  return state.auth.accessToken;
-};
-
-// Helper to create headers with auth token
-export const createAuthHeaders = (token: string | null): Record<string, string> => {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return headers;
-};
-
 // Generic error handler for async thunks
 export const handleAsyncThunkError = (error: any): string => {
   if (error.response?.data?.message) {
@@ -30,20 +12,20 @@ export const handleAsyncThunkError = (error: any): string => {
   return "An unexpected error occurred";
 };
 
-// Helper to create authenticated fetch request
+// Helper to create authenticated fetch request (cookies sent automatically via credentials)
 export const createAuthenticatedFetch = async (
   url: string,
-  options: RequestInit = {},
-  token: string | null
+  options: RequestInit = {}
 ): Promise<Response> => {
-  const headers = createAuthHeaders(token);
-  
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      ...headers,
-      ...options.headers,
-    },
+    credentials: "include",
+    headers,
   });
 
   if (!response.ok) {
@@ -61,11 +43,10 @@ export const createGetThunk = <T>(
 ) => {
   return createAsyncThunk<T, any, { state: RootState }>(
     name,
-    async (arg, { getState, rejectWithValue }) => {
+    async (arg, { rejectWithValue }) => {
       try {
-        const token = getTokenFromState(getState());
         const endpoint = typeof url === "function" ? url(arg) : url;
-        const response = await createAuthenticatedFetch(endpoint, {}, token);
+        const response = await createAuthenticatedFetch(endpoint);
         return await response.json();
       } catch (error) {
         return rejectWithValue(handleAsyncThunkError(error));
@@ -81,18 +62,13 @@ export const createPostThunk = <T, P>(
 ) => {
   return createAsyncThunk<T, P, { state: RootState }>(
     name,
-    async (arg, { getState, rejectWithValue }) => {
+    async (arg, { rejectWithValue }) => {
       try {
-        const token = getTokenFromState(getState());
         const endpoint = typeof url === "function" ? url(arg) : url;
-        const response = await createAuthenticatedFetch(
-          endpoint,
-          {
-            method: "POST",
-            body: JSON.stringify(arg),
-          },
-          token
-        );
+        const response = await createAuthenticatedFetch(endpoint, {
+          method: "POST",
+          body: JSON.stringify(arg),
+        });
         return await response.json();
       } catch (error) {
         return rejectWithValue(handleAsyncThunkError(error));
@@ -108,18 +84,13 @@ export const createPutThunk = <T, P>(
 ) => {
   return createAsyncThunk<T, P, { state: RootState }>(
     name,
-    async (arg, { getState, rejectWithValue }) => {
+    async (arg, { rejectWithValue }) => {
       try {
-        const token = getTokenFromState(getState());
         const endpoint = typeof url === "function" ? url(arg) : url;
-        const response = await createAuthenticatedFetch(
-          endpoint,
-          {
-            method: "PUT",
-            body: JSON.stringify(arg),
-          },
-          token
-        );
+        const response = await createAuthenticatedFetch(endpoint, {
+          method: "PUT",
+          body: JSON.stringify(arg),
+        });
         return await response.json();
       } catch (error) {
         return rejectWithValue(handleAsyncThunkError(error));
@@ -135,16 +106,13 @@ export const createDeleteThunk = <T>(
 ) => {
   return createAsyncThunk<T, any, { state: RootState }>(
     name,
-    async (arg, { getState, rejectWithValue }) => {
+    async (arg, { rejectWithValue }) => {
       try {
-        const token = getTokenFromState(getState());
         const endpoint = typeof url === "function" ? url(arg) : url;
-        const response = await createAuthenticatedFetch(
-          endpoint,
-          { method: "DELETE" },
-          token
-        );
-        
+        const response = await createAuthenticatedFetch(endpoint, {
+          method: "DELETE",
+        });
+
         // DELETE requests might not return JSON
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {

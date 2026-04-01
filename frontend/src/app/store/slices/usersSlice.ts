@@ -62,7 +62,7 @@ export const fetchUsers = createAsyncThunk(
       sortBy?: string;
       order?: "ASC" | "DESC";
     },
-    { getState, rejectWithValue }
+    { rejectWithValue }
   ) => {
     try {
       const {
@@ -75,22 +75,6 @@ export const fetchUsers = createAsyncThunk(
 
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      console.log("fetchUsers: Starting request", {
-        params,
-        API_BASE_URL,
-        hasToken: !!token,
-        tokenLength: token ? token.length : 0,
-      });
-
-      if (!token) {
-        console.error("fetchUsers: No token available");
-        return rejectWithValue("No authentication token available");
-      }
 
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -107,8 +91,8 @@ export const fetchUsers = createAsyncThunk(
       console.log("fetchUsers: Making request to:", url);
 
       const response = await fetch(url, {
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
@@ -146,19 +130,15 @@ export const fetchUsers = createAsyncThunk(
 // Async thunk for creating user
 export const createUser = createAsyncThunk(
   "users/createUser",
-  async (userData: CreateUserData, { getState, rejectWithValue }) => {
+  async (userData: CreateUserData, { rejectWithValue }) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
       const response = await fetch(`${API_BASE_URL}/users`, {
         method: "POST",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(userData),
@@ -183,20 +163,16 @@ export const updateUser = createAsyncThunk(
   "users/updateUser",
   async (
     { id, userData }: { id: string; userData: UpdateUserData },
-    { getState, rejectWithValue }
+    { rejectWithValue }
   ) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
       const response = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: "PUT",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(userData),
@@ -219,19 +195,15 @@ export const updateUser = createAsyncThunk(
 // Async thunk for deleting user
 export const deleteUser = createAsyncThunk(
   "users/deleteUser",
-  async (id: string, { getState, rejectWithValue }) => {
+  async (id: string, { rejectWithValue }) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
       const response = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: "DELETE",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });

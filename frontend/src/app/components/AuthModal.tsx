@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { setAuth, selectIsAuthenticated } from "../store/slices/authSlice";
+import { setUser, selectIsAuthenticated } from "../store/slices/authSlice";
 import { fetchShortlist } from "../store/slices/shortlistSlice";
 import { AppDispatch } from "../store/store";
 import { authAPI } from "../lib/api";
@@ -101,12 +101,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         const loginResponse = await authAPI.login({ email, password });
 
         // Success - login completed
-        dispatch(
-          setAuth({
-            user: loginResponse.data.user,
-            accessToken: loginResponse.data.access_token,
-          }),
-        );
+        dispatch(setUser({ user: loginResponse.data.user }));
 
         // Initialize shortlist for tenant and admin users
         if (loginResponse.data.user?.role === "tenant" || loginResponse.data.user?.role === "admin") {

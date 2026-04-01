@@ -55,19 +55,11 @@ export const fetchAllPreferences = createAsyncThunk(
   "preferences/fetchAll",
   async (
     params: { page: number; limit: number; search?: string },
-    { getState, rejectWithValue }
+    { rejectWithValue }
   ) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
 
       const queryParams = new URLSearchParams({
         page: params.page.toString(),
@@ -82,8 +74,8 @@ export const fetchAllPreferences = createAsyncThunk(
       console.log("fetchAllPreferences: Making request to:", url);
 
       const response = await fetch(url, {
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
@@ -123,27 +115,19 @@ export const updateUserPreferences = createAsyncThunk(
   "preferences/updateUser",
   async (
     params: { userId: string; preferences: Partial<PreferencesRow> },
-    { getState, rejectWithValue }
+    { rejectWithValue }
   ) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
 
       const url = `${API_BASE_URL}/preferences/admin/${params.userId}`;
       console.log("updateUserPreferences: Making request to:", url);
 
       const response = await fetch(url, {
         method: "PUT",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(params.preferences),
@@ -179,27 +163,17 @@ export const updateUserPreferences = createAsyncThunk(
 // Async thunk for clearing user preferences (admin only)
 export const clearUserPreferences = createAsyncThunk(
   "preferences/clearUser",
-  async (params: { userId: string }, { getState, rejectWithValue }) => {
+  async (params: { userId: string }, { rejectWithValue }) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
 
       const url = `${API_BASE_URL}/preferences/admin/${params.userId}`;
       console.log("clearUserPreferences: Making request to:", url);
 
       const response = await fetch(url, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       console.log("clearUserPreferences: Response status:", response.status);
@@ -233,27 +207,19 @@ export const createUserPreferences = createAsyncThunk(
   "preferences/createUser",
   async (
     params: { userId: string; preferences: Partial<PreferencesRow> },
-    { getState, rejectWithValue }
+    { rejectWithValue }
   ) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
 
       const url = `${API_BASE_URL}/preferences/admin/${params.userId}`;
       console.log("createUserPreferences: Making request to:", url);
 
       const response = await fetch(url, {
         method: "POST",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(params.preferences),
@@ -289,26 +255,18 @@ export const createUserPreferences = createAsyncThunk(
 // Async thunk for deleting user preferences (admin only)
 export const deleteUserPreferences = createAsyncThunk(
   "preferences/deleteUser",
-  async (params: { userId: string }, { getState, rejectWithValue }) => {
+  async (params: { userId: string }, { rejectWithValue }) => {
     try {
       const API_BASE_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-
-      // Get token from Redux store
-      const state = getState() as any;
-      const token = state.auth.accessToken;
-
-      if (!token) {
-        return rejectWithValue("No authentication token available");
-      }
 
       const url = `${API_BASE_URL}/preferences/admin/${params.userId}`;
       console.log("deleteUserPreferences: Making request to:", url);
 
       const response = await fetch(url, {
         method: "DELETE",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });

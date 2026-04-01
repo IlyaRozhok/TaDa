@@ -169,17 +169,16 @@ function AdminPanelContent() {
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
         const headers = {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         };
 
         if (activeSection === "users") {
-          const response = await fetch(`${apiUrl}/users`, { headers });
+          const response = await fetch(`${apiUrl}/users`, { credentials: "include", headers });
           if (response.ok) {
             const data = await response.json();
             setUsers(data.users || data || []);
           }
         } else if (activeSection === "buildings") {
-          const response = await fetch(`${apiUrl}/buildings`, { headers });
+          const response = await fetch(`${apiUrl}/buildings`, { credentials: "include", headers });
           if (response.ok) {
             const data = await response.json();
             setBuildings(data.data || data || []);
@@ -220,7 +219,6 @@ function AdminPanelContent() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       };
 
       if (activeSection === "buildings") {
@@ -319,9 +317,7 @@ function AdminPanelContent() {
     setIsActionLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = localStorage.getItem("accessToken");
       const headers = {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
 
@@ -338,6 +334,7 @@ function AdminPanelContent() {
 
       const response = await fetch(`${apiUrl}/users`, {
         method: "POST",
+        credentials: "include",
         headers,
         body: JSON.stringify(body),
       });
@@ -355,7 +352,7 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, { headers });
+        const response = await fetch(`${apiUrl}/users`, { credentials: "include", headers });
         if (response.ok) {
           const usersData = await response.json();
           setUsers(usersData.users || usersData || []);
@@ -372,14 +369,13 @@ function AdminPanelContent() {
     setIsActionLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = localStorage.getItem("accessToken");
       const headers = {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
 
       const response = await fetch(`${apiUrl}/buildings`, {
         method: "POST",
+        credentials: "include",
         headers,
         body: JSON.stringify(data),
       });
@@ -397,7 +393,7 @@ function AdminPanelContent() {
 
       // Reload buildings list
       if (activeSection === "buildings") {
-        const response = await fetch(`${apiUrl}/buildings`, { headers });
+        const response = await fetch(`${apiUrl}/buildings`, { credentials: "include", headers });
         if (response.ok) {
           const buildingsData = await response.json();
           setBuildings(buildingsData.data || buildingsData || []);
@@ -422,9 +418,7 @@ function AdminPanelContent() {
     setIsActionLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = localStorage.getItem("accessToken");
       const headers = {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
 
@@ -440,6 +434,7 @@ function AdminPanelContent() {
 
       const response = await fetch(`${apiUrl}/users/${id}`, {
         method: "PUT",
+        credentials: "include",
         headers,
         body: JSON.stringify(body),
       });
@@ -459,7 +454,7 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, { headers });
+        const response = await fetch(`${apiUrl}/users`, { credentials: "include", headers });
         if (response.ok) {
           const usersData = await response.json();
           const updatedUsers = usersData.users || usersData || [];
@@ -493,14 +488,13 @@ function AdminPanelContent() {
       });
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = localStorage.getItem("accessToken");
       const headers = {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
 
       const response = await fetch(`${apiUrl}/buildings/${id}`, {
         method: "PATCH",
+        credentials: "include",
         headers,
         body: JSON.stringify(data),
       });
@@ -520,13 +514,7 @@ function AdminPanelContent() {
 
       // Refresh buildings list and update selectedItem
       if (activeSection === "buildings") {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-        const headers = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        };
-        const response = await fetch(`${apiUrl}/buildings`, { headers });
+        const response = await fetch(`${apiUrl}/buildings`, { credentials: "include", headers });
         if (response.ok) {
           const buildingsData = await response.json();
           const updatedBuildings = buildingsData.data || buildingsData || [];
@@ -563,15 +551,14 @@ function AdminPanelContent() {
     setIsActionLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = localStorage.getItem("accessToken");
       const headers = {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
 
       console.log("📮 Sending to API:", JSON.stringify(data, null, 2));
       const response = await fetch(`${apiUrl}/properties`, {
         method: "POST",
+        credentials: "include",
         headers,
         body: JSON.stringify(data),
       });
@@ -591,7 +578,7 @@ function AdminPanelContent() {
 
       // Reload properties
       if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, { headers });
+        const response = await fetch(`${apiUrl}/properties`, { credentials: "include", headers });
         if (response.ok) {
           const data = await response.json();
           setProperties(data.data || data || []);
@@ -622,14 +609,13 @@ function AdminPanelContent() {
       });
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const token = localStorage.getItem("accessToken");
       const headers = {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
 
       const response = await fetch(`${apiUrl}/properties/${id}`, {
         method: "PATCH",
+        credentials: "include",
         headers,
         body: JSON.stringify(data),
       });
@@ -661,7 +647,7 @@ function AdminPanelContent() {
 
       // Refresh properties list
       if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, { headers });
+        const response = await fetch(`${apiUrl}/properties`, { credentials: "include", headers });
         if (response.ok) {
           const propertiesData = await response.json();
           const updatedProperties = propertiesData.data || propertiesData || [];
@@ -812,13 +798,10 @@ function AdminPanelContent() {
               if (activeSection === "buildings") {
                 const apiUrl =
                   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-                const headers = {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem(
-                    "accessToken",
-                  )}`,
-                };
-                fetch(`${apiUrl}/buildings`, { headers })
+                fetch(`${apiUrl}/buildings`, {
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                })
                   .then((response) => response.json())
                   .then((data) => setBuildings(data.data || data || []))
                   .catch((error) =>

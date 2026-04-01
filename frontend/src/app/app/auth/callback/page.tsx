@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setAuth } from "../../../store/slices/authSlice";
+import { setUser } from "../../../store/slices/authSlice";
 import { fetchShortlist } from "../../../store/slices/shortlistSlice";
 import { AppDispatch } from "../../../store/store";
 import { authAPI } from "../../../lib/api";
@@ -105,23 +105,12 @@ function AuthCallbackContent() {
           console.error("❌ Failed to get user profile");
           setError("Failed to get user profile. Please try logging in again.");
 
-          // Clear invalid token
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("sessionExpiry");
-
           return;
         }
 
         // Update Redux store
         console.log("🔍 Updating Redux store with user data");
-        dispatch(
-          setAuth({
-            user: profileResponse.data.user,
-            // Cookie-based auth: token is not read from the callback URL.
-            // Keep an empty string to satisfy the slice type, while axios won't send Authorization header.
-            accessToken: "",
-          })
-        );
+        dispatch(setUser({ user: profileResponse.data.user }));
 
         // Initialize shortlist for tenant and admin users
         if (profileResponse.data.user?.role === "tenant" || profileResponse.data.user?.role === "admin") {
@@ -163,10 +152,6 @@ function AuthCallbackContent() {
         } else if (error.message) {
           errorMessage = error.message;
         }
-
-        // Clear any stored tokens on error
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionExpiry");
 
         setError(errorMessage);
       } finally {
@@ -237,10 +222,7 @@ function AuthCallbackContent() {
             <button
               onClick={() => {
                 console.log("🔍 Current state for debugging:", {
-                  localStorage: {
-                    accessToken: !!localStorage.getItem("accessToken"),
-                    sessionExpiry: localStorage.getItem("sessionExpiry"),
-                  },
+                  localStorage: "(removed — cookie-based auth)",
                   searchParams: searchParams ? Object.fromEntries(searchParams.entries()) : {},
                   currentURL: window.location.href,
                   apiUrl: process.env.NEXT_PUBLIC_API_URL,

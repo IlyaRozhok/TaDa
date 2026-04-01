@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, SelectQueryBuilder } from "typeorm";
-import { Property } from "../../entities/property.entity";
-import { Preferences } from "../../entities/preferences.entity";
+import { Property } from "@/entities";
+import { Preferences } from "@/entities";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
-import { S3Service } from "../../common/services/s3.service";
+import { S3Service } from "@/common/services/s3.service";
 import {
   PropertyMatchResult,
   MatchingOptions,

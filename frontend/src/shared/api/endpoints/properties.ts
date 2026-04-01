@@ -98,10 +98,19 @@ export const propertiesApi = {
       formData.append(`images`, file);
     });
 
-    const response = await apiClient.upload<string[]>(
+    const response = await apiClient.post<string[]>(
       `/properties/${propertyId}/images`,
       formData,
-      onProgress
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: onProgress
+          ? (progressEvent) => {
+              if (progressEvent.total) {
+                onProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+              }
+            }
+          : undefined,
+      }
     );
     return response.data;
   },
