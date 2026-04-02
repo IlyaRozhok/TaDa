@@ -35,6 +35,7 @@ export interface User {
     phone?: string;
     date_of_birth?: string | Date;
     nationality?: string;
+    avatar_url?: string;
     occupation?: string;
     age_range?: string;
     industry?: string;
@@ -49,6 +50,7 @@ export interface User {
     full_name?: string;
     phone?: string;
     company_name?: string;
+    avatar_url?: string;
     business_address?: string;
     years_experience?: number;
     operating_areas?: string[];

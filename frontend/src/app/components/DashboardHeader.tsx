@@ -51,6 +51,13 @@ export default function DashboardHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const avatarUrl =
+    user?.avatar_url ||
+    // Backward-compat: some APIs return avatar on nested role profile
+    (user as any)?.tenantProfile?.avatar_url ||
+    (user as any)?.operatorProfile?.avatar_url ||
+    null;
+
   // Get user initials for avatar
   const getUserInitials = () => {
     const displayName = getDisplayName();
@@ -122,7 +129,7 @@ export default function DashboardHeader() {
   const userRole = getUserRole(user);
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+    <header className="border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className=" px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -155,9 +162,9 @@ export default function DashboardHeader() {
               >
                 {/* Avatar */}
                 <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white text-sm font-semibold overflow-hidden">
-                  {user?.avatar_url ? (
+                  {avatarUrl ? (
                     <img
-                      src={user.avatar_url}
+                      src={avatarUrl}
                       alt="Profile"
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -178,7 +185,7 @@ export default function DashboardHeader() {
                   ) : null}
                   <div
                     className={`fallback-initials-header w-full h-full flex items-center justify-center ${
-                      user?.avatar_url ? "hidden" : ""
+                      avatarUrl ? "hidden" : ""
                     }`}
                   >
                     {getUserInitials()}

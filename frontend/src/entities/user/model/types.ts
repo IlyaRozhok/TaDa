@@ -29,6 +29,7 @@ export interface TenantProfile {
   phone?: string;
   date_of_birth?: string | Date;
   nationality?: string;
+  avatar_url?: string;
   // Onboarding-specific fields
   occupation?: string;
   age_range?: string;
@@ -45,6 +46,7 @@ export interface OperatorProfile {
   userId?: string;
   full_name?: string;
   phone?: string;
+  avatar_url?: string;
   company_name?: string;
   business_address?: string;
   business_description?: string;

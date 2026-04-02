@@ -42,7 +42,10 @@ export const AmenitiesStep: React.FC<AmenitiesStepProps> = ({
   const section5LabelKeys = k.section5Options;
 
   return (
-    <StepWrapper title={t(k.title)} description={t(k.subtitle)}>
+    <StepWrapper
+      title={t("preferences.building.amenities.title")}
+      description={t("preferences.building.amenities.subtitle")}
+    >
       <StepContainer>
         {/* Section 1: title des.text1, options amenities.name1–9 */}
         <StepHeader title={t(k.des.text1)} />

@@ -55,7 +55,13 @@ export const buildFormDataFromUser = (currentUser: User | null): UpdateUserData 
     phone:        currentUser.phone        || "",
     date_of_birth: dateOfBirth,
     nationality:  currentUser.nationality  || "",
-    avatar_url:   currentUser.avatar_url   || "",
+    // Avatar can live either in top-level `users.avatar_url` or in the nested
+    // role profiles (legacy/backward-compat responses).
+    avatar_url:
+      currentUser.avatar_url ||
+      currentUser.tenantProfile?.avatar_url ||
+      currentUser.operatorProfile?.avatar_url ||
+      "",
   };
 };
 

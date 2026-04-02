@@ -5,7 +5,6 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { PreferencesFormData } from "@/app/types/preferences";
-import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { PROPERTY_AMENITIES_GROUPS } from "@/shared/constants/property-amenities";
 
 interface PropertyAmenitiesStepProps {
@@ -20,7 +19,10 @@ export const PropertyAmenitiesStep: React.FC<PropertyAmenitiesStepProps> = ({
   const { t } = useTranslation();
 
   return (
-    <StepWrapper title={t(wizardKeys.step7.title)} description="">
+    <StepWrapper
+      title={t("preferences.home.amenities.title")}
+      description={t("preferences.home.amenities.subtitle")}
+    >
       <StepContainer>
         {PROPERTY_AMENITIES_GROUPS.map((group) => (
           <React.Fragment key={group.titleKey}>

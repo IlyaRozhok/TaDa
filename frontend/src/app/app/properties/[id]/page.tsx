@@ -1216,11 +1216,10 @@ export default function PropertyPublicPage() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">
-                        2 month x £
-                        {Number(property.price || 0).toLocaleString()}
+                        {t(listingPropertyKeys.pricing.rent)}
                       </span>
                       <span className="font-semibold text-black">
-                        £{(Number(property.price || 0) * 2).toLocaleString()}
+                        £{Number(property.price || 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1260,7 +1259,7 @@ export default function PropertyPublicPage() {
                       <span className="font-bold text-black text-base">
                         £
                         {(
-                          Number(property.price || 0) * 2 +
+                          Number(property.price || 0) +
                           Number(
                             property.deposit != null ? property.deposit : 0,
                           )
@@ -1324,8 +1323,68 @@ export default function PropertyPublicPage() {
             {t(listingPropertyKeys.keyFeatures.sectionTitle)}
           </h2>
 
-          {/* Building amenities (same labels as preferences / mappings) */}
+          {/* Apartment-level property amenities (listing.features.* keys) */}
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+            {t(wizardKeys.step7.title)}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
+            {(() => {
+              const allPropertyAmenities = Array.isArray(
+                property.property_amenities,
+              )
+                ? property.property_amenities
+                : [];
+
+              const visible = showAllPropertyOffers
+                ? allPropertyAmenities
+                : allPropertyAmenities.slice(0, 9);
+
+              return visible.length > 0 ? (
+                visible.map((item: string, i: number) => (
+                  <div
+                    key={`p-${i}-${item}`}
+                    className="flex items-center gap-2 sm:gap-3 py-2"
+                  >
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm sm:text-base text-black">
+                      {labelPropertyAmenity(item)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm col-span-full">
+                  No apartment features listed
+                </p>
+              );
+            })()}
+          </div>
+          {(() => {
+            const allPropertyAmenities = Array.isArray(
+              property.property_amenities,
+            )
+              ? property.property_amenities
+              : [];
+            const hiddenCount = allPropertyAmenities.length - 9;
+
+            return (
+              hiddenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowAllPropertyOffers(!showAllPropertyOffers)
+                  }
+                  className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
+                >
+                  {showAllPropertyOffers
+                    ? `Show less`
+                    : `${t(propertyDetailsKeys.showMoreBtn)} (${allPropertyAmenities.length})`}
+                </button>
+              )
+            );
+          })()}
+
+          {/* Building amenities (same labels as preferences / mappings) */}
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mt-8 sm:mt-10 mb-3 sm:mb-4">
             {t(wizardKeys.step8.title)}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
@@ -1382,66 +1441,6 @@ export default function PropertyPublicPage() {
                   {showAllOffers
                     ? `Show less`
                     : `${t(propertyDetailsKeys.showMoreBtn)} (${allAmenitiesList.length})`}
-                </button>
-              )
-            );
-          })()}
-
-          {/* Apartment-level property amenities (listing.features.* keys) */}
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mt-8 sm:mt-10 mb-3 sm:mb-4">
-            {t(wizardKeys.step7.title)}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
-            {(() => {
-              const allPropertyAmenities = Array.isArray(
-                property.property_amenities,
-              )
-                ? property.property_amenities
-                : [];
-
-              const visible = showAllPropertyOffers
-                ? allPropertyAmenities
-                : allPropertyAmenities.slice(0, 9);
-
-              return visible.length > 0 ? (
-                visible.map((item: string, i: number) => (
-                  <div
-                    key={`p-${i}-${item}`}
-                    className="flex items-center gap-2 sm:gap-3 py-2"
-                  >
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
-                    <span className="text-sm sm:text-base text-black">
-                      {labelPropertyAmenity(item)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-sm col-span-full">
-                  No apartment features listed
-                </p>
-              );
-            })()}
-          </div>
-          {(() => {
-            const allPropertyAmenities = Array.isArray(
-              property.property_amenities,
-            )
-              ? property.property_amenities
-              : [];
-            const hiddenCount = allPropertyAmenities.length - 9;
-
-            return (
-              hiddenCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowAllPropertyOffers(!showAllPropertyOffers)
-                  }
-                  className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
-                >
-                  {showAllPropertyOffers
-                    ? `Show less`
-                    : `${t(propertyDetailsKeys.showMoreBtn)} (${allPropertyAmenities.length})`}
                 </button>
               )
             );

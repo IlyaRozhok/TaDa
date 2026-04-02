@@ -35,6 +35,13 @@ export default function UserDropdown({
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
 
+  const avatarUrl =
+    user?.avatar_url ||
+    // Backward-compat: some APIs return avatar on nested role profile
+    (user as any)?.tenantProfile?.avatar_url ||
+    (user as any)?.operatorProfile?.avatar_url ||
+    null;
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -151,9 +158,9 @@ export default function UserDropdown({
         }`}
       >
         <div className="relative w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600 flex-shrink-0">
-          {user.avatar_url ? (
+          {avatarUrl ? (
             <img
-              src={user.avatar_url}
+              src={avatarUrl}
               alt="Profile"
               className="w-full h-full object-cover rounded-full"
               onError={(e) => {
@@ -171,7 +178,7 @@ export default function UserDropdown({
           ) : null}
           <div
             className={`fallback-initials absolute inset-0 flex items-center justify-center ${
-              user.avatar_url ? "hidden" : ""
+              avatarUrl ? "hidden" : ""
             }`}
           >
             {initials}
@@ -199,9 +206,9 @@ export default function UserDropdown({
             <div className="px-3 sm:px-4 py-3 border-b border-white/15">
               <div className="flex items-center gap-3">
                 <div className="relative w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-medium text-white flex-shrink-0 overflow-hidden">
-                  {user.avatar_url ? (
+                  {avatarUrl ? (
                     <img
-                      src={user.avatar_url}
+                      src={avatarUrl}
                       alt="Profile"
                       className="w-full h-full object-cover rounded-full"
                       onError={(e) => {
@@ -221,7 +228,7 @@ export default function UserDropdown({
                   ) : null}
                   <div
                     className={`dropdown-fallback-initials absolute inset-0 flex items-center justify-center ${
-                      user.avatar_url ? "hidden" : ""
+                      avatarUrl ? "hidden" : ""
                     }`}
                   >
                     {initials}

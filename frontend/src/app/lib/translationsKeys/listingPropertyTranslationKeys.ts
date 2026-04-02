@@ -69,6 +69,7 @@ export const listingPropertyKeys = {
   },
   pricing: {
     bookRequested: "listing.property.pricing.bookRequested",
+    rent: "listing.property.pricing.rent",
     deposit: "listing.property.pricing.deposit",
     wifi: "listing.property.pricing.wifi",
     bills: "listing.property.pricing.bills",
