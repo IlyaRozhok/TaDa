@@ -410,13 +410,22 @@ export function transformAdminAmenitiesToPreferences(
 }
 
 export function transformPropertyTypeUIToAPI(uiValues: string[]): string[] {
-  return uiValues
+  const apiValues = uiValues
     .map((value) => PROPERTY_TYPE_UI_TO_API[value])
-    .filter(Boolean);
+    .filter(Boolean) as string[];
+
+  // Multiple UI options can map to the same API value (e.g. "En-suite room" and "Room" => "room").
+  // Since the backend stores a multiselect of API values, we must dedupe to avoid duplicated entries.
+  return Array.from(new Set(apiValues));
 }
 
 export function transformPropertyTypeAPIToUI(apiValues: string[]): string[] {
-  return apiValues.flatMap((value) => {
+  // Backend stores multiselect values; duplicates can appear from older writes.
+  // Since multiple UI options can map to the same API value (e.g. room),
+  // dedupe API values first to avoid duplicated UI selections being produced.
+  const uniqueApiValues = Array.from(new Set(apiValues));
+
+  return uniqueApiValues.flatMap((value) => {
     const multi = PROPERTY_TYPE_API_TO_UI_MULTI[value];
     if (multi?.length) return multi;
     const single = PROPERTY_TYPE_API_TO_UI[value];

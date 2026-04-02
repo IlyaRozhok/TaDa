@@ -331,7 +331,12 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                 }}
               >
                 {matchCategories
-                  .filter((cat) => cat.hasPreference && cat.maxScore > 0)
+                  .filter(
+                    (cat) =>
+                      cat.hasPreference &&
+                      cat.maxScore > 0 &&
+                      cat.category !== "location",
+                  )
                   .map((cat) => {
                     const scorePercentage =
                       cat.maxScore > 0
@@ -351,7 +356,6 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                     // Priority order for better UX - most important categories first
                     const priorityOrder = [
                       "budget",
-                      "location",
                       "bedrooms",
                       "propertyType",
                       "availability",
@@ -411,7 +415,6 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                       buildingStyle: t("wizard.step4.des.text1"),
                       squareMeters: t("matching.square.feet.title"),
                       budget: t("matching.budget.title"),
-                      location: t("preferences.location"),
                       bedrooms: t("matching.bedrooms.name"),
                       bathrooms: t("wizard.step3.des.text3"),
                       availability: t("matching.availability.title"),
@@ -432,7 +435,6 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                         buildingStyle: <Building className="w-3 h-3" />,
                         squareMeters: <Maximize className="w-3 h-3" />,
                         budget: <PoundSterling className="w-3 h-3" />,
-                        location: <MapPin className="w-3 h-3" />,
                         bedrooms: <Bed className="w-3 h-3" />,
                         bathrooms: <Bath className="w-3 h-3" />,
                         availability: <Calendar className="w-3 h-3" />,
@@ -465,7 +467,7 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                       prevCategory &&
                       ((prevCategory.isMatch && !isMatch) ||
                         (prevCategory.isPartial && !isPartial && !isMatch) ||
-                        // Add separator after core categories (budget, location, bedrooms, propertyType)
+                        // Add separator after core categories (budget, bedrooms, propertyType)
                         (index === 4 && sortedCategories.length > 6));
 
                     return (

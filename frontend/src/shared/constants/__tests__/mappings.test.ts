@@ -218,9 +218,12 @@ describe("Property Type Transformations", () => {
   test("should handle room mappings", () => {
     expect(transformPropertyTypeUIToAPI(["En-suite room", "Room"])).toEqual([
       "room",
-      "room",
     ]);
     expect(transformPropertyTypeAPIToUI(["room"])).toEqual([
+      "En-suite room",
+      "Room",
+    ]);
+    expect(transformPropertyTypeAPIToUI(["room", "room"])).toEqual([
       "En-suite room",
       "Room",
     ]);

@@ -97,7 +97,12 @@ export default function MatchesPage() {
           matchCategories: match.categories || [], // Include categories for detailed breakdown
           matchReasons: match.categories
             ? match.categories
-                .filter((cat) => cat.hasPreference && cat.score > 0) // Only categories with preferences that matched
+                .filter(
+                  (cat) =>
+                    cat.hasPreference &&
+                    cat.score > 0 &&
+                    cat.category !== "location",
+                ) // Only categories with preferences that matched
                 .map((cat) => cat.reason)
             : [],
         }));
@@ -593,7 +598,11 @@ export default function MatchesPage() {
                           matchResult.categories.length > 0 ? (
                             <div className="space-y-2">
                               {matchResult.categories
-                                .filter((cat) => cat.hasPreference) // Only show categories where user has preferences
+                                .filter(
+                                  (cat) =>
+                                    cat.hasPreference &&
+                                    cat.category !== "location",
+                                ) // Only show categories where user has preferences (and exclude location)
                                 .slice(0, 6)
                                 .map((cat, catIndex) => (
                                   <div

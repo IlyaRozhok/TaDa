@@ -20,6 +20,7 @@ interface Building {
   amenities?: string[];
   districts?: Array<{ label: string; destination?: number }>;
   areas?: Array<{ label: string; destination?: number }>;
+  metro_stations?: Array<{ label: string; destination?: number }>;
   commute_times?: Array<{
     label: string;
     destination?: number;
@@ -28,7 +29,13 @@ interface Building {
 }
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
-import { Share, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Share,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  Train,
+} from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
@@ -42,6 +49,9 @@ import {
   useGetPreferencesQuery,
 } from "../../../store/slices/apiSlice";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
+import { useTranslation } from "../../../hooks/useTranslation";
+import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 type BuildingWithMedia = Building & {
   media?: Array<{
@@ -62,6 +72,7 @@ type BuildingWithMedia = Building & {
 };
 
 export default function BuildingPublicPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const id = params && typeof params.id === "string" ? params.id : null;
   const router = useRouter();
@@ -195,6 +206,57 @@ export default function BuildingPublicPage() {
     [properties],
   );
   const { matchByPropertyId } = usePropertyMatches(displayedPropertyIds);
+
+  const preferredAreas = useMemo(() => {
+    const raw = (building as any)?.areas;
+    if (!Array.isArray(raw) || raw.length === 0) return null;
+    const labels = raw
+      .map((a: any) => (typeof a === "string" ? a : a?.label))
+      .filter(Boolean);
+    return labels.length > 0 ? labels.join(", ") : null;
+  }, [building]);
+
+  const preferredDistricts = useMemo(() => {
+    const raw = (building as any)?.districts;
+    if (!Array.isArray(raw) || raw.length === 0) return null;
+    const labels = raw
+      .map((d: any) => (typeof d === "string" ? d : d?.label))
+      .filter(Boolean);
+    return labels.length > 0 ? labels.join(", ") : null;
+  }, [building]);
+
+  const preferredMetro = useMemo(() => {
+    let raw =
+      (building as any)?.metro_stations ??
+      (building as any)?.metroStations ??
+      (building as any)?.commute_times ??
+      (building as any)?.commuteTimes;
+
+    // Sometimes backends can return JSON columns as strings; handle safely.
+    if (typeof raw === "string") {
+      try {
+        raw = JSON.parse(raw);
+      } catch {
+        // keep raw as-is
+      }
+    }
+
+    if (!Array.isArray(raw) || raw.length === 0) return null;
+
+    const labels = raw
+      .map((m: any) => {
+        if (typeof m === "string") return m;
+        if (!m || typeof m !== "object") return null;
+        return (
+          (typeof m.label === "string" ? m.label : null) ??
+          (typeof m.name === "string" ? m.name : null) ??
+          (typeof m.station === "string" ? m.station : null)
+        );
+      })
+      .filter((v: unknown): v is string => typeof v === "string" && v.length);
+
+    return labels.length > 0 ? labels.join(", ") : null;
+  }, [building]);
 
   // Get all images for gallery
   const allImages = useMemo(() => {
@@ -343,39 +405,39 @@ export default function BuildingPublicPage() {
           {/* Details summary under gallery, same container width */}
           <div className="w-full">
             <DetailsCard
-              title="Details"
+              title={t("listing.building.details.sectionTitle")}
               titleSize="compact"
               showDividers={true}
               align="center"
               gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
               items={[
                 {
-                  label: "Price from",
+                  label: t(wizardKeys.step2.budget.from),
                   value:
                     priceStats.min !== null
                       ? `£${priceStats.min.toLocaleString()} pcm`
                       : "N/A",
                 },
                 {
-                  label: "Property type",
+                  label: t(wizardKeys.step3.des.text1),
                   value: building.type_of_unit?.length
                     ? building.type_of_unit.join(", ")
                     : "N/A",
                 },
                 {
-                  label: "Units",
+                  label: t("building.details.units"),
                   value: building.number_of_units
                     ? building.number_of_units.toLocaleString()
                     : "N/A",
                 },
                 {
-                  label: "Amenities",
+                  label: t("wizard.step7.title"),
                   value: building.amenities?.length
                     ? `${building.amenities.length} items`
                     : "N/A",
                 },
                 {
-                  label: "Listed",
+                  label: t("building.details.availableUnits"),
                   value: properties.length
                     ? `${properties.length} items`
                     : "N/A",
@@ -387,7 +449,7 @@ export default function BuildingPublicPage() {
           {/* About building */}
           <section className="py-4 sm:py-6 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              About building
+              {t(listingPropertyKeys.keyFeatures.sectionTitle)}
             </h2>
             <div className="text-sm sm:text-base text-black leading-relaxed">
               <p>
@@ -411,7 +473,7 @@ export default function BuildingPublicPage() {
           {displayedAmenities.length > 0 && (
             <section className="py-4 sm:py-6 w-full">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
-                What this place offers
+                {t("building.details.situated")}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
                 {displayedAmenities.map((amenity, index) => (
@@ -442,11 +504,10 @@ export default function BuildingPublicPage() {
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div>
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-                    Listed property
+                    {t("building.details.availableUnits")}
                   </h2>
                   <p className="text-sm sm:text-base text-gray-600">
-                    After you log in, our service gives you the best results
-                    tailored to your preferences
+                    {t("building.listings.subtitle")}{" "}
                     <span className="ml-1 text-gray-900 font-medium">
                       • {properties.length} items
                     </span>
@@ -497,7 +558,7 @@ export default function BuildingPublicPage() {
           {/* Building location */}
           <section className="py-4 sm:py-6 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Building location
+              {t("building.details.situated")}
             </h2>
             <p className="text-sm sm:text-base text-black">
               {building.address}
@@ -507,82 +568,69 @@ export default function BuildingPublicPage() {
           {/* Transport and placements */}
           <section className="py-4 sm:py-10 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
-              Transport and placements
+              {t("building.location.whatsAround")}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               {/* Location and date */}
               <div>
                 <h3 className="text-base font-semibold text-gray-900 mb-3">
-                  Location and date
+                  {t("preferences.location")}
                 </h3>
                 <div className="space-y-2">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">
-                      Primary postcode
-                    </p>
-                    <p className="text-sm font-medium text-black">
-                      {(() => {
-                        if (!building.address) return "N/A";
-                        // Try to extract UK postcode (format: SW1A 1AA or SW1A1AA)
-                        const postcodeMatch = building.address.match(
-                          /[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}/i,
-                        );
-                        if (postcodeMatch)
-                          return postcodeMatch[0].toUpperCase();
-                        // Fallback to first part of address
-                        return building.address.split(",")[0]?.trim() || "N/A";
-                      })()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">
-                      Commute location
-                    </p>
-                    <p className="text-sm font-medium text-black">
-                      {building.districts && building.districts.length > 0
-                        ? typeof building.districts[0] === "string"
-                          ? building.districts[0]
-                          : building.districts[0]?.label
-                        : building.areas && building.areas.length > 0
-                          ? typeof building.areas[0] === "string"
-                            ? building.areas[0]
-                            : building.areas[0]?.label
-                          : "Central London"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">
-                      Secondary location (option)
-                    </p>
-                    <p className="text-sm font-medium text-black">
-                      {building.districts && building.districts.length > 1
-                        ? typeof building.districts[1] === "string"
-                          ? building.districts[1]
-                          : building.districts[1]?.label
-                        : building.areas && building.areas.length > 1
-                          ? typeof building.areas[1] === "string"
-                            ? building.areas[1]
-                            : building.areas[1]?.label
-                          : "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Move-in Date</p>
-                    <p className="text-sm font-medium text-black">N/A</p>
-                  </div>
+                  {preferredAreas ? (
+                    <div className="flex items-start gap-2">
+                      <Home className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">
+                          {t(wizardKeys.step1.areas)}
+                        </p>
+                        <p className="text-sm font-medium text-black">
+                          {preferredAreas}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {preferredDistricts ? (
+                    <div className="flex items-start gap-2">
+                      <Home className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">
+                          {t(wizardKeys.step1.districts)}
+                        </p>
+                        <p className="text-sm font-medium text-black">
+                          {preferredDistricts}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {preferredMetro ? (
+                    <div className="flex items-start gap-2">
+                      <Train className="w-4 h-4 mt-0.5 text-gray-700 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">
+                          {t(wizardKeys.step1.metro.station)}
+                        </p>
+                        <p className="text-sm font-medium text-black">
+                          {preferredMetro}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
               {/* Budget range */}
               <div>
                 <h3 className="text-base font-semibold text-gray-900 mb-3">
-                  Budget range
+                  {t("preferences.budgetRange")}
                 </h3>
                 <div className="space-y-2">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">
-                      Minimum (£/Month)
+                      {t(wizardKeys.step2.budget.from)} (£/Month)
                     </p>
                     <p className="text-sm font-medium text-black">
                       {priceStats.min !== null
@@ -592,7 +640,7 @@ export default function BuildingPublicPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">
-                      Maximum (£/Month)
+                      {t(wizardKeys.step2.budget.to)} (£/Month)
                     </p>
                     <p className="text-sm font-medium text-black">
                       {priceStats.max !== null
