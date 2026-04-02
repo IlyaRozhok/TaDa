@@ -46,7 +46,7 @@ export default function TenantUniversalHeader({
   onSearchChange,
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const user = useSelector(selectUser);
   const isOnboarded = useSelector(selectIsOnboarded);
   const { t } = useTranslation();
@@ -54,6 +54,14 @@ export default function TenantUniversalHeader({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isUnitsPage =
     pathname === "/app/units" || pathname.startsWith("/app/units/");
+  const isSameHeaderPage =
+    isUnitsPage ||
+    pathname === "/app/shortlist" ||
+    pathname === "/app/tenant-cv" ||
+    pathname === "/app/preferences" ||
+    pathname === "/app/profile" ||
+    pathname.startsWith("/app/properties/") ||
+    pathname.startsWith("/app/buildings/");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -126,7 +134,7 @@ export default function TenantUniversalHeader({
                   placeholder={t(headerKeys.searchPlaceholder)}
                   className={`w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 ${
                     isUnitsPage
-                      ? "py-3 text-base sm:py-2 sm:text-sm"
+                      ? "py-2 text-base sm:text-sm"
                       : "py-2 text-sm"
                   } border border-gray-300 rounded-3xl focus:outline-0 focus:border-gray-400`}
                   aria-label={t(headerKeys.searchPlaceholder)}
@@ -158,7 +166,7 @@ export default function TenantUniversalHeader({
             <button
               onClick={() => router.push("/app/admin/panel")}
               className={`flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer ${
-                isUnitsPage ? "hidden sm:flex" : ""
+                isSameHeaderPage ? "hidden sm:flex" : ""
               }`}
             >
               <Shield className="w-4 h-4 flex-shrink-0" />
@@ -209,7 +217,7 @@ export default function TenantUniversalHeader({
               className="p-2 cursor-pointer flex justify-center items-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Menu"
             >
-              {isUnitsPage ? (
+              {isSameHeaderPage ? (
                 <Menu className="w-5 h-5" />
               ) : (
                 <MoreHorizontal className="w-5 h-5" />
@@ -252,7 +260,7 @@ export default function TenantUniversalHeader({
                     {t(tenantCvKeys.tenantCvButton)}
                   </button>
 
-                  {user?.role === "admin" && isUnitsPage && (
+                  {user?.role === "admin" && isSameHeaderPage && (
                     <button
                       onClick={() => handleMobileMenuClick("/app/admin/panel")}
                       className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"

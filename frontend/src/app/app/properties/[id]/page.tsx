@@ -1276,7 +1276,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* About apartment */}
-      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
+      <div className="lg:max-w-[92%] mx-auto mt-6 px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.description.sectionTitle)}

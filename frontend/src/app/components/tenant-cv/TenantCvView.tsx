@@ -195,7 +195,8 @@ export function TenantCvView({
       return key ? t(key) : value;
     })
     .filter(Boolean);
-  const childrenLabel = childrenLabels.length > 0 ? childrenLabels.join(", ") : null;
+  const childrenLabel =
+    childrenLabels.length > 0 ? childrenLabels.join(", ") : null;
 
   const familyLabels = parseMultiValue(preferences?.family_status)
     .filter((value) => value === "couple" || value === "couple-with-children")
@@ -395,12 +396,12 @@ export function TenantCvView({
                     <button
                       onClick={onShareClick}
                       disabled={shareLoading}
-                      className="inline-flex cursor-pointer items-center justify-center gap-2 px-4 py-2 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+                      className="inline-flex text-[11px] lg:text-sm cursor-pointer items-center justify-center gap-1 lg:gap-2 px-2 lg:px-4 lg:py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
                     >
                       {shareLoading ? (
-                        <Info className="w-4 h-4 animate-pulse" />
+                        <Info className="w-3 h-3 animate-pulse" />
                       ) : (
-                        <Share className="w-4 h-4" />
+                        <Share className="w-3 h-3" />
                       )}
                       {shareLoading
                         ? "Generating link..."
@@ -473,7 +474,6 @@ export function TenantCvView({
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Separator after lifestyle attributes */}

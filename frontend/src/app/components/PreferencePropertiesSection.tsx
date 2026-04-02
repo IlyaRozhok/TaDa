@@ -74,8 +74,8 @@ const PreferencePropertiesSection: React.FC<
   }
 
   return (
-    <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="lg:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-8">
+      <div className="lg:flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-black">
           {t(listingPropertyKeys.recommendations.title)}
         </h2>

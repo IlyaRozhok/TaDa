@@ -77,39 +77,83 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   if (loading) {
     return (
       <section className="lg:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-              <span className="text-center leading-tight">
-                {getBuildingInitials()}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">
+        <div className="mb-6">
+          {/* Mobile */}
+          <div className="lg:hidden">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+                <span className="text-center leading-tight">
+                  {getBuildingInitials()}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 pt-1">
                 {t(listingPropertyKeys.building.label)}
               </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push(`/app/buildings/${buildingId}`)}
+              className="mt-2 w-full text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+            >
+              {buildingName}
+            </button>
+
+            {operatorName && (
+              <p className="mt-1 text-sm text-gray-500 text-left">
+                {operatorName}
+              </p>
+            )}
+
+            <button
+              className="mt-2 w-full text-black text-sm underline hover:text-gray-600 font-medium text-left"
+              onClick={() =>
+                operatorId
+                  ? router.push(`/app/operators/${operatorId}`)
+                  : router.push(`/app/buildings/${buildingId}`)
+              }
+            >
+              {t(listingPropertyKeys.building.seeMoreApartments)}
+            </button>
+          </div>
+
+          {/* Desktop */}
+          <div className="hidden lg:block">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+                  <span className="text-center leading-tight">
+                    {getBuildingInitials()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {t(listingPropertyKeys.building.label)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/app/buildings/${buildingId}`)}
+                    className="text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+                  >
+                    {buildingName}
+                  </button>
+                  {operatorName && (
+                    <p className="text-sm text-gray-500">{operatorName}</p>
+                  )}
+                </div>
+              </div>
               <button
-                type="button"
-                onClick={() => router.push(`/app/buildings/${buildingId}`)}
-                className="text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+                className="text-black text-sm underline hover:text-gray-600 font-medium"
+                onClick={() =>
+                  operatorId
+                    ? router.push(`/app/operators/${operatorId}`)
+                    : router.push(`/app/buildings/${buildingId}`)
+                }
               >
-                {buildingName}
+                {t(listingPropertyKeys.building.seeMoreApartments)}
               </button>
-              {operatorName && (
-                <p className="text-sm text-gray-500">{operatorName}</p>
-              )}
             </div>
           </div>
-          <button
-            className="text-black text-sm underline hover:text-gray-600 font-medium"
-            onClick={() =>
-              operatorId
-                ? router.push(`/app/operators/${operatorId}`)
-                : router.push(`/app/buildings/${buildingId}`)
-            }
-          >
-            {t(listingPropertyKeys.building.seeMoreApartments)}
-          </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -126,39 +170,83 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
 
   return (
     <section className="lg:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 lg:w-12 lg:h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-            <span className="text-center leading-tight">
-              {getBuildingInitials()}
-            </span>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">
+      <div className="mb-6">
+        {/* Mobile */}
+        <div className="lg:hidden">
+          <div className="flex items-baseline lg:items-start gap-3">
+            <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+              <span className="text-center leading-tight">
+                {getBuildingInitials()}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 pt-1">
               {t(listingPropertyKeys.building.label)}
             </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/app/buildings/${buildingId}`)}
+            className="lg:mt-2 w-full text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+          >
+            {buildingName}
+          </button>
+
+          {operatorName && (
+            <p className="mt-1 text-sm text-gray-500 text-left">
+              {operatorName}
+            </p>
+          )}
+
+          <button
+            className="lg:mt-2 w-full text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium text-left"
+            onClick={() =>
+              operatorId
+                ? router.push(`/app/operators/${operatorId}`)
+                : router.push(`/app/buildings/${buildingId}`)
+            }
+          >
+            {t(listingPropertyKeys.building.seeMoreApartments)}
+          </button>
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden lg:block">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 lg:w-12 lg:h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+                <span className="text-center leading-tight">
+                  {getBuildingInitials()}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">
+                  {t(listingPropertyKeys.building.label)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/app/buildings/${buildingId}`)}
+                  className="text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+                >
+                  {buildingName}
+                </button>
+                {operatorName && (
+                  <p className="text-sm text-gray-500">{operatorName}</p>
+                )}
+              </div>
+            </div>
             <button
-              type="button"
-              onClick={() => router.push(`/app/buildings/${buildingId}`)}
-              className="text-xl font-semibold text-black text-left cursor-pointer hover:underline"
+              className="text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium"
+              onClick={() =>
+                operatorId
+                  ? router.push(`/app/operators/${operatorId}`)
+                  : router.push(`/app/buildings/${buildingId}`)
+              }
             >
-              {buildingName}
+              {t(listingPropertyKeys.building.seeMoreApartments)}
             </button>
-            {operatorName && (
-              <p className="text-sm text-gray-500">{operatorName}</p>
-            )}
           </div>
         </div>
-        <button
-          className="text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium"
-          onClick={() =>
-            operatorId
-              ? router.push(`/app/operators/${operatorId}`)
-              : router.push(`/app/buildings/${buildingId}`)
-          }
-        >
-          {t(listingPropertyKeys.building.seeMoreApartments)}
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
