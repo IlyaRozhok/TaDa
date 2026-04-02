@@ -29,13 +29,7 @@ interface Building {
 }
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
-import {
-  Share,
-  ChevronLeft,
-  ChevronRight,
-  Home,
-  Train,
-} from "lucide-react";
+import { Share, ChevronLeft, ChevronRight, Home, Train } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
@@ -107,12 +101,13 @@ export default function BuildingPublicPage() {
   });
 
   const preferencesFilledCount = useMemo(() => {
-    const preferences =
-      (preferencesQueryData &&
-        typeof preferencesQueryData === "object" &&
-        "data" in preferencesQueryData
+    const preferences = (
+      preferencesQueryData &&
+      typeof preferencesQueryData === "object" &&
+      "data" in preferencesQueryData
         ? (preferencesQueryData as { data?: Record<string, unknown> }).data
-        : preferencesQueryData) as Record<string, unknown> | undefined;
+        : preferencesQueryData
+    ) as Record<string, unknown> | undefined;
 
     if (!preferences || typeof preferences !== "object") {
       return 0;
@@ -120,18 +115,26 @@ export default function BuildingPublicPage() {
 
     let filledCount = 0;
     if (hasPreferencesLocationFilled(preferences)) filledCount += 1;
-    if (preferences.min_price != null || preferences.max_price != null) filledCount += 1;
+    if (preferences.min_price != null || preferences.max_price != null)
+      filledCount += 1;
     if (preferences.min_bedrooms != null) filledCount += 1;
     if (preferences.furnishing) filledCount += 1;
     if (preferences.let_duration) filledCount += 1;
-    if (preferences.designer_furniture !== undefined && preferences.designer_furniture !== null) filledCount += 1;
+    if (
+      preferences.designer_furniture !== undefined &&
+      preferences.designer_furniture !== null
+    )
+      filledCount += 1;
     if (preferences.ideal_living_environment) filledCount += 1;
     if (preferences.pets) filledCount += 1;
-    if (preferences.smoker !== undefined && preferences.smoker !== null) filledCount += 1;
+    if (preferences.smoker !== undefined && preferences.smoker !== null)
+      filledCount += 1;
     if (preferences.move_in_date) filledCount += 1;
     if (preferences.max_bedrooms != null) filledCount += 1;
-    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null) filledCount += 1;
-    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0) filledCount += 1;
+    if (preferences.min_bathrooms != null || preferences.max_bathrooms != null)
+      filledCount += 1;
+    if (Array.isArray(preferences.hobbies) && preferences.hobbies.length > 0)
+      filledCount += 1;
     if (preferences.additional_info) filledCount += 1;
 
     return filledCount;
@@ -566,7 +569,7 @@ export default function BuildingPublicPage() {
           </section>
 
           {/* Transport and placements */}
-          <section className="py-4 sm:py-10 w-full">
+          <section className="py-4 sm:py-10 mb-8 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
               {t("building.location.whatsAround")}
             </h2>
@@ -650,7 +653,6 @@ export default function BuildingPublicPage() {
                   </div>
                 </div>
               </div>
-
             </div>
           </section>
         </div>

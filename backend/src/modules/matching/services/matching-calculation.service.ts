@@ -23,83 +23,78 @@ export class MatchingCalculationService {
     // 1. Budget matching
     categories.push(this.matchBudget(property, preferences, weights.budget));
 
-    // 2. Location matching (areas, districts, metro) - HIGH PRIORITY
-    categories.push(
-      this.matchLocation(property, preferences, weights.location),
-    );
-
-    // 3. Bedrooms matching
+    // 2. Bedrooms matching
     categories.push(
       this.matchBedrooms(property, preferences, weights.bedrooms),
     );
 
-    // 4. Property type matching
+    // 3. Property type matching
     categories.push(
       this.matchPropertyType(property, preferences, weights.propertyType),
     );
 
-    // 5. Availability/Dates matching
+    // 4. Availability/Dates matching
     categories.push(
       this.matchAvailability(property, preferences, weights.availability),
     );
 
-    // 6. Amenities matching (includes outdoor space)
+    // 5. Amenities matching (includes outdoor space)
     categories.push(
       this.matchAmenities(property, preferences, weights.amenities),
     );
 
-    // 7. Bathrooms matching
+    // 6. Bathrooms matching
     categories.push(
       this.matchBathrooms(property, preferences, weights.bathrooms),
     );
 
-    // 8. Building style matching
+    // 7. Building style matching
     categories.push(
       this.matchBuildingStyle(property, preferences, weights.buildingStyle),
     );
 
-    // 9. Occupation compatibility matching (ENHANCED)
+    // 8. Occupation compatibility matching (ENHANCED)
     categories.push(
       this.matchOccupation(property, preferences, weights.occupation),
     );
 
-    // 10. Family status compatibility matching (ENHANCED)
+    // 9. Family status compatibility matching (ENHANCED)
     categories.push(
       this.matchFamilyStatus(property, preferences, weights.familyStatus),
     );
 
-    // 11. Children compatibility matching (ENHANCED)
+    // 10. Children compatibility matching (ENHANCED)
     categories.push(
       this.matchChildren(property, preferences, weights.children),
     );
 
-    // 12. Duration matching
+    // 11. Duration matching
     categories.push(
       this.matchDuration(property, preferences, weights.duration),
     );
 
-    // 13. Square meters matching
+    // 12. Square meters matching
     categories.push(
       this.matchSquareMeters(property, preferences, weights.squareMeters),
     );
 
-    // 14. Furnishing matching
+    // 13. Furnishing matching
     categories.push(
       this.matchFurnishing(property, preferences, weights.furnishing),
     );
 
-    // 15. Smoking compatibility matching
+    // 14. Smoking compatibility matching
     categories.push(
       this.matchSmoking(property, preferences, weights.smoking),
     );
 
-    // 16. Pets matching
+    // 15. Pets matching
     categories.push(this.matchPets(property, preferences, weights.pets));
 
-    // 17. Bills matching
+    // 16. Bills matching
     categories.push(this.matchBills(property, preferences, weights.bills));
 
-    // 18. Property amenities matching (apartment-level features)
+    // 17. Property amenities matching (apartment-level features)
     categories.push(
       this.matchPropertyAmenities(property, preferences, weights.propertyAmenities),
     );

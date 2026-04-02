@@ -57,7 +57,7 @@ export default function AllPropertiesPage() {
     {
       page: 1,
       limit: 12,
-    }
+    },
   );
 
   // Use filtered properties hook with all options
@@ -73,7 +73,7 @@ export default function AllPropertiesPage() {
     filters,
     debouncedSearchTerm,
     sortOptions,
-    paginationOptions
+    paginationOptions,
   );
 
   // Load when auth role is known; refetch when fetchProperties identity changes (e.g. tenant vs operator)
@@ -144,16 +144,16 @@ export default function AllPropertiesPage() {
     if (filters.max_price) activeFilters.push(`Max £${filters.max_price}`);
     if (filters.bedrooms)
       activeFilters.push(
-        `≥${filters.bedrooms} bed${filters.bedrooms > 1 ? "s" : ""}`
+        `≥${filters.bedrooms} bed${filters.bedrooms > 1 ? "s" : ""}`,
       );
     if (filters.bathrooms)
       activeFilters.push(
-        `≥${filters.bathrooms} bath${filters.bathrooms > 1 ? "s" : ""}`
+        `≥${filters.bathrooms} bath${filters.bathrooms > 1 ? "s" : ""}`,
       );
     if (filters.property_type && filters.property_type !== "all") {
       activeFilters.push(
         filters.property_type.charAt(0).toUpperCase() +
-          filters.property_type.slice(1)
+          filters.property_type.slice(1),
       );
     }
     if (filters.furnishing && filters.furnishing !== "all") {
@@ -176,9 +176,7 @@ export default function AllPropertiesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <TenantUniversalHeader
-          showPreferencesButton={true}
-        />
+        <TenantUniversalHeader showPreferencesButton={true} />
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Header Skeleton */}
           <div className="mb-8">
@@ -212,9 +210,7 @@ export default function AllPropertiesPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <TenantUniversalHeader
-          showPreferencesButton={true}
-        />
+        <TenantUniversalHeader showPreferencesButton={true} />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -334,7 +330,7 @@ export default function AllPropertiesPage() {
                 onChange={(e) => {
                   const [sortBy, direction] = e.target.value.split("-") as [
                     SortOptions["sortBy"],
-                    "asc" | "desc"
+                    "asc" | "desc",
                   ];
                   setSortOptions({ sortBy, sortDirection: direction });
                 }}
@@ -425,8 +421,8 @@ export default function AllPropertiesPage() {
                     1,
                     Math.min(
                       paginationInfo.page - 2 + i,
-                      paginationInfo.totalPages - 4 + i
-                    )
+                      paginationInfo.totalPages - 4 + i,
+                    ),
                   );
 
                   if (pageNum < 1 || pageNum > paginationInfo.totalPages)
@@ -445,7 +441,7 @@ export default function AllPropertiesPage() {
                       {pageNum}
                     </button>
                   );
-                }
+                },
               )}
 
               <button

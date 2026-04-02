@@ -22,7 +22,7 @@ export default function PageSkeleton() {
       </div>
 
       {/* Content Skeleton */}
-      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-1">
         {/* Section Header Skeleton */}
         <div className="mb-6">
           <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>

@@ -884,12 +884,6 @@ export default function PropertyPublicPage() {
                 {property.title || "Property Title"}
               </h1>
               <button
-                className="flex items-center justify-center w-10 h-10 bg-white/90 hover:bg-white text-gray-600 transition-colors cursor-pointer rounded-lg"
-                aria-label="Share property"
-              >
-                <Share className="w-5 h-5" />
-              </button>
-              <button
                 onClick={handleShortlistToggle}
                 disabled={shortlistLoading}
                 className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all cursor-pointer ${
