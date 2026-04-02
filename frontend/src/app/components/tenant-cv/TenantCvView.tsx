@@ -388,7 +388,7 @@ export function TenantCvView({
                 <h1 className="text-3xl font-bold text-gray-900 sm:mr-10">
                   {displayName}
                 </h1>
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   {badges.map((b) => (
                     <StatusBadge key={b.label} label={b.label} />
                   ))}
@@ -396,7 +396,7 @@ export function TenantCvView({
                     <button
                       onClick={onShareClick}
                       disabled={shareLoading}
-                      className="inline-flex text-[11px] lg:text-sm cursor-pointer items-center justify-center gap-1 lg:gap-2 px-2 lg:px-4 lg:py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
+                      className="inline-flex w-full sm:w-auto text-[11px] lg:text-sm cursor-pointer items-center justify-center gap-1 lg:gap-2 px-2 lg:px-4 lg:py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-60 whitespace-nowrap"
                     >
                       {shareLoading ? (
                         <Info className="w-3 h-3 animate-pulse" />
@@ -487,7 +487,7 @@ export function TenantCvView({
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               {/* Ready to move badge with green border and duration */}
               {readyLabel && (
-                <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border-[1.5px] border-green-500 bg-white w-full sm:w-auto sm:min-w-0 sm:max-w-full">
+                <div className="flex items-start gap-3 px-4 py-2.5 rounded-2xl border-[1.5px] border-green-500 bg-white w-full sm:w-auto sm:min-w-0 sm:max-w-full">
                   <Home className="w-4 h-4 text-gray-900 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-gray-900 break-words">
@@ -515,7 +515,7 @@ export function TenantCvView({
 
               {/* Building style preferences badge without green border */}
               {buildingTypesLabels.length > 0 && (
-                <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border-[1.5px] border-gray-300 bg-white w-full sm:w-auto sm:min-w-0 sm:max-w-full">
+                <div className="flex items-start gap-3 px-4 py-2.5 rounded-2xl border-[1.5px] border-gray-300 bg-white w-full sm:w-auto sm:min-w-0 sm:max-w-full">
                   <Building2 className="w-4 h-4 text-gray-900 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     {/* Mobile: each value on new line */}

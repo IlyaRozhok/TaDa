@@ -28,7 +28,9 @@ export default function TenantCvPage() {
     if (typeof navigator === "undefined") return false;
     const ua = navigator.userAgent;
     // Safari is detected as "Safari" + not common Chromium-based browsers.
-    return /Safari/.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|Android/i.test(ua);
+    return (
+      /Safari/.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|Android/i.test(ua)
+    );
   };
 
   const execCommandCopy = (text: string): boolean => {
@@ -276,7 +278,7 @@ export default function TenantCvPage() {
       />
 
       <main className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-18 pb-10 mt-6">
+        <div className="lg:max-w-6xl mx-auto lg:px-4 sm:px-6 lg:px-8 pt-18 pb-10 mt-6">
           {shouldShowLoadingSkeleton ? (
             <div className="h-[calc(100vh-130px)] min-h-[520px] overflow-hidden">
               <TenantCvSkeleton />

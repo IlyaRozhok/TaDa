@@ -7,6 +7,7 @@ import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
 import { selectUser, selectIsOnboarded } from "../store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
+import { favoritesKeys } from "@/app/lib/translationsKeys/favoritesTranslationKeys";
 import {
   Settings,
   Shield,
@@ -54,6 +55,7 @@ export default function TenantUniversalHeader({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isUnitsPage =
     pathname === "/app/units" || pathname.startsWith("/app/units/");
+  const isFavoritesPage = pathname === "/app/shortlist";
   const isSameHeaderPage =
     isUnitsPage ||
     pathname === "/app/shortlist" ||
@@ -277,7 +279,9 @@ export default function TenantUniversalHeader({
                         className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
                       >
                         <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
-                        {t(profileKeys.dropFavourites)}
+                        {isFavoritesPage
+                          ? t(favoritesKeys.title)
+                          : t(profileKeys.dropFavourites)}
                       </button>
                     )}
                 </div>
