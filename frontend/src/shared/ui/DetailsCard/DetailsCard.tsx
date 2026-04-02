@@ -41,7 +41,7 @@ export function DetailsCard({
           className={cn(
             "font-semibold text-gray-900",
             titleSize === "large" && "text-xl sm:text-2xl mb-3 sm:mb-6",
-            titleSize === "compact" && "text-base sm:text-lg mb-3"
+            titleSize === "compact" && "text-base sm:text-lg mb-3",
           )}
         >
           {title}
@@ -55,7 +55,7 @@ export function DetailsCard({
               className={cn(
                 showDividers &&
                   index > 0 &&
-                  "flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0"
+                  "flex items-center gap-2 sm:gap-4 pl-0 sm:pl-6 min-w-[5rem] sm:min-w-0",
               )}
             >
               {showDividers && index > 0 && (
@@ -65,7 +65,8 @@ export function DetailsCard({
                 className={cn(
                   "flex flex-col min-w-0 py-1",
                   showDividers && "flex-1",
-                  align === "center" && "items-center justify-center text-center"
+                  align === "center" &&
+                    "items-center justify-center text-center",
                 )}
               >
                 <p className="text-xs sm:text-sm text-gray-500 sm:whitespace-nowrap mb-0.5 sm:mb-1">
@@ -74,7 +75,7 @@ export function DetailsCard({
                 <p
                   className={cn(
                     "text-sm sm:text-base font-semibold text-gray-900 break-words text-black",
-                    align === "left" && "truncate"
+                    align === "left" && "truncate",
                   )}
                 >
                   {item.value}

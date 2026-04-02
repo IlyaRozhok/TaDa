@@ -76,7 +76,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
 
   if (loading) {
     return (
-      <section className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <section className="lg:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
@@ -125,10 +125,10 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   }
 
   return (
-    <section className="max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <section className="lg:max-w-[92%] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+          <div className="w-12 h-12 lg:w-12 lg:h-12 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
             <span className="text-center leading-tight">
               {getBuildingInitials()}
             </span>

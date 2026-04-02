@@ -129,18 +129,19 @@ const ImageGallery = memo(function ImageGallery({
           />
 
           {/* Main image skeleton – показываем только пока основное изображение реально грузится */}
-          {!isMainImageLoaded && displayImages[selectedImage] !== PROPERTY_PLACEHOLDER && (
-            <div
-              className="absolute inset-0 pointer-events-none rounded-3xl sm:rounded-3xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_200%] animate-[shimmer_2s_infinite]"
-              aria-hidden
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[slideIn_1.5s_infinite]" />
-            </div>
-          )}
+          {!isMainImageLoaded &&
+            displayImages[selectedImage] !== PROPERTY_PLACEHOLDER && (
+              <div
+                className="absolute inset-0 pointer-events-none rounded-3xl sm:rounded-3xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_200%] animate-[shimmer_2s_infinite]"
+                aria-hidden
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[slideIn_1.5s_infinite]" />
+              </div>
+            )}
 
           {/* Image Counter */}
           {displayImages.length > 1 && (
-            <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-black/70 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-3lg sm:rounded-3xl text-xs sm:text-sm font-medium shadow-lg">
+            <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-black/70 backdrop-blur-sm text-white px-1 sm:px-4 py-1.5 sm:py-2 rounded-2xl sm:rounded-2xl text-xs sm:text-sm font-medium shadow-lg">
               {selectedImage + 1} / {displayImages.length}
             </div>
           )}
@@ -172,7 +173,7 @@ const ImageGallery = memo(function ImageGallery({
           )}
 
           {/* Click to expand hint */}
-          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-3lg sm:rounded-3xl text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-1 sm:px-4 py-1.5 sm:py-2 rounded-3lg sm:rounded-3xl text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {t(listingPropertyKeys.gallery.viewFullscreen)}
           </div>
         </div>
@@ -180,7 +181,7 @@ const ImageGallery = memo(function ImageGallery({
 
       {/* Thumbnail strip - horizontal scroll, stays in sync with main image */}
       {displayImages.length > 1 && (
-        <div className="overflow-x-auto overflow-y-hidden scroll-smooth py-1 -mx-1">
+        <div className="overflow-x-auto overflow-y-hidden scroll-smooth py-1">
           <div className="flex gap-1.5 sm:gap-2 min-w-0">
             {displayImages.map((image, index) => (
               <button
@@ -316,7 +317,7 @@ const ImageGallery = memo(function ImageGallery({
 
                 {/* Modal Image Counter - Liquid Glass */}
                 <div
-                  className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-medium shadow-xl"
+                  className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 text-white px-1 sm:px-6 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-medium shadow-xl"
                   style={{
                     background: "rgba(0, 0, 0, 0.4)",
                     backdropFilter: "blur(10px) saturate(180%)",

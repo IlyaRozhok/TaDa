@@ -23,6 +23,7 @@ import {
   Bed,
   Bath,
   Sofa,
+  Copy,
 } from "lucide-react";
 import { TenantCvResponse, RentHistoryEntry } from "../../types/tenantCv";
 import { buildDisplayName, buildInitials } from "../../utils/displayName";
@@ -56,6 +57,9 @@ interface TenantCvViewProps {
   shareUrl?: string | null;
   onShareClick?: () => void;
   shareLoading?: boolean;
+  showManualCopy?: boolean;
+  manualCopyLoading?: boolean;
+  onManualCopyClick?: () => void | Promise<void>;
 }
 
 const SectionTitle = ({ title }: { title: string }) => (
@@ -130,6 +134,9 @@ export function TenantCvView({
   shareUrl,
   onShareClick,
   shareLoading,
+  showManualCopy,
+  manualCopyLoading,
+  onManualCopyClick,
 }: TenantCvViewProps) {
   const { t } = useTranslation();
   const { profile, meta, preferences } = data;
@@ -402,6 +409,26 @@ export function TenantCvView({
                   )}
                 </div>
               </div>
+
+              {showManualCopy && shareUrl ? (
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
+                  <input
+                    value={shareUrl}
+                    readOnly
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="w-full sm:flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-2xl bg-gray-50 text-xs sm:text-sm font-mono text-gray-900 truncate"
+                  />
+                  <button
+                    onClick={() => onManualCopyClick?.()}
+                    disabled={manualCopyLoading}
+                    className="inline-flex cursor-pointer items-center justify-center gap-2 px-4 py-2 rounded-full bg-white text-gray-900 font-medium hover:bg-gray-50 transition-colors disabled:opacity-60 border border-gray-200"
+                    type="button"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {manualCopyLoading ? "Copying..." : "Copy link"}
+                  </button>
+                </div>
+              ) : null}
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-700">
                 {profile.age_years ? (
                   <span>

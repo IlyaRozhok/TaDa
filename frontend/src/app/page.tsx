@@ -441,7 +441,7 @@ export default function HomePage() {
 
       {/* Cookie consent popup (landing only) */}
       {!isAuthenticated && cookieConsentChecked && showCookieConsent && (
-        <div className="fixed inset-x-0 bottom-6 z-[100] flex justify-end px-4">
+        <div className="fixed inset-x-0 bottom-2 z-[100] flex justify-end px-4">
           <div
             role="dialog"
             aria-modal="false"
@@ -455,9 +455,7 @@ export default function HomePage() {
               >
                 {t("cookies.title")}
               </h2>
-              <p className="mt-2 text-gray-800">
-                {t("cookies.description")}
-              </p>
+              <p className="mt-2 text-gray-800">{t("cookies.description")}</p>
 
               <div className="mt-6 flex items-center gap-6 flex-wrap">
                 <button

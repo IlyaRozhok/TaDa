@@ -86,9 +86,9 @@ const Footer = () => {
 
         {/* Footer Bottom */}
         <div className="border-t border-gray-800 pt-8">
-          <div className="flex flex-col lg:flex-row justify-between items-center">
+          <div className="flex flex-col lg:flex-row justify-center items-center">
             {/* Copyright */}
-            <div className="mb-4 lg:mb-0">
+            <div className="mb-4 lg:mb-0 text-center">
               <p className="text-gray-400 text-sm">
                 {t(generalKeys.footer.allRightsReserved)}
               </p>
@@ -111,7 +111,7 @@ const Footer = () => {
             </div>
 
             {/* Social Media (Mobile) & Location */}
-            <div className="flex flex-col lg:flex-row items-center gap-4">
+            <div className="flex flex-col lg:flex-row items-center gap-4 justify-center">
               {/* Instagram Link for Mobile */}
               <div className="lg:hidden">
                 <a

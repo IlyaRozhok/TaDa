@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
@@ -11,6 +11,7 @@ import {
   Settings,
   Shield,
   MoreHorizontal,
+  Menu,
   User,
   FileText,
   Search,
@@ -45,11 +46,14 @@ export default function TenantUniversalHeader({
   onSearchChange,
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const user = useSelector(selectUser);
   const isOnboarded = useSelector(selectIsOnboarded);
   const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const isUnitsPage =
+    pathname === "/app/units" || pathname.startsWith("/app/units/");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,7 +93,7 @@ export default function TenantUniversalHeader({
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-5 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-2">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-2">
       <div className="w-full mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Logo - clickable to dashboard */}
         <div className="flex items-center flex-shrink-0">
@@ -110,13 +114,21 @@ export default function TenantUniversalHeader({
           {onSearchChange !== undefined && (
             <div className="min-w-0 max-w-md flex-1 flex">
               <label className="relative flex items-center w-full">
-                <Search className="absolute left-3 w-4 h-4 text-gray-500 pointer-events-none" />
+                <Search
+                  className={`absolute left-3 ${
+                    isUnitsPage ? "w-5 h-5" : "w-4 h-4"
+                  } text-gray-500 pointer-events-none`}
+                />
                 <input
                   type="search"
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder={t(headerKeys.searchPlaceholder)}
-                  className="w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-3xl focus:outline-0 focus:border-gray-400"
+                  className={`w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 ${
+                    isUnitsPage
+                      ? "py-3 text-base sm:py-2 sm:text-sm"
+                      : "py-2 text-sm"
+                  } border border-gray-300 rounded-3xl focus:outline-0 focus:border-gray-400`}
                   aria-label={t(headerKeys.searchPlaceholder)}
                 />
               </label>
@@ -145,7 +157,9 @@ export default function TenantUniversalHeader({
           {user?.role === "admin" && (
             <button
               onClick={() => router.push("/app/admin/panel")}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+              className={`flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer ${
+                isUnitsPage ? "hidden sm:flex" : ""
+              }`}
             >
               <Shield className="w-4 h-4 flex-shrink-0" />
               <span>Admin Panel</span>
@@ -188,14 +202,18 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Mobile Menu (3 dots) - visible only on mobile */}
+          {/* Mobile Menu - visible only on mobile */}
           <div className="relative md:hidden" ref={mobileMenuRef}>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-2 cursor-pointer flex justify-center items-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Menu"
             >
-              <MoreHorizontal className="w-5 h-5" />
+              {isUnitsPage ? (
+                <Menu className="w-5 h-5" />
+              ) : (
+                <MoreHorizontal className="w-5 h-5" />
+              )}
             </button>
 
             {/* Mobile Menu Dropdown - styled like LanguageDropdown */}
@@ -234,15 +252,26 @@ export default function TenantUniversalHeader({
                     {t(tenantCvKeys.tenantCvButton)}
                   </button>
 
-                  {showFavouritesButton && (isOnboarded || user?.role === "admin") && (
+                  {user?.role === "admin" && isUnitsPage && (
                     <button
-                      onClick={() => handleMobileMenuClick("/app/shortlist")}
+                      onClick={() => handleMobileMenuClick("/app/admin/panel")}
                       className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
                     >
-                      <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
-                      {t(profileKeys.dropFavourites)}
+                      <Shield className="w-4 h-4 mr-3 flex-shrink-0" />
+                      Admin Panel
                     </button>
                   )}
+
+                  {showFavouritesButton &&
+                    (isOnboarded || user?.role === "admin") && (
+                      <button
+                        onClick={() => handleMobileMenuClick("/app/shortlist")}
+                        className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                      >
+                        <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
+                        {t(profileKeys.dropFavourites)}
+                      </button>
+                    )}
                 </div>
               </div>
             )}

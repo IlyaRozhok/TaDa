@@ -78,7 +78,7 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
   }
 
   return (
-    <div className="py-4 px-1">
+    <div className="py-3 px-1">
       {/* Title */}
       <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
         {property.title}

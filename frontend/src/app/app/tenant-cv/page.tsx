@@ -20,7 +20,72 @@ export default function TenantCvPage() {
   const [error, setError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
+  const [manualCopyLoading, setManualCopyLoading] = useState(false);
+  const [showManualCopy, setShowManualCopy] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+
+  const isSafariLike = () => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent;
+    // Safari is detected as "Safari" + not common Chromium-based browsers.
+    return /Safari/.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|Android/i.test(ua);
+  };
+
+  const execCommandCopy = (text: string): boolean => {
+    try {
+      // IMPORTANT (Safari): this must be executed synchronously inside a click
+      // handler. Avoid any `await` on the call path when possible.
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.readOnly = true;
+
+      // Keep it in the layout/rendering pipeline (opacity 0 often breaks copy
+      // in Safari). 1x1px + offscreen is usually safe.
+      ta.style.position = "fixed";
+      ta.style.top = "0";
+      ta.style.left = "0";
+      ta.style.width = "1px";
+      ta.style.height = "1px";
+      ta.style.padding = "0";
+      ta.style.margin = "0";
+      ta.style.border = "0";
+      ta.style.opacity = "1";
+      ta.style.background = "transparent";
+      ta.style.zIndex = "9999";
+
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+
+      // Safari sometimes needs explicit selection range.
+      try {
+        ta.setSelectionRange(0, text.length);
+      } catch {
+        // ignore
+      }
+
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  };
+
+  const copyTextToClipboardAsync = async (text: string): Promise<boolean> => {
+    // 1) Modern async clipboard API (works in most browsers)
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      // Safari can reject the Clipboard API even after a click; fall back below.
+    }
+
+    // 2) Legacy fallback via execCommand
+    return execCommandCopy(text);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -124,6 +189,7 @@ export default function TenantCvPage() {
 
     if (cvData.share_uuid && typeof window !== "undefined") {
       setShareUrl(`${window.location.origin}/cv/${cvData.share_uuid}`);
+      setShowManualCopy(false);
     }
   }, [cvQueryData]);
 
@@ -142,6 +208,7 @@ export default function TenantCvPage() {
     let copied = false;
     try {
       setShareLoading(true);
+      setShowManualCopy(false);
       const result = await createShare().unwrap();
       const uuid = extractShareUuid(result);
       if (!uuid || typeof window === "undefined") {
@@ -150,33 +217,15 @@ export default function TenantCvPage() {
       }
       const url = `${window.location.origin}/cv/${uuid}`;
       setShareUrl(url);
-      try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(url);
-          copied = true;
-        }
-      } catch {
-        // Safari often rejects Clipboard API even after a click; fall back below
-      }
-      if (!copied) {
-        try {
-          const ta = document.createElement("textarea");
-          ta.value = url;
-          ta.setAttribute("readonly", "");
-          ta.style.position = "fixed";
-          ta.style.left = "-9999px";
-          document.body.appendChild(ta);
-          ta.select();
-          copied = document.execCommand("copy");
-          document.body.removeChild(ta);
-        } catch {
-          copied = false;
-        }
-      }
+      copied = await copyTextToClipboardAsync(url);
       if (copied) {
         notify.success("Link copied to clipboard!");
+        setShowManualCopy(false);
       } else {
-        notify.error(`Could not copy automatically. Use this link: ${url}`);
+        setShowManualCopy(true);
+        if (!isSafariLike()) {
+          notify.error(`Could not copy automatically. Use this link: ${url}`);
+        }
       }
     } catch (e: unknown) {
       const msg =
@@ -189,6 +238,28 @@ export default function TenantCvPage() {
       );
     } finally {
       setShareLoading(false);
+    }
+  };
+
+  const handleManualCopy = () => {
+    if (!shareUrl) return;
+    setManualCopyLoading(true);
+    try {
+      // IMPORTANT: synchronous path for Safari clipboard restrictions.
+      const copied = execCommandCopy(shareUrl);
+      if (copied) {
+        notify.success("Link copied to clipboard!");
+        setShowManualCopy(false);
+      } else {
+        if (!isSafariLike()) {
+          notify.error(
+            `Could not copy automatically. Use this link: ${shareUrl}`,
+          );
+        }
+        setShowManualCopy(true);
+      }
+    } finally {
+      setManualCopyLoading(false);
     }
   };
 
@@ -223,6 +294,9 @@ export default function TenantCvPage() {
                 shareUrl={shareUrl}
                 onShareClick={handleShare}
                 shareLoading={shareLoading}
+                onManualCopyClick={handleManualCopy}
+                showManualCopy={showManualCopy}
+                manualCopyLoading={manualCopyLoading}
               />
             </div>
           ) : null}

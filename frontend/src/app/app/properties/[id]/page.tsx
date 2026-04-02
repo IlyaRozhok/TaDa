@@ -26,7 +26,7 @@ import {
 } from "../../../store/slices/apiSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
-import { Heart, Share } from "lucide-react";
+import { Share } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
@@ -876,7 +876,7 @@ export default function PropertyPublicPage() {
       />
 
       {/* Header with title and actions */}
-      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32">
+      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
@@ -886,18 +886,29 @@ export default function PropertyPublicPage() {
               <button
                 onClick={handleShortlistToggle}
                 disabled={shortlistLoading}
-                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all cursor-pointer ${
+                type="button"
+                className={`min-w-[44px] h-11 px-2.5 rounded-full border transition-all duration-200 flex items-center justify-center cursor-pointer ${
                   isInShortlist
-                    ? "bg-red-500 hover:bg-red-600 text-white"
-                    : "bg-white/90 hover:bg-white text-gray-600"
-                }`}
+                    ? "border-red-500 text-red-500"
+                    : "border-gray-300 text-gray-600 hover:border-red-500"
+                } ${shortlistLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 aria-label={
                   isInShortlist ? "Remove from shortlist" : "Add to shortlist"
                 }
               >
-                <Heart
-                  className={`w-5 h-5 ${isInShortlist ? "fill-current" : ""}`}
-                />
+                <svg
+                  width="20"
+                  height="19"
+                  viewBox="0 0 16 15"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5 transition-all duration-200 pointer-events-none shrink-0"
+                >
+                  <path
+                    d="M0 4.71875C0 4.02604 0.109375 3.39323 0.328125 2.82031C0.552083 2.24219 0.864583 1.74219 1.26562 1.32031C1.66667 0.898438 2.13542 0.572917 2.67188 0.34375C3.21354 0.114583 3.79948 0 4.42969 0C5.15365 0 5.80208 0.158854 6.375 0.476562C6.94792 0.794271 7.40885 1.21615 7.75781 1.74219C8.11198 1.21615 8.57292 0.794271 9.14062 0.476562C9.71354 0.158854 10.362 0 11.0859 0C11.7214 0 12.3073 0.114583 12.8438 0.34375C13.3854 0.572917 13.8542 0.898438 14.25 1.32031C14.651 1.74219 14.9609 2.24219 15.1797 2.82031C15.4036 3.39323 15.5156 4.02604 15.5156 4.71875C15.5156 5.82812 15.2214 6.92708 14.6328 8.01562C14.0495 9.09896 13.2188 10.1562 12.1406 11.1875C11.0677 12.2135 9.79688 13.1953 8.32812 14.1328C8.24479 14.1849 8.14844 14.2318 8.03906 14.2734C7.9349 14.3203 7.84115 14.3438 7.75781 14.3438C7.67969 14.3438 7.58594 14.3203 7.47656 14.2734C7.3724 14.2318 7.27865 14.1849 7.19531 14.1328C5.72656 13.1953 4.45312 12.2135 3.375 11.1875C2.29688 10.1562 1.46354 9.09896 0.875 8.01562C0.291667 6.92708 0 5.82812 0 4.71875ZM1.25781 4.71875C1.25781 5.44271 1.43229 6.17708 1.78125 6.92188C2.13021 7.66146 2.60417 8.38802 3.20312 9.10156C3.80208 9.8151 4.47917 10.4974 5.23438 11.1484C5.99479 11.7943 6.78385 12.388 7.60156 12.9297C7.6849 12.9922 7.73698 13.0234 7.75781 13.0234C7.77865 13.0234 7.83333 12.9922 7.92188 12.9297C8.73958 12.388 9.52604 11.7943 10.2812 11.1484C11.0417 10.4974 11.7188 9.8151 12.3125 9.10156C12.9115 8.38802 13.3854 7.66146 13.7344 6.92188C14.0833 6.17708 14.2578 5.44271 14.2578 4.71875C14.2578 4.02604 14.1198 3.42188 13.8438 2.90625C13.5729 2.38542 13.1979 1.98177 12.7188 1.69531C12.2448 1.40365 11.7057 1.25781 11.1016 1.25781C10.612 1.25781 10.1901 1.34635 9.83594 1.52344C9.48698 1.69531 9.1849 1.91406 8.92969 2.17969C8.67969 2.4401 8.46615 2.69792 8.28906 2.95312C8.17448 3.10417 8.08073 3.20833 8.00781 3.26562C7.9349 3.32292 7.85156 3.35156 7.75781 3.35156C7.66406 3.35156 7.57812 3.32552 7.5 3.27344C7.42708 3.21615 7.33594 3.10938 7.22656 2.95312C7.0599 2.69271 6.85156 2.43229 6.60156 2.17188C6.35156 1.91146 6.04688 1.69531 5.6875 1.52344C5.32812 1.34635 4.90365 1.25781 4.41406 1.25781C3.8099 1.25781 3.26823 1.40365 2.78906 1.69531C2.3151 1.98177 1.9401 2.38542 1.66406 2.90625C1.39323 3.42188 1.25781 4.02604 1.25781 4.71875Z"
+                    fill="currentColor"
+                  />
+                </svg>
               </button>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-gray-600">
@@ -915,7 +926,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Main content: gallery + sticky price card */}
-      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6">
+      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Left: Gallery with preview carousel */}
           <div className="lg:col-span-2 relative">
@@ -1065,43 +1076,89 @@ export default function PropertyPublicPage() {
             <div className="sticky top-6">
               {/* Building info */}
               {property.building && (
-                <div className="flex items-start gap-3 mb-6 p-4">
-                  <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                    <div className="text-center leading-tight px-1">
-                      <div>BUILDING</div>
+                <div className="mb-3 lg:mb-6">
+                  {/* Mobile: logo + label on the same row, then name + link left-aligned on grid */}
+                  <div className="lg:hidden">
+                    <div className="flex items-baseline lg:items-start gap-3">
+                      <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                        <div className="text-center leading-tight px-1">
+                          <div>B</div>
+                        </div>
+                      </div>
+                      <div className="text-gray-600 text-sm lg:mb-1 pt-1">
+                        {t(listingPropertyKeys.building.label)}
+                      </div>
+                    </div>
+
+                    <div className="mt-1 flex flex-col">
+                      <button
+                        className="w-full font-semibold text-2xl text-black mb-1 cursor-pointer hover:underline transition-colors text-left"
+                        onClick={() =>
+                          router.push(
+                            `/app/buildings/${property.building?.id}`,
+                            { scroll: true },
+                          )
+                        }
+                      >
+                        {property.building?.name}
+                      </button>
+                      <button
+                        className="w-full text-black text-sm underline cursor-pointer font-medium hover:text-slate-700 transition-colors text-left"
+                        onClick={() =>
+                          router.push(
+                            `/app/buildings/${property.building?.id}`,
+                            { scroll: true },
+                          )
+                        }
+                      >
+                        {t(listingPropertyKeys.building.seeMore)}
+                      </button>
                     </div>
                   </div>
-                  <div className="flex flex-col justify-start flex-1">
-                    <div className="text-gray-600 text-sm mb-1">
-                      {t(listingPropertyKeys.building.label)}
+
+                  {/* Desktop: keep previous layout */}
+                  <div className="hidden lg:block">
+                    <div className="flex items-start gap-3 lg:p-4">
+                      <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                        <div className="text-center leading-tight px-1">
+                          <div>B</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col flex-1 items-start">
+                        <div className="text-gray-600 text-sm lg:mb-1">
+                          {t(listingPropertyKeys.building.label)}
+                        </div>
+                        <button
+                          className="font-semibold text-2xl text-black mb-1 cursor-pointer hover:underline transition-colors text-left self-start"
+                          onClick={() =>
+                            router.push(
+                              `/app/buildings/${property.building?.id}`,
+                              { scroll: true },
+                            )
+                          }
+                        >
+                          {property.building?.name}
+                        </button>
+                        <button
+                          className="text-black text-sm underline text-left cursor-pointer font-medium hover:text-slate-700 transition-colors self-start"
+                          onClick={() =>
+                            router.push(
+                              `/app/buildings/${property.building?.id}`,
+                              { scroll: true },
+                            )
+                          }
+                        >
+                          {t(listingPropertyKeys.building.seeMore)}
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      className="font-semibold text-2xl text-black mb-1 cursor-pointer hover:underline transition-colors text-left"
-                      onClick={() =>
-                        router.push(`/app/buildings/${property.building?.id}`, {
-                          scroll: true,
-                        })
-                      }
-                    >
-                      {property.building?.name}
-                    </button>
-                    <button
-                      className="text-black text-sm underline text-left cursor-pointer font-medium hover:text-slate-700 transition-colors"
-                      onClick={() =>
-                        router.push(`/app/buildings/${property.building?.id}`, {
-                          scroll: true,
-                        })
-                      }
-                    >
-                      {t(listingPropertyKeys.building.seeMore)}
-                    </button>
                   </div>
                 </div>
               )}
 
               {/* Availability */}
-              <div className="mb-4 flex items-baseline font-semibold">
-                <p className="text-base text-black mb-1 px-4">
+              <div className="lg:mb-4 mb-2 flex items-baseline font-semibold">
+                <p className="text-base text-black mr-1 md:pl-4">
                   {t(listingPropertyKeys.availability.availableFrom)}
                 </p>
                 <p className="text-base text-black">
@@ -1119,7 +1176,7 @@ export default function PropertyPublicPage() {
               </div>
 
               {/* Price and booking */}
-              <div className="bg-white px-4">
+              <div className="bg-white lg:px-4">
                 <div className="mb-3 flex items-center">
                   <div className="text-3xl sm:text-4xl font-bold text-black mb-1">
                     £{Number(property.price || 0).toLocaleString()}
@@ -1219,7 +1276,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* About apartment */}
-      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.description.sectionTitle)}
@@ -1261,7 +1318,7 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* What this place offers — building amenities + apartment features */}
-      <div className="max-w-[92%] mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
             {t(listingPropertyKeys.keyFeatures.sectionTitle)}

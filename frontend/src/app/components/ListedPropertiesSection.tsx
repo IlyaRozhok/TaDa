@@ -119,7 +119,7 @@ function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
 
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-xl"
+          className="absolute left-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-xl sm:left-auto sm:right-0"
           style={{
             background:
               "linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%), rgba(0, 0, 0, 0.65)",
