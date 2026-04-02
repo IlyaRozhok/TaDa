@@ -3,6 +3,8 @@ import { Property } from "../../entities/property.entity";
 // Minimal public-facing projection; adjust if more fields should be exposed
 export type PublicPropertyResponse = {
   id: string;
+  /** Present so clients can filter by landlord without loading full operator relation */
+  operator_id: string | null;
   title: string | null;
   address: string | null;
   price: number | null;
@@ -19,6 +21,9 @@ export type PublicPropertyResponse = {
     address?: string;
   } | null;
   amenities?: string[];
+  property_amenities?: string[];
+  deposit?: number | null;
+  bills?: string | null;
 };
 
 export const toPublicProperty = (
@@ -46,8 +51,19 @@ export const toPublicProperty = (
     }
   }
 
+  let deposit: number | null = null;
+  if (property.deposit !== null && property.deposit !== undefined) {
+    if (typeof property.deposit === "string") {
+      const parsed = parseFloat(property.deposit);
+      deposit = isNaN(parsed) ? null : parsed;
+    } else {
+      deposit = Number(property.deposit);
+    }
+  }
+
   return {
     id: property.id,
+    operator_id: property.operator_id ?? null,
     title: property.title || null,
     address: property.address || null,
     price,
@@ -66,5 +82,10 @@ export const toPublicProperty = (
         }
       : null,
     amenities: Array.isArray(property.amenities) ? property.amenities : [],
+    property_amenities: Array.isArray(property.property_amenities)
+      ? property.property_amenities
+      : [],
+    deposit,
+    bills: property.bills ?? null,
   };
 };
