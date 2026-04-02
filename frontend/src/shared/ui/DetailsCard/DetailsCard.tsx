@@ -39,8 +39,9 @@ export function DetailsCard({
       {title && (
         <h2
           className={cn(
-            "font-semibold text-gray-900",
-            titleSize === "large" && "text-xl sm:text-2xl mb-3 sm:mb-6",
+            "text-gray-900",
+            titleSize === "large" &&
+              "font-bold text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4",
             titleSize === "compact" && "text-base sm:text-lg mb-3",
           )}
         >
@@ -74,7 +75,7 @@ export function DetailsCard({
                 </p>
                 <p
                   className={cn(
-                    "text-sm sm:text-base font-semibold text-gray-900 break-words text-black",
+                    "text-sm sm:text-base font-semibold text-gray-900 break-words",
                     align === "left" && "truncate",
                   )}
                 >

@@ -8,7 +8,7 @@ const Footer = () => {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-black text-white py-16">
+    <footer className="bg-black text-white py-8 lg:py-16">
       <div className="container mx-auto px-4">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
@@ -19,7 +19,7 @@ const Footer = () => {
               <img
                 src="/landing-logo.svg"
                 alt="TADA Logo"
-                className="w-[150px] cursor-pointer"
+                className="lg:w-[150px] cursor-pointer"
               />
             </div>
 
@@ -29,7 +29,7 @@ const Footer = () => {
                 <h4 className="text-gray-400 text-sm mb-2">
                   {t(generalKeys.footer.companyNumberLabel)}
                 </h4>
-                <p className="text-white text-lg">
+                <p className="text-white text-sm lg:text-lg">
                   {t(generalKeys.footer.companyNumberText)}
                 </p>
               </div>
@@ -38,7 +38,7 @@ const Footer = () => {
                 <h4 className="text-gray-400 text-sm mb-2">
                   {t(generalKeys.footer.addressLabel)}
                 </h4>
-                <p className="text-white text-lg">
+                <p className="text-white text-sm lg:text-lg">
                   {t(generalKeys.footer.addressText)}
                 </p>
               </div>

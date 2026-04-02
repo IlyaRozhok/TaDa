@@ -256,7 +256,9 @@ export default function BuildingPublicPage() {
           (typeof m.station === "string" ? m.station : null)
         );
       })
-      .filter((v: unknown): v is string => typeof v === "string" && v.length);
+      .filter(
+        (v: unknown): v is string => typeof v === "string" && v.length > 0,
+      );
 
     return labels.length > 0 ? labels.join(", ") : null;
   }, [building]);
@@ -376,18 +378,6 @@ export default function BuildingPublicPage() {
               {building.address}
             </p>
           </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-0.5 sm:gap-0.75">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleShare}
-              className="flex items-center gap-0.5"
-            >
-              <Share className="w-1.25 h-1.25" />
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -409,7 +399,7 @@ export default function BuildingPublicPage() {
           <div className="w-full">
             <DetailsCard
               title={t("listing.building.details.sectionTitle")}
-              titleSize="compact"
+              titleSize="large"
               showDividers={true}
               align="center"
               gridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
@@ -466,21 +456,21 @@ export default function BuildingPublicPage() {
                 {building.amenities?.includes("concierge") &&
                   " Среди удобств есть консьерж-зона и бесплатный Wi-Fi."}
               </p>
-              <button className="text-black cursor-pointer hover:text-gray-700 font-medium mt-0.5 text-sm">
-                More information
-              </button>
             </div>
           </section>
 
           {/* What this place offers */}
           {displayedAmenities.length > 0 && (
             <section className="py-4 sm:py-6 w-full">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
                 {t("building.details.situated")}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-1">
                 {displayedAmenities.map((amenity, index) => (
-                  <div key={index} className="flex items-center gap-1 py-0.5">
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 sm:gap-3 py-2"
+                  >
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
                     <span className="text-sm sm:text-base text-black">
                       {amenity}
@@ -491,7 +481,7 @@ export default function BuildingPublicPage() {
               {building.amenities && building.amenities.length > 9 && (
                 <button
                   onClick={() => setShowAllOffers(!showAllOffers)}
-                  className="mt-3 cursor-pointer px-4 py-2 text-black border border-gray-300 rounded-3xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 cursor-pointer rounded-3xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
                 >
                   {showAllOffers
                     ? "Show less"
@@ -627,7 +617,7 @@ export default function BuildingPublicPage() {
 
               {/* Budget range */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-3">
+                <h3 className="text-base font-semibold text-gray-900 mb-3 mt-4 lg:mt-0">
                   {t("preferences.budgetRange")}
                 </h3>
                 <div className="space-y-2">

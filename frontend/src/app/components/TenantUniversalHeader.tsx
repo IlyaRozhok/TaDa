@@ -132,9 +132,9 @@ export default function TenantUniversalHeader({
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder={t(headerKeys.searchPlaceholder)}
-                  className={`w-full text-gray-700 placeholder:text-gray-500 pl-9 pr-3 ${
+                  className={`w-full text-gray-700 placeholder-transparent sm:placeholder-gray-500  pl-9 pr-3 ${
                     isUnitsPage
-                      ? "py-2 text-base sm:text-sm"
+                      ? "py-1 lg:py-2 text-base sm:text-sm"
                       : "py-2 text-sm"
                   } border border-gray-300 rounded-3xl focus:outline-0 focus:border-gray-400`}
                   aria-label={t(headerKeys.searchPlaceholder)}
