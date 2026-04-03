@@ -280,6 +280,7 @@ function AdminPanelContent() {
         const user = selectedItem as User;
         const response = await fetch(`${apiUrl}/users/${user.id}`, {
           method: "DELETE",
+          credentials: "include",
           headers,
         });
 
