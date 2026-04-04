@@ -84,7 +84,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Footer Bottom */}
         <div className="border-t border-gray-800 pt-8">
           {/* Desktop: copyright | links | country */}
           <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-6">
