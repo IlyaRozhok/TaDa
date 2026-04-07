@@ -28,7 +28,11 @@ export class UsersService {
    * Найти пользователя по ID
    */
   async findOne(id: string): Promise<User> {
-    return this.userQueryService.findOneWithProfiles(id);
+    const user = await this.userQueryService.findOneWithProfiles(id);
+    if (user?.avatar_url) {
+      user.avatar_url = await this.s3Service.refreshAvatarUrl(user.avatar_url) ?? user.avatar_url;
+    }
+    return user;
   }
 
   /**

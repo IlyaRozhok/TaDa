@@ -17,6 +17,7 @@ import { AuthValidationService } from "./services/auth-validation.service";
 import { AuthTokenService } from "./services/auth-token.service";
 import { USER_CONSTANTS } from "../../common/constants/user.constants";
 import { toUserResponse } from "../users/user.mapper";
+import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
 export class AuthService {
@@ -30,7 +31,8 @@ export class AuthService {
     @InjectRepository(Preferences)
     private authValidationService: AuthValidationService,
     private authTokenService: AuthTokenService,
-    private tenantCvService: TenantCvService
+    private tenantCvService: TenantCvService,
+    private s3Service: S3Service
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -107,10 +109,14 @@ export class AuthService {
   }
 
   async findUserWithProfile(userId: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ["preferences", "tenantProfile", "operatorProfile"],
     });
+    if (user?.avatar_url) {
+      user.avatar_url = await this.s3Service.refreshAvatarUrl(user.avatar_url) ?? user.avatar_url;
+    }
+    return user;
   }
 
   async checkUserExists(email: string): Promise<boolean> {
