@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { tenantCvAPI } from "../../lib/api";
 import { TenantCvResponse } from "../../types/tenantCv";
 import { TenantCvView } from "../../components/tenant-cv/TenantCvView";
+import Footer from "../../components/Footer";
 
 export default function PublicTenantCvPage() {
   const params = useParams();
@@ -60,6 +61,8 @@ export default function PublicTenantCvPage() {
         {error && <div className="py-16 text-center text-red-600">{error}</div>}
         {data && !loading ? <TenantCvView data={data} /> : null}
       </div>
+
+      <Footer />
     </div>
   );
 }
