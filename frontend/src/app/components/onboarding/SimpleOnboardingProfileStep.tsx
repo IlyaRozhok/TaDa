@@ -108,7 +108,6 @@ export default function SimpleOnboardingProfileStep({
             <Button
               onClick={handleNext}
               disabled={!validateForm() || loading}
-              loading={loading}
               size="lg"
             >
               {onNext ? t(onboardingKeys.bottom.nextButton) : t(onboardingKeys.bottom.doneButton)}

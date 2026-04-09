@@ -423,20 +423,13 @@ export default function OnboardingPage() {
                 type="button"
                 onClick={handleProfileNext}
                 disabled={state.isLoading || !isProfileValid || isProfileSaving}
-                className={`px-8 py-3 rounded-full font-medium transition-all cursor-pointer flex items-center gap-2 bg-black text-white hover:bg-gray-800 ${
+                className={`px-8 py-3 rounded-full font-medium transition-all cursor-pointer bg-black text-white hover:bg-gray-800 ${
                   state.isLoading || !isProfileValid || isProfileSaving
                     ? "opacity-30 cursor-not-allowed"
                     : ""
                 }`}
               >
-                {isProfileSaving ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    {t(onboardingKeys.bottom.savingText)}
-                  </>
-                ) : (
-                  t(onboardingKeys.bottom.nextButton)
-                )}
+                {t(onboardingKeys.bottom.nextButton)}
               </button>
             )}
 
