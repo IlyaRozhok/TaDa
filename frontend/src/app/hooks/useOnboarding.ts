@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 
 // Total steps in unified onboarding flow:
-// Intro: 3 steps, Profile: 1 step, Preferences: 11 steps = 15 total
-export const TOTAL_ONBOARDING_STEPS = 15;
+// Intro: 3 steps, Profile: 1 step, Preferences: 12 steps = 16 total
+export const TOTAL_ONBOARDING_STEPS = 16;
 export const INTRO_STEPS = 3;
 export const PROFILE_STEP = 4; // After intro steps
 export const PREFERENCES_START_STEP = 5; // After profile step

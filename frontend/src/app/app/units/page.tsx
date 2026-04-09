@@ -193,24 +193,19 @@ export default function TenantUnitsPage() {
       return;
     }
 
-    // Check if user is admin - only admins can access units page
-    if (user.role !== "admin") {
-      // For tenant users, check if onboarding is completed
-      if (user.role === "tenant" && !onboardingCompleted) {
-        router.replace("/app/onboarding");
-        return;
-      }
-      // For completed tenant users, redirect to tenant-cv
-      if (user.role === "tenant" && onboardingCompleted) {
-        router.replace("/app/tenant-cv");
-        return;
-      }
-      // For other roles, redirect to appropriate dashboard
-      if (user.role === "operator") {
-        router.replace("/app/dashboard/operator");
-        return;
-      }
-      // Unknown role - redirect to home
+    // Allow admins and tenants to access units page.
+    if (user.role === "tenant" && !onboardingCompleted) {
+      router.replace("/app/onboarding");
+      return;
+    }
+
+    // Redirect roles that should not stay on units.
+    if (user.role === "operator") {
+      router.replace("/app/dashboard/operator");
+      return;
+    }
+
+    if (user.role !== "admin" && user.role !== "tenant") {
       router.replace("/");
       return;
     }
@@ -266,8 +261,8 @@ export default function TenantUnitsPage() {
     );
   }
 
-  // Only allow admins
-  if (user && user.role !== "admin") {
+  // Only allow admins and tenants
+  if (user && user.role !== "admin" && user.role !== "tenant") {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <div className="flex-1 flex items-center justify-center">
@@ -276,7 +271,7 @@ export default function TenantUnitsPage() {
               Access Denied
             </h1>
             <p className="text-gray-600">
-              This page is only accessible to admin users.
+              This page is only accessible to admin and tenant users.
             </p>
           </div>
         </div>

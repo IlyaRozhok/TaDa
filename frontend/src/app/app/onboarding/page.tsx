@@ -82,7 +82,7 @@ export default function OnboardingPage() {
     handleIntroComplete,
     handleProfileComplete,
     handlePreferencesComplete,
-  } = useOnboarding(user, () => router.push("/app/tenant-cv"));
+  } = useOnboarding(user, () => router.push("/app/units"));
 
   // Handle profile completion with save
   const handleProfileNext = async () => {
@@ -228,8 +228,8 @@ export default function OnboardingPage() {
       try {
         const response = await preferencesAPI.get();
         if (response.data && response.data.id && onboardingCompleted) {
-          // User has preferences AND completed full onboarding, redirect to tenant-cv
-          router.push("/app/tenant-cv");
+          // User has preferences AND completed full onboarding, redirect to units
+          router.push("/app/units");
           return;
         }
         // If user has preferences but onboarding not completed, stay on onboarding
@@ -454,7 +454,7 @@ export default function OnboardingPage() {
                 }`}
               >
                 {preferencesHook.isLastStep
-                  ? t(onboardingKeys.bottom.finishButton)
+                  ? t(onboardingKeys.bottom.doneButton)
                   : t(onboardingKeys.bottom.nextButton)}
               </button>
             )}

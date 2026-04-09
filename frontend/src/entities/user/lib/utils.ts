@@ -37,7 +37,16 @@ export const buildFormDataFromUser = (currentUser: User | null): UpdateUserData 
     }
   }
 
-  // Derive first/last from full_name only as a last resort
+  // Normalize text fields to avoid showing literal "undefined" in inputs.
+  const normalizeText = (value?: string | null): string => {
+    if (!value) return "";
+    const trimmedValue = value.trim();
+    if (trimmedValue.toLowerCase() === "undefined") return "";
+    return trimmedValue;
+  };
+
+  // Derive first name from full_name as a last resort.
+  // Last name should not be prefilled from full_name.
   const splitFullName = (full?: string | null) => {
     if (!full) return { first: "", last: "" };
     const parts = full.trim().split(" ");
@@ -48,13 +57,13 @@ export const buildFormDataFromUser = (currentUser: User | null): UpdateUserData 
   const nameFallback = splitFullName(currentUser.full_name);
 
   return {
-    first_name:   currentUser.first_name   || nameFallback.first || "",
-    last_name:    currentUser.last_name    || nameFallback.last  || "",
-    address:      currentUser.address      || "",
-    email:        currentUser.email        || "",
-    phone:        currentUser.phone        || "",
+    first_name: normalizeText(currentUser.first_name) || nameFallback.first || "",
+    last_name: normalizeText(currentUser.last_name),
+    address: normalizeText(currentUser.address),
+    email: normalizeText(currentUser.email),
+    phone: normalizeText(currentUser.phone),
     date_of_birth: dateOfBirth,
-    nationality:  currentUser.nationality  || "",
+    nationality: normalizeText(currentUser.nationality),
     // Avatar can live either in top-level `users.avatar_url` or in the nested
     // role profiles (legacy/backward-compat responses).
     avatar_url:

@@ -33,6 +33,15 @@ interface UpdateUserData {
   nationality?: string;
 }
 
+const normalizeOptionalText = (value?: string): string => {
+  if (!value) return "";
+  const trimmedValue = value.trim();
+  if (trimmedValue.toLowerCase() === "undefined") {
+    return "";
+  }
+  return trimmedValue;
+};
+
 interface OnboardingProfileStepProps {
   onComplete: () => void;
   isLoading?: boolean;
@@ -99,12 +108,12 @@ export default function OnboardingProfileStep({
       const savedData = buildFormDataFromUser(user as any);
 
       setFormData({
-        first_name: savedData.first_name || "",
-        last_name: savedData.last_name || "",
-        address: savedData.address || "",
-        phone: savedData.phone || "",
-        date_of_birth: savedData.date_of_birth || "",
-        nationality: savedData.nationality || "",
+        first_name: normalizeOptionalText(savedData.first_name),
+        last_name: normalizeOptionalText(savedData.last_name),
+        address: normalizeOptionalText(savedData.address),
+        phone: normalizeOptionalText(savedData.phone),
+        date_of_birth: normalizeOptionalText(savedData.date_of_birth),
+        nationality: normalizeOptionalText(savedData.nationality),
       });
 
       if (savedData.phone) {
@@ -174,7 +183,8 @@ export default function OnboardingProfileStep({
     ] as const;
 
     for (const field of requiredFields) {
-      if (!formData[field] || String(formData[field]).trim() === "") {
+      const value = normalizeOptionalText(formData[field]);
+      if (!value) {
         return false;
       }
     }
@@ -406,7 +416,6 @@ export default function OnboardingProfileStep({
                 value={formData.nationality ?? undefined}
                 onChange={(value) => handleInputChange("nationality", value)}
                 placeholder={t(wizardKeys.profile.nationality)}
-                required
               />
             </div>
           </div>

@@ -77,6 +77,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
     }
 
     let success = false;
+    let avatarUrlToSave = formData.avatar_url || "";
 
     // Upload avatar first if file is selected
     if (avatarFile) {
@@ -88,13 +89,13 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
           uploadResponse?.url;
 
         if (avatarUrl) {
+          avatarUrlToSave = avatarUrl;
           handleInputChange("avatar_url", avatarUrl);
           // Cleanup preview
           if (avatarPreview) {
             URL.revokeObjectURL(avatarPreview);
           }
           setAvatarPreview(null);
-          setAvatarFile(null);
         }
       } catch (error) {
         console.error("Failed to upload avatar:", error);
@@ -103,7 +104,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
     }
 
     // Save profile data
-    success = await saveProfile();
+    success = await saveProfile({ avatar_url: avatarUrlToSave });
 
     if (success && avatarFile) {
       // Reset avatar state after successful save

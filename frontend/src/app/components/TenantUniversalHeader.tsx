@@ -52,6 +52,7 @@ export default function TenantUniversalHeader({
   const isOnboarded = useSelector(selectIsOnboarded);
   const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isUnitsPage =
     pathname === "/app/units" || pathname.startsWith("/app/units/");
@@ -91,6 +92,19 @@ export default function TenantUniversalHeader({
     };
   }, [isMobileMenuOpen]);
 
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsMobileViewport(window.innerWidth < 640);
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => {
+      window.removeEventListener("resize", updateViewport);
+    };
+  }, []);
+
   const handleLogoClick = () => {
     const path = getRedirectPath(user);
     router.push(path);
@@ -100,6 +114,16 @@ export default function TenantUniversalHeader({
     setIsMobileMenuOpen(false);
     router.push(path);
   };
+
+  const searchPlaceholder =
+    isUnitsPage && isMobileViewport
+      ? t("mobile.search.title")
+      : t(headerKeys.searchPlaceholder);
+
+  const searchPlaceholderClass =
+    isUnitsPage && isMobileViewport
+      ? "placeholder-gray-500"
+      : "placeholder-transparent sm:placeholder-gray-500";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-2">
@@ -132,13 +156,13 @@ export default function TenantUniversalHeader({
                   type="search"
                   value={searchTerm}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  placeholder={t(headerKeys.searchPlaceholder)}
-                  className={`w-full text-gray-700 placeholder-transparent sm:placeholder-gray-500  pl-9 pr-3 ${
+                  placeholder={searchPlaceholder}
+                  className={`w-full text-gray-700 ${searchPlaceholderClass}  pl-9 pr-3 ${
                     isUnitsPage
                       ? "py-1 lg:py-2 text-base sm:text-sm"
                       : "py-2 text-sm"
                   } border border-gray-300 rounded-3xl focus:outline-0 focus:border-gray-400`}
-                  aria-label={t(headerKeys.searchPlaceholder)}
+                  aria-label={searchPlaceholder}
                 />
               </label>
             </div>

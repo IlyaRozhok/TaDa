@@ -28,7 +28,7 @@ interface UseUnifiedProfileReturn {
   handlePhoneChange: (phoneNumber: string, countryCode: string) => void;
   validateDateOfBirth: (dateString: string) => boolean;
   validateForm: () => boolean;
-  saveProfile: () => Promise<boolean>;
+  saveProfile: (overrideData?: Partial<UpdateUserData>) => Promise<boolean>;
   resetForm: () => void;
   parsePhoneNumber: (phoneNumber: string) => void;
 }
@@ -161,35 +161,40 @@ export const useUnifiedProfile = (
     return age >= 18 && age <= 100;
   }, [formData]);
 
-  const saveProfile = useCallback(async (): Promise<boolean> => {
-    if (!validateForm()) return false;
+  const saveProfile = useCallback(
+    async (overrideData?: Partial<UpdateUserData>): Promise<boolean> => {
+      const payload = overrideData ? { ...formData, ...overrideData } : formData;
+      if (!validateForm()) return false;
 
-    setIsSaving(true);
-    setIsLoading(true);
+      setIsSaving(true);
+      setIsLoading(true);
 
-    try {
-      const response = await authAPI.updateProfile(formData);
-      const updatedUser = response.data?.user;
+      try {
+        const response = await authAPI.updateProfile(payload);
+        const updatedUser = response.data?.user;
 
-      if (updatedUser) {
-        // Update Redux — updateUser will merge tenantProfile correctly
-        dispatch(updateUser(updatedUser));
-        // Allow the useEffect above to pick up the new data by resetting the key
-        initializedForRef.current = null;
+        if (updatedUser) {
+          // Update Redux — updateUser will merge tenantProfile correctly
+          dispatch(updateUser(updatedUser));
+          // Allow the useEffect above to pick up the new data by resetting the key
+          initializedForRef.current = null;
+        }
+
+        setHasChanges(false);
+        onSuccess?.();
+        return true;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to update profile";
+        onError?.(message);
+        return false;
+      } finally {
+        setIsSaving(false);
+        setIsLoading(false);
       }
-
-      setHasChanges(false);
-      onSuccess?.();
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to update profile";
-      onError?.(message);
-      return false;
-    } finally {
-      setIsSaving(false);
-      setIsLoading(false);
-    }
-  }, [formData, validateForm, dispatch, onSuccess, onError]);
+    },
+    [formData, validateForm, dispatch, onSuccess, onError]
+  );
 
   const resetForm = useCallback(() => {
     if (!user) return;

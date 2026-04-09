@@ -58,12 +58,20 @@ export default function SimpleOnboardingProfileStep({
     onValidationChange?.(isValid);
   }, [formData, validateForm, onValidationChange]);
 
-  const handleSave = async (): Promise<boolean> => {
+  const handleSave = useCallback(async (): Promise<boolean> => {
     if (onSave) {
       return await onSave();
     }
     return await saveProfile();
-  };
+  }, [onSave, saveProfile]);
+
+  // Keep onboarding save contract aligned with parent onboarding page logic.
+  useEffect(() => {
+    (window as any).onboardingProfileSave = handleSave;
+    return () => {
+      delete (window as any).onboardingProfileSave;
+    };
+  }, [handleSave]);
 
   const handleNext = async () => {
     const success = await handleSave();
@@ -103,7 +111,7 @@ export default function SimpleOnboardingProfileStep({
               loading={loading}
               size="lg"
             >
-              {onNext ? t(onboardingKeys.bottom.nextButton) : t(onboardingKeys.bottom.finishButton)}
+              {onNext ? t(onboardingKeys.bottom.nextButton) : t(onboardingKeys.bottom.doneButton)}
             </Button>
           </div>
         </div>
