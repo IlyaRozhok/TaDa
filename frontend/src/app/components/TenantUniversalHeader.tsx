@@ -64,6 +64,8 @@ export default function TenantUniversalHeader({
     pathname === "/app/profile" ||
     pathname.startsWith("/app/properties/") ||
     pathname.startsWith("/app/buildings/");
+  const shouldShowPreferencesButton =
+    user?.role === "tenant" || user?.role === "admin";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -167,7 +169,7 @@ export default function TenantUniversalHeader({
               </label>
             </div>
           )}
-          {isOnboarded && showPreferencesButton && (
+          {shouldShowPreferencesButton && (
             <button
               onClick={() => router.push("/app/preferences")}
               className="hidden md:flex items-center gap-2 py-2 text-sm font-semibold text-gray-900 bg-white border border-gray-300 pl-3 pr-2 rounded-3xl hover:bg-gray-50 hover:border-gray-400 transition-colors cursor-pointer flex-shrink-0"
@@ -269,13 +271,15 @@ export default function TenantUniversalHeader({
                     {t(profileKeys.dropProfileSettings)}
                   </button>
 
-                  <button
-                    onClick={() => handleMobileMenuClick("/app/preferences")}
-                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
-                  >
-                    <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
-                    {t(profileKeys.dropChangePreferences)}
-                  </button>
+                  {shouldShowPreferencesButton && (
+                    <button
+                      onClick={() => handleMobileMenuClick("/app/preferences")}
+                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    >
+                      <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
+                      {t(profileKeys.dropChangePreferences)}
+                    </button>
+                  )}
 
                   <button
                     onClick={() => handleMobileMenuClick("/app/tenant-cv")}
@@ -313,7 +317,7 @@ export default function TenantUniversalHeader({
           {/* User Dropdown - visible only on desktop; hide Preferences & Tenant CV when shown in header */}
           <div className="hidden md:block">
             <UserDropdown
-              hidePreferences={isOnboarded}
+              hidePreferences={shouldShowPreferencesButton}
               hideTenantCv={!showTenantCvLink}
             />
           </div>
