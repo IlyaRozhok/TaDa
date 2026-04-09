@@ -189,7 +189,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isSaving}
-                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-black text-white rounded-full text-xs sm:text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-black text-white cursor-pointer rounded-full text-xs sm:text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                 >
                   <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {formData.avatar_url || avatarPreview
@@ -212,7 +212,7 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
                       }
                     }}
                     disabled={isSaving}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-full text-xs sm:text-sm font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer bg-gray-200 text-gray-700 rounded-full text-xs sm:text-sm font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                   >
                     <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     {t(profileKeys.avatarRemove)}

@@ -379,7 +379,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ user }) => {
                       setHasChanges(true);
                     }}
                     disabled={isSaving}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-full text-xs sm:text-sm font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-full text-xs sm:text-sm font-medium cursor-pointer hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2"
                   >
                     <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     {t(profileKeys.avatarRemove)}

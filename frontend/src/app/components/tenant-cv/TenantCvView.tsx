@@ -311,17 +311,17 @@ export function TenantCvView({
         return key ? t(key) : v;
       })
       .filter(Boolean)
-      .join(", ") || t(tenantCvKeys.notSet);
+      .join(", ") || "-";
   const bedroomsDisplay =
     (preferences?.bedrooms || [])
       .map((n) => t(wizardKeys.step3.roomsCount[n - 1]))
       .filter(Boolean)
-      .join(", ") || t(tenantCvKeys.notSet);
+      .join(", ") || "-";
   const bathroomsDisplay =
     (preferences?.bathrooms || [])
       .map((n) => t(wizardKeys.step3.bathroomsCount[n - 1]))
       .filter(Boolean)
-      .join(", ") || t(tenantCvKeys.notSet);
+      .join(", ") || "-";
 
   const amenityTags = [
     ...(preferences?.amenities || []),
@@ -663,7 +663,7 @@ export function TenantCvView({
                       {t(wizardKeys.step3.des.text4)}
                     </div>
                     <div className="font-medium text-gray-900">
-                      {furnishingLabel || t(tenantCvKeys.notSet)}
+                      {furnishingLabel || "-"}
                     </div>
                   </div>
                 </div>
