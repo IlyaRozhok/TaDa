@@ -9,7 +9,15 @@ import { logout } from "../store/slices/authSlice";
 import { authAPI } from "../lib/api";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
-import { Sliders, FileText, UserCog, Building2, LogOut } from "lucide-react";
+import { favoritesKeys } from "@/app/lib/translationsKeys/favoritesTranslationKeys";
+import {
+  Sliders,
+  FileText,
+  UserCog,
+  Building2,
+  LogOut,
+  Heart,
+} from "lucide-react";
 
 interface UserDropdownProps {
   simplified?: boolean;
@@ -125,6 +133,11 @@ export default function UserDropdown({
   const handleUnits = () => {
     setIsOpen(false);
     router.push("/app/units");
+  };
+
+  const handleFavourites = () => {
+    setIsOpen(false);
+    router.push("/app/shortlist");
   };
 
   const handleSupport = () => {
@@ -276,6 +289,14 @@ export default function UserDropdown({
                       {t(tenantCvKeys.tenantCvButton)}
                     </button>
                   )}
+
+                <button
+                  onClick={handleFavourites}
+                  className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/14"
+                >
+                  <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
+                  {t(favoritesKeys.title)}
+                </button>
 
                 {user?.role === "admin" && (
                   <button

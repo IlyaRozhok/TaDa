@@ -2,14 +2,21 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import { tenantCvAPI } from "../../lib/api";
 import { TenantCvResponse } from "../../types/tenantCv";
 import { TenantCvView } from "../../components/tenant-cv/TenantCvView";
 import Footer from "../../components/Footer";
+import UserDropdown from "../../components/UserDropdown";
+import { selectIsAuthenticated } from "../../store/slices/authSlice";
+import { useTranslation } from "../../hooks/useTranslation";
+import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 
 export default function PublicTenantCvPage() {
   const params = useParams();
   const router = useRouter();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const { t } = useTranslation();
   const shareUuid = (params?.uuid as string) || "";
 
   const [data, setData] = useState<TenantCvResponse | null>(null);
@@ -50,6 +57,16 @@ export default function PublicTenantCvPage() {
             className="h-7 sm:h-8"
           />
         </button>
+        {isAuthenticated ? (
+          <UserDropdown />
+        ) : (
+          <button
+            onClick={() => router.push("/app/auth")}
+            className="bg-black cursor-pointer text-white px-3 sm:px-4 md:px-6 py-2 md:py-2.5 rounded-full hover:bg-black/80 transition-colors font-medium text-xs sm:text-sm flex-shrink-0"
+          >
+            {t(onboardingKeys.headerCtaGetStarted)}
+          </button>
+        )}
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">

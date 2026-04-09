@@ -55,7 +55,6 @@ export default function TenantUniversalHeader({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isUnitsPage =
     pathname === "/app/units" || pathname.startsWith("/app/units/");
-  const isFavoritesPage = pathname === "/app/shortlist";
   const isSameHeaderPage =
     isUnitsPage ||
     pathname === "/app/shortlist" ||
@@ -279,9 +278,7 @@ export default function TenantUniversalHeader({
                         className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
                       >
                         <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
-                        {isFavoritesPage
-                          ? t(favoritesKeys.title)
-                          : t(profileKeys.dropFavourites)}
+                        {t(favoritesKeys.title)}
                       </button>
                     )}
                 </div>
