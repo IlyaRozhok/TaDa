@@ -54,14 +54,44 @@ interface UseTenantDashboardReturn {
 interface UseTenantDashboardOptions {
   useMatchedProperties?: boolean;
   useFullCountForHeader?: boolean;
+  /** Persist search/page between navigations (sessionStorage key). */
+  persistenceKey?: string;
 }
 
 export const useTenantDashboard = (
   options: UseTenantDashboardOptions = {},
 ): UseTenantDashboardReturn => {
-  const { useMatchedProperties = true, useFullCountForHeader = false } = options;
+  const {
+    useMatchedProperties = true,
+    useFullCountForHeader = false,
+    persistenceKey,
+  } = options;
   const user = useSelector(selectUser);
   const dispatch = useDispatch<AppDispatch>();
+  const persistedStateRef = useRef<{ searchTerm: string; currentPage: number } | null>(
+    null,
+  );
+
+  if (persistedStateRef.current === null && persistenceKey && typeof window !== "undefined") {
+    try {
+      const raw = window.sessionStorage.getItem(persistenceKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as {
+          searchTerm?: string;
+          currentPage?: number;
+        };
+        persistedStateRef.current = {
+          searchTerm: parsed.searchTerm ?? "",
+          currentPage:
+            typeof parsed.currentPage === "number" && parsed.currentPage > 0
+              ? parsed.currentPage
+              : 1,
+        };
+      }
+    } catch {
+      persistedStateRef.current = null;
+    }
+  }
 
   // Seed initial state from RTK Query cache when available
   const cachedInitial = useSelector((state: RootState) =>
@@ -71,7 +101,11 @@ export const useTenantDashboard = (
           limit: 12,
           search: "",
         })(state)
-      : undefined,
+      : apiSlice.endpoints.getPublicPropertiesPaginated.select({
+          page: 1,
+          limit: 12,
+          search: "",
+        })(state),
   );
 
   const [state, setState] = useState<DashboardState>(() => {
@@ -87,14 +121,19 @@ export const useTenantDashboard = (
       totalPages = cachedData.totalPages || Math.ceil(totalCount / 12);
 
       initialMatched = propertiesData
-        .map((item: any) => ({
-          property: item.property,
-          matchScore:
-            item.matchScore ??
-            item.matchPercentage ??
-            0,
-          categories: item.categories || [],
-        }))
+        .map((item: any) =>
+          useMatchedProperties
+            ? {
+                property: item.property,
+                matchScore: item.matchScore ?? item.matchPercentage ?? 0,
+                categories: item.categories || [],
+              }
+            : {
+                property: item,
+                matchScore: 0,
+                categories: [],
+              },
+        )
         .filter(
           (item: MatchedProperty) =>
             item && item.property && item.property.id,
@@ -102,7 +141,7 @@ export const useTenantDashboard = (
     }
 
     return {
-      searchTerm: "",
+      searchTerm: persistedStateRef.current?.searchTerm ?? "",
       properties: initialMatched,
       matchedProperties: initialMatched,
       userPreferences: null,
@@ -114,7 +153,7 @@ export const useTenantDashboard = (
       sessionLoading: true,
       preferencesLoading: true,
       hasCompletePreferences: false,
-      currentPage: 1,
+      currentPage: persistedStateRef.current?.currentPage ?? 1,
       totalPages,
       isSearchTriggered: false,
       hydratedFromCache: !!cachedData,
@@ -133,16 +172,56 @@ export const useTenantDashboard = (
         const { user: authUser, isAuthenticated } = store.getState().auth;
         const hasAuthSession = !!authUser?.id && isAuthenticated;
 
+        const loadPublicListFromCacheableEndpoint = async () => {
+          const responseData = await dispatch(
+            apiSlice.endpoints.getPublicPropertiesPaginated.initiate({
+              page,
+              limit: 12,
+              search,
+            }),
+          ).unwrap();
+
+          const propertiesData = responseData.data || responseData || [];
+          const totalCount = responseData.total || propertiesData.length;
+
+          const matchedProperties: MatchedProperty[] = propertiesData
+            .filter((p: Property) => p && p.id)
+            .map((p: Property) => ({
+              property: p,
+              matchScore: 0,
+              categories: undefined,
+            }));
+
+          setState((prev) => ({
+            ...prev,
+            properties: matchedProperties,
+            matchedProperties,
+            totalCount,
+            currentPage: page,
+            totalPages: responseData.totalPages || Math.ceil(totalCount / 12),
+            loading: false,
+          }));
+        };
+
         // No Redux session → public list only
         if (!hasAuthSession) {
           console.warn("⚠️ No auth session, using public endpoint");
-          // Fallback to public endpoint if no token
           let response;
+          let rtkPublicListError: unknown;
           try {
-            response = await propertiesAPI.getPublic(page, 12, search);
+            await loadPublicListFromCacheableEndpoint();
+            return;
           } catch (searchError) {
-            console.warn("⚠️ Search failed, trying to load all properties...");
+            rtkPublicListError = searchError;
+            console.warn(
+              "⚠️ Cached public endpoint failed, trying axios fallback...",
+            );
+          }
+
+          try {
             response = await propertiesAPI.getPublic(page, 12);
+          } catch {
+            throw rtkPublicListError;
           }
 
           const propertiesData = response.data?.data || response.data || [];
@@ -208,12 +287,17 @@ export const useTenantDashboard = (
             }
           }
         } else {
-          // Full catalog: public paginated API (tenant-safe). GET /properties is admin/operator-only.
-          const response = await propertiesAPI.getPublic(page, 12, search);
-          propertiesData = response.data?.data || response.data || [];
-          totalCount = response.data?.total ?? propertiesData.length;
-          totalPages =
-            response.data?.totalPages || Math.ceil(totalCount / 12);
+          // Full catalog: use RTK Query for cache on /app/units.
+          const responseData = await dispatch(
+            apiSlice.endpoints.getPublicPropertiesPaginated.initiate({
+              page,
+              limit: 12,
+              search,
+            }),
+          ).unwrap();
+          propertiesData = responseData.data || responseData || [];
+          totalCount = responseData.total ?? propertiesData.length;
+          totalPages = responseData.totalPages || Math.ceil(totalCount / 12);
         }
 
         // Transform to MatchedProperty format and filter out invalid items.
@@ -448,8 +532,9 @@ export const useTenantDashboard = (
 
         if (!isMounted) return;
 
-        // Load properties with matching (now calculated on backend)
-        await loadProperties("", 1);
+        const initialSearch = persistedStateRef.current?.searchTerm ?? "";
+        const initialPage = persistedStateRef.current?.currentPage ?? 1;
+        await loadProperties(initialSearch, initialPage);
 
         if (!isMounted) return;
 
@@ -489,6 +574,21 @@ export const useTenantDashboard = (
   const setSearchTerm = useCallback((term: string) => {
     setState((prev) => ({ ...prev, searchTerm: term }));
   }, []);
+
+  useEffect(() => {
+    if (!persistenceKey || typeof window === "undefined") return;
+    try {
+      window.sessionStorage.setItem(
+        persistenceKey,
+        JSON.stringify({
+          searchTerm: state.searchTerm,
+          currentPage: state.currentPage,
+        }),
+      );
+    } catch {
+      // Ignore storage failures to avoid affecting dashboard behavior.
+    }
+  }, [persistenceKey, state.searchTerm, state.currentPage]);
 
   const refreshData = useCallback(async () => {
     await Promise.all([

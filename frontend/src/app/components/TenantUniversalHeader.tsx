@@ -66,6 +66,9 @@ export default function TenantUniversalHeader({
     pathname.startsWith("/app/buildings/");
   const shouldShowPreferencesButton =
     user?.role === "tenant" || user?.role === "admin";
+  const shouldShowFavouritesButton =
+    showFavouritesButton &&
+    (user?.role === "tenant" || user?.role === "admin");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -201,28 +204,26 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Tenant: Tenant CV then Favourites (heart) on desktop after onboarding; admin: Favourites only */}
-          {(isOnboarded || user?.role === "admin") && (
-            <div className="hidden md:flex items-center gap-2 lg:gap-3">
-              {showTenantCvLink && isOnboarded && (
-                <button
-                  onClick={() => router.push("/app/tenant-cv")}
-                  className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
-                >
-                  {t(tenantCvKeys.tenantCvButton)}
-                </button>
-              )}
-              {showFavouritesButton && (
-                <button
-                  onClick={() => router.push("/app/shortlist")}
-                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                  aria-label="Favourites / Shortlist"
-                >
-                  <Heart className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          )}
+          {/* Tenant: Tenant CV + Favourites; admin: Favourites */}
+          <div className="hidden md:flex items-center gap-2 lg:gap-3">
+            {showTenantCvLink && isOnboarded && (
+              <button
+                onClick={() => router.push("/app/tenant-cv")}
+                className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+              >
+                {t(tenantCvKeys.tenantCvButton)}
+              </button>
+            )}
+            {shouldShowFavouritesButton && (
+              <button
+                onClick={() => router.push("/app/shortlist")}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                aria-label="Favourites / Shortlist"
+              >
+                <Heart className="w-5 h-5" />
+              </button>
+            )}
+          </div>
 
           {/* Language Dropdown */}
           <LanguageDropdown variant="default" />
@@ -299,16 +300,15 @@ export default function TenantUniversalHeader({
                     </button>
                   )}
 
-                  {showFavouritesButton &&
-                    (isOnboarded || user?.role === "admin") && (
-                      <button
-                        onClick={() => handleMobileMenuClick("/app/shortlist")}
-                        className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
-                      >
-                        <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
-                        {t(favoritesKeys.title)}
-                      </button>
-                    )}
+                  {shouldShowFavouritesButton && (
+                    <button
+                      onClick={() => handleMobileMenuClick("/app/shortlist")}
+                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    >
+                      <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
+                      {t(favoritesKeys.title)}
+                    </button>
+                  )}
                 </div>
               </div>
             )}

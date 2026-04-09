@@ -4,7 +4,6 @@ import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  matchingAPI,
   bookingRequestsAPI,
   CategoryMatchResult,
 } from "../../../lib/api";
@@ -23,6 +22,7 @@ import {
   useGetPublicPropertyQuery,
   useGetPublicBuildingQuery,
   useGetPreferencesQuery,
+  useGetPropertyMatchQuery,
 } from "../../../store/slices/apiSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
@@ -344,6 +344,17 @@ export default function PropertyPublicPage() {
     setError(message || "Failed to load property details");
   }, [queryError]);
 
+  const {
+    data: propertyMatchData,
+    isFetching: isPropertyMatchFetching,
+  } = useGetPropertyMatchQuery(id as string, {
+    skip:
+      !id ||
+      !isAuthenticated ||
+      !user ||
+      (user.role !== "tenant" && user.role !== "admin"),
+  });
+
   // Redirect to properties list when rate-limited (429), after showing toast
   useEffect(() => {
     if (!redirecting429) return;
@@ -382,49 +393,36 @@ export default function PropertyPublicPage() {
     loadBookingRequest();
   }, [id, isAuthenticated, user]);
 
-  // Load match score for authenticated users
+  // Load match score for authenticated users (cached via RTK Query)
   useEffect(() => {
-    const fetchMatchScore = async () => {
-      if (
-        !id ||
-        !isAuthenticated ||
-        !user ||
-        (user.role !== "tenant" && user.role !== "admin")
-      ) {
-        setMatchScore(null);
-        setMatchCategories([]);
-        setMatchLoading(false);
-        return;
-      }
+    const canLoadMatch =
+      !!id &&
+      !!isAuthenticated &&
+      !!user &&
+      (user.role === "tenant" || user.role === "admin");
 
-      try {
-        setMatchLoading(true);
-        setMatchScore(null);
-        setMatchCategories([]);
-        // Do not require localStorage token: session may be cookie-only (httpOnly);
-        // axios is configured with withCredentials and sends cookies to the API.
-        const response = await matchingAPI.getPropertyMatch(id as string);
-        const matchData = response.data || response;
+    if (!canLoadMatch) {
+      setMatchScore(null);
+      setMatchCategories([]);
+      setMatchLoading(false);
+      return;
+    }
 
-        // Extract match percentage and categories from response
-        const score = matchData.matchPercentage || matchData.matchScore || null;
-        setMatchScore(score);
+    setMatchLoading(isPropertyMatchFetching);
 
-        // Extract categories if available
-        if (matchData.categories && Array.isArray(matchData.categories)) {
-          setMatchCategories(matchData.categories);
-        }
-      } catch (err: unknown) {
-        // Silently fail - match score is optional
-        console.warn("Failed to load match score:", err);
-        setMatchScore(null);
-      } finally {
-        setMatchLoading(false);
-      }
-    };
+    if (!propertyMatchData) {
+      return;
+    }
 
-    fetchMatchScore();
-  }, [id, isAuthenticated, user]);
+    const score =
+      propertyMatchData.matchPercentage ?? propertyMatchData.matchScore ?? null;
+    setMatchScore(score);
+    setMatchCategories(
+      Array.isArray(propertyMatchData.categories)
+        ? propertyMatchData.categories
+        : [],
+    );
+  }, [id, isAuthenticated, isPropertyMatchFetching, propertyMatchData, user]);
 
   // Check if property is in shortlist using Redux state (avoid API calls to prevent cycling)
   useEffect(() => {

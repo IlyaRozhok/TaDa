@@ -61,7 +61,6 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
     setImageSrc("");
     setIsLoaded(false);
     setHasError(false);
-    setIsInView(false);
   }, [property.id]);
 
   // Lazy-load: only set image src when card is in or near viewport

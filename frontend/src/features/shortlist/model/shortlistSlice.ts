@@ -40,8 +40,7 @@ export const fetchShortlist = createAsyncThunk(
       // Client-side cache: if мы уже грузили shortlist < 5 минут назад, просто вернём существующие данные
       if (
         state.shortlist.lastFetch &&
-        Date.now() - state.shortlist.lastFetch < SHORTLIST_CACHE_TTL_MS &&
-        state.shortlist.properties.length > 0
+        Date.now() - state.shortlist.lastFetch < SHORTLIST_CACHE_TTL_MS
       ) {
         return state.shortlist.properties;
       }
@@ -174,8 +173,7 @@ const shortlistSlice = createSlice({
         // Если кэш ещё свежий, не включаем лоадер, чтобы не мигал спиннер при возврате на страницу
         if (
           state.lastFetch &&
-          Date.now() - state.lastFetch < SHORTLIST_CACHE_TTL_MS &&
-          state.properties.length > 0
+          Date.now() - state.lastFetch < SHORTLIST_CACHE_TTL_MS
         ) {
           return;
         }

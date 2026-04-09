@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { matchingAPI } from "../lib/api";
+import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "../store/slices/authSlice";
+import { apiSlice } from "../store/slices/apiSlice";
+import type { AppDispatch } from "../store/store";
 
 export interface PropertyMatchData {
   matchScore: number;
@@ -34,6 +35,7 @@ export function usePropertyMatches(
   propertyIds: string[],
   options: UsePropertyMatchesOptions = {}
 ): { matchByPropertyId: MatchByPropertyId; loading: boolean } {
+  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
   const [matchByPropertyId, setMatchByPropertyId] = useState<MatchByPropertyId>({});
   const [loading, setLoading] = useState(false);
@@ -58,8 +60,11 @@ export function usePropertyMatches(
         propertyIds.map(async (id) => {
           if (cancelled) return;
           try {
-            const response = await matchingAPI.getPropertyMatch(id);
-            const data = response.data ?? response;
+            const data = await dispatch(
+              apiSlice.endpoints.getPropertyMatch.initiate(id, {
+                subscribe: false,
+              }),
+            ).unwrap();
             const score = data.matchPercentage ?? data.matchScore ?? 0;
             const categories = data.categories && Array.isArray(data.categories) ? data.categories : undefined;
             if (!cancelled) {
@@ -82,7 +87,7 @@ export function usePropertyMatches(
     return () => {
       cancelled = true;
     };
-  }, [enabled, idsKey]);
+  }, [dispatch, enabled, idsKey, propertyIds]);
 
   return {
     matchByPropertyId: enabled ? matchByPropertyId : {},

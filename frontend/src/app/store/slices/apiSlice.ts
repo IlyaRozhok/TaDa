@@ -66,6 +66,17 @@ export const apiSlice = createApi({
       providesTags: ["Property"],
       keepUnusedDataFor: 300,
     }),
+    getPublicPropertiesPaginated: builder.query<
+      any,
+      { page?: number; limit?: number; search?: string }
+    >({
+      query: ({ page = 1, limit = 12, search } = {}) => ({
+        url: "/properties/public",
+        params: { page, limit, search },
+      }),
+      providesTags: ["Property"],
+      keepUnusedDataFor: 300,
+    }),
     createProperty: builder.mutation({
       query: (formData) => ({
         url: "/properties",
@@ -90,6 +101,11 @@ export const apiSlice = createApi({
     }),
     getRecommendations: builder.query({
       query: () => "/matching/recommendations",
+    }),
+    getPropertyMatch: builder.query<any, string>({
+      query: (propertyId) => `/matching/property/${propertyId}`,
+      providesTags: ["Property"],
+      keepUnusedDataFor: 300,
     }),
     addToShortlist: builder.mutation({
       query: (propertyId) => ({
@@ -168,9 +184,11 @@ export const {
   useGetPublicPropertyQuery,
   useGetPublicBuildingQuery,
   useGetPublicBuildingPropertiesQuery,
+  useGetPublicPropertiesPaginatedQuery,
   useCreatePropertyMutation,
   useGetMatchedPropertiesPaginatedQuery,
   useGetRecommendationsQuery,
+  useGetPropertyMatchQuery,
   useAddToShortlistMutation,
   useRemoveFromShortlistMutation,
   useGetShortlistQuery,

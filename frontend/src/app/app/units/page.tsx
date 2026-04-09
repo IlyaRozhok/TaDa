@@ -22,6 +22,7 @@ function TenantDashboardContent() {
       // Full catalog — matching endpoint applies preference SQL filters and hides many listings.
       useMatchedProperties: false,
       useFullCountForHeader: false,
+      persistenceKey: "units-dashboard-filters",
     });
 
   const propertyIdsForMatches = useMemo(
