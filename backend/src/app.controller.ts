@@ -4,7 +4,7 @@ import { Controller, Get } from "@nestjs/common";
 export class AppController {
   @Get()
   getHello(): string {
-    return "Hello World!";
+    return "TADA is running!";
   }
 
   @Get("health")
@@ -13,6 +13,11 @@ export class AppController {
       status: "ok",
       timestamp: new Date().toISOString(),
     };
+  }
+
+  @Get('test-sentry')
+  testSentry() {
+    throw new Error('Sentry integration test');
   }
 
 }
