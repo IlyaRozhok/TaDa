@@ -1,4 +1,4 @@
-import "./instrument.ts";
+import "./instrument";
 import {HttpAdapterHost, NestFactory} from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
@@ -7,7 +7,7 @@ import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 import * as path from "path";
-import {SentryGlobalFilter} from "@sentry/nestjs/setup";
+import { SentryGlobalFilter } from "./common/filters/sentry-exception.filter";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
