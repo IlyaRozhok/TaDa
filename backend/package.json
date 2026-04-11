@@ -34,6 +34,8 @@
     "@nestjs/swagger": "^7.1.11",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^10.0.0",
+    "@sentry/nestjs": "^10.48.0",
+    "@sentry/profiling-node": "^10.48.0",
     "@types/cors": "^2.8.19",
     "@types/multer": "^1.4.13",
     "aws-sdk": "^2.1692.0",

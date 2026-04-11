@@ -1,4 +1,5 @@
-import { NestFactory } from "@nestjs/core";
+import "./instrument.ts";
+import {HttpAdapterHost, NestFactory} from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
@@ -6,6 +7,7 @@ import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 import * as path from "path";
+import {SentryGlobalFilter} from "@sentry/nestjs/setup";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -36,6 +38,9 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+    const { httpAdapter } = app.get(HttpAdapterHost);
+    app.useGlobalFilters(new SentryGlobalFilter(httpAdapter));
 
   const swaggerCfg = new DocumentBuilder()
     .setTitle("TaDa Rental Platform API")

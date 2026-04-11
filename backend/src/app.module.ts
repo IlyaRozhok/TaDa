@@ -19,9 +19,11 @@ import { BookingRequestModule } from "./modules/booking-request/booking-request.
 import { S3Module } from "./common/services/s3.module";
 import { RedisModule } from "./common/services/redis.module";
 import { typeOrmConfig } from "./database/typeorm.config";
+import {SentryModule} from "@sentry/nestjs/setup";
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [".env.local", ".env"],
