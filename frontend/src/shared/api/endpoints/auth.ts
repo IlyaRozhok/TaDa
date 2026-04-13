@@ -9,7 +9,7 @@ import {
   LoginResponse,
   RegisterRequest,
   User,
-} from '@/shared/types/user';
+} from '@/types/user';
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {

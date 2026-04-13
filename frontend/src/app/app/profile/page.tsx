@@ -6,15 +6,15 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   selectUser,
   setUser,
-} from "../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import Footer from "../../components/Footer";
 import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/UnifiedProfileForm";
 import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
-import { useGetPreferencesQuery } from "../../store/slices/apiSlice";
+import { useGetPreferencesQuery } from "@/store/slices/apiSlice";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
-import { store } from "../../store/store";
+import { store } from "@/store/store";
 import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";
 
 export default function ProfilePage() {

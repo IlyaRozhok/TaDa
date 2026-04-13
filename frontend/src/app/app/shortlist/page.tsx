@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   selectIsAuthenticated,
   selectUser,
-} from "../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import {
   fetchShortlist,
   clearShortlist,
@@ -15,8 +15,8 @@ import {
   selectShortlistError,
   selectShortlistCount,
   clearError,
-} from "../../store/slices/shortlistSlice";
-import { AppDispatch } from "../../store/store";
+} from "@/store/slices/shortlistSlice";
+import { AppDispatch } from "@/store/store";
 import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";

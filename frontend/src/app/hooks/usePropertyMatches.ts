@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { selectUser } from "../store/slices/authSlice";
-import { apiSlice } from "../store/slices/apiSlice";
-import type { AppDispatch } from "../store/store";
+import { selectUser } from "@/store/slices/authSlice";
+import { apiSlice } from "@/store/slices/apiSlice";
+import type { AppDispatch } from "@/store/store";
 
 export interface PropertyMatchData {
   matchScore: number;

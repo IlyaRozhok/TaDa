@@ -35,7 +35,7 @@ import {
   IDEAL_LIVING_OPTIONS,
   SMOKING_OPTIONS,
   TOTAL_STEPS_NEW as TOTAL_STEPS,
-} from "@/app/constants/preferences";
+} from "@/constants/preferences";
 
 interface NewPreferencesPageProps {
   onComplete?: () => void;

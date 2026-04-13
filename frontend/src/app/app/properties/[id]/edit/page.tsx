@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAppSelector } from "@/app/store/hooks";
+import { useAppSelector } from "@/store/hooks";
 import { usePropertyForm } from "@/app/hooks/usePropertyForm";
 import { getUserRole } from "@/app/utils/simpleRedirect";
 import { PropertyMedia } from "@/app/types";

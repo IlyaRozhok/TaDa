@@ -9,7 +9,7 @@ import React from 'react';
 import { X, Save, ArrowLeft, ArrowRight } from 'lucide-react';
 
 import { Button, Card, VStack, HStack, Container } from '@/shared/ui';
-import { Property } from '@/shared/types/property';
+import { Property } from '@/types/property';
 
 import { usePropertyForm } from '../lib/usePropertyForm';
 import { BasicInfoSection } from './sections/BasicInfoSection';

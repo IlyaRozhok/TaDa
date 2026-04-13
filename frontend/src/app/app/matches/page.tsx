@@ -8,7 +8,7 @@ import {
   Property,
   preferencesAPI,
 } from "../../lib/api";
-import { selectUser } from "../../store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
 import MatchedPropertyGridWithLoader from "../../components/MatchedPropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
 import { useRouter } from "next/navigation";

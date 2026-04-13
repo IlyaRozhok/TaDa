@@ -48,7 +48,7 @@ import {
   getFamilyStatusTranslationKey,
   getSmokerTranslationKey,
   getPetsDisplayTranslationKey,
-} from "../../../shared/constants/mappings";
+} from "@/constants/mappings";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 

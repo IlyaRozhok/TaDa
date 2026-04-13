@@ -5,7 +5,7 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { PreferencesFormData } from "@/app/types/preferences";
-import { PROPERTY_AMENITIES_GROUPS } from "@/shared/constants/property-amenities";
+import { PROPERTY_AMENITIES_GROUPS } from "@/constants/property-amenities";
 
 interface PropertyAmenitiesStepProps {
   formData: PreferencesFormData;

@@ -12,7 +12,7 @@ import {
   useGetTenantCvQuery,
   useCreateTenantCvShareMutation,
   useGetPreferencesQuery,
-} from "../../store/slices/apiSlice";
+} from "@/store/slices/apiSlice";
 import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";
 
 export default function TenantCvPage() {

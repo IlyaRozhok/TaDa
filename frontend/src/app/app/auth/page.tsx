@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser, selectIsAuthenticated } from "../../store/slices/authSlice";
-import { fetchShortlist } from "../../store/slices/shortlistSlice";
-import { AppDispatch } from "../../store/store";
+import { setUser, selectIsAuthenticated } from "@/store/slices/authSlice";
+import { fetchShortlist } from "@/store/slices/shortlistSlice";
+import { AppDispatch } from "@/store/store";
 import { authAPI } from "../../lib/api";
 import { redirectAfterLogin } from "../../utils/simpleRedirect";
 import Link from "next/link";

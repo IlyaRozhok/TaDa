@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../store/store";
+import { AppDispatch } from "@/store/store";
 import {
   suggestProperty,
   clearErrors,
   TenantRow,
-} from "../../store/slices/operatorSlice";
+} from "@/store/slices/operatorSlice";
 import { notify } from "@/shared/lib/notify";
 
 export function useSuggestProperty() {

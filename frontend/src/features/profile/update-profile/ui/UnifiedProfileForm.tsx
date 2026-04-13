@@ -13,7 +13,7 @@ import { Upload, X, Camera, Loader2 } from "lucide-react";
 import { StepWrapper } from "../../../../app/components/preferences/step-components/StepWrapper";
 import { StepContainer } from "@/app/components/preferences/step-components/StepContainer";
 import { Button } from "@/shared/ui";
-import type { User } from "@/app/store/slices/authSlice";
+import type { User } from "@/store/slices/authSlice";
 import { useUnifiedProfile } from "@/shared/hooks/useUnifiedProfile";
 import { ProfileFormFields } from "@/shared/components/ProfileFormFields";
 import { authAPI } from "@/app/lib/api";

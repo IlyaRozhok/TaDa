@@ -8,3 +8,5 @@ export * from './property';
 export * from './building';
 export * from './preferences';
 export * from './api';
+export * from './booking';
+export * from './tenantCv';

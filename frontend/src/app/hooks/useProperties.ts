@@ -13,7 +13,7 @@ import {
   PaginationOptions,
   PropertyQueryOptions,
 } from "../lib/api";
-import { selectUser } from "../store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
 import { useDebounce, useDebouncedApiCall } from "./useDebounce";
 
 /** GET /properties/public* returns { data, total, page, totalPages } */

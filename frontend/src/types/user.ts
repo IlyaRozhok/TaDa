@@ -2,16 +2,24 @@
  * User domain types
  */
 
-import { BaseEntity, ID, MediaFile } from './common';
+import { ID } from './common';
 
 export type UserRole = 'tenant' | 'operator' | 'admin';
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 
-export interface User extends BaseEntity {
+export interface User {
+  id: string;
   email: string;
   role: UserRole;
-  status: UserStatus;
+  status?: UserStatus;
   full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  address?: string;
+  phone?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  occupation?: string;
   avatar_url?: string;
   tenantProfile?: TenantProfile;
   operatorProfile?: OperatorProfile;
@@ -20,14 +28,18 @@ export interface User extends BaseEntity {
   lastLoginAt?: string;
 }
 
-export interface BaseProfile extends BaseEntity {
-  user_id: ID;
+export interface BaseProfile {
+  id?: ID;
+  user_id?: ID;
+  userId?: ID;
+  created_at?: string;
+  updated_at?: string;
   first_name?: string;
   last_name?: string;
   full_name?: string;
   address?: string;
   phone?: string;
-  date_of_birth?: string;
+  date_of_birth?: string | Date;
   nationality?: string;
   occupation?: string;
   avatar_url?: string;
@@ -41,6 +53,14 @@ export interface TenantProfile extends BaseProfile {
   annual_income?: number;
   guarantor_required?: boolean;
   references?: Reference[];
+  // Onboarding-specific fields
+  age_range?: string;
+  industry?: string;
+  work_style?: string;
+  lifestyle?: string[];
+  ideal_living_environment?: string;
+  additional_info?: string;
+  shortlisted_properties?: string[];
 }
 
 export interface OperatorProfile extends BaseProfile {
@@ -50,6 +70,10 @@ export interface OperatorProfile extends BaseProfile {
   license_number?: string;
   website?: string;
   description?: string;
+  business_address?: string;
+  business_description?: string;
+  years_experience?: number;
+  operating_areas?: string[];
 }
 
 export interface Reference {
@@ -103,4 +127,17 @@ export interface LoginResponse {
 export interface RegisterRequest extends CreateUserRequest {
   confirmPassword: string;
   acceptTerms: boolean;
+}
+
+// Fields sent to PUT /api/users/profile (matches actual backend API)
+export interface UpdateUserData {
+  first_name?: string;
+  last_name?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  avatar_url?: string;
+  occupation?: string;
 }

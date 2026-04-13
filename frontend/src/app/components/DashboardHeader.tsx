@@ -16,8 +16,8 @@ import {
   Building2,
   Layers,
 } from "lucide-react";
-import { selectUser } from "../store/slices/authSlice";
-import { logout } from "../store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
+import { logout } from "@/store/slices/authSlice";
 import styles from "./ui/DropdownStyles.module.scss";
 import { getRedirectPath, getUserRole } from "../utils/simpleRedirect";
 

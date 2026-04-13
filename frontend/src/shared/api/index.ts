@@ -16,7 +16,7 @@ export * from './endpoints/properties';
 // export * from './endpoints/preferences';
 
 // Types
-export * from '../types/api';
+export * from '@/types/api';
 
 // Main API object for convenient access
 import { authApi } from './endpoints/auth';

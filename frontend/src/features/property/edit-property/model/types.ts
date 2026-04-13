@@ -4,7 +4,7 @@
  * Types specific to property editing functionality.
  */
 
-import { Property } from '@/shared/types/property';
+import { Property } from '@/types/property';
 
 export interface PropertyFormData extends Omit<Property, 'id' | 'created_at' | 'updated_at'> {
   // Additional form-specific fields

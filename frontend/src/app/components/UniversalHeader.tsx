@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { Heart, Bell } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import styles from "./ui/DropdownStyles.module.scss";
-import { selectUser } from "../store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
 import { getRedirectPath } from "../utils/simpleRedirect";
 import LanguageDropdown from "./LanguageDropdown";
 

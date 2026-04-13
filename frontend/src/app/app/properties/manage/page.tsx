@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import {
   selectUser,
   selectIsAuthenticated,
-} from "../../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import DashboardHeader from "../../../components/DashboardHeader";
 import { getUserRole } from "../../../utils/simpleRedirect";
 // import { Property } from "../../../types"; // Conflicts with local declaration

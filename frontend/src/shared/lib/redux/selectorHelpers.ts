@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit";
-import type { RootState } from "@/app/store/store";
+import type { RootState } from "@/store/store";
 
 // Generic selector creator for slice state
 export const createSliceSelector = <T>(sliceName: keyof RootState) => {

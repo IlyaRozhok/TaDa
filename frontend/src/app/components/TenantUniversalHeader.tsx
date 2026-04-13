@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
-import { selectUser, selectIsOnboarded } from "../store/slices/authSlice";
+import { selectUser, selectIsOnboarded } from "@/store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { favoritesKeys } from "@/app/lib/translationsKeys/favoritesTranslationKeys";
 import {

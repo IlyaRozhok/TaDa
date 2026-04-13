@@ -3,7 +3,7 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
-import { HOBBY_ICON_OPTIONS } from "@/app/constants/preferences";
+import { HOBBY_ICON_OPTIONS } from "@/constants/preferences";
 
 interface PersonalPreferencesStepProps {
   formData: any;

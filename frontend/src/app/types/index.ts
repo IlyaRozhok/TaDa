@@ -93,7 +93,7 @@ export interface UploadResponse {
 }
 
 // Re-export Preferences from shared types
-export type { Preferences } from "../../shared/types/preferences";
+export type { Preferences } from "@/types/preferences";
 
 export interface CreatePropertyRequest {
   title: string;

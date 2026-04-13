@@ -18,10 +18,10 @@ import {
   Furnishing,
   Bills,
 } from "../types/property";
-import type { User } from "../store/slices/authSlice";
+import type { User } from "@/store/slices/authSlice";
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
-import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITIES_BY_CATEGORY } from "../../shared/constants/admin-form-options";
-import { translateAmenityStoredLabel } from "../../shared/constants/amenities";
+import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITIES_BY_CATEGORY } from "@/constants/admin-form-options";
+import { translateAmenityStoredLabel } from "@/constants/amenities";
 import { useTranslation } from "../hooks/useTranslation";
 import { wizardKeys } from "../lib/translationsKeys/wizardTranslationKeys";
 import {
@@ -29,7 +29,7 @@ import {
   transformTenantTypeAPIToUI,
   transformDurationUIToAPIArray,
   transformDurationAPIToUIArray,
-} from "../../shared/constants/mappings";
+} from "@/constants/mappings";
 
 interface Pet {
   type: "dog" | "cat" | "other";

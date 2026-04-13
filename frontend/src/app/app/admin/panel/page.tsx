@@ -6,7 +6,7 @@ import Link from "next/link";
 // import {
 //   selectUser,
 //   selectIsAuthenticated,
-// } from "../../../store/slices/authSlice";
+// } from "@/store/slices/authSlice";
 import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 // import { useDebounce } from "../../../hooks/useDebounce";
@@ -45,7 +45,7 @@ import {
 import {
   useGetPropertiesQuery,
   useGetBookingRequestsQuery,
-} from "../../../store/slices/apiSlice";
+} from "@/store/slices/apiSlice";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
 

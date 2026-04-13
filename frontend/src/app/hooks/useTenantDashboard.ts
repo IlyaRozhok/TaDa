@@ -7,12 +7,12 @@ import {
   matchingAPI,
   CategoryMatchResult,
 } from "../lib/api";
-import { selectUser } from "../store/slices/authSlice";
-import { apiSlice } from "../store/slices/apiSlice";
-import type { AppDispatch, RootState } from "../store/store";
+import { selectUser } from "@/store/slices/authSlice";
+import { apiSlice } from "@/store/slices/apiSlice";
+import type { AppDispatch, RootState } from "@/store/store";
 import { useDebounce } from "./useDebounce";
 import { waitForSessionManager } from "../components/providers/SessionManager";
-import { store } from "../store/store";
+import { store } from "@/store/store";
 import { hasPreferencesLocationFilled } from "../../entities/preferences/model/preferences";
 
 interface MatchedProperty {

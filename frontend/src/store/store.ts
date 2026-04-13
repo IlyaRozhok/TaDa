@@ -3,7 +3,7 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { apiSlice } from "./slices/apiSlice";
 import authSlice from "./slices/authSlice";
 import usersSlice from "./slices/usersSlice";
-import { preferencesReducer } from "@/features/preferences/model";
+import preferencesReducer from "@/store/slices/preferencesSlice";
 import operatorSlice from "./slices/operatorSlice";
 import shortlistReducer from "./slices/shortlistSlice";
 

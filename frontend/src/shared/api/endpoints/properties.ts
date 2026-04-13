@@ -9,8 +9,8 @@ import {
   CreatePropertyRequest, 
   UpdatePropertyRequest,
   PropertyListResponse 
-} from '@/shared/types/property';
-import { PaginationParams } from '@/shared/types/common';
+} from '@/types/property';
+import { PaginationParams } from '@/types/common';
 
 export const propertiesApi = {
   /**

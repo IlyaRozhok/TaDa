@@ -6,9 +6,9 @@ import {
   setUser,
   logout,
   setOnboardingCompleted,
-} from "../../store/slices/authSlice";
-import { fetchShortlist } from "../../store/slices/shortlistSlice";
-import { AppDispatch } from "../../store/store";
+} from "@/store/slices/authSlice";
+import { fetchShortlist } from "@/store/slices/shortlistSlice";
+import { AppDispatch } from "@/store/store";
 import api, { preferencesAPI } from "../../lib/api";
 
 // Global promise for session initialization

@@ -8,7 +8,7 @@ import { TenantCvResponse } from "../../types/tenantCv";
 import { TenantCvView } from "../../components/tenant-cv/TenantCvView";
 import Footer from "../../components/Footer";
 import UserDropdown from "../../components/UserDropdown";
-import { selectIsAuthenticated } from "../../store/slices/authSlice";
+import { selectIsAuthenticated } from "@/store/slices/authSlice";
 import { useTranslation } from "../../hooks/useTranslation";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 

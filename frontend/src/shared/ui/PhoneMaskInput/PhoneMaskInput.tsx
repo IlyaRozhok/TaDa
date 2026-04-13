@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { InputMask, InputMaskChangeEvent } from "primereact/inputmask";
+import { IMaskInput } from "react-imask";
 import { ChevronDown, Search } from "lucide-react";
 import { getPhoneMask } from "../../lib/phoneMasks";
 import {
@@ -12,38 +12,18 @@ import {
 } from "../../lib/countries";
 
 export interface PhoneMaskInputProps {
-  /** Country code (ISO 3166-1 alpha-2, e.g., "US", "GB", "FR") */
   countryCode?: string;
-  /** Current phone number value (without country code) */
   value?: string;
-  /** Callback when phone number changes */
   onChange: (value: string | undefined) => void;
-  /** Label text */
   label?: string;
-  /** Placeholder text (defaults to mask pattern) */
   placeholder?: string;
-  /** Additional CSS classes */
   className?: string;
-  /** Whether the field is disabled */
   disabled?: boolean;
-  /** Whether the field is required */
   required?: boolean;
-  /** Error message */
   error?: string;
-  /** Callback when country changes */
   onCountryChange?: (countryCode: string) => void;
-  /** Additional props for InputMask component */
-  inputMaskProps?: Omit<
-    React.ComponentProps<typeof InputMask>,
-    "value" | "onChange" | "mask" | "placeholder"
-  >;
 }
 
-/**
- * PhoneMaskInput component using PrimeReact InputMask
- * Applies country-specific phone number masks based on country code
- * Includes country code selector with fixed width
- */
 export default function PhoneMaskInput({
   countryCode: initialCountryCode = "US",
   value,
@@ -55,7 +35,6 @@ export default function PhoneMaskInput({
   required = false,
   error,
   onCountryChange,
-  inputMaskProps,
 }: PhoneMaskInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
     () => getCountryByCode(initialCountryCode) || getDefaultCountry(),
@@ -65,35 +44,22 @@ export default function PhoneMaskInput({
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Update selected country when countryCode prop changes
   useEffect(() => {
     const country = getCountryByCode(initialCountryCode);
-    if (country) {
-      setSelectedCountry(country);
-    }
+    if (country) setSelectedCountry(country);
   }, [initialCountryCode]);
 
-  // Get mask for the current country code
   const mask = getPhoneMask(selectedCountry.code);
-
-  // Use custom placeholder or empty string (no mask placeholder)
   const displayPlaceholder = placeholder || "";
-
-  const handleChange = (e: InputMaskChangeEvent) => {
-    const newValue = e.value;
-    onChange(newValue ?? undefined);
-  };
 
   const handleCountryChange = (country: Country) => {
     setSelectedCountry(country);
     setIsDropdownOpen(false);
     setSearchQuery("");
-    // Reset phone value when country changes
     onChange("");
     onCountryChange?.(country.code);
   };
 
-  // Filter countries based on search query
   const filteredCountries = COUNTRIES.filter(
     (country) =>
       country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -101,20 +67,14 @@ export default function PhoneMaskInput({
       country.code.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // Focus search input when dropdown opens
   useEffect(() => {
     if (isDropdownOpen && searchInputRef.current) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 100);
+      setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isDropdownOpen]);
 
-  // Reset search when dropdown closes
   useEffect(() => {
-    if (!isDropdownOpen) {
-      setSearchQuery("");
-    }
+    if (!isDropdownOpen) setSearchQuery("");
   }, [isDropdownOpen]);
 
   const hasValue = !!value;
@@ -122,7 +82,7 @@ export default function PhoneMaskInput({
   return (
     <div className={`relative ${className}`}>
       <div className="relative flex">
-        {/* Country Code Selector - Fixed Width */}
+        {/* Country Code Selector */}
         <div className="relative min-w-[11rem] max-w-[13rem] flex-shrink-0">
           <button
             type="button"
@@ -139,33 +99,22 @@ export default function PhoneMaskInput({
               </span>
             </div>
             <ChevronDown
-              className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
+              className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isDropdownOpen ? "rotate-180" : ""}`}
             />
           </button>
 
-          {/* Dropdown */}
           {isDropdownOpen && !disabled && (
             <>
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setIsDropdownOpen(false)}
-              />
-              {/* Dropdown Menu */}
+              <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
               <div className="absolute top-full left-0 z-50 mt-1 w-80 rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
                 <div
                   className="relative rounded-3xl"
                   style={{
-                    background:
-                      "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
-                    boxShadow:
-                      "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%), rgba(0,0,0,0.5)",
+                    boxShadow: "0 1.5625rem 3.125rem rgba(0,0,0,0.4), 0 0.625rem 1.875rem rgba(0,0,0,0.2), inset 0 0.0625rem 0 rgba(255,255,255,0.1), inset 0 -0.0625rem 0 rgba(0,0,0,0.2)",
                   }}
                 >
                   <div className="relative z-10">
-                    {/* Search Input */}
                     <div className="p-3">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
@@ -180,53 +129,26 @@ export default function PhoneMaskInput({
                         />
                       </div>
                     </div>
-
-                    {/* Countries List */}
-                    <div
-                      className="overflow-y-auto max-h-48"
-                      style={{ maxHeight: "12rem" }}
-                    >
+                    <div className="overflow-y-auto max-h-48">
                       {filteredCountries.length > 0 ? (
                         filteredCountries.map((country) => (
                           <button
                             key={country.code}
                             type="button"
                             onClick={() => handleCountryChange(country)}
-                            className={`w-full px-5 py-3 text-left transition-all duration-200 flex cursor-pointer items-center gap-3 ${
-                              selectedCountry.code === country.code
-                                ? "bg-white/18 text-white"
-                                : "text-white hover:bg-white/12"
-                            }`}
-                            style={{
-                              backdropFilter:
-                                selectedCountry.code === country.code
-                                  ? "blur(10px)"
-                                  : undefined,
-                            }}
+                            className={`w-full px-5 py-3 text-left transition-all duration-200 flex cursor-pointer items-center gap-3 ${selectedCountry.code === country.code ? "bg-white/18 text-white" : "text-white hover:bg-white/12"}`}
                           >
                             <div className="flex-1 min-w-0">
-                              <div
-                                className="text-sm font-semibold truncate"
-                                style={{ fontWeight: 600 }}
-                              >
-                                {country.name}
-                              </div>
-                              <div
-                                className="text-xs"
-                                style={{ color: "rgba(255, 255, 255, 0.7)" }}
-                              >
-                                {country.dialCode}
-                              </div>
+                              <div className="text-sm font-semibold truncate">{country.name}</div>
+                              <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{country.dialCode}</div>
                             </div>
                             {selectedCountry.code === country.code && (
-                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                              <div className="w-2 h-2 bg-white rounded-full" />
                             )}
                           </button>
                         ))
                       ) : (
-                        <div className="px-4 py-3 text-sm text-white/70 text-center">
-                          No countries found
-                        </div>
+                        <div className="px-4 py-3 text-sm text-white/70 text-center">No countries found</div>
                       )}
                     </div>
                   </div>
@@ -236,33 +158,22 @@ export default function PhoneMaskInput({
           )}
         </div>
 
-        {/* Phone Number Input */}
+        {/* Phone Input */}
         <div className="flex-1 relative">
           <div className="relative">
-            <InputMask
-              value={value ?? ""}
-              onChange={handleChange}
+            <IMaskInput
               mask={mask}
+              value={value ?? ""}
+              onAccept={(val: string) => onChange(val || undefined)}
               placeholder={displayPlaceholder}
               disabled={disabled}
               required={required}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              slotChar=""
-              unmask={false}
-              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400  ${
-                error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
-              } ${inputMaskProps?.className || ""}`}
-              {...inputMaskProps}
+              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
             />
-
-            {/* Floating Label */}
             <label
-              className={`absolute left-6 pointer-events-none transition-all duration-200 ${
-                isFocused || hasValue
-                  ? "top-3 text-xs text-gray-600"
-                  : "top-1/2 -translate-y-1/2 text-base text-gray-500"
-              }`}
+              className={`absolute left-6 pointer-events-none transition-all duration-200 ${isFocused || hasValue ? "top-3 text-xs text-gray-600" : "top-1/2 -translate-y-1/2 text-base text-gray-500"}`}
             >
               {label}
             </label>
@@ -270,7 +181,6 @@ export default function PhoneMaskInput({
         </div>
       </div>
 
-      {/* Error Message */}
       {error && <p className="text-sm text-red-600 mt-1 px-6">{error}</p>}
     </div>
   );

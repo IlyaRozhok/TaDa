@@ -12,18 +12,18 @@ import {
   addToShortlist,
   removeFromShortlist,
   selectShortlistProperties,
-} from "../../../store/slices/shortlistSlice";
-import { AppDispatch } from "../../../store/store";
+} from "@/store/slices/shortlistSlice";
+import { AppDispatch } from "@/store/store";
 import {
   selectUser,
   selectIsAuthenticated,
-} from "../../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import {
   useGetPublicPropertyQuery,
   useGetPublicBuildingQuery,
   useGetPreferencesQuery,
   useGetPropertyMatchQuery,
-} from "../../../store/slices/apiSlice";
+} from "@/store/slices/apiSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share } from "lucide-react";
@@ -56,8 +56,8 @@ import {
   getPropertyTypeTranslationKey,
   getFurnishingTranslationKey,
   getAmenityDisplayTranslationKey,
-} from "@/shared/constants/mappings";
-import { getPropertyAmenityLabelKey } from "@/shared/constants/property-amenities";
+} from "@/constants/mappings";
+import { getPropertyAmenityLabelKey } from "@/constants/property-amenities";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 
@@ -1558,29 +1558,8 @@ export default function PropertyPublicPage() {
                     // Use floating label instead of native placeholder to avoid overlap.
                     placeholder=""
                     disabled={bookingLoading}
-                    inputMaskProps={{
-                      className: [
-                        "w-full",
-                        "rounded-r-4xl",
-                        "bg-white",
-                        "text-gray-900 text-base",
-                        "placeholder-gray-500",
-                        "focus:outline-none focus:ring-0",
-                        "outline-none",
-                        "pt-10 pb-5 h-[72px]",
-                        bookingPhoneError
-                          ? "ring-2 ring-red-400 focus:ring-red-500"
-                          : "",
-                      ].join(" "),
-                    }}
+                    error={bookingPhoneError}
                   />
-                  <div className="mt-1 px-6">
-                    {bookingPhoneError ? (
-                      <p className="text-sm text-red-600">
-                        {bookingPhoneError}
-                      </p>
-                    ) : null}
-                  </div>
                 </div>
 
                 <div>

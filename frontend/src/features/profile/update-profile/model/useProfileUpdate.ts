@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { updateUser } from '../../../../app/store/slices/authSlice';
+import { updateUser } from '@/store/slices/authSlice';
 import { authAPI } from '../../../../app/lib/api';
-import { UpdateUserData, User } from '../../../../entities/user/model/types';
+import { UpdateUserData, User } from '@/types/user';
 import { normalizeDate } from '../../../../entities/user/lib/utils';
 
 export const useProfileUpdate = (user: User | null) => {
