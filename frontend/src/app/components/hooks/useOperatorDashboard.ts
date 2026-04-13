@@ -1,15 +1,15 @@
 import { useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { AppDispatch, RootState } from "../../store/store";
+import { AppDispatch, RootState } from "@/store/store";
 import {
   fetchDashboardCounts,
   fetchTenants,
   fetchOperatorProperties,
-} from "../../store/slices/operatorSlice";
+} from "@/store/slices/operatorSlice";
 import {
   selectIsAuthenticated,
   selectUser,
-} from "../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 
 export function useOperatorDashboard() {
   const dispatch = useDispatch<AppDispatch>();

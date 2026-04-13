@@ -23,7 +23,7 @@ import {
   getDefaultCountry,
 } from "@/shared/lib/countries";
 import { UpdateUserData } from "@/types/user";
-import type { User as AuthUser } from "@/app/store/slices/authSlice";
+import type { User as AuthUser } from "@/store/slices/authSlice";
 import type { User } from "@/types/user";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
@@ -44,7 +44,7 @@ const adaptUser = (u: AuthUser): User => ({
   operatorProfile: u.operatorProfile,
 });
 import { authAPI } from "@/app/lib/api";
-import { updateUser } from "@/app/store/slices/authSlice";
+import { updateUser } from "@/store/slices/authSlice";
 import { AvatarCropModal } from "./AvatarCropModal";
 
 interface ProfileFormProps {

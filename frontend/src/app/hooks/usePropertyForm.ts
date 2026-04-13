@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAppSelector } from "@/app/store/hooks";
+import { useAppSelector } from "@/store/hooks";
 import { propertiesAPI } from "@/app/lib/api";
 import { CreatePropertyRequest } from "@/app/types";
 import { Property, PropertyMedia } from "@/app/types";

@@ -12,18 +12,18 @@ import {
   addToShortlist,
   removeFromShortlist,
   selectShortlistProperties,
-} from "../../../store/slices/shortlistSlice";
-import { AppDispatch } from "../../../store/store";
+} from "@/store/slices/shortlistSlice";
+import { AppDispatch } from "@/store/store";
 import {
   selectUser,
   selectIsAuthenticated,
-} from "../../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import {
   useGetPublicPropertyQuery,
   useGetPublicBuildingQuery,
   useGetPreferencesQuery,
   useGetPropertyMatchQuery,
-} from "../../../store/slices/apiSlice";
+} from "@/store/slices/apiSlice";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share } from "lucide-react";

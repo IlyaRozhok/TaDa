@@ -7,7 +7,7 @@ import {
   selectUser,
   selectIsAuthenticated,
   selectIsOnboarded,
-} from "../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import { waitForSessionManager } from "./providers/SessionManager";
 
 interface SimpleDashboardRouterProps {

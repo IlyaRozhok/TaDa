@@ -41,7 +41,7 @@ import {
   useGetPublicBuildingQuery,
   useGetPublicBuildingPropertiesQuery,
   useGetPreferencesQuery,
-} from "../../../store/slices/apiSlice";
+} from "@/store/slices/apiSlice";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";

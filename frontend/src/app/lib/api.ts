@@ -1,5 +1,5 @@
 import axios from "axios";
-import { logout } from "../store/slices/authSlice";
+import { logout } from "@/store/slices/authSlice";
 import { Property } from "../types";
 
 // Create axios instance
@@ -25,7 +25,7 @@ api.interceptors.response.use(
         !currentPath.includes("/auth") &&
         !currentPath.includes("/onboarding")
       ) {
-        import("../store/store").then(({ store }) => {
+        import("@/store/store").then(({ store }) => {
           store.dispatch(logout());
         });
       }

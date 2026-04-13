@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useAppSelector } from "@/app/store/hooks";
+import { useAppSelector } from "@/store/hooks";
 import { preferencesAPI } from "@/app/lib/api";
 import {
   FormFieldErrors,

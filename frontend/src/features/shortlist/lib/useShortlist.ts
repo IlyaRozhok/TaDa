@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch } from "@/app/store/store";
+import { AppDispatch } from "@/store/store";
 import {
   addToShortlist,
   removeFromShortlist,

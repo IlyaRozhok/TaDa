@@ -2,7 +2,7 @@
 
 import React, { useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
-import { selectUser } from "../../store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
 import { useTranslation } from "../../hooks/useTranslation";
 import { wizardKeys } from "../../lib/translationsKeys/wizardTranslationKeys";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";

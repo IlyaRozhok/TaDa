@@ -10,7 +10,7 @@ import { StepContainer } from "@/app/components/preferences/step-components/Step
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput, Button } from "@/shared/ui";
 import { useUserProfile } from "@/shared/hooks/useUserProfile";
-import type { User } from "@/app/store/slices/authSlice";
+import type { User } from "@/store/slices/authSlice";
 import { AvatarCropModal } from "./AvatarCropModal";
 import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
 

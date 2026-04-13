@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { authLogger } from "../../services/authLogger";
+import { authLogger } from "@/app/services/authLogger";
 
 export interface User {
   id: string;

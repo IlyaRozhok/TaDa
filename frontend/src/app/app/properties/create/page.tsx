@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAppSelector } from "@/app/store/hooks";
+import { useAppSelector } from "@/store/hooks";
 import DashboardHeader from "../../../components/DashboardHeader";
 import MediaUpload, {
   MediaUploadRef,

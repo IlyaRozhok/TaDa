@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { selectUser, selectIsAuthenticated } from "./store/slices/authSlice";
+import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
 import { Property } from "./types";
 import HomepagePropertyCard from "./components/HomepagePropertyCard";
 import PropertyCardSkeleton from "./components/PropertyCardSkeleton";

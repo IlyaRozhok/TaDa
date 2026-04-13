@@ -7,7 +7,7 @@ import {
   selectIsAuthenticated,
   updateUser,
   setIsOnboarded,
-} from "../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import { authAPI } from "../../lib/api";
 import { useTranslation } from "../../hooks/useTranslation";
 import { wizardKeys } from "../../lib/translationsKeys/wizardTranslationKeys";

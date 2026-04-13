@@ -18,7 +18,7 @@ import {
   Furnishing,
   Bills,
 } from "../types/property";
-import type { User } from "../store/slices/authSlice";
+import type { User } from "@/store/slices/authSlice";
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
 import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITIES_BY_CATEGORY } from "@/constants/admin-form-options";
 import { translateAmenityStoredLabel } from "@/constants/amenities";

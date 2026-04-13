@@ -7,7 +7,7 @@ import {
   selectUser,
   selectIsAuthenticated,
   selectOnboardingCompleted,
-} from "../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";

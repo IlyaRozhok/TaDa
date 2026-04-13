@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import EnhancedPropertyCard from "@/app/components/EnhancedPropertyCard";
 import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
-import { selectUser } from "@/app/store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
 
 interface MatchedProperty {
   property: any; // Property type

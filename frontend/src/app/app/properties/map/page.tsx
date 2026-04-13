@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { selectUser } from "../../../store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
 import TaDaMap from "../../../components/TaDaMap";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import { Property } from "../../../types";

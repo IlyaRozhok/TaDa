@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setUser, logout as logoutAction } from "../store/slices/authSlice";
+import { setUser, logout as logoutAction } from "@/store/slices/authSlice";
 import { authAPI } from "../lib/api";
 
 interface AuthUserData {

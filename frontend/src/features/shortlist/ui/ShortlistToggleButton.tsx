@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useShortlist } from "@/features/shortlist/lib/useShortlist";
-import { selectUser } from "@/app/store/slices/authSlice";
+import { selectUser } from "@/store/slices/authSlice";
 import { Property } from "@/app/types";
 
 interface ShortlistToggleButtonProps {

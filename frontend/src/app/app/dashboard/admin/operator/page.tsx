@@ -6,12 +6,12 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   selectUser,
   selectIsAuthenticated,
-} from "../../../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import {
   clearErrors,
   TenantRow,
   OperatorProperty,
-} from "../../../../store/slices/operatorSlice";
+} from "@/store/slices/operatorSlice";
 import DashboardHeader from "../../../../components/DashboardHeader";
 import {
   // Plus,
@@ -24,7 +24,7 @@ import {
   Shield,
 } from "lucide-react";
 import Link from "next/link";
-import { AppDispatch } from "../../../../store/store";
+import { AppDispatch } from "@/store/store";
 import { notify } from "@/shared/lib/notify";
 import { useOperatorDashboard } from "../../../../components/hooks/useOperatorDashboard";
 import { useSuggestProperty } from "../../../../components/hooks/useSuggestProperty";

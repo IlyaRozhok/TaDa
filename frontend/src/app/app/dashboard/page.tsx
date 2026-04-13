@@ -7,7 +7,7 @@ import {
   selectUser,
   selectIsAuthenticated,
   selectIsOnboarded,
-} from "../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 
 export default function DashboardPage() {
   const user = useSelector(selectUser);

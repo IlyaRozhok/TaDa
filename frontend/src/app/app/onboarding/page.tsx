@@ -11,7 +11,7 @@ import {
   selectOnboardingCompleted,
   setIsOnboarded,
   setOnboardingCompleted,
-} from "../../store/slices/authSlice";
+} from "@/store/slices/authSlice";
 import { preferencesAPI } from "../../lib/api";
 import SimpleOnboardingProfileStep from "../../components/onboarding/SimpleOnboardingProfileStep";
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
