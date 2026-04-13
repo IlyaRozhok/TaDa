@@ -8,7 +8,6 @@ import { fetchShortlist } from "../store/slices/shortlistSlice";
 import { AppDispatch } from "../store/store";
 import { authAPI } from "../lib/api";
 import { redirectAfterLogin } from "../utils/simpleRedirect";
-import { useAuthContext } from "../contexts/AuthContext";
 import { ApiError } from "../types/api";
 import { Loader2, Eye, EyeOff, Mail, Lock, X } from "lucide-react";
 import { Button } from "@/shared/ui/Button/Button";
@@ -33,7 +32,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const authContext = useAuthContext();
 
   // Close modal on authentication success
   useEffect(() => {

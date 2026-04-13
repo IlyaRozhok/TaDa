@@ -4,7 +4,6 @@ import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import EmailJSInitializer from "./components/EmailJSInitializer";
-import { AuthProvider } from "./contexts/AuthContext";
 import { I18nProvider } from "./contexts/I18nContext";
 import AppToaster from "./components/AppToaster";
 import { Suspense } from "react";
@@ -74,12 +73,10 @@ export default function RootLayout({
         <Suspense fallback={<div></div>}>
           <I18nProvider>
             <ReduxProvider>
-              <AuthProvider>
                 <SessionManager />
                 <EmailJSInitializer />
                 {children}
                 <AppToaster />
-              </AuthProvider>
             </ReduxProvider>
           </I18nProvider>
         </Suspense>
