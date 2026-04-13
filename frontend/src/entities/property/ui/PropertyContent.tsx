@@ -7,7 +7,7 @@ import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyT
 import {
   getPropertyTypeTranslationKey,
   getFurnishingTranslationKey,
-} from "@/shared/constants/mappings";
+} from "@/constants/mappings";
 
 const iconClass = "w-4 h-4 mr-1 flex-shrink-0";
 

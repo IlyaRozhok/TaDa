@@ -4,7 +4,7 @@ import React from "react";
 import {
   LIFESTYLE_FEATURES,
   LifestyleFeature,
-} from "../constants/lifestyleFeatures";
+} from "@/constants/lifestyleFeatures";
 
 interface LifestyleFeaturesSelectorProps {
   selectedFeatures: string[];

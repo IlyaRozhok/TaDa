@@ -20,7 +20,7 @@ import {
   transformTenantTypeUIToAPI,
   transformTenantTypeAPIToUI,
   transformDurationUIToAPIArray,
-} from "../../../shared/constants/mappings";
+} from "@/constants/mappings";
 import { propertiesAPI } from "../../lib/api";
 
 const AddPropertyModal: React.FC<AddPropertyModalProps> = ({

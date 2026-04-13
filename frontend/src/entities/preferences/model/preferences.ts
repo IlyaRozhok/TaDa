@@ -19,7 +19,7 @@ import {
   transformRoomsAPIToUI,
   transformBathroomsUIToAPI,
   transformBathroomsAPIToUI,
-} from "../../../shared/constants/mappings";
+} from "@/constants/mappings";
 
 // Pet type matching Property.pets structure
 export interface Pet {

@@ -56,8 +56,8 @@ import {
   getPropertyTypeTranslationKey,
   getFurnishingTranslationKey,
   getAmenityDisplayTranslationKey,
-} from "@/shared/constants/mappings";
-import { getPropertyAmenityLabelKey } from "@/shared/constants/property-amenities";
+} from "@/constants/mappings";
+import { getPropertyAmenityLabelKey } from "@/constants/property-amenities";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 

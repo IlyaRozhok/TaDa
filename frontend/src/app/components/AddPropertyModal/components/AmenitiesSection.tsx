@@ -1,7 +1,7 @@
 import React from "react";
 import { PropertyFormData } from "../types";
-import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITIES_BY_CATEGORY } from "../../../../shared/constants/admin-form-options";
-import { translateAmenityStoredLabel } from "../../../../shared/constants/amenities";
+import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITIES_BY_CATEGORY } from "@/constants/admin-form-options";
+import { translateAmenityStoredLabel } from "@/constants/amenities";
 import { useTranslation } from "../../../hooks/useTranslation";
 
 interface AmenitiesSectionProps {

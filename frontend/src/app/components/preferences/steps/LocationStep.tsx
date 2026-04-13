@@ -11,7 +11,7 @@ import {
   AREA_OPTIONS,
   DISTRICTS_BY_AREA,
   LONDON_METRO_STATIONS,
-} from "../../../../shared/constants/admin-form-options";
+} from "@/constants/admin-form-options";
 
 interface LocationStepProps {
   formData: PreferencesFormData;

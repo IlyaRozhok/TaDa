@@ -7,15 +7,15 @@ import {
   LONDON_DISTRICTS,
   AMENITIES_BY_CATEGORY,
   TYPE_OF_UNIT_OPTIONS,
-} from "../../shared/constants/admin-form-options";
+} from "@/constants/admin-form-options";
 import {
   transformUnitTypeUIToAPI,
   buildingUnitTypeAPIToUI,
   transformTenantTypeUIToAPI,
   transformTenantTypeAPIToUI,
-} from "../../shared/constants/mappings";
+} from "@/constants/mappings";
 import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
-import { translateAmenityStoredLabel } from "../../shared/constants/amenities";
+import { translateAmenityStoredLabel } from "@/constants/amenities";
 import { useTranslation } from "../hooks/useTranslation";
 import { wizardKeys } from "../lib/translationsKeys/wizardTranslationKeys";
 

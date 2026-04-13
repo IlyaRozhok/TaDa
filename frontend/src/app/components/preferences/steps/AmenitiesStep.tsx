@@ -6,7 +6,7 @@ import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { PreferencesFormData } from "@/app/types/preferences";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
-import { AMENITIES_VALUES } from "@/shared/constants/amenities";
+import { AMENITIES_VALUES } from "@/constants/amenities";
 
 interface AmenitiesStepProps {
   formData: PreferencesFormData;
