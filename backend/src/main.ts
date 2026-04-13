@@ -60,6 +60,26 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerCfg);
+
+  if (process.env.NODE_ENV === "production") {
+    app.use("/api/docs", (req: any, res: any, next: any) => {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith("Basic ")) {
+        const [user, pass] = Buffer.from(authHeader.split(" ")[1], "base64")
+          .toString()
+          .split(":");
+        if (
+          user === process.env.SWAGGER_USER &&
+          pass === process.env.SWAGGER_PASSWORD
+        ) {
+          return next();
+        }
+      }
+      res.setHeader("WWW-Authenticate", 'Basic realm="Swagger"');
+      res.status(401).send("Unauthorized");
+    });
+  }
+
   SwaggerModule.setup("docs", app, document);
 
   const port = process.env.PORT ?? 5001;
