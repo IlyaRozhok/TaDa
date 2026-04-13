@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
-import { UpdateUserData } from "@/entities/user/model/types";
+import { UpdateUserData } from "@/types/user";
 import type { User } from "@/app/store/slices/authSlice";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { authAPI } from "@/app/lib/api";

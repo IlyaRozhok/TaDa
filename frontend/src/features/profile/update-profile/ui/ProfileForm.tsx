@@ -22,9 +22,9 @@ import {
   getCountryByCode,
   getDefaultCountry,
 } from "@/shared/lib/countries";
-import { UpdateUserData } from "@/entities/user/model/types";
+import { UpdateUserData } from "@/types/user";
 import type { User as AuthUser } from "@/app/store/slices/authSlice";
-import type { User } from "@/entities/user/model/types";
+import type { User } from "@/types/user";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { useProfileUpdate } from "../model/useProfileUpdate";
 

@@ -13,7 +13,7 @@ import { DateInput } from "@/shared/ui";
 import { useTranslation } from "@/app/hooks/useTranslation";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from '@/app/components/preferences/ui/InputField';
-import { UpdateUserData } from '@/entities/user/model/types';
+import { UpdateUserData } from '@/types/user';
 
 interface BasicProfileFieldsProps {
   formData: UpdateUserData;

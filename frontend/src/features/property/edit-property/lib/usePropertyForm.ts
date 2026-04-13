@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Property } from '@/shared/types/property';
+import { Property } from '@/types/property';
 import { 
   PropertyFormData, 
   PropertyFormState, 

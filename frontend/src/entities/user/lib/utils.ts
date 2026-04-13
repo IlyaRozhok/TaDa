@@ -1,4 +1,4 @@
-import { User, UpdateUserData } from '../model/types';
+import { User, UpdateUserData } from '@/types/user';
 
 /**
  * Map a User object (from Redux / API) to the flat UpdateUserData shape

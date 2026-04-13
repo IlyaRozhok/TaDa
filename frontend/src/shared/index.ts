@@ -6,7 +6,7 @@
  */
 
 // Types
-export * from './types';
+// export * from './types' // types dir removed - use @/types instead;
 
 // UI Components
 export * from './ui';
