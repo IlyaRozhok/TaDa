@@ -44,13 +44,15 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            cd /root/TaDa
+            cd /opt/tada/app
 
             git pull origin main
 
             docker compose build backend
             docker compose up -d --no-deps backend
 
+            echo "Waiting for backend to be healthy..."
+            sleep 10
             docker compose exec -T backend npm run mig:run:prod
 
             echo "Deploy complete"
