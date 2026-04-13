@@ -80,7 +80,7 @@ async function bootstrap() {
     });
   }
 
-  SwaggerModule.setup("docs", app, document);
+  SwaggerModule.setup("api/docs", app, document);
 
   const port = process.env.PORT ?? 5001;
   await app.listen(port, "0.0.0.0");
