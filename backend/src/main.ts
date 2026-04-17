@@ -10,7 +10,9 @@ import * as path from "path";
 import { SentryGlobalFilter } from "./common/filters/sentry-exception.filter";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false, // отключаем встроенный body parser NestJS, используем свой ниже
+  });
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(cookieParser());
 
