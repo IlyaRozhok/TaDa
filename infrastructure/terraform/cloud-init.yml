@@ -1,0 +1,81 @@
+#cloud-config
+
+users:
+  - name: deploy
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      PubkeyAuthentication yes
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ufw
+  - fail2ban
+  - curl
+  - wget
+  - gnupg2
+  - nginx
+  - certbot
+  - python3-certbot-nginx
+  - iptables-persistent
+  - postgresql
+  - postgresql-contrib
+  - git
+
+runcmd:
+  # UFW firewall
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+
+  # PostgreSQL config - localhost + docker bridge only
+  - echo "listen_addresses = 'localhost,172.18.0.1'" >> /etc/postgresql/16/main/postgresql.conf
+  - echo "host    tada_${environment}  tada_user  172.18.0.0/16  scram-sha-256" >> /etc/postgresql/16/main/pg_hba.conf
+  - systemctl restart postgresql@16-main
+
+  # iptables - allow docker bridge to reach postgres
+  - iptables -I INPUT -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT
+  - netfilter-persistent save
+
+  # Create PostgreSQL user and database
+  - sudo -u postgres psql -c "CREATE USER tada_user WITH PASSWORD '${db_password}';"
+  - sudo -u postgres psql -c "CREATE DATABASE tada_${environment} OWNER tada_user;"
+  - sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE tada_${environment} TO tada_user;"
+
+  # Install Docker
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" > /etc/apt/sources.list.d/docker.list
+  - DEBIAN_FRONTEND=noninteractive apt-get update -q
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y -q docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  - usermod -aG docker deploy
+
+  # App directory
+  - mkdir -p /opt/tada
+  - chown -R deploy:deploy /opt/tada
+
+  # Clone repo
+  - git clone https://github.com/IlyaRozhok/TaDa.git /opt/tada/app
+  - chown -R deploy:deploy /opt/tada/app
+
+  # Copy SSH key from root to deploy user
+  - mkdir -p /home/deploy/.ssh
+  - cp /root/.ssh/authorized_keys /home/deploy/.ssh/authorized_keys
+  - chown -R deploy:deploy /home/deploy/.ssh
+  - chmod 700 /home/deploy/.ssh
+  - chmod 600 /home/deploy/.ssh/authorized_keys
+
+  # Restart SSH to apply hardening
+  - systemctl restart ssh

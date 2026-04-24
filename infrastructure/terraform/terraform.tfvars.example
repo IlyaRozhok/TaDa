@@ -1,0 +1,5 @@
+hetzner_token  = "your_hetzner_api_token"
+ssh_public_key = "ssh-ed25519 AAAA..."
+environment    = "stage"
+server_type    = "cx22"
+location       = "nbg1"
