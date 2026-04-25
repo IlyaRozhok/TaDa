@@ -18,13 +18,17 @@ async function bootstrap() {
 
   app.use(require("express").json({ limit: "10mb" }));
   app.use(require("express").urlencoded({ limit: "10mb", extended: true }));
+  const corsOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://ta-da.co",
+    "https://www.ta-da.co",
+    ...(process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+      : []),
+  ];
   app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://ta-da.co",
-      "https://www.ta-da.co",
-    ],
+    origin: corsOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],

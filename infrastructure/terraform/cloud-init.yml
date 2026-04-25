@@ -37,9 +37,9 @@ runcmd:
   - ufw allow 443/tcp
   - ufw --force enable
 
-  # PostgreSQL config - localhost + docker bridge only
-  - echo "listen_addresses = 'localhost,172.18.0.1'" >> /etc/postgresql/16/main/postgresql.conf
-  - echo "host    tada_${environment}  tada_user  172.18.0.0/16  scram-sha-256" >> /etc/postgresql/16/main/pg_hba.conf
+  # PostgreSQL config - listen on all interfaces (UFW blocks 5432 externally)
+  - sudo -u postgres psql -c "ALTER SYSTEM SET listen_addresses TO '*';"
+  - echo "host    tada_${environment}  tada_user  172.16.0.0/12  scram-sha-256" >> /etc/postgresql/16/main/pg_hba.conf
   - systemctl restart postgresql
 
   # Create PostgreSQL user and database
@@ -47,8 +47,8 @@ runcmd:
   - sudo -u postgres psql -c "CREATE DATABASE tada_${environment} OWNER tada_user;"
   - sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE tada_${environment} TO tada_user;"
 
-  # iptables - allow docker bridge to reach postgres
-  - iptables -I INPUT -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT
+  # iptables - allow all docker bridge subnets to reach postgres (172.16.0.0/12 covers 172.x.x.x)
+  - iptables -I INPUT -s 172.16.0.0/12 -p tcp --dport 5432 -j ACCEPT
   - netfilter-persistent save
 
   # Install Docker
