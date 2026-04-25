@@ -1,0 +1,58 @@
+name: CI/CD Stage
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Build
+        working-directory: backend
+        run: npm run build
+
+  deploy:
+    name: Deploy to Stage
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGE_VPS_HOST }}
+          username: ${{ secrets.STAGE_VPS_USER }}
+          key: ${{ secrets.STAGE_VPS_SSH_KEY }}
+          port: ${{ secrets.STAGE_VPS_PORT }}
+          script: |
+            set -e
+            cd /opt/tada/app
+
+            git pull origin develop
+
+            docker compose build backend
+            docker compose up -d --no-deps backend
+
+            echo "Waiting for backend to be healthy..."
+            sleep 10
+            docker compose exec -T backend npm run mig:run:prod
+
+            echo "Stage deploy complete"
