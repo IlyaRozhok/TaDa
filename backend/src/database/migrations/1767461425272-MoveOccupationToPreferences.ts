@@ -5,8 +5,15 @@ export class MoveOccupationToPreferences1767461425272 implements MigrationInterf
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "tenant_cvs" DROP CONSTRAINT IF EXISTS "FK_tenant_cvs_user"`);
-        await queryRunner.query(`ALTER TABLE "booking_requests" DROP CONSTRAINT IF EXISTS "FK_booking_requests_property"`);
-        await queryRunner.query(`ALTER TABLE "booking_requests" DROP CONSTRAINT IF EXISTS "FK_booking_requests_tenant"`);
+        await queryRunner.query(`
+            DO $$ BEGIN
+                IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'booking_requests') THEN
+                    ALTER TABLE "booking_requests" DROP CONSTRAINT IF EXISTS "FK_booking_requests_property";
+                    ALTER TABLE "booking_requests" DROP CONSTRAINT IF EXISTS "FK_booking_requests_tenant";
+                    ALTER TABLE "booking_requests" DROP CONSTRAINT IF EXISTS "UQ_booking_requests_property_tenant";
+                END IF;
+            END $$;
+        `);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_properties_price"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_properties_bedrooms"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_properties_bathrooms"`);
@@ -17,7 +24,6 @@ export class MoveOccupationToPreferences1767461425272 implements MigrationInterf
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_properties_available_from"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_properties_operator_id"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_properties_building_id"`);
-        await queryRunner.query(`ALTER TABLE "booking_requests" DROP CONSTRAINT IF EXISTS "UQ_booking_requests_property_tenant"`);
         await queryRunner.query(`ALTER TABLE "preferences" ADD COLUMN IF NOT EXISTS "occupation" character varying`);
         
         // Migrate occupation data from tenant_profiles to preferences
@@ -33,17 +39,25 @@ export class MoveOccupationToPreferences1767461425272 implements MigrationInterf
         await queryRunner.query(`ALTER TABLE "tenant_cvs" ADD "created_at" TIMESTAMP NOT NULL DEFAULT now()`);
         await queryRunner.query(`ALTER TABLE "tenant_cvs" DROP COLUMN "updated_at"`);
         await queryRunner.query(`ALTER TABLE "tenant_cvs" ADD "updated_at" TIMESTAMP NOT NULL DEFAULT now()`);
-        await queryRunner.query(`
-DO $$
-BEGIN
-  ALTER TABLE "booking_requests" ADD CONSTRAINT "UQ_9ba3da4fd4396cb4555855222ca" UNIQUE ("property_id", "tenant_id");
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
-        `);
         await queryRunner.query(`ALTER TABLE "tenant_cvs" ADD CONSTRAINT "FK_1cf1047690c039fa3d5239b6755" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "booking_requests" ADD CONSTRAINT "FK_20e76d72eee4ecda54da1ac1d06" FOREIGN KEY ("property_id") REFERENCES "properties"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "booking_requests" ADD CONSTRAINT "FK_de6b5dcbd7710920cc0baa2367b" FOREIGN KEY ("tenant_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`
+            DO $$ BEGIN
+                IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'booking_requests') THEN
+                    BEGIN
+                        ALTER TABLE "booking_requests" ADD CONSTRAINT "UQ_9ba3da4fd4396cb4555855222ca" UNIQUE ("property_id", "tenant_id");
+                    EXCEPTION WHEN duplicate_object THEN NULL;
+                    END;
+                    BEGIN
+                        ALTER TABLE "booking_requests" ADD CONSTRAINT "FK_20e76d72eee4ecda54da1ac1d06" FOREIGN KEY ("property_id") REFERENCES "properties"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+                    EXCEPTION WHEN duplicate_object THEN NULL;
+                    END;
+                    BEGIN
+                        ALTER TABLE "booking_requests" ADD CONSTRAINT "FK_de6b5dcbd7710920cc0baa2367b" FOREIGN KEY ("tenant_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+                    EXCEPTION WHEN duplicate_object THEN NULL;
+                    END;
+                END IF;
+            END $$;
+        `);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
