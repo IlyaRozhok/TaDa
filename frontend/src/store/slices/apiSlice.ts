@@ -132,6 +132,11 @@ export const apiSlice = createApi({
       // Tie CV to User tag so it can be invalidated together if needed
       providesTags: ["User"],
     }),
+
+    // Admin: get tenant CV by userId
+    getAdminTenantCv: builder.query<{ share_uuid?: string | null }, string>({
+      query: (userId) => `/tenant-cv/admin/${userId}`,
+    }),
     /** Same auth as getTenantCv (Redux token) — avoids axios/localStorage mismatch breaking share */
     createTenantCvShare: builder.mutation<
       { share_uuid: string } | { data?: { share_uuid?: string } },
@@ -193,6 +198,7 @@ export const {
   useRemoveFromShortlistMutation,
   useGetShortlistQuery,
   useGetTenantCvQuery,
+  useGetAdminTenantCvQuery,
   useCreateTenantCvShareMutation,
   useGetBookingRequestsQuery,
   useGetPreferencesQuery,

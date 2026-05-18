@@ -7,7 +7,9 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  FileText,
 } from "lucide-react";
+import { useGetAdminTenantCvQuery } from "@/store/slices/apiSlice";
 
 interface User {
   id: string;
@@ -31,6 +33,29 @@ interface AdminUsersSectionProps {
   onDelete: (user: User) => void;
   onAdd: () => void;
 }
+
+const TenantCvButton: React.FC<{ userId: string }> = ({ userId }) => {
+  const { data: cv } = useGetAdminTenantCvQuery(userId);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (cv?.share_uuid) {
+      window.open(`/cv/${cv.share_uuid}`, "_blank");
+    } else {
+      alert("This tenant has no CV yet");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+      title="View Tenant CV"
+    >
+      <FileText className="w-4 h-4" />
+    </button>
+  );
+};
 
 const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   users,
@@ -233,6 +258,9 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                     </td>
                     <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
+                        {user.role === "tenant" && (
+                          <TenantCvButton userId={user.id} />
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
