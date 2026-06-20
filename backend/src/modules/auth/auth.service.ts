@@ -4,7 +4,6 @@ import { JwtService } from "@nestjs/jwt";
 import { Repository } from "typeorm";
 import { User, UserRole, UserStatus } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
-import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
 import { S3Service } from "../../common/services/s3.service";
 
@@ -15,8 +14,6 @@ export class AuthService {
     private userRepository: Repository<User>,
     @InjectRepository(TenantProfile)
     private tenantProfileRepository: Repository<TenantProfile>,
-    @InjectRepository(OperatorProfile)
-    private operatorProfileRepository: Repository<OperatorProfile>,
     private jwtService: JwtService,
     private tenantCvService: TenantCvService,
     private s3Service: S3Service,

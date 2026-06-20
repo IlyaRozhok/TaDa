@@ -10,13 +10,11 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { User } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
-import { OperatorProfile } from "../../entities/operator-profile.entity";
-import { Preferences } from "../../entities/preferences.entity";
 import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, TenantProfile, OperatorProfile, Preferences]),
+    TypeOrmModule.forFeature([User, TenantProfile]),
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
