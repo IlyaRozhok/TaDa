@@ -1,21 +1,12 @@
-import {
-  Injectable,
-  BadRequestException,
-  InternalServerErrorException,
-} from "@nestjs/common";
+import { Injectable, UnauthorizedException, InternalServerErrorException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import * as bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
 import { User, UserRole, UserStatus } from "../../entities/user.entity";
-import { RegisterDto } from "./dto/register.dto";
-import { LoginDto } from "./dto/login.dto";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
-import { Preferences } from "../../entities/preferences.entity";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
-import { AuthValidationService } from "./services/auth-validation.service";
 import { AuthTokenService } from "./services/auth-token.service";
-import { USER_CONSTANTS } from "../../common/constants/user.constants";
 import { toUserResponse } from "../users/user.mapper";
 import { S3Service } from "../../common/services/s3.service";
 
@@ -28,85 +19,10 @@ export class AuthService {
     private tenantProfileRepository: Repository<TenantProfile>,
     @InjectRepository(OperatorProfile)
     private operatorProfileRepository: Repository<OperatorProfile>,
-    @InjectRepository(Preferences)
-    private authValidationService: AuthValidationService,
     private authTokenService: AuthTokenService,
     private tenantCvService: TenantCvService,
-    private s3Service: S3Service
+    private s3Service: S3Service,
   ) {}
-
-  async register(registerDto: RegisterDto) {
-    const { email, password } = registerDto;
-    const role = UserRole.Tenant; // All new users are tenants by default
-
-    // Validate registration data
-    await this.authValidationService.validateRegistration(registerDto);
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(
-      password,
-      USER_CONSTANTS.PASSWORD_SALT_ROUNDS
-    );
-
-    // Create user
-    const user = this.userRepository.create({
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      role: role as UserRole,
-      status: UserStatus.Active,
-    });
-
-    try {
-      const savedUser = await this.userRepository.save(user);
-
-      // Create tenant profile for all users
-      await this.createTenantProfile(savedUser);
-      // Ensure tenant CV share link exists
-      await this.tenantCvService.ensureShareUuid(savedUser.id);
-
-      // Generate tokens and create session
-      const accessToken = this.authTokenService.generateAccessToken(savedUser);
-      const refreshToken =
-        this.authTokenService.generateRefreshToken(savedUser);
-      await this.authTokenService.createSession(savedUser.id, accessToken);
-
-      return {
-        user: toUserResponse(savedUser),
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      };
-    } catch (error) {
-      throw new InternalServerErrorException("Registration failed");
-    }
-  }
-
-  async login(loginDto: LoginDto) {
-
-    // Validate login credentials
-    const user = await this.authValidationService.validateLogin(loginDto);
-
-    // Generate tokens and create session
-    const accessToken = this.authTokenService.generateAccessToken(user);
-    const refreshToken = this.authTokenService.generateRefreshToken(user);
-    await this.authTokenService.createSession(user.id, accessToken);
-
-    return {
-      user: toUserResponse(user),
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
-  }
-
-  async refresh(user: User) {
-    const accessToken = this.authTokenService.generateAccessToken(user);
-    const refreshToken = this.authTokenService.generateRefreshToken(user);
-    await this.authTokenService.createSession(user.id, accessToken);
-
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
-  }
 
   async findUserWithProfile(userId: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
@@ -114,55 +30,15 @@ export class AuthService {
       relations: ["preferences", "tenantProfile", "operatorProfile"],
     });
     if (user?.avatar_url) {
-      user.avatar_url = await this.s3Service.refreshAvatarUrl(user.avatar_url) ?? user.avatar_url;
+      user.avatar_url = (await this.s3Service.refreshAvatarUrl(user.avatar_url)) ?? user.avatar_url;
     }
     return user;
   }
 
-  async checkUserExists(email: string): Promise<boolean> {
-    const user = await this.userRepository.findOne({
-      where: { email: email.toLowerCase() },
-    });
-    return !!user;
-  }
-
-  // Session management
-  async logout(userId: string, token: string) {
-    return this.authTokenService.invalidateToken(userId, token);
-  }
-
-  async logoutAllDevices(userId: string) {
-    return this.authTokenService.invalidateAllUserTokens(userId);
-  }
-
-  async logoutOtherDevices(userId: string, currentToken: string) {
-    return this.authTokenService.invalidateOtherUserTokens(
-      userId,
-      currentToken
-    );
-  }
-
-  async getUserSessions(userId: string) {
-    return this.authTokenService.getUserSessions(userId);
-  }
-
-  async invalidateSession(userId: string, sessionId: string) {
-    return this.authTokenService.invalidateSession(userId, sessionId);
-  }
-
-  async updateSessionActivity(userId: string, token: string) {
-    return this.authTokenService.updateSessionActivity(userId, token);
-  }
-
-  // Google OAuth methods
   async googleAuth(googleUser: any): Promise<User> {
-    // Find or create user from Google data
-    let user = await this.userRepository.findOne({
-      where: { google_id: googleUser.google_id },
-    });
+    let user = await this.userRepository.findOne({ where: { google_id: googleUser.google_id } });
 
     if (!user) {
-      // Create new user from Google data (always as tenant)
       user = this.userRepository.create({
         email: googleUser.email.toLowerCase(),
         google_id: googleUser.google_id,
@@ -175,70 +51,91 @@ export class AuthService {
       });
 
       user = await this.userRepository.save(user);
-
-      // Create tenant profile for all Google users
       await this.createTenantProfile(user);
       await this.tenantCvService.ensureShareUuid(user.id);
     } else {
-      // Update existing user with latest Google data
       user.full_name = googleUser.full_name;
-      // Only update avatar_url if user hasn't uploaded their own avatar
-      // Check if current avatar_url is from Google (contains googleusercontent.com or is null/empty)
-      const hasCustomAvatar = user.avatar_url && 
-        !user.avatar_url.includes('googleusercontent.com') &&
-        !user.avatar_url.includes('google.com');
-      
+      user.email_verified = googleUser.email_verified;
+
+      const hasCustomAvatar =
+        user.avatar_url &&
+        !user.avatar_url.includes("googleusercontent.com") &&
+        !user.avatar_url.includes("google.com");
+
       if (!hasCustomAvatar) {
-        // User doesn't have a custom avatar, update with Google's
         user.avatar_url = googleUser.avatar_url;
       }
-      // Always update email_verified status
-      user.email_verified = googleUser.email_verified;
+
       user = await this.userRepository.save(user);
     }
 
     return user;
   }
 
-  async createGoogleUserFromTempToken(tempToken: string) {
-    const tokenInfo = await this.authTokenService.getTempTokenInfo(tempToken);
+  async generateTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
+    const jti = uuidv4();
+    const accessToken = this.authTokenService.generateAccessToken(user);
+    const refreshToken = this.authTokenService.generateRefreshToken(user, jti);
+    await this.authTokenService.createSession(user.id, accessToken, jti);
+    return { accessToken, refreshToken };
+  }
 
-    if (!tokenInfo) {
-      throw new BadRequestException("Invalid temporary token");
+  async refreshTokens(rawRefreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
+    const verified = this.authTokenService.verifyRefreshToken(rawRefreshToken);
+    if (!verified) {
+      throw new UnauthorizedException("Invalid refresh token");
     }
 
-    const user = this.userRepository.create({
-      email: tokenInfo.googleUserData.email,
-      google_id: tokenInfo.googleUserData.google_id,
-      full_name: tokenInfo.googleUserData.full_name,
-      avatar_url: tokenInfo.googleUserData.avatar_url ?? undefined,
-      email_verified: tokenInfo.googleUserData.email_verified,
-      provider: "google",
-      role: UserRole.Tenant,
-      status: UserStatus.Active,
-    });
+    const { userId, jti: oldJti } = verified;
 
-    const saved = await this.userRepository.save(user);
-    const savedUser = Array.isArray(saved) ? saved[0] : saved;
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user || user.status !== UserStatus.Active) {
+      throw new UnauthorizedException("User not found or inactive");
+    }
 
-    await this.createTenantProfile(savedUser);
-    await this.tenantCvService.ensureShareUuid(savedUser.id);
+    const rotated = await this.authTokenService.rotateRefreshToken(userId, oldJti);
+    if (!rotated) {
+      // Token reuse detected — invalidate all sessions as a security measure
+      await this.authTokenService.invalidateAllUserTokens(userId);
+      throw new UnauthorizedException("Refresh token already used");
+    }
 
-    return savedUser;
-  }
-
-  async generateTokens(user: User) {
+    const newJti = uuidv4();
     const accessToken = this.authTokenService.generateAccessToken(user);
-    const refreshToken = this.authTokenService.generateRefreshToken(user);
-    await this.authTokenService.createSession(user.id, accessToken);
+    const refreshToken = this.authTokenService.generateRefreshToken(user, newJti);
+    await this.authTokenService.createSession(user.id, accessToken, newJti);
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { access_token: accessToken, refresh_token: refreshToken };
   }
 
-  // Profile creation methods
+  // --- Session management ---
+
+  async logout(userId: string, token: string): Promise<void> {
+    await this.authTokenService.invalidateToken(userId, token);
+  }
+
+  async logoutAllDevices(userId: string): Promise<void> {
+    await this.authTokenService.invalidateAllUserTokens(userId);
+  }
+
+  async logoutOtherDevices(userId: string, currentToken: string): Promise<void> {
+    await this.authTokenService.invalidateOtherUserTokens(userId, currentToken);
+  }
+
+  async getUserSessions(userId: string) {
+    return this.authTokenService.getUserSessions(userId);
+  }
+
+  async invalidateSession(userId: string, sessionId: string): Promise<void> {
+    await this.authTokenService.invalidateSession(userId, sessionId);
+  }
+
+  async updateSessionActivity(userId: string, token: string): Promise<void> {
+    await this.authTokenService.updateSessionActivity(userId, token);
+  }
+
+  // --- Private helpers ---
+
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
@@ -254,31 +151,6 @@ export class AuthService {
       additional_info: "",
       shortlisted_properties: [],
     });
-
     await this.tenantProfileRepository.save(tenantProfile);
-  }
-
-  private async createOperatorProfile(user: User): Promise<void> {
-    const operatorProfile = this.operatorProfileRepository.create({
-      userId: user.id,
-      full_name: undefined,
-      phone: "",
-      company_name: "",
-      date_of_birth: undefined,
-      nationality: "",
-      business_address: "",
-      company_registration: "",
-      vat_number: "",
-      license_number: "",
-      years_experience: undefined,
-      operating_areas: [],
-      property_types: [],
-      services: [],
-      business_description: "",
-      website: "",
-      linkedin: "",
-    });
-
-    await this.operatorProfileRepository.save(operatorProfile);
   }
 }

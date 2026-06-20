@@ -35,30 +35,15 @@ api.interceptors.response.use(
   },
 );
 
-// API methods for different resources
 export const authAPI = {
-  login: (data: { email: string; password: string }) =>
-    api.post("/auth/login", data),
+  getMe: () => api.get("/auth/me"),
 
-  register: (data: any) => api.post("/auth/register", data),
-
-  checkUser: (email: string) => api.post("/auth/check-user", { email }),
-
-  authenticate: (data: {
-    email: string;
-    password: string;
-    role?: "tenant" | "operator";
-    rememberMe?: boolean;
-  }) => api.post("/auth/authenticate", data),
-
-  googleAuth: (token: string) => api.post("/auth/google", { token }),
+  logout: () => api.post("/auth/logout"),
 
   updateProfile: (data: any) => api.put("/users/profile", data),
 
   updateUserRole: (userId: string, data: { role: string }) =>
     api.put(`/users/${userId}/role`, data),
-
-  getProfile: () => api.get("/users/profile"),
 
   uploadAvatar: async (file: File) => {
     const formData = new FormData();
@@ -68,13 +53,6 @@ export const authAPI = {
     });
     return response.data;
   },
-
-  getMe: () => api.get("/auth/me"),
-
-  logout: () => api.post("/auth/logout"),
-
-  getTempTokenInfo: (tempToken: string) =>
-    api.get(`/auth/temp-token/${tempToken}`),
 };
 
 export const usersAPI = {
