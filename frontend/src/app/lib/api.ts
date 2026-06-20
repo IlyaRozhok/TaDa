@@ -13,25 +13,66 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Response interceptor - handle 401 errors
+let isRefreshing = false;
+let pendingRequests: Array<(success: boolean) => void> = [];
+
+function flushPending(success: boolean) {
+  pendingRequests.forEach((cb) => cb(success));
+  pendingRequests = [];
+}
+
+function dispatchLogout() {
+  const currentPath = window.location.pathname;
+  if (
+    !currentPath.includes("/auth") &&
+    !currentPath.includes("/onboarding") &&
+    !currentPath.includes("/preferences")
+  ) {
+    import("@/store/store").then(({ store }) => {
+      store.dispatch(logout());
+    });
+  }
+}
+
+// Response interceptor — attempt token refresh on 401 before logging out
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      const currentPath = window.location.pathname;
+    const originalRequest = error.config;
 
-      if (
-        !currentPath.includes("/preferences") &&
-        !currentPath.includes("/auth") &&
-        !currentPath.includes("/onboarding")
-      ) {
-        import("@/store/store").then(({ store }) => {
-          store.dispatch(logout());
-        });
-      }
+    if (error.response?.status !== 401) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    // Never retry auth endpoints to avoid infinite loops
+    if (originalRequest.url?.includes("/auth/") || originalRequest._retry) {
+      dispatchLogout();
+      return Promise.reject(error);
+    }
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        pendingRequests.push((success) => {
+          if (success) resolve(api(originalRequest));
+          else reject(error);
+        });
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      await api.post("/auth/refresh");
+      flushPending(true);
+      isRefreshing = false;
+      return api(originalRequest);
+    } catch {
+      flushPending(false);
+      isRefreshing = false;
+      dispatchLogout();
+      return Promise.reject(error);
+    }
   },
 );
 
@@ -56,8 +97,6 @@ export const authAPI = {
 };
 
 export const usersAPI = {
-  getMe: () => api.get("/auth/me"),
-
   update: (id: string, data: any) => api.patch(`/users/${id}`, data),
 
   getAll: (params?: {

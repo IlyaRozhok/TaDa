@@ -105,11 +105,7 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
 
-      // Clear app state and any stale auth keys left from the old localStorage-based flow
       if (typeof window !== "undefined") {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionExpiry");
-        localStorage.removeItem("authCredentials");
         localStorage.removeItem("onboardingState");
         localStorage.removeItem("preferencesStep");
         localStorage.removeItem("preferencesDraft");
