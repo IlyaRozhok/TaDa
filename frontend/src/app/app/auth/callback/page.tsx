@@ -59,9 +59,7 @@ function AuthCallbackContent() {
           dispatch(fetchShortlist());
         }
 
-        setTimeout(async () => {
-          await redirectAfterLogin(user, router);
-        }, 100);
+        await redirectAfterLogin(user, router);
       } catch (err: any) {
         let errorMessage = "Authentication failed";
 

@@ -106,7 +106,7 @@ export default function ProfilePage() {
           return;
         }
 
-        const res = await authAPI.getProfile();
+        const res = await authAPI.getMe();
         const fetchedUser = res.data?.user || res.data;
 
         if (!fetchedUser || !fetchedUser.id) {

@@ -84,6 +84,10 @@ export class AuthService {
       await this.createTenantProfile(user);
       await this.tenantCvService.ensureShareUuid(user.id);
     } else {
+      if (user.status !== UserStatus.Active) {
+        throw new UnauthorizedException("Account is suspended or inactive");
+      }
+
       user.full_name = googleUser.full_name;
       user.email_verified = googleUser.email_verified;
 
