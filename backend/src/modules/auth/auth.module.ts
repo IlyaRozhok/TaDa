@@ -6,7 +6,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
-import { AuthTokenService } from "./services/auth-token.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { User } from "../../entities/user.entity";
@@ -28,9 +27,7 @@ import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
         }
         return {
           secret,
-          signOptions: {
-            expiresIn: configService.get("JWT_ACCESS_EXPIRES_IN", "1d"),
-          },
+          signOptions: { expiresIn: configService.get("JWT_ACCESS_EXPIRES_IN", "1d") },
         };
       },
       inject: [ConfigService],
@@ -39,7 +36,7 @@ import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
     forwardRef(() => TenantCvModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthTokenService, JwtStrategy, GoogleStrategy],
-  exports: [AuthService, AuthTokenService, JwtStrategy, GoogleStrategy, PassportModule, TypeOrmModule],
+  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  exports: [AuthService, JwtStrategy, GoogleStrategy, PassportModule, TypeOrmModule],
 })
 export class AuthModule {}
