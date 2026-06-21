@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { selectIsAuthenticated } from "@/store/slices/authSlice";
+import { selectIsAuthenticated, selectUser } from "@/store/slices/authSlice";
 import Link from "next/link";
 import Image from "next/image";
 import { X } from "lucide-react";
 import Header from "../../components/Header";
 import { useTranslation } from "../../hooks/useTranslation";
 import { loginKeys } from "../../lib/translationsKeys/loginTranslationKeys";
+import { getRedirectPath } from "../../utils/simpleRedirect";
 
 export default function AuthPage() {
   const [error, setError] = useState("");
@@ -18,13 +19,13 @@ export default function AuthPage() {
 
   const router = useRouter();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
 
-  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/app/units");
+    if (isAuthenticated && user) {
+      router.push(getRedirectPath(user));
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -58,12 +59,7 @@ export default function AuthPage() {
           }`}
           sizes="100vw"
           quality={85}
-          onLoadingComplete={() => {
-            setTimeout(() => setImageLoaded(true), 10);
-          }}
-          onLoad={() => {
-            setTimeout(() => setImageLoaded(true), 10);
-          }}
+          onLoad={() => setImageLoaded(true)}
         />
       </div>
 
