@@ -97,8 +97,6 @@ export const authAPI = {
 };
 
 export const usersAPI = {
-  update: (id: string, data: any) => api.patch(`/users/${id}`, data),
-
   getAll: (params?: {
     role?: string;
     limit?: number;

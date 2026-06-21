@@ -84,12 +84,12 @@ export class UsersController {
   async uploadAvatar(
     @Req() req: Request & { user: User },
     @UploadedFile() file: Express.Multer.File
-  ): Promise<User> {
+  ) {
     if (!file) {
       throw new BadRequestException("No file uploaded");
     }
     const user = await this.usersService.uploadAvatar(req.user.id, file);
-    return toUserResponse(user) as any;
+    return { user };
   }
 
   @Delete("account")

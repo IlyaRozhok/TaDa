@@ -87,21 +87,11 @@ export default function ProfilePage() {
         const hasSession = !!storeUser?.id && isAuthenticated;
 
         if (!hasSession) {
-          router.replace("/app/auth/login");
+          router.replace("/app/auth");
           return;
         }
 
         if (storeUser?.id) {
-          if (isMounted) setIsLoading(false);
-          return;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        if (!isMounted) return;
-
-        const { user: storeUserAfterWait } = store.getState().auth;
-        if (storeUserAfterWait?.id) {
           if (isMounted) setIsLoading(false);
           return;
         }
@@ -122,7 +112,7 @@ export default function ProfilePage() {
         if (isMounted) {
           setHasError(true);
           if (err.response?.status === 401) {
-            router.replace("/app/auth/login");
+            router.replace("/app/auth");
             return;
           }
         }
