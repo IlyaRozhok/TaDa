@@ -89,7 +89,7 @@ export class UsersController {
       throw new BadRequestException("No file uploaded");
     }
     const user = await this.usersService.uploadAvatar(req.user.id, file);
-    return { user };
+    return { user: toUserResponse(user) };
   }
 
   @Delete("account")

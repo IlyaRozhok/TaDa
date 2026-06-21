@@ -2,15 +2,11 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
-import {
-  selectUser,
-  setUser,
-} from "@/store/slices/authSlice";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/slices/authSlice";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import Footer from "../../components/Footer";
 import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/UnifiedProfileForm";
-import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
 import { useGetPreferencesQuery } from "@/store/slices/apiSlice";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
@@ -19,7 +15,6 @@ import { hasPreferencesLocationFilled } from "../../../entities/preferences/mode
 
 export default function ProfilePage() {
   const router = useRouter();
-  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -84,51 +79,26 @@ export default function ProfilePage() {
         // Fresh auth from store (avoid stale closure on `user` from first render).
         // SessionManager restores the session via cookie — no localStorage token needed.
         const { user: storeUser, isAuthenticated } = store.getState().auth;
-        const hasSession = !!storeUser?.id && isAuthenticated;
-
-        if (!hasSession) {
+        if (!storeUser?.id || !isAuthenticated) {
           router.replace("/app/auth");
           return;
         }
 
-        if (storeUser?.id) {
-          if (isMounted) setIsLoading(false);
-          return;
-        }
-
-        const res = await authAPI.getMe();
-        const fetchedUser = res.data?.user || res.data;
-
-        if (!fetchedUser || !fetchedUser.id) {
-          throw new Error("Invalid user data received from API");
-        }
-
-        if (isMounted) {
-          dispatch(setUser({ user: fetchedUser }));
-          setHasError(false);
-        }
+        if (isMounted) setIsLoading(false);
       } catch (err) {
         console.error("Failed to fetch profile:", err);
-        if (isMounted) {
-          setHasError(true);
-          if (err.response?.status === 401) {
-            router.replace("/app/auth");
-            return;
-          }
-        }
+        if (isMounted) setHasError(true);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
 
     initializeProfile();
-    
+
     return () => {
       isMounted = false;
     };
-  }, [router, dispatch]);
+  }, [router]);
 
   // Show loading state
   if (typeof window === "undefined" || isLoading) {
