@@ -19,22 +19,24 @@ export class AuthService {
     private s3Service: S3Service,
   ) {}
 
-  generateTokens(user: User): { accessToken: string; refreshToken: string } {
-    const accessToken = this.jwtService.sign(
-      { sub: user.id, email: user.email, role: user.role, status: user.status },
-      { expiresIn: "24h" },
-    );
-    const refreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh" },
-      { expiresIn: "7d" },
-    );
+  async generateTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        { sub: user.id, email: user.email, role: user.role, status: user.status },
+        { expiresIn: "24h" },
+      ),
+      this.jwtService.signAsync(
+        { sub: user.id, type: "refresh" },
+        { expiresIn: "7d" },
+      ),
+    ]);
     return { accessToken, refreshToken };
   }
 
   async refreshTokens(rawRefreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     let payload: { sub: string; type: string };
     try {
-      payload = this.jwtService.verify(rawRefreshToken);
+      payload = await this.jwtService.verifyAsync(rawRefreshToken);
     } catch {
       throw new UnauthorizedException("Invalid refresh token");
     }

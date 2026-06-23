@@ -80,7 +80,7 @@ export class AuthController {
       }
 
       const user = await this.authService.googleAuth(req.user);
-      const { accessToken, refreshToken } = this.authService.generateTokens(user);
+      const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
       res.cookie("access_token", accessToken, accessCookieOptions());
       res.cookie("refresh_token", refreshToken, refreshCookieOptions());
