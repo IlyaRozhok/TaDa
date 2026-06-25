@@ -4,7 +4,6 @@ import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { Auth } from "../../common/decorators/auth.decorator";
 import { User } from "../../entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
 
@@ -14,7 +13,8 @@ const accessCookieOptions = () => ({
   httpOnly: true,
   secure: isProd(),
   sameSite: "lax" as const,
-  maxAge: 24 * 60 * 60 * 1000,
+  // 10s for testing — change to 15 * 60 * 1000 (15m) before production
+  maxAge: 10 * 1000,
 });
 
 const refreshCookieOptions = () => ({
@@ -52,7 +52,11 @@ export class AuthController {
   }
 
   @Post("logout")
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    if (refreshToken) {
+      await this.authService.clearRefreshToken(refreshToken);
+    }
     res.clearCookie("access_token");
     res.clearCookie("refresh_token");
     return { message: "Logged out successfully" };
@@ -89,28 +93,5 @@ export class AuthController {
     } catch {
       return res.redirect(`${frontendUrl}/app/auth/callback?error=auth_failed`);
     }
-  }
-
-  @Get("google/config-check")
-  @Auth("admin")
-  async checkGoogleConfig() {
-    const clientID = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const callbackURL = process.env.GOOGLE_CALLBACK_URL;
-    const frontendUrl = process.env.FRONTEND_URL;
-
-    return {
-      configured: !!(clientID && clientSecret && callbackURL),
-      clientID: clientID ? `${clientID.substring(0, 15)}...` : "NOT SET",
-      clientSecret: clientSecret ? "SET" : "NOT SET",
-      callbackURL: callbackURL || "NOT SET",
-      frontendUrl: frontendUrl || "NOT SET",
-    };
-  }
-
-  @Get("test-token")
-  @Auth("admin")
-  async testToken(@CurrentUser() user: User) {
-    return { message: "Token is valid", user: { id: user.id, email: user.email, role: user.role } };
   }
 }

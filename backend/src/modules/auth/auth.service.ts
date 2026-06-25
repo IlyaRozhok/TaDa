@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
 import { Repository } from "typeorm";
+import { createHash } from "crypto";
 import { User, UserRole, UserStatus } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
@@ -19,17 +20,27 @@ export class AuthService {
     private s3Service: S3Service,
   ) {}
 
+  private hashToken(token: string): string {
+    return createHash("sha256").update(token).digest("hex");
+  }
+
   async generateTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         { sub: user.id, email: user.email, role: user.role, status: user.status },
-        { expiresIn: "24h" },
+        { expiresIn: "10s" },
       ),
       this.jwtService.signAsync(
         { sub: user.id, type: "refresh" },
         { expiresIn: "7d" },
       ),
     ]);
+
+    await this.userRepository.update(
+      { id: user.id },
+      { refresh_token_hash: this.hashToken(refreshToken) },
+    );
+
     return { accessToken, refreshToken };
   }
 
@@ -45,12 +56,29 @@ export class AuthService {
       throw new UnauthorizedException("Invalid token type");
     }
 
-    const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub },
+      select: { id: true, email: true, role: true, status: true, refresh_token_hash: true },
+    });
+
     if (!user || user.status !== UserStatus.Active) {
       throw new UnauthorizedException("User not found or inactive");
     }
 
+    if (!user.refresh_token_hash || user.refresh_token_hash !== this.hashToken(rawRefreshToken)) {
+      throw new UnauthorizedException("Refresh token reuse or invalidation detected");
+    }
+
     return this.generateTokens(user);
+  }
+
+  async clearRefreshToken(rawRefreshToken: string): Promise<void> {
+    try {
+      const payload = await this.jwtService.verifyAsync<{ sub: string }>(rawRefreshToken);
+      await this.userRepository.update({ id: payload.sub }, { refresh_token_hash: null });
+    } catch {
+      // token already invalid — nothing to clear
+    }
   }
 
   async findUserWithProfile(userId: string): Promise<User | null> {

@@ -44,8 +44,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Never retry auth endpoints to avoid infinite loops
-    if (originalRequest.url?.includes("/auth/") || originalRequest._retry) {
+    // Never retry the refresh endpoint itself — would cause an infinite loop
+    if (originalRequest.url?.includes("/auth/refresh") || originalRequest._retry) {
       dispatchLogout();
       return Promise.reject(error);
     }
