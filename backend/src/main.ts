@@ -20,7 +20,6 @@ async function bootstrap() {
   app.use(require("express").urlencoded({ limit: "10mb", extended: true }));
   const corsOrigins = [
     "http://localhost:3000",
-    "http://localhost:3001",
     "https://ta-da.co",
     "https://www.ta-da.co",
     ...(process.env.CORS_ORIGIN

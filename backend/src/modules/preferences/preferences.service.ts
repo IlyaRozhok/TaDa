@@ -33,10 +33,7 @@ export class PreferencesService {
       throw new NotFoundException("User not found");
     }
 
-    if (
-      user.role === UserRole.Operator ||
-      (user.roles && user.roles.includes("operator"))
-    ) {
+    if (user.role === UserRole.Operator) {
       throw new ForbiddenException("Only tenants can set preferences");
     }
 
