@@ -190,4 +190,4 @@ Until the global baseline is clean, checks apply to changed files; global error 
 - [ ] New component placed in its FSD layer (not `src/app/components/`)
 - [ ] User-visible string uses `useTranslation()`; key added to `en.json`; `localazy:sync` run
 - [ ] No token stored outside httpOnly cookies
-- [ ] Behaviour-changing refactor is covered by a test pinning prior behaviour
+- [ ] New clean code (post-FSD migration) has unit tests; do not write tests for legacy components being rewritten
