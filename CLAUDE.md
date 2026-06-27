@@ -33,25 +33,26 @@ Feature branches: `feature/<name>`, `fix/<name>`, `refactor/<name>` — always o
 
 ## Safety net before refactoring
 
-The codebase currently has **zero tests**. This is precisely what makes refactoring
-dangerous, not a reason to skip tests.
+Structural refactoring must not begin until golden-path tests are green (Phase 2 of the
+roadmap). Until then, only bug fixes and housekeeping (Phase 0/1) are safe to run.
 
-- Before refactoring any non-trivial module, first add **characterization tests** that
-  pin its *current observable behaviour* (even if that behaviour is imperfect). Refactor
-  only while those tests stay green.
-- Setting up the test runner (Jest for backend, Vitest + React Testing Library for
-  frontend) is a **prerequisite task**, not a separate initiative — see finding I4.
+- **Golden-path e2e/integration tests come first** (Phase 2) and must cover the 5 critical
+  user journeys: auth, property creation, matching, shortlist, admin basics. These tests
+  are the regression guard for all subsequent refactoring.
+- **Unit tests are written only for new, clean code** — after a feature has been refactored
+  into its FSD layer. Never write unit tests for legacy code that is about to be rewritten
+  or deleted; it wastes effort and anchors bad structure.
 - Type-checking is necessary but **not sufficient** verification. "Verify by clicking
   through the app" does not catch silent regressions in DI-wired or 15K-line code.
-- Start with a thin smoke layer over the critical flows: auth/login, property list,
-  shortlist. Expand coverage as you touch each area.
+- Test runner setup (Jest for backend, Vitest + React Testing Library for frontend) is a
+  **Phase 2 prerequisite**, not an optional initiative.
 
 ## Refactoring philosophy
 
 This codebase is being incrementally simplified. Each step must keep observable behaviour
 **identical**, and the order is chosen for safety, not speed:
 
-1. **Establish a safety net** — characterization tests for the area you are about to touch.
+1. **Establish a safety net** — golden-path tests must already be green (Phase 2 complete) before any structural refactoring starts.
 2. **Consolidate duplicates** — same thing in two places: merge into one, verify identical behaviour.
 3. **Move to the right layer** — relocate misplaced files to their canonical location.
 4. **Simplify logic** — only after the above.
@@ -126,7 +127,7 @@ error count must **never increase** (ratchet).
 - [ ] No `TODO`/`FIXME` without a linked issue
 - [ ] No `.env.*` / secret / `*.tfstate*` files staged
 - [ ] Feature branch off `develop`; PR targets `develop`
-- [ ] Behaviour-changing refactors are covered by tests pinning the prior behaviour
+- [ ] New clean code (post-FSD migration) has unit tests; legacy code being deleted does not
 
 ## Known duplication to resolve (priority list)
 
