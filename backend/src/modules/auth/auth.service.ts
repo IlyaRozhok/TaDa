@@ -1,4 +1,12 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
+
+export interface GoogleUser {
+  google_id: string;
+  email: string;
+  full_name: string;
+  avatar_url: string;
+  email_verified: boolean;
+}
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
 import { Repository } from "typeorm";
@@ -28,7 +36,7 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         { sub: user.id, email: user.email, role: user.role, status: user.status },
-        { expiresIn: "10s" },
+        { expiresIn: "15m" },
       ),
       this.jwtService.signAsync(
         { sub: user.id, type: "refresh" },
@@ -92,7 +100,7 @@ export class AuthService {
     return user;
   }
 
-  async googleAuth(googleUser: any): Promise<User> {
+  async googleAuth(googleUser: GoogleUser): Promise<User> {
     let user = await this.userRepository.findOne({ where: { google_id: googleUser.google_id } });
 
     if (!user) {

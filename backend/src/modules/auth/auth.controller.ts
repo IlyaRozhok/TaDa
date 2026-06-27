@@ -1,6 +1,6 @@
 import { Controller, Post, UseGuards, Get, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
-import { AuthService } from "./auth.service";
+import { AuthService, GoogleUser } from "./auth.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
@@ -13,8 +13,7 @@ const accessCookieOptions = () => ({
   httpOnly: true,
   secure: isProd(),
   sameSite: "lax" as const,
-  // 10s for testing — change to 15 * 60 * 1000 (15m) before production
-  maxAge: 10 * 1000,
+  maxAge: 15 * 60 * 1000,
 });
 
 const refreshCookieOptions = () => ({
@@ -83,7 +82,7 @@ export class AuthController {
         return res.redirect(`${frontendUrl}/app/auth/callback?error=no_user_data`);
       }
 
-      const user = await this.authService.googleAuth(req.user);
+      const user = await this.authService.googleAuth(req.user as GoogleUser);
       const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
       res.cookie("access_token", accessToken, accessCookieOptions());
