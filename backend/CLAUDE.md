@@ -37,6 +37,7 @@ Each module owns exactly:
 - Known redundancy: `User` already has `full_name`, `phone`, `date_of_birth`, `nationality`,
   `address`; `TenantProfile`/`OperatorProfile` duplicate these. Add no more duplicate
   columns; consolidation is a roadmap target.
+- If you change entity run migrations using command from package.json, never create them manually.
 
 ## Auth & guards
 - `@Auth()` = `JwtAuthGuard` + `@ApiBearerAuth()`; `@Roles(UserRole.Admin)` + `RolesGuard`
