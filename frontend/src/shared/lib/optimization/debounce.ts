@@ -2,7 +2,7 @@
  * Debounce and throttle utilities for performance optimization
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Debounce function - delays execution until after delay has passed since last call
@@ -163,6 +163,3 @@ export function advancedDebounce<Args extends any[]>(
     }, delay);
   };
 }
-
-// Fix missing import
-import { useState } from 'react';
