@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { EventEmitterModule } from "@nestjs/event-emitter";
 import { APP_GUARD } from "@nestjs/core";
 
 import { AppController } from "./app.controller";
@@ -16,6 +17,7 @@ import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { BuildingModule } from "./modules/building/building.module";
 import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { S3Module } from "./common/services/s3.module";
 import { typeOrmConfig } from "./database/typeorm.config";
 import {SentryModule} from "@sentry/nestjs/setup";
@@ -48,6 +50,7 @@ import {SentryModule} from "@sentry/nestjs/setup";
         limit: 200, // 200 requests per minute
       }
     ]),
+    EventEmitterModule.forRoot(),
     S3Module,
 
     AuthModule,
@@ -60,6 +63,7 @@ import {SentryModule} from "@sentry/nestjs/setup";
     BuildingModule,
     TenantCvModule,
     BookingRequestModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 export interface GoogleUser {
   google_id: string;
@@ -15,6 +16,7 @@ import { User, UserRole, UserStatus } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
 import { S3Service } from "../../common/services/s3.service";
+import { UserCreatedEvent } from "../notifications/events/user-created.event";
 
 @Injectable()
 export class AuthService {
@@ -26,6 +28,7 @@ export class AuthService {
     private jwtService: JwtService,
     private tenantCvService: TenantCvService,
     private s3Service: S3Service,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private hashToken(token: string): string {
@@ -118,6 +121,11 @@ export class AuthService {
       user = await this.userRepository.save(user);
       await this.createTenantProfile(user);
       await this.tenantCvService.ensureShareUuid(user.id);
+
+      this.eventEmitter.emit(
+        "user.created",
+        new UserCreatedEvent(user.id, user.email, user.role, user.created_at),
+      );
     } else {
       if (user.status !== UserStatus.Active) {
         throw new UnauthorizedException("Account is suspended or inactive");
