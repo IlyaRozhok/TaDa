@@ -1,5 +1,5 @@
 # ---------- Builder ----------
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install all dependencies (dev deps also needed for build)
@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 # ---------- Production ----------
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /app
 
 # Create app user
