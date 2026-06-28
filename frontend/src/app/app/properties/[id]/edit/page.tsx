@@ -56,7 +56,7 @@ export default function EditPropertyPage() {
     }
 
     if (property && property.operator_id !== user.id && userRole !== "admin") {
-      router.push("/app/dashboard/operator");
+      router.push("/app/properties/manage");
       return;
     }
   }, [isAuthenticated, user, property, router]);

@@ -226,7 +226,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
 
     // Check if operator role
     if (user.role === "operator") {
-      router.push("/app/dashboard/operator");
+      router.push("/app/properties/manage");
       return;
     }
 
