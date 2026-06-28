@@ -1293,7 +1293,7 @@ export default function PropertyPublicPage() {
                       showTruncation && !showFullDescription
                         ? "line-clamp-3"
                         : ""
-                    } overflow-hidden`}
+                    } overflow-hidden whitespace-pre-wrap`}
                   >
                     {description}
                   </div>
