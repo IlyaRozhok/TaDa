@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Repository } from "typeorm";
 import { v4 as uuidv4 } from "uuid";
 import { TenantCv } from "../../entities/tenant-cv.entity";
@@ -8,6 +9,7 @@ import { TenantCvResponseDto } from "./dto/tenant-cv-response.dto";
 import { UserQueryService } from "../users/services/user-query.service";
 import { buildTenantCvResponse } from "./tenant-cv.mapper";
 import { S3Service } from "../../common/services/s3.service";
+import { TenantCvSharedEvent } from "../notifications/events/tenant-cv-shared.event";
 
 @Injectable()
 export class TenantCvService {
@@ -15,7 +17,8 @@ export class TenantCvService {
     @InjectRepository(TenantCv)
     private readonly tenantCvRepository: Repository<TenantCv>,
     private readonly userQueryService: UserQueryService,
-    private readonly s3Service: S3Service
+    private readonly s3Service: S3Service,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async getForUser(userId: string): Promise<TenantCvResponseDto> {
@@ -78,6 +81,17 @@ export class TenantCvService {
     }
 
     return { share_uuid: cv.share_uuid };
+  }
+
+  async shareCv(userId: string, userEmail: string): Promise<{ share_uuid: string }> {
+    const result = await this.ensureShareUuid(userId);
+
+    this.eventEmitter.emit(
+      "tenant-cv.shared",
+      new TenantCvSharedEvent(userId, userEmail, result.share_uuid),
+    );
+
+    return result;
   }
 
   private async findCvByUserId(userId: string) {

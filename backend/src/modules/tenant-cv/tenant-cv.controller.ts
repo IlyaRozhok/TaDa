@@ -50,7 +50,7 @@ export class TenantCvController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async createShareLink(@CurrentUser() user: any) {
-    return this.tenantCvService.ensureShareUuid(user.id);
+    return this.tenantCvService.shareCv(user.id, user.email);
   }
 
   @Get("admin/:userId")

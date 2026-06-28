@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Repository } from "typeorm";
 import {
   BookingRequest,
@@ -12,6 +13,7 @@ import {
 import { Property } from "../../entities/property.entity";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import { TenantCv } from "../../entities/tenant-cv.entity";
+import { BookingRequestCreatedEvent } from "../notifications/events/booking-request-created.event";
 
 @Injectable()
 export class BookingRequestService {
@@ -19,7 +21,8 @@ export class BookingRequestService {
     @InjectRepository(BookingRequest)
     private readonly bookingRequestRepository: Repository<BookingRequest>,
     @InjectRepository(Property)
-    private readonly propertyRepository: Repository<Property>
+    private readonly propertyRepository: Repository<Property>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -74,7 +77,9 @@ export class BookingRequestService {
       existing.date_from = dateFrom;
       existing.date_to = dateTo;
       existing.description = description;
-      return this.bookingRequestRepository.save(existing);
+      const updated = await this.bookingRequestRepository.save(existing);
+      this.emitBookingRequestCreated(updated, property);
+      return updated;
     }
 
     const request = this.bookingRequestRepository.create({
@@ -90,10 +95,14 @@ export class BookingRequestService {
 
     const saved = await this.bookingRequestRepository.save(request);
 
-    return this.bookingRequestRepository.findOneOrFail({
+    const result = await this.bookingRequestRepository.findOneOrFail({
       where: { id: saved.id },
       relations: ["property", "tenant"],
     });
+
+    this.emitBookingRequestCreated(result, property);
+
+    return result;
   }
 
   async findAll(status?: BookingRequestStatus): Promise<BookingRequest[]> {
@@ -142,5 +151,20 @@ export class BookingRequestService {
 
     request.status = status;
     return this.bookingRequestRepository.save(request);
+  }
+
+  private emitBookingRequestCreated(request: BookingRequest, property: Property): void {
+    this.eventEmitter.emit(
+      "booking-request.created",
+      new BookingRequestCreatedEvent(
+        request.id,
+        request.email ?? "",
+        request.tenant?.full_name ?? null,
+        property.id,
+        property.title ?? null,
+        request.date_from?.toISOString().split("T")[0] ?? null,
+        request.date_to?.toISOString().split("T")[0] ?? null,
+      ),
+    );
   }
 }
