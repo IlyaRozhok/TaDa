@@ -141,6 +141,40 @@ export class AuthService {
     return user;
   }
 
+  async findOrCreateFixtureUser(role: "tenant" | "admin" | "fresh-tenant"): Promise<User> {
+    const fixtureMap = {
+      tenant: { email: "e2e-tenant@tada-test.internal", full_name: "E2E Tenant", dbRole: UserRole.Tenant },
+      "fresh-tenant": { email: "e2e-fresh-tenant@tada-test.internal", full_name: "E2E Fresh Tenant", dbRole: UserRole.Tenant },
+      admin: { email: "e2e-admin@tada-test.internal", full_name: "E2E Admin", dbRole: UserRole.Admin },
+    };
+
+    const fixture = fixtureMap[role];
+    let user = await this.userRepository.findOne({ where: { email: fixture.email } });
+
+    if (!user) {
+      user = this.userRepository.create({
+        email: fixture.email,
+        full_name: fixture.full_name,
+        email_verified: true,
+        provider: "e2e",
+        role: fixture.dbRole,
+        status: UserStatus.Active,
+      });
+      user = await this.userRepository.save(user);
+
+      if (fixture.dbRole === UserRole.Tenant) {
+        await this.createTenantProfile(user);
+        await this.tenantCvService.ensureShareUuid(user.id);
+      }
+    }
+
+    if (user.status !== UserStatus.Active) {
+      throw new Error(`Fixture user ${fixture.email} is not active`);
+    }
+
+    return user;
+  }
+
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
