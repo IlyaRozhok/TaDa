@@ -40,7 +40,7 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
     property.square_meters ?? property.total_area ?? property.living_area;
 
   const formatAreaSqm = (sqm: number) =>
-    `${Math.round(sqm)} ${t(k.sqFt)}`.trim();
+    `${Math.round(sqm * 10.764)} ${t(k.sqFt)}`.trim();
 
   const availabilityText = property.available_from
     ? (() => {
