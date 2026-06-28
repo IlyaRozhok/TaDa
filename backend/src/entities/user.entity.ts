@@ -47,9 +47,6 @@ export class User {
   @Column({ select: false, nullable: true })
   password: string;
 
-  @Column({ select: false, nullable: true, type: "varchar" })
-  refresh_token_hash: string | null;
-
   @ApiProperty({
     description: "Primary user role",
     example: "tenant",

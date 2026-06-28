@@ -14,7 +14,7 @@ import { S3Service } from "../../common/services/s3.service";
     ConfigModule,
     MulterModule.register({
       limits: {
-        fileSize: 50 * 1024 * 1024, // 50MB - enforced by Nginx
+        fileSize: 1024 * 1024 * 1024, // 1GB - практически без ограничений
       },
     }),
   ],

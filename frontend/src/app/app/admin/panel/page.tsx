@@ -9,7 +9,7 @@ import Link from "next/link";
 // } from "@/store/slices/authSlice";
 import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
-import { useDebounce } from "../../../hooks/useDebounce";
+// import { useDebounce } from "../../../hooks/useDebounce";
 import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
@@ -86,10 +86,6 @@ function AdminPanelContent() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const limit = 20;
-  const debouncedSearch = useDebounce(searchTerm, 400);
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
     direction: "desc",
@@ -144,9 +140,8 @@ function AdminPanelContent() {
     }
   }, [bookingQueryData]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  // Debounced search term
+  // const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
   // Notification management
   const addNotification = (
@@ -177,19 +172,13 @@ function AdminPanelContent() {
         };
 
         if (activeSection === "users") {
-          const params = new URLSearchParams({
-            page: String(page),
-            limit: String(limit),
-          });
-          if (debouncedSearch) params.set("search", debouncedSearch);
-          const response = await fetch(`${apiUrl}/users?${params}`, {
+          const response = await fetch(`${apiUrl}/users`, {
             credentials: "include",
             headers,
           });
           if (response.ok) {
             const data = await response.json();
             setUsers(data.users || data || []);
-            setTotalPages(data.totalPages || 1);
           }
         } else if (activeSection === "buildings") {
           const response = await fetch(`${apiUrl}/buildings`, {
@@ -204,11 +193,13 @@ function AdminPanelContent() {
       } catch (error) {
         console.error("Error loading data:", error);
         addNotification("error", "Failed to load data");
+      } finally {
+        // no-op for requests: RTK Query управляет своим loading
       }
     };
 
     loadData();
-  }, [activeSection, debouncedSearch, page]);
+  }, [activeSection]);
 
   // Event handlers
   const handleView = (item: User | Building | Property) => {
@@ -800,7 +791,6 @@ function AdminPanelContent() {
             users={users}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            onSearchChange={(v) => setSearchTerm(v)}
             searchLoading={false}
             sort={sort}
             setSort={setSort}
@@ -808,9 +798,6 @@ function AdminPanelContent() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={(p) => setPage(p)}
           />
         );
       case "buildings":
