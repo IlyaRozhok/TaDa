@@ -58,7 +58,7 @@ export function getRedirectPath(user: any): string {
     case "admin":
       return "/app/units";
     case "operator":
-      return "/app/properties/manage";
+      return "/app/units";
     case "tenant":
       return "/app/units";
     default:

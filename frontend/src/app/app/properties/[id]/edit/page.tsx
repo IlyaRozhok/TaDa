@@ -56,7 +56,7 @@ export default function EditPropertyPage() {
     }
 
     if (property && property.operator_id !== user.id && userRole !== "admin") {
-      router.push("/app/properties/manage");
+      router.push("/app/units");
       return;
     }
   }, [isAuthenticated, user, property, router]);
@@ -65,7 +65,7 @@ export default function EditPropertyPage() {
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
-        router.push("/app/properties/manage");
+        router.push("/app/units");
       }, 2000);
       return () => clearTimeout(timer);
     }

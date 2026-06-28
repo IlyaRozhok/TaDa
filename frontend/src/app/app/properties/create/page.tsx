@@ -509,7 +509,7 @@ export default function CreatePropertyPage() {
             "Property created successfully, but some media files failed to upload. You can add them later from the property management page.",
           );
           setTimeout(() => {
-            router.push("/app/properties/manage");
+            router.push("/app/units");
           }, 3000);
           return;
         }
@@ -518,7 +518,7 @@ export default function CreatePropertyPage() {
       // Success
       setSuccess("Property created successfully!");
       setTimeout(() => {
-        router.push("/app/properties/manage");
+        router.push("/app/units");
       }, 2000);
     } catch (err: unknown) {
       console.error("Error creating property:", err);
@@ -540,7 +540,7 @@ export default function CreatePropertyPage() {
           <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-lg border border-slate-200/50 backdrop-blur-sm relative">
             {/* Back Button - Top Right */}
             <button
-              onClick={() => router.push("/app/properties/manage")}
+              onClick={() => router.push("/app/units")}
               className="absolute top-4 right-4 sm:top-6 sm:right-6 inline-flex items-center justify-center w-10 h-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200 rounded-full group"
               title="Back to Dashboard"
             >

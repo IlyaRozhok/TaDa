@@ -200,13 +200,7 @@ export default function TenantUnitsPage() {
       return;
     }
 
-    // Redirect roles that should not stay on units.
-    if (user.role === "operator") {
-      router.replace("/app/properties/manage");
-      return;
-    }
-
-    if (user.role !== "admin" && user.role !== "tenant") {
+    if (user.role !== "admin" && user.role !== "tenant" && user.role !== "operator") {
       router.replace("/");
       return;
     }
