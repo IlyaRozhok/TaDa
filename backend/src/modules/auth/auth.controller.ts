@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Get, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Controller, Post, UseGuards, Get, Req, Res, UnauthorizedException, Body, ForbiddenException } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { AuthService, GoogleUser } from "./auth.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -6,6 +6,7 @@ import { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
+import { TestLoginDto } from "./dto/test-login.dto";
 
 const isProd = () => process.env.NODE_ENV === "production";
 
@@ -59,6 +60,23 @@ export class AuthController {
     res.clearCookie("access_token");
     res.clearCookie("refresh_token");
     return { message: "Logged out successfully" };
+  }
+
+  // --- Test auth bypass (non-production only) ---
+
+  @Post("test-login")
+  async testLogin(@Body() dto: TestLoginDto, @Res({ passthrough: true }) res: Response) {
+    if (process.env.NODE_ENV === "production") {
+      throw new ForbiddenException("Not available in production");
+    }
+
+    const user = await this.authService.findOrCreateFixtureUser(dto.role);
+    const { accessToken, refreshToken } = await this.authService.generateTokens(user);
+
+    res.cookie("access_token", accessToken, accessCookieOptions());
+    res.cookie("refresh_token", refreshToken, refreshCookieOptions());
+
+    return { success: true, user: { id: user.id, email: user.email, role: user.role } };
   }
 
   // --- Google OAuth ---
