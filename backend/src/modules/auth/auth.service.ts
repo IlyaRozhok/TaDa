@@ -142,6 +142,17 @@ export class AuthService {
   }
 
   async findOrCreateFixtureUser(role: "tenant" | "admin" | "fresh-tenant"): Promise<User> {
+    // Profile fields must be set so isProfileComplete() returns true in the frontend,
+    // which makes SimpleDashboardRouter skip the onboarding redirect for admin users.
+    const sharedProfile = {
+      first_name: "E2E",
+      last_name: role === "admin" ? "Admin" : "Tenant",
+      address: "1 Test Street, London",
+      phone: "+447700900001",
+      date_of_birth: new Date("1990-01-01"),
+      nationality: "British",
+    };
+
     const fixtureMap = {
       tenant: { email: "e2e-tenant@tada-test.internal", full_name: "E2E Tenant", dbRole: UserRole.Tenant },
       "fresh-tenant": { email: "e2e-fresh-tenant@tada-test.internal", full_name: "E2E Fresh Tenant", dbRole: UserRole.Tenant },
@@ -159,6 +170,7 @@ export class AuthService {
         provider: "e2e",
         role: fixture.dbRole,
         status: UserStatus.Active,
+        ...sharedProfile,
       });
       user = await this.userRepository.save(user);
 
@@ -166,6 +178,10 @@ export class AuthService {
         await this.createTenantProfile(user);
         await this.tenantCvService.ensureShareUuid(user.id);
       }
+    } else {
+      // Ensure profile fields are always up-to-date (handles fixtures created before this fix)
+      await this.userRepository.update({ id: user.id }, sharedProfile);
+      user = (await this.userRepository.findOne({ where: { id: user.id } })) as User;
     }
 
     if (user.status !== UserStatus.Active) {
