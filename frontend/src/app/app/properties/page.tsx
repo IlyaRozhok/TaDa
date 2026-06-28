@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PropertyFilters, SortOptions, PaginationOptions } from "../../lib/api";
 import { Property } from "../../types";
-import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
+import { PropertyGridWithLoader } from "@/widgets/property";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { useFilteredProperties } from "../../hooks/useProperties";
 import { useDebounce } from "../../hooks/useDebounce";
