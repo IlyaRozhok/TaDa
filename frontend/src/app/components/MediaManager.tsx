@@ -101,7 +101,6 @@ export default function MediaManager({
   };
 
   const validateFile = (file: File): string | null => {
-    // Check file type
     const allowedTypes = [
       "image/jpeg",
       "image/jpg",
@@ -119,6 +118,10 @@ export default function MediaManager({
 
     if (!allowedTypes.includes(file.type)) {
       return `File "${file.name}" has an unsupported format.`;
+    }
+
+    if (file.type.startsWith("image/") && file.size > 10 * 1024 * 1024) {
+      return `File "${file.name}" exceeds the 10MB limit.`;
     }
 
     return null;
@@ -344,7 +347,7 @@ export default function MediaManager({
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*,video/*"
+          accept="image/jpeg,image/png,image/webp,video/*"
           onChange={handleFileInputChange}
           disabled={disabled}
           className="hidden"

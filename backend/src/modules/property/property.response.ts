@@ -24,6 +24,7 @@ export type PublicPropertyResponse = {
   property_amenities?: string[];
   deposit?: number | null;
   bills?: string | null;
+  descriptions?: string | null;
 };
 
 export const toPublicProperty = (
@@ -87,5 +88,6 @@ export const toPublicProperty = (
       : [],
     deposit,
     bills: property.bills ?? null,
+    descriptions: property.descriptions ?? null,
   };
 };

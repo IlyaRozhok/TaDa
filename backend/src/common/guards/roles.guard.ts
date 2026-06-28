@@ -22,22 +22,7 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    // Проверяем, есть ли у пользователя хотя бы одна из требуемых ролей
-    // Поддерживаем как новый формат (role), так и старый (roles). Сравниваем как строки (enum/string).
     const userRoleStr = user.role != null ? String(user.role) : "";
-    const hasRequiredRole = requiredRoles.some(
-      (r) => String(r) === userRoleStr,
-    );
-    if (hasRequiredRole) {
-      return true;
-    }
-    if (Array.isArray(user.roles)) {
-      const hasRole = requiredRoles.some((role) =>
-        user.roles.some((ur) => String(ur) === String(role)),
-      );
-      return hasRole;
-    }
-
-    return false;
+    return requiredRoles.some((r) => String(r) === userRoleStr);
   }
 }

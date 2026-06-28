@@ -11,6 +11,8 @@ import {
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  BadRequestException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -125,33 +127,28 @@ export class BuildingController {
   @ApiResponse({ status: 201, description: "Logo uploaded successfully" })
   async uploadLogo(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new Error("No file provided");
+      throw new BadRequestException("No file provided");
     }
 
-    try {
-      if (!file.mimetype.startsWith("image/")) {
-        throw new Error("Invalid file type. Only images are allowed.");
-      }
-
-      const fileKey = this.s3Service.generateFileKey(
-        file.originalname,
-        "building-logo",
-      );
-      const uploadResult = await this.s3Service.uploadFile(
-        file.buffer,
-        fileKey,
-        file.mimetype,
-        file.originalname,
-      );
-
-      return {
-        url: uploadResult.url,
-        key: uploadResult.key,
-      };
-    } catch (error) {
-      console.error(`Error uploading logo ${file.originalname}:`, error);
-      throw new Error(`Failed to upload logo: ${error.message}`);
+    if (!file.mimetype.startsWith("image/")) {
+      throw new BadRequestException("Invalid file type. Only images are allowed.");
     }
+
+    const fileKey = this.s3Service.generateFileKey(
+      file.originalname,
+      "building-logo",
+    );
+    const uploadResult = await this.s3Service.uploadFile(
+      file.buffer,
+      fileKey,
+      file.mimetype,
+      file.originalname,
+    );
+
+    return {
+      url: uploadResult.url,
+      key: uploadResult.key,
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -164,33 +161,28 @@ export class BuildingController {
   @ApiResponse({ status: 201, description: "Video uploaded successfully" })
   async uploadVideo(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new Error("No file provided");
+      throw new BadRequestException("No file provided");
     }
 
-    try {
-      if (!file.mimetype.startsWith("video/")) {
-        throw new Error("Invalid file type. Only videos are allowed.");
-      }
-
-      const fileKey = this.s3Service.generateFileKey(
-        file.originalname,
-        "building-video",
-      );
-      const uploadResult = await this.s3Service.uploadFile(
-        file.buffer,
-        fileKey,
-        file.mimetype,
-        file.originalname,
-      );
-
-      return {
-        url: uploadResult.url,
-        key: uploadResult.key,
-      };
-    } catch (error) {
-      console.error(`Error uploading video ${file.originalname}:`, error);
-      throw new Error(`Failed to upload video: ${error.message}`);
+    if (!file.mimetype.startsWith("video/")) {
+      throw new BadRequestException("Invalid file type. Only videos are allowed.");
     }
+
+    const fileKey = this.s3Service.generateFileKey(
+      file.originalname,
+      "building-video",
+    );
+    const uploadResult = await this.s3Service.uploadFile(
+      file.buffer,
+      fileKey,
+      file.mimetype,
+      file.originalname,
+    );
+
+    return {
+      url: uploadResult.url,
+      key: uploadResult.key,
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -203,47 +195,41 @@ export class BuildingController {
   @ApiResponse({ status: 201, description: "Photos uploaded successfully" })
   async uploadPhotos(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
-      throw new Error("No files provided");
+      throw new BadRequestException("No files provided");
+    }
+
+    const maxSize = 10 * 1024 * 1024;
+    for (const file of files) {
+      if (file.size > maxSize) {
+        throw new BadRequestException(`File ${file.originalname} exceeds the 10MB limit`);
+      }
     }
 
     const uploadPromises = files.map(async (file) => {
-      try {
-        if (!file.mimetype.startsWith("image/")) {
-          throw new Error(
-            `Invalid file type for ${file.originalname}. Only images are allowed.`,
-          );
-        }
-
-        const fileKey = this.s3Service.generateFileKey(
-          file.originalname,
-          "building-photo",
-        );
-        const uploadResult = await this.s3Service.uploadFile(
-          file.buffer,
-          fileKey,
-          file.mimetype,
-          file.originalname,
-        );
-
-        return {
-          url: uploadResult.url,
-          key: uploadResult.key,
-        };
-      } catch (error) {
-        console.error(`Error uploading photo ${file.originalname}:`, error);
-        throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`,
+      if (!file.mimetype.startsWith("image/")) {
+        throw new BadRequestException(
+          `Invalid file type for ${file.originalname}. Only images are allowed.`,
         );
       }
+
+      const fileKey = this.s3Service.generateFileKey(
+        file.originalname,
+        "building-photo",
+      );
+      const uploadResult = await this.s3Service.uploadFile(
+        file.buffer,
+        fileKey,
+        file.mimetype,
+        file.originalname,
+      );
+
+      return {
+        url: uploadResult.url,
+        key: uploadResult.key,
+      };
     });
 
-    try {
-      const results = await Promise.all(uploadPromises);
-      return results;
-    } catch (error) {
-      console.error("Photo upload failed:", error);
-      throw error;
-    }
+    return Promise.all(uploadPromises);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -256,46 +242,33 @@ export class BuildingController {
   @ApiResponse({ status: 201, description: "Documents uploaded successfully" })
   async uploadDocuments(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
-      throw new Error("No files provided");
+      throw new BadRequestException("No files provided");
     }
 
     const uploadPromises = files.map(async (file) => {
-      try {
-        if (file.mimetype !== "application/pdf") {
-          throw new Error(
-            `Invalid file type for ${file.originalname}. Only PDF files are allowed.`,
-          );
-        }
-
-        const fileKey = this.s3Service.generateFileKey(
-          file.originalname,
-          "building-document",
-        );
-        const uploadResult = await this.s3Service.uploadFile(
-          file.buffer,
-          fileKey,
-          file.mimetype,
-          file.originalname,
-        );
-
-        return {
-          url: uploadResult.url,
-          key: uploadResult.key,
-        };
-      } catch (error) {
-        console.error(`Error uploading document ${file.originalname}:`, error);
-        throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`,
+      if (file.mimetype !== "application/pdf") {
+        throw new BadRequestException(
+          `Invalid file type for ${file.originalname}. Only PDF files are allowed.`,
         );
       }
+
+      const fileKey = this.s3Service.generateFileKey(
+        file.originalname,
+        "building-document",
+      );
+      const uploadResult = await this.s3Service.uploadFile(
+        file.buffer,
+        fileKey,
+        file.mimetype,
+        file.originalname,
+      );
+
+      return {
+        url: uploadResult.url,
+        key: uploadResult.key,
+      };
     });
 
-    try {
-      const results = await Promise.all(uploadPromises);
-      return results;
-    } catch (error) {
-      console.error("Document upload failed:", error);
-      throw error;
-    }
+    return Promise.all(uploadPromises);
   }
 }

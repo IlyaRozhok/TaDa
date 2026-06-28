@@ -2,18 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
-import { setUser, selectIsAuthenticated } from "@/store/slices/authSlice";
-import { fetchShortlist } from "@/store/slices/shortlistSlice";
-import { AppDispatch } from "@/store/store";
-import { authAPI } from "../../lib/api";
-import { redirectAfterLogin } from "../../utils/simpleRedirect";
+import { useSelector } from "react-redux";
+import { selectIsAuthenticated, selectUser } from "@/store/slices/authSlice";
 import Link from "next/link";
 import Image from "next/image";
 import { X } from "lucide-react";
 import Header from "../../components/Header";
 import { useTranslation } from "../../hooks/useTranslation";
 import { loginKeys } from "../../lib/translationsKeys/loginTranslationKeys";
+import { getRedirectPath } from "../../utils/simpleRedirect";
 
 export default function AuthPage() {
   const [error, setError] = useState("");
@@ -21,58 +18,26 @@ export default function AuthPage() {
   const { t } = useTranslation();
 
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
 
-  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/app/units");
+    if (isAuthenticated && user) {
+      router.push(getRedirectPath(user));
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
-  // Check for Google auth callback parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const success = urlParams.get("success");
     const error = urlParams.get("error");
-
     if (error) {
       setError("Google authentication failed. Please try again.");
-      // Clean up URL
-      router.replace("/app/auth", undefined);
-    } else if (token && success === "true") {
-      // Google auth successful — token is now in httpOnly cookie; fetch user data
-
-      // Get user data
-      authAPI
-        .getMe()
-        .then(async (response) => {
-          const user = response.data.user;
-          dispatch(setUser({ user }));
-
-          // Load shortlist for tenant and admin users
-          if (user?.role === "tenant" || user?.role === "admin") {
-            dispatch(fetchShortlist());
-          }
-
-          // Redirect based on role
-          await redirectAfterLogin(user, router);
-        })
-        .catch((err) => {
-          console.error("Failed to get user data:", err);
-          setError("Failed to complete authentication");
-        });
-
-      // Clean up URL
       router.replace("/app/auth", undefined);
     }
-  }, [router, dispatch]);
+  }, [router]);
 
   const handleGoogleAuth = () => {
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
     window.location.href = `${apiUrl}/auth/google`;
   };
 
@@ -94,12 +59,7 @@ export default function AuthPage() {
           }`}
           sizes="100vw"
           quality={85}
-          onLoadingComplete={() => {
-            setTimeout(() => setImageLoaded(true), 10);
-          }}
-          onLoad={() => {
-            setTimeout(() => setImageLoaded(true), 10);
-          }}
+          onLoad={() => setImageLoaded(true)}
         />
       </div>
 

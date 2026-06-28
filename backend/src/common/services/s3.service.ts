@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, BadRequestException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
   S3Client,
@@ -9,6 +9,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as fs from 'fs';
 import * as path from 'path';
+import sharp from 'sharp';
 
 export interface S3UploadResult {
   url: string;
@@ -271,6 +272,67 @@ export class S3Service {
    */
   getFileType(mimeType: string): "image" | "video" {
     return mimeType.startsWith("image/") ? "image" : "video";
+  }
+
+  async optimizeImage(buffer: Buffer, mimeType: string): Promise<Buffer> {
+    const image = sharp(buffer);
+    const metadata = await image.metadata();
+
+    // Preserve PNG with transparency as WebP; everything else → JPEG
+    const hasAlpha = metadata.channels === 4 || metadata.hasAlpha;
+    const keepTransparency = mimeType === 'image/png' && hasAlpha;
+
+    const pipeline = image.resize({
+      width: 2000,
+      withoutEnlargement: true,
+      fit: 'inside',
+    });
+
+    if (keepTransparency) {
+      return pipeline.webp({ quality: 80 }).toBuffer();
+    }
+    return pipeline.jpeg({ quality: 80 }).toBuffer();
+  }
+
+  async uploadImageWithOptimization(
+    file: Express.Multer.File,
+    folder: string,
+  ): Promise<{ originalUrl: string; optimizedUrl: string }> {
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException(`File ${file.originalname} exceeds the 10MB limit`);
+    }
+
+    const originalKey = this.generateFileKey(file.originalname, folder);
+    const originalResult = await this.uploadFile(
+      file.buffer,
+      originalKey,
+      file.mimetype,
+      file.originalname,
+    );
+
+    const optimizedBuffer = await this.optimizeImage(file.buffer, file.mimetype);
+    const hasAlpha = file.mimetype === 'image/png' &&
+      (await sharp(file.buffer).metadata()).hasAlpha;
+    const optimizedMime = hasAlpha ? 'image/webp' : 'image/jpeg';
+    const ext = hasAlpha ? 'webp' : 'jpg';
+
+    const parts = originalKey.split('.');
+    const optimizedKey = parts.length > 1
+      ? `${parts.slice(0, -1).join('.')}-optimized.${ext}`
+      : `${originalKey}-optimized.${ext}`;
+
+    const optimizedResult = await this.uploadFile(
+      optimizedBuffer,
+      optimizedKey,
+      optimizedMime,
+      file.originalname,
+    );
+
+    return {
+      originalUrl: originalResult.url,
+      optimizedUrl: optimizedResult.url,
+    };
   }
 
   /**

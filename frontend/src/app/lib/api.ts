@@ -4,7 +4,7 @@ import { Property } from "../types";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL}` || "http://localhost:5001/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,52 +13,78 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Response interceptor - handle 401 errors
+let isRefreshing = false;
+let pendingRequests: Array<(success: boolean) => void> = [];
+
+function flushPending(success: boolean) {
+  pendingRequests.forEach((cb) => cb(success));
+  pendingRequests = [];
+}
+
+function dispatchLogout() {
+  const currentPath = window.location.pathname;
+  if (
+    !currentPath.includes("/auth") &&
+    !currentPath.includes("/onboarding") &&
+    !currentPath.includes("/preferences")
+  ) {
+    import("@/store/store").then(({ store }) => {
+      store.dispatch(logout());
+    });
+  }
+}
+
+// Response interceptor — attempt token refresh on 401 before logging out
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      const currentPath = window.location.pathname;
+    const originalRequest = error.config;
 
-      if (
-        !currentPath.includes("/preferences") &&
-        !currentPath.includes("/auth") &&
-        !currentPath.includes("/onboarding")
-      ) {
-        import("@/store/store").then(({ store }) => {
-          store.dispatch(logout());
-        });
-      }
+    if (error.response?.status !== 401) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    // Never retry the refresh endpoint itself — would cause an infinite loop
+    if (originalRequest.url?.includes("/auth/refresh") || originalRequest._retry) {
+      dispatchLogout();
+      return Promise.reject(error);
+    }
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        pendingRequests.push((success) => {
+          if (success) resolve(api(originalRequest));
+          else reject(error);
+        });
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      await api.post("/auth/refresh");
+      flushPending(true);
+      isRefreshing = false;
+      return api(originalRequest);
+    } catch {
+      flushPending(false);
+      isRefreshing = false;
+      dispatchLogout();
+      return Promise.reject(error);
+    }
   },
 );
 
-// API methods for different resources
 export const authAPI = {
-  login: (data: { email: string; password: string }) =>
-    api.post("/auth/login", data),
+  getMe: () => api.get("/auth/me"),
 
-  register: (data: any) => api.post("/auth/register", data),
-
-  checkUser: (email: string) => api.post("/auth/check-user", { email }),
-
-  authenticate: (data: {
-    email: string;
-    password: string;
-    role?: "tenant" | "operator";
-    rememberMe?: boolean;
-  }) => api.post("/auth/authenticate", data),
-
-  googleAuth: (token: string) => api.post("/auth/google", { token }),
+  logout: () => api.post("/auth/logout"),
 
   updateProfile: (data: any) => api.put("/users/profile", data),
 
   updateUserRole: (userId: string, data: { role: string }) =>
     api.put(`/users/${userId}/role`, data),
-
-  getProfile: () => api.get("/users/profile"),
 
   uploadAvatar: async (file: File) => {
     const formData = new FormData();
@@ -68,20 +94,9 @@ export const authAPI = {
     });
     return response.data;
   },
-
-  getMe: () => api.get("/auth/me"),
-
-  logout: () => api.post("/auth/logout"),
-
-  getTempTokenInfo: (tempToken: string) =>
-    api.get(`/auth/temp-token/${tempToken}`),
 };
 
 export const usersAPI = {
-  getMe: () => api.get("/auth/me"),
-
-  update: (id: string, data: any) => api.patch(`/users/${id}`, data),
-
   getAll: (params?: {
     role?: string;
     limit?: number;

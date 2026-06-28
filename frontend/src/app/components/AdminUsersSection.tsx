@@ -7,7 +7,9 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  FileText,
 } from "lucide-react";
+import { useGetAdminTenantCvQuery } from "@/store/slices/apiSlice";
 
 interface User {
   id: string;
@@ -23,6 +25,7 @@ interface AdminUsersSectionProps {
   users: User[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  onSearchChange: (value: string) => void;
   searchLoading: boolean;
   sort: { field: string; direction: "asc" | "desc" };
   setSort: (sort: { field: string; direction: "asc" | "desc" }) => void;
@@ -30,12 +33,39 @@ interface AdminUsersSectionProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   onAdd: () => void;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
+
+const TenantCvButton: React.FC<{ userId: string }> = ({ userId }) => {
+  const { data: cv } = useGetAdminTenantCvQuery(userId);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (cv?.share_uuid) {
+      window.open(`/cv/${cv.share_uuid}`, "_blank");
+    } else {
+      alert("This tenant has no CV yet");
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+      title="View Tenant CV"
+    >
+      <FileText className="w-4 h-4" />
+    </button>
+  );
+};
 
 const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   users,
   searchTerm,
   setSearchTerm,
+  onSearchChange,
   searchLoading,
   sort,
   setSort,
@@ -43,6 +73,9 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   onEdit,
   onDelete,
   onAdd,
+  page,
+  totalPages,
+  onPageChange,
 }) => {
   const SortButton = ({
     field,
@@ -116,6 +149,16 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
         >
           <span>Create User</span>
         </button>
+      </div>
+
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full max-w-sm px-4 py-2 border border-gray-200 rounded-lg text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        />
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -233,6 +276,9 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                     </td>
                     <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
+                        {user.role === "tenant" && (
+                          <TenantCvButton userId={user.id} />
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -262,8 +308,39 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           </table>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200">
-          {/* Pagination component would go here */}
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center gap-1">
+          {(() => {
+            const total = totalPages || 1;
+            const pages: (number | "...")[] = [];
+            if (total <= 7) {
+              for (let i = 1; i <= total; i++) pages.push(i);
+            } else if (page <= 4) {
+              pages.push(1, 2, 3, 4, 5, "...", total);
+            } else if (page >= total - 3) {
+              pages.push(1, "...", total - 4, total - 3, total - 2, total - 1, total);
+            } else {
+              pages.push(1, "...", page - 1, page, page + 1, "...", total);
+            }
+            return pages.map((p, i) =>
+              p === "..." ? (
+                <span key={`ellipsis-${i}`} className="px-2 py-1.5 text-sm text-gray-400 select-none">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => onPageChange(p as number)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                    p === page
+                      ? "bg-gray-900 text-white"
+                      : "text-black border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            );
+          })()}
         </div>
       </div>
     </div>

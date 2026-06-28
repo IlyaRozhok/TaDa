@@ -11,6 +11,9 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { TenantCvService } from "./tenant-cv.service";
 import { UpdateTenantCvDto } from "./dto/update-tenant-cv.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { RolesGuard } from "../../common/guards/roles.guard";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { UserRole } from "../../entities/user.entity";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
 @ApiTags("Tenant CV")
@@ -48,6 +51,14 @@ export class TenantCvController {
   @ApiBearerAuth()
   async createShareLink(@CurrentUser() user: any) {
     return this.tenantCvService.ensureShareUuid(user.id);
+  }
+
+  @Get("admin/:userId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.Admin)
+  @ApiBearerAuth()
+  async getAdminCvByUserId(@Param("userId") userId: string) {
+    return this.tenantCvService.getForUser(userId);
   }
 
   @Get(":share_uuid")

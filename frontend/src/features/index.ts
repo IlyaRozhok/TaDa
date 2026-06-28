@@ -18,5 +18,4 @@ export * from './preferences/lib';
 export { clearError as clearPreferencesError } from './preferences/model';
 
 // Profile features
-export * from './profile/update-profile/lib';
 // export * from './profile/update-profile/ui'; // ui module doesn't have index.ts

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-google-oauth20";
 import { ConfigService } from "@nestjs/config";
@@ -6,36 +6,19 @@ import { ConfigService } from "@nestjs/config";
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
   constructor(private readonly configService: ConfigService) {
-    const clientID = configService.get("GOOGLE_CLIENT_ID") || "dummy-client-id";
-    const clientSecret =
-      configService.get("GOOGLE_CLIENT_SECRET") || "dummy-client-secret";
+    const clientID = configService.get<string>("GOOGLE_CLIENT_ID");
+    const clientSecret = configService.get<string>("GOOGLE_CLIENT_SECRET");
     const callbackURL =
-      configService.get("GOOGLE_CALLBACK_URL") ||
+      configService.get<string>("GOOGLE_CALLBACK_URL") ||
       "http://localhost:5001/auth/google/callback";
 
-    // Validate environment variables
-    if (!configService.get("GOOGLE_CLIENT_ID")) {
-      console.warn(
-        "⚠️ GOOGLE_CLIENT_ID is not configured - Google OAuth will be disabled"
-      );
-    }
-    if (!configService.get("GOOGLE_CLIENT_SECRET")) {
-      console.warn(
-        "⚠️ GOOGLE_CLIENT_SECRET is not configured - Google OAuth will be disabled"
-      );
-    }
-    if (!configService.get("GOOGLE_CALLBACK_URL")) {
-      console.warn(
-        "⚠️ GOOGLE_CALLBACK_URL is not configured - Google OAuth will be disabled"
+    if (!clientID || !clientSecret) {
+      throw new Error(
+        "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required for Google OAuth",
       );
     }
 
-    super({
-      clientID,
-      clientSecret,
-      callbackURL,
-      scope: ["email", "profile"],
-    });
+    super({ clientID, clientSecret, callbackURL, scope: ["email", "profile"] });
   }
 
   async validate(
@@ -44,13 +27,20 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
     profile: any,
   ): Promise<any> {
     const { id, name, emails, photos } = profile;
+
+    const email = emails?.[0]?.value;
+    if (!email) {
+      throw new InternalServerErrorException(
+        "Google account did not provide an email address",
+      );
+    }
+
     return {
       google_id: id,
-      email: emails[0].value,
-      full_name: `${name.givenName} ${name.familyName}`.trim(),
+      email,
+      full_name: `${name.givenName ?? ""} ${name.familyName ?? ""}`.trim(),
       avatar_url: photos?.[0]?.value ?? null,
       email_verified: emails[0].verified ?? false,
     };
   }
-
 }
