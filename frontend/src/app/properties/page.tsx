@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import PropertyGridWithLoader from "../components/PropertyGridWithLoader";
+import { PropertyGridWithLoader } from "@/widgets/property";
 import { Button } from "@/shared/ui/Button/Button";
 import Logo from "../components/Logo";
 import { Search, Home, Lock, ArrowLeft } from "lucide-react";

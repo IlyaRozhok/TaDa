@@ -17,7 +17,7 @@ import {
   clearError,
 } from "@/store/slices/shortlistSlice";
 import { AppDispatch } from "@/store/store";
-import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
+import { PropertyGridWithLoader } from "@/widgets/property";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";
 import ConfirmModal from "../../components/ui/ConfirmModal";
