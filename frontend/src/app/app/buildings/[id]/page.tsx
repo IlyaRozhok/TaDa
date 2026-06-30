@@ -10,6 +10,7 @@ interface Building {
   id: string;
   name: string;
   address: string;
+  description?: string;
   number_of_units: number;
   type_of_unit: string[];
   logo?: string;
@@ -440,24 +441,16 @@ export default function BuildingPublicPage() {
           )}
 
           {/* About building */}
-          <section className="py-4 sm:py-6 w-full">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              {t(listingPropertyKeys.description.sectionTitle)}
-            </h2>
-            <div className="text-sm sm:text-base text-black leading-relaxed">
-              <p>
-                {building.name} — это{" "}
-                {building.type_of_unit && building.type_of_unit.length
-                  ? building.type_of_unit.join(", ").toLowerCase()
-                  : "апартаменты"}{" "}
-                в центре города Лондон, расположенные в {building.address}.
-                {building.number_of_units &&
-                  ` В здании ${building.number_of_units} единиц.`}
-                {building.amenities?.includes("concierge") &&
-                  " Среди удобств есть консьерж-зона и бесплатный Wi-Fi."}
-              </p>
-            </div>
-          </section>
+          {building.description && (
+            <section className="py-4 sm:py-6 w-full">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+                {t(listingPropertyKeys.description.sectionTitle)}
+              </h2>
+              <div className="text-sm sm:text-base text-black leading-relaxed whitespace-pre-line">
+                {building.description}
+              </div>
+            </section>
+          )}
 
           {/* What this place offers */}
           {displayedAmenities.length > 0 && (

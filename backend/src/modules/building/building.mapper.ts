@@ -5,6 +5,7 @@ export type BuildingResponse = Pick<
   | "id"
   | "name"
   | "address"
+  | "description"
   | "number_of_units"
   | "type_of_unit"
   | "logo"
@@ -30,6 +31,7 @@ export const toBuildingResponse = (building: Building): BuildingResponse => ({
   id: building.id,
   name: building.name,
   address: building.address,
+  description: building.description,
   number_of_units: building.number_of_units,
   type_of_unit: building.type_of_unit || [],
   logo: building.logo,

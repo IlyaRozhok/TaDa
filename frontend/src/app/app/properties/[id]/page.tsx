@@ -307,6 +307,8 @@ export default function PropertyPublicPage() {
     if (!buildingData) return null;
     const normalized = (buildingData as any).data || buildingData;
     return normalized as {
+      description?: string;
+      amenities?: string[];
       media?: Array<{
         id: string;
         url: string;
@@ -1314,17 +1316,12 @@ export default function PropertyPublicPage() {
         </div>
       </div>
 
-      {/* What this place offers — building amenities + apartment features */}
+      {/* What's Included — apartment-level property amenities */}
       <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-            {t(listingPropertyKeys.keyFeatures.sectionTitle)}
-          </h2>
-
-          {/* Apartment-level property amenities (listing.features.* keys) */}
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             {t(wizardKeys.step7.title)}
-          </h3>
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
             {(() => {
               const allPropertyAmenities = Array.isArray(
@@ -1380,20 +1377,33 @@ export default function PropertyPublicPage() {
               )
             );
           })()}
+        </div>
+      </div>
 
-          {/* Building amenities (same labels as preferences / mappings) */}
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mt-8 sm:mt-10 mb-3 sm:mb-4">
-            {t(wizardKeys.step8.title)}
-          </h3>
+      {/* Building Key features — building description + building amenities */}
+      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
+        <div className="w-full lg:w-2/3">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+            {t(listingPropertyKeys.keyFeatures.sectionTitle)}
+          </h2>
+
+          {buildingWithMedia?.description && (
+            <div className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line mb-6 sm:mb-8">
+              {buildingWithMedia.description}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
             {(() => {
               const allAmenities =
-                property.amenities && property.amenities.length > 0
-                  ? property.amenities
-                  : property.lifestyle_features &&
-                      property.lifestyle_features.length > 0
-                    ? property.lifestyle_features
-                    : [];
+                buildingWithMedia?.amenities && buildingWithMedia.amenities.length > 0
+                  ? buildingWithMedia.amenities
+                  : property.amenities && property.amenities.length > 0
+                    ? property.amenities
+                    : property.lifestyle_features &&
+                        property.lifestyle_features.length > 0
+                      ? property.lifestyle_features
+                      : [];
 
               const visibleAmenities = showAllOffers
                 ? allAmenities
@@ -1420,12 +1430,14 @@ export default function PropertyPublicPage() {
           </div>
           {(() => {
             const allAmenitiesList =
-              property.amenities && property.amenities.length > 0
-                ? property.amenities
-                : property.lifestyle_features &&
-                    property.lifestyle_features.length > 0
-                  ? property.lifestyle_features
-                  : [];
+              buildingWithMedia?.amenities && buildingWithMedia.amenities.length > 0
+                ? buildingWithMedia.amenities
+                : property.amenities && property.amenities.length > 0
+                  ? property.amenities
+                  : property.lifestyle_features &&
+                      property.lifestyle_features.length > 0
+                    ? property.lifestyle_features
+                    : [];
 
             const hiddenCount = allAmenitiesList.length - 9;
 
