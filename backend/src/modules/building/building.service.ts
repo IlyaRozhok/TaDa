@@ -66,6 +66,7 @@ export class BuildingService {
       family_status: createBuildingDto.family_status || [],
       occupation: createBuildingDto.occupation || [],
       children: createBuildingDto.children || [],
+      description: createBuildingDto.description || null,
     };
 
     const building = this.buildingRepository.create(buildingData);
@@ -184,6 +185,8 @@ export class BuildingService {
       updateData.occupation = updateBuildingDto.occupation;
     if (updateBuildingDto.children !== undefined)
       updateData.children = updateBuildingDto.children;
+    if (updateBuildingDto.description !== undefined)
+      updateData.description = updateBuildingDto.description;
 
     if (operatorId !== undefined) {
       updateData.operator_id = operatorId ?? undefined;
