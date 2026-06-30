@@ -49,6 +49,7 @@ interface Building {
   id: string;
   name: string;
   address: string;
+  description?: string;
   number_of_units: number;
   type_of_unit: string[];
   logo?: string;
@@ -78,6 +79,7 @@ interface Building {
 
 interface BuildingFormData {
   name: string;
+  description: string;
   address: string;
   number_of_units: number | null;
   type_of_unit: string[];
@@ -176,6 +178,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<BuildingFormData>({
     name: "",
+    description: "",
     address: "",
     number_of_units: null,
     type_of_unit: [] as string[],
@@ -290,6 +293,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
 
       setFormData({
         name: building.name || "",
+        description: building.description || "",
         address: building.address || "",
         number_of_units: building.number_of_units || 1,
         type_of_unit: [
@@ -636,6 +640,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       };
 
       // Add optional fields only if they have values
+      if (formData.description && formData.description.trim() !== "") {
+        buildingData.description = formData.description;
+      }
       if (formData.address && formData.address.trim() !== "") {
         buildingData.address = formData.address;
       }
@@ -813,6 +820,21 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                     setFormData({ ...formData, address: e.target.value })
                   }
                   className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  rows={3}
+                  placeholder="Describe the building, its location, and key highlights"
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 resize-y"
                 />
               </div>
 
