@@ -384,18 +384,7 @@ export default function BuildingPublicPage() {
       {/* Main content: gallery + details */}
       <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="grid grid-cols-1 gap-6 sm:gap-8">
-          {/* Gallery — same width as page container */}
-          {allImages.length > 0 && (
-            <div className="mb-4 sm:mb-6">
-              <ImageGallery
-                media={building.media || []}
-                images={allImages}
-                alt={building.name || "Building"}
-              />
-            </div>
-          )}
-
-          {/* Details summary under gallery, same container width */}
+          {/* Details summary */}
           <div className="w-full">
             <DetailsCard
               title={t("listing.building.details.sectionTitle")}
@@ -439,10 +428,21 @@ export default function BuildingPublicPage() {
             />
           </div>
 
+          {/* Gallery */}
+          {allImages.length > 0 && (
+            <div className="mb-4 sm:mb-6">
+              <ImageGallery
+                media={building.media || []}
+                images={allImages}
+                alt={building.name || "Building"}
+              />
+            </div>
+          )}
+
           {/* About building */}
           <section className="py-4 sm:py-6 w-full">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              {t(listingPropertyKeys.keyFeatures.sectionTitle)}
+              {t(listingPropertyKeys.description.sectionTitle)}
             </h2>
             <div className="text-sm sm:text-base text-black leading-relaxed">
               <p>
@@ -462,8 +462,8 @@ export default function BuildingPublicPage() {
           {/* What this place offers */}
           {displayedAmenities.length > 0 && (
             <section className="py-4 sm:py-6 w-full">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-                {t("building.details.situated")}
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+                {t(listingPropertyKeys.keyFeatures.sectionTitle)}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-1">
                 {displayedAmenities.map((amenity, index) => (
