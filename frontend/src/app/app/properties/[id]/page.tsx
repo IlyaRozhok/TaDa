@@ -69,6 +69,7 @@ type PropertyWithMedia = Property & {
     id: string;
     name: string;
     address?: string;
+    logo?: string | null;
   } | null;
   building_type?: string;
   property_type?: string;
@@ -1080,10 +1081,18 @@ export default function PropertyPublicPage() {
                   {/* Mobile: logo + label on the same row, then name + link left-aligned on grid */}
                   <div className="lg:hidden">
                     <div className="flex items-baseline lg:items-start gap-3">
-                      <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                        <div className="text-center leading-tight px-1">
-                          <div>B</div>
-                        </div>
+                      <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {property.building?.logo ? (
+                          <img
+                            src={property.building.logo}
+                            alt={property.building.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-500 font-bold text-sm">
+                            {property.building?.name?.[0]?.toUpperCase() ?? "B"}
+                          </span>
+                        )}
                       </div>
                       <div className="text-gray-600 text-sm lg:mb-1 pt-1">
                         {t(listingPropertyKeys.building.label)}
@@ -1119,10 +1128,18 @@ export default function PropertyPublicPage() {
                   {/* Desktop: keep previous layout */}
                   <div className="hidden lg:block">
                     <div className="flex items-start gap-3 lg:p-4">
-                      <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                        <div className="text-center leading-tight px-1">
-                          <div>B</div>
-                        </div>
+                      <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {property.building?.logo ? (
+                          <img
+                            src={property.building.logo}
+                            alt={property.building.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-500 font-bold text-sm">
+                            {property.building?.name?.[0]?.toUpperCase() ?? "B"}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-col flex-1 items-start">
                         <div className="text-gray-600 text-sm lg:mb-1">
