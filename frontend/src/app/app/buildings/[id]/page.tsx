@@ -372,9 +372,24 @@ export default function BuildingPublicPage() {
       <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-6 sm:pb-8 lg:pb-10">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              {building.name}
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center">
+                {building.logo ? (
+                  <img
+                    src={building.logo}
+                    alt={building.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500 font-bold text-sm">
+                    {building.name?.[0]?.toUpperCase() ?? "B"}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+                {building.name}
+              </h1>
+            </div>
             <p className="text-sm sm:text-base text-gray-600">
               {building.address}
             </p>
