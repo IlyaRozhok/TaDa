@@ -7,7 +7,7 @@ import { InputField } from "../ui/InputField";
 import { PreferencesFormData } from "@/app/types/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
-import { sqFtToSqM, sqMToSqFt } from "@/shared/lib/area";
+import { sqFtToSqM, sqMToSqFt, formatSqMForForm } from "@/shared/lib/area";
 
 interface BudgetStepProps {
   formData: PreferencesFormData;
@@ -73,6 +73,16 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
     formData.max_square_meters != null
       ? sqMToSqFt(formData.max_square_meters)
       : null;
+
+  // Square meters equivalent shown as a hint under each square-feet input
+  const minSqMHint =
+    formData.min_square_meters != null
+      ? `≈ ${formatSqMForForm(formData.min_square_meters)} m²`
+      : undefined;
+  const maxSqMHint =
+    formData.max_square_meters != null
+      ? `≈ ${formatSqMForForm(formData.max_square_meters)} m²`
+      : undefined;
 
   // Push a square-feet value up to formData as square meters
   const updateSqM = useCallback(
@@ -488,6 +498,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 onChange={handleMinInputChange}
                 onBlur={handleMinInputBlur}
                 error={minError}
+                tooltip={minSqMHint}
                 className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 placeholder=""
               />
@@ -503,6 +514,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 onChange={handleMaxInputChange}
                 onBlur={handleMaxInputBlur}
                 error={maxError}
+                tooltip={maxSqMHint}
                 className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 placeholder=""
               />
