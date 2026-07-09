@@ -20,6 +20,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Auth } from "../../common/decorators/auth.decorator";
 import { User } from "../../entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
+import { TestLoginDto } from "./dto/test-login.dto";
 
 @Controller("auth")
 export class AuthController {

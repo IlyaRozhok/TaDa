@@ -123,6 +123,7 @@ export interface Property {
     id: string;
     name: string;
     address: string;
+    logo?: string | null;
   };
   operator?: {
     id: string;

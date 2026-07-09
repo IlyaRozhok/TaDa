@@ -34,6 +34,7 @@ import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleto
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
 import { notify } from "@/shared/lib/notify";
+import { formatAreaDisplay } from "@/shared/lib/area";
 import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
 import {
   getCountryByCode,
@@ -69,6 +70,7 @@ type PropertyWithMedia = Property & {
     id: string;
     name: string;
     address?: string;
+    logo?: string | null;
   } | null;
   building_type?: string;
   property_type?: string;
@@ -307,6 +309,8 @@ export default function PropertyPublicPage() {
     if (!buildingData) return null;
     const normalized = (buildingData as any).data || buildingData;
     return normalized as {
+      description?: string;
+      amenities?: string[];
       media?: Array<{
         id: string;
         url: string;
@@ -861,10 +865,7 @@ export default function PropertyPublicPage() {
     return t(wizardKeys.step3.bathroomsCount[n - 1]);
   })();
 
-  const sizeLabel =
-    property.square_meters != null
-      ? `${Math.round(property.square_meters * 10.764)} ${t(listingPropertyKeys.card.sqFt)}`
-      : "N/A";
+  const sizeLabel = formatAreaDisplay(property.square_meters) ?? "N/A";
 
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: "auto" }}>
@@ -1078,10 +1079,18 @@ export default function PropertyPublicPage() {
                   {/* Mobile: logo + label on the same row, then name + link left-aligned on grid */}
                   <div className="lg:hidden">
                     <div className="flex items-baseline lg:items-start gap-3">
-                      <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                        <div className="text-center leading-tight px-1">
-                          <div>B</div>
-                        </div>
+                      <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {property.building?.logo ? (
+                          <img
+                            src={property.building.logo}
+                            alt={property.building.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-500 font-bold text-sm">
+                            {property.building?.name?.[0]?.toUpperCase() ?? "B"}
+                          </span>
+                        )}
                       </div>
                       <div className="text-gray-600 text-sm lg:mb-1 pt-1">
                         {t(listingPropertyKeys.building.label)}
@@ -1117,10 +1126,18 @@ export default function PropertyPublicPage() {
                   {/* Desktop: keep previous layout */}
                   <div className="hidden lg:block">
                     <div className="flex items-start gap-3 lg:p-4">
-                      <div className="w-12 h-12 bg-red-500 rounded-full flex flex-col items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                        <div className="text-center leading-tight px-1">
-                          <div>B</div>
-                        </div>
+                      <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {property.building?.logo ? (
+                          <img
+                            src={property.building.logo}
+                            alt={property.building.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-500 font-bold text-sm">
+                            {property.building?.name?.[0]?.toUpperCase() ?? "B"}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-col flex-1 items-start">
                         <div className="text-gray-600 text-sm lg:mb-1">
@@ -1293,7 +1310,7 @@ export default function PropertyPublicPage() {
                       showTruncation && !showFullDescription
                         ? "line-clamp-3"
                         : ""
-                    } overflow-hidden`}
+                    } overflow-hidden whitespace-pre-wrap`}
                   >
                     {description}
                   </div>
@@ -1314,17 +1331,12 @@ export default function PropertyPublicPage() {
         </div>
       </div>
 
-      {/* What this place offers — building amenities + apartment features */}
+      {/* What's Included — apartment-level property amenities */}
       <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
         <div className="w-full lg:w-2/3">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-            {t(listingPropertyKeys.keyFeatures.sectionTitle)}
-          </h2>
-
-          {/* Apartment-level property amenities (listing.features.* keys) */}
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             {t(wizardKeys.step7.title)}
-          </h3>
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
             {(() => {
               const allPropertyAmenities = Array.isArray(
@@ -1380,20 +1392,33 @@ export default function PropertyPublicPage() {
               )
             );
           })()}
+        </div>
+      </div>
 
-          {/* Building amenities (same labels as preferences / mappings) */}
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mt-8 sm:mt-10 mb-3 sm:mb-4">
-            {t(wizardKeys.step8.title)}
-          </h3>
+      {/* Building Key features — building description + building amenities */}
+      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
+        <div className="w-full lg:w-2/3">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+            {t(listingPropertyKeys.keyFeatures.sectionTitle)}
+          </h2>
+
+          {buildingWithMedia?.description && (
+            <div className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line mb-6 sm:mb-8">
+              {buildingWithMedia.description}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
             {(() => {
               const allAmenities =
-                property.amenities && property.amenities.length > 0
-                  ? property.amenities
-                  : property.lifestyle_features &&
-                      property.lifestyle_features.length > 0
-                    ? property.lifestyle_features
-                    : [];
+                buildingWithMedia?.amenities && buildingWithMedia.amenities.length > 0
+                  ? buildingWithMedia.amenities
+                  : property.amenities && property.amenities.length > 0
+                    ? property.amenities
+                    : property.lifestyle_features &&
+                        property.lifestyle_features.length > 0
+                      ? property.lifestyle_features
+                      : [];
 
               const visibleAmenities = showAllOffers
                 ? allAmenities
@@ -1420,12 +1445,14 @@ export default function PropertyPublicPage() {
           </div>
           {(() => {
             const allAmenitiesList =
-              property.amenities && property.amenities.length > 0
-                ? property.amenities
-                : property.lifestyle_features &&
-                    property.lifestyle_features.length > 0
-                  ? property.lifestyle_features
-                  : [];
+              buildingWithMedia?.amenities && buildingWithMedia.amenities.length > 0
+                ? buildingWithMedia.amenities
+                : property.amenities && property.amenities.length > 0
+                  ? property.amenities
+                  : property.lifestyle_features &&
+                      property.lifestyle_features.length > 0
+                    ? property.lifestyle_features
+                    : [];
 
             const hiddenCount = allAmenitiesList.length - 9;
 

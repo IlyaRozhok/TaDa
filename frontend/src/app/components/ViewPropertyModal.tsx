@@ -20,6 +20,7 @@ import {
   Check,
 } from "lucide-react";
 import { Property } from "../types/property";
+import { formatAreaDisplay } from "@/shared/lib/area";
 
 interface ViewPropertyModalProps {
   isOpen: boolean;
@@ -241,11 +242,9 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-white/10">
-                  <span className="text-white/70">Square Meters</span>
+                  <span className="text-white/70">Size</span>
                   <span className="font-medium text-white">
-                    {property.square_meters != null
-                      ? `${property.square_meters} m²`
-                      : "N/A"}
+                    {formatAreaDisplay(property.square_meters) ?? "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-white/10">

@@ -133,6 +133,15 @@ export class CreateBuildingDto {
   address?: string;
 
   @ApiProperty({
+    description: "Building description text",
+    example: "A modern residential complex in central London",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({
     description: "Total number of units in the building",
     example: 150,
     required: false,

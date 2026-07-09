@@ -275,20 +275,20 @@ export class S3Service {
 
   /**
    * Extract S3 key from a presigned or public S3 URL.
-   * Supports both production (tada-prod-media) and local dev (tada-media-bucket-local) bucket URLs.
+   * Matches against the configured bucket name so staging, production, and local
+   * buckets are all handled without hardcoding bucket names here.
    */
   extractS3KeyFromUrl(url: string): string | null {
     try {
-      const patterns = [
-        /https:\/\/tada-prod-media\.s3\.eu-west-2\.amazonaws\.com\/([^?]+)/,
-        /https:\/\/tada-media-bucket-local\.s3\.eu-north-1\.amazonaws\.com\/([^?]+)/,
-      ];
+      // Build a pattern from the configured bucket name so any environment works.
+      const escapedBucket = this.bucketName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const dynamicPattern = new RegExp(
+        `https://${escapedBucket}\\.s3\\.[^.]+\\.amazonaws\\.com/([^?]+)`,
+      );
 
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-          return decodeURIComponent(match[1]);
-        }
+      const match = url.match(dynamicPattern);
+      if (match && match[1]) {
+        return decodeURIComponent(match[1]);
       }
 
       return null;

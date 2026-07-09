@@ -170,6 +170,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
   };
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
     address: "",
     number_of_units: null as number | null,
     type_of_unit: [] as string[],
@@ -510,6 +511,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       };
 
       // Add optional fields only if they have values
+      if (formData.description && formData.description.trim() !== "") {
+        buildingData.description = formData.description;
+      }
       if (formData.address && formData.address.trim() !== "") {
         buildingData.address = formData.address;
       }
@@ -587,6 +591,7 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
         // Reset form
         setFormData({
           name: "",
+          description: "",
           address: "",
           number_of_units: 1,
           type_of_unit: [] as string[],
@@ -749,6 +754,17 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
                   onBlur={() => handleFieldBlur("address")}
                   error={touched.address && !!errors.address}
                   placeholder="e.g. 123 Main Street, London"
+                />
+              </FormField>
+
+              <FormField label="Description" className="md:col-span-2">
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleFieldChange("description", e.target.value)
+                  }
+                  placeholder="Describe the building, its location, and key highlights"
+                  rows={3}
                 />
               </FormField>
 

@@ -10,6 +10,7 @@ interface Building {
   id: string;
   name: string;
   address: string;
+  description?: string;
   number_of_units: number;
   type_of_unit: string[];
   logo?: string;
@@ -371,9 +372,24 @@ export default function BuildingPublicPage() {
       <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-6 sm:pb-8 lg:pb-10">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              {building.name}
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center">
+                {building.logo ? (
+                  <img
+                    src={building.logo}
+                    alt={building.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500 font-bold text-sm">
+                    {building.name?.[0]?.toUpperCase() ?? "B"}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+                {building.name}
+              </h1>
+            </div>
             <p className="text-sm sm:text-base text-gray-600">
               {building.address}
             </p>
@@ -384,18 +400,7 @@ export default function BuildingPublicPage() {
       {/* Main content: gallery + details */}
       <div className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="grid grid-cols-1 gap-6 sm:gap-8">
-          {/* Gallery — same width as page container */}
-          {allImages.length > 0 && (
-            <div className="mb-4 sm:mb-6">
-              <ImageGallery
-                media={building.media || []}
-                images={allImages}
-                alt={building.name || "Building"}
-              />
-            </div>
-          )}
-
-          {/* Details summary under gallery, same container width */}
+          {/* Details summary */}
           <div className="w-full">
             <DetailsCard
               title={t("listing.building.details.sectionTitle")}
@@ -439,31 +444,34 @@ export default function BuildingPublicPage() {
             />
           </div>
 
-          {/* About building */}
-          <section className="py-4 sm:py-6 w-full">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              {t(listingPropertyKeys.keyFeatures.sectionTitle)}
-            </h2>
-            <div className="text-sm sm:text-base text-black leading-relaxed">
-              <p>
-                {building.name} — это{" "}
-                {building.type_of_unit && building.type_of_unit.length
-                  ? building.type_of_unit.join(", ").toLowerCase()
-                  : "апартаменты"}{" "}
-                в центре города Лондон, расположенные в {building.address}.
-                {building.number_of_units &&
-                  ` В здании ${building.number_of_units} единиц.`}
-                {building.amenities?.includes("concierge") &&
-                  " Среди удобств есть консьерж-зона и бесплатный Wi-Fi."}
-              </p>
+          {/* Gallery */}
+          {allImages.length > 0 && (
+            <div className="mb-4 sm:mb-6">
+              <ImageGallery
+                media={building.media || []}
+                images={allImages}
+                alt={building.name || "Building"}
+              />
             </div>
-          </section>
+          )}
+
+          {/* About building */}
+          {building.description && (
+            <section className="py-4 sm:py-6 w-full">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+                {t(listingPropertyKeys.description.sectionTitle)}
+              </h2>
+              <div className="text-sm sm:text-base text-black leading-relaxed whitespace-pre-line">
+                {building.description}
+              </div>
+            </section>
+          )}
 
           {/* What this place offers */}
           {displayedAmenities.length > 0 && (
             <section className="py-4 sm:py-6 w-full">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-                {t("building.details.situated")}
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+                {t(listingPropertyKeys.keyFeatures.sectionTitle)}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-1">
                 {displayedAmenities.map((amenity, index) => (
