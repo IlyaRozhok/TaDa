@@ -50,6 +50,7 @@ import {
   getPetsDisplayTranslationKey,
 } from "@/constants/mappings";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
+import { formatAreaDisplay } from "@/shared/lib/area";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 interface TenantCvViewProps {
@@ -267,14 +268,14 @@ export function TenantCvView({
   const outdoorSpaceLabel =
     outdoorSpaceItems.length > 0 ? outdoorSpaceItems.join(", ") : null;
 
-  // Meters range
+  // Size range (square feet primary, square meters in parentheses)
   const metersRange =
     preferences?.min_square_meters && preferences?.max_square_meters
-      ? `${preferences.min_square_meters} msq - ${preferences.max_square_meters} msq`
+      ? `${formatAreaDisplay(preferences.min_square_meters)} - ${formatAreaDisplay(preferences.max_square_meters)}`
       : preferences?.min_square_meters
-        ? `${preferences.min_square_meters} msq+`
+        ? `${formatAreaDisplay(preferences.min_square_meters)}+`
         : preferences?.max_square_meters
-          ? `up to ${preferences.max_square_meters} msq`
+          ? `up to ${formatAreaDisplay(preferences.max_square_meters)}`
           : null;
 
   // Bills label (localized)

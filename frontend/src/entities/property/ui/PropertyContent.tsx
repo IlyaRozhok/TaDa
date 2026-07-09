@@ -8,6 +8,7 @@ import {
   getPropertyTypeTranslationKey,
   getFurnishingTranslationKey,
 } from "@/constants/mappings";
+import { formatAreaDisplay } from "@/shared/lib/area";
 
 const iconClass = "w-4 h-4 mr-1 flex-shrink-0";
 
@@ -38,9 +39,7 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
 
   const areaSqm =
     property.square_meters ?? property.total_area ?? property.living_area;
-
-  const formatAreaSqm = (sqm: number) =>
-    `${Math.round(sqm * 10.764)} ${t(k.sqFt)}`.trim();
+  const areaDisplay = formatAreaDisplay(areaSqm);
 
   const availabilityText = property.available_from
     ? (() => {
@@ -105,10 +104,10 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
             {property.bathrooms} {t(k.bath)}
           </span>
         </div>
-        {areaSqm != null && (
+        {areaDisplay != null && (
           <div className="flex items-center">
             <img src="/sqmeters.svg" alt="" className={iconClass} />
-            <span>{formatAreaSqm(areaSqm)}</span>
+            <span>{areaDisplay}</span>
           </div>
         )}
       </div>

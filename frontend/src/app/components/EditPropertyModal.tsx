@@ -24,6 +24,7 @@ import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITIES_BY_CATEGORY } from "@/constan
 import { translateAmenityStoredLabel } from "@/constants/amenities";
 import { useTranslation } from "../hooks/useTranslation";
 import { wizardKeys } from "../lib/translationsKeys/wizardTranslationKeys";
+import { sqFtToSqM, sqMToSqFt, formatSqMForForm } from "@/shared/lib/area";
 import {
   transformTenantTypeUIToAPI,
   transformTenantTypeAPIToUI,
@@ -136,6 +137,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     balcony: false,
     terrace: false,
     square_meters: null as number | null,
+    // UI-only field: area entered in square feet. Converted to square_meters on submit.
+    square_feet: null as number | null,
     photos: [] as string[],
     video: "",
     documents: "",
@@ -262,6 +265,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         balcony: property.balcony || false,
         terrace: property.terrace || false,
         square_meters: property.square_meters || null,
+        square_feet: property.square_meters
+          ? sqMToSqFt(property.square_meters)
+          : null,
         photos: property.photos || [],
         video: videoValue,
         documents: property.documents || "",
@@ -2162,21 +2168,38 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
-                Square Meters
+                Square Feet
               </label>
               <input
                 type="number"
-                value={formData.square_meters || ""}
-                onChange={(e) =>
+                value={formData.square_feet ?? ""}
+                onChange={(e) => {
+                  const raw =
+                    e.target.value === "" ? null : Number(e.target.value);
+                  const sqFt = raw != null && !isNaN(raw) ? raw : null;
                   setFormData({
                     ...formData,
-                    square_meters:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
+                    square_feet: sqFt,
+                    square_meters: sqFt == null ? null : sqFtToSqM(sqFt),
+                  });
+                }}
                 className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 min="0"
                 step="0.1"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Square Meters
+              </label>
+              <input
+                type="text"
+                value={formatSqMForForm(formData.square_meters)}
+                readOnly
+                tabIndex={-1}
+                placeholder="—"
+                className="w-full px-4 py-2 bg-white/5 backdrop-blur-[5px] border border-white/20 rounded-lg text-white/70 placeholder-white/50 cursor-not-allowed"
               />
             </div>
           </div>

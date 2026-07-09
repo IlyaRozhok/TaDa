@@ -34,6 +34,7 @@ import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleto
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
 import { notify } from "@/shared/lib/notify";
+import { formatAreaDisplay } from "@/shared/lib/area";
 import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
 import {
   getCountryByCode,
@@ -864,10 +865,7 @@ export default function PropertyPublicPage() {
     return t(wizardKeys.step3.bathroomsCount[n - 1]);
   })();
 
-  const sizeLabel =
-    property.square_meters != null
-      ? `${Math.round(property.square_meters * 10.764)} ${t(listingPropertyKeys.card.sqFt)}`
-      : "N/A";
+  const sizeLabel = formatAreaDisplay(property.square_meters) ?? "N/A";
 
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: "auto" }}>
