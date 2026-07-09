@@ -41,23 +41,9 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
           <input
             ref={photoInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/*"
             multiple
-            onChange={(e) => {
-              if (!e.target.files) return;
-              const maxSize = 10 * 1024 * 1024;
-              const validFiles = Array.from(e.target.files).filter((file) => {
-                if (file.size > maxSize) {
-                  alert(`File ${file.name} exceeds the 10MB limit`);
-                  return false;
-                }
-                return true;
-              });
-              if (validFiles.length === 0) return;
-              const dt = new DataTransfer();
-              validFiles.forEach((f) => dt.items.add(f));
-              onPhotoChange(dt.files);
-            }}
+            onChange={(e) => onPhotoChange(e.target.files)}
             className="hidden"
           />
           <div className="flex flex-col items-center justify-center">

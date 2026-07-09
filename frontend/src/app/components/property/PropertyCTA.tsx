@@ -18,9 +18,17 @@ export default function PropertyCTA() {
           and get personalized matches
         </p>
         <div className="flex gap-3">
-          <Link href="/app/auth">
+          <Link href="/app/auth/register">
             <Button className="bg-white text-gray-900 hover:bg-gray-100">
-              Sign In with Google
+              Sign Up Free
+            </Button>
+          </Link>
+          <Link href="/app/auth/login">
+            <Button
+              variant="outline"
+              className="border-white text-white hover:bg-white/10"
+            >
+              Login
             </Button>
           </Link>
         </div>

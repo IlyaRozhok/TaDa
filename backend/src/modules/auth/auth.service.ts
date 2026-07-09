@@ -1,19 +1,22 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-
-export interface GoogleUser {
-  google_id: string;
-  email: string;
-  full_name: string;
-  avatar_url: string;
-  email_verified: boolean;
-}
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { JwtService } from "@nestjs/jwt";
 import { Repository } from "typeorm";
-import { createHash } from "crypto";
+import * as bcrypt from "bcryptjs";
 import { User, UserRole, UserStatus } from "../../entities/user.entity";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
+import { OperatorProfile } from "../../entities/operator-profile.entity";
+import { Preferences } from "../../entities/preferences.entity";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
+import { AuthValidationService } from "./services/auth-validation.service";
+import { AuthTokenService } from "./services/auth-token.service";
+import { USER_CONSTANTS } from "../../common/constants/user.constants";
+import { toUserResponse } from "../users/user.mapper";
 import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
@@ -23,70 +26,86 @@ export class AuthService {
     private userRepository: Repository<User>,
     @InjectRepository(TenantProfile)
     private tenantProfileRepository: Repository<TenantProfile>,
-    private jwtService: JwtService,
+    @InjectRepository(OperatorProfile)
+    private operatorProfileRepository: Repository<OperatorProfile>,
+    @InjectRepository(Preferences)
+    private authValidationService: AuthValidationService,
+    private authTokenService: AuthTokenService,
     private tenantCvService: TenantCvService,
-    private s3Service: S3Service,
+    private s3Service: S3Service
   ) {}
 
-  private hashToken(token: string): string {
-    return createHash("sha256").update(token).digest("hex");
-  }
+  async register(registerDto: RegisterDto) {
+    const { email, password } = registerDto;
+    const role = UserRole.Tenant; // All new users are tenants by default
 
-  async generateTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        { sub: user.id, email: user.email, role: user.role, status: user.status },
-        { expiresIn: "15m" },
-      ),
-      this.jwtService.signAsync(
-        { sub: user.id, type: "refresh" },
-        { expiresIn: "7d" },
-      ),
-    ]);
+    // Validate registration data
+    await this.authValidationService.validateRegistration(registerDto);
 
-    await this.userRepository.update(
-      { id: user.id },
-      { refresh_token_hash: this.hashToken(refreshToken) },
+    // Hash password
+    const hashedPassword = await bcrypt.hash(
+      password,
+      USER_CONSTANTS.PASSWORD_SALT_ROUNDS
     );
 
-    return { accessToken, refreshToken };
-  }
-
-  async refreshTokens(rawRefreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-    let payload: { sub: string; type: string };
-    try {
-      payload = await this.jwtService.verifyAsync(rawRefreshToken);
-    } catch {
-      throw new UnauthorizedException("Invalid refresh token");
-    }
-
-    if (payload.type !== "refresh") {
-      throw new UnauthorizedException("Invalid token type");
-    }
-
-    const user = await this.userRepository.findOne({
-      where: { id: payload.sub },
-      select: { id: true, email: true, role: true, status: true, refresh_token_hash: true },
+    // Create user
+    const user = this.userRepository.create({
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: role as UserRole,
+      status: UserStatus.Active,
     });
 
-    if (!user || user.status !== UserStatus.Active) {
-      throw new UnauthorizedException("User not found or inactive");
-    }
+    try {
+      const savedUser = await this.userRepository.save(user);
 
-    if (!user.refresh_token_hash || user.refresh_token_hash !== this.hashToken(rawRefreshToken)) {
-      throw new UnauthorizedException("Refresh token reuse or invalidation detected");
-    }
+      // Create tenant profile for all users
+      await this.createTenantProfile(savedUser);
+      // Ensure tenant CV share link exists
+      await this.tenantCvService.ensureShareUuid(savedUser.id);
 
-    return this.generateTokens(user);
+      // Generate tokens and create session
+      const accessToken = this.authTokenService.generateAccessToken(savedUser);
+      const refreshToken =
+        this.authTokenService.generateRefreshToken(savedUser);
+      await this.authTokenService.createSession(savedUser.id, accessToken);
+
+      return {
+        user: toUserResponse(savedUser),
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException("Registration failed");
+    }
   }
 
-  async clearRefreshToken(rawRefreshToken: string): Promise<void> {
-    try {
-      const payload = await this.jwtService.verifyAsync<{ sub: string }>(rawRefreshToken);
-      await this.userRepository.update({ id: payload.sub }, { refresh_token_hash: null });
-    } catch {
-      // token already invalid — nothing to clear
-    }
+  async login(loginDto: LoginDto) {
+
+    // Validate login credentials
+    const user = await this.authValidationService.validateLogin(loginDto);
+
+    // Generate tokens and create session
+    const accessToken = this.authTokenService.generateAccessToken(user);
+    const refreshToken = this.authTokenService.generateRefreshToken(user);
+    await this.authTokenService.createSession(user.id, accessToken);
+
+    return {
+      user: toUserResponse(user),
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+  }
+
+  async refresh(user: User) {
+    const accessToken = this.authTokenService.generateAccessToken(user);
+    const refreshToken = this.authTokenService.generateRefreshToken(user);
+    await this.authTokenService.createSession(user.id, accessToken);
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
   }
 
   async findUserWithProfile(userId: string): Promise<User | null> {
@@ -95,15 +114,55 @@ export class AuthService {
       relations: ["preferences", "tenantProfile", "operatorProfile"],
     });
     if (user?.avatar_url) {
-      user.avatar_url = (await this.s3Service.refreshAvatarUrl(user.avatar_url)) ?? user.avatar_url;
+      user.avatar_url = await this.s3Service.refreshAvatarUrl(user.avatar_url) ?? user.avatar_url;
     }
     return user;
   }
 
-  async googleAuth(googleUser: GoogleUser): Promise<User> {
-    let user = await this.userRepository.findOne({ where: { google_id: googleUser.google_id } });
+  async checkUserExists(email: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { email: email.toLowerCase() },
+    });
+    return !!user;
+  }
+
+  // Session management
+  async logout(userId: string, token: string) {
+    return this.authTokenService.invalidateToken(userId, token);
+  }
+
+  async logoutAllDevices(userId: string) {
+    return this.authTokenService.invalidateAllUserTokens(userId);
+  }
+
+  async logoutOtherDevices(userId: string, currentToken: string) {
+    return this.authTokenService.invalidateOtherUserTokens(
+      userId,
+      currentToken
+    );
+  }
+
+  async getUserSessions(userId: string) {
+    return this.authTokenService.getUserSessions(userId);
+  }
+
+  async invalidateSession(userId: string, sessionId: string) {
+    return this.authTokenService.invalidateSession(userId, sessionId);
+  }
+
+  async updateSessionActivity(userId: string, token: string) {
+    return this.authTokenService.updateSessionActivity(userId, token);
+  }
+
+  // Google OAuth methods
+  async googleAuth(googleUser: any): Promise<User> {
+    // Find or create user from Google data
+    let user = await this.userRepository.findOne({
+      where: { google_id: googleUser.google_id },
+    });
 
     if (!user) {
+      // Create new user from Google data (always as tenant)
       user = this.userRepository.create({
         email: googleUser.email.toLowerCase(),
         google_id: googleUser.google_id,
@@ -116,85 +175,76 @@ export class AuthService {
       });
 
       user = await this.userRepository.save(user);
+
+      // Create tenant profile for all Google users
       await this.createTenantProfile(user);
       await this.tenantCvService.ensureShareUuid(user.id);
     } else {
-      if (user.status !== UserStatus.Active) {
-        throw new UnauthorizedException("Account is suspended or inactive");
-      }
-
+      // Update existing user with latest Google data
       user.full_name = googleUser.full_name;
-      user.email_verified = googleUser.email_verified;
-
-      const hasCustomAvatar =
-        user.avatar_url &&
-        !user.avatar_url.includes("googleusercontent.com") &&
-        !user.avatar_url.includes("google.com");
-
+      // Only update avatar_url if user hasn't uploaded their own avatar
+      // Check if current avatar_url is from Google (contains googleusercontent.com or is null/empty)
+      const hasCustomAvatar = user.avatar_url && 
+        !user.avatar_url.includes('googleusercontent.com') &&
+        !user.avatar_url.includes('google.com');
+      
       if (!hasCustomAvatar) {
+        // User doesn't have a custom avatar, update with Google's
         user.avatar_url = googleUser.avatar_url;
       }
-
+      // Always update email_verified status
+      user.email_verified = googleUser.email_verified;
       user = await this.userRepository.save(user);
     }
 
     return user;
   }
 
-  async findOrCreateFixtureUser(role: "tenant" | "admin" | "fresh-tenant"): Promise<User> {
-    // Profile fields must be set so isProfileComplete() returns true in the frontend,
-    // which makes SimpleDashboardRouter skip the onboarding redirect for admin users.
-    const sharedProfile = {
-      first_name: "E2E",
-      last_name: role === "admin" ? "Admin" : "Tenant",
-      address: "1 Test Street, London",
-      phone: "+447700900001",
-      date_of_birth: new Date("1990-01-01"),
-      nationality: "British",
-    };
+  async createGoogleUserFromTempToken(tempToken: string) {
+    const tokenInfo = await this.authTokenService.getTempTokenInfo(tempToken);
 
-    const fixtureMap = {
-      tenant: { email: "e2e-tenant@tada-test.internal", full_name: "E2E Tenant", dbRole: UserRole.Tenant },
-      "fresh-tenant": { email: "e2e-fresh-tenant@tada-test.internal", full_name: "E2E Fresh Tenant", dbRole: UserRole.Tenant },
-      admin: { email: "e2e-admin@tada-test.internal", full_name: "E2E Admin", dbRole: UserRole.Admin },
-    };
-
-    const fixture = fixtureMap[role];
-    let user = await this.userRepository.findOne({ where: { email: fixture.email } });
-
-    if (!user) {
-      user = this.userRepository.create({
-        email: fixture.email,
-        full_name: fixture.full_name,
-        email_verified: true,
-        provider: "e2e",
-        role: fixture.dbRole,
-        status: UserStatus.Active,
-        ...sharedProfile,
-      });
-      user = await this.userRepository.save(user);
-
-      if (fixture.dbRole === UserRole.Tenant) {
-        await this.createTenantProfile(user);
-        await this.tenantCvService.ensureShareUuid(user.id);
-      }
-    } else {
-      // Ensure profile fields are always up-to-date (handles fixtures created before this fix)
-      await this.userRepository.update({ id: user.id }, sharedProfile);
-      user = (await this.userRepository.findOne({ where: { id: user.id } })) as User;
+    if (!tokenInfo) {
+      throw new BadRequestException("Invalid temporary token");
     }
 
-    if (user.status !== UserStatus.Active) {
-      throw new Error(`Fixture user ${fixture.email} is not active`);
-    }
+    const user = this.userRepository.create({
+      email: tokenInfo.googleUserData.email,
+      google_id: tokenInfo.googleUserData.google_id,
+      full_name: tokenInfo.googleUserData.full_name,
+      avatar_url: tokenInfo.googleUserData.avatar_url ?? undefined,
+      email_verified: tokenInfo.googleUserData.email_verified,
+      provider: "google",
+      role: UserRole.Tenant,
+      status: UserStatus.Active,
+    });
 
-    return user;
+    const saved = await this.userRepository.save(user);
+    const savedUser = Array.isArray(saved) ? saved[0] : saved;
+
+    await this.createTenantProfile(savedUser);
+    await this.tenantCvService.ensureShareUuid(savedUser.id);
+
+    return savedUser;
   }
 
+  async generateTokens(user: User) {
+    const accessToken = this.authTokenService.generateAccessToken(user);
+    const refreshToken = this.authTokenService.generateRefreshToken(user);
+    await this.authTokenService.createSession(user.id, accessToken);
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  // Profile creation methods
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
+      full_name: undefined,
       phone: "",
+      date_of_birth: undefined,
       nationality: "",
       occupation: "",
       industry: "",
@@ -204,6 +254,31 @@ export class AuthService {
       additional_info: "",
       shortlisted_properties: [],
     });
+
     await this.tenantProfileRepository.save(tenantProfile);
+  }
+
+  private async createOperatorProfile(user: User): Promise<void> {
+    const operatorProfile = this.operatorProfileRepository.create({
+      userId: user.id,
+      full_name: undefined,
+      phone: "",
+      company_name: "",
+      date_of_birth: undefined,
+      nationality: "",
+      business_address: "",
+      company_registration: "",
+      vat_number: "",
+      license_number: "",
+      years_experience: undefined,
+      operating_areas: [],
+      property_types: [],
+      services: [],
+      business_description: "",
+      website: "",
+      linkedin: "",
+    });
+
+    await this.operatorProfileRepository.save(operatorProfile);
   }
 }

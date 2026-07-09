@@ -1599,20 +1599,13 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                     <input
                       ref={photoInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/*"
                       multiple
                       onChange={(e) => {
                         const newFiles = Array.from(e.target.files || []);
-                        const maxSize = 10 * 1024 * 1024;
-                        const validFiles = newFiles.filter((file) => {
-                          if (file.size > maxSize) {
-                            alert(`File ${file.name} exceeds the 10MB limit`);
-                            return false;
-                          }
-                          return true;
-                        });
-                        if (validFiles.length > 0) {
-                          setPhotoFiles((prev) => [...prev, ...validFiles]);
+                        if (newFiles.length > 0) {
+                          setPhotoFiles((prev) => [...prev, ...newFiles]);
+                          // Reset input so user can select the same file again if needed
                           if (photoInputRef.current) {
                             photoInputRef.current.value = "";
                           }

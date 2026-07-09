@@ -87,7 +87,7 @@ export default function ProfilePage() {
         const hasSession = !!storeUser?.id && isAuthenticated;
 
         if (!hasSession) {
-          router.replace("/app/auth");
+          router.replace("/app/auth/login");
           return;
         }
 
@@ -96,7 +96,17 @@ export default function ProfilePage() {
           return;
         }
 
-        const res = await authAPI.getMe();
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        if (!isMounted) return;
+
+        const { user: storeUserAfterWait } = store.getState().auth;
+        if (storeUserAfterWait?.id) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        const res = await authAPI.getProfile();
         const fetchedUser = res.data?.user || res.data;
 
         if (!fetchedUser || !fetchedUser.id) {
@@ -112,7 +122,7 @@ export default function ProfilePage() {
         if (isMounted) {
           setHasError(true);
           if (err.response?.status === 401) {
-            router.replace("/app/auth");
+            router.replace("/app/auth/login");
             return;
           }
         }

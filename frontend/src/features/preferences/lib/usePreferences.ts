@@ -204,6 +204,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
   useEffect(() => {
     // Wait for session to be initialized first
     if (!sessionInitialized) {
+      console.log("⏳ Waiting for session initialization in usePreferences...");
       return;
     }
 
@@ -215,17 +216,22 @@ export default function usePreferences(currentStepOffset: number = 0) {
     // Only redirect if we've checked authentication and user is definitely not authenticated
     // Important: check that session is initialized before checking authentication
     if (sessionInitialized && isAuthenticated === false) {
-      router.push("/app/auth");
+      console.log(
+        "🔒 User not authenticated, redirecting to login from usePreferences",
+      );
+      router.push("/app/auth/login");
       return;
     }
 
     // Only proceed if we have a user
     if (!user) {
+      console.log("⏳ Waiting for user data in usePreferences...");
       return;
     }
 
     // Check if operator role
     if (user.role === "operator") {
+      console.log("👷 User is operator, redirecting from usePreferences");
       router.push("/app/dashboard/operator");
       return;
     }
@@ -233,6 +239,8 @@ export default function usePreferences(currentStepOffset: number = 0) {
     // Mark as checked to prevent re-runs
     hasCheckedAuthRef.current = true;
 
+    // Load existing preferences for tenant
+    console.log("📄 Loading preferences for tenant:", user.email);
     loadExistingPreferences();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionInitialized, isAuthenticated, user?.id]); // Include sessionInitialized in dependencies
@@ -260,13 +268,16 @@ export default function usePreferences(currentStepOffset: number = 0) {
 
   const loadExistingPreferences = async () => {
     try {
+      console.log("🔄 Loading existing preferences...");
       const response = await preferencesAPI.get();
 
       if (response.data) {
+        console.log("✅ API preferences loaded:", response.data);
         setState((prev) => ({ ...prev, existingPreferences: response.data }));
 
         // Transform API data to form format
         const formData = transformApiDataForForm(response.data);
+        console.log("🔄 Transformed form data:", formData);
 
         // First, restore draft from localStorage if it exists (lower priority)
         let draftApplied = false;
@@ -276,6 +287,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
             if (raw) {
               const draft = JSON.parse(raw) as Partial<PreferencesFormData>;
               if (draft && typeof draft === "object") {
+                console.log("📝 Applying draft data first:", draft);
                 Object.keys(draft).forEach((key) => {
                   const value = draft[key as keyof PreferencesFormData];
                   if (value === null || value === undefined) return;
@@ -321,18 +333,30 @@ export default function usePreferences(currentStepOffset: number = 0) {
                 typeof value === "string" && value.includes("T")
                   ? value.split("T")[0]
                   : value;
+              console.log(`📅 Setting date field ${key}:`, dateValue);
               setValue(key as keyof PreferencesFormData, dateValue);
               return;
             }
 
+            // Handle all other fields (including empty arrays, empty strings, and false booleans)
+            console.log(`📝 Setting field ${key}:`, value);
             setValue(key as keyof PreferencesFormData, value);
+          } else {
+            console.log(`⏭️ Skipping null/undefined field ${key}`);
           }
         });
 
+        if (draftApplied) {
+          console.log("📝 Draft was applied first, then overridden by API data where available");
+        }
+      } else {
+        console.log("ℹ️ No preferences data in response");
       }
 
       hasAppliedInitialLoadRef.current = true;
     } catch (error) {
+      console.log("❌ Failed to load preferences from API:", error);
+      // Check if this is a 404 (no preferences yet) or another error
       setState((prev) => ({ ...prev, existingPreferences: null }));
 
       // Restore draft when no API preferences (e.g. first time or 404)
@@ -342,6 +366,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
           if (raw) {
             const draft = JSON.parse(raw) as Partial<PreferencesFormData>;
             if (draft && typeof draft === "object") {
+              console.log("📝 No API preferences, applying draft only:", draft);
               Object.keys(draft).forEach((key) => {
                 const value = draft[key as keyof PreferencesFormData];
                 if (value === null || value === undefined) return;
@@ -605,6 +630,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
           changedData.move_out_date = processedData.move_out_date;
         }
 
+        console.log("🔄 Changed data to send:", changedData);
         dataToSend = changedData;
       }
 
