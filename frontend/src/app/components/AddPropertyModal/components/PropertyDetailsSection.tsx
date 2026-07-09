@@ -1,6 +1,7 @@
 import React from "react";
 import { FormField, Input, Textarea } from "../../FormField";
 import { PropertyFormData } from "../types";
+import { sqFtToSqM, formatSqMForForm } from "@/shared/lib/area";
 
 interface PropertyDetailsSectionProps {
   formData: PropertyFormData;
@@ -184,23 +185,36 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
         </FormField>
 
         <FormField
-          label="Square Meters"
+          label="Square Feet"
           error={errors.square_meters}
           touched={touched.square_meters}
         >
           <Input
             type="number"
-            value={formData.square_meters ?? ""}
-            onChange={(e) =>
+            value={formData.square_feet ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value === "" ? null : Number(e.target.value);
+              const sqFt = raw != null && !isNaN(raw) ? raw : null;
+              onFieldChange("square_feet", sqFt);
               onFieldChange(
                 "square_meters",
-                e.target.value === "" ? null : Number(e.target.value),
-              )
-            }
+                sqFt == null ? null : sqFtToSqM(sqFt),
+              );
+            }}
             onBlur={() => onFieldBlur("square_meters")}
             error={touched.square_meters && !!errors.square_meters}
             min={0}
             step="0.1"
+          />
+        </FormField>
+
+        <FormField label="Square Meters">
+          <Input
+            type="text"
+            value={formatSqMForForm(formData.square_meters)}
+            readOnly
+            tabIndex={-1}
+            placeholder="—"
           />
         </FormField>
       </div>
