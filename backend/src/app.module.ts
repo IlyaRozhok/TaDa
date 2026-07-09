@@ -10,7 +10,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
 import { PreferencesModule } from "./modules/preferences/preferences.module";
 import { MatchingModule } from "./modules/matching/matching.module";
-import { PropertiesModule } from "./modules/properties/properties.module";
+import { PropertyModule } from "./modules/property/property.module";
 import { PropertyMediaModule } from "./modules/property-media/property-media.module";
 import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { BuildingModule } from "./modules/building/building.module";
@@ -54,7 +54,7 @@ import {SentryModule} from "@sentry/nestjs/setup";
     UsersModule,
     PreferencesModule,
     MatchingModule,
-    PropertiesModule,
+    PropertyModule,
     PropertyMediaModule,
     ShortlistModule,
     BuildingModule,

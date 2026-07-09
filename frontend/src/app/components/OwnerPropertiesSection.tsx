@@ -100,7 +100,7 @@ const OwnerPropertiesSection: React.FC<OwnerPropertiesSectionProps> = ({
         <button
           className="text-black text-sm underline hover:text-gray-600 font-medium"
           onClick={() =>
-            (window.location.href = `/app/operators/${operatorId}`)
+            (window.location.href = `/app/properties`)
           }
         >
           {t(listingPropertyKeys.building.seeMoreApartments)}

@@ -107,11 +107,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
 
             <button
               className="mt-2 w-full text-black text-sm underline hover:text-gray-600 font-medium text-left"
-              onClick={() =>
-                operatorId
-                  ? router.push(`/app/operators/${operatorId}`)
-                  : router.push(`/app/buildings/${buildingId}`)
-              }
+              onClick={() => router.push(`/app/buildings/${buildingId}`)}
             >
               {t(listingPropertyKeys.building.seeMoreApartments)}
             </button>
@@ -144,11 +140,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
               </div>
               <button
                 className="text-black text-sm underline hover:text-gray-600 font-medium"
-                onClick={() =>
-                  operatorId
-                    ? router.push(`/app/operators/${operatorId}`)
-                    : router.push(`/app/buildings/${buildingId}`)
-                }
+                onClick={() => router.push(`/app/buildings/${buildingId}`)}
               >
                 {t(listingPropertyKeys.building.seeMoreApartments)}
               </button>
@@ -200,11 +192,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
 
           <button
             className="lg:mt-2 w-full text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium text-left"
-            onClick={() =>
-              operatorId
-                ? router.push(`/app/operators/${operatorId}`)
-                : router.push(`/app/buildings/${buildingId}`)
-            }
+            onClick={() => router.push(`/app/buildings/${buildingId}`)}
           >
             {t(listingPropertyKeys.building.seeMoreApartments)}
           </button>
@@ -237,11 +225,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
             </div>
             <button
               className="text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium"
-              onClick={() =>
-                operatorId
-                  ? router.push(`/app/operators/${operatorId}`)
-                  : router.push(`/app/buildings/${buildingId}`)
-              }
+              onClick={() => router.push(`/app/buildings/${buildingId}`)}
             >
               {t(listingPropertyKeys.building.seeMoreApartments)}
             </button>
