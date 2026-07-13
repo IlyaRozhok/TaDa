@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 // import { useSelector } from "react-redux";
 import Link from "next/link";
 // import {
@@ -9,7 +9,7 @@ import Link from "next/link";
 // } from "@/store/slices/authSlice";
 import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
-// import { useDebounce } from "../../../hooks/useDebounce";
+import { useDebounce } from "../../../hooks/useDebounce";
 import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
@@ -82,6 +82,10 @@ function AdminPanelContent() {
   // const isAuthenticated = useSelector(selectIsAuthenticated);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [users, setUsers] = useState<User[]>([]);
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const USERS_PAGE_SIZE = 10;
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [requests, setRequests] = useState<BookingRequest[]>([]);
@@ -141,7 +145,7 @@ function AdminPanelContent() {
   }, [bookingQueryData]);
 
   // Debounced search term
-  // const debouncedSearchTerm = useDebounce(searchTerm, 150);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Notification management
   const addNotification = (
@@ -161,7 +165,48 @@ function AdminPanelContent() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
-  // Load data based on active section
+  // Load paginated, searchable users list
+  const loadUsers = useCallback(async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+    setUsersLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(usersPage),
+        limit: String(USERS_PAGE_SIZE),
+      });
+      if (debouncedSearchTerm.trim()) {
+        params.set("search", debouncedSearchTerm.trim());
+      }
+      const response = await fetch(`${apiUrl}/users?${params.toString()}`, {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || data || []);
+        setUsersTotal(
+          typeof data.total === "number" ? data.total : (data.users || []).length,
+        );
+      }
+    } catch (error) {
+      addNotification("error", "Failed to load users");
+    } finally {
+      setUsersLoading(false);
+    }
+  }, [usersPage, debouncedSearchTerm]);
+
+  // Reset to first page whenever the search term changes
+  useEffect(() => {
+    setUsersPage(1);
+  }, [debouncedSearchTerm]);
+
+  // Load users when the section is active, page changes, or search changes
+  useEffect(() => {
+    if (activeSection !== "users") return;
+    loadUsers();
+  }, [activeSection, loadUsers]);
+
+  // Load data for other sections
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -171,16 +216,7 @@ function AdminPanelContent() {
           "Content-Type": "application/json",
         };
 
-        if (activeSection === "users") {
-          const response = await fetch(`${apiUrl}/users`, {
-            credentials: "include",
-            headers,
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUsers(data.users || data || []);
-          }
-        } else if (activeSection === "buildings") {
+        if (activeSection === "buildings") {
           const response = await fetch(`${apiUrl}/buildings`, {
             credentials: "include",
             headers,
@@ -191,7 +227,6 @@ function AdminPanelContent() {
           }
         }
       } catch (error) {
-        console.error("Error loading data:", error);
         addNotification("error", "Failed to load data");
       } finally {
         // no-op for requests: RTK Query управляет своим loading
@@ -285,7 +320,7 @@ function AdminPanelContent() {
         });
 
         if (response.ok) {
-          setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
+          await loadUsers();
           addNotification(
             "success",
             `User "${user.full_name || user.email}" deleted successfully`,
@@ -359,14 +394,7 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const usersData = await response.json();
-          setUsers(usersData.users || usersData || []);
-        }
+        await loadUsers();
       }
     } catch (error: any) {
       addNotification("error", `Failed to create user: ${error.message}`);
@@ -467,23 +495,7 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const usersData = await response.json();
-          const updatedUsers = usersData.users || usersData || [];
-          setUsers(updatedUsers);
-
-          // Update selectedItem with the updated user from the list
-          const updatedUserFromList = updatedUsers.find(
-            (u: User) => u.id === id,
-          );
-          if (updatedUserFromList) {
-            setSelectedItem(updatedUserFromList);
-          }
-        }
+        await loadUsers();
       }
 
       setShowModal(null);
@@ -791,9 +803,13 @@ function AdminPanelContent() {
             users={users}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            searchLoading={false}
+            searchLoading={usersLoading}
             sort={sort}
             setSort={setSort}
+            page={usersPage}
+            total={usersTotal}
+            pageSize={USERS_PAGE_SIZE}
+            onPageChange={setUsersPage}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}

@@ -7,6 +7,9 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
   FileText,
 } from "lucide-react";
 import { useGetAdminTenantCvQuery } from "@/store/slices/apiSlice";
@@ -28,6 +31,10 @@ interface AdminUsersSectionProps {
   searchLoading: boolean;
   sort: { field: string; direction: "asc" | "desc" };
   setSort: (sort: { field: string; direction: "asc" | "desc" }) => void;
+  page: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
   onView: (user: User) => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
@@ -64,6 +71,10 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   searchLoading,
   sort,
   setSort,
+  page,
+  total,
+  pageSize,
+  onPageChange,
   onView,
   onEdit,
   onDelete,
@@ -143,6 +154,23 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
         </button>
       </div>
 
+      <div className="relative max-w-md">
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          {searchLoading ? (
+            <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+          ) : (
+            <Search className="w-4 h-4 text-gray-400" />
+          )}
+        </div>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search by name or email..."
+          className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-black placeholder-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
+        />
+      </div>
+
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -174,7 +202,7 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
             <tbody className="bg-white divide-y divide-gray-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Users className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -290,9 +318,35 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           </table>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200">
-          {/* Pagination component would go here */}
-        </div>
+        {total > 0 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              Showing {(page - 1) * pageSize + 1}–
+              {Math.min(page * pageSize, total)} of {total}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onPageChange(page - 1)}
+                disabled={page <= 1}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Prev
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
+              </span>
+              <button
+                onClick={() => onPageChange(page + 1)}
+                disabled={page >= Math.ceil(total / pageSize)}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
