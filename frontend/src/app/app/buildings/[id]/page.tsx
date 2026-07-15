@@ -73,7 +73,11 @@ export default function BuildingPublicPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [showAllOffers, setShowAllOffers] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+
+  // Approximate 3 lines = ~50 words
+  const needsTruncation = (text: string) => text.split(" ").length > 50;
 
   useEffect(() => {
     let isMounted = true;
@@ -455,17 +459,39 @@ export default function BuildingPublicPage() {
             </div>
           )}
 
-          {/* About building */}
-          {building.description && (
-            <section className="py-4 sm:py-6 w-full">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-                {t(listingPropertyKeys.description.sectionTitle)}
-              </h2>
-              <div className="text-sm sm:text-base text-black leading-relaxed whitespace-pre-line">
-                {building.description}
-              </div>
-            </section>
-          )}
+          {/* About building — only when a description exists */}
+          {(() => {
+            const description =
+              typeof building.description === "string"
+                ? building.description.trim()
+                : "";
+            if (!description) return null;
+
+            const showTruncation = needsTruncation(description);
+
+            return (
+              <section className="py-4 sm:py-6 w-full">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+                  {t(listingPropertyKeys.description.sectionTitle)}
+                </h2>
+                <div
+                  className={`${
+                    showTruncation && !showFullDescription ? "line-clamp-3" : ""
+                  } overflow-hidden text-sm sm:text-base text-black leading-relaxed whitespace-pre-line`}
+                >
+                  {description}
+                </div>
+                {showTruncation && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="cursor-pointer text-black underline text-sm hover:text-black/85 font-medium mt-2"
+                  >
+                    {showFullDescription ? "Show less" : "More information"}
+                  </button>
+                )}
+              </section>
+            );
+          })()}
 
           {/* What this place offers */}
           {displayedAmenities.length > 0 && (
