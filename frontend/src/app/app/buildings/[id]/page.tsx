@@ -484,7 +484,7 @@ export default function BuildingPublicPage() {
                 {showTruncation && (
                   <button
                     onClick={() => setShowFullDescription(!showFullDescription)}
-                    className="text-black underline text-sm hover:text-black/85 font-medium mt-2"
+                    className="cursor-pointer text-black underline text-sm hover:text-black/85 font-medium mt-2"
                   >
                     {showFullDescription ? "Show less" : "More information"}
                   </button>
