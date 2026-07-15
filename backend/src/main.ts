@@ -86,7 +86,6 @@ async function bootstrap() {
   const port = process.env.PORT ?? 5001;
   await app.listen(port, "0.0.0.0");
 
-  console.log(`Tada server is running on: http://localhost:${port}`);
   console.log(`Swagger: http://localhost:${port}/api/docs`);
 }
 
