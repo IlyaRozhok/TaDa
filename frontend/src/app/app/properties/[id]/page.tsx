@@ -102,6 +102,8 @@ export default function PropertyPublicPage() {
   const [isInShortlist, setIsInShortlist] = useState(false);
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [showFullBuildingDescription, setShowFullBuildingDescription] =
+    useState(false);
   const [showAllOffers, setShowAllOffers] = useState(false);
   const [showAllPropertyOffers, setShowAllPropertyOffers] = useState(false);
   const [matchScore, setMatchScore] = useState<number | null>(null);
@@ -1289,47 +1291,41 @@ export default function PropertyPublicPage() {
         </div>
       </div>
 
-      {/* About apartment */}
-      <div className="lg:max-w-[92%] mx-auto mt-6 px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
-        <div className="w-full lg:w-2/3">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-            {t(listingPropertyKeys.description.sectionTitle)}
-          </h2>
-          <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
-            {(() => {
-              const description =
-                property.descriptions ||
-                property.description ||
-                "Spacious family home spread over three floors with a beautiful rear garden. Perfect for families, featuring multiple reception rooms and a modern kitchen extension.";
-              const showTruncation = needsTruncation(description);
+      {/* About apartment — only when a description exists */}
+      {(() => {
+        const raw = property.descriptions || property.description;
+        const description = typeof raw === "string" ? raw.trim() : "";
+        if (!description) return null;
 
-              return (
-                <>
-                  <div
-                    className={`${
-                      showTruncation && !showFullDescription
-                        ? "line-clamp-3"
-                        : ""
-                    } overflow-hidden whitespace-pre-wrap`}
+        const showTruncation = needsTruncation(description);
+
+        return (
+          <div className="lg:max-w-[92%] mx-auto mt-6 px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
+            <div className="w-full lg:w-2/3">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                {t(listingPropertyKeys.description.sectionTitle)}
+              </h2>
+              <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
+                <div
+                  className={`${
+                    showTruncation && !showFullDescription ? "line-clamp-3" : ""
+                  } overflow-hidden whitespace-pre-wrap`}
+                >
+                  {description}
+                </div>
+                {showTruncation && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="text-black underline text-sm hover:text-black/85 font-medium mt-2"
                   >
-                    {description}
-                  </div>
-                  {showTruncation && (
-                    <button
-                      onClick={() =>
-                        setShowFullDescription(!showFullDescription)
-                      }
-                      className="text-black underline text-sm hover:text-black/85 font-medium mt-2"
-                    >
-                      {showFullDescription ? "Show less" : "More information"}
-                    </button>
-                  )}
-                </>
-              );
-            })()}
+                    {showFullDescription ? "Show less" : "More information"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* What's Included — apartment-level property amenities */}
       <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-6 sm:py-8">
@@ -1402,11 +1398,39 @@ export default function PropertyPublicPage() {
             {t(listingPropertyKeys.keyFeatures.sectionTitle)}
           </h2>
 
-          {buildingWithMedia?.description && (
-            <div className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line mb-6 sm:mb-8">
-              {buildingWithMedia.description}
-            </div>
-          )}
+          {(() => {
+            const buildingDescription =
+              typeof buildingWithMedia?.description === "string"
+                ? buildingWithMedia.description.trim()
+                : "";
+            if (!buildingDescription) return null;
+
+            const showTruncation = needsTruncation(buildingDescription);
+
+            return (
+              <div className="mb-6 sm:mb-8">
+                <div
+                  className={`${
+                    showTruncation && !showFullBuildingDescription
+                      ? "line-clamp-3"
+                      : ""
+                  } overflow-hidden text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line`}
+                >
+                  {buildingDescription}
+                </div>
+                {showTruncation && (
+                  <button
+                    onClick={() =>
+                      setShowFullBuildingDescription(!showFullBuildingDescription)
+                    }
+                    className="text-black underline text-sm hover:text-black/85 font-medium mt-2"
+                  >
+                    {showFullBuildingDescription ? "Show less" : "More information"}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-1">
             {(() => {
