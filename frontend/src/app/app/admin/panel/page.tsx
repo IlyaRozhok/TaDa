@@ -9,7 +9,7 @@ import Link from "next/link";
 // } from "@/store/slices/authSlice";
 import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
-// import { useDebounce } from "../../../hooks/useDebounce";
+import { useDebounce } from "../../../hooks/useDebounce";
 import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
@@ -86,6 +86,9 @@ function AdminPanelContent() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const debouncedSearch = useDebounce(searchTerm, 400);
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
     direction: "desc",
@@ -140,9 +143,6 @@ function AdminPanelContent() {
     }
   }, [bookingQueryData]);
 
-  // Debounced search term
-  // const debouncedSearchTerm = useDebounce(searchTerm, 150);
-
   // Notification management
   const addNotification = (
     type: "success" | "error" | "info",
@@ -172,13 +172,16 @@ function AdminPanelContent() {
         };
 
         if (activeSection === "users") {
-          const response = await fetch(`${apiUrl}/users`, {
+          const params = new URLSearchParams({ page: String(page), limit: "20" });
+          if (debouncedSearch) params.set("search", debouncedSearch);
+          const response = await fetch(`${apiUrl}/users?${params}`, {
             credentials: "include",
             headers,
           });
           if (response.ok) {
             const data = await response.json();
             setUsers(data.users || data || []);
+            setTotalPages(data.totalPages || 1);
           }
         } else if (activeSection === "buildings") {
           const response = await fetch(`${apiUrl}/buildings`, {
@@ -199,6 +202,11 @@ function AdminPanelContent() {
     };
 
     loadData();
+  }, [activeSection, debouncedSearch, page]);
+
+  // Reset page when section changes
+  useEffect(() => {
+    setPage(1);
   }, [activeSection]);
 
   // Event handlers
@@ -791,6 +799,7 @@ function AdminPanelContent() {
             users={users}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
+            onSearchChange={(v) => { setSearchTerm(v); setPage(1); }}
             searchLoading={false}
             sort={sort}
             setSort={setSort}
@@ -798,6 +807,9 @@ function AdminPanelContent() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p)}
           />
         );
       case "buildings":
