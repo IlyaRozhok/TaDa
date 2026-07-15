@@ -639,10 +639,11 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         operator_id: operatorIdValue,
       };
 
-      // Add optional fields only if they have values
-      if (formData.description && formData.description.trim() !== "") {
-        buildingData.description = formData.description;
-      }
+      // Always send description so clearing it in the editor persists as empty
+      buildingData.description =
+        formData.description && formData.description.trim() !== ""
+          ? formData.description
+          : "";
       if (formData.address && formData.address.trim() !== "") {
         buildingData.address = formData.address;
       }
