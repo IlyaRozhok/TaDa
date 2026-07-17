@@ -47,9 +47,13 @@ interface ListedPropertiesSectionProps {
   showShortlistForAllRoles?: boolean;
   /** When true, image-level skeletons are disabled (useful when hydrating from cache on back nav). */
   disableImageSkeleton?: boolean;
+  /** Controlled sort value. When provided, parent manages sort selection and data source. */
+  sortBy?: SortOption;
+  /** Called when user picks a new sort. When provided, bestMatch data is assumed globally sorted by server. */
+  onSortChange?: (sort: SortOption) => void;
 }
 
-type SortOption =
+export type SortOption =
   | "bestMatch"
   | "lowPrice"
   | "highPrice"
@@ -165,10 +169,20 @@ export default function ListedPropertiesSection({
   totalPages = 1,
   onPageChange,
   showShortlistForAllRoles = false,
+  sortBy: controlledSortBy,
+  onSortChange,
 }: ListedPropertiesSectionProps) {
   const router = useRouter();
   const { t } = useTranslation();
-  const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
+  const [internalSortBy, setInternalSortBy] = useState<SortOption>(
+    controlledSortBy ?? "bestMatch",
+  );
+  const activeSortBy = controlledSortBy ?? internalSortBy;
+  const isControlled = controlledSortBy !== undefined;
+  const handleSortChange = (s: SortOption) => {
+    setInternalSortBy(s);
+    onSortChange?.(s);
+  };
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -197,8 +211,10 @@ export default function ListedPropertiesSection({
       return [];
     }
 
-    switch (sortBy) {
+    switch (activeSortBy) {
       case "bestMatch":
+        // Controlled: data comes from the matching endpoint, already globally sorted — skip re-sort
+        if (isControlled) return validProperties;
         return validProperties.sort(
           (a, b) => (b.matchScore || 0) - (a.matchScore || 0),
         );
@@ -227,7 +243,7 @@ export default function ListedPropertiesSection({
       default:
         return validProperties;
     }
-  }, [properties, sortBy]);
+  }, [properties, activeSortBy, isControlled]);
 
   const handlePropertyClick = (propertyId: string) => {
     router.push(`/app/properties/${propertyId}`);
@@ -254,7 +270,7 @@ export default function ListedPropertiesSection({
 
         {/* Controls */}
         <div className="flex items-center gap-4 mt-4 sm:mt-0">
-          <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
+          <SortDropdown sortBy={activeSortBy} onSortChange={handleSortChange} />
         </div>
       </div>
 
