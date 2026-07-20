@@ -351,9 +351,8 @@ export class MatchingService {
       };
     }
 
-    // Apply SQL pre-filters to narrow the candidate set
-    this.applyPreFilters(qb, preferences);
-
+    // No SQL pre-filters here — we score ALL properties so the "Best Match"
+    // sort shows every property ranked by compatibility, not a filtered subset.
     const candidates = await qb.getMany();
 
     // Score remaining candidates in JS
