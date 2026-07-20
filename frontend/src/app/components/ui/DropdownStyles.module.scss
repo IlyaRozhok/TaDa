@@ -13,6 +13,19 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); // shadow-2xl
   border: 1px solid rgba(255, 255, 255, 0.1); // border-white/10
   padding: 1rem 0; // py-4
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @media (max-width: 640px) {
+    position: fixed;
+    top: 64px; // header height
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 0 0 1rem 1rem;
+    margin-top: 0;
+  }
 }
 
 .dropdownHeader {

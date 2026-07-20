@@ -107,6 +107,18 @@ export default function DashboardHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Lock body scroll on mobile when dropdown is open
+  useEffect(() => {
+    if (isDropdownOpen && window.innerWidth < 640) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isDropdownOpen]);
+
   const handleLogout = () => {
     dispatch(logout());
     router.push("/");
