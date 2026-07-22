@@ -180,8 +180,13 @@ export class AuthService {
       await this.createTenantProfile(user);
       await this.tenantCvService.ensureShareUuid(user.id);
     } else {
-      // Update existing user with latest Google data
-      user.full_name = googleUser.full_name;
+      // Update existing user with latest Google data.
+      // Only overwrite full_name if the user hasn't set a custom name via
+      // their profile (first_name / last_name set = they edited it manually).
+      const hasCustomName = user.first_name || user.last_name;
+      if (!hasCustomName) {
+        user.full_name = googleUser.full_name;
+      }
       // Only update avatar_url if user hasn't uploaded their own avatar
       // Check if current avatar_url is from Google (contains googleusercontent.com or is null/empty)
       const hasCustomAvatar = user.avatar_url && 

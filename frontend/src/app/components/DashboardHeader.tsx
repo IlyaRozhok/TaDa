@@ -73,17 +73,18 @@ export default function DashboardHeader() {
       .slice(0, 2);
   };
 
-  // Get display name with better fallback logic
+  // Get display name with better fallback logic.
+  // Priority: profile name (user-edited) → user.full_name (Google) → email
   const getDisplayName = () => {
-    // Try user.full_name first
-    if (user?.full_name) return user.full_name;
-
-    // Try profile-based name
+    // Profile name takes priority — this is what the user explicitly set
     const profileName =
       user?.tenantProfile?.full_name || user?.operatorProfile?.full_name;
     if (profileName) return profileName;
 
-    // Fallback to email username
+    // Fall back to user.full_name (initially from Google, preserved if no profile update)
+    if (user?.full_name) return user.full_name;
+
+    // Last resort: email username
     if (user?.email) {
       const emailUsername = user.email.split("@")[0];
       return emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
