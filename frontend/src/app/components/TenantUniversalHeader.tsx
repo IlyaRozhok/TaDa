@@ -17,9 +17,12 @@ import {
   FileText,
   Search,
   Heart,
+  LogOut,
 } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
+import { useDispatch } from "react-redux";
+import { logout } from "@/store/slices/authSlice";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { headerKeys } from "@/app/lib/translationsKeys/headerTranslationKeys";
 
@@ -48,6 +51,7 @@ export default function TenantUniversalHeader({
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
+  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isOnboarded = useSelector(selectIsOnboarded);
   const { t } = useTranslation();
@@ -252,21 +256,22 @@ export default function TenantUniversalHeader({
               )}
             </button>
 
-            {/* Mobile Menu Dropdown - styled like LanguageDropdown */}
+            {/* Mobile Menu Dropdown */}
             {isMobileMenuOpen && (
               <div
-                className="absolute right-0 top-full mt-1 sm:mt-2 rounded-xl min-w-[200px] sm:min-w-[240px] z-50 overflow-hidden backdrop-blur-[3px]"
+                className="fixed left-0 right-0 z-50 rounded-b-xl backdrop-blur-[3px]"
                 style={{
+                  top: "53px", // header height
                   background:
                     "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
                   boxShadow:
-                    "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
+                    "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2)",
                 }}
               >
-                <div className="max-h-64 overflow-y-auto rounded-xl relative">
+                <div className="overflow-y-auto rounded-b-xl" style={{ maxHeight: "calc(100vh - 60px)" }}>
                   <button
                     onClick={() => handleMobileMenuClick("/app/profile")}
-                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                   >
                     <User className="w-4 h-4 mr-3 flex-shrink-0" />
                     {t(profileKeys.dropProfileSettings)}
@@ -275,7 +280,7 @@ export default function TenantUniversalHeader({
                   {shouldShowPreferencesButton && (
                     <button
                       onClick={() => handleMobileMenuClick("/app/preferences")}
-                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                      className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                     >
                       <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
                       {t(profileKeys.dropChangePreferences)}
@@ -284,7 +289,7 @@ export default function TenantUniversalHeader({
 
                   <button
                     onClick={() => handleMobileMenuClick("/app/tenant-cv")}
-                    className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                    className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                   >
                     <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
                     {t(tenantCvKeys.tenantCvButton)}
@@ -293,7 +298,7 @@ export default function TenantUniversalHeader({
                   {user?.role === "admin" && isSameHeaderPage && (
                     <button
                       onClick={() => handleMobileMenuClick("/app/admin/panel")}
-                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                      className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                     >
                       <Shield className="w-4 h-4 mr-3 flex-shrink-0" />
                       Admin Panel
@@ -303,12 +308,26 @@ export default function TenantUniversalHeader({
                   {shouldShowFavouritesButton && (
                     <button
                       onClick={() => handleMobileMenuClick("/app/shortlist")}
-                      className="flex w-full cursor-pointer items-center px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-left transition-all duration-200 rounded-lg text-white hover:bg-white/12"
+                      className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                     >
                       <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
                       {t(favoritesKeys.title)}
                     </button>
                   )}
+
+                  <div className="mx-4 border-t border-white/20 my-1" />
+
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      dispatch(logout());
+                      router.push("/");
+                    }}
+                    className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-red-400 hover:bg-white/12"
+                  >
+                    <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
+                    Sign Out
+                  </button>
                 </div>
               </div>
             )}
