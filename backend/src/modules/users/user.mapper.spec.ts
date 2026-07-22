@@ -67,8 +67,8 @@ describe("toUserResponse (characterization)", () => {
     expect(result).not.toHaveProperty("password");
   });
 
-  describe("phone fallback chain (current duplicated-schema behaviour)", () => {
-    it("prefers the top-level user.phone", () => {
+  describe("phone (canonical on the user, post-consolidation)", () => {
+    it("reads phone from the top-level user, ignoring profile phones", () => {
       const user = {
         ...baseUser(),
         phone: "+44 TOP",
@@ -79,27 +79,18 @@ describe("toUserResponse (characterization)", () => {
       expect(toUserResponse(user).phone).toBe("+44 TOP");
     });
 
-    it("falls back to tenantProfile.phone when user.phone is empty", () => {
+    it("returns null when user.phone is empty even if a profile has a phone", () => {
       const user = {
         ...baseUser(),
         phone: null,
         tenantProfile: { phone: "+44 TENANT" },
-      } as unknown as User;
-
-      expect(toUserResponse(user).phone).toBe("+44 TENANT");
-    });
-
-    it("falls back to operatorProfile.phone when user and tenant phone are empty", () => {
-      const user = {
-        ...baseUser(),
-        phone: null,
         operatorProfile: { phone: "+44 OPERATOR" },
       } as unknown as User;
 
-      expect(toUserResponse(user).phone).toBe("+44 OPERATOR");
+      expect(toUserResponse(user).phone).toBeNull();
     });
 
-    it("returns null when no phone exists anywhere", () => {
+    it("returns null when there is no phone on the user", () => {
       const user = { ...baseUser(), phone: null } as unknown as User;
 
       expect(toUserResponse(user).phone).toBeNull();

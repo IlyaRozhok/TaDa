@@ -59,31 +59,6 @@ export class UserProfileService {
     await this.tenantProfileRepository.save(profile);
   }
 
-  /** Mirror personal fields from users table → tenant_profiles (backward compat). */
-  async syncTenantProfileFromUser(user: User): Promise<void> {
-    if (!user.tenantProfile) return;
-    const profile = user.tenantProfile;
-    if (user.first_name !== undefined) profile.first_name = user.first_name;
-    if (user.last_name  !== undefined) profile.last_name  = user.last_name;
-    if (user.address    !== undefined) profile.address    = user.address;
-    if (user.phone      !== undefined) profile.phone      = user.phone;
-    if (user.nationality !== undefined) profile.nationality = user.nationality;
-    if (user.date_of_birth !== undefined) profile.date_of_birth = user.date_of_birth;
-    profile.full_name = user.full_name || profile.full_name;
-    await this.tenantProfileRepository.save(profile);
-  }
-
-  /** Mirror personal fields from users table → operator_profiles (backward compat). */
-  async syncOperatorProfileFromUser(user: User): Promise<void> {
-    if (!user.operatorProfile) return;
-    const profile = user.operatorProfile;
-    if (user.first_name !== undefined) (profile as any).first_name = user.first_name;
-    if (user.last_name  !== undefined) (profile as any).last_name  = user.last_name;
-    if (user.phone      !== undefined) profile.phone  = user.phone;
-    profile.full_name = user.full_name || profile.full_name;
-    await this.operatorProfileRepository.save(profile);
-  }
-
   async createTenantProfileForUser(
     userId: string,
     updateUserDto: UpdateUserDto

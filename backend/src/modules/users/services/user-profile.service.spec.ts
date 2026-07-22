@@ -128,31 +128,4 @@ describe("UserProfileService (characterization)", () => {
     });
   });
 
-  describe("syncTenantProfileFromUser (backward-compat mirror)", () => {
-    it("mirrors user personal fields down onto the tenant profile", async () => {
-      const tenantProfile = { full_name: "old" } as TenantProfile;
-      const user = {
-        first_name: "Jane",
-        last_name: "Doe",
-        address: "1 High St",
-        phone: "+44 900",
-        nationality: "British",
-        date_of_birth: new Date("1990-01-15"),
-        full_name: "Jane Doe",
-        tenantProfile,
-      } as User;
-
-      await service.syncTenantProfileFromUser(user);
-
-      expect(tenantProfile.first_name).toBe("Jane");
-      expect(tenantProfile.phone).toBe("+44 900");
-      expect(tenantProfile.full_name).toBe("Jane Doe");
-      expect(tenantRepo.save).toHaveBeenCalledWith(tenantProfile);
-    });
-
-    it("is a no-op when the user has no tenant profile", async () => {
-      await service.syncTenantProfileFromUser({} as User);
-      expect(tenantRepo.save).not.toHaveBeenCalled();
-    });
-  });
 });

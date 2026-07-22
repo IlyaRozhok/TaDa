@@ -96,23 +96,19 @@ export class UsersService {
       await this.userRepository.update(id, updates);
     }
 
-    // Keep tenant/operator profile in sync for preferences-related fields
-    const user = await this.userQueryService.findOneWithProfiles(id);
+    // Personal/contact fields are canonical on the users table (updated above).
+    // Only preferences-related fields still live on their own entity.
+    const preferencesChanged =
+      updateUserDto.pets !== undefined ||
+      updateUserDto.smoker !== undefined ||
+      updateUserDto.hobbies !== undefined;
 
-    if (user.role === UserRole.Tenant || user.role === UserRole.Admin) {
-      if (user.tenantProfile) {
-        await this.userProfileService.syncTenantProfileFromUser(user);
-      }
-      if (
-        updateUserDto.pets !== undefined ||
-        updateUserDto.smoker !== undefined ||
-        updateUserDto.hobbies
-      ) {
+    if (preferencesChanged) {
+      const user = await this.userQueryService.findOneWithProfiles(id);
+      const isTenantLike =
+        user.role === UserRole.Tenant || user.role === UserRole.Admin;
+      if (isTenantLike && user.preferences) {
         await this.userProfileService.updatePreferences(user, updateUserDto);
-      }
-    } else if (user.role === UserRole.Operator) {
-      if (user.operatorProfile) {
-        await this.userProfileService.syncOperatorProfileFromUser(user);
       }
     }
 

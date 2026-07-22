@@ -133,7 +133,7 @@ export class UserRoleService {
     if (!user.tenantProfile) {
       const tenantProfile = queryRunner.manager.create(TenantProfile, {
         userId: user.id,
-        full_name: user.full_name || user.operatorProfile?.full_name,
+        full_name: user.full_name,
       });
       await queryRunner.manager.save(TenantProfile, tenantProfile);
     }

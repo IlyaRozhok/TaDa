@@ -110,9 +110,8 @@ export class PreferencesService {
 
     if (search) {
       queryBuilder.where(
-        `tenantProfile.full_name ILIKE :search 
-         OR operatorProfile.full_name ILIKE :search 
-         OR user.email ILIKE :search 
+        `user.full_name ILIKE :search
+         OR user.email ILIKE :search
          OR preferences.preferred_address ILIKE :search`,
         { search: `%${search}%` }
       );

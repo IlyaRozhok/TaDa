@@ -171,17 +171,9 @@ export class User {
     return [this.role];
   }
 
-  // Computed property for full_name from profiles (fallback)
+  // Computed property kept for backward compatibility; full_name is canonical
+  // on the users table now.
   get computed_full_name(): string | null {
-    if (this.full_name) {
-      return this.full_name;
-    }
-    if (this.tenantProfile?.full_name) {
-      return this.tenantProfile.full_name;
-    }
-    if (this.operatorProfile?.full_name) {
-      return this.operatorProfile.full_name;
-    }
-    return null;
+    return this.full_name || null;
   }
 }
