@@ -259,16 +259,16 @@ export default function TenantUniversalHeader({
             {/* Mobile Menu Dropdown */}
             {isMobileMenuOpen && (
               <div
-                className="fixed left-0 right-0 z-50 rounded-b-xl backdrop-blur-[3px]"
+                className="fixed left-4 right-4 z-50 rounded-xl backdrop-blur-[3px]"
                 style={{
-                  top: "53px", // header height
+                  top: "61px", // header height + small gap
                   background:
                     "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
                   boxShadow:
                     "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2)",
                 }}
               >
-                <div className="overflow-y-auto rounded-b-xl" style={{ maxHeight: "calc(100vh - 60px)" }}>
+                <div className="overflow-y-auto rounded-xl" style={{ maxHeight: "calc(100vh - 70px)" }}>
                   <button
                     onClick={() => handleMobileMenuClick("/app/profile")}
                     className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
