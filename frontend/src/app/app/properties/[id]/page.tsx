@@ -574,7 +574,7 @@ export default function PropertyPublicPage() {
     }
 
     if (!isAuthenticated || !user) {
-      router.push("/auth/login");
+      router.push("/app/auth");
       return;
     }
 
