@@ -16,34 +16,9 @@ export class OperatorProfile {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ApiProperty({
-    description: "Full name of the operator",
-    example: "John Smith",
-  })
-  @Column({ nullable: true })
-  full_name: string;
-
   @ApiProperty({ description: "Company name", example: "Smith Properties Ltd" })
   @Column({ nullable: true })
   company_name: string;
-
-  @ApiProperty({
-    description: "Operator phone number",
-    example: "+44 7700 900123",
-  })
-  @Column({ nullable: true })
-  phone: string;
-
-  @ApiProperty({
-    description: "Operator date of birth",
-    example: "1990-01-15",
-  })
-  @Column({ type: "date", nullable: true })
-  date_of_birth: Date;
-
-  @ApiProperty({ description: "Operator nationality", example: "British" })
-  @Column({ nullable: true })
-  nationality: string;
 
   @ApiProperty({
     description: "Business address",

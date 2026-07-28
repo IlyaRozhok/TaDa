@@ -114,7 +114,6 @@ export class UserRoleService {
     if (!user.operatorProfile) {
       const operatorProfile = queryRunner.manager.create(OperatorProfile, {
         userId: user.id,
-        full_name: user.full_name || user.tenantProfile?.full_name,
       });
       await queryRunner.manager.save(OperatorProfile, operatorProfile);
     }
@@ -133,7 +132,6 @@ export class UserRoleService {
     if (!user.tenantProfile) {
       const tenantProfile = queryRunner.manager.create(TenantProfile, {
         userId: user.id,
-        full_name: user.full_name || user.operatorProfile?.full_name,
       });
       await queryRunner.manager.save(TenantProfile, tenantProfile);
     }
@@ -170,7 +168,6 @@ export class UserRoleService {
     // Create tenant profile and preferences for admin becoming tenant
     const tenantProfile = queryRunner.manager.create(TenantProfile, {
       userId: user.id,
-      full_name: user.full_name,
     });
     await queryRunner.manager.save(TenantProfile, tenantProfile);
 
@@ -187,7 +184,6 @@ export class UserRoleService {
     // Create operator profile for admin becoming operator
     const operatorProfile = queryRunner.manager.create(OperatorProfile, {
       userId: user.id,
-      full_name: user.full_name,
     });
     await queryRunner.manager.save(OperatorProfile, operatorProfile);
   }
