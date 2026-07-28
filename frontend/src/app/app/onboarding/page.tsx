@@ -8,7 +8,6 @@ import {
   selectUser,
   selectIsAuthenticated,
   selectIsOnboarded,
-  selectOnboardingCompleted,
   setIsOnboarded,
   setOnboardingCompleted,
 } from "@/store/slices/authSlice";
@@ -67,7 +66,6 @@ export default function OnboardingPage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isOnboarded = useSelector(selectIsOnboarded);
-  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const [loading, setLoading] = useState(true);
   const [isProfileValid, setIsProfileValid] = useState(false);
   const [isPreferencesValid, setIsPreferencesValid] = useState(true);
@@ -227,7 +225,7 @@ export default function OnboardingPage() {
       // Only redirect if both conditions are met to avoid redirect loops
       try {
         const response = await preferencesAPI.get();
-        if (response.data && response.data.id && onboardingCompleted) {
+        if (response.data && response.data.id && isOnboarded) {
           // User has preferences AND completed full onboarding, redirect to units
           router.push("/app/units");
           return;
@@ -247,7 +245,7 @@ export default function OnboardingPage() {
     };
 
     checkUserStatus();
-  }, [sessionReady, isAuthenticated, user, onboardingCompleted, router]);
+  }, [sessionReady, isAuthenticated, user, isOnboarded, router]);
 
   if (!sessionReady || loading) {
     return (
