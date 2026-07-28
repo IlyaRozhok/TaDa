@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { QueryRunner, Repository } from "typeorm";
 import { User, UserRole } from "../../../entities/user.entity";
@@ -22,6 +26,16 @@ export class UserRoleService {
   ) {}
 
   async updateUserRole(userId: string, role: UserRole | string): Promise<User> {
+    // Валидируем роль до обращения к БД. Раньше неизвестное значение молча
+    // становилось UserRole.Tenant — опечатка в запросе тихо понижала роль.
+    const roleEnum = Object.values(UserRole).find((r) => r === role);
+
+    if (!roleEnum) {
+      throw new BadRequestException(
+        `Invalid role "${role}". Allowed: ${Object.values(UserRole).join(", ")}`
+      );
+    }
+
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ["tenantProfile", "operatorProfile", "preferences"],
@@ -30,12 +44,6 @@ export class UserRoleService {
     if (!user) {
       throw new NotFoundException("User not found");
     }
-
-    // Convert string to enum if needed
-    const roleEnum =
-      typeof role === "string"
-        ? Object.values(UserRole).find((r) => r === role) || UserRole.Tenant
-        : role;
 
     const oldRole = user.role;
 

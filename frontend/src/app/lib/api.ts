@@ -39,9 +39,6 @@ api.interceptors.response.use(
 export const authAPI = {
   updateProfile: (data: any) => api.put("/users/profile", data),
 
-  updateUserRole: (userId: string, data: { role: string }) =>
-    api.put(`/users/${userId}/role`, data),
-
   getProfile: () => api.get("/users/profile"),
 
   uploadAvatar: async (file: File) => {
