@@ -6,8 +6,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
-import { AuthValidationService } from "./services/auth-validation.service";
-import { AuthTokenService } from "./services/auth-token.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { User } from "../../entities/user.entity";
@@ -45,17 +43,9 @@ import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
     forwardRef(() => TenantCvModule),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    AuthValidationService,
-    AuthTokenService,
-    JwtStrategy,
-    GoogleStrategy,
-  ],
+  providers: [AuthService, JwtStrategy, GoogleStrategy],
   exports: [
     AuthService,
-    AuthValidationService,
-    AuthTokenService,
     JwtStrategy,
     GoogleStrategy,
     PassportModule,
