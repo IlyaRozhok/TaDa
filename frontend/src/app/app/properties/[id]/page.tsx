@@ -921,6 +921,10 @@ export default function PropertyPublicPage() {
                 {t(listingPropertyKeys.details.listedOn)}{" "}
                 {publishDate.toLocaleDateString("en-GB")}
               </span>
+              <span className="hidden sm:inline text-gray-500">•</span>
+              <span className="text-xs sm:text-sm text-gray-500">
+                ID: {property?.id}
+              </span>
             </div>
           </div>
         </div>

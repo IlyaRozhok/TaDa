@@ -479,13 +479,14 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                           <div className="flex items-center justify-between text-xs mb-1">
                             <div className="flex items-center gap-2 truncate pr-3">
                               <span
-                                className={`flex-shrink-0 ${
-                                  isMatch
-                                    ? "text-emerald-300"
+                                className="flex-shrink-0"
+                                style={{
+                                  color: isMatch
+                                    ? "#4CD964"
                                     : isPartial
-                                      ? "text-amber-300"
-                                      : "text-white/50"
-                                }`}
+                                      ? "#ff9502"
+                                      : "rgba(255,255,255,0.5)",
+                                }}
                               >
                                 {categoryIconMap[categoryName] || (
                                   <Home className="w-3 h-3" />
@@ -496,27 +497,29 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                               </span>
                             </div>
                             <span
-                              className={`font-bold tabular-nums flex-shrink-0 text-xs ${
-                                isMatch
-                                  ? "text-emerald-300"
+                              className="font-bold tabular-nums flex-shrink-0 text-xs"
+                              style={{
+                                color: isMatch
+                                  ? "#4CD964"
                                   : isPartial
-                                    ? "text-amber-300"
-                                    : "text-white/50"
-                              }`}
+                                    ? "#ff9502"
+                                    : "rgba(255,255,255,0.5)",
+                              }}
                             >
                               +{contribution.toFixed(1)}/{weight}
                             </span>
                           </div>
                           <div className="relative h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className={`absolute left-0 top-0 h-full rounded-full transition-all duration-300 ${
-                                isMatch
-                                  ? "bg-emerald-400/80"
+                              className="absolute left-0 top-0 h-full rounded-full transition-all duration-300"
+                              style={{
+                                width: `${scorePercentage}%`,
+                                backgroundColor: isMatch
+                                  ? "#4CD964CC"
                                   : isPartial
-                                    ? "bg-amber-400/80"
-                                    : "bg-white/25"
-                              }`}
-                              style={{ width: `${scorePercentage}%` }}
+                                    ? "#ff9502CC"
+                                    : "rgba(255,255,255,0.25)",
+                              }}
                             />
                           </div>
                         </div>

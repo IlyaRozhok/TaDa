@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -11,8 +11,12 @@ import {
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
-import ListedPropertiesSection from "../../components/ListedPropertiesSection";
+import ListedPropertiesSection, {
+  type SortOption,
+} from "../../components/ListedPropertiesSection";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
+import { matchingAPI } from "../../lib/api";
+import { useDebounce } from "../../hooks/useDebounce";
 import Footer from "../../components/Footer";
 
 function TenantDashboardContent() {
@@ -49,6 +53,75 @@ function TenantDashboardContent() {
     });
   }, [state.matchedProperties, matchByPropertyId]);
 
+  const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
+  const [bestMatchState, setBestMatchState] = useState({
+    properties: [] as Array<{ property: any; matchScore: number; categories: any[] }>,
+    totalCount: 0,
+    currentPage: 1,
+    totalPages: 1,
+    loading: true,
+  });
+
+  const loadBestMatch = useCallback(async (page: number, search: string) => {
+    setBestMatchState((prev) => ({ ...prev, loading: true }));
+    try {
+      const response = await matchingAPI.getMatchedPropertiesWithPagination(
+        page,
+        12,
+        search || undefined,
+      );
+      const { data, total, totalPages } = response.data;
+      const properties = (data || [])
+        .map((item: any) => ({
+          property: item.property,
+          matchScore: item.matchScore ?? 0,
+          categories: item.categories ?? [],
+        }))
+        .filter((item: any) => item.property?.id);
+      setBestMatchState({
+        properties,
+        totalCount: total ?? 0,
+        currentPage: page,
+        totalPages: totalPages ?? 1,
+        loading: false,
+      });
+    } catch (error) {
+      console.error("Failed to load best match properties:", error);
+      setBestMatchState((prev) => ({ ...prev, loading: false }));
+    }
+  }, []);
+
+  // Trigger initial best match load once session is ready (fires once)
+  const sessionReadyRef = useRef(false);
+  useEffect(() => {
+    if (!state.sessionLoading && !sessionReadyRef.current) {
+      sessionReadyRef.current = true;
+      void loadBestMatch(1, state.searchTerm);
+    }
+  }, [state.sessionLoading, loadBestMatch, state.searchTerm]);
+
+  // Reload best match when search changes (debounced), skipping initial mount
+  const debouncedSearch = useDebounce(state.searchTerm, 300);
+  const isFirstSearchRender = useRef(true);
+  useEffect(() => {
+    if (isFirstSearchRender.current) {
+      isFirstSearchRender.current = false;
+      return;
+    }
+    if (sortBy === "bestMatch") {
+      void loadBestMatch(1, debouncedSearch);
+    }
+  }, [debouncedSearch, sortBy, loadBestMatch]);
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSortBy(newSort);
+    if (newSort === "bestMatch") {
+      void loadBestMatch(1, state.searchTerm);
+    } else {
+      void loadProperties(state.searchTerm, 1);
+    }
+  };
+
   const handlePageChange = (page: number) => {
     // When switching pages we always move the user back to the top.
     // Pagination doesn't trigger navigation, so the browser keeps the previous scroll position.
@@ -56,7 +129,11 @@ function TenantDashboardContent() {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }
 
-    void loadProperties(state.searchTerm, page);
+    if (sortBy === "bestMatch") {
+      void loadBestMatch(page, state.searchTerm);
+    } else {
+      void loadProperties(state.searchTerm, page);
+    }
   };
 
   // Loading state: показываем скелетоны ТОЛЬКО когда нет кэша
@@ -127,6 +204,17 @@ function TenantDashboardContent() {
     );
   }
 
+  const displayProperties =
+    sortBy === "bestMatch" ? bestMatchState.properties : propertiesWithMatchScores;
+  const displayLoading =
+    sortBy === "bestMatch" ? bestMatchState.loading : state.loading;
+  const displayTotalCount =
+    sortBy === "bestMatch" ? bestMatchState.totalCount : state.totalCount;
+  const displayCurrentPage =
+    sortBy === "bestMatch" ? bestMatchState.currentPage : state.currentPage;
+  const displayTotalPages =
+    sortBy === "bestMatch" ? bestMatchState.totalPages : state.totalPages;
+
   return (
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
@@ -139,15 +227,17 @@ function TenantDashboardContent() {
       <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16">
         {/* Listed Properties Section */}
         <ListedPropertiesSection
-          properties={propertiesWithMatchScores}
-          matchedProperties={propertiesWithMatchScores}
-          loading={state.loading}
+          properties={displayProperties}
+          matchedProperties={displayProperties}
+          loading={displayLoading}
           userPreferences={state.userPreferences}
-          totalCount={state.totalCount}
-          currentPage={state.currentPage}
-          totalPages={state.totalPages}
+          totalCount={displayTotalCount}
+          currentPage={displayCurrentPage}
+          totalPages={displayTotalPages}
           onPageChange={handlePageChange}
           showShortlistForAllRoles={true}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
         />
       </main>
       <Footer />
