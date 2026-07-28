@@ -9,6 +9,7 @@ import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { useFilteredProperties } from "../../hooks/useProperties";
 import { useDebounce } from "../../hooks/useDebounce";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";
+import { sqFtToSqM, sqMToSqFt } from "@/shared/lib/area";
 import {
   Search,
   Filter,
@@ -166,9 +167,9 @@ export default function AllPropertiesPage() {
       activeFilters.push(`Amenities: ${filters.amenities.length}`);
     }
     if (filters.min_square_meters)
-      activeFilters.push(`Min ${filters.min_square_meters} m²`);
+      activeFilters.push(`Min ${sqMToSqFt(filters.min_square_meters)} sq ft`);
     if (filters.max_square_meters)
-      activeFilters.push(`Max ${filters.max_square_meters} m²`);
+      activeFilters.push(`Max ${sqMToSqFt(filters.max_square_meters)} sq ft`);
 
     return activeFilters;
   };
@@ -612,21 +613,25 @@ export default function AllPropertiesPage() {
                     </select>
                   </div>
 
-                  {/* Square Meters */}
+                  {/* Square Feet (stored as square meters) */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Min Size (m²)
+                        Min Size (sq ft)
                       </label>
                       <input
                         type="number"
                         placeholder="0"
-                        value={tempFilters.min_square_meters || ""}
+                        value={
+                          tempFilters.min_square_meters != null
+                            ? sqMToSqFt(tempFilters.min_square_meters)
+                            : ""
+                        }
                         onChange={(e) =>
                           setTempFilters((prev) => ({
                             ...prev,
                             min_square_meters: e.target.value
-                              ? Number(e.target.value)
+                              ? sqFtToSqM(Number(e.target.value))
                               : undefined,
                           }))
                         }
@@ -635,17 +640,21 @@ export default function AllPropertiesPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Max Size (m²)
+                        Max Size (sq ft)
                       </label>
                       <input
                         type="number"
                         placeholder="No limit"
-                        value={tempFilters.max_square_meters || ""}
+                        value={
+                          tempFilters.max_square_meters != null
+                            ? sqMToSqFt(tempFilters.max_square_meters)
+                            : ""
+                        }
                         onChange={(e) =>
                           setTempFilters((prev) => ({
                             ...prev,
                             max_square_meters: e.target.value
-                              ? Number(e.target.value)
+                              ? sqFtToSqM(Number(e.target.value))
                               : undefined,
                           }))
                         }

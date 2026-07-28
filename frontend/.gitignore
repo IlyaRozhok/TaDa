@@ -59,4 +59,9 @@ pids
 .eslintcache
 
 # Turbo
-.turbo 
+.turbo
+
+# Playwright
+e2e/.auth/
+test-results/
+playwright-report/

@@ -179,10 +179,10 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 w-10 h-10">
-                          {building.photos && building.photos.length > 0 ? (
+                          {building.logo ? (
                             <img
                               className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                              src={building.photos[0]}
+                              src={building.logo}
                               alt={building.name}
                             />
                           ) : (

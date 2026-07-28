@@ -229,17 +229,6 @@ export class PropertyService {
 
     const properties = await queryBuilder.getMany();
 
-    // Debug: Log first property to check price field
-    if (properties.length > 0 && params?.building_id) {
-      console.log("🔍 Property from DB:", {
-        id: properties[0].id,
-        title: properties[0].title,
-        price: properties[0].price,
-        priceType: typeof properties[0].price,
-        rawPrice: JSON.stringify(properties[0].price),
-      });
-    }
-
     // Update photo URLs for all properties
     const propertiesWithFreshUrls = await Promise.all(
       properties.map((property) => this.updatePhotosUrls(property)),
@@ -312,10 +301,16 @@ export class PropertyService {
   }
 
   private async updatePhotosUrls(property: Property): Promise<Property> {
-    return this.s3Service.refreshMediaUrls(property, {
+    await this.s3Service.refreshMediaUrls(property, {
       singleFields: ["video", "documents"],
       arrayFields: ["photos"],
     });
+    if (property.building?.logo) {
+      property.building.logo = await this.s3Service.refreshUrl(
+        property.building.logo,
+      );
+    }
+    return property;
   }
 
   /**

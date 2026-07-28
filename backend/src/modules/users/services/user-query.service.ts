@@ -19,9 +19,6 @@ export class UserQueryService {
     private preferencesRepository: Repository<Preferences>
   ) {}
 
-  /**
-   * Найти пользователя по ID с полными данными
-   */
   async findOneWithProfiles(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -55,9 +52,6 @@ export class UserQueryService {
     return user;
   }
 
-  /**
-   * Найти пользователя по email
-   */
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email },
@@ -84,9 +78,6 @@ export class UserQueryService {
     });
   }
 
-  /**
-   * Получить всех пользователей с пагинацией
-   */
   async findAllPaginated({
     page = 1,
     limit = 10,
@@ -108,20 +99,17 @@ export class UserQueryService {
       .leftJoinAndSelect("user.operatorProfile", "operatorProfile")
       .leftJoinAndSelect("user.preferences", "preferences");
 
-    // Поиск по email или имени
     if (search) {
       queryBuilder.andWhere(
-        "(user.email ILIKE :search OR tenantProfile.full_name ILIKE :search OR operatorProfile.full_name ILIKE :search)",
+        "(user.email ILIKE :search OR user.full_name ILIKE :search OR tenantProfile.full_name ILIKE :search OR operatorProfile.full_name ILIKE :search)",
         { search: `%${search}%` }
       );
     }
 
-    // Фильтр по роли
     if (role) {
       queryBuilder.andWhere("user.role = :role", { role });
     }
 
-    // Сортировка с валидацией полей
     const validSortFields = [
       "id",
       "email",
@@ -134,11 +122,9 @@ export class UserQueryService {
     if (validSortFields.includes(sortBy)) {
       queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
     } else {
-      // Fallback на created_at если поле невалидно
       queryBuilder.orderBy("user.created_at", sortOrder);
     }
 
-    // Пагинация
     const offset = (page - 1) * limit;
     queryBuilder.skip(offset).take(limit);
 
@@ -153,9 +139,6 @@ export class UserQueryService {
     };
   }
 
-  /**
-   * Найти пользователя для удаления (с полными связями)
-   */
   async findOneForDeletion(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },

@@ -15,6 +15,26 @@ export const apiSlice = createApi({
   // Keep all server state cached for 5 minutes by default
   keepUnusedDataFor: 300,
   endpoints: (builder) => ({
+    // Auth endpoints
+    login: builder.mutation({
+      query: (credentials) => ({
+        url: "/auth/login",
+        method: "POST",
+        body: credentials,
+      }),
+    }),
+    register: builder.mutation({
+      query: (userData) => ({
+        url: "/auth/register",
+        method: "POST",
+        body: userData,
+      }),
+    }),
+    getProfile: builder.query({
+      query: () => "/users/profile",
+      providesTags: ["User"],
+    }),
+
     // Properties endpoints
     getProperties: builder.query({
       query: (filters) => ({
@@ -112,11 +132,6 @@ export const apiSlice = createApi({
       // Tie CV to User tag so it can be invalidated together if needed
       providesTags: ["User"],
     }),
-
-    // Admin: get tenant CV by userId
-    getAdminTenantCv: builder.query<{ share_uuid?: string | null }, string>({
-      query: (userId) => `/tenant-cv/admin/${userId}`,
-    }),
     /** Same auth as getTenantCv (Redux token) — avoids axios/localStorage mismatch breaking share */
     createTenantCvShare: builder.mutation<
       { share_uuid: string } | { data?: { share_uuid?: string } },
@@ -161,6 +176,9 @@ export const apiSlice = createApi({
 });
 
 export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useGetProfileQuery,
   useGetPropertiesQuery,
   useGetPropertyQuery,
   useGetPublicPropertyQuery,
@@ -175,7 +193,6 @@ export const {
   useRemoveFromShortlistMutation,
   useGetShortlistQuery,
   useGetTenantCvQuery,
-  useGetAdminTenantCvQuery,
   useCreateTenantCvShareMutation,
   useGetBookingRequestsQuery,
   useGetPreferencesQuery,

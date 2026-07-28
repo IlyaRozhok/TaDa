@@ -83,7 +83,10 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
     if (avatarFile) {
       try {
         const uploadResponse = await authAPI.uploadAvatar(avatarFile);
-        const avatarUrl = uploadResponse?.user?.avatar_url;
+        const avatarUrl =
+          uploadResponse?.avatar_url ||
+          uploadResponse?.user?.avatar_url ||
+          uploadResponse?.url;
 
         if (avatarUrl) {
           avatarUrlToSave = avatarUrl;

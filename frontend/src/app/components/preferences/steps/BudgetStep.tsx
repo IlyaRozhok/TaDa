@@ -7,6 +7,7 @@ import { InputField } from "../ui/InputField";
 import { PreferencesFormData } from "@/app/types/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
+import { sqFtToSqM, sqMToSqFt, formatSqMForForm } from "@/shared/lib/area";
 
 interface BudgetStepProps {
   formData: PreferencesFormData;
@@ -43,6 +44,11 @@ const FURNISHING_OPTIONS = [
 // Outdoor space values (labels from outdoorspace.name1–3)
 const OUTDOOR_SPACE_OPTIONS = ["Balcony", "Terrace"];
 
+// Slider bounds are expressed in square feet. The backend stores square meters,
+// so values are converted at the formData boundary (read: sqM -> sqFt, write: sqFt -> sqM).
+const MIN_VALUE = sqMToSqFt(15); // ~15 m² lower bound
+const MAX_VALUE = sqMToSqFt(500); // ~500 m² upper bound
+
 export const BudgetStep: React.FC<BudgetStepProps> = ({
   formData,
   onUpdate,
@@ -55,11 +61,36 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
   const minInputRef = useRef<HTMLInputElement>(null);
   const maxInputRef = useRef<HTMLInputElement>(null);
 
-  const MIN_VALUE = 15;
-  const MAX_VALUE = 500;
-
   const [minError, setMinError] = React.useState<string | undefined>(undefined);
   const [maxError, setMaxError] = React.useState<string | undefined>(undefined);
+
+  // Current values as square feet (formData stores square meters)
+  const minSqFt =
+    formData.min_square_meters != null
+      ? sqMToSqFt(formData.min_square_meters)
+      : null;
+  const maxSqFt =
+    formData.max_square_meters != null
+      ? sqMToSqFt(formData.max_square_meters)
+      : null;
+
+  // Square meters equivalent shown as a hint under each square-feet input
+  const minSqMHint =
+    formData.min_square_meters != null
+      ? `≈ ${formatSqMForForm(formData.min_square_meters)} m²`
+      : undefined;
+  const maxSqMHint =
+    formData.max_square_meters != null
+      ? `≈ ${formatSqMForForm(formData.max_square_meters)} m²`
+      : undefined;
+
+  // Push a square-feet value up to formData as square meters
+  const updateSqM = useCallback(
+    (field: "min_square_meters" | "max_square_meters", sqFt: number | null) => {
+      onUpdate(field, sqFt == null ? null : sqFtToSqM(sqFt));
+    },
+    [onUpdate],
+  );
 
   // Convert value to percentage
   const valueToPercentage = useCallback((value: number) => {
@@ -98,7 +129,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       formData.min_square_meters !== null &&
       formData.min_square_meters !== undefined
     ) {
-      const minValue = formData.min_square_meters;
+      const minValue = sqMToSqFt(formData.min_square_meters);
       const minPercent = valueToPercentage(minValue);
       setThumbPosition("min", minPercent);
       if (minSliderRef.current) {
@@ -110,7 +141,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       formData.max_square_meters !== null &&
       formData.max_square_meters !== undefined
     ) {
-      const maxValue = formData.max_square_meters;
+      const maxValue = sqMToSqFt(formData.max_square_meters);
       const maxPercent = valueToPercentage(maxValue);
       setThumbPosition("max", maxPercent);
       if (maxSliderRef.current) {
@@ -134,7 +165,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
     ) {
       if (formData.max_square_meters < formData.min_square_meters) {
         setMaxError(
-          `Maximum value cannot be less than minimum value (${formData.min_square_meters} meters)`,
+          `Maximum value cannot be less than minimum value (${sqMToSqFt(
+            formData.min_square_meters,
+          )} sq ft)`,
         );
       } else {
         setMaxError(undefined);
@@ -155,22 +188,25 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       if (inputValue === "") {
         // Allow empty input temporarily (will be set to null on blur)
         setMinError(undefined);
-        onUpdate("min_square_meters", null);
+        updateSqM("min_square_meters", null);
         return;
       }
 
-      const maxValue = formData.max_square_meters ?? MAX_VALUE;
+      const maxValue =
+        formData.max_square_meters != null
+          ? sqMToSqFt(formData.max_square_meters)
+          : MAX_VALUE;
       let value = parseInt(inputValue);
 
       if (isNaN(value)) {
         setMinError(undefined);
-        onUpdate("min_square_meters", null);
+        updateSqM("min_square_meters", null);
         return;
       }
 
       // Validate range - show error instead of auto-correcting
       if (value < MIN_VALUE) {
-        setMinError(`Minimum value cannot be less than ${MIN_VALUE} meters`);
+        setMinError(`Minimum value cannot be less than ${MIN_VALUE} sq ft`);
       } else {
         setMinError(undefined);
       }
@@ -188,9 +224,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         minSliderRef.current.value = percentage.toString();
       }
       setThumbPosition("min", percentage);
-      onUpdate("min_square_meters", value);
+      updateSqM("min_square_meters", value);
     },
-    [formData.max_square_meters, valueToPercentage, setThumbPosition, onUpdate],
+    [formData.max_square_meters, valueToPercentage, setThumbPosition, updateSqM],
   );
 
   // Handle min input blur - validate on blur
@@ -201,22 +237,25 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       // If empty, set to null (no value)
       if (inputValue === "") {
         setMinError(undefined);
-        onUpdate("min_square_meters", null);
+        updateSqM("min_square_meters", null);
         return;
       }
 
       let value = parseInt(inputValue);
       if (isNaN(value)) {
         setMinError(undefined);
-        onUpdate("min_square_meters", null);
+        updateSqM("min_square_meters", null);
         return;
       }
 
-      const maxValue = formData.max_square_meters ?? MAX_VALUE;
+      const maxValue =
+        formData.max_square_meters != null
+          ? sqMToSqFt(formData.max_square_meters)
+          : MAX_VALUE;
 
       // Validate range - show error instead of auto-correcting
       if (value < MIN_VALUE) {
-        setMinError(`Minimum value cannot be less than ${MIN_VALUE} meters`);
+        setMinError(`Minimum value cannot be less than ${MIN_VALUE} sq ft`);
       } else {
         setMinError(undefined);
       }
@@ -229,9 +268,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         value = maxValue - 1;
       }
 
-      onUpdate("min_square_meters", value);
+      updateSqM("min_square_meters", value);
     },
-    [formData.max_square_meters, onUpdate],
+    [formData.max_square_meters, updateSqM],
   );
 
   // Handle max input change
@@ -242,23 +281,26 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       if (inputValue === "") {
         // Allow empty input temporarily (will be set to null on blur)
         setMaxError(undefined);
-        onUpdate("max_square_meters", null);
+        updateSqM("max_square_meters", null);
         return;
       }
 
-      const minValue = formData.min_square_meters;
+      const minValue =
+        formData.min_square_meters != null
+          ? sqMToSqFt(formData.min_square_meters)
+          : null;
       let value = parseInt(inputValue);
 
       if (isNaN(value)) {
         setMaxError(undefined);
-        onUpdate("max_square_meters", null);
+        updateSqM("max_square_meters", null);
         return;
       }
 
       // Validate range - show error instead of auto-correcting
       if (minValue !== null && value < minValue) {
         setMaxError(
-          `Maximum value cannot be less than minimum value (${minValue} meters)`,
+          `Maximum value cannot be less than minimum value (${minValue} sq ft)`,
         );
       } else {
         setMaxError(undefined);
@@ -273,9 +315,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         maxSliderRef.current.value = percentage.toString();
       }
       setThumbPosition("max", percentage);
-      onUpdate("max_square_meters", value);
+      updateSqM("max_square_meters", value);
     },
-    [formData.min_square_meters, valueToPercentage, setThumbPosition, onUpdate],
+    [formData.min_square_meters, valueToPercentage, setThumbPosition, updateSqM],
   );
 
   // Handle max input blur - validate on blur
@@ -286,23 +328,26 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
       // If empty, set to null (no value)
       if (inputValue === "") {
         setMaxError(undefined);
-        onUpdate("max_square_meters", null);
+        updateSqM("max_square_meters", null);
         return;
       }
 
       let value = parseInt(inputValue);
       if (isNaN(value)) {
         setMaxError(undefined);
-        onUpdate("max_square_meters", null);
+        updateSqM("max_square_meters", null);
         return;
       }
 
-      const minValue = formData.min_square_meters;
+      const minValue =
+        formData.min_square_meters != null
+          ? sqMToSqFt(formData.min_square_meters)
+          : null;
 
       // Validate range - show error instead of auto-correcting
       if (minValue !== null && value < minValue) {
         setMaxError(
-          `Maximum value cannot be less than minimum value (${minValue} meters)`,
+          `Maximum value cannot be less than minimum value (${minValue} sq ft)`,
         );
       } else {
         setMaxError(undefined);
@@ -312,9 +357,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
         value = MAX_VALUE;
       }
 
-      onUpdate("max_square_meters", value);
+      updateSqM("max_square_meters", value);
     },
-    [formData.min_square_meters, onUpdate],
+    [formData.min_square_meters, updateSqM],
   );
 
   // Handle min range slider change
@@ -330,9 +375,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
       const value = percentageToValue(percentage);
       setThumbPosition("min", percentage);
-      onUpdate("min_square_meters", value);
+      updateSqM("min_square_meters", value);
     },
-    [getThumbPosition, percentageToValue, setThumbPosition, onUpdate],
+    [getThumbPosition, percentageToValue, setThumbPosition, updateSqM],
   );
 
   // Handle max range slider change
@@ -348,9 +393,9 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
 
       const value = percentageToValue(percentage);
       setThumbPosition("max", percentage);
-      onUpdate("max_square_meters", value);
+      updateSqM("max_square_meters", value);
     },
-    [getThumbPosition, percentageToValue, setThumbPosition, onUpdate],
+    [getThumbPosition, percentageToValue, setThumbPosition, updateSqM],
   );
 
   return (
@@ -437,7 +482,7 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
           ))}
         </div>
 
-        {/* Meters - Range Input with Dual Slider */}
+        {/* Size - Range Input with Dual Slider (square feet) */}
         <StepHeader title={t(wizardKeys.step3.des.text6)} />
         <div className="space-y-4">
           {/* Input fields */}
@@ -449,10 +494,11 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={formData.min_square_meters?.toString() ?? ""}
+                value={minSqFt?.toString() ?? ""}
                 onChange={handleMinInputChange}
                 onBlur={handleMinInputBlur}
                 error={minError}
+                tooltip={minSqMHint}
                 className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 placeholder=""
               />
@@ -464,10 +510,11 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={formData.max_square_meters?.toString() ?? ""}
+                value={maxSqFt?.toString() ?? ""}
                 onChange={handleMaxInputChange}
                 onBlur={handleMaxInputBlur}
                 error={maxError}
+                tooltip={maxSqMHint}
                 className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 placeholder=""
               />
@@ -482,12 +529,8 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
               style={
                 {
                   "--range-track-top": "10px",
-                  "--min-thumb-percent": valueToPercentage(
-                    formData.min_square_meters ?? MIN_VALUE,
-                  ),
-                  "--max-thumb-percent": valueToPercentage(
-                    formData.max_square_meters ?? MIN_VALUE,
-                  ),
+                  "--min-thumb-percent": valueToPercentage(minSqFt ?? MIN_VALUE),
+                  "--max-thumb-percent": valueToPercentage(maxSqFt ?? MIN_VALUE),
                   "--range-progress-w": `calc((var(--max-thumb-percent) - var(--min-thumb-percent)) * 1%)`,
                   "--range-progress-left": `calc(var(--min-thumb-percent) * 1%)`,
                 } as React.CSSProperties
@@ -524,9 +567,8 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                   max="100"
                   step="1"
                   value={
-                    formData.min_square_meters !== null &&
-                    formData.min_square_meters !== undefined
-                      ? valueToPercentage(formData.min_square_meters)
+                    minSqFt !== null
+                      ? valueToPercentage(minSqFt)
                       : valueToPercentage(MIN_VALUE)
                   }
                   onChange={handleMinRangeChange}
@@ -541,9 +583,8 @@ export const BudgetStep: React.FC<BudgetStepProps> = ({
                   max="100"
                   step="1"
                   value={
-                    formData.max_square_meters !== null &&
-                    formData.max_square_meters !== undefined
-                      ? valueToPercentage(formData.max_square_meters)
+                    maxSqFt !== null
+                      ? valueToPercentage(maxSqFt)
                       : valueToPercentage(MIN_VALUE)
                   }
                   onChange={handleMaxRangeChange}

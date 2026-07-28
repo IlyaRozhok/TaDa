@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 // import { useSelector } from "react-redux";
 import Link from "next/link";
 // import {
@@ -82,14 +82,13 @@ function AdminPanelContent() {
   // const isAuthenticated = useSelector(selectIsAuthenticated);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [users, setUsers] = useState<User[]>([]);
-  const [usersPage, setUsersPage] = useState(1);
-  const [usersTotal, setUsersTotal] = useState(0);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const USERS_PAGE_SIZE = 10;
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const debouncedSearch = useDebounce(searchTerm, 400);
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
     direction: "desc",
@@ -144,9 +143,6 @@ function AdminPanelContent() {
     }
   }, [bookingQueryData]);
 
-  // Debounced search term
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
   // Notification management
   const addNotification = (
     type: "success" | "error" | "info",
@@ -165,48 +161,7 @@ function AdminPanelContent() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
-  // Load paginated, searchable users list
-  const loadUsers = useCallback(async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-    setUsersLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: String(usersPage),
-        limit: String(USERS_PAGE_SIZE),
-      });
-      if (debouncedSearchTerm.trim()) {
-        params.set("search", debouncedSearchTerm.trim());
-      }
-      const response = await fetch(`${apiUrl}/users?${params.toString()}`, {
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || data || []);
-        setUsersTotal(
-          typeof data.total === "number" ? data.total : (data.users || []).length,
-        );
-      }
-    } catch (error) {
-      addNotification("error", "Failed to load users");
-    } finally {
-      setUsersLoading(false);
-    }
-  }, [usersPage, debouncedSearchTerm]);
-
-  // Reset to first page whenever the search term changes
-  useEffect(() => {
-    setUsersPage(1);
-  }, [debouncedSearchTerm]);
-
-  // Load users when the section is active, page changes, or search changes
-  useEffect(() => {
-    if (activeSection !== "users") return;
-    loadUsers();
-  }, [activeSection, loadUsers]);
-
-  // Load data for other sections
+  // Load data based on active section
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -216,7 +171,19 @@ function AdminPanelContent() {
           "Content-Type": "application/json",
         };
 
-        if (activeSection === "buildings") {
+        if (activeSection === "users") {
+          const params = new URLSearchParams({ page: String(page), limit: "20" });
+          if (debouncedSearch) params.set("search", debouncedSearch);
+          const response = await fetch(`${apiUrl}/users?${params}`, {
+            credentials: "include",
+            headers,
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setUsers(data.users || data || []);
+            setTotalPages(data.totalPages || 1);
+          }
+        } else if (activeSection === "buildings") {
           const response = await fetch(`${apiUrl}/buildings`, {
             credentials: "include",
             headers,
@@ -227,6 +194,7 @@ function AdminPanelContent() {
           }
         }
       } catch (error) {
+        console.error("Error loading data:", error);
         addNotification("error", "Failed to load data");
       } finally {
         // no-op for requests: RTK Query управляет своим loading
@@ -234,6 +202,11 @@ function AdminPanelContent() {
     };
 
     loadData();
+  }, [activeSection, debouncedSearch, page]);
+
+  // Reset page when section changes
+  useEffect(() => {
+    setPage(1);
   }, [activeSection]);
 
   // Event handlers
@@ -320,7 +293,7 @@ function AdminPanelContent() {
         });
 
         if (response.ok) {
-          await loadUsers();
+          setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
           addNotification(
             "success",
             `User "${user.full_name || user.email}" deleted successfully`,
@@ -394,7 +367,14 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        await loadUsers();
+        const response = await fetch(`${apiUrl}/users`, {
+          credentials: "include",
+          headers,
+        });
+        if (response.ok) {
+          const usersData = await response.json();
+          setUsers(usersData.users || usersData || []);
+        }
       }
     } catch (error: any) {
       addNotification("error", `Failed to create user: ${error.message}`);
@@ -495,7 +475,23 @@ function AdminPanelContent() {
 
       // Reload users list
       if (activeSection === "users") {
-        await loadUsers();
+        const response = await fetch(`${apiUrl}/users`, {
+          credentials: "include",
+          headers,
+        });
+        if (response.ok) {
+          const usersData = await response.json();
+          const updatedUsers = usersData.users || usersData || [];
+          setUsers(updatedUsers);
+
+          // Update selectedItem with the updated user from the list
+          const updatedUserFromList = updatedUsers.find(
+            (u: User) => u.id === id,
+          );
+          if (updatedUserFromList) {
+            setSelectedItem(updatedUserFromList);
+          }
+        }
       }
 
       setShowModal(null);
@@ -803,17 +799,17 @@ function AdminPanelContent() {
             users={users}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            searchLoading={usersLoading}
+            onSearchChange={(v) => { setSearchTerm(v); setPage(1); }}
+            searchLoading={false}
             sort={sort}
             setSort={setSort}
-            page={usersPage}
-            total={usersTotal}
-            pageSize={USERS_PAGE_SIZE}
-            onPageChange={setUsersPage}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p)}
           />
         );
       case "buildings":

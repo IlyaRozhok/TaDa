@@ -77,6 +77,8 @@ export interface PropertyFormData {
   terrace: boolean;
   luxury: boolean;
   square_meters: number | null;
+  // UI-only field: area entered in square feet. Converted to square_meters on submit.
+  square_feet: number | null;
   photos: string[];
   video: string;
   documents: string;

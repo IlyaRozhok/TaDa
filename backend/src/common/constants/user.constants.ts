@@ -45,7 +45,8 @@ export const USER_CONSTANTS = {
   // Default status
   DEFAULT_STATUS: "active" as const,
 
-  // Used by admin user creation only (not auth flow)
+  // Password requirements
+  PASSWORD_MIN_LENGTH: 6,
   PASSWORD_SALT_ROUNDS: 10,
 } as const;
 

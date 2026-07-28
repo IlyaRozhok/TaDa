@@ -21,6 +21,7 @@ const initialFormData: PropertyFormData = {
   terrace: false,
   luxury: false,
   square_meters: null,
+  square_feet: null,
   photos: [],
   video: "",
   documents: "",

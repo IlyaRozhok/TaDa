@@ -19,4 +19,5 @@ export * from './lib';
 
 // Hooks
 export * from './hooks/useLocalizedFormOptions';
+export * from './hooks/useUserProfile';
 export * from './hooks/useUnifiedProfile';

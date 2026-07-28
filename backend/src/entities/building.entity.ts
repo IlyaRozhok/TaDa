@@ -101,6 +101,14 @@ export class Building {
   address: string | null;
 
   @ApiProperty({
+    description: "Building description text",
+    example: "A modern residential complex in central London",
+    required: false,
+  })
+  @Column({ type: "text", nullable: true })
+  description: string | null;
+
+  @ApiProperty({
     description: "Total number of units in the building",
     example: 150,
     required: false,

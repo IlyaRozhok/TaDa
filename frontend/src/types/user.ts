@@ -87,6 +87,13 @@ export interface Reference {
 }
 
 // API DTOs
+export interface CreateUserRequest {
+  email: string;
+  password: string;
+  role: UserRole;
+  full_name?: string;
+}
+
 export interface UpdateUserRequest {
   full_name?: string;
   avatar_url?: string;
@@ -103,6 +110,23 @@ export interface UpdateProfileRequest {
   avatar_url?: string;
   // Profile specific fields can be added based on role
   [key: string]: unknown;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface RegisterRequest extends CreateUserRequest {
+  confirmPassword: string;
+  acceptTerms: boolean;
 }
 
 // Fields sent to PUT /api/users/profile (matches actual backend API)

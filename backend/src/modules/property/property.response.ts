@@ -6,6 +6,7 @@ export type PublicPropertyResponse = {
   /** Present so clients can filter by landlord without loading full operator relation */
   operator_id: string | null;
   title: string | null;
+  descriptions: string | null;
   address: string | null;
   price: number | null;
   bedrooms: number | null;
@@ -19,6 +20,7 @@ export type PublicPropertyResponse = {
     id: string;
     name: string;
     address?: string;
+    logo?: string | null;
   } | null;
   amenities?: string[];
   property_amenities?: string[];
@@ -65,6 +67,7 @@ export const toPublicProperty = (
     id: property.id,
     operator_id: property.operator_id ?? null,
     title: property.title || null,
+    descriptions: property.descriptions ?? null,
     address: property.address || null,
     price,
     bedrooms: property.bedrooms ?? null,
@@ -79,6 +82,7 @@ export const toPublicProperty = (
           id: property.building.id,
           name: property.building.name,
           address: property.building.address || undefined,
+          logo: property.building.logo || null,
         }
       : null,
     amenities: Array.isArray(property.amenities) ? property.amenities : [],
