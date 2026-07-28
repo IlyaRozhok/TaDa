@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import {
   selectUser,
   selectIsAuthenticated,
-  selectIsOnboarded,
+  selectOnboardingCompleted,
 } from "@/store/slices/authSlice";
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";
@@ -248,7 +248,7 @@ function TenantDashboardContent() {
 export default function TenantUnitsPage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isOnboarded = useSelector(selectIsOnboarded);
+  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -285,10 +285,10 @@ export default function TenantUnitsPage() {
     }
 
     // Allow admins and tenants to access units page.
-    // Gate on the persisted isOnboarded (profile-complete) flag rather than the
-    // async-derived onboardingCompleted, which races on refresh and wrongly
-    // bounces completed users back to onboarding.
-    if (user.role === "tenant" && !isOnboarded) {
+    // onboardingCompleted is hydrated from a persisted flag (localStorage) in
+    // setUser, so a refresh keeps a completed tenant here instead of bouncing
+    // them back to onboarding.
+    if (user.role === "tenant" && !onboardingCompleted) {
       router.replace("/app/onboarding");
       return;
     }
@@ -303,7 +303,7 @@ export default function TenantUnitsPage() {
       router.replace("/");
       return;
     }
-  }, [sessionReady, isAuthenticated, user, isOnboarded, router]);
+  }, [sessionReady, isAuthenticated, user, onboardingCompleted, router]);
 
   if (!sessionReady) {
     return (

@@ -95,7 +95,21 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<{ user: User }>) => {
       const { user } = action.payload;
       const onboarded = user.isOnboarded ?? isProfileComplete(user);
-      state.user = { ...user, isOnboarded: onboarded };
+      // Onboarding completion is an explicit, persisted flag: the server does
+      // not track it and it cannot be reliably inferred (preferences are saved
+      // incrementally, so their existence does not mean the flow finished).
+      // Hydrate it from localStorage so a page refresh keeps completed users out
+      // of onboarding.
+      let completed = user.onboardingCompleted ?? false;
+      if (!completed && typeof window !== "undefined" && user.id) {
+        completed =
+          localStorage.getItem(`onboarding_completed_${user.id}`) === "1";
+      }
+      state.user = {
+        ...user,
+        isOnboarded: onboarded,
+        onboardingCompleted: completed,
+      };
       state.isAuthenticated = true;
     },
     logout: (state) => {
