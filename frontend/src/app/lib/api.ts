@@ -1,6 +1,6 @@
 import axios from "axios";
 import { logout } from "@/store/slices/authSlice";
-import { Property } from "../types";
+import { Property } from "@/app/types";
 
 // Create axios instance
 const api = axios.create({
@@ -38,9 +38,6 @@ api.interceptors.response.use(
 // API methods for different resources
 export const authAPI = {
   updateProfile: (data: any) => api.put("/users/profile", data),
-
-  updateUserRole: (userId: string, data: { role: string }) =>
-    api.put(`/users/${userId}/role`, data),
 
   getProfile: () => api.get("/users/profile"),
 

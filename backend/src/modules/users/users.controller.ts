@@ -13,7 +13,6 @@ import {
   Param,
   UploadedFile,
   BadRequestException,
-  ForbiddenException,
 } from "@nestjs/common";
 import { Request } from "express";
 import {
@@ -25,10 +24,11 @@ import {
 
 import { UsersService } from "./users.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { User, UserRole } from "../../entities/user.entity";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { RolesGuard } from "../../common/guards/roles.guard";
+import { User } from "@/entities";
+import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { RolesGuard } from "@/common/guards/roles.guard";
+import { Auth } from "@/common/decorators/auth.decorator";
 import { toUserResponse } from "./user.mapper";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -171,19 +171,14 @@ export class UsersController {
   }
 
   @Put(":id/role")
-  @UseGuards(JwtAuthGuard)
+  @Auth("admin")
   @ApiBearerAuth("access-token")
-  @ApiOperation({ summary: "Update user role" })
+  @ApiOperation({ summary: "Update user role (admin only)" })
   @ApiResponse({ status: 200, description: "User role updated", type: User })
   async updateUserRole(
     @Param("id") id: string,
-    @Body() updateData: { role: string },
-    @Req() req: Request & { user: User }
+    @Body() updateData: { role: string }
   ): Promise<{ user: User; access_token?: string }> {
-    if (req.user.id !== id && req.user.role !== UserRole.Admin) {
-      throw new ForbiddenException("Unauthorized to update this role");
-    }
-
     const user = await this.usersService.updateUserRole(id, updateData.role);
     return { user: toUserResponse(user) as any };
   }
