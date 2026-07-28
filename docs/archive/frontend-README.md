@@ -1,3 +1,5 @@
+> ⚠️ ИСТОРИЧЕСКИЙ ДОКУМЕНТ. Не выполнять и не использовать как руководство. Актуальный источник истины — docs/audit/. Архивировано 2026-07-28.
+
 # TaDa Frontend Application
 
 Modern, scalable frontend application built with Next.js, TypeScript, and Feature-Sliced Design architecture.

@@ -1,3 +1,5 @@
+> ⚠️ ИСТОРИЧЕСКИЙ ДОКУМЕНТ. Не выполнять и не использовать как руководство. Актуальный источник истины — docs/audit/. Архивировано 2026-07-28.
+
 # Property Amenities Feature Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

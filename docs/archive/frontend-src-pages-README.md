@@ -1,3 +1,5 @@
+> ⚠️ ИСТОРИЧЕСКИЙ ДОКУМЕНТ. Не выполнять и не использовать как руководство. Актуальный источник истины — docs/audit/. Архивировано 2026-07-28.
+
 # Pages Layer
 
 This layer contains page-level components that compose widgets and processes for specific routes.
