@@ -15,21 +15,6 @@ export const apiSlice = createApi({
   // Keep all server state cached for 5 minutes by default
   keepUnusedDataFor: 300,
   endpoints: (builder) => ({
-    // Auth endpoints
-    login: builder.mutation({
-      query: (credentials) => ({
-        url: "/auth/login",
-        method: "POST",
-        body: credentials,
-      }),
-    }),
-    register: builder.mutation({
-      query: (userData) => ({
-        url: "/auth/register",
-        method: "POST",
-        body: userData,
-      }),
-    }),
     getProfile: builder.query({
       query: () => "/users/profile",
       providesTags: ["User"],
@@ -176,8 +161,6 @@ export const apiSlice = createApi({
 });
 
 export const {
-  useLoginMutation,
-  useRegisterMutation,
   useGetProfileQuery,
   useGetPropertiesQuery,
   useGetPropertyQuery,

@@ -37,22 +37,6 @@ api.interceptors.response.use(
 
 // API methods for different resources
 export const authAPI = {
-  login: (data: { email: string; password: string }) =>
-    api.post("/auth/login", data),
-
-  register: (data: any) => api.post("/auth/register", data),
-
-  checkUser: (email: string) => api.post("/auth/check-user", { email }),
-
-  authenticate: (data: {
-    email: string;
-    password: string;
-    role?: "tenant" | "operator";
-    rememberMe?: boolean;
-  }) => api.post("/auth/authenticate", data),
-
-  googleAuth: (token: string) => api.post("/auth/google", { token }),
-
   updateProfile: (data: any) => api.put("/users/profile", data),
 
   updateUserRole: (userId: string, data: { role: string }) =>
