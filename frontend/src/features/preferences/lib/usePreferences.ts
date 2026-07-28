@@ -219,7 +219,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       console.log(
         "🔒 User not authenticated, redirecting to login from usePreferences",
       );
-      router.push("/app/auth/login");
+      router.push("/app/auth");
       return;
     }
 

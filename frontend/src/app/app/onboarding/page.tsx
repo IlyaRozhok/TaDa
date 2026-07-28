@@ -213,7 +213,7 @@ export default function OnboardingPage() {
 
     const checkUserStatus = async () => {
       if (!isAuthenticated || !user) {
-        router.push("/app/auth/login");
+        router.push("/app/auth");
         return;
       }
 
