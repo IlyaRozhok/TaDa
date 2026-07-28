@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User, UserRole } from "../../../entities/user.entity";
+import { User } from "../../../entities/user.entity";
 import { TenantProfile } from "../../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../../entities/operator-profile.entity";
 import { Preferences } from "../../../entities/preferences.entity";
@@ -17,103 +17,6 @@ export class UserProfileService {
     @InjectRepository(Preferences)
     private preferencesRepository: Repository<Preferences>
   ) {}
-
-  async updateTenantProfile(
-    user: User,
-    updateUserDto: UpdateUserDto
-  ): Promise<void> {
-    if (!user.tenantProfile) {
-      throw new NotFoundException("Tenant profile not found");
-    }
-
-    const profile = user.tenantProfile;
-
-    // Update basic profile fields - allow empty strings and null values
-    if (updateUserDto.full_name !== undefined) profile.full_name = updateUserDto.full_name;
-    if (updateUserDto.first_name !== undefined)
-      profile.first_name = updateUserDto.first_name;
-    if (updateUserDto.last_name !== undefined)
-      profile.last_name = updateUserDto.last_name;
-    if (updateUserDto.address !== undefined)
-      profile.address = updateUserDto.address;
-    if (updateUserDto.phone !== undefined) profile.phone = updateUserDto.phone;
-    if (updateUserDto.date_of_birth !== undefined) {
-      if (updateUserDto.date_of_birth && updateUserDto.date_of_birth.trim() !== "") {
-        profile.date_of_birth = new Date(updateUserDto.date_of_birth);
-      } else {
-        profile.date_of_birth = undefined as unknown as Date;
-      }
-    }
-    if (updateUserDto.nationality !== undefined)
-      profile.nationality = updateUserDto.nationality;
-    if (updateUserDto.age_range !== undefined) profile.age_range = updateUserDto.age_range;
-    if (updateUserDto.industry !== undefined) profile.industry = updateUserDto.industry;
-    if (updateUserDto.work_style !== undefined) profile.work_style = updateUserDto.work_style;
-    if (updateUserDto.lifestyle !== undefined) profile.lifestyle = updateUserDto.lifestyle;
-    if (updateUserDto.ideal_living_environment !== undefined) {
-      profile.ideal_living_environment = updateUserDto.ideal_living_environment;
-    }
-    if (updateUserDto.additional_info !== undefined)
-      profile.additional_info = updateUserDto.additional_info;
-
-    await this.tenantProfileRepository.save(profile);
-  }
-
-  async createTenantProfileForUser(
-    userId: string,
-    updateUserDto: UpdateUserDto
-  ): Promise<void> {
-    // Create new tenant profile for admin user
-    const newProfile = this.tenantProfileRepository.create({
-      userId: userId,
-      first_name: updateUserDto.first_name || "",
-      last_name: updateUserDto.last_name || "",
-      full_name: updateUserDto.full_name || "",
-      address: updateUserDto.address || "",
-      phone: updateUserDto.phone || "",
-      date_of_birth: updateUserDto.date_of_birth ? new Date(updateUserDto.date_of_birth) : undefined,
-      nationality: updateUserDto.nationality || "",
-      industry: updateUserDto.industry || "",
-      work_style: updateUserDto.work_style || "",
-      lifestyle: updateUserDto.lifestyle || [],
-      ideal_living_environment: updateUserDto.ideal_living_environment || "",
-      additional_info: updateUserDto.additional_info || "",
-    });
-
-    await this.tenantProfileRepository.save(newProfile);
-  }
-
-  async updateOperatorProfile(
-    user: User,
-    updateUserDto: UpdateUserDto
-  ): Promise<void> {
-    if (!user.operatorProfile) {
-      throw new NotFoundException("Operator profile not found");
-    }
-
-    const profile = user.operatorProfile;
-
-    // Update basic profile fields
-    if (updateUserDto.full_name) profile.full_name = updateUserDto.full_name;
-    if (updateUserDto.phone) profile.phone = updateUserDto.phone;
-    if (
-      updateUserDto.date_of_birth &&
-      updateUserDto.date_of_birth.trim() !== ""
-    ) {
-      profile.date_of_birth = new Date(updateUserDto.date_of_birth);
-    }
-    if (updateUserDto.nationality)
-      profile.nationality = updateUserDto.nationality;
-    if (updateUserDto.company_name)
-      profile.company_name = updateUserDto.company_name;
-    if (updateUserDto.business_address)
-      profile.business_address = updateUserDto.business_address;
-    if (updateUserDto.business_description) {
-      profile.business_description = updateUserDto.business_description;
-    }
-
-    await this.operatorProfileRepository.save(profile);
-  }
 
   async updatePreferences(
     user: User,
@@ -143,35 +46,6 @@ export class UserProfileService {
     if (updateUserDto.hobbies) preferences.hobbies = updateUserDto.hobbies;
 
     await this.preferencesRepository.save(preferences);
-  }
-
-  async createTenantProfile(
-    userId: string,
-    fullName?: string
-  ): Promise<TenantProfile> {
-    const profile = this.tenantProfileRepository.create({
-      userId,
-      full_name: fullName,
-    });
-    return await this.tenantProfileRepository.save(profile);
-  }
-
-  async createOperatorProfile(
-    userId: string,
-    fullName?: string
-  ): Promise<OperatorProfile> {
-    const profile = this.operatorProfileRepository.create({
-      userId,
-      full_name: fullName,
-    });
-    return await this.operatorProfileRepository.save(profile);
-  }
-
-  async createPreferences(userId: string): Promise<Preferences> {
-    const preferences = this.preferencesRepository.create({
-      user_id: userId,
-    });
-    return await this.preferencesRepository.save(preferences);
   }
 
   async deleteUserData(user: User): Promise<void> {

@@ -8,13 +8,11 @@ import { OperatorProfile } from "../../../entities/operator-profile.entity";
 import { Preferences } from "../../../entities/preferences.entity";
 
 /**
- * Characterization tests for UserProfileService.
+ * Characterization tests for the LIVE surface of UserProfileService.
  *
- * These pin the CURRENT (pre-consolidation) write behaviour, where personal /
- * contact fields are stored on the *profile* tables rather than on `users`.
- * The Users/Profiles schema consolidation will flip this so `users` is the
- * single source of truth — at which point these expectations change
- * deliberately, and this file documents exactly what the old behaviour was.
+ * After the Users/Profiles consolidation, personal/contact fields are owned by
+ * the users table, so this service only handles preferences-linked fields and
+ * cascade deletion of a user's owned rows.
  */
 describe("UserProfileService (characterization)", () => {
   let service: UserProfileService;
@@ -44,88 +42,66 @@ describe("UserProfileService (characterization)", () => {
     service = module.get<UserProfileService>(UserProfileService);
   });
 
-  describe("updateTenantProfile", () => {
-    it("writes personal/contact fields onto the TENANT PROFILE (not the user)", async () => {
-      const tenantProfile = {} as TenantProfile;
-      const user = { id: "u-1", tenantProfile } as User;
+  describe("updatePreferences", () => {
+    it("maps a concrete pet type to a Pet[] and enables pet_policy", async () => {
+      const preferences = {} as Preferences;
+      const user = { preferences } as User;
 
-      await service.updateTenantProfile(user, {
-        full_name: "Jane Doe",
-        first_name: "Jane",
-        last_name: "Doe",
-        address: "1 High St",
-        phone: "+44 900",
-        nationality: "British",
-      } as any);
+      await service.updatePreferences(user, { pets: "dog" } as any);
 
-      expect(tenantProfile.full_name).toBe("Jane Doe");
-      expect(tenantProfile.first_name).toBe("Jane");
-      expect(tenantProfile.last_name).toBe("Doe");
-      expect(tenantProfile.address).toBe("1 High St");
-      expect(tenantProfile.phone).toBe("+44 900");
-      expect(tenantProfile.nationality).toBe("British");
-      // The user object is NOT mutated — duplication lives on the profile side.
-      expect((user as any).phone).toBeUndefined();
-      expect(tenantRepo.save).toHaveBeenCalledWith(tenantProfile);
+      expect(preferences.pets).toEqual([{ type: "dog" }]);
+      expect(preferences.pet_policy).toBe(true);
+      expect(preferencesRepo.save).toHaveBeenCalledWith(preferences);
     });
 
-    it("parses a non-empty date_of_birth string into a Date", async () => {
-      const tenantProfile = {} as TenantProfile;
-      const user = { tenantProfile } as User;
+    it('clears pets and pet_policy for "none"', async () => {
+      const preferences = { pets: [{ type: "cat" }], pet_policy: true } as Preferences;
+      const user = { preferences } as User;
 
-      await service.updateTenantProfile(user, {
-        date_of_birth: "1990-01-15",
-      } as any);
+      await service.updatePreferences(user, { pets: "none" } as any);
 
-      expect(tenantProfile.date_of_birth).toEqual(new Date("1990-01-15"));
+      expect(preferences.pets).toEqual([]);
+      expect(preferences.pet_policy).toBe(false);
     });
 
-    it("clears date_of_birth when given an empty string", async () => {
-      const tenantProfile = { date_of_birth: new Date() } as TenantProfile;
-      const user = { tenantProfile } as User;
+    it("normalises smoker boolean to yes/no", async () => {
+      const preferences = {} as Preferences;
+      const user = { preferences } as User;
 
-      await service.updateTenantProfile(user, { date_of_birth: "" } as any);
+      await service.updatePreferences(user, { smoker: true } as any);
+      expect(preferences.smoker).toBe("yes");
 
-      expect(tenantProfile.date_of_birth).toBeUndefined();
+      await service.updatePreferences(user, { smoker: false } as any);
+      expect(preferences.smoker).toBe("no");
     });
 
-    it("throws NotFoundException when the tenant profile is missing", async () => {
-      const user = { id: "u-1" } as User;
-
+    it("throws NotFoundException when preferences are missing", async () => {
       await expect(
-        service.updateTenantProfile(user, { phone: "x" } as any),
+        service.updatePreferences({} as User, { smoker: true } as any),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
-  describe("updateOperatorProfile", () => {
-    it("writes personal + operator fields onto the OPERATOR PROFILE", async () => {
-      const operatorProfile = {} as OperatorProfile;
-      const user = { operatorProfile } as User;
+  describe("deleteUserData", () => {
+    it("removes preferences, tenant profile and operator profile when present", async () => {
+      const preferences = { id: "p" } as Preferences;
+      const tenantProfile = { id: "t" } as TenantProfile;
+      const operatorProfile = { id: "o" } as OperatorProfile;
+      const user = { preferences, tenantProfile, operatorProfile } as User;
 
-      await service.updateOperatorProfile(user, {
-        full_name: "Op Co",
-        phone: "+44 111",
-        nationality: "British",
-        company_name: "Op Ltd",
-        business_address: "2 Market St",
-      } as any);
+      await service.deleteUserData(user);
 
-      expect(operatorProfile.full_name).toBe("Op Co");
-      expect(operatorProfile.phone).toBe("+44 111");
-      expect(operatorProfile.nationality).toBe("British");
-      expect(operatorProfile.company_name).toBe("Op Ltd");
-      expect(operatorProfile.business_address).toBe("2 Market St");
-      expect(operatorRepo.save).toHaveBeenCalledWith(operatorProfile);
+      expect(preferencesRepo.remove).toHaveBeenCalledWith(preferences);
+      expect(tenantRepo.remove).toHaveBeenCalledWith(tenantProfile);
+      expect(operatorRepo.remove).toHaveBeenCalledWith(operatorProfile);
     });
 
-    it("throws NotFoundException when the operator profile is missing", async () => {
-      const user = {} as User;
+    it("skips repositories for relations the user does not have", async () => {
+      await service.deleteUserData({} as User);
 
-      await expect(
-        service.updateOperatorProfile(user, { phone: "x" } as any),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(preferencesRepo.remove).not.toHaveBeenCalled();
+      expect(tenantRepo.remove).not.toHaveBeenCalled();
+      expect(operatorRepo.remove).not.toHaveBeenCalled();
     });
   });
-
 });
