@@ -199,10 +199,6 @@ export class UserAdminService {
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
-      full_name: "",
-      phone: "",
-      date_of_birth: undefined,
-      nationality: "",
       occupation: "",
       industry: "",
       work_style: "",
@@ -224,11 +220,7 @@ export class UserAdminService {
   ): Promise<void> {
     const operatorProfile = this.operatorProfileRepository.create({
       userId: user.id,
-      full_name: "",
-      phone: "",
       company_name: "",
-      date_of_birth: undefined,
-      nationality: "",
       business_address: "",
       company_registration: "",
       vat_number: "",

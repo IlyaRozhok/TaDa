@@ -13,7 +13,7 @@ import { MigrationInterface, QueryRunner } from "typeorm";
  * fall back to the profile value when the user's is NULL or empty. Idempotent
  * and safe to re-run.
  */
-export class BackfillUserIdentityFromProfiles1775300000000
+export class BackfillUserIdentityFromProfiles1775300000001
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {

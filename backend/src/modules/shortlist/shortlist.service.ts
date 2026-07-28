@@ -46,7 +46,6 @@ export class ShortlistService {
     // Admin (or tenant without profile): create minimal tenant profile for shortlist storage
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
-      full_name: user.full_name ?? undefined,
       shortlisted_properties: [],
     });
     await this.tenantProfileRepository.save(tenantProfile);

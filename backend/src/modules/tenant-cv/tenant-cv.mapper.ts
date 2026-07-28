@@ -34,31 +34,27 @@ export const buildTenantCvResponse = (
   const preferences = user.preferences as Preferences | undefined;
   const tenantProfile = user.tenantProfile;
 
-  const ageYears = resolveAge(tenantProfile?.date_of_birth);
+  const ageYears = resolveAge(user.date_of_birth);
 
-  const nameFromTp = splitName(tenantProfile?.full_name);
   const nameFromUser = splitName(user.full_name || null);
 
-  const first_name =
-    tenantProfile?.first_name || nameFromTp.first || nameFromUser.first || null;
-  const last_name =
-    tenantProfile?.last_name || nameFromTp.last || nameFromUser.last || null;
+  const first_name = user.first_name || nameFromUser.first || null;
+  const last_name = user.last_name || nameFromUser.last || null;
 
   const profile = {
     first_name,
     last_name,
     full_name:
       [first_name, last_name].filter(Boolean).join(" ") ||
-      tenantProfile?.full_name ||
       user.full_name ||
       null,
     avatar_url: user.avatar_url || null,
     email: user.email || null,
     phone: user.phone || null,
     age_years: ageYears,
-    nationality: tenantProfile?.nationality || null,
+    nationality: user.nationality || null,
     occupation: tenantProfile?.occupation || null,
-    address: tenantProfile?.address || null,
+    address: user.address || null,
   };
 
   const meta = {

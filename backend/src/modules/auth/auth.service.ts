@@ -136,8 +136,6 @@ export class AuthService {
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
-      phone: "",
-      nationality: "",
       occupation: "",
       industry: "",
       work_style: "",
