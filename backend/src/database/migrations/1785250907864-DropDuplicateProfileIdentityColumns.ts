@@ -15,11 +15,9 @@ export class DropDuplicateProfileIdentityColumns1785250907864 implements Migrati
         await queryRunner.query(`ALTER TABLE "operator_profiles" DROP COLUMN "phone"`);
         await queryRunner.query(`ALTER TABLE "operator_profiles" DROP COLUMN "date_of_birth"`);
         await queryRunner.query(`ALTER TABLE "operator_profiles" DROP COLUMN "nationality"`);
-        await queryRunner.query(`ALTER TABLE "buildings" ADD "description" text`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "buildings" DROP COLUMN "description"`);
         await queryRunner.query(`ALTER TABLE "operator_profiles" ADD "nationality" character varying`);
         await queryRunner.query(`ALTER TABLE "operator_profiles" ADD "date_of_birth" date`);
         await queryRunner.query(`ALTER TABLE "operator_profiles" ADD "phone" character varying`);
