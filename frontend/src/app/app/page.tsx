@@ -332,10 +332,7 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4">For Tenants</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a
-                    href="/app/auth/register?type=tenant"
-                    className="hover:text-white"
-                  >
+                  <a href="/app/auth" className="hover:text-white">
                     Sign Up
                   </a>
                 </li>
@@ -351,10 +348,7 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4">For Operators</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a
-                    href="/app/auth/register?type=operator"
-                    className="hover:text-white"
-                  >
+                  <a href="/app/auth" className="hover:text-white">
                     List Property
                   </a>
                 </li>
