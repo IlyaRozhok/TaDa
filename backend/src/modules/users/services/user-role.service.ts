@@ -5,29 +5,17 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { QueryRunner, Repository } from "typeorm";
-import { User, UserRole } from "../../../entities/user.entity";
-import { TenantProfile } from "../../../entities/tenant-profile.entity";
-import { OperatorProfile } from "../../../entities/operator-profile.entity";
-import { Preferences } from "../../../entities/preferences.entity";
-import { UserProfileService } from "./user-profile.service";
+import { User, UserRole } from "@/entities/user.entity";
+import { OperatorProfile, Preferences, TenantProfile } from "@/entities";
 
 @Injectable()
 export class UserRoleService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(TenantProfile)
-    private tenantProfileRepository: Repository<TenantProfile>,
-    @InjectRepository(OperatorProfile)
-    private operatorProfileRepository: Repository<OperatorProfile>,
-    @InjectRepository(Preferences)
-    private preferencesRepository: Repository<Preferences>,
-    private userProfileService: UserProfileService
   ) {}
 
   async updateUserRole(userId: string, role: UserRole | string): Promise<User> {
-    // Валидируем роль до обращения к БД. Раньше неизвестное значение молча
-    // становилось UserRole.Tenant — опечатка в запросе тихо понижала роль.
     const roleEnum = Object.values(UserRole).find((r) => r === role);
 
     if (!roleEnum) {

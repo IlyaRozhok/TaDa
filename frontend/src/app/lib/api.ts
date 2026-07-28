@@ -1,6 +1,6 @@
 import axios from "axios";
 import { logout } from "@/store/slices/authSlice";
-import { Property } from "../types";
+import { Property } from "@/app/types";
 
 // Create axios instance
 const api = axios.create({
