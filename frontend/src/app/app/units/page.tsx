@@ -285,6 +285,9 @@ export default function TenantUnitsPage() {
     }
 
     // Allow admins and tenants to access units page.
+    // onboardingCompleted is hydrated from a persisted flag (localStorage) in
+    // setUser, so a refresh keeps a completed tenant here instead of bouncing
+    // them back to onboarding.
     if (user.role === "tenant" && !onboardingCompleted) {
       router.replace("/app/onboarding");
       return;

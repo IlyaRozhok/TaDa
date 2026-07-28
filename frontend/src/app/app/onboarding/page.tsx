@@ -7,12 +7,10 @@ import { ChevronDown, ChevronLeft } from "lucide-react";
 import {
   selectUser,
   selectIsAuthenticated,
-  selectIsOnboarded,
   selectOnboardingCompleted,
   setIsOnboarded,
   setOnboardingCompleted,
 } from "@/store/slices/authSlice";
-import { preferencesAPI } from "../../lib/api";
 import SimpleOnboardingProfileStep from "../../components/onboarding/SimpleOnboardingProfileStep";
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
 import OnboardingIntroCenteredWrapper from "../../components/onboarding/OnboardingIntroCenteredWrapper";
@@ -66,7 +64,6 @@ export default function OnboardingPage() {
   const { t } = useTranslation();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isOnboarded = useSelector(selectIsOnboarded);
   const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const [loading, setLoading] = useState(true);
   const [isProfileValid, setIsProfileValid] = useState(false);
@@ -159,8 +156,12 @@ export default function OnboardingPage() {
 
   const handlePreferencesNext = async () => {
     if (preferencesHook.isLastStep) {
-      // Mark onboarding as fully completed
+      // Mark onboarding as fully completed (persisted so a refresh keeps the
+      // user out of onboarding — see setUser hydration).
       dispatch(setOnboardingCompleted(true));
+      if (user?.id) {
+        localStorage.setItem(`onboarding_completed_${user.id}`, "1");
+      }
       await handlePreferencesComplete();
     } else {
       await preferencesHook.nextStep();
@@ -220,30 +221,17 @@ export default function OnboardingPage() {
       // Mark as checked to prevent re-checking
       hasCheckedPreferences.current = true;
 
-      // Reset preferences step for new onboarding
-      localStorage.removeItem("preferencesStep");
-
-      // Check if user already has preferences AND is onboarded
-      // Only redirect if both conditions are met to avoid redirect loops
-      try {
-        const response = await preferencesAPI.get();
-        if (response.data && response.data.id && onboardingCompleted) {
-          // User has preferences AND completed full onboarding, redirect to units
-          router.push("/app/units");
-          return;
-        }
-        // If user has preferences but onboarding not completed, stay on onboarding
-        // If user doesn't have preferences, stay on onboarding
-      } catch (error: unknown) {
-        // 404 means no preferences - user needs onboarding
-        const errorResponse = error as { response?: { status?: number } };
-        if (errorResponse.response?.status !== 404) {
-          console.error("Error checking preferences:", error);
-        }
-        // Stay on onboarding if error (except 404)
-      } finally {
-        setLoading(false);
+      // Completed onboarding (persisted flag) → straight to the catalog, before
+      // touching any step state. This is what makes a refresh keep the user out
+      // of onboarding.
+      if (onboardingCompleted) {
+        router.push("/app/units");
+        return;
       }
+
+      // Fresh onboarding pass — reset the transient preferences step.
+      localStorage.removeItem("preferencesStep");
+      setLoading(false);
     };
 
     checkUserStatus();

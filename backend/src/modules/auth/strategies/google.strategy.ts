@@ -47,7 +47,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
     return {
       google_id: id,
       email: emails[0].value,
-      full_name: `${name.givenName} ${name.familyName}`.trim(),
+      full_name:
+        [name?.givenName, name?.familyName].filter(Boolean).join(" ") ||
+        undefined,
       avatar_url: photos?.[0]?.value ?? null,
       email_verified: emails[0].verified ?? false,
     };
