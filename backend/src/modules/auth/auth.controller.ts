@@ -13,8 +13,7 @@ const accessCookieOptions = () => ({
   httpOnly: true,
   secure: isProd(),
   sameSite: "lax" as const,
-  // 10s for testing — change to 15 * 60 * 1000 (15m) before production
-  maxAge: 10 * 1000,
+  maxAge: 15 * 60 * 1000, // 15 minutes
 });
 
 const refreshCookieOptions = () => ({
