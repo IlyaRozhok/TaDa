@@ -7,6 +7,8 @@ type E2EFixtures = {
   tenantPage: Page;
   adminPage: Page;
   freshTenantPage: Page;
+  /** Админ, прошедший онбординг, но с незаполненным профилем. */
+  adminPartialProfilePage: Page;
 };
 
 export const test = base.extend<E2EFixtures>({
@@ -26,6 +28,13 @@ export const test = base.extend<E2EFixtures>({
 
   freshTenantPage: async ({ browser }, use) => {
     const ctx = await browser.newContext({ storageState: path.join(AUTH_DIR, "fresh-tenant.json") });
+    const page = await ctx.newPage();
+    await use(page);
+    await ctx.close();
+  },
+
+  adminPartialProfilePage: async ({ browser }, use) => {
+    const ctx = await browser.newContext({ storageState: path.join(AUTH_DIR, "admin-partial.json") });
     const page = await ctx.newPage();
     await use(page);
     await ctx.close();

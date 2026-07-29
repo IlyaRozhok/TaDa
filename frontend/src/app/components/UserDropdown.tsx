@@ -158,7 +158,7 @@ export default function UserDropdown({
     .toUpperCase()
     .slice(0, 2);
   const hasCompletedOnboarding = Boolean(
-    user.onboardingCompleted ?? user.isOnboarded,
+    user.onboardingCompleted,
   );
 
   return (

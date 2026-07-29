@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { BASE_URL } from "./e2e/env";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -8,7 +9,7 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
 
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: BASE_URL,
     ...devices["Desktop Chrome"],
   },
 
