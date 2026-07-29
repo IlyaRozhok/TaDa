@@ -6,13 +6,13 @@ import { useSelector } from "react-redux";
 import {
   selectUser,
   selectIsAuthenticated,
-  selectIsOnboarded,
+  selectOnboardingCompleted,
 } from "@/store/slices/authSlice";
 
 export default function DashboardPage() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isOnboarded = useSelector(selectIsOnboarded);
+  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function DashboardPage() {
     // Check onboarding status - redirect to onboarding if not onboarded
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "";
-    if (!isOnboarded && !currentPath.includes("/onboarding")) {
+    if (!onboardingCompleted && !currentPath.includes("/onboarding")) {
       router.replace("/app/onboarding");
       return;
     }
@@ -50,7 +50,7 @@ export default function DashboardPage() {
         router.replace("/app/units");
         break;
     }
-  }, [isAuthenticated, user, isOnboarded, router]);
+  }, [isAuthenticated, user, onboardingCompleted, router]);
 
   // Empty page while redirecting
   return null;

@@ -31,8 +31,16 @@ interface SeedUser {
   id: string;
   email: string;
   role: Role;
-  /** Наличие строки в preferences = онбординг пройден (см. SessionManager). */
-  onboarded: boolean;
+  /**
+   * Заполнены ли шесть полей, которые проверяет isProfileComplete().
+   * Это НЕ то же самое, что пройденный онбординг: сам флоу собирает только
+   * phone и date_of_birth, поэтому у реального пользователя профиль обычно
+   * неполон. Разделено намеренно — ради сценария «прошёл онбординг,
+   * профиль неполный».
+   */
+  profileComplete: boolean;
+  /** Пройден ли флоу: строка в preferences + флаг в localStorage. */
+  completedOnboarding: boolean;
   stateFile: string;
 }
 
@@ -45,22 +53,35 @@ const SEED_USERS: SeedUser[] = [
     id: "e2e00000-0000-4000-8000-000000000001",
     email: "e2e-tenant@tada-e2e.local",
     role: "tenant",
-    onboarded: true,
+    profileComplete: true,
+    completedOnboarding: true,
     stateFile: "tenant.json",
   },
   {
     id: "e2e00000-0000-4000-8000-000000000002",
     email: "e2e-fresh-tenant@tada-e2e.local",
     role: "tenant",
-    onboarded: false,
+    profileComplete: false,
+    completedOnboarding: false,
     stateFile: "fresh-tenant.json",
   },
   {
     id: "e2e00000-0000-4000-8000-000000000003",
     email: "e2e-admin@tada-e2e.local",
     role: "admin",
-    onboarded: true,
+    profileComplete: true,
+    completedOnboarding: true,
     stateFile: "admin.json",
+  },
+  {
+    // Типовой случай для админа, заведённого через админ-панель: профиль пустой.
+    // До унификации гварда такой пользователь не мог открыть саму панель.
+    id: "e2e00000-0000-4000-8000-000000000004",
+    email: "e2e-admin-partial@tada-e2e.local",
+    role: "admin",
+    profileComplete: false,
+    completedOnboarding: true,
+    stateFile: "admin-partial.json",
   },
 ];
 
@@ -122,15 +143,12 @@ const quote = (value: string): string => `'${value.replace(/'/g, "''")}'`;
  * от ломки внешних ключей, если тестовый юзер уже был заведён иначе.
  */
 function seedUser(psql: (sql: string) => string, user: SeedUser): string {
-  // psql печатает тег команды ("INSERT 0 1") следующей строкой после RETURNING,
-  // поэтому берём только первую строку вывода.
   /**
-   * isOnboarded в authSlice выводится через isProfileComplete(): нужны все шесть
-   * полей профиля. Без них SimpleDashboardRouter уводит на /app/onboarding даже
-   * при наличии preferences. Поэтому «пройденный онбординг» = заполненный профиль,
-   * а свежему арендатору поля явно очищаются (важно при повторном прогоне).
+   * Шесть полей, которые проверяет isProfileComplete(). Заполняем или явно
+   * обнуляем — второе важно при повторном прогоне, чтобы пользователь
+   * с неполным профилем таким и остался.
    */
-  const profile = user.onboarded
+  const profile = user.profileComplete
     ? {
         first_name: quote("E2E"),
         last_name: quote(user.role === "admin" ? "Admin" : "Tenant"),
@@ -148,6 +166,8 @@ function seedUser(psql: (sql: string) => string, user: SeedUser): string {
         nationality: "NULL",
       };
 
+  // psql печатает тег команды ("INSERT 0 1") следующей строкой после RETURNING,
+  // поэтому берём только первую строку вывода.
   const [id] = psql(`
     INSERT INTO users (id, email, role, status, provider, email_verified, full_name,
                        first_name, last_name, address, phone, date_of_birth, nationality)
@@ -172,13 +192,13 @@ function seedUser(psql: (sql: string) => string, user: SeedUser): string {
     throw new Error(`e2e global-setup: не удалось засеять ${user.email}`);
   }
 
-  if (user.onboarded) {
+  if (user.completedOnboarding) {
     psql(`
       INSERT INTO preferences (user_id) VALUES (${quote(id)})
       ON CONFLICT (user_id) DO NOTHING;
     `);
   } else {
-    // Свежий арендатор не должен иметь предпочтений — иначе приложение
+    // Свежий пользователь не должен иметь предпочтений — иначе SessionManager
     // сочтёт онбординг пройденным и тест редиректа развалится.
     psql(`DELETE FROM preferences WHERE user_id = ${quote(id)};`);
   }
@@ -219,7 +239,7 @@ function writeStorageState(user: SeedUser, userId: string, token: string): void 
    * preferencesAPI, и guard успевает увести со страницы раньше её ответа —
    * то есть синтетическая сессия вела бы себя не как настоящая.
    */
-  const origins = user.onboarded
+  const origins = user.completedOnboarding
     ? [
         {
           origin,

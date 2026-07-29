@@ -49,3 +49,29 @@ test("admin Requests tab renders", async ({ adminPage: page }) => {
   await page.waitForTimeout(1_500);
   expect(page.url()).toMatch(/\/app\/admin\/panel/);
 });
+
+/**
+ * Регрессия: гвард онбординга.
+ *
+ * SimpleDashboardRouter гейтил доступ по isOnboarded, то есть по
+ * isProfileComplete() — «профиль заполнен». Но онбординг собирает только phone
+ * и date_of_birth, а address и nationality не спрашивает вообще. В результате
+ * пользователь, честно прошедший флоу, выбрасывался обратно в онбординг —
+ * в первую очередь админ, заведённый через админ-панель с пустым профилем,
+ * то есть панель была недоступна тому, для кого создана.
+ *
+ * После унификации гварды смотрят на onboardingCompleted — явный признак
+ * завершения флоу.
+ */
+test("admin with an incomplete profile can still open the panel", async ({
+  adminPartialProfilePage: page,
+}) => {
+  await page.goto("/app/admin/panel");
+
+  await expect(page.getByRole("button", { name: "Users" })).toBeVisible({ timeout: 10_000 });
+  expect(page.url()).toMatch(/\/app\/admin\/panel/);
+
+  // Контроль: не увело на онбординг спустя мгновение после рендера.
+  await page.waitForTimeout(2_000);
+  expect(page.url()).toMatch(/\/app\/admin\/panel/);
+});

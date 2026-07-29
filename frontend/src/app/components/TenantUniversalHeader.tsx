@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
 import LanguageDropdown from "./LanguageDropdown";
-import { selectUser, selectIsOnboarded } from "@/store/slices/authSlice";
+import { selectUser, selectOnboardingCompleted } from "@/store/slices/authSlice";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { favoritesKeys } from "@/app/lib/translationsKeys/favoritesTranslationKeys";
 import {
@@ -53,7 +53,7 @@ export default function TenantUniversalHeader({
   const pathname = usePathname() ?? "";
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
-  const isOnboarded = useSelector(selectIsOnboarded);
+  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -210,7 +210,7 @@ export default function TenantUniversalHeader({
 
           {/* Tenant: Tenant CV + Favourites; admin: Favourites */}
           <div className="hidden md:flex items-center gap-2 lg:gap-3">
-            {showTenantCvLink && isOnboarded && (
+            {showTenantCvLink && onboardingCompleted && (
               <button
                 onClick={() => router.push("/app/tenant-cv")}
                 className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"

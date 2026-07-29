@@ -180,7 +180,17 @@ export const selectAuth = (state: { auth: AuthState }) => state.auth;
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectIsAuthenticated = (state: { auth: AuthState }) =>
   state.auth.isAuthenticated;
-export const selectIsOnboarded = (state: { auth: AuthState }) =>
-  state.auth.user?.isOnboarded ?? false;
+/**
+ * Единственный источник истины для «онбординг пройден».
+ *
+ * selectIsOnboarded убран: он отдавал isProfileComplete(), то есть «профиль
+ * заполнен», а это другой вопрос. Онбординг не собирает address и nationality,
+ * поэтому у прошедшего его пользователя профиль обычно неполон — и гварды,
+ * стоявшие на isOnboarded, выбрасывали такого пользователя обратно в онбординг.
+ *
+ * Поле user.isOnboarded пока остаётся: оно пишется через setIsOnboarded по ходу
+ * флоу. Вычистить его вместе с isProfileComplete и перенести признак на сервер —
+ * шаг 6.8 плана.
+ */
 export const selectOnboardingCompleted = (state: { auth: AuthState }) =>
   state.auth.user?.onboardingCompleted ?? false;
