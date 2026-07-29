@@ -380,10 +380,11 @@ Your schema is up to date - there are no queries to be executed by schema synchr
 - `dto/test-login.dto.ts` — маршрута тест-логина нет.
 - `entities/index.ts` — пустой barrel (при этом `@/entities` импортируется в matching).
 - Колонка `users.password` — заполняется только при удалённой регистрации; вход только через Google.
-- Redis: модуль и сервис **удалены на `develop`** (PR #44) — код чист.
-  `docker-compose.yml` вычищен в ходе аудита (сервис, `depends_on`, том `redis_data`).
-  Остаточная чистка вне репозитория: `REDIS_*` в `.env.production` и в `/opt/tada/.env`
-  на хостах, осиротевший том и контейнер `tada-redis` на VPS.
+- Redis: модуль и сервис **удалены на `develop`** (PR #44) — код чист. Но
+  `docker-compose.yml` **не вычищен**: сервис `redis`, том `redis_data` и `depends_on`
+  у backend на месте (ветка `chore/remove-redis-compose` удалена без мержа 2026-07-28).
+  Удаление и остальная чистка — `REDIS_*` в `.env.production` и в `/opt/tada/.env`
+  на хостах, осиротевший том и контейнер `tada-redis` на VPS — в Фазе 3.2.
 - `sharp`-зависимости в Dockerfile при отсутствии `sharp` в package.json.
 
 ---

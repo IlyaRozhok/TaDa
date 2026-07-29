@@ -26,7 +26,7 @@ develop (stage, stage.ta-da.co)  →  main (prod, ta-da.co)
 |---|---|---|
 | 1 | Operator-UI сносится, **кроме** роли `operator` и admin-CRUD операторов (нужны для линковки зданий) | Новая **Фаза 2А** |
 | 2 | Есть доступ к stage и prod (VPS Hetzner) | Фаза 3.1 — снять реальные конфиги и зафиксировать как источник истины |
-| 3 | **Redis не нужен.** Удалён из кода на `develop`; сервис, том и `depends_on` убраны из `docker-compose.yml` — осознанное решение, откат не требуется | R22 понижен: осталась чистка `REDIS_*` в env и артефактов на хостах |
+| 3 | **Redis не нужен** — решение в силе. Из кода удалён на `develop` (PR #44). ⚠️ Из `docker-compose.yml` **НЕ удалён**: ветка `chore/remove-redis-compose` снесена без мержа | R22 остаётся: удаление из compose + `REDIS_*` в env + артефакты на хостах — всё в 3.2 |
 | 4 | Архитектура фронта — **App Router native** | Фаза 5.3 перестаёт быть выбором, становится исполнением |
 | 5 | Старые ветки рефакторинга игнорируются | Пункт 1.6 первого прохода **удалён** из плана |
 | 6 | **У роли `operator` нет фронтового флоу** — квартиры создаются из админки. Редирект-таргет не нужен, новую страницу не заводим | Вопрос В1 закрыт; 2А.2 переформулирован и понижен 🔴 → 🟡 |
@@ -59,7 +59,7 @@ develop (stage, stage.ta-da.co)  →  main (prod, ta-da.co)
 | R19 | **Нет `.env.example`**, нет документации бэкенда, README описывает несуществующую систему | docs | Средняя | 1 |
 | R20 | 38 МБ несжатых PNG в `public/` | `frontend/public` | Низкая | 4 |
 | R21 | Вторая устаревшая папка миграций `backend/database/`, едет в Docker-образ | `backend/` | Низкая | 2 |
-| R22 | `REDIS_*` в env и артефакты на хостах (том `redis_data`, контейнер `tada-redis`) при удалённом Redis; `sharp`-зависимости в Dockerfile без `sharp`. *Compose уже вычищен* | Dockerfile, env, хосты | Низкая | 3 |
+| R22 | Сервис `redis`, том `redis_data` и `depends_on` в `docker-compose.yml` при удалённом из кода Redis; плюс `REDIS_*` в env и артефакты на хостах; `sharp`-зависимости в Dockerfile без `sharp` | compose, Dockerfile, env, хосты | Низкая | 3 |
 | R23 | Сломанные npm-скрипты `db:reset*` (файла `scripts/reset-database.js` нет) | `backend/package.json` | Низкая | 2 |
 | ~~R24~~ | ~~20+ незакрытых веток рефакторингов~~ — **снято**: решение владельца игнорировать старые ветки | git | — | — |
 
@@ -309,10 +309,14 @@ verify-email,resend-verification}`, `/auth/temp-token/:t`, `GET /users/:id`,
 на хост, где конфигурация другая.
 
 ### 3.2 🟢 Убрать мусор из инфраструктуры (R22)
-- Redis: **код чист на `develop`**, `docker-compose.yml` **вычищен** (сервис, `depends_on`,
-  том `redis_data`; `docker compose config` → exit 0). Осталось: убрать `REDIS_*`
-  из `.env.production` и из `/opt/tada/.env` на хостах, удалить на хостах
-  осиротевший том `redis_data` и контейнер `tada-redis`. Делать вместе с 3.1.
+- Redis: **код чист на `develop`**, но `docker-compose.yml` **НЕ вычищен** — сервис
+  `redis`, том `redis_data` и `depends_on: redis: condition: service_healthy` у backend
+  всё ещё там. Ветка `chore/remove-redis-compose` была удалена без мержа (2026-07-28),
+  работу делать заново. Убрать из compose эти три вещи (после правки обязательно
+  проверить `docker compose config` — при удалении сервиса легко забыть `depends_on`
+  или том, и проект станет невалидным), затем `REDIS_*` из `.env.production`
+  и из `/opt/tada/.env` на хостах, затем осиротевший том `redis_data` и контейнер
+  `tada-redis` на самих VPS. Делать вместе с 3.1.
 - `Dockerfile`: убрать `apk add vips-dev fftw-dev` (нет `sharp`).
 - `Dockerfile`: `HEALTHCHECK` → `/api/health` (сейчас `/health`, всегда 404).
 - `frontend/Dockerfile*` — фронт на Vercel; удалить или пометить как неиспользуемые.
@@ -546,7 +550,7 @@ Redis вернуть осознанно, под конкретные сцена�
 | Удаление мёртвых API-методов | **Снятие конфигов с prod/stage** (3.1) | Переход на App Router native |
 | `backend/database/`, `dto/test-login.dto.ts` | **Ветки `case "operator"` в маршрутизации** (2А.2) | Разбор трёх god-модалок |
 | Удаление `/api/test-sentry` (0.2) | **Удаление operator-UI** (2А.3) | `matching-calculation.service.ts` |
-| **Добавление индексов** (`CONCURRENTLY`) | `REDIS_*` из env, `sharp` из Dockerfile | Разрыв циклов модулей |
+| **Добавление индексов** (`CONCURRENTLY`) | Redis из compose, `REDIS_*` из env, `sharp` из Dockerfile | Разрыв циклов модулей |
 | `npm install`, починка `type-check` | `HEALTHCHECK` → `/api/health` | Унификация guard'ов |
 | Проверки в CI, Node 18 → 20 | Подключение `@config` Tailwind (+ скриншоты) | Дедупликация живых хуков |
 | `.env.example`, README | Сжатие ассетов · логгер вместо `console.*` | |
@@ -554,8 +558,8 @@ Redis вернуть осознанно, под конкретные сцена�
 
 Изменения относительно первого прохода: **0.1 понижен 🔴 → 🟡** (у маршрута нет живых
 вызовов с фронта), **2А.2 понижен 🔴 → 🟡** (новая страница не заводится, роль через UI
-больше не присваивается). Redis из compose уже удалён — в таблице осталась только
-чистка env и артефактов на хостах.
+больше не присваивается). Удаление Redis из compose **остаётся в 3.2** — ветка
+`chore/remove-redis-compose` была снесена без мержа, работу делать заново.
 
 ---
 
