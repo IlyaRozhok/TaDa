@@ -21,7 +21,7 @@
 tada-prod/
 ├── backend/            NestJS 10 + TypeORM 0.3 + PostgreSQL     (свой package.json)
 ├── frontend/           Next.js 16 + React 19 + Tailwind v4      (свой package.json)
-├── docker-compose.yml  только backend (frontend на Vercel; redis вычищен)
+├── docker-compose.yml  backend + redis (frontend на Vercel; redis не используется кодом)
 ├── nginx/              prod.conf, stage.conf
 ├── infrastructure/     terraform (Hetzner Cloud)
 ├── .github/workflows/  deploy.yml — единственный пайплайн
@@ -82,7 +82,7 @@ TYPEORM_SYNCHRONIZE TYPEORM_LOGGING
 `SESSION_CLEANUP_INTERVAL`, `MAX_SESSIONS_PER_DEVICE` (сессий больше нет),
 `REDIS_HOST/PORT/PASSWORD/DB` — **Redis из кода удалён на `develop`** (PR #44:
 `redis.module.ts` снесён, `ioredis` и `@types/ioredis` убраны из `package.json`),
-из `docker-compose.yml` вычищен в ходе аудита; переменные в env остались, см. §6.
+но **из `docker-compose.yml` НЕ удалён** и переменные в env остались, см. §6.
 
 Frontend: `NEXT_PUBLIC_API_URL` + ключи EmailJS.
 
@@ -162,7 +162,7 @@ push main|develop, PR→main
 |---|---|
 | **Структурное логирование** | Нет. 88 `console.*` в backend, 427 в frontend. `Logger` из Nest использован 1 раз. Нет request-id, нет уровней, нет JSON-логов. |
 | **Автозапуск миграций** | Сломан молча — `migrations: ["dist/migrations/*.js"]` указывает не туда (детали в `02`, §5). |
-| **Кэш** | Отсутствует. Redis удалён из кода бэкенда на `develop` (PR #44) и вычищен из `docker-compose.yml` в ходе этого аудита. Остаточная чистка: `REDIS_*` в `.env.production` и в `/opt/tada/.env` на хостах, осиротевший том `redis_data` и контейнер `tada-redis` на самих VPS. |
+| **Кэш** | Отсутствует. Redis удалён **только из кода** бэкенда на `develop` (PR #44). В `docker-compose.yml` сервис `redis`, том `redis_data` и `depends_on: redis: condition: service_healthy` у backend **всё ещё на месте** — compose поднимает и ждёт готовности сервиса, которым никто не пользуется. Ветка `chore/remove-redis-compose` была удалена без мержа (2026-07-28), удаление делается заново в Фазе 3.2. Туда же: `REDIS_*` в `.env.production` и в `/opt/tada/.env` на хостах, осиротевший том и контейнер `tada-redis` на VPS. |
 | **Очереди** | Отсутствуют. Все операции синхронные, включая загрузку в S3. |
 | **Rate limit при масштабировании** | Throttler хранит счётчики в памяти процесса. При >1 инстанса лимиты множатся на число инстансов. |
 | **Sentry на фронте** | Не подключён. Ошибки клиента не видны. |

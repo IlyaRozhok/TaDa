@@ -14,10 +14,4 @@ export class AppController {
       timestamp: new Date().toISOString(),
     };
   }
-
-  @Get('test-sentry')
-  testSentry() {
-    throw new Error('Sentry integration test');
-  }
-
 }
