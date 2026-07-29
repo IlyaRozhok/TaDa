@@ -1,84 +1,271 @@
+/**
+ * Подготовка сессий для e2e без тест-логин роута на бэкенде.
+ *
+ * Раньше здесь дёргался POST /api/auth/test-login — бэкдор, который удалён
+ * из приложения. Вместо него:
+ *   1. пользователи засеваются прямо в Postgres через psql (идемпотентно);
+ *   2. JWT выпускается локально тем же алгоритмом и секретом, что и в бэкенде;
+ *   3. кука кладётся в storageState, который читают фикстуры.
+ *
+ * Токены выпускаются на каждом прогоне, поэтому протухание сохранённых
+ * состояний — прошлая причина падения всей сетки — исключено конструктивно.
+ *
+ * Требования к окружению: доступный psql и backend/.env с DB_* и JWT_SECRET.
+ */
+import { execFileSync } from "child_process";
+import { createHmac } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 
-const BACKEND_URL = "http://localhost:5001/api";
+import { BASE_URL } from "./env";
+
 const AUTH_DIR = path.join(__dirname, ".auth");
+const BACKEND_ENV = path.join(__dirname, "..", "..", "backend", ".env");
 
-interface TestLoginResponse {
-  success: boolean;
-  user: { id: string; email: string; role: string };
+/** Access-токен живёт 15 минут — столько же, сколько выдаёт приложение. */
+const ACCESS_TTL_SECONDS = 15 * 60;
+
+type Role = "tenant" | "admin";
+
+interface SeedUser {
+  id: string;
+  email: string;
+  role: Role;
+  /** Наличие строки в preferences = онбординг пройден (см. SessionManager). */
+  onboarded: boolean;
+  stateFile: string;
 }
 
-function parseSetCookieHeaders(headers: Headers): Array<{ name: string; value: string; domain: string; path: string; httpOnly: boolean; secure: boolean; sameSite: "Lax" | "Strict" | "None" }> {
-  const raw = headers.getSetCookie ? headers.getSetCookie() : [headers.get("set-cookie") ?? ""];
-  const cookies: Array<{ name: string; value: string; domain: string; path: string; httpOnly: boolean; secure: boolean; sameSite: "Lax" | "Strict" | "None" }> = [];
+/**
+ * Фиксированные UUID делают засев идемпотентным и позволяют опознать
+ * тестовые строки в базе глазами.
+ */
+const SEED_USERS: SeedUser[] = [
+  {
+    id: "e2e00000-0000-4000-8000-000000000001",
+    email: "e2e-tenant@tada-e2e.local",
+    role: "tenant",
+    onboarded: true,
+    stateFile: "tenant.json",
+  },
+  {
+    id: "e2e00000-0000-4000-8000-000000000002",
+    email: "e2e-fresh-tenant@tada-e2e.local",
+    role: "tenant",
+    onboarded: false,
+    stateFile: "fresh-tenant.json",
+  },
+  {
+    id: "e2e00000-0000-4000-8000-000000000003",
+    email: "e2e-admin@tada-e2e.local",
+    role: "admin",
+    onboarded: true,
+    stateFile: "admin.json",
+  },
+];
 
-  for (const header of raw) {
-    if (!header) continue;
-    const parts = header.split(";").map((p) => p.trim());
-    const [nameValue, ...attrs] = parts;
-    const eqIdx = nameValue.indexOf("=");
-    if (eqIdx === -1) continue;
-
-    const name = nameValue.slice(0, eqIdx).trim();
-    const value = nameValue.slice(eqIdx + 1).trim();
-
-    const attrMap: Record<string, string> = {};
-    for (const attr of attrs) {
-      const [k, v = ""] = attr.split("=").map((s) => s.trim());
-      attrMap[k.toLowerCase()] = v;
-    }
-
-    cookies.push({
-      name,
-      value,
-      domain: "localhost",
-      path: attrMap["path"] ?? "/",
-      httpOnly: "httponly" in attrMap,
-      secure: "secure" in attrMap,
-      sameSite: (attrMap["samesite"] as "Lax" | "Strict" | "None") ?? "Lax",
-    });
+function parseEnvFile(file: string): Record<string, string> {
+  if (!fs.existsSync(file)) {
+    throw new Error(
+      `e2e global-setup: не найден ${file}. Нужны DB_* и JWT_SECRET бэкенда.`,
+    );
   }
 
-  return cookies;
+  const env: Record<string, string> = {};
+  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    env[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim();
+  }
+  return env;
 }
 
-async function createAuthState(role: "tenant" | "admin" | "fresh-tenant", outputFile: string): Promise<void> {
-  const response = await fetch(`${BACKEND_URL}/auth/test-login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ role }),
-  });
+function createPsqlRunner(env: Record<string, string>) {
+  const args = [
+    "-h",
+    env.DB_HOST ?? "localhost",
+    "-p",
+    env.DB_PORT ?? "5432",
+    "-U",
+    env.DB_USER ?? "postgres",
+    "-d",
+    env.DB_NAME ?? "postgres",
+    "-tA",
+    "-v",
+    "ON_ERROR_STOP=1",
+  ];
 
-  if (!response.ok) {
-    throw new Error(`test-login failed for role "${role}": ${response.status} ${await response.text()}`);
-  }
-
-  const data: TestLoginResponse = await response.json();
-  const cookies = parseSetCookieHeaders(response.headers);
-
-  if (role === "tenant") {
-    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+  return (sql: string): string => {
     try {
-      await fetch(`${BACKEND_URL}/preferences`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Cookie: cookieHeader },
-        body: JSON.stringify({}),
-      });
-    } catch {
-      // Preferences may already exist — ignore conflict errors
+      return execFileSync("psql", [...args, "-c", sql], {
+        encoding: "utf8",
+        env: { ...process.env, PGPASSWORD: env.DB_PASSWORD ?? "" },
+      }).trim();
+    } catch (error) {
+      const details =
+        error instanceof Error && "stderr" in error
+          ? String((error as { stderr?: Buffer }).stderr ?? error.message)
+          : String(error);
+      throw new Error(`e2e global-setup: psql упал.\nSQL: ${sql}\n${details}`);
     }
+  };
+}
+
+/** Экранирование строкового литерала для SQL. */
+const quote = (value: string): string => `'${value.replace(/'/g, "''")}'`;
+
+/**
+ * Возвращает фактический id строки: при конфликте по email берётся id
+ * существующего пользователя, а не тот, что мы предложили. Это защищает
+ * от ломки внешних ключей, если тестовый юзер уже был заведён иначе.
+ */
+function seedUser(psql: (sql: string) => string, user: SeedUser): string {
+  // psql печатает тег команды ("INSERT 0 1") следующей строкой после RETURNING,
+  // поэтому берём только первую строку вывода.
+  /**
+   * isOnboarded в authSlice выводится через isProfileComplete(): нужны все шесть
+   * полей профиля. Без них SimpleDashboardRouter уводит на /app/onboarding даже
+   * при наличии preferences. Поэтому «пройденный онбординг» = заполненный профиль,
+   * а свежему арендатору поля явно очищаются (важно при повторном прогоне).
+   */
+  const profile = user.onboarded
+    ? {
+        first_name: quote("E2E"),
+        last_name: quote(user.role === "admin" ? "Admin" : "Tenant"),
+        address: quote("1 Test Street, London"),
+        phone: quote("+447700900000"),
+        date_of_birth: quote("1990-01-01"),
+        nationality: quote("British"),
+      }
+    : {
+        first_name: "NULL",
+        last_name: "NULL",
+        address: "NULL",
+        phone: "NULL",
+        date_of_birth: "NULL",
+        nationality: "NULL",
+      };
+
+  const [id] = psql(`
+    INSERT INTO users (id, email, role, status, provider, email_verified, full_name,
+                       first_name, last_name, address, phone, date_of_birth, nationality)
+    VALUES (${quote(user.id)}, ${quote(user.email)}, ${quote(user.role)}, 'active', 'google', true,
+            ${quote(`E2E ${user.role}`)},
+            ${profile.first_name}, ${profile.last_name}, ${profile.address},
+            ${profile.phone}, ${profile.date_of_birth}, ${profile.nationality})
+    ON CONFLICT (email) DO UPDATE
+      SET role = EXCLUDED.role,
+          status = EXCLUDED.status,
+          email_verified = EXCLUDED.email_verified,
+          first_name = EXCLUDED.first_name,
+          last_name = EXCLUDED.last_name,
+          address = EXCLUDED.address,
+          phone = EXCLUDED.phone,
+          date_of_birth = EXCLUDED.date_of_birth,
+          nationality = EXCLUDED.nationality
+    RETURNING id;
+  `).split("\n");
+
+  if (!id) {
+    throw new Error(`e2e global-setup: не удалось засеять ${user.email}`);
   }
 
-  const storageState = { cookies, origins: [] };
-  fs.mkdirSync(path.dirname(outputFile), { recursive: true });
-  fs.writeFileSync(outputFile, JSON.stringify(storageState, null, 2));
-  // eslint-disable-next-line no-console
-  console.log(`[global-setup] Auth state saved for ${data.user.email} → ${path.basename(outputFile)}`);
+  if (user.onboarded) {
+    psql(`
+      INSERT INTO preferences (user_id) VALUES (${quote(id)})
+      ON CONFLICT (user_id) DO NOTHING;
+    `);
+  } else {
+    // Свежий арендатор не должен иметь предпочтений — иначе приложение
+    // сочтёт онбординг пройденным и тест редиректа развалится.
+    psql(`DELETE FROM preferences WHERE user_id = ${quote(id)};`);
+  }
+
+  return id;
+}
+
+/** HS256-JWT с той же полезной нагрузкой, что выпускает AuthService. */
+function signAccessToken(
+  secret: string,
+  payload: { sub: string; email: string; role: Role },
+): string {
+  const base64url = (value: object): string =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const header = base64url({ alg: "HS256", typ: "JWT" });
+  const body = base64url({
+    ...payload,
+    status: "active",
+    iat: issuedAt,
+    exp: issuedAt + ACCESS_TTL_SECONDS,
+  });
+  const signature = createHmac("sha256", secret)
+    .update(`${header}.${body}`)
+    .digest("base64url");
+
+  return `${header}.${body}.${signature}`;
+}
+
+function writeStorageState(user: SeedUser, userId: string, token: string): void {
+  const { hostname, protocol, origin } = new URL(BASE_URL);
+
+  /**
+   * Флаг онбординга в localStorage. authSlice читает его синхронно при setUser
+   * (`onboarding_completed_<id>`), поэтому у реального пользователя isOnboarded
+   * поднимается сразу. Без флага остаётся только асинхронная ветка через
+   * preferencesAPI, и guard успевает увести со страницы раньше её ответа —
+   * то есть синтетическая сессия вела бы себя не как настоящая.
+   */
+  const origins = user.onboarded
+    ? [
+        {
+          origin,
+          localStorage: [
+            { name: `onboarding_completed_${userId}`, value: "1" },
+          ],
+        },
+      ]
+    : [];
+
+  const storageState = {
+    cookies: [
+      {
+        name: "access_token",
+        value: token,
+        domain: hostname,
+        path: "/",
+        expires: Math.floor(Date.now() / 1000) + ACCESS_TTL_SECONDS,
+        httpOnly: true,
+        secure: protocol === "https:",
+        sameSite: "Lax" as const,
+      },
+    ],
+    origins,
+  };
+
+  const target = path.join(AUTH_DIR, user.stateFile);
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+  fs.writeFileSync(target, JSON.stringify(storageState, null, 2));
 }
 
 export default async function globalSetup(): Promise<void> {
-  await createAuthState("tenant", path.join(AUTH_DIR, "tenant.json"));
-  await createAuthState("admin", path.join(AUTH_DIR, "admin.json"));
-  await createAuthState("fresh-tenant", path.join(AUTH_DIR, "fresh-tenant.json"));
+  const env = parseEnvFile(BACKEND_ENV);
+
+  const secret = env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("e2e global-setup: в backend/.env нет JWT_SECRET.");
+  }
+
+  const psql = createPsqlRunner(env);
+
+  for (const user of SEED_USERS) {
+    const id = seedUser(psql, user);
+    const token = signAccessToken(secret, { sub: id, email: user.email, role: user.role });
+    writeStorageState(user, id, token);
+    // eslint-disable-next-line no-console
+    console.log(`[global-setup] сессия готова: ${user.email} → ${user.stateFile}`);
+  }
 }
