@@ -101,7 +101,7 @@
 | Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
 |---|---|---|---|---|---|---|---|
 | 3.1 | Снять реальные compose/nginx/env с prod и stage, зафиксировать расхождения | 🟡 | ⬜ | | | | R8, вопрос В4. Только чтение — можно начать сразу |
-| 3.2 | Чистка инфраструктуры: `REDIS_*` из env, `sharp` из Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ⬜ | | | | R22. После 3.1. **Заготовка:** ветка `chore/remove-redis-compose` уже готова и запушена — удаление redis-сервиса/тома/`depends_on` из compose. Остальное по 3.2 (env, хосты, Dockerfile) — вместе с 3.1 |
+| 3.2 | Чистка инфраструктуры: **удалить redis из `docker-compose.yml`**, `REDIS_*` из env, `sharp` из Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ⬜ | | | | R22. После 3.1. ⚠️ **Redis в compose НЕ удалён** — ветка `chore/remove-redis-compose` была удалена без мержа (2026-07-28). В `develop` сервис `redis`, том `redis_data` и `depends_on` на месте. Работу делать заново в рамках 3.2 |
 | 3.3 | Структурированный логгер + request-id; вырезать `console.*`; Sentry на фронте | 🟡 | ⬜ | | | | R9. После Фазы 2 |
 | 3.4 | Мелочи прода: `enableShutdownHooks`, CORS из env, `SWAGGER_*` в env | 🟢 | ⬜ | | | | |
 
