@@ -27,9 +27,6 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy build artifacts from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy scripts and additional code if used at runtime
-COPY database ./database
-
 USER nestjs
 
 # Production port
