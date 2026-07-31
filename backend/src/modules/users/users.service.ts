@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { Injectable, BadRequestException, Logger } from "@nestjs/common";
 import { User, UserRole } from "../../entities/user.entity";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -14,6 +14,8 @@ import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -148,7 +150,7 @@ export class UsersService {
               key = pathParts.join('/');
             }
           } catch (urlError) {
-            console.error("Failed to parse avatar URL for deletion:", urlError);
+            this.logger.error("Failed to parse avatar URL for deletion", urlError?.stack ?? String(urlError));
           }
         }
         
@@ -156,7 +158,7 @@ export class UsersService {
           await this.s3Service.deleteFile(key);
         }
       } catch (error) {
-        console.error("Failed to delete avatar from S3:", error);
+        this.logger.error("Failed to delete avatar from S3", error?.stack ?? String(error));
         // Continue with account deletion even if avatar deletion fails
       }
     }

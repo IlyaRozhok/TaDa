@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Current step: 2А.3** — built and pushed, **merge waits on the staging check of 2А.2** (a live operator).
+**Current step: 3.3 (backend half)** — built and pushed. 2А.3 also waits: **merge needs the staging check of 2А.2** (a live operator).
 
 **Phases 0 and 1 fully closed.**
 - Phase 0: 0.1 (#48), 0.2 (#50), 0.3 (reconciliation on hosts), 0.4 (#51)
@@ -115,7 +115,8 @@ Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with P
 |---|---|---|---|---|---|---|---|
 | 3.1 | Pull the real compose/nginx/env from prod and stage, record the discrepancies | 🟡 | ⬜ | | | | R8, question Q4. Read-only — can start immediately |
 | 3.2 | Infrastructure cleanup: **remove redis from `docker-compose.yml`**, `REDIS_*` from env, `sharp` from the Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ⬜ | | | | R22. After 3.1. ⚠️ **Redis in compose is NOT removed** — the `chore/remove-redis-compose` branch was deleted without merging (2026-07-28). In `develop` the `redis` service, `redis_data` volume, and `depends_on` are still in place. The work has to be redone as part of 3.2 |
-| 3.3 | Structured logger + request-id; strip `console.*`; Sentry on the frontend | 🟡 | ⬜ | | | | R9. After Phase 2 |
+| 3.3 | Structured logger + request-id; strip `console.*`; Sentry on the frontend | 🟡 | 🟡 | PR open | ✅ | 2026-07-31 | R9. **Backend half only** (owner's decision, 2026-07-31): the frontend half waits for 4.3 (broken ESLint) and Phase 5. Added `nestjs-pino` + `pino` + `pino-http` (`pino-pretty` in dev): JSON to stdout in prod, pretty in dev, access logs where there were none. `X-Request-Id` is reused from the proxy when sent and generated otherwise, and returned in the response. `redact` hides `authorization`, `cookie` and `set-cookie` — **verified by eye on a live 200 request**. `/api/health` is out of the access log. `SentryGlobalFilter` now logs 5xx with a stack and 4xx as a warning, both with the request id. All 16 application `console.*` replaced; the 72 in migrations left alone. Checks: build exit 0, 13 unit, **16/16 frontend e2e**. PR open, **not merged** |
+| 3.3b | Frontend half of 3.3: `console.*` and Sentry | 🟡 | ⬜ | | | | Split out of 3.3 by owner's decision. Blocked by 4.3 (ESLint) and touches files Phase 5 rewrites |
 | 3.4 | Prod bits and pieces: `enableShutdownHooks`, CORS from env, `SWAGGER_*` in env | 🟢 | ⬜ | | | | |
 
 ## Phase 4 — Targeted frontend fixes
@@ -193,10 +194,14 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 | 2026-07-31 | `DashboardHeader.tsx` | The admin navigation block was rendered for `admin \|\| operator`. After 2А.2 an operator is refused the admin panel, so two of its three remaining items led nowhere useful; the block is now admin-only. Operators keep the ordinary menu | done in 2А.3, flagged for the owner |
 | 2026-07-31 | `frontend/src/app/app/properties/*` | The property create/edit/manage flow is still shared by admins and operators and is guarded by `getUserRole(user) !== "operator" && !== "admin"` in each page separately. Nothing here was removed — the role keeps its property rights — but the guard is copy-pasted three times | 6.5 (guard unification) |
 
+| 2026-07-31 | `docker-compose.yml` on the hosts | **Log volume grows with 3.3.** Structured JSON with full headers is several times fatter per request than the old silence, and there is no `logging:` section — the json-file driver has no `max-size`/`max-file`, so nothing rotates. On a busy day this fills the VPS disk. Needs `logging: driver: json-file, options: {max-size: 10m, max-file: 3}` | **3.2 — treat as a blocker for merging 3.3 to prod** |
+| 2026-07-31 | `sentry-exception.filter.ts` | **5xx are logged twice.** The filter writes its own line (with `reqId`, `method`, `path`, `stack`), and then `super.catch()` makes Nest's `BaseExceptionFilter` log the same error again under `context: ExceptionsHandler`. Nest only logs what is not an `HttpException`, so the fix is to skip our own line in exactly that case — Nest's line already carries `req.id` from pino. Left as-is: the approved design says every 5xx gets our line, and changing that is the owner's call | 3.3 follow-up |
+| 2026-07-31 | `sentry-exception.filter.ts` | `@sentry/nestjs` v10 exports its own `SentryGlobalFilter`; ours is a hand-written class with the same name. Worth checking whether the package one covers the case before maintaining a copy | 6.x |
+
 ## Summary
 
 | | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Steps | 49 | 27 | 1 | 16 | 0 | 5 |
+| Steps | 50 | 26 | 3 | 16 | 0 | 5 |
 
 Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.1 (skipped — absorbed by 2A.3), 2A.4 (stop-list), 2A.5 (backlog).

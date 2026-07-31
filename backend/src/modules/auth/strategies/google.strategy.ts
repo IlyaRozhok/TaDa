@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-google-oauth20";
 import { ConfigService } from "@nestjs/config";
@@ -13,20 +13,22 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
       configService.get("GOOGLE_CALLBACK_URL") ||
       "http://localhost:5001/auth/google/callback";
 
-    // Validate environment variables
+    // Validate environment variables. These run before super(), so `this` is
+    // not available yet and the logger has to be a local instance.
+    const logger = new Logger(GoogleStrategy.name);
     if (!configService.get("GOOGLE_CLIENT_ID")) {
-      console.warn(
-        "⚠️ GOOGLE_CLIENT_ID is not configured - Google OAuth will be disabled"
+      logger.warn(
+        "GOOGLE_CLIENT_ID is not configured - Google OAuth will be disabled"
       );
     }
     if (!configService.get("GOOGLE_CLIENT_SECRET")) {
-      console.warn(
-        "⚠️ GOOGLE_CLIENT_SECRET is not configured - Google OAuth will be disabled"
+      logger.warn(
+        "GOOGLE_CLIENT_SECRET is not configured - Google OAuth will be disabled"
       );
     }
     if (!configService.get("GOOGLE_CALLBACK_URL")) {
-      console.warn(
-        "⚠️ GOOGLE_CALLBACK_URL is not configured - Google OAuth will be disabled"
+      logger.warn(
+        "GOOGLE_CALLBACK_URL is not configured - Google OAuth will be disabled"
       );
     }
 

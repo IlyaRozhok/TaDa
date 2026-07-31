@@ -19,10 +19,13 @@ import { BookingRequestModule } from "./modules/booking-request/booking-request.
 import { S3Module } from "./common/services/s3.module";
 import { typeOrmConfig } from "./database/typeorm.config";
 import {SentryModule} from "@sentry/nestjs/setup";
+import { LoggerModule } from "nestjs-pino";
+import { buildLoggerParams } from "@/common/logger/logger.config";
 
 @Module({
   imports: [
     SentryModule.forRoot(),
+    LoggerModule.forRoot(buildLoggerParams(process.env)),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [".env.local", ".env"],
