@@ -13,7 +13,6 @@ import {
   Search,
   Shield,
   Users,
-  Building2,
   Layers,
 } from "lucide-react";
 import { selectUser } from "@/store/slices/authSlice";
@@ -261,7 +260,7 @@ export default function DashboardHeader() {
                     />
 
                     {/* Admin-specific navigation moved here */}
-                    {(userRole === "admin" || userRole === "operator") && (
+                    {userRole === "admin" && (
                       <>
                         <hr className={styles.dropdownDivider} />
                         <DropdownItem
@@ -281,14 +280,6 @@ export default function DashboardHeader() {
                           label="Tenant Dashboard"
                           onClick={() =>
                             handleNavigation("/app/dashboard/admin/tenant")
-                          }
-                          color="text-slate-700 hover:text-slate-900"
-                        />
-                        <DropdownItem
-                          icon={<Building2 className="w-4 h-4" />}
-                          label="Operator Dashboard"
-                          onClick={() =>
-                            handleNavigation("/app/dashboard/admin/operator")
                           }
                           color="text-slate-700 hover:text-slate-900"
                         />

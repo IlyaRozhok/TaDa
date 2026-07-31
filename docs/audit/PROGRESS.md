@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Current step: 2А.3** — remove the frontend operator layer. Blocked until 2А.2 is verified on staging.
+**Current step: 2А.3** — built and pushed, **merge waits on the staging check of 2А.2** (a live operator).
 
 **Phases 0 and 1 fully closed.**
 - Phase 0: 0.1 (#48), 0.2 (#50), 0.3 (reconciliation on hosts), 0.4 (#51)
@@ -9,7 +9,7 @@
 **What we have as a safety net:** e2e 12/12 on stable `data-testid`, CI gates both deploys
 (types + tests + build of both apps), `.env.example` and root README.
 
-**Phase 2 closed.** In Phase 2A: 2А.1 skipped by decision, 2А.2 done, 2А.3 waits for staging.
+**Phase 2 closed.** In Phase 2A: 2А.1 skipped by decision, 2А.2 merged (#63), 2А.3 PR open — do not merge before staging.
 
 **Phase 0 fully closed:** 0.1 (PR #48), 0.2 (PR #50), 0.3 (reconciliation on hosts — pending = 0),
 0.4 (PR #51, confirmed on stage: `No migrations are pending`, container healthy).
@@ -105,7 +105,7 @@ Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with P
 |---|---|---|---|---|---|---|---|
 | 2A.1 | Neutralize `useOperatorDashboard`: remove 8 `console.log` and `Promise.allSettled` | 🟢 | ➖ | | | 2026-07-31 | **Skipped deliberately** (owner, 2026-07-31): the hook is deleted whole in 2А.3, so tidying it first buys nothing. The step existed to make breakage visible while the operator layer stayed; it does not, so there is nothing to make visible |
 | 2A.2 | Remove `case "operator"` from routing (3 places) | 🟡 | 🟡 | PR open | ✅ | 2026-07-31 | R5b. **Strictly before 2A.3.** Turned out to be **five** places, not three: the two extra ones are both guards on `/app/units` (`useEffect` + the render-level «Access Denied» branch) that bounced operators straight back to the operator dashboard — without them the step would have been a no-op and a 404 after 2А.3. The `units` render guard was caught by the new e2e, not by reading. In `simpleRedirect` the branch is remapped, not deleted (default leads to `/?needsRole=true`). Also dropped the `requiredRole === "admin" && userRole === "operator"` clause in `SimpleDashboardRouter`. Checks: type-check exit 0, 7 unit, **15/15 e2e**. PR open, **not merged** — awaiting staging |
-| 2A.3 | Remove the frontend operator layer (2 pages, slice, 2 hooks, `operatorAPI`) | 🟡 | ⬜ | | | | R5. **Do not start before 2А.2 is verified on staging.** Eight `/app/dashboard/operator` navigation targets survive in the property create/edit/manage flows, `units`, `usePreferences` and `SimpleDashboardRouter`'s `/app/dashboard/${userRole}` template — every one of them 404s the moment the pages go |
+| 2A.3 | Remove the frontend operator layer (2 pages, slice, 2 hooks, `operatorAPI`) | 🟡 | 🟡 | PR open | ✅ | 2026-07-31 | R5. Removed: `dashboard/operator/page.tsx`, `dashboard/admin/operator/page.tsx`, `operatorSlice.ts`, `useOperatorDashboard.ts`, `useSuggestProperty.ts`, the `operatorAPI` block, the `operator` reducer key, the «Operator Dashboard» menu item — 1542 lines. Six links to the dead route redirected (create ×3, manage, edit, `usePreferences`), plus `SimpleDashboardRouter`'s `/app/dashboard/${userRole}` template, which pointed at a 404 for tenants too. `grep dashboard/operator` over `src` is empty. Checks: type-check exit 0, **16/16 e2e**. **PR open, must not be merged until a live operator is checked on staging** |
 | 2A.4 | «DO NOT TOUCH» stop-list | — | ➖ | | | | Reference, check against during 2A.3 |
 | 2A.5 | Server-side filtering for `operators/[id]` | — | ➖ | | | | To the backlog, not in this refactoring |
 
@@ -188,6 +188,10 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 | 2026-07-31 | `frontend`, vitest | **No vitest config at all**, so no path-alias resolution: any unit test that pulls in app code dies on `Cannot find package '@/store/slices/authSlice'`. Wrote a `getRedirectPath` test during 2А.2, could not run it, removed it. That leaves `simpleRedirect` covered by review and staging only — e2e cannot reach it, it runs after Google login | 4.3 / test tooling |
 | 2026-07-31 | `SimpleDashboardRouter.tsx` | On denial it redirects to `` `/app/dashboard/${userRole}` `` — a template over a role name. `/app/dashboard/tenant` does not exist, so a tenant hitting an admin screen already lands on a 404 today. Pre-existing, not caused by 2А.2; `/app/dashboard/operator` joins it after 2А.3 | 2А.3 / 6.5 |
 | 2026-07-31 | `SimpleDashboardRouter.tsx` | The `useEffect` role check and the render-level one had **different rules** — the effect granted operators admin screens, the render guard did not. Net effect was a blank page, never the admin panel, so the access widening never actually worked. Unified in 2А.2; the two checks are still duplicated and can drift again | 6.5 (guard unification) |
+
+| 2026-07-31 | `frontend/src/app/app/properties/manage`, `create` | The «Back to Dashboard» buttons pointed at the operator dashboard. Retargeted at `/app/units` in 2А.3 and **relabelled to «Back to Units»** — a visible copy change, small but not silent: leaving the old label over a new destination would be worse | done in 2А.3, flagged for the owner |
+| 2026-07-31 | `DashboardHeader.tsx` | The admin navigation block was rendered for `admin \|\| operator`. After 2А.2 an operator is refused the admin panel, so two of its three remaining items led nowhere useful; the block is now admin-only. Operators keep the ordinary menu | done in 2А.3, flagged for the owner |
+| 2026-07-31 | `frontend/src/app/app/properties/*` | The property create/edit/manage flow is still shared by admins and operators and is guarded by `getUserRole(user) !== "operator" && !== "admin"` in each page separately. Nothing here was removed — the role keeps its property rights — but the guard is copy-pasted three times | 6.5 (guard unification) |
 
 ## Summary
 

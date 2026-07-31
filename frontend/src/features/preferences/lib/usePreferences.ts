@@ -229,10 +229,9 @@ export default function usePreferences(currentStepOffset: number = 0) {
       return;
     }
 
-    // Check if operator role
+    // Preferences belong to tenants; operators have nothing to fill in here.
     if (user.role === "operator") {
-      console.log("👷 User is operator, redirecting from usePreferences");
-      router.push("/app/dashboard/operator");
+      router.push("/app/units");
       return;
     }
 
