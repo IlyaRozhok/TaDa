@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Current step: 2.5** — 🟡 backend leftovers, branch `chore/remove-backend-junk`, PR open.
+**Current step: 2А.1** — defuse `useOperatorDashboard`. Not started.
 
 **Phases 0 and 1 fully closed.**
 - Phase 0: 0.1 (#48), 0.2 (#50), 0.3 (reconciliation on hosts), 0.4 (#51)
@@ -96,8 +96,8 @@ Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with P
 | 2.2 | Remove the remaining dead files | 🟢 | ✅ | #59 merged | ✅ | 2026-07-31 | The list from the audit was re-scanned with the resolver on current `develop` — came out to **38 files** (19 from the audit + barrels orphaned after 2.1). Removed. **Cascade: another 29 files became unreachable** — this is FSD-layer untangling, assigned to 5.3 (see «Noticed along the way»). Checks: type-check, build, 7 unit, **12/12 e2e** |
 | 2.3 | Remove dead frontend API methods (`/residential-complexes*` etc.) | 🟢 | ✅ | #60 merged | ✅ | 2026-07-31 | Drift re-reconciled with the resolver against 71 backend routes. Removed: `residentialComplexesAPI` (6 methods), `operatorsAPI`, `authAPI.getTempTokenInfo`, `usersAPI.update`/`getById` (no such method), `updatePropertyMedia`/`setAsPrimary`, the entire `shared/api/endpoints/auth.ts` file (4 nonexistent auth routes; imported only from a commented-out line). **Didn't touch `operatorAPI` — that's Phase 2A.** Checks: type-check, build, 7 unit, **12/12 e2e**. PR open, **not merged** |
 | 2.4 | Operator dashboard | — | ➖ | | | | Moved to Phase 2A |
-| 2.5 | Backend junk: `backend/database/`, `test-login.dto.ts`, broken npm scripts | 🟢 | 🟡 | `chore/remove-backend-junk` | ⬜ | 2026-07-31 | R21, R23. Removed the obsolete `backend/database/` migrations folder and the `COPY database ./database` line that shipped it into the image, the orphaned `test-login.dto.ts`, and three npm scripts pointing at files that do not exist. **The eight `*.old.txt` files were never in the repository** — `.gitignore:225` matches `*.txt`, so they were local-only artifacts; removed from the working tree, nothing to commit. Verified: tsc exit 0, 13 jest tests, build exit 0, **Docker image builds**. PR open, **not merged** |
-| 2.6 | Changelog fragments and `src/pages/` | 🟢 | ⬜ | | | | The `.md` files are already archived; what remains is to remove the empty `src/pages/` and a dead component |
+| 2.5 | Backend junk: `backend/database/`, `test-login.dto.ts`, broken npm scripts | 🟢 | ✅ | #61 merged | ✅ | 2026-07-31 | R21, R23. Removed the obsolete `backend/database/` migrations folder and the `COPY database ./database` line that shipped it into the image, the orphaned `test-login.dto.ts`, and three npm scripts pointing at files that do not exist. **The eight `*.old.txt` files were never in the repository** — `.gitignore:225` matches `*.txt`, so they were local-only artifacts; removed from the working tree, nothing to commit. Verified: tsc exit 0, 13 jest tests, build exit 0, **Docker image builds**. |
+| 2.6 | Changelog fragments and `src/pages/` | 🟢 | ✅ | — (nothing left to delete) | ✅ | 2026-07-31 | **Already done by earlier steps, verified rather than assumed.** `src/pages/` disappeared when its only file, `README.md`, was archived during preparation — absent from disk and from the git tree. The dead onboarding component `OnboardingProfileStep.tsx` went in 2.2. The `ONBOARDING_*.md` changelog fragments are in `docs/archive/`, which is where the archiving decision put them. Two stale references to `src/pages` remain and belong elsewhere: a glob in `tailwind.config.ts` (4.1 deletes that file) and six commented-out imports in `shared/lib/performance/lazy-loading.ts`, itself part of the 29-file cascade assigned to 5.3. Verified: type-check exit 0, **12/12 e2e** |
 
 ## Phase 2A — Removing operator-UI
 
@@ -189,6 +189,6 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 
 | | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Steps | 49 | 30 | 1 | 14 | 0 | 4 |
+| Steps | 49 | 29 | 0 | 16 | 0 | 4 |
 
 Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.4 (stop-list), 2A.5 (backlog).
