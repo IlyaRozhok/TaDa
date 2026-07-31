@@ -5,14 +5,22 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
-import { AppModule } from "./app.module";
+import { Logger, PinoLogger } from "nestjs-pino";
+import { AppModule } from "@/app.module";
 import * as path from "path";
-import { SentryGlobalFilter } from "./common/filters/sentry-exception.filter";
+import { SentryGlobalFilter } from "@/common/filters/sentry-exception.filter";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false, // отключаем встроенный body parser NestJS, используем свой ниже
+    // Hold Nest's own startup messages until useLogger below, so they come out
+    // in the same format as everything else instead of the default console.
+    bufferLogs: true,
   });
+
+  const logger = app.get(Logger);
+  app.useLogger(logger);
+
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(cookieParser());
 
@@ -42,7 +50,11 @@ async function bootstrap() {
   );
 
     const { httpAdapter } = app.get(HttpAdapterHost);
-    app.useGlobalFilters(new SentryGlobalFilter(httpAdapter));
+    // PinoLogger is transient-scoped, so it has to be resolved, not fetched.
+    // The filter passes the request id explicitly, so an instance created
+    // outside a request context is enough.
+    const pinoLogger = await app.resolve(PinoLogger);
+    app.useGlobalFilters(new SentryGlobalFilter(httpAdapter, pinoLogger));
 
   const swaggerCfg = new DocumentBuilder()
     .setTitle("TaDa Rental Platform API")
@@ -87,7 +99,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 5001;
   await app.listen(port, "0.0.0.0");
 
-  console.log(`Swagger: http://localhost:${port}/api/docs`);
+  logger.log(`Swagger: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

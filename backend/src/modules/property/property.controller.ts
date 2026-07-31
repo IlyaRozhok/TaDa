@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  Logger,
 } from "@nestjs/common";
 import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import {
@@ -36,6 +37,8 @@ import { User } from "../../entities/user.entity";
 @ApiTags("properties")
 @Controller("properties")
 export class PropertyController {
+  private readonly logger = new Logger(PropertyController.name);
+
   constructor(
     private readonly propertyService: PropertyService,
     private readonly s3Service: S3Service,
@@ -147,7 +150,7 @@ export class PropertyController {
           key: uploadResult.key,
         };
       } catch (error) {
-        console.error(`Error uploading photo ${file.originalname}:`, error);
+        this.logger.error(`Error uploading photo ${file.originalname}`, error?.stack ?? String(error));
         throw new Error(
           `Failed to upload ${file.originalname}: ${error.message}`,
         );
@@ -158,7 +161,7 @@ export class PropertyController {
       const results = await Promise.all(uploadPromises);
       return results;
     } catch (error) {
-      console.error("Photo upload failed:", error);
+      this.logger.error("Photo upload failed", error?.stack ?? String(error));
       throw error;
     }
   }
@@ -216,7 +219,7 @@ export class PropertyController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading video ${file.originalname}:`, error);
+      this.logger.error(`Error uploading video ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload video: ${error.message}`);
     }
   }
@@ -274,7 +277,7 @@ export class PropertyController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading document ${file.originalname}:`, error);
+      this.logger.error(`Error uploading document ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload document: ${error.message}`);
     }
   }

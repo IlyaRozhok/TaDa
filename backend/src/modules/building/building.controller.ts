@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  Logger,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -32,6 +33,8 @@ import { S3Service } from "../../common/services/s3.service";
 @ApiTags("buildings")
 @Controller("buildings")
 export class BuildingController {
+  private readonly logger = new Logger(BuildingController.name);
+
   constructor(
     private readonly buildingService: BuildingService,
     private readonly s3Service: S3Service,
@@ -149,7 +152,7 @@ export class BuildingController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading logo ${file.originalname}:`, error);
+      this.logger.error(`Error uploading logo ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload logo: ${error.message}`);
     }
   }
@@ -188,7 +191,7 @@ export class BuildingController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading video ${file.originalname}:`, error);
+      this.logger.error(`Error uploading video ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload video: ${error.message}`);
     }
   }
@@ -230,7 +233,7 @@ export class BuildingController {
           key: uploadResult.key,
         };
       } catch (error) {
-        console.error(`Error uploading photo ${file.originalname}:`, error);
+        this.logger.error(`Error uploading photo ${file.originalname}`, error?.stack ?? String(error));
         throw new Error(
           `Failed to upload ${file.originalname}: ${error.message}`,
         );
@@ -241,7 +244,7 @@ export class BuildingController {
       const results = await Promise.all(uploadPromises);
       return results;
     } catch (error) {
-      console.error("Photo upload failed:", error);
+      this.logger.error("Photo upload failed", error?.stack ?? String(error));
       throw error;
     }
   }
@@ -283,7 +286,7 @@ export class BuildingController {
           key: uploadResult.key,
         };
       } catch (error) {
-        console.error(`Error uploading document ${file.originalname}:`, error);
+        this.logger.error(`Error uploading document ${file.originalname}`, error?.stack ?? String(error));
         throw new Error(
           `Failed to upload ${file.originalname}: ${error.message}`,
         );
@@ -294,7 +297,7 @@ export class BuildingController {
       const results = await Promise.all(uploadPromises);
       return results;
     } catch (error) {
-      console.error("Document upload failed:", error);
+      this.logger.error("Document upload failed", error?.stack ?? String(error));
       throw error;
     }
   }
