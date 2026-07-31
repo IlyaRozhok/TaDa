@@ -284,7 +284,7 @@ export default function TenantUnitsPage() {
       return;
     }
 
-    // Allow admins and tenants to access units page.
+    // Allow admins, operators and tenants to access units page.
     // onboardingCompleted is hydrated from a persisted flag (localStorage) in
     // setUser, so a refresh keeps a completed tenant here instead of bouncing
     // them back to onboarding.
@@ -294,12 +294,11 @@ export default function TenantUnitsPage() {
     }
 
     // Redirect roles that should not stay on units.
-    if (user.role === "operator") {
-      router.replace("/app/dashboard/operator");
-      return;
-    }
-
-    if (user.role !== "admin" && user.role !== "tenant") {
+    if (
+      user.role !== "admin" &&
+      user.role !== "operator" &&
+      user.role !== "tenant"
+    ) {
       router.replace("/");
       return;
     }
@@ -355,8 +354,13 @@ export default function TenantUnitsPage() {
     );
   }
 
-  // Only allow admins and tenants
-  if (user && user.role !== "admin" && user.role !== "tenant") {
+  // Only allow admins, operators and tenants
+  if (
+    user &&
+    user.role !== "admin" &&
+    user.role !== "operator" &&
+    user.role !== "tenant"
+  ) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <div className="flex-1 flex items-center justify-center">
@@ -365,7 +369,7 @@ export default function TenantUnitsPage() {
               Access Denied
             </h1>
             <p className="text-gray-600">
-              This page is only accessible to admin and tenant users.
+              This page is only accessible to admin, operator and tenant users.
             </p>
           </div>
         </div>
