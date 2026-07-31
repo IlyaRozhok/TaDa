@@ -9,6 +9,7 @@ import { Logger, PinoLogger } from "nestjs-pino";
 import { AppModule } from "@/app.module";
 import * as path from "path";
 import { SentryGlobalFilter } from "@/common/filters/sentry-exception.filter";
+import { resolveCorsOrigins } from "@/common/config/cors.config";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -27,13 +28,9 @@ async function bootstrap() {
   app.use(require("express").json({ limit: "10mb" }));
   app.use(require("express").urlencoded({ limit: "10mb", extended: true }));
   app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://ta-da.co",
-      "https://www.ta-da.co",
-      "https://stage.ta-da.co",
-    ],
+    origin: resolveCorsOrigins(process.env.CORS_ORIGIN),
+    // Authentication is a JWT in an httpOnly cookie — without this the browser
+    // sends no cookie and every authenticated call fails.
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -95,6 +92,10 @@ async function bootstrap() {
   }
 
   SwaggerModule.setup("api/docs", app, document);
+
+  // Let Nest close the database pool and finish in-flight requests when the
+  // container gets SIGTERM, instead of dying mid-request on every deploy.
+  app.enableShutdownHooks();
 
   const port = process.env.PORT ?? 5001;
   await app.listen(port, "0.0.0.0");
