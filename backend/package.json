@@ -17,9 +17,6 @@
     "mig:run:dev": "npm run typeorm:dev migration:run",
     "mig:run:prod": "npm run typeorm:prod migration:run",
     "mig:revert:prod": "npm run typeorm:prod migration:revert",
-    "db:reset": "node scripts/reset-database.js",
-    "db:reset:seed": "node scripts/reset-database.js --seed",
-    "clean:test-users": "node scripts/clean-test-users.js",
     "test": "jest --config jest.config.ts",
     "test:watch": "jest --config jest.config.ts --watch",
     "test:cov": "jest --config jest.config.ts --coverage"

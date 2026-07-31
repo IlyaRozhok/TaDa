@@ -1,194 +1,194 @@
-# PROGRESS — живой трекер рефакторинга
+# PROGRESS — living refactoring tracker
 
-**Текущий шаг: 2.3** — 🟡 удаление мёртвых API-методов, ветка `refactor/remove-dead-api-methods`, PR открыт.
+**Current step: 2.5** — 🟡 backend leftovers, branch `chore/remove-backend-junk`, PR open.
 
-**Фазы 0 и 1 закрыты полностью.**
-- Фаза 0: 0.1 (#48), 0.2 (#50), 0.3 (сверка на хостах), 0.4 (#51)
-- Фаза 1: 1.1, 1.2 (#53), 1.3 (#54), 1.3b (#55), 1.4 (#56), 1.5 (#57), 1.7 (#54)
+**Phases 0 and 1 fully closed.**
+- Phase 0: 0.1 (#48), 0.2 (#50), 0.3 (reconciliation on hosts), 0.4 (#51)
+- Phase 1: 1.1, 1.2 (#53), 1.3 (#54), 1.3b (#55), 1.4 (#56), 1.5 (#57), 1.7 (#54)
 
-**Что есть как страховка:** e2e 12/12 на устойчивых `data-testid`, CI гейтит оба деплоя
-(типы + тесты + сборка обоих приложений), `.env.example` и корневой README.
+**What we have as a safety net:** e2e 12/12 on stable `data-testid`, CI gates both deploys
+(types + tests + build of both apps), `.env.example` and root README.
 
-**Дальше по Фазе 2:** 2.5 → 2.6, затем Фаза 2А (снос operator-UI).
+**Next in Phase 2:** 2.5 → 2.6, then Phase 2A (tearing down operator-UI).
 
-**Фаза 0 закрыта полностью:** 0.1 (PR #48), 0.2 (PR #50), 0.3 (сверка на хостах — pending = 0),
-0.4 (PR #51, подтверждён на stage: `No migrations are pending`, контейнер healthy).
-**Фаза 1:** 1.1 закрыт без правок в репозитории (хватило `npm ci`), 1.2 — PR открыт, не мержен.
+**Phase 0 fully closed:** 0.1 (PR #48), 0.2 (PR #50), 0.3 (reconciliation on hosts — pending = 0),
+0.4 (PR #51, confirmed on stage: `No migrations are pending`, container healthy).
+**Phase 1:** 1.1 closed with no repo changes (`npm ci` was enough), 1.2 — PR open, not merged.
 
-**Блокирующих вопросов нет.** Все ответы владельца получены 2026-07-28:
+**No blocking questions.** All owner answers received 2026-07-28:
 
-| # | Статус | Решение |
+| # | Status | Decision |
 |---|---|---|
-| В1 | ✅ закрыт | У роли `operator` нет фронтового флоу. Operator-UI сносим, редирект-таргет не нужен |
-| В2 | ✅ закрыт | **Шрифт SF Pro нужен.** `font-sf-pro` сохраняем. Tailwind чиним вариантом (b) — токены в CSS-first `@theme`, конфиг удаляем |
-| В3 | ⏸ отложен до Фазы 0.3 | Схема БД на stage/prod — снимается доступом к хостам. Старт не блокирует |
-| В4 | ⏸ отложен до Фазы 3.1 | Реальные compose/nginx на хостах — снимается доступом к хостам. Старт не блокирует |
+| Q1 | ✅ closed | The `operator` role has no frontend flow. We tear down operator-UI, no redirect target needed |
+| Q2 | ✅ closed | **The SF Pro font is needed.** We keep `font-sf-pro`. We fix Tailwind via option (b) — tokens in CSS-first `@theme`, config removed |
+| Q3 | ⏸ deferred until Phase 0.3 | DB schema on stage/prod — resolved by host access. Doesn't block the start |
+| Q4 | ⏸ deferred until Phase 3.1 | Real compose/nginx on hosts — resolved by host access. Doesn't block the start |
 
 ---
 
-## Как вести этот файл
+## How to maintain this file
 
-1. Перед началом работы — прочитать этот файл сверху вниз, найти первый шаг
-   со статусом ⬜ в самой ранней незакрытой фазе. Это и есть текущий шаг.
-2. Взял шаг в работу → статус **🟡**, проставить дату начала.
-3. Открыл PR → вписать номер/ссылку в колонку **PR**.
-4. PR влит в `develop` и **проверен на stage** → колонка «Stage» = ✅,
-   статус шага = **✅**, дата = дата мержа.
-5. Шаг нельзя начать (ждём ответа, ждём предыдущий шаг) → **⛔** + причина в «Заметке».
-6. Обновить строку «Текущий шаг» в шапке.
+1. Before starting work — read this file top to bottom, find the first step
+   with status ⬜ in the earliest unclosed phase. That is the current step.
+2. Took a step into work → status **🟡**, set the start date.
+3. Opened a PR → write the number/link into the **PR** column.
+4. PR merged into `develop` and **verified on stage** → «Stage» column = ✅,
+   step status = **✅**, date = merge date.
+5. A step can't be started (waiting for an answer, waiting for the previous step) → **⛔** + reason in «Note».
+6. Update the «Current step» line in the header.
 
-**Статусы:** ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked · ➖ не задача (снято/перенесено/справочное)
-**Риск:** 🟢 безопасно · 🟡 проверка на stage · 🔴 только после зелёных e2e
+**Statuses:** ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked · ➖ not a task (removed/moved/reference)
+**Risk:** 🟢 safe · 🟡 verify on stage · 🔴 only after green e2e
 
-**Правила, которые здесь легко нарушить:**
-- Фазу **не начинаем**, пока не закрыта предыдущая. Исключения — только те,
-  что явно перечислены в «Что можно вести параллельно» в `05-refactoring-plan.md`.
-- 🔴-шаг **не начинаем** без зелёных e2e (шаг 1.3).
-- Один шаг = один PR. Не склеивать.
-- Нумерация здесь **1:1** с `05-refactoring-plan.md`. Появился новый шаг —
-  сначала внести его в план, потом сюда.
+**Rules that are easy to break here:**
+- We **do not start** a phase until the previous one is closed. Exceptions — only those
+  explicitly listed in «What can be run in parallel» in `05-refactoring-plan.md`.
+- We **do not start** a 🔴 step without green e2e (step 1.3).
+- One step = one PR. Don't merge them together.
+- Numbering here is **1:1** with `05-refactoring-plan.md`. A new step appeared —
+  first add it to the plan, then here.
 
 ---
 
-## Жёсткие зависимости (нарушать нельзя)
+## Hard dependencies (must not be violated)
 
 ```
-0.3  →  до любых изменений схемы
-1.3  →  до 5.x и 6.3–6.5
-2А.2 →  строго до 2А.3 (иначе 404 у операторов)
-2.1  →  до 5.3
-5.1, 5.2 →  до 5.3
-3.1  →  до 3.2 и до правок CI/деплоя
+0.3  →  before any schema changes
+1.3  →  before 5.x and 6.3–6.5
+2A.2 →  strictly before 2A.3 (otherwise 404 for operators)
+2.1  →  before 5.3
+5.1, 5.2 →  before 5.3
+3.1  →  before 3.2 and before CI/deploy changes
 ```
 
-Можно вести параллельно: **6.1** (после Фазы 1), **Фаза 4** (параллельно Фазе 5),
-**3.1** (только чтение, можно начать сразу).
+Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with Phase 5),
+**3.1** (read-only, can start immediately).
 
 ---
 
-## Фаза 0 — Безопасность и целостность схемы
+## Phase 0 — Security and schema integrity
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 0.1 | Закрыть эскалацию привилегий: `PUT /users/:id/role` → `@Auth("admin")`, убрать самопроверку `req.user.id !== id`, валидация роли | 🟡 | ✅ | #48 merged | ✅ | 2026-07-28 | R1 закрыт. Влит в `develop`, проверено на stage |
-| 0.2 | Убрать `GET /api/test-sentry` | 🟢 | ✅ | #50 merged | ✅ | 2026-07-28 | R17 закрыт. Влит в `develop`, проверено на stage. Эндпоинт удалён, других ссылок в коде нет |
-| 0.3 | Сверить `SELECT name FROM migrations` на stage и prod со списком файлов | 🟡 | ✅ | — (read-only) | ✅ | 2026-07-29 | R3 **закрыт.** PROD: 48 записей = 48 файлов, 1:1, дрейфа нет. STAGE: 51 запись / 50 файлов, все 50 записаны. Лишняя — призрак `AddRefreshTokenHashToUser1775100000000` (ед. число, файла нет; переименован в `...Users1785246923429` — тот применён и с файлом). **pending = 0 на обоих.** Прод отстаёт от стейджа на 2 миграции (`Backfill…`, `DropDuplicate…`) — обычный лаг релиза. Чистка призрака — вне scope, см. «Замечено по ходу» |
-| 0.4 | `migrationsRun: false` + починить путь миграций в `typeorm.config.ts` | 🟡 | ✅ | #51 merged | ✅ | 2026-07-29 | R2 закрыт. Путь через `join(__dirname, …)` → `dist/database/migrations`; `migrationsRun: false`, применение — только явным шагом `mig:run:prod`. На stage: `No migrations are pending`, контейнер healthy |
+| 0.1 | Close privilege escalation: `PUT /users/:id/role` → `@Auth("admin")`, remove self-check `req.user.id !== id`, role validation | 🟡 | ✅ | #48 merged | ✅ | 2026-07-28 | R1 closed. Merged into `develop`, verified on stage |
+| 0.2 | Remove `GET /api/test-sentry` | 🟢 | ✅ | #50 merged | ✅ | 2026-07-28 | R17 closed. Merged into `develop`, verified on stage. Endpoint removed, no other references in the code |
+| 0.3 | Reconcile `SELECT name FROM migrations` on stage and prod against the file list | 🟡 | ✅ | — (read-only) | ✅ | 2026-07-29 | R3 **closed.** PROD: 48 records = 48 files, 1:1, no drift. STAGE: 51 records / 50 files, all 50 recorded. The extra one — a ghost `AddRefreshTokenHashToUser1775100000000` (singular, no file; renamed to `...Users1785246923429` — that one is applied and has a file). **pending = 0 on both.** Prod is 2 migrations behind stage (`Backfill…`, `DropDuplicate…`) — a normal release lag. Cleaning up the ghost — out of scope, see «Noticed along the way» |
+| 0.4 | `migrationsRun: false` + fix the migrations path in `typeorm.config.ts` | 🟡 | ✅ | #51 merged | ✅ | 2026-07-29 | R2 closed. Path via `join(__dirname, …)` → `dist/database/migrations`; `migrationsRun: false`, application only via the explicit `mig:run:prod` step. On stage: `No migrations are pending`, container healthy |
 
-## Фаза 1 — Сетка безопасности
+## Phase 1 — Safety net
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 1.1 | Починить запуск тестов: `npm ci` в `backend/`, убедиться что `npm test` проходит | 🟢 | ✅ | — (правок в репо не потребовалось) | н/д | 2026-07-29 | R6, часть. **Дефекта в репозитории не было:** `jest ^29.7.0`, `ts-jest`, `@types/jest` объявлены в devDependencies и присутствуют в lockfile, `jest.config.ts` корректен. Локальные `node_modules` были поставлены с `--omit=dev`, отсюда «jest: not found». Лечится `npm ci`. Результат: **2 suites, 13 tests, exit 0**. Остаток R6 — тесты не гоняются в CI — закрывается шагом 1.4 |
-| 1.2 | Починить `type-check` фронта — битый `area.test.ts` (vitest не установлен) | 🟢 | ✅ | #53 merged | ✅ | 2026-07-29 | R14, часть. Поставлен `vitest ^4.1.10` (devDep), добавлен минимальный `vitest.config.ts` (env `node`, `include: src/**`), скрипты `test` / `test:watch`. `type-check` → **exit 0**, `npm test` → **1 файл, 7 тестов, exit 0**. Тест не правил — проходит как есть |
-| 1.3 | Поднять e2e до зелёных + дописать покрытие под фазы 4–6 | 🔴 | ✅ | #54 merged | ✅ | 2026-07-29 | **Базовая сетка поднята: 12/12 зелёных** против локального стека. Адреса вынесены в `PLAYWRIGHT_BASE_URL` / `PLAYWRIGHT_API_URL`. `global-setup` переписан без бэкдора: засев через `psql` (фикс. UUID, идемпотентно) + выпуск HS256-JWT с `JWT_SECRET` + `storageState`. Добавлен API-спек — регрессия на R1. Код приложения не тронут. PR открыт, **не мержен** |
-| 1.3b | Укрепить селекторы e2e через `data-testid` | 🟡 | ✅ | #55 merged | ✅ | 2026-07-31 | Добавлено 9 атрибутов в 6 компонентов (**только атрибуты, логика не тронута**), 4 спека переведены на `getByTestId`. Ушли привязки к `.cursor-pointer.group`, `button svg`, `table tbody tr` и к тексту кнопок — Фазы 4.1/5.3 больше не сломают сетку. **12/12 зелёные.** PR открыт, **не мержен** |
-| 1.4 | Включить в CI: тесты, type-check, сборку обоих приложений; Node 18 → 20 | 🟢 | ✅ | #56 merged | ✅ | 2026-07-31 | Job `build-and-test` разделён на `backend` и `frontend`, обе deploy-джобы зависят от обеих. Добавлены typecheck + unit-тесты + сборка фронта (раньше фронт в CI не проверялся вообще). Node 18 → 20 (как в Dockerfile). PR-триггер расширен на `develop`. **Линт намеренно не включён — решение владельца, вариант (а):** ⚠️ **линтинг фронта не работает вообще** (обнаружено на 1.2). `npm run lint` = `next lint`, а в Next 16 команды `lint` в CLI нет — падает с «Invalid project directory: …/frontend/lint». Прямой `npx eslint src` тоже падает: `TypeError: Converting circular structure to JSON` — ESLint 9.34 + `FlatCompat` c `next/core-web-vitals`. Значит `npm run quality` тоже сломан. Добавить шаг `lint` в CI — после починки в 4.3. Прогон подтверждён: PR-run и push-run зелёные, deploy-staging отработал |
-| 1.5 | `.env.example`, корневой README, баннеры на историчные доки | 🟢 | ✅ | #57 merged | ✅ | 2026-07-31 | R19. Добавлены `backend/.env.example` и `frontend/.env.example` — **список сверен с кодом**, неиспользуемые переменные вынесены отдельным блоком. Корневой `README.md`: топология, запуск, проверки, флоу, деплой, карта `docs/audit/`. В `.gitignore` добавлено `!.env.example` (иначе шаблоны отсекались правилом `.env*`). Баннеры на историчных доках сделаны ранее. Тем же PR — раздел «Язык» в CLAUDE.md |
-| 1.6 | ~~Разобрать ветки~~ | — | ➖ | | | | Снято: старые ветки игнорируем |
-| 1.7 | Унифицировать гвард онбординга на `onboardingCompleted` (вариант A) | 🟡 | ✅ | #54 merged | ✅ | 2026-07-29 | Найдено при 1.3. Гварды стояли на `isOnboarded` = `isProfileComplete()`, а онбординг не собирает `address`/`nationality` → **админ, заведённый через админ-панель, не мог открыть панель**. Переведены `SimpleDashboardRouter`, `dashboard/page`, `TenantUniversalHeader`, `UserDropdown`; удалён осиротевший `selectIsOnboarded`. Добавлен e2e — проверено, что падает на старом коде. PR открыт, **не мержен** |
+| 1.1 | Fix the test run: `npm ci` in `backend/`, make sure `npm test` passes | 🟢 | ✅ | — (no repo changes needed) | n/a | 2026-07-29 | R6, part. **There was no defect in the repository:** `jest ^29.7.0`, `ts-jest`, `@types/jest` are declared in devDependencies and present in the lockfile, `jest.config.ts` is correct. The local `node_modules` had been installed with `--omit=dev`, hence «jest: not found». Cured by `npm ci`. Result: **2 suites, 13 tests, exit 0**. The remainder of R6 — tests not running in CI — is closed by step 1.4 |
+| 1.2 | Fix the frontend `type-check` — broken `area.test.ts` (vitest not installed) | 🟢 | ✅ | #53 merged | ✅ | 2026-07-29 | R14, part. Installed `vitest ^4.1.10` (devDep), added a minimal `vitest.config.ts` (env `node`, `include: src/**`), scripts `test` / `test:watch`. `type-check` → **exit 0**, `npm test` → **1 file, 7 tests, exit 0**. Didn't touch the test — it passes as is |
+| 1.3 | Bring e2e to green + write coverage for phases 4–6 | 🔴 | ✅ | #54 merged | ✅ | 2026-07-29 | **Base net raised: 12/12 green** against the local stack. Addresses moved out to `PLAYWRIGHT_BASE_URL` / `PLAYWRIGHT_API_URL`. `global-setup` rewritten without the backdoor: seeding via `psql` (fixed UUID, idempotent) + issuing an HS256 JWT with `JWT_SECRET` + `storageState`. Added an API spec — regression on R1. App code untouched. PR open, **not merged** |
+| 1.3b | Harden e2e selectors via `data-testid` | 🟡 | ✅ | #55 merged | ✅ | 2026-07-31 | Added 9 attributes across 6 components (**attributes only, logic untouched**), 4 specs moved to `getByTestId`. Dropped bindings to `.cursor-pointer.group`, `button svg`, `table tbody tr` and to button text — Phases 4.1/5.3 will no longer break the net. **12/12 green.** PR open, **not merged** |
+| 1.4 | Enable in CI: tests, type-check, build of both apps; Node 18 → 20 | 🟢 | ✅ | #56 merged | ✅ | 2026-07-31 | The `build-and-test` job split into `backend` and `frontend`, both deploy jobs depend on both. Added typecheck + unit tests + frontend build (previously the frontend wasn't checked in CI at all). Node 18 → 20 (as in the Dockerfile). PR trigger extended to `develop`. **Lint intentionally not enabled — owner's decision, option (a):** ⚠️ **frontend linting doesn't work at all** (discovered at 1.2). `npm run lint` = `next lint`, but in Next 16 there's no `lint` command in the CLI — it fails with «Invalid project directory: …/frontend/lint». A direct `npx eslint src` also fails: `TypeError: Converting circular structure to JSON` — ESLint 9.34 + `FlatCompat` with `next/core-web-vitals`. So `npm run quality` is broken too. Add the `lint` step to CI — after the fix in 4.3. Run confirmed: PR run and push run green, deploy-staging worked |
+| 1.5 | `.env.example`, root README, banners on historical docs | 🟢 | ✅ | #57 merged | ✅ | 2026-07-31 | R19. Added `backend/.env.example` and `frontend/.env.example` — **the list is reconciled with the code**, unused variables moved into a separate block. Root `README.md`: topology, run, checks, flow, deploy, map of `docs/audit/`. Added `!.env.example` to `.gitignore` (otherwise the templates were cut off by the `.env*` rule). Banners on historical docs were done earlier. In the same PR — a «Language» section in CLAUDE.md |
+| 1.6 | ~~Sort out branches~~ | — | ➖ | | | | Removed: we ignore old branches |
+| 1.7 | Unify the onboarding guard on `onboardingCompleted` (option A) | 🟡 | ✅ | #54 merged | ✅ | 2026-07-29 | Found during 1.3. Guards were on `isOnboarded` = `isProfileComplete()`, but onboarding doesn't collect `address`/`nationality` → **an admin created through the admin panel couldn't open the panel**. Moved `SimpleDashboardRouter`, `dashboard/page`, `TenantUniversalHeader`, `UserDropdown`; removed the orphaned `selectIsOnboarded`. Added an e2e — verified that it fails on the old code. PR open, **not merged** |
 
-## Фаза 2 — Удаление мёртвого кода
+## Phase 2 — Removing dead code
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 2.1 | Удалить `src/components/` — 22 файла, 0 импортов | 🟢 | ✅ | #58 merged | ✅ | 2026-07-31 | Перед удалением перепроверено резолвером: **0 входящих импортов**. Сверено с `shared/ui` — 7 расходящихся файлов разобраны, единственная уникальная доработка (флаги стран в `CountryDropdown`) записана в «Замечено по ходу». Проверки: type-check, build, 7 unit, **12/12 e2e**. Разблокирует 5.3 |
-| 2.2 | Удалить остальные мёртвые файлы | 🟢 | ✅ | #59 merged | ✅ | 2026-07-31 | Список из аудита пересканирован резолвером на актуальном `develop` — вышло **38 файлов** (аудитные 19 + барели, осиротевшие после 2.1). Удалены. **Каскад: ещё 29 файлов стали недостижимы** — это разбор FSD-слоёв, отнесено к 5.3 (см. «Замечено по ходу»). Проверки: type-check, build, 7 unit, **12/12 e2e** |
-| 2.3 | Удалить мёртвые API-методы фронта (`/residential-complexes*` и др.) | 🟢 | 🟡 | `refactor/remove-dead-api-methods` | ⬜ | 2026-07-31 | Дрейф пересверен резолвером против 71 маршрута бэка. Удалено: `residentialComplexesAPI` (6 методов), `operatorsAPI`, `authAPI.getTempTokenInfo`, `usersAPI.update`/`getById` (метода нет), `updatePropertyMedia`/`setAsPrimary`, весь файл `shared/api/endpoints/auth.ts` (4 несуществующих auth-маршрута; импортировался только из закомментированной строки). **`operatorAPI` не трогал — это Фаза 2А.** Проверки: type-check, build, 7 unit, **12/12 e2e**. PR открыт, **не мержен** |
-| 2.4 | Дашборд оператора | — | ➖ | | | | Перенесено в Фазу 2А |
-| 2.5 | Мусор бэкенда: `backend/database/`, `test-login.dto.ts`, сломанные npm-скрипты | 🟢 | ⬜ | | | | R21, R23 |
-| 2.6 | Changelog-фрагменты и `src/pages/` | 🟢 | ⬜ | | | | `.md` уже в архиве; осталось удалить пустой `src/pages/` и мёртвый компонент |
+| 2.1 | Remove `src/components/` — 22 files, 0 imports | 🟢 | ✅ | #58 merged | ✅ | 2026-07-31 | Before removal, re-checked with the resolver: **0 incoming imports**. Reconciled against `shared/ui` — 7 diverging files sorted out, the single unique refinement (country flags in `CountryDropdown`) recorded in «Noticed along the way». Checks: type-check, build, 7 unit, **12/12 e2e**. Unblocks 5.3 |
+| 2.2 | Remove the remaining dead files | 🟢 | ✅ | #59 merged | ✅ | 2026-07-31 | The list from the audit was re-scanned with the resolver on current `develop` — came out to **38 files** (19 from the audit + barrels orphaned after 2.1). Removed. **Cascade: another 29 files became unreachable** — this is FSD-layer untangling, assigned to 5.3 (see «Noticed along the way»). Checks: type-check, build, 7 unit, **12/12 e2e** |
+| 2.3 | Remove dead frontend API methods (`/residential-complexes*` etc.) | 🟢 | ✅ | #60 merged | ✅ | 2026-07-31 | Drift re-reconciled with the resolver against 71 backend routes. Removed: `residentialComplexesAPI` (6 methods), `operatorsAPI`, `authAPI.getTempTokenInfo`, `usersAPI.update`/`getById` (no such method), `updatePropertyMedia`/`setAsPrimary`, the entire `shared/api/endpoints/auth.ts` file (4 nonexistent auth routes; imported only from a commented-out line). **Didn't touch `operatorAPI` — that's Phase 2A.** Checks: type-check, build, 7 unit, **12/12 e2e**. PR open, **not merged** |
+| 2.4 | Operator dashboard | — | ➖ | | | | Moved to Phase 2A |
+| 2.5 | Backend junk: `backend/database/`, `test-login.dto.ts`, broken npm scripts | 🟢 | 🟡 | `chore/remove-backend-junk` | ⬜ | 2026-07-31 | R21, R23. Removed the obsolete `backend/database/` migrations folder and the `COPY database ./database` line that shipped it into the image, the orphaned `test-login.dto.ts`, and three npm scripts pointing at files that do not exist. **The eight `*.old.txt` files were never in the repository** — `.gitignore:225` matches `*.txt`, so they were local-only artifacts; removed from the working tree, nothing to commit. Verified: tsc exit 0, 13 jest tests, build exit 0, **Docker image builds**. PR open, **not merged** |
+| 2.6 | Changelog fragments and `src/pages/` | 🟢 | ⬜ | | | | The `.md` files are already archived; what remains is to remove the empty `src/pages/` and a dead component |
 
-## Фаза 2А — Удаление operator-UI
+## Phase 2A — Removing operator-UI
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 2А.1 | Обезвредить `useOperatorDashboard`: убрать 8 `console.log` и `Promise.allSettled` | 🟢 | ⬜ | | | | Делает поломку видимой |
-| 2А.2 | Убрать `case "operator"` из маршрутизации (3 места) | 🟡 | ⬜ | | | | R5b. **Строго до 2А.3** |
-| 2А.3 | Удалить фронтовый operator-слой (2 страницы, слайс, 2 хука, `operatorAPI`) | 🟡 | ⬜ | | | | R5 |
-| 2А.4 | Стоп-лист «НЕ ТРОГАТЬ» | — | ➖ | | | | Справочный, сверять при 2А.3 |
-| 2А.5 | Серверная фильтрация для `operators/[id]` | — | ➖ | | | | В бэклог, не в этот рефакторинг |
+| 2A.1 | Neutralize `useOperatorDashboard`: remove 8 `console.log` and `Promise.allSettled` | 🟢 | ⬜ | | | | Makes the breakage visible |
+| 2A.2 | Remove `case "operator"` from routing (3 places) | 🟡 | ⬜ | | | | R5b. **Strictly before 2A.3** |
+| 2A.3 | Remove the frontend operator layer (2 pages, slice, 2 hooks, `operatorAPI`) | 🟡 | ⬜ | | | | R5 |
+| 2A.4 | «DO NOT TOUCH» stop-list | — | ➖ | | | | Reference, check against during 2A.3 |
+| 2A.5 | Server-side filtering for `operators/[id]` | — | ➖ | | | | To the backlog, not in this refactoring |
 
-## Фаза 3 — Инфраструктура и наблюдаемость
+## Phase 3 — Infrastructure and observability
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 3.1 | Снять реальные compose/nginx/env с prod и stage, зафиксировать расхождения | 🟡 | ⬜ | | | | R8, вопрос В4. Только чтение — можно начать сразу |
-| 3.2 | Чистка инфраструктуры: **удалить redis из `docker-compose.yml`**, `REDIS_*` из env, `sharp` из Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ⬜ | | | | R22. После 3.1. ⚠️ **Redis в compose НЕ удалён** — ветка `chore/remove-redis-compose` была удалена без мержа (2026-07-28). В `develop` сервис `redis`, том `redis_data` и `depends_on` на месте. Работу делать заново в рамках 3.2 |
-| 3.3 | Структурированный логгер + request-id; вырезать `console.*`; Sentry на фронте | 🟡 | ⬜ | | | | R9. После Фазы 2 |
-| 3.4 | Мелочи прода: `enableShutdownHooks`, CORS из env, `SWAGGER_*` в env | 🟢 | ⬜ | | | | |
+| 3.1 | Pull the real compose/nginx/env from prod and stage, record the discrepancies | 🟡 | ⬜ | | | | R8, question Q4. Read-only — can start immediately |
+| 3.2 | Infrastructure cleanup: **remove redis from `docker-compose.yml`**, `REDIS_*` from env, `sharp` from the Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ⬜ | | | | R22. After 3.1. ⚠️ **Redis in compose is NOT removed** — the `chore/remove-redis-compose` branch was deleted without merging (2026-07-28). In `develop` the `redis` service, `redis_data` volume, and `depends_on` are still in place. The work has to be redone as part of 3.2 |
+| 3.3 | Structured logger + request-id; strip `console.*`; Sentry on the frontend | 🟡 | ⬜ | | | | R9. After Phase 2 |
+| 3.4 | Prod bits and pieces: `enableShutdownHooks`, CORS from env, `SWAGGER_*` in env | 🟢 | ⬜ | | | | |
 
-## Фаза 4 — Точечные исправления фронта
+## Phase 4 — Targeted frontend fixes
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 4.1 | Tailwind: перенести токены в CSS-first `@theme`, удалить `tailwind.config.ts` | 🟡 | ⬜ | | | | R11. **В2 закрыт: SF Pro нужен, `font-sf-pro` не удаляем.** Вариант (b). Скриншоты до/после обязательны |
-| 4.2 | Сжать ассеты: `public/` 38 МБ → WebP/AVIF | 🟡 | ⬜ | | | | R20 |
-| 4.3 | Ужесточение типов по одному флагу + перенос правил ESLint в flat-конфиг | 🟡 | ⬜ | | | | R14. Отдельный PR на флаг |
+| 4.1 | Tailwind: move tokens into CSS-first `@theme`, remove `tailwind.config.ts` | 🟡 | ⬜ | | | | R11. **Q2 closed: SF Pro is needed, we don't remove `font-sf-pro`.** Option (b). Before/after screenshots required |
+| 4.2 | Compress assets: `public/` 38 MB → WebP/AVIF | 🟡 | ⬜ | | | | R20 |
+| 4.3 | Tighten types one flag at a time + move ESLint rules into the flat config | 🟡 | ⬜ | | | | R14. Separate PR per flag |
 
-## Фаза 5 — Консолидация фронта
+## Phase 5 — Frontend consolidation
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 5.1 | Один слой данных → RTK Query; по одному PR на домен | 🔴 | ⬜ | | | | R13. До 5.3 |
-| 5.2 | Одно дерево типов; рассмотреть генерацию из Swagger | 🔴 | ⬜ | | | | R12. До 5.3 |
-| 5.3 | Одна архитектура — App Router native; слить три `ui`, разнести FSD-слои | 🔴 | ⬜ | | | | R12. После 2.1, 5.1, 5.2 |
-| 5.4 | Разобрать god-модалки (3057 / 2454 / 2186 строк) | 🔴 | ⬜ | | | | R16. **Самая рискованная задача плана** |
-| 5.5 | Дедупликация хуков и форм профиля | 🟡 | ⬜ | | | | |
+| 5.1 | One data layer → RTK Query; one PR per domain | 🔴 | ⬜ | | | | R13. Before 5.3 |
+| 5.2 | One type tree; consider generation from Swagger | 🔴 | ⬜ | | | | R12. Before 5.3 |
+| 5.3 | One architecture — App Router native; merge the three `ui`s, sort out FSD layers | 🔴 | ⬜ | | | | R12. After 2.1, 5.1, 5.2 |
+| 5.4 | Break up the god-modals (3057 / 2454 / 2186 lines) | 🔴 | ⬜ | | | | R16. **The riskiest task in the plan** |
+| 5.5 | Deduplicate hooks and profile forms | 🟡 | ⬜ | | | | |
 
-## Фаза 6 — Бэкенд: границы и данные
+## Phase 6 — Backend: boundaries and data
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 6.1 | Индексы на все FK + колонки фильтрации матчинга, `CREATE INDEX CONCURRENTLY` | 🟢 | ⬜ | | | | R4. **Самая дешёвая победа.** Можно параллельно после Фазы 1 |
-| 6.2 | Матчинг: убрать N+1 и S3-презайн в цикле, выровнять два способа чтения | 🟡 | ⬜ | | | | R15 |
-| 6.3 | Разбить `matching-calculation.service.ts` (1941 строка), сначала unit-тесты | 🔴 | ⬜ | | | | Заодно появится документация домена |
-| 6.4 | Разорвать циклы модулей Auth ⇄ Users и Auth → TenantCv → Users | 🔴 | ⬜ | | | | R10 |
-| 6.5 | Унифицировать guard'ы — оставить только `@Auth` | 🟡 | ⬜ | | | | Затрагивает все контроллеры |
-| 6.6 | `simple-array` → `jsonb` с конверсией данных | 🟡 | ⬜ | | | | R18. Нужен бэкап и проверка на копии прод-данных |
-| 6.7 | Владение энтити: разложить по модулям-владельцам | 🟡 | ⬜ | | | | Делать последним — затрагивает все импорты |
-| 6.8 | Персистить завершение онбординга на сервере (вариант B) + укрепить сам флоу | 🟡 | ⬜ | | | | Колонка `onboarding_completed` + миграция + отдача в `/auth/me`; вычистить `isOnboarded`/`setIsOnboarded`/`isProfileComplete` как гвард. Сейчас признак только в `localStorage` — **на другом устройстве пользователь снова попадает в онбординг**. **Сюда же — две находки от 2026-07-29** (см. «Замечено по ходу»): (1) честный сигнал завершения вместо «строка `preferences` существует»; (2) дизейбл «Далее» до заполнения обязательных полей, включая национальность. Разобрано, дизайн предложен, реализацию владелец отложил. После 1.7 |
+| 6.1 | Indexes on all FKs + matching filter columns, `CREATE INDEX CONCURRENTLY` | 🟢 | ⬜ | | | | R4. **The cheapest win.** Can be done in parallel after Phase 1 |
+| 6.2 | Matching: remove N+1 and S3 presign in the loop, align the two read paths | 🟡 | ⬜ | | | | R15 |
+| 6.3 | Split `matching-calculation.service.ts` (1941 lines), unit tests first | 🔴 | ⬜ | | | | Domain documentation will appear as a byproduct |
+| 6.4 | Break the module cycles Auth ⇄ Users and Auth → TenantCv → Users | 🔴 | ⬜ | | | | R10 |
+| 6.5 | Unify the guards — keep only `@Auth` | 🟡 | ⬜ | | | | Affects all controllers |
+| 6.6 | `simple-array` → `jsonb` with data conversion | 🟡 | ⬜ | | | | R18. Needs a backup and a check on a copy of prod data |
+| 6.7 | Entity ownership: distribute across owner modules | 🟡 | ⬜ | | | | Do last — affects all imports |
+| 6.8 | Persist onboarding completion on the server (option B) + harden the flow itself | 🟡 | ⬜ | | | | An `onboarding_completed` column + migration + returning it in `/auth/me`; clean out `isOnboarded`/`setIsOnboarded`/`isProfileComplete` as a guard. Right now the flag is only in `localStorage` — **on another device the user lands back in onboarding**. **Also here — two findings from 2026-07-29** (see «Noticed along the way»): (1) an honest completion signal instead of «the `preferences` row exists»; (2) disable «Next» until the required fields are filled in, including nationality. Analyzed, design proposed, implementation deferred by the owner. After 1.7 |
 
-## Фаза 7 — Подготовка к масштабированию
+## Phase 7 — Preparing for scale
 
-| Шаг | Описание | Риск | Статус | PR | Stage | Дата | Заметка |
+| Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 7.1 | Throttler в Redis (если Redis возвращается) | 🟡 | ⬜ | | | | R7. Сейчас счётчики в памяти процесса |
-| 7.2 | Кэш — вернуть Redis осознанно, под конкретные сценарии | 🟡 | ⬜ | | | | |
-| 7.3 | Очереди — вынести загрузку медиа в S3 из HTTP-хендлера | 🟡 | ⬜ | | | | |
-| 7.4 | Метрики — `/metrics` или APM | 🟢 | ⬜ | | | | Сейчас видимости ноль, кроме Sentry |
-| 7.5 | Пагинация — проверить все листинги | 🟡 | ⬜ | | | | |
-| 7.6 | Backup-политика БД — зафиксировать и задокументировать | 🟢 | ⬜ | | | | |
+| 7.1 | Throttler in Redis (if Redis comes back) | 🟡 | ⬜ | | | | R7. Right now the counters are in process memory |
+| 7.2 | Cache — bring Redis back deliberately, for specific scenarios | 🟡 | ⬜ | | | | |
+| 7.3 | Queues — move media upload to S3 out of the HTTP handler | 🟡 | ⬜ | | | | |
+| 7.4 | Metrics — `/metrics` or APM | 🟢 | ⬜ | | | | Right now visibility is zero, apart from Sentry |
+| 7.5 | Pagination — check all listings | 🟡 | ⬜ | | | | |
+| 7.6 | DB backup policy — lock it down and document it | 🟢 | ⬜ | | | | |
 
 ---
 
-## Замечено по ходу
+## Noticed along the way
 
-Кандидаты на улучшение, найденные при работе над шагами. **Не чиним оппортунистически** —
-каждый уходит в фазу, которая владеет файлом, и только после Фазы 1 (см. CLAUDE.md, «Где граница уборки»).
+Improvement candidates found while working on the steps. **We don't fix them opportunistically** —
+each one goes into the phase that owns the file, and only after Phase 1 (see CLAUDE.md, «Where the cleanup boundary is»).
 
-| Дата | Где | Что заметили | Куда относится |
+| Date | Where | What we noticed | Where it belongs |
 |---|---|---|---|
-| 2026-07-28 | `user-role.service.ts` | `updateUserRole` дважды читает пользователя с `relations` — до и после транзакции | 6.2 (перф бэкенда) |
-| 2026-07-28 | `users.controller.ts` | Маршрут `PUT :id/role` теперь на `@Auth`, остальные админские — на `@UseGuards + @Roles`. Два стиля в одном файле | 6.5 (унификация guard'ов) |
-| 2026-07-28 | `frontend/src/app/lib/api.ts` | Остались мёртвые группы: `operatorAPI`, `residentialComplexesAPI`, `operatorsAPI` — зовут несуществующие маршруты | 2.3 / 2А.3 |
-| 2026-07-29 | БД stage, таблица `migrations` | Призрачная запись `AddRefreshTokenHashToUser1775100000000` — файла нет, миграция была переименована. На pending не влияет (`ADD COLUMN IF NOT EXISTS`), но расхождение stage↔prod останется, пока не убрать строку | отдельная задача по гигиене БД, не Фаза 0 |
-| 2026-07-29 | `frontend`, ESLint | Линтинг фронта не работает: `next lint` удалён из CLI в Next 16, а `npx eslint` падает на `FlatCompat` + `next/core-web-vitals` (`Converting circular structure to JSON`, ESLint 9.34). `npm run quality` сломан следом. Предсуществующее, найдено при 1.2 | 1.4 (CI) / 4.3 (правила ESLint) |
-| 2026-07-29 | `src/shared/lib/__tests__/area.test.ts` | Импорт `from "../area"` — выход вверх по дереву, по нашему правилу должен быть алиас `@/shared/lib/area`. Не трогал: строка не в диффе шага | 4.3 / отдельная задача по алиасам |
-| 2026-07-31 | `.github/workflows/deploy.yml` | `actions/checkout@v4` и `actions/setup-node@v4` работают на рантайме Node 20, который GitHub объявил устаревшим — в каждом прогоне два warning'а. Лечится бампом до `@v5`. К нашему `node-version: 20` (версия приложения) отношения не имеет | мелочь, отдельным PR или попутно в 4.3 |
-| 2026-07-31 | `frontend/src` | **Каскад после 2.2:** удаление 38 мёртвых файлов делает недостижимыми ещё **29** — в основном барели и внутренности FSD-слоёв (`features/*/lib|model|ui/index.ts`, `widgets/*/index.ts`, `shared/api/endpoints/properties.ts`, `shared/hooks/useUserProfile.ts`, `types/{api,booking,building,tenantCv}.ts`, 7 дропдаунов в `preferences/ui`). Не удалял: это уже структурный разбор FSD, а не «мёртвый файл из списка», и каскад может продолжиться. Полный список — в диффе прогона 2.2 | 5.3 |
-| 2026-07-31 | `src/app/properties/[id]/test/page.tsx` | Тестовый артефакт, доехавший до прода: это **живой маршрут** `/properties/[id]/test`, поэтому в 2.2 не трогал — удаление маршрута это изменение поведения, а не чистка мёртвого кода. Соседний `test-page.tsx` (не маршрут) удалён | решение владельца |
-| 2026-07-31 | `shared/ui/CountryDropdown` | В удалённой копии `src/components/ui/CountryDropdown` были **флаги стран** (`{country.flag}` в списке и у выбранного значения), в живом компоненте их нет — хотя поле `flag` в `shared/lib/countries.ts` заполнено эмодзи. Пользователи флагов никогда не видели: копия не импортировалась. Реализация осталась в истории git (коммит удаления 2.1). Если флаги нужны — это отдельная UI-задача | бэклог UI |
-| 2026-07-31 | `backend/src/` | Восемь файлов `*.old.txt` внутри `src`: `matching-enhanced.service`, `matching-enhanced.controller`, `shortlist.controller`, `shortlist.service`, `matching-media.service`, `matching-filter-enhanced.service`, `matching-notification.service`, `matching-calculation-enhanced.service`. Не компилируются, но лежат в дереве исходников и путают поиск | 2.5 (мусор бэкенда) |
-| 2026-07-31 | `backend/.env` на хостах | Переменные, которые не читает ни одна строка кода: `CORS_ORIGIN`, `BCRYPT_ROUNDS`, `SESSION_CLEANUP_INTERVAL`, `MAX_SESSIONS_PER_DEVICE`, `JWT_REFRESH_EXPIRES_IN`, `REDIS_*`. Зафиксированы отдельным блоком в `.env.example` | 3.2 |
-| 2026-07-29 | онбординг: `SessionManager` + `usePreferences` | **Дыра в признаке завершения.** `SessionManager:43-49` ставит `onboardingCompleted=true` по факту существования строки `preferences`, а `usePreferences.saveSingleField:437-439` создаёт эту строку на **первом же заполненном поле**. Сценарий: заполнил одно поле → перезагрузил → онбординг помечен пройденным при неполном профиле, и `onboarding/page.tsx:227` выталкивает на `/app/units` — вернуться и дорезюмировать нельзя, черновики в localStorage становятся мёртвым грузом. Дыра **старше** `265ec5e`: `/app/units` гейтился этим флагом ещё с PR #46 | 6.8 |
-| 2026-07-29 | `useUnifiedProfile.ts:151-162` | **«Далее» активна без обязательных полей.** На шаге профиля (4) рендерятся все 6 полей (`first_name`, `last_name`, `address`, `phone`, `date_of_birth`, `nationality`), но `validateForm` проверяет только `first_name`, `last_name`, `date_of_birth` + возраст. Национальность, адрес и телефон можно пропустить. В фазе предпочтений гейт вообще один — на 10-м шаге | 6.8 |
-| 2026-07-29 | `src/database/migrations/` | Из 50 миграций только 14 защищены `IF (NOT) EXISTS`, 36 упадут при повторном применении. Пока pending = 0 — неважно, но любое расхождение таблицы с файлами станет отказом | 6.x / гигиена БД |
+| 2026-07-28 | `user-role.service.ts` | `updateUserRole` reads the user with `relations` twice — before and after the transaction | 6.2 (backend perf) |
+| 2026-07-28 | `users.controller.ts` | The `PUT :id/role` route is now on `@Auth`, the other admin ones — on `@UseGuards + @Roles`. Two styles in one file | 6.5 (guard unification) |
+| 2026-07-28 | `frontend/src/app/lib/api.ts` | Dead groups remain: `operatorAPI`, `residentialComplexesAPI`, `operatorsAPI` — they call nonexistent routes | 2.3 / 2A.3 |
+| 2026-07-29 | DB stage, table `migrations` | A ghost record `AddRefreshTokenHashToUser1775100000000` — no file, the migration was renamed. Doesn't affect pending (`ADD COLUMN IF NOT EXISTS`), but the stage↔prod discrepancy will remain until the row is removed | separate DB-hygiene task, not Phase 0 |
+| 2026-07-29 | `frontend`, ESLint | Frontend linting doesn't work: `next lint` was removed from the CLI in Next 16, and `npx eslint` fails on `FlatCompat` + `next/core-web-vitals` (`Converting circular structure to JSON`, ESLint 9.34). `npm run quality` is broken as a result. Pre-existing, found during 1.2 | 1.4 (CI) / 4.3 (ESLint rules) |
+| 2026-07-29 | `src/shared/lib/__tests__/area.test.ts` | Import `from "../area"` — going up the tree, by our rule it should be the alias `@/shared/lib/area`. Didn't touch: the line isn't in the step's diff | 4.3 / separate alias task |
+| 2026-07-31 | `.github/workflows/deploy.yml` | `actions/checkout@v4` and `actions/setup-node@v4` run on the Node 20 runtime, which GitHub declared deprecated — two warnings per run. Cured by bumping to `@v5`. Has nothing to do with our `node-version: 20` (the app version) | minor, separate PR or alongside 4.3 |
+| 2026-07-31 | `frontend/src` | **Cascade after 2.2:** removing 38 dead files makes another **29** unreachable — mostly barrels and the internals of FSD layers (`features/*/lib\|model\|ui/index.ts`, `widgets/*/index.ts`, `shared/api/endpoints/properties.ts`, `shared/hooks/useUserProfile.ts`, `types/{api,booking,building,tenantCv}.ts`, 7 dropdowns in `preferences/ui`). Didn't remove: this is already a structural FSD untangling, not a «dead file from the list», and the cascade may continue. Full list — in the diff of the 2.2 run | 5.3 |
+| 2026-07-31 | `src/app/properties/[id]/test/page.tsx` | A test artifact that made it to prod: this is a **live route** `/properties/[id]/test`, so I didn't touch it in 2.2 — removing a route is a behavior change, not dead-code cleanup. The neighboring `test-page.tsx` (not a route) was removed | owner's decision |
+| 2026-07-31 | `shared/ui/CountryDropdown` | The removed copy `src/components/ui/CountryDropdown` had **country flags** (`{country.flag}` in the list and next to the selected value), the live component doesn't have them — even though the `flag` field in `shared/lib/countries.ts` is filled with emoji. Users never saw the flags: the copy wasn't imported. The implementation remains in git history (the 2.1 removal commit). If flags are needed — that's a separate UI task | UI backlog |
+| 2026-07-31 | `backend/src/` | Eight `*.old.txt` files inside `src`: `matching-enhanced.service`, `matching-enhanced.controller`, `shortlist.controller`, `shortlist.service`, `matching-media.service`, `matching-filter-enhanced.service`, `matching-notification.service`, `matching-calculation-enhanced.service`. They don't compile, but they sit in the source tree and confuse search | 2.5 (backend junk) |
+| 2026-07-31 | `backend/.env` on the hosts | Variables not read by a single line of code: `CORS_ORIGIN`, `BCRYPT_ROUNDS`, `SESSION_CLEANUP_INTERVAL`, `MAX_SESSIONS_PER_DEVICE`, `JWT_REFRESH_EXPIRES_IN`, `REDIS_*`. Recorded in a separate block in `.env.example` | 3.2 |
+| 2026-07-29 | onboarding: `SessionManager` + `usePreferences` | **A hole in the completion flag.** `SessionManager:43-49` sets `onboardingCompleted=true` based on the existence of a `preferences` row, and `usePreferences.saveSingleField:437-439` creates that row on the **very first filled field**. Scenario: filled one field → reloaded → onboarding marked as passed with an incomplete profile, and `onboarding/page.tsx:227` pushes to `/app/units` — you can't go back and finish, the drafts in localStorage become dead weight. The hole is **older** than `265ec5e`: `/app/units` was gated by this flag since PR #46 | 6.8 |
+| 2026-07-29 | `useUnifiedProfile.ts:151-162` | **«Next» is active without the required fields.** On the profile step (4) all 6 fields render (`first_name`, `last_name`, `address`, `phone`, `date_of_birth`, `nationality`), but `validateForm` checks only `first_name`, `last_name`, `date_of_birth` + age. Nationality, address, and phone can be skipped. In the preferences phase there's just one gate — on the 10th step | 6.8 |
+| 2026-07-29 | `src/database/migrations/` | Of 50 migrations, only 14 are protected by `IF (NOT) EXISTS`, 36 will fail on re-application. As long as pending = 0 it doesn't matter, but any table-vs-files discrepancy will become a failure | 6.x / DB hygiene |
 
-## Сводка
+## Summary
 
-| | Всего | ⬜ todo | 🟡 в работе | ✅ done | ⛔ blocked | ➖ не задача |
+| | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Шагов | 49 | 31 | 1 | 13 | 0 | 4 |
+| Steps | 49 | 30 | 1 | 14 | 0 | 4 |
 
-Не-задачи: 1.6 (снято), 2.4 (перенесено в 2А), 2А.4 (стоп-лист), 2А.5 (бэклог).
+Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.4 (stop-list), 2A.5 (backlog).
