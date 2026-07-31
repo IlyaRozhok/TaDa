@@ -45,13 +45,13 @@ export default function UniversalHeader() {
           <div className="flex items-center gap-0.5 sm:gap-0.75">
             <button
               onClick={handleFavouritesClick}
-              className="text-gray-600 hover:text-gray-900 transition-colors p-0.75 rounded-lg hover:bg-gray-100 min-h-touch-sm min-w-[2.25rem] flex items-center justify-center"
+              className="text-gray-600 hover:text-gray-900 transition-colors p-0.75 rounded-lg hover:bg-gray-100 min-w-[2.25rem] flex items-center justify-center"
               aria-label="Shortlist"
             >
               <Heart className="h-1.25 w-1.25" />
             </button>
             <button
-              className="text-gray-600 hover:text-gray-900 transition-colors p-0.75 rounded-lg hover:bg-gray-100 min-h-touch-sm min-w-[2.25rem] flex items-center justify-center"
+              className="text-gray-600 hover:text-gray-900 transition-colors p-0.75 rounded-lg hover:bg-gray-100 min-w-[2.25rem] flex items-center justify-center"
               aria-label="Notifications"
             >
               <Bell className="h-1.25 w-1.25" />

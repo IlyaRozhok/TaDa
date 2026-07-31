@@ -45,7 +45,7 @@ const CardsSection = () => {
           <p className="text-black font-semibold text-md tracking-wide mb-4 mt-5">
             {t(operatorKeys.howItWorks.label)}
           </p>
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-sf-pro font-semibold text-gray-900 max-w-4xl lg:mx-0 mx-auto">
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-semibold text-gray-900 max-w-4xl lg:mx-0 mx-auto">
             {t(operatorKeys.howItWorks.title)}
           </h2>
           <p className="text-gray-600 text-lg mt-6 max-w-2xl lg:mx-0 mx-auto">
