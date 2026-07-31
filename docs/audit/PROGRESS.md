@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Current step: 3.3 hardening** — double 5xx logging removed and log rotation added, PR open. 2А.3 also waits: **merge needs the staging check of 2А.2** (a live operator).
+**Current step: 3.4** — production odds and ends, PR open. 2А.3 also waits: **merge needs the staging check of 2А.2** (a live operator).
 
 **Phases 0 and 1 fully closed.**
 - Phase 0: 0.1 (#48), 0.2 (#50), 0.3 (reconciliation on hosts), 0.4 (#51)
@@ -117,7 +117,7 @@ Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with P
 | 3.2 | Infrastructure cleanup: **remove redis from `docker-compose.yml`**, `REDIS_*` from env, `sharp` from the Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ⬜ | | | | R22. After 3.1. ⚠️ **Redis in compose is NOT removed** — the `chore/remove-redis-compose` branch was deleted without merging (2026-07-28). In `develop` the `redis` service, `redis_data` volume, and `depends_on` are still in place. The work has to be redone as part of 3.2 |
 | 3.3 | Structured logger + request-id; strip `console.*`; Sentry on the frontend | 🟡 | 🟡 | PR open | ✅ | 2026-07-31 | R9. **Backend half only** (owner's decision, 2026-07-31): the frontend half waits for 4.3 (broken ESLint) and Phase 5. Added `nestjs-pino` + `pino` + `pino-http` (`pino-pretty` in dev): JSON to stdout in prod, pretty in dev, access logs where there were none. `X-Request-Id` is reused from the proxy when sent and generated otherwise, and returned in the response. `redact` hides `authorization`, `cookie` and `set-cookie` — **verified by eye on a live 200 request**. `/api/health` is out of the access log. `SentryGlobalFilter` now logs 5xx with a stack and 4xx as a warning, both with the request id. All 16 application `console.*` replaced; the 72 in migrations left alone. Checks: build exit 0, 13 unit, **16/16 frontend e2e**. Merged (#65). **Hardened afterwards** (`chore/finish-logging-hardening`, PR open): each 5xx now produces exactly one error line, and the backend service has json-file rotation |
 | 3.3b | Frontend half of 3.3: `console.*` and Sentry | 🟡 | ⬜ | | | | Split out of 3.3 by owner's decision. Blocked by 4.3 (ESLint) and touches files Phase 5 rewrites |
-| 3.4 | Prod bits and pieces: `enableShutdownHooks`, CORS from env, `SWAGGER_*` in env | 🟢 | ⬜ | | | | |
+| 3.4 | Prod bits and pieces: `enableShutdownHooks`, CORS from env, `SWAGGER_*` in env | 🟢 | 🟡 | PR open | ✅ | 2026-07-31 | `enableShutdownHooks()` before `listen`. CORS reads `CORS_ORIGIN` as a comma-separated list and **merges it into the previous hardcoded list instead of replacing it** — deliberate deviation from the brief, see the note below. `credentials: true`, methods and headers unchanged. `CORS_ORIGIN` moved out of the «no longer read» block in `.env.example`; the `SWAGGER_*` comment now states that production requires both. Checks: build exit 0, 13 unit, **16/16 e2e**, live CORS preflight and an authenticated cookie request from `http://localhost:3000`, SIGTERM exits cleanly. PR open, **not merged** |
 
 ## Phase 4 — Targeted frontend fixes
 
@@ -199,10 +199,14 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 | 2026-07-31 | `s3.service.ts` + `property.controller.ts` / `building.controller.ts` | **One failed upload writes four error lines**: S3Service logs it, the inner controller `catch` logs and rethrows a plain `Error`, the outer `catch` logs again, then the filter layer logs once more. Pre-existing shape, only made visible by 3.3 — the `console.error` calls did the same. Also means the controller replaces `InternalServerErrorException` with a bare `Error`, so the filter's own 5xx branch is currently unreachable from any route | 6.x (error handling in upload flows) |
 | 2026-07-31 | `sentry-exception.filter.ts` | `@sentry/nestjs` v10 exports its own `SentryGlobalFilter`; ours is a hand-written class with the same name. Worth checking whether the package one covers the case before maintaining a copy | 6.x |
 
+| 2026-07-31 | `backend/.env.production` (local, gitignored) | **`CORS_ORIGIN=http://localhost:3000`** — a stale single value from before the origin list was hardcoded. Had 3.4 honoured the variable as a replacement, the first production deploy would have cut the allowed origins down to localhost and the frontend on ta-da.co would have been CORS-blocked outright. This is why the implementation merges instead. **Fix the value on the hosts, then the merge can become a plain replacement** | 3.1 (host reconciliation) → then simplify 3.4 |
+| 2026-07-31 | `backend/.env.production` (local, gitignored) | `SWAGGER_USER` and `SWAGGER_PASSWORD` are **absent entirely**, while `main.ts` compares submitted basic-auth credentials against them directly. With both undefined the comparison can never succeed, so `/api/docs` answers 401 to everyone in production. Documented in `.env.example`; setting real values is a host change | 3.1 / ops |
+| 2026-07-31 | stage checklist for 3.4 | After deploying: confirm the frontend still reaches the API (CORS), and that `CORS_ORIGIN` on the hosts lists the real frontend origins. With the merge in place an unset or stale variable is harmless — behaviour equals today's | 3.1 |
+
 ## Summary
 
 | | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Steps | 50 | 26 | 3 | 16 | 0 | 5 |
+| Steps | 50 | 25 | 4 | 16 | 0 | 5 |
 
 Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.1 (skipped — absorbed by 2A.3), 2A.4 (stop-list), 2A.5 (backlog).
