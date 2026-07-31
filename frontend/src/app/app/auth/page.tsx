@@ -139,6 +139,7 @@ export default function AuthPage() {
             {/* Google Auth */}
             <div className="w-full">
               <button
+                data-testid="google-login"
                 onClick={handleGoogleAuth}
                 className="w-full cursor-pointer flex items-center justify-center gap-3 py-3 px-4 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg hover:bg-white/20 transition-colors font-medium text-white"
               >

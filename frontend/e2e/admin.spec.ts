@@ -6,16 +6,16 @@ test("admin panel loads with Users, Buildings, and Requests tabs", async ({ admi
   await page.goto("/app/admin/panel");
 
   // Sidebar navigation tabs should be visible
-  await expect(page.getByRole("button", { name: "Users" })).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByRole("button", { name: "Buildings" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Requests" })).toBeVisible();
+  await expect(page.getByTestId("admin-tab-users")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("admin-tab-buildings")).toBeVisible();
+  await expect(page.getByTestId("admin-tab-requests")).toBeVisible();
 });
 
 test("admin Users tab shows a table with at least one row", async ({ adminPage: page }) => {
   await page.goto("/app/admin/panel");
 
   // Users tab is active by default — wait for the users table to render
-  const tableRow = page.locator("table tbody tr, [role='row']").first();
+  const tableRow = page.getByTestId("admin-user-row").first();
   await expect(tableRow).toBeVisible({ timeout: 15_000 });
 });
 
@@ -25,15 +25,15 @@ test("admin Users tab shows a table with at least one row", async ({ adminPage: 
  * и по вкладкам можно кликать.
  */
 async function waitForPanelReady(page: Page): Promise<void> {
-  await expect(page.getByRole("button", { name: "Users" })).toBeVisible({ timeout: 10_000 });
-  await expect(page.locator("table tbody tr, [role='row']").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("admin-tab-users")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("admin-user-row").first()).toBeVisible({ timeout: 15_000 });
 }
 
 test("admin Buildings tab renders", async ({ adminPage: page }) => {
   await page.goto("/app/admin/panel");
   await waitForPanelReady(page);
 
-  await page.getByRole("button", { name: "Buildings" }).click();
+  await page.getByTestId("admin-tab-buildings").click();
 
   // The URL should remain on the admin panel
   await page.waitForTimeout(1_500);
@@ -44,7 +44,7 @@ test("admin Requests tab renders", async ({ adminPage: page }) => {
   await page.goto("/app/admin/panel");
   await waitForPanelReady(page);
 
-  await page.getByRole("button", { name: "Requests" }).click();
+  await page.getByTestId("admin-tab-requests").click();
 
   await page.waitForTimeout(1_500);
   expect(page.url()).toMatch(/\/app\/admin\/panel/);
@@ -68,7 +68,7 @@ test("admin with an incomplete profile can still open the panel", async ({
 }) => {
   await page.goto("/app/admin/panel");
 
-  await expect(page.getByRole("button", { name: "Users" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("admin-tab-users")).toBeVisible({ timeout: 10_000 });
   expect(page.url()).toMatch(/\/app\/admin\/panel/);
 
   // Контроль: не увело на онбординг спустя мгновение после рендера.

@@ -49,6 +49,7 @@ export default function ShortlistToggleButton({
           user.role === "admin") && (
           <button
             type="button"
+            data-testid="shortlist-toggle"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

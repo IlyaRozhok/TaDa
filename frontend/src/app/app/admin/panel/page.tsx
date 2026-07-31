@@ -744,6 +744,7 @@ function AdminPanelContent() {
       <nav className="space-y-4 p-4">
         <button
           onClick={() => setActiveSection("users")}
+          data-testid="admin-tab-users"
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all cursor-pointer duration-200 cursor-pointer ${
             activeSection === "users"
               ? "bg-gray-100 text-black"
@@ -755,6 +756,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("buildings")}
+          data-testid="admin-tab-buildings"
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
             activeSection === "buildings"
               ? "bg-gray-100 text-black"
@@ -766,6 +768,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("properties")}
+          data-testid="admin-tab-properties"
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
             activeSection === "properties"
               ? "bg-gray-100 text-black"
@@ -777,6 +780,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("requests")}
+          data-testid="admin-tab-requests"
           className={`w-full flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all duration-200 ${
             activeSection === "requests"
               ? "bg-gray-100 text-black"
