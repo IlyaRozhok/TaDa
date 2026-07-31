@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Current step: 4.1** — dead Tailwind config removed, PR open. 2А.3 also waits: **merge needs the staging check of 2А.2** (a live operator).
+**Current step: 4.2 stage 1** — unused images deleted, PR open. 2А.3 also waits: **merge needs the staging check of 2А.2** (a live operator).
 
 **Phases 0 and 1 fully closed.**
 - Phase 0: 0.1 (#48), 0.2 (#50), 0.3 (reconciliation on hosts), 0.4 (#51)
@@ -124,7 +124,8 @@ Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with P
 | Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
 | 4.1 | Tailwind: move tokens into CSS-first `@theme`, remove `tailwind.config.ts` | 🟡 | 🟡 | PR open | ✅ | 2026-07-31 | R11. **The step turned out to be smaller than the plan assumed, because the premise was wrong.** The plan said `font-sf-pro` gave no CSS and the font therefore did not work. The first half is true; the second is not — `globals.css` already sets the identical SF Pro stack twice, via `@theme inline { --font-sans }` (which feeds Tailwind v4's `--default-font-family` on `html`) and via an explicit `body` rule. So the font has been working all along and there was nothing to switch on; the class was pure decoration. Q2 stands — SF Pro stays — it simply never depended on this config. Done: deleted `tailwind.config.ts`, stripped 20 `font-sf-pro` and 2 `min-h-touch-sm`. **`@config` was rejected**: the ignored config redefines the spacing scale in `rem` while v4 computes it as `n × 0.25rem`, so enabling it would have quadrupled 131 spacing classes across the app. Checks: type-check exit 0, build exit 0, 16/16 e2e, and six before/after screenshots (3 pages × desktop+mobile) that are **byte-identical**. PR open, **not merged** |
-| 4.2 | Compress assets: `public/` 38 MB → WebP/AVIF | 🟡 | ⬜ | | | | R20 |
+| 4.2 **stage 1** | Delete unused images | 🟢 | 🟡 | PR open | ✅ | 2026-07-31 | R20. **The «→ WebP/AVIF» in the title is wrong and the plan should not be followed literally** — see below. Deleted 24 files, **4.45 MB**; `public/` 38 → 33 MB. `ilya.png` (1.27 MB) was swapped for a 77 KB jpg — the owner had started that swap by hand, it is finished and committed here. Every file was grepped twice by bare name and public URL across 368 text files in `src/`, `e2e/`, `public/`, `next.config.ts`, `package.json`; dynamic construction was ruled out separately (no template-built local paths, no CSS `url()`, no `backgroundImage`). Checks: type-check exit 0, build exit 0, 16/16 e2e, landing screenshot with the team section expanded. PR open, **not merged** |
+| 4.2 **stage 2** | Shrink the heavy images that are actually used | 🟡 | ⬜ | | | | **Format conversion is NOT the win here.** `next.config.ts` already sets `formats: ["image/webp", "image/avif"]` and 71 of the references go through `<Image>`, so WebP/AVIF is already served on the fly; the 12 raw `<img>` tags pointing at `public/` are all SVG icons under 3 KB. The real work is **source resolution** (32.97 MB of USED assets, top 8 ≈ 18 MB) and one specific bug: `layout.tsx:50-60` preloads `/tenant-hero-bg.png` and `/tenant-landing-bg.png` with `<link rel="preload">` — **2.72 MB of raw PNG fetched on every route of the app**, bypassing `next/image` entirely, from the root layout. Fix that first |
 | 4.3 | Tighten types one flag at a time + move ESLint rules into the flat config | 🟡 | ⬜ | | | | R14. Separate PR per flag |
 
 ## Phase 5 — Frontend consolidation
@@ -206,10 +207,12 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 | 2026-07-31 | `UniversalHeader.tsx`, `buildings/[id]/page.tsx` | **`p-0.75` renders as 3px, not the 12px the old config meant.** Tailwind v4 computes spacing as `n × 0.25rem`, so `p-0.75` = 0.1875rem; the ignored `tailwind.config.ts` declared `'0.75': '0.75rem'` = 12px. 9 usages (5 `p-0.75`, plus `gap-0.75`). Almost certainly written against v3 expectations. Left untouched in 4.1 on purpose — going to 12px quadruples the padding in the header and on the building page, which is a design call, not cleanup. **Ask design: bug or intentional?** If it is a bug the fix is `p-3`, with a screenshot review | backlog — design |
 | 2026-07-31 | typography, product-level | **SF Pro only renders on Apple devices.** There is no `@font-face`, no `next/font` for it and no font file in the repo — the stack falls through to `Helvetica Neue` and then the system sans, so Windows and Android users see Segoe UI / Roboto. That is today's behaviour and no Tailwind change alters it. Apple licenses the family for use on its own platforms, so self-hosting the files is not a developer decision. Matching typography everywhere means picking an openly licensed face with similar metrics — Inter is the usual stand-in for SF — and wiring it through `next/font`. Needs product and design, and a budget | backlog — product |
 
+| 2026-07-31 | `auth/callback/page.tsx:70` | Redirects to `/?needsRole=true`, but **nothing anywhere reads `needsRole`** — not `page.tsx`, not `DualLandingWrapper`. The user lands on the ordinary landing page, so the role-selection screen does not exist. Its artwork (`choose-role-*.png`) was deleted in 4.2 on the owner's decision; the dead redirect is still there | 6.x / product |
+
 ## Summary
 
 | | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Steps | 50 | 24 | 5 | 16 | 0 | 5 |
+| Steps | 51 | 24 | 6 | 16 | 0 | 5 |
 
 Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.1 (skipped — absorbed by 2A.3), 2A.4 (stop-list), 2A.5 (backlog).
