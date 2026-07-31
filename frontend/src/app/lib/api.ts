@@ -106,14 +106,6 @@ export const shortlistAPI = {
       .then((res) => res.data?.isShortlisted || false),
 };
 
-export const operatorAPI = {
-  getDashboard: () => api.get("/operator/dashboard"),
-
-  getProperties: () => api.get("/operator/properties"),
-
-  getTenants: () => api.get("/operator/tenants"),
-};
-
 // Add matchingAPI for compatibility
 export const matchingAPI = {
   getDetailedMatches: (limit?: number) =>
