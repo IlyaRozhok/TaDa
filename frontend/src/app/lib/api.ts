@@ -53,15 +53,10 @@ export const authAPI = {
   getMe: () => api.get("/auth/me"),
 
   logout: () => api.post("/auth/logout"),
-
-  getTempTokenInfo: (tempToken: string) =>
-    api.get(`/auth/temp-token/${tempToken}`),
 };
 
 export const usersAPI = {
   getMe: () => api.get("/auth/me"),
-
-  update: (id: string, data: any) => api.patch(`/users/${id}`, data),
 
   getAll: (params?: {
     role?: string;
@@ -69,8 +64,6 @@ export const usersAPI = {
     page?: number;
     search?: string;
   }) => api.get("/users", { params }),
-
-  getById: (id: string) => api.get(`/users/${id}`),
 };
 
 export const preferencesAPI = {
@@ -143,19 +136,6 @@ export const matchingAPI = {
 
   getPropertyMatch: (propertyId: string) =>
     api.get(`/matching/property/${propertyId}`),
-};
-
-export const operatorsAPI = {
-  getAll: () => api.get("/residential-complexes/operators"),
-};
-
-export const residentialComplexesAPI = {
-  getAll: (params?: any) => api.get("/residential-complexes", { params }),
-  getById: (id: string) => api.get(`/residential-complexes/${id}`),
-  create: (data: any) => api.post("/residential-complexes", data),
-  update: (id: string, data: any) =>
-    api.patch(`/residential-complexes/${id}`, data),
-  delete: (id: string) => api.delete(`/residential-complexes/${id}`),
 };
 
 export const bookingRequestsAPI = {
@@ -446,10 +426,6 @@ export const propertyMediaAPI = {
     );
     return response.data;
   },
-  updatePropertyMedia: (propertyId: string, mediaId: string, data: any) =>
-    api.put(`/properties/${propertyId}/media/${mediaId}`, data),
-  setAsPrimary: (propertyId: string, mediaId: string) =>
-    api.patch(`/properties/${propertyId}/media/${mediaId}/primary`),
 
   updateMediaOrder: async (
     propertyId: string,
