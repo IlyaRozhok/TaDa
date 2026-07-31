@@ -1,4 +1,4 @@
-import { Catch, ArgumentsHost } from '@nestjs/common';
+import { Catch, ArgumentsHost, HttpException } from '@nestjs/common';
 import type { HttpServer } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import * as Sentry from '@sentry/nestjs';
@@ -25,12 +25,19 @@ export class SentryGlobalFilter extends BaseExceptionFilter {
     }
 
     /**
-     * Nest's own BaseExceptionFilter only logs what it fails to recognise, so an
-     * HttpException carrying a 500 used to leave no trace at all. Everything
-     * reaching this filter is logged here instead, carrying the request id so a
-     * report can be tied back to its access line.
+     * Nest's BaseExceptionFilter logs everything that is not an HttpException,
+     * and nothing that is — so an HttpException carrying a 500 used to leave no
+     * trace at all. That gap is what this fills, and only that: writing a line
+     * for the unknown errors as well would print each of them twice.
+     *
+     * The line Nest writes goes through the same pino logger and carries the
+     * request under `req`, so the request id survives either way.
      */
     private log(exception: unknown, status: number | null, host: ArgumentsHost) {
+        if (!(exception instanceof HttpException)) {
+            return;
+        }
+
         const request = host.switchToHttp().getRequest();
         const context = {
             reqId: request?.id,
