@@ -29,7 +29,7 @@ const AboutUsSection = () => {
       id: 3,
       name: t(operatorKeys.about.card3.name),
       position: t(operatorKeys.about.card3.position),
-      image: "/ilya.png",
+      image: "/ilya.jpg",
       description: t(operatorKeys.about.card3.description),
     },
   ];
