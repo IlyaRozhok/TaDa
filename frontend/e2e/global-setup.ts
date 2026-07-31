@@ -25,7 +25,7 @@ const BACKEND_ENV = path.join(__dirname, "..", "..", "backend", ".env");
 /** Access-токен живёт 15 минут — столько же, сколько выдаёт приложение. */
 const ACCESS_TTL_SECONDS = 15 * 60;
 
-type Role = "tenant" | "admin";
+type Role = "tenant" | "admin" | "operator";
 
 interface SeedUser {
   id: string;
@@ -82,6 +82,17 @@ const SEED_USERS: SeedUser[] = [
     profileComplete: false,
     completedOnboarding: true,
     stateFile: "admin-partial.json",
+  },
+  {
+    // Operators have no dashboard of their own any more (step 2А.2). This user
+    // exists to prove the role still lands on a working page instead of the
+    // role-selection screen or a route that is about to be deleted.
+    id: "e2e00000-0000-4000-8000-000000000005",
+    email: "e2e-operator@tada-e2e.local",
+    role: "operator",
+    profileComplete: true,
+    completedOnboarding: true,
+    stateFile: "operator.json",
   },
 ];
 
@@ -151,7 +162,7 @@ function seedUser(psql: (sql: string) => string, user: SeedUser): string {
   const profile = user.profileComplete
     ? {
         first_name: quote("E2E"),
-        last_name: quote(user.role === "admin" ? "Admin" : "Tenant"),
+        last_name: quote(user.role[0].toUpperCase() + user.role.slice(1)),
         address: quote("1 Test Street, London"),
         phone: quote("+447700900000"),
         date_of_birth: quote("1990-01-01"),

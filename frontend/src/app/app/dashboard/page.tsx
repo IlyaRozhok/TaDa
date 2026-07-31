@@ -42,9 +42,6 @@ export default function DashboardPage() {
       case "admin":
         router.replace("/app/admin/panel");
         break;
-      case "operator":
-        router.replace("/app/dashboard/operator");
-        break;
       case "tenant":
       default:
         router.replace("/app/units");

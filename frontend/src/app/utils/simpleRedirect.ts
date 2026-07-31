@@ -53,12 +53,12 @@ export function getRedirectPath(user: any): string {
   // Определяем основную роль (с поддержкой множественных ролей)
   const primaryRole = getPrimaryRole(user);
 
-  // В зависимости от основной роли - на соответствующий дашборд
+  // Every known role lands on the units listing. Operators used to get their own
+  // dashboard; that layer is being removed, so they follow the same path as the
+  // rest instead of falling through to the role-selection screen.
   switch (primaryRole) {
     case "admin":
-      return "/app/units";
     case "operator":
-      return "/app/dashboard/operator";
     case "tenant":
       return "/app/units";
     default:
