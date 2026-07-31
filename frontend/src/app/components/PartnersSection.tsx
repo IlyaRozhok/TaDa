@@ -57,7 +57,7 @@ const PartnersSection = ({
       <div className="container mx-auto px-4">
         {/* Section Title */}
         <div className="text-center md:mb-16 mt-10 md:mt-0">
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-sf-pro font-semibold text-gray-900 mb-8">
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-semibold text-gray-900 mb-8">
             {t(keys.partners.title)}
           </h2>
         </div>

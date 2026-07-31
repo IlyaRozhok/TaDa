@@ -74,10 +74,10 @@ const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void })
       {/* Text content positioned on the left */}
       <div className="relative z-20 mt-12 container mx-auto px-4 pt-24 md:pt-32 lg:pt-0 lg:flex lg:items-center lg:min-h-screen">
         <div className="text-white space-y-4 md:space-y-6 lg:space-y-6 xl:space-y-8 w-full lg:max-w-[45%] xl:max-w-[50%] 2xl:max-w-[55%]">
-          <h1 className="font-sf-pro font-semibold text-5xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-7xl 2xl:text-8xl max-w-[700px] 2xl:leading-[100px]">
+          <h1 className="font-semibold text-5xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-7xl 2xl:text-8xl max-w-[700px] 2xl:leading-[100px]">
             {t(tenantKeys.hero.title)}
           </h1>
-          <p className="font-sf-pro font-regular text-lg sm:text-xl md:text-xl lg:text-lg xl:text-xl 2xl:text-2xl leading-6 sm:leading-7 lg:leading-6 xl:leading-7 2xl:leading-8 tracking-[0.22px] max-w-xl md:max-w-2xl lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
+          <p className="font-regular text-lg sm:text-xl md:text-xl lg:text-lg xl:text-xl 2xl:text-2xl leading-6 sm:leading-7 lg:leading-6 xl:leading-7 2xl:leading-8 tracking-[0.22px] max-w-xl md:max-w-2xl lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
             {t(tenantKeys.hero.subtitle)}
           </p>
 
@@ -227,7 +227,7 @@ const TenantsCardsSection = ({ onContactClick }: { onContactClick?: () => void }
         {/* Section Header */}
         <div className="container mx-auto px-4">
           <div className="text-start mb-8 md:mb-16">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-black lg:max-w-4xl lg:mx-0 mx-auto mt-6">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-black lg:max-w-4xl lg:mx-0 mx-auto mt-6">
               {t(tenantKeys.rentSection.title)}
             </h2>
             <p className="text-black text-lg lg:max-w-[500px] lg:mx-0 mx-auto mt-6">
@@ -290,7 +290,7 @@ const TenantsBTRSection = () => {
       <div className="container mx-auto px-4">
         {/* Section Title */}
         <div className="text-center">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 mb-8">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-gray-900 mb-8">
             {t(tenantKeys.btr.title)}
           </h2>
         </div>
@@ -396,7 +396,7 @@ const TenantsFeaturesSection = () => {
       {/* Section Header with padding */}
       <div className="container mx-auto px-4 mb-12">
         <div className="text-start">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl lg:mx-0 mx-auto mb-8">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-gray-900 leading-tight max-w-4xl lg:mx-0 mx-auto mb-8">
             {t(tenantKeys.relocation.title)}
           </h2>
           <p className="text-gray-700 text-lg max-w-2xl lg:mx-0 mx-auto">
@@ -471,7 +471,7 @@ const GenerationRentSection = ({
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="mb-16">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl mb-3 mt-4">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-gray-900 leading-tight max-w-4xl mb-3 mt-4">
             {t(tenantKeys.generation.title)}
           </h2>
           <p className="text-gray-900 text-lg mb-12 max-w-xl">

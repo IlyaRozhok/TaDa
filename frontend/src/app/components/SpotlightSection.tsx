@@ -35,7 +35,7 @@ const SpotlightSection = ({ onBookClick }: SpotlightSectionProps) => {
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="mb-16">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl mb-8 mt-5">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-gray-900 leading-tight max-w-4xl mb-8 mt-5">
             {t(operatorKeys.spotlight.title)}
           </h2>
           <p className="text-gray-700 text-lg mb-12 max-w-2xl">
