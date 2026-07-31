@@ -11,10 +11,9 @@ test("operator hitting /app/dashboard lands on the units listing", async ({
 }) => {
   await page.goto("/app/dashboard");
 
-  await expect(page).toHaveURL(/\/app\/units$/, { timeout: 15_000 });
-  // The default branch of getRedirectPath leads to the role-selection screen;
+  // The default branch of getRedirectPath drops the user on the home page;
   // an operator must never fall into it.
-  await expect(page).not.toHaveURL(/needsRole=true/);
+  await expect(page).toHaveURL(/\/app\/units$/, { timeout: 15_000 });
 });
 
 test("operator stays on the units listing instead of being bounced", async ({

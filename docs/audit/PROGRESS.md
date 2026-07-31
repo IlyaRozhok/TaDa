@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Current step: 4.2 stage 1** — unused images deleted, PR open. 2А.3 also waits: **merge needs the staging check of 2А.2** (a live operator).
+**Current step: 4.2 stage 2** — shrinking the heavy images. Side task in flight: dead `needsRole` removed, PR open. 2А.3 also waits: **merge needs the staging check of 2А.2** (a live operator).
 
 **Phases 0 and 1 fully closed.**
 - Phase 0: 0.1 (#48), 0.2 (#50), 0.3 (reconciliation on hosts), 0.4 (#51)
@@ -207,7 +207,8 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 | 2026-07-31 | `UniversalHeader.tsx`, `buildings/[id]/page.tsx` | **`p-0.75` renders as 3px, not the 12px the old config meant.** Tailwind v4 computes spacing as `n × 0.25rem`, so `p-0.75` = 0.1875rem; the ignored `tailwind.config.ts` declared `'0.75': '0.75rem'` = 12px. 9 usages (5 `p-0.75`, plus `gap-0.75`). Almost certainly written against v3 expectations. Left untouched in 4.1 on purpose — going to 12px quadruples the padding in the header and on the building page, which is a design call, not cleanup. **Ask design: bug or intentional?** If it is a bug the fix is `p-3`, with a screenshot review | backlog — design |
 | 2026-07-31 | typography, product-level | **SF Pro only renders on Apple devices.** There is no `@font-face`, no `next/font` for it and no font file in the repo — the stack falls through to `Helvetica Neue` and then the system sans, so Windows and Android users see Segoe UI / Roboto. That is today's behaviour and no Tailwind change alters it. Apple licenses the family for use on its own platforms, so self-hosting the files is not a developer decision. Matching typography everywhere means picking an openly licensed face with similar metrics — Inter is the usual stand-in for SF — and wiring it through `next/font`. Needs product and design, and a budget | backlog — product |
 
-| 2026-07-31 | `auth/callback/page.tsx:70` | Redirects to `/?needsRole=true`, but **nothing anywhere reads `needsRole`** — not `page.tsx`, not `DualLandingWrapper`. The user lands on the ordinary landing page, so the role-selection screen does not exist. Its artwork (`choose-role-*.png`) was deleted in 4.2 on the owner's decision; the dead redirect is still there | 6.x / product |
+| 2026-07-31 | `auth/callback/page.tsx`, `simpleRedirect.ts` | ~~Redirects to `/?needsRole=true` that nothing reads.~~ **Closed** (`refactor/remove-dead-needsrole`): all three producers now send the user to `/`, which is where the ignored parameter left them anyway. **Still open and larger:** the branch that produced one of them is unreachable end to end — `callback/page.tsx:62` fires on `needsRoleSelection && registrationId`, and the backend never sends either parameter (`auth.controller.ts` only ever redirects with `success`, `error` or `details`). Inside it, `sessionStorage.setItem("googleRegistrationId")` is written and read by nobody. So a Google sign-up that genuinely has no role has no screen to pick one on. Deleting the branch is a behaviour question about the OAuth flow, not cleanup — left for the owner | product / 6.x |
+| 2026-07-31 | `hooks/useOnboarding.ts:74` | Parameter `isGoogleAuth: boolean = false` — no caller ever passes it. Its only related producer was the `isGoogleAuth=true` query string dropped with `needsRole` | 6.x |
 
 ## Summary
 

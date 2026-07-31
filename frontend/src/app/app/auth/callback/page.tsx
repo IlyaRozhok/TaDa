@@ -65,9 +65,10 @@ function AuthCallbackContent() {
           // Store registration ID in sessionStorage for role selection
           sessionStorage.setItem("googleRegistrationId", registrationId);
 
-          // Redirect to home page for role selection
-          console.log("✅ Redirecting to role selection");
-          router.replace("/?needsRole=true&isGoogleAuth=true");
+          // There is no role-selection screen: nothing reads needsRole, so the
+          // parameter only ever decorated a plain visit to the home page.
+          console.log("✅ Redirecting to the home page");
+          router.replace("/");
           return;
         }
 
