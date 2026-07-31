@@ -183,6 +183,7 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 users.map((user) => (
                   <tr
                     key={user.id}
+                    data-testid="admin-user-row"
                     onClick={() => onView(user)}
                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >

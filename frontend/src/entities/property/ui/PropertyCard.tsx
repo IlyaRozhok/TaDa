@@ -57,6 +57,7 @@ export default function PropertyCard({
   return (
     <div
       onClick={handleCardClick}
+      data-testid="property-card"
       className="w-full min-w-0 rounded-xl transition-all duration-200 cursor-pointer group overflow-visible"
     >
       {/* Image Section */}

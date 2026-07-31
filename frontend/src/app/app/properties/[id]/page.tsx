@@ -1208,6 +1208,7 @@ export default function PropertyPublicPage() {
                 </div>
 
                 <Button
+                  data-testid="book-viewing"
                   className="w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold mb-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleBookApartment}
                   disabled={bookingLoading || hasBookingRequest}
