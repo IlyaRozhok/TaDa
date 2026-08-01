@@ -45,27 +45,25 @@ export function getRedirectPath(user: any): string {
     return "/";
   }
 
-  // Если нет роли - выбрать роль
+  // A user without a role (the column is nullable) has nowhere of their own to
+  // go, so they land on the public page.
   if (!user.role) {
-    return "/?needsRole=true";
+    return "/";
   }
 
   // Определяем основную роль (с поддержкой множественных ролей)
   const primaryRole = getPrimaryRole(user);
 
   // Every known role lands on the units listing. Operators used to get their own
-  // dashboard; that layer is being removed, so they follow the same path as the
-  // rest instead of falling through to the role-selection screen.
+  // dashboard; that layer was removed, so they follow the same path as the rest.
   switch (primaryRole) {
     case "admin":
     case "operator":
     case "tenant":
       return "/app/units";
     default:
-      console.warn(
-        `⚠️ Unknown role "${user.role}", redirecting to role selection`,
-      );
-      return "/?needsRole=true";
+      console.warn(`⚠️ Unknown role "${user.role}", redirecting to the home page`);
+      return "/";
   }
 }
 
