@@ -10,6 +10,7 @@ import {
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import Footer from "../../components/Footer";
 import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/UnifiedProfileForm";
+import axios from "axios";
 import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
 import { useGetPreferencesQuery } from "@/store/slices/apiSlice";
@@ -121,7 +122,7 @@ export default function ProfilePage() {
         console.error("Failed to fetch profile:", err);
         if (isMounted) {
           setHasError(true);
-          if (err.response?.status === 401) {
+          if (axios.isAxiosError(err) && err.response?.status === 401) {
             router.replace("/app/auth");
             return;
           }

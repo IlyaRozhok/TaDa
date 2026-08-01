@@ -41,12 +41,46 @@ export interface TenantCvMeta {
   tenant_type_labels?: string[];
 }
 
+/**
+ * Snapshot of the server-side preferences row. Only the fields the CV renders
+ * are described; everything is optional and nullable because the snapshot is
+ * taken from a row where every column is.
+ */
+export interface TenantCvPreferences {
+  preferred_address?: string | null;
+  preferred_areas?: string[] | null;
+  preferred_districts?: string[] | null;
+  preferred_metro_stations?: string[] | null;
+  min_price?: number | null;
+  max_price?: number | null;
+  min_square_meters?: number | null;
+  max_square_meters?: number | null;
+  bedrooms?: number[] | null;
+  bathrooms?: number[] | null;
+  property_types?: string[] | null;
+  building_types?: string[] | null;
+  furnishing?: string[] | null;
+  let_duration?: string | null;
+  bills?: string | null;
+  amenities?: string[] | null;
+  hobbies?: string[] | null;
+  tenant_types?: string[] | null;
+  children_count?: string | null;
+  family_status?: string | null;
+  additional_info?: string | null;
+  balcony?: boolean | null;
+  terrace?: boolean | null;
+  outdoor_space?: boolean | null;
+  is_concierge?: boolean | null;
+  smoking_area?: boolean | null;
+}
+
 export interface TenantCvResponse {
   user_id: string;
   share_uuid?: string | null;
   profile: TenantCvProfile;
   meta: TenantCvMeta;
-  preferences?: any; // snapshot of server preferences; narrowed per use
+  preferences?: TenantCvPreferences | null;
   amenities?: string[];
   about?: string | null;
   hobbies?: string[];

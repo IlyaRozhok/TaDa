@@ -134,7 +134,13 @@ export default function AllPropertiesPage() {
     if (!properties || !Array.isArray(properties)) {
       return [];
     }
-    const types = new Set(properties.map((p) => p.property_type));
+    // property_type is optional on the model, so drop the blanks rather than
+    // rendering an empty <option> for them.
+    const types = new Set(
+      properties
+        .map((p) => p.property_type)
+        .filter((type): type is string => Boolean(type)),
+    );
     return Array.from(types);
   };
 
