@@ -296,7 +296,6 @@ export default async function globalSetup(): Promise<void> {
     const id = seedUser(psql, user);
     const token = signAccessToken(secret, { sub: id, email: user.email, role: user.role });
     writeStorageState(user, id, token);
-    // eslint-disable-next-line no-console
     console.log(`[global-setup] сессия готова: ${user.email} → ${user.stateFile}`);
   }
 }
