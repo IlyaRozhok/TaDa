@@ -4,7 +4,7 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { InputField } from "../ui/InputField";
 import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
-import { PreferencesFormData } from "@/app/types/preferences";
+import { PreferencesFormData, PreferencesFieldValue } from "@/app/types/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 import {
@@ -15,7 +15,7 @@ import {
 
 interface LocationStepProps {
   formData: PreferencesFormData;
-  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
+  onUpdate: (field: keyof PreferencesFormData, value: PreferencesFieldValue) => void;
 }
 
 const AREAS = [...AREA_OPTIONS];

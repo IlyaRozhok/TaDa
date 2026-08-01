@@ -78,7 +78,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const sizeStyles = {
       xs: `px-[${spacing[2]}] py-[${spacing[1]}] text-xs`,
-      sm: `px-[${spacing[3]}] py-[${spacing[1.5]}] text-sm`,
+      sm: `px-[${spacing[3]}] py-[${spacing[1]}] text-sm`,
       md: `px-[${spacing[4]}] py-[${spacing[2]}] text-sm`,
       lg: `px-[${spacing[6]}] py-[${spacing[3]}] text-base`,
       xl: `px-[${spacing[8]}] py-[${spacing[4]}] text-lg`,

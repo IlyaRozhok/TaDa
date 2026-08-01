@@ -4,13 +4,16 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
-import { PreferencesFormData } from "@/entities/preferences/model/preferences";
+import {
+  PreferencesFormData,
+  PreferencesFieldValue,
+} from "@/entities/preferences/model/preferences";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { Briefcase, Users, Baby } from "lucide-react";
 
 interface LifestylePreferencesStepProps {
   formData: PreferencesFormData;
-  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
+  onUpdate: (field: keyof PreferencesFormData, value: PreferencesFieldValue) => void;
   onValidationChange?: (isValid: boolean) => void;
 }
 

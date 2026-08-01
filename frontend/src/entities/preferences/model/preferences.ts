@@ -28,6 +28,19 @@ export interface Pet {
   size?: "small" | "medium" | "large";
 }
 
+/**
+ * Everything a preferences field can hold. Named because the step components
+ * used to declare it as `unknown`, which is wider than what `updateField`
+ * actually accepts — under strict that made the handler unassignable.
+ */
+export type PreferencesFieldValue =
+  | string
+  | number
+  | boolean
+  | string[]
+  | null
+  | undefined;
+
 export interface PreferencesFormData {
   // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
   occupation?: string[] | string;

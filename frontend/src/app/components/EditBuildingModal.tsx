@@ -98,7 +98,7 @@ interface BuildingFormData {
     type: "dog" | "cat" | "other";
     customType?: string;
     size?: "small" | "medium" | "large";
-  }>;
+  }> | null;
   smoking_area?: boolean;
   tenant_type?: string[];
   family_status?: string[];
@@ -715,14 +715,14 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   const addMetroStation = () => {
     setFormData((prev) => ({
       ...prev,
-      metro_stations: [...prev.metro_stations, { label: "", destination: 0 }],
+      metro_stations: [...(prev.metro_stations ?? []), { label: "", destination: 0 }],
     }));
   };
 
   const removeMetroStation = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      metro_stations: prev.metro_stations.filter((_, i) => i !== index),
+      metro_stations: (prev.metro_stations ?? []).filter((_, i) => i !== index),
     }));
   };
 
@@ -733,7 +733,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   ) => {
     setFormData((prev) => ({
       ...prev,
-      metro_stations: prev.metro_stations.map((station, i) =>
+      metro_stations: (prev.metro_stations ?? []).map((station, i) =>
         i === index ? { ...station, [field]: value } : station,
       ),
     }));
@@ -2293,7 +2293,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
               Metro Stations
             </h4>
 
-            {formData.metro_stations.map((station, index) => (
+            {(formData.metro_stations ?? []).map((station, index) => (
               <div key={index} className="flex gap-2">
                 <input
                   type="text"

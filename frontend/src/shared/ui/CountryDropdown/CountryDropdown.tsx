@@ -42,7 +42,7 @@ export default function CountryDropdown({
   error,
 }: CountryDropdownProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(
-    () => (value ? getCountryByName(value) : null)
+    () => (value ? (getCountryByName(value) ?? null) : null)
   );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);

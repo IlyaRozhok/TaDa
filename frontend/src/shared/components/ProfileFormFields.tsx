@@ -32,7 +32,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const handlePhoneChange = useCallback((value: string) => {
+  const handlePhoneChange = useCallback((value: string | undefined) => {
     // Combine country code with phone number for storage
     const country = getCountryByCode(phoneCountryCode) || getDefaultCountry();
     if (value) {

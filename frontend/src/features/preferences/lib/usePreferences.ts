@@ -7,7 +7,7 @@ import { useAppSelector } from "@/store/hooks";
 import { preferencesAPI } from "@/app/lib/api";
 import {
   FormFieldErrors,
-  PreferencesFormData,
+  PreferencesFormData, PreferencesFieldValue,
   PreferencesState,
   transformApiDataForForm,
   transformFormDataForApi,
@@ -486,10 +486,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
   );
 
   const updateField = useCallback(
-    (
-      field: keyof PreferencesFormData,
-      value: string | number | boolean | string[] | undefined,
-    ) => {
+    (field: keyof PreferencesFormData, value: PreferencesFieldValue) => {
       setValue(field, value, { shouldValidate: false, shouldDirty: true });
 
       // Auto-save the field after debounce
