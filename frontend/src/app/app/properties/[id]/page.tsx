@@ -830,7 +830,7 @@ export default function PropertyPublicPage() {
     if (key) return t(key);
     if (raw)
       return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    return t(wizardKeys.step3.propertyTypeOptions[0]);
+    return "";
   })();
 
   const propertyTypeLabel = (() => {
@@ -841,7 +841,7 @@ export default function PropertyPublicPage() {
     if (key) return t(key);
     if (raw)
       return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    return t(wizardKeys.step3.propertyTypeOptions[0]);
+    return "";
   })();
 
   const furnishingLabel = (() => {
@@ -850,24 +850,24 @@ export default function PropertyPublicPage() {
       : "";
     const key = raw ? getFurnishingTranslationKey(raw) : undefined;
     if (key) return t(key);
-    return t(wizardKeys.step3.furnishingCount[1]);
+    return "";
   })();
 
   const bedroomsLabel = (() => {
     const n = property.bedrooms;
-    if (n == null || n === 0) return "N/A";
+    if (n == null || n === 0) return "";
     if (n >= 5) return t(wizardKeys.step3.roomsCount[4]);
     return t(wizardKeys.step3.roomsCount[n - 1]);
   })();
 
   const bathroomsLabel = (() => {
     const n = property.bathrooms;
-    if (n == null || n === 0) return "N/A";
+    if (n == null || n === 0) return "";
     if (n >= 4) return t(wizardKeys.step3.bathroomsCount[3]);
     return t(wizardKeys.step3.bathroomsCount[n - 1]);
   })();
 
-  const sizeLabel = formatAreaDisplay(property.square_meters) ?? "N/A";
+  const sizeLabel = formatAreaDisplay(property.square_meters) ?? "";
 
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: "auto" }}>
@@ -1192,7 +1192,7 @@ export default function PropertyPublicPage() {
                           year: "numeric",
                         },
                       )
-                    : "Not specified"}
+                    : ""}
                 </p>
               </div>
 
@@ -1200,7 +1200,7 @@ export default function PropertyPublicPage() {
               <div className="bg-white lg:px-4">
                 <div className="mb-3 flex items-center">
                   <div className="text-3xl sm:text-4xl font-bold text-black mb-1">
-                    £{Number(property.price || 0).toLocaleString()}
+                    {property.price ? `£${Number(property.price).toLocaleString()}` : ""}
                   </div>
                   <div className="text-base text-gray-600 ml-5">
                     {t(propertyDetailsKeys.pcm)}
@@ -1240,7 +1240,7 @@ export default function PropertyPublicPage() {
                         {t(listingPropertyKeys.pricing.rent)}
                       </span>
                       <span className="font-semibold text-black">
-                        £{Number(property.price || 0).toLocaleString()}
+                        {property.price ? `£${Number(property.price).toLocaleString()}` : ""}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1248,10 +1248,9 @@ export default function PropertyPublicPage() {
                         {t(listingPropertyKeys.pricing.deposit)}
                       </span>
                       <span className="font-semibold text-black">
-                        £
-                        {Number(
-                          property.deposit != null ? property.deposit : 0,
-                        ).toLocaleString()}
+                        {property.deposit != null
+                          ? `£${Number(property.deposit).toLocaleString()}`
+                          : ""}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1259,10 +1258,12 @@ export default function PropertyPublicPage() {
                         {t(listingPropertyKeys.pricing.wifi)}
                       </span>
                       <span className="font-semibold text-black">
-                        {Array.isArray(property.property_amenities) &&
-                        property.property_amenities.includes("Wi-Fi")
-                          ? t(listingPropertyKeys.pricing.included)
-                          : t(listingPropertyKeys.pricing.excluded)}
+                        {!Array.isArray(property.property_amenities) ||
+                        property.property_amenities.length === 0
+                          ? ""
+                          : property.property_amenities.includes("Wi-Fi")
+                            ? t(listingPropertyKeys.pricing.included)
+                            : t(listingPropertyKeys.pricing.excluded)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1272,19 +1273,20 @@ export default function PropertyPublicPage() {
                       <span className="font-semibold text-black">
                         {property.bills === "included"
                           ? t(listingPropertyKeys.pricing.included)
-                          : t(listingPropertyKeys.pricing.excluded)}
+                          : property.bills === "excluded"
+                            ? t(listingPropertyKeys.pricing.excluded)
+                            : ""}
                       </span>
                     </div>
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span className="font-semibold text-black">Total</span>
                       <span className="font-bold text-black text-base">
-                        £
-                        {(
-                          Number(property.price || 0) +
-                          Number(
-                            property.deposit != null ? property.deposit : 0,
-                          )
-                        ).toLocaleString()}
+                        {property.price != null || property.deposit != null
+                          ? `£${(
+                              Number(property.price ?? 0) +
+                              Number(property.deposit ?? 0)
+                            ).toLocaleString()}`
+                          : ""}
                       </span>
                     </div>
                   </div>
