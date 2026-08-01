@@ -22,7 +22,7 @@ const AboutUsSection = () => {
       id: 2,
       name: t(operatorKeys.about.card2.name),
       position: t(operatorKeys.about.card2.position),
-      image: "/dima.png",
+      image: "/dima.webp",
       description: t(operatorKeys.about.card2.description),
     },
     {

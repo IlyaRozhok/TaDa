@@ -50,7 +50,7 @@ const HeroSection = () => {
           <div className="absolute inset-0 flex items-center justify-center ">
             <div className="w-[82%] h-[88%] mt-[-4%] overflow-hidden rounded-lg">
               <Image
-                src="/tada-stage.png"
+                src="/tada-stage.webp"
                 alt="TADA Property Website"
                 width={800}
                 height={600}
@@ -89,7 +89,7 @@ const HeroSection = () => {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-[82%] h-[88%] mt-[-4%] overflow-hidden rounded">
               <Image
-                src="/tada-stage.png"
+                src="/tada-stage.webp"
                 alt="TADA Property Website"
                 width={600}
                 height={400}

@@ -12,19 +12,19 @@ const TenantsSocialMediaSection = () => {
   const socialCards = [
     {
       id: 1,
-      image: "/img_social_00.png",
+      image: "/img_social_00.webp",
     },
     {
       id: 2,
-      image: "/img_social_01.png",
+      image: "/img_social_01.webp",
     },
     {
       id: 3,
-      image: "/img_social_02.png",
+      image: "/img_social_02.webp",
     },
     {
       id: 4,
-      image: "/img_social_03.png",
+      image: "/img_social_03.webp",
     },
   ];
 
