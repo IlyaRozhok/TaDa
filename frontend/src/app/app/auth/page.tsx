@@ -84,7 +84,7 @@ export default function AuthPage() {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/tenant-hero-bg.png"
+          src="/tenant-hero-bg.webp"
           alt="Background"
           fill
           priority

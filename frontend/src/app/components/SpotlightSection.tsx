@@ -22,7 +22,7 @@ const SpotlightSection = ({ onBookClick }: SpotlightSectionProps) => {
       src: "/spotlight-2.png",
       alt: "Apartment balcony view",
     },
-    { id: 3, src: "/spotlight-3.png", alt: "Contemporary kitchen" },
+    { id: 3, src: "/spotlight-3.webp", alt: "Contemporary kitchen" },
     { id: 4, src: "/spotlight-4.png", alt: "Dining area" },
     { id: 5, src: "/spotlight-6.png", alt: "Bedroom interior" },
     { id: 6, src: "/spotlight-5.png", alt: "Bathroom design" },

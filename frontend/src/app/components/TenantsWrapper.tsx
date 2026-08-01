@@ -12,7 +12,7 @@ const TenantsWrapper = () => {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/tenants-bg.png"
+          src="/tenants-bg.webp"
           alt="Background"
           fill
           className={`object-cover transition-opacity duration-300 ${

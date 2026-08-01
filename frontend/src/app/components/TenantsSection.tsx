@@ -48,7 +48,7 @@ const TenantsSection = () => {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/operator-reinvent-bg.png"
+          src="/operator-reinvent-bg.webp"
           alt="Background"
           fill
           priority
