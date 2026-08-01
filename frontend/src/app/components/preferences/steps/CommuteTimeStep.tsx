@@ -5,13 +5,13 @@ import { StepHeader } from "../step-components/StepHeader";
 import { DateInput } from "@/shared/ui/DateInput";
 import { InputField } from "../ui/InputField";
 import { SelectionButton } from "../step-components/SelectionButton";
-import { PreferencesFormData } from "@/app/types/preferences";
+import { PreferencesFormData, PreferencesFieldValue } from "@/app/types/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 
 interface CommuteTimeStepProps {
   formData: PreferencesFormData;
-  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
+  onUpdate: (field: keyof PreferencesFormData, value: PreferencesFieldValue) => void;
 }
 
 export const CommuteTimeStep: React.FC<CommuteTimeStepProps> = ({

@@ -193,7 +193,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       if (photoFiles.length > 0) {
         const photoResults = await propertiesAPI.uploadPhotos(photoFiles);
         uploadedPhotoUrls = Array.isArray(photoResults)
-          ? photoResults.map((r: { url?: string }) => r.url).filter(Boolean)
+          ? photoResults
+              .map((r: { url?: string }) => r.url)
+              .filter((url): url is string => Boolean(url))
           : [];
       }
       if (videoFile) {

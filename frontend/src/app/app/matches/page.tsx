@@ -26,6 +26,14 @@ import {
 } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 
+/** The slice of a match category this page reads. */
+interface MatchCategory {
+  category: string;
+  hasPreference: boolean;
+  score: number;
+  reason: string;
+}
+
 export default function MatchesPage() {
   const router = useRouter();
   const user = useSelector(selectUser);
@@ -98,12 +106,12 @@ export default function MatchesPage() {
           matchReasons: match.categories
             ? match.categories
                 .filter(
-                  (cat) =>
+                  (cat: MatchCategory) =>
                     cat.hasPreference &&
                     cat.score > 0 &&
                     cat.category !== "location",
                 ) // Only categories with preferences that matched
-                .map((cat) => cat.reason)
+                .map((cat: MatchCategory) => cat.reason)
             : [],
         }));
 

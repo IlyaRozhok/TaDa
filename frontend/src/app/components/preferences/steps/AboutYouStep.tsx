@@ -3,12 +3,12 @@ import { useTranslation } from "../../../hooks/useTranslation";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { TextAreaField } from "../step-components/TextAreaField";
-import { PreferencesFormData } from "@/app/types/preferences";
+import { PreferencesFormData, PreferencesFieldValue } from "@/app/types/preferences";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 interface AboutYouStepProps {
   formData: PreferencesFormData;
-  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
+  onUpdate: (field: keyof PreferencesFormData, value: PreferencesFieldValue) => void;
   onValidationChange?: (isValid: boolean) => void;
 }
 
