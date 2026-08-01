@@ -14,6 +14,8 @@ export type PublicPropertyResponse = {
   square_meters: number | null;
   photos: string[];
   building_type: Property["building_type"] | null;
+  property_type: Property["property_type"] | null;
+  furnishing: Property["furnishing"] | null;
   available_from: Date | null;
   created_at: Date;
   building?: {
@@ -75,6 +77,8 @@ export const toPublicProperty = (
     square_meters,
     photos: Array.isArray(property.photos) ? property.photos : [],
     building_type: property.building_type || null,
+    property_type: property.property_type || null,
+    furnishing: property.furnishing || null,
     available_from: property.available_from || null,
     created_at: property.created_at,
     building: property.building
