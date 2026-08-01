@@ -368,6 +368,21 @@ export default function BuildingPublicPage() {
     );
   }
 
+  // The guards above only fire once the request has settled, so a refetch with
+  // no data yet falls through to a body that dereferences `building` directly.
+  // Show the same skeleton the first load uses instead of throwing on null.
+  if (!building) {
+    return (
+      <div className="min-h-screen bg-white">
+        <TenantUniversalHeader preferencesCount={preferencesFilledCount} />
+        <div className="pt-24 sm:pt-28 lg:pt-32">
+          <PropertyDetailSkeleton />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader preferencesCount={preferencesFilledCount} />

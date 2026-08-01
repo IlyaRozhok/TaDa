@@ -820,7 +820,24 @@ export default function PropertyPublicPage() {
     );
   }
 
-  const publishDate = new Date(property?.created_at || Date.now());
+  // Everything below dereferences `property` directly. The guards above cover
+  // the states this page has a screen for; what is left is a refetch that has
+  // not produced data yet — the same thing the skeleton represents. Without
+  // this the render reached `property.building_type` on a null and threw.
+  if (!property) {
+    return (
+      <div className="min-h-screen bg-white">
+        <TenantUniversalHeader
+          showPreferencesButton={true}
+          preferencesCount={preferencesFilledCount}
+        />
+        <PropertyDetailSkeleton />
+        <Footer />
+      </div>
+    );
+  }
+
+  const publishDate = new Date(property.created_at || Date.now());
 
   const buildingTypeLabel = (() => {
     const raw = property.building_type
