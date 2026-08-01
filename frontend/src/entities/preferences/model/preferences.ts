@@ -43,21 +43,21 @@ export type PreferencesFieldValue =
 
 export interface PreferencesFormData {
   // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
-  occupation?: string[] | string;
-  family_status?: string[] | string;
-  children_count?: string[] | string;
+  occupation?: string[] | string | null;
+  family_status?: string[] | string | null;
+  children_count?: string[] | string | null;
 
   // ==================== STEP 1: LOCATION ====================
-  preferred_areas?: string[];
-  preferred_districts?: string[];
-  preferred_metro_stations?: string[];
+  preferred_areas?: string[] | null;
+  preferred_districts?: string[] | null;
+  preferred_metro_stations?: string[] | null;
 
   // ==================== STEP 2: BUDGET & MOVE-IN ====================
-  move_in_date?: string;
-  move_out_date?: string;
-  min_price?: number;
-  max_price?: number;
-  flexible_budget?: boolean;
+  move_in_date?: string | null;
+  move_out_date?: string | null;
+  min_price?: number | null;
+  max_price?: number | null;
+  flexible_budget?: boolean | null;
   move_in_flexibility?: string; // UI: "flexible" / fixed etc.
 
   // ==================== STEP 3: PROPERTY & ROOMS ====================
@@ -68,8 +68,8 @@ export interface PreferencesFormData {
   outdoor_space?: boolean; // matches Property.outdoor_space
   balcony?: boolean; // matches Property.balcony
   terrace?: boolean; // matches Property.terrace
-  min_square_meters?: number;
-  max_square_meters?: number;
+  min_square_meters?: number | null;
+  max_square_meters?: number | null;
 
   // ==================== STEP 4: BUILDING & DURATION ====================
   building_types?: string[]; // matches Property.building_type
@@ -82,7 +82,7 @@ export interface PreferencesFormData {
   // ==================== STEP 6: PETS ====================
   pet_policy?: boolean; // matches Property.pet_policy
   pets?: Pet[]; // matches Property.pets structure
-  number_of_pets?: number;
+  number_of_pets?: number | null;
 
   // ==================== STEP 7: AMENITIES ====================
   amenities?: string[]; // matches Property.amenities
@@ -91,22 +91,22 @@ export interface PreferencesFormData {
   smoking_area?: boolean; // matches Property.smoking_area
 
   // ==================== STEP 8: HOBBIES ====================
-  hobbies?: string[];
+  hobbies?: string[] | null;
 
   // ==================== STEP 9: LIVING ENVIRONMENT ====================
-  ideal_living_environment?: string[];
-  smoker?: string;
+  ideal_living_environment?: string[] | null;
+  smoker?: string | null;
 
   // ==================== STEP 10: ABOUT YOU ====================
-  preferred_address?: string;
-  additional_info?: string;
+  preferred_address?: string | null;
+  additional_info?: string | null;
 
   // ==================== LEGACY FIELDS (for backward compatibility) ====================
   // Only keeping fields that are used in transformations or matching
-  min_bedrooms?: number;
-  max_bedrooms?: number;
-  min_bathrooms?: number;
-  max_bathrooms?: number;
+  min_bedrooms?: number | null;
+  max_bedrooms?: number | null;
+  min_bathrooms?: number | null;
+  max_bathrooms?: number | null;
 
   // ==================== UI-ONLY FIELDS (not sent to backend) ====================
   // These are used by UI components and transformed before sending

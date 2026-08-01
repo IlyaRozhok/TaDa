@@ -109,6 +109,20 @@ interface EditPropertyModalProps {
   operators?: User[];
 }
 
+/**
+ * What this modal actually needs from an operator: it renders a name or an
+ * email and stores the id. Typing the list as `User` promised far more than the
+ * dropdown uses, and the placeholder entries built in this file never satisfied
+ * it. EditBuildingModal already carries its own narrow `Operator` for the same
+ * reason.
+ */
+interface OperatorOption {
+  id: string;
+  full_name?: string;
+  email?: string;
+  role?: string;
+}
+
 const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   isOpen,
   onClose,
@@ -164,7 +178,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
     null,
   );
-  const [availableOperators, setAvailableOperators] = useState<User[]>([]);
+  const [availableOperators, setAvailableOperators] = useState<OperatorOption[]>([]);
   const [operatorsLoading, setOperatorsLoading] = useState(false);
 
   // Validation errors state
@@ -350,7 +364,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         console.log("🔍 Trying usersAPI.getAll({ role: 'operator' })");
         const operatorsResponse = await usersAPI.getAll({ role: "operator" });
         console.log("🔍 Operators API response:", operatorsResponse);
-        const operatorsData =
+        const operatorsData: OperatorOption[] =
           operatorsResponse.data?.data || operatorsResponse.data || [];
         console.log(
           "✅ Operators loaded with role filter:",
@@ -359,7 +373,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         );
 
         if (operatorsData.length > 0) {
-          let finalOperators = operatorsData;
+          let finalOperators: OperatorOption[] = operatorsData;
 
           // If the current property's operator is not in the list, add it
           if (
@@ -424,7 +438,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       });
       console.log("✅ Filtered operators:", operatorsData.length, "operators");
 
-      let finalOperators = operatorsData;
+      let finalOperators: OperatorOption[] = operatorsData;
 
       // If no real operators found, use mock data
       if (operatorsData.length === 0) {
