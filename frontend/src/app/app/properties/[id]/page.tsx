@@ -4,7 +4,6 @@ import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  bookingRequestsAPI,
   CategoryMatchResult,
 } from "../../../lib/api";
 import type { Property, PropertyMedia } from "../../../types";
@@ -24,6 +23,10 @@ import {
   useGetPreferencesQuery,
   useGetPropertyMatchQuery,
 } from "@/store/slices/apiSlice";
+import {
+  useGetMyBookingRequestsQuery,
+  useCreateBookingRequestMutation,
+} from "@/store/api/bookingRequests.api";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share } from "lucide-react";
@@ -113,7 +116,6 @@ export default function PropertyPublicPage() {
     [],
   );
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [hasBookingRequest, setHasBookingRequest] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingInlineError, setBookingInlineError] = useState<string | null>(
     null,
@@ -371,33 +373,23 @@ export default function PropertyPublicPage() {
     return () => clearTimeout(t);
   }, [redirecting429, router]);
 
-  // Load existing booking request for this tenant/property
-  useEffect(() => {
-    const loadBookingRequest = async () => {
-      if (
-        !isAuthenticated ||
-        !user ||
-        (user.role !== "tenant" && user.role !== "admin") ||
-        !id
-      ) {
-        setHasBookingRequest(false);
-        return;
-      }
-      try {
-        const data = await bookingRequestsAPI.mine(id as string);
-        if (Array.isArray(data) && data.length > 0) {
-          setHasBookingRequest(true);
-        } else {
-          setHasBookingRequest(false);
-        }
-      } catch (err) {
-        // silently ignore to not block page
-        setHasBookingRequest(false);
-      }
-    };
+  // Whether this tenant already asked to view this property. The query owns
+  // it now, so creating a request refreshes the answer by tag invalidation
+  // instead of the page setting a boolean on itself.
+  const [createBookingRequest] = useCreateBookingRequestMutation();
 
-    loadBookingRequest();
-  }, [id, isAuthenticated, user]);
+  const canHaveBookingRequest =
+    Boolean(id) &&
+    isAuthenticated &&
+    (user?.role === "tenant" || user?.role === "admin");
+
+  const { data: myBookingRequests } = useGetMyBookingRequestsQuery(
+    id as string,
+    { skip: !canHaveBookingRequest },
+  );
+
+  const hasBookingRequest =
+    canHaveBookingRequest && (myBookingRequests?.length ?? 0) > 0;
 
   // Load match score for authenticated users (cached via RTK Query)
   useEffect(() => {
@@ -686,14 +678,14 @@ export default function PropertyPublicPage() {
 
     try {
       setBookingLoading(true);
-      await bookingRequestsAPI.create(property.id, {
+      await createBookingRequest({
+        propertyId: property.id,
         email: email || undefined,
         phone_number: hasPhone ? bookingPhone.trim() : undefined,
         date_from: dateFrom,
         date_to: dateTo,
         description: bookingDescription.trim() || undefined,
-      });
-      setHasBookingRequest(true);
+      }).unwrap();
       setIsBookingModalOpen(false);
       notify.success(t(listingNotificationKeys.viewingRequestSentMessage));
     } catch (err: any) {

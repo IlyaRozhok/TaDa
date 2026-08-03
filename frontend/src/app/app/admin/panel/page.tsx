@@ -24,7 +24,6 @@ import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
 import { Copy, Check, X } from "lucide-react";
 import {
-  bookingRequestsAPI,
   buildingsAPI,
   propertiesAPI,
 } from "../../../lib/api";
@@ -44,8 +43,11 @@ import {
 } from "lucide-react";
 import {
   useGetPropertiesQuery,
-  useGetBookingRequestsQuery,
 } from "@/store/slices/apiSlice";
+import {
+  useGetBookingRequestsQuery,
+  useUpdateBookingRequestStatusMutation,
+} from "@/store/api/bookingRequests.api";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
 
@@ -84,7 +86,6 @@ function AdminPanelContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -135,13 +136,10 @@ function AdminPanelContent() {
     skip: activeSection !== "requests",
   });
 
-  useEffect(() => {
-    if (!bookingQueryData) return;
-    const list = (bookingQueryData as any).data || bookingQueryData || [];
-    if (Array.isArray(list)) {
-      setRequests(list);
-    }
-  }, [bookingQueryData]);
+  const [updateBookingStatus] = useUpdateBookingRequestStatusMutation();
+
+  // The query is the list; transformResponse already unwrapped it.
+  const requests = bookingQueryData ?? [];
 
   // Notification management
   const addNotification = (
@@ -720,12 +718,8 @@ function AdminPanelContent() {
   ) => {
     try {
       setUpdatingRequestId(id);
-      const updated = await bookingRequestsAPI.updateStatus(id, status);
-      setRequests((prev) =>
-        prev.map((request) =>
-          request.id === id ? { ...request, ...updated } : request,
-        ),
-      );
+      await updateBookingStatus({ id, status }).unwrap();
+      // The list refetches itself — invalidatesTags on the mutation.
       addNotification("success", "Booking status updated");
     } catch (error: any) {
       const message =

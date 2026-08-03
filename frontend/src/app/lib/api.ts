@@ -123,59 +123,6 @@ export const matchingAPI = {
     api.get(`/matching/property/${propertyId}`),
 };
 
-export const bookingRequestsAPI = {
-  create: (
-    propertyId: string,
-    body?: {
-      email?: string;
-      phone_number?: string;
-      date_from?: string | null;
-      date_to?: string | null;
-      description?: string;
-    },
-  ) => {
-    const b = body ?? {};
-    return api
-      .post("/booking-requests", {
-        property_id: propertyId,
-        ...(b.email != null && b.email !== "" ? { email: b.email } : {}),
-        ...(b.phone_number != null && b.phone_number !== ""
-          ? { phone_number: b.phone_number }
-          : {}),
-        ...(b.date_from &&
-        typeof b.date_from === "string" &&
-        /^\d{4}-\d{2}-\d{2}$/.test(b.date_from)
-          ? { date_from: b.date_from }
-          : {}),
-        ...(b.date_to &&
-        typeof b.date_to === "string" &&
-        /^\d{4}-\d{2}-\d{2}$/.test(b.date_to)
-          ? { date_to: b.date_to }
-          : {}),
-        ...(b.description != null && b.description.trim() !== ""
-          ? { description: b.description.trim() }
-          : {}),
-      })
-      .then((res) => res.data ?? res);
-  },
-  list: (status?: string) =>
-    api
-      .get("/booking-requests", {
-        params: status ? { status } : undefined,
-      })
-      .then((res) => res.data ?? res),
-  updateStatus: (id: string, status: string) =>
-    api
-      .patch(`/booking-requests/${id}/status`, { status })
-      .then((res) => res.data ?? res),
-  mine: (propertyId?: string) =>
-    api
-      .get("/booking-requests/me", {
-        params: propertyId ? { property_id: propertyId } : undefined,
-      })
-      .then((res) => res.data ?? res),
-};
-
 export const buildingsAPI = {
   getAll: (params?: any) => api.get("/buildings", { params }),
   getById: (id: string) => api.get(`/buildings/${id}`),
