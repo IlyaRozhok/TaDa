@@ -8,7 +8,8 @@ import {
   setOnboardingCompleted,
 } from "@/store/slices/authSlice";
 import { AppDispatch } from "@/store/store";
-import api, { preferencesAPI } from "../../lib/api";
+import api from "../../lib/api";
+import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 
 // Global promise for session initialization
 let sessionManagerPromise: Promise<void> | null = null;
@@ -41,8 +42,8 @@ export default function SessionManager() {
             // loads it when a screen that shows hearts mounts.
             if (!response.data.user.onboardingCompleted) {
               try {
-                const prefsResponse = await preferencesAPI.get();
-                if (prefsResponse.data && prefsResponse.data.id) {
+                const preferences = await fetchPreferencesOnce();
+                if (preferences && preferences.id) {
                   dispatch(setOnboardingCompleted(true));
                 }
               } catch {

@@ -38,10 +38,8 @@ import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { notify } from "@/shared/lib/notify";
 import Footer from "../../../components/Footer";
 import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
-import {
-  useGetPublicBuildingPropertiesQuery,
-  useGetPreferencesQuery,
-} from "@/store/slices/apiSlice";
+import { useGetPublicBuildingPropertiesQuery } from "@/store/slices/apiSlice";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";

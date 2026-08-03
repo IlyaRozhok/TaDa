@@ -3,10 +3,10 @@ import { useSelector, useDispatch } from "react-redux";
 import { Property } from "../types";
 import {
   propertiesAPI,
-  preferencesAPI,
   matchingAPI,
   CategoryMatchResult,
 } from "../lib/api";
+import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 import { selectUser } from "@/store/slices/authSlice";
 import { apiSlice } from "@/store/slices/apiSlice";
 import type { AppDispatch, RootState } from "@/store/store";
@@ -381,8 +381,7 @@ export const useTenantDashboard = (
         console.warn("⚠️ No session, skipping preferences load");
         return;
       }
-      const preferencesResponse = await preferencesAPI.get();
-      const loadedPreferences = preferencesResponse.data;
+      const loadedPreferences = await fetchPreferencesOnce();
 
       // Enhanced preference completion calculation with weighted scoring
       let totalScore = 0;

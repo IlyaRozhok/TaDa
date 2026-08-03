@@ -55,16 +55,6 @@ export const authAPI = {
   logout: () => api.post("/auth/logout"),
 };
 
-export const preferencesAPI = {
-  get: () => api.get("/preferences"),
-
-  getPreferences: () => api.get("/preferences"),
-
-  create: (data: any) => api.post("/preferences", data),
-
-  update: (data: any) => api.put("/preferences", data),
-};
-
 // Removed duplicate - see propertiesAPI definition below
 
 // Add matchingAPI for compatibility

@@ -18,9 +18,9 @@ import {
 } from "@/store/slices/authSlice";
 import {
   useGetPublicPropertyQuery,
-  useGetPreferencesQuery,
   useGetPropertyMatchQuery,
 } from "@/store/slices/apiSlice";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import {
   useGetMyBookingRequestsQuery,
