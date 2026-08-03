@@ -218,9 +218,10 @@ export default function ShortlistPage() {
       return;
     }
 
-    // Tenant and admin can access shortlist; others go to dashboard
+    // Tenant and admin can access shortlist; others go to the units listing
+    // (the dashboard routes are gone).
     if (user.role !== "tenant" && user.role !== "admin") {
-      router.push("/app/dashboard");
+      router.push("/app/units");
       return;
     }
   }, [sessionReady, isAuthenticated, user, router]);

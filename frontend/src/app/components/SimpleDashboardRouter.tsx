@@ -94,11 +94,10 @@ export default function SimpleDashboardRouter({
       });
 
       if (!hasAccess) {
-        // Send them through the role router rather than to a per-role path:
-        // /app/dashboard/tenant never existed and /app/dashboard/operator is
-        // gone, so the template this used to build was a 404 either way.
-        console.log("❌ Access denied, redirecting to /app/dashboard");
-        router.replace("/app/dashboard");
+        // The dashboard routes are gone; the units listing is the safe
+        // landing every role can open.
+        console.log("❌ Access denied, redirecting to /app/units");
+        router.replace("/app/units");
         return;
       } else {
         console.log("✅ Access granted");

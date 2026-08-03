@@ -6,14 +6,13 @@ import { test, expect } from "./fixtures";
  * the thing that must not regress: the role always lands on a page that exists.
  */
 
-test("operator hitting /app/dashboard lands on the units listing", async ({
-  operatorPage: page,
-}) => {
-  await page.goto("/app/dashboard");
+test("the dashboard route is gone", async ({ operatorPage: page }) => {
+  const response = await page.goto("/app/dashboard");
 
-  // The default branch of getRedirectPath drops the user on the home page;
-  // an operator must never fall into it.
-  await expect(page).toHaveURL(/\/app\/units$/, { timeout: 15_000 });
+  // The whole /app/dashboard tree was deleted in the route sweep and every
+  // link that pointed at it was retargeted to /app/units, so this is an
+  // honest 404 rather than a redirect stop.
+  expect(response?.status()).toBe(404);
 });
 
 test("operator stays on the units listing instead of being bounced", async ({
