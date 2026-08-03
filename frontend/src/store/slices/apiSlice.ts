@@ -1,19 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseApi } from "@/store/api/baseApi";
 
-const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api",
-  credentials: "include",
-});
-
-export const apiSlice = createApi({
-  reducerPath: "api",
-  baseQuery,
-  tagTypes: ["User", "Property", "Preferences", "Shortlist"],
-  refetchOnMountOrArgChange: false,
-  refetchOnFocus: false,
-  refetchOnReconnect: false,
-  // Keep all server state cached for 5 minutes by default
-  keepUnusedDataFor: 300,
+/**
+ * Endpoints that have not been split into their own domain file yet. They are
+ * injected into the same baseApi, so the store wiring is unchanged; step 5.1
+ * moves them out one domain per PR — see store/api/tenantCv.api.ts for the
+ * shape they are heading towards.
+ */
+export const apiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: () => "/users/profile",
@@ -112,22 +105,6 @@ export const apiSlice = createApi({
     }),
 
     // Tenant CV (current user's CV)
-    getTenantCv: builder.query({
-      query: () => "/tenant-cv/current",
-      // Tie CV to User tag so it can be invalidated together if needed
-      providesTags: ["User"],
-    }),
-    /** Same auth as getTenantCv (Redux token) — avoids axios/localStorage mismatch breaking share */
-    createTenantCvShare: builder.mutation<
-      { share_uuid: string } | { data?: { share_uuid?: string } },
-      void
-    >({
-      query: () => ({
-        url: "/tenant-cv/share",
-        method: "POST",
-      }),
-    }),
-
     // Booking requests (admin)
     getBookingRequests: builder.query({
       query: (status?: string) => ({
@@ -175,8 +152,6 @@ export const {
   useAddToShortlistMutation,
   useRemoveFromShortlistMutation,
   useGetShortlistQuery,
-  useGetTenantCvQuery,
-  useCreateTenantCvShareMutation,
   useGetBookingRequestsQuery,
   useGetPreferencesQuery,
   useCreatePreferencesMutation,

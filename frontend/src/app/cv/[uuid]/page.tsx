@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { tenantCvAPI } from "../../lib/api";
-import { TenantCvResponse } from "../../types/tenantCv";
+import { useGetPublicTenantCvQuery } from "@/store/api/tenantCv.api";
 import { TenantCvView } from "../../components/tenant-cv/TenantCvView";
 import Footer from "../../components/Footer";
 import UserDropdown from "../../components/UserDropdown";
@@ -19,30 +18,18 @@ export default function PublicTenantCvPage() {
   const { t } = useTranslation();
   const shareUuid = (params?.uuid as string) || "";
 
-  const [data, setData] = useState<TenantCvResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useGetPublicTenantCvQuery(shareUuid, { skip: !shareUuid });
 
-  const fetchCv = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await tenantCvAPI.getPublic(shareUuid);
-      setData(response.data as TenantCvResponse);
-    } catch (err) {
-      setError("Profile not available");
-    } finally {
-      setLoading(false);
-    }
-  }, [shareUuid]);
-
-  useEffect(() => {
-    if (shareUuid) {
-      fetchCv();
-    } else {
-      setError("Missing CV link");
-      setLoading(false);
-    }
-  }, [shareUuid, fetchCv]);
+  const loading = Boolean(shareUuid) && isLoading;
+  const error = !shareUuid
+    ? "Missing CV link"
+    : isError
+      ? "Profile not available"
+      : null;
 
   return (
     <div className="min-h-screen bg-white">
