@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Current step: Phase 5** — 5.1, one data layer on RTK Query, one PR per domain.
+**Current step: 5.1** — one data layer on RTK Query, one PR per domain. **PR 1 of 8 (tenant-cv) is open**; next is booking-requests.
 
 **Phase 4 is closed.** `strict` is on and the frontend type-checks clean.
 
@@ -140,7 +140,7 @@ Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with P
 
 | Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 5.1 | One data layer → RTK Query; one PR per domain | 🔴 | ⬜ | | | | R13. Before 5.3 |
+| 5.1 | One data layer → RTK Query; one PR per domain | 🔴 | 🟡 | PR open (1/8) | ✅ | 2026-08-01 | R13. **PR 1 — tenant-cv — establishes the pattern the other seven follow:** `store/api/baseApi.ts` holds the single `createApi` with a `baseQueryWithAuth` wrapper, and each domain attaches its endpoints from `store/api/<domain>.api.ts` via `injectEndpoints`, so no file grows to hold them all. The wrapper gives RTK Query the 401 handling only axios had — an expired session now signs the user out instead of leaving them on a broken page — and skips it for public endpoints so a signed-out reader opening a shared CV is not logged out. tenant-cv: three typed endpoints, `transformResponse` unwraps the payload (which removed an `as any` from the page), the share mutation invalidates `{TenantCv, ME}` so the new link arrives by refetch instead of being patched into local state, and the page's `useState`/`useEffect` mirror is gone. `tenantCvAPI` deleted — 3 of its 4 methods already had no callers. Refetch stays off globally; own CV opts in with `refetchOnMountOrArgChange: 60`. Checks: type-check exit 0 (strict), lint exit 0, build exit 0, 16/16 e2e, plus a manual run of the flow — read, share, public page |
 | 5.2 | One type tree; consider generation from Swagger | 🔴 | ⬜ | | | | R12. Before 5.3 |
 | 5.3a | **Delete the unreachable frontend files** (split out of 5.3, brought forward) | 🟢 | ✅ | merged #76 | ✅ | 2026-08-01 | Reachability from the 34 App Router entry points: 317 files, 266 reachable, **50 deleted (−5344 lines)**. Re-running the analysis afterwards leaves **zero** new orphans, so the cascade is closed rather than shifted. The vitest file `shared/lib/__tests__/area.test.ts` is unreachable from the app but tests a live module, so it stays. Two grep «hits» were name collisions, not references: `ProfilePageSkeleton` vs `PageSkeleton`, and `SelectField` from `shared/ui/FormField` vs the preferences one. Checks: type-check exit 0, lint exit 0, build exit 0, 7 unit, **16/16 e2e** |
 | 5.3 | One architecture — App Router native; merge the three `ui`s, sort out FSD layers | 🔴 | ⬜ | | | | R12. After 2.1, 5.1, 5.2 |
