@@ -1,104 +1,72 @@
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch } from "@/store/store";
+import { useSelector } from "react-redux";
 import {
-  addToShortlist,
-  removeFromShortlist,
-  selectShortlistProperties,
-} from "@/features/shortlist/model/shortlistSlice";
+  useAddToShortlistMutation,
+  useGetShortlistQuery,
+  useRemoveFromShortlistMutation,
+} from "@/store/api/shortlist.api";
+import { selectUser } from "@/store/slices/authSlice";
 import { Property } from "@/app/types";
 
+/**
+ * `/shortlist` is tenant- and admin-only. Other roles — and signed-out
+ * visitors on a public property page — must not fire it at all: a 401 there
+ * would sign the reader out through the base query's 401 handling.
+ */
+const canUseShortlist = (role: string | undefined): boolean =>
+  role === "tenant" || role === "admin";
+
+/**
+ * The shortlist itself. Everything that needs the list reads it through this
+ * hook, so the role gate lives in exactly one place and RTK Query dedupes the
+ * request across however many cards are on screen.
+ */
+export const useShortlistProperties = () => {
+  const user = useSelector(selectUser);
+
+  return useGetShortlistQuery(undefined, {
+    skip: !canUseShortlist(user?.role),
+    // The mutations keep the cache in step, so this only picks up changes made
+    // in another tab or on another device.
+    refetchOnMountOrArgChange: 60,
+  });
+};
+
+/** The heart on a property card. */
 export const useShortlist = (property: Property, showShortlist: boolean) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const shortlistProperties = useSelector(selectShortlistProperties);
-  const [isShortlisted, setIsShortlisted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const { data: shortlistProperties } = useShortlistProperties();
+  const [addToShortlist, { isLoading: adding }] = useAddToShortlistMutation();
+  const [removeFromShortlist, { isLoading: removing }] =
+    useRemoveFromShortlistMutation();
 
-  // Sync local state with Redux shortlist (do not depend on isShortlisted to avoid update loop)
-  useEffect(() => {
-    const isInShortlist = shortlistProperties.some((p) => p.id === property.id);
-    setIsShortlisted(isInShortlist);
-  }, [shortlistProperties, property.id]);
-
-  const handleAddToShortlist = async () => {
-    setError(null);
-    setSuccess(null);
-
-    try {
-      setLoading(true);
-      setIsShortlisted(true);
-
-      await dispatch(
-        addToShortlist({ propertyId: property.id, property })
-      ).unwrap();
-
-      setSuccess("Property added to shortlist");
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error: unknown) {
-      console.error("Error adding to shortlist:", error);
-      setIsShortlisted(false);
-
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to add to shortlist";
-      setError(errorMessage);
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveFromShortlist = async () => {
-    setError(null);
-    setSuccess(null);
-
-    try {
-      setLoading(true);
-      setIsShortlisted(false);
-
-      await dispatch(removeFromShortlist(property.id)).unwrap();
-
-      setSuccess("Property removed from shortlist");
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error: unknown) {
-      console.error("Error removing from shortlist:", error);
-      setIsShortlisted(true);
-
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to remove from shortlist";
-      setError(errorMessage);
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isShortlisted = Boolean(
+    shortlistProperties?.some((item) => item.id === property.id),
+  );
 
   const handleShortlistToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
     if (!showShortlist || !property?.id) {
-      console.warn("Shortlist operation not allowed");
       return;
     }
 
-    if (isShortlisted) {
-      await handleRemoveFromShortlist();
-      return;
-    }
+    try {
+      if (isShortlisted) {
+        await removeFromShortlist(property.id).unwrap();
+        return;
+      }
 
-    await handleAddToShortlist();
+      await addToShortlist({ propertyId: property.id, property }).unwrap();
+    } catch (error: unknown) {
+      // The optimistic patch has already been rolled back, so the heart is back
+      // where it was; nothing renders this message today.
+      console.error("Shortlist toggle failed:", error);
+    }
   };
 
   return {
     isShortlisted,
-    loading,
-    error,
-    success,
+    loading: adding || removing,
     handleShortlistToggle,
-    handleRemoveFromShortlist,
   };
 };
 

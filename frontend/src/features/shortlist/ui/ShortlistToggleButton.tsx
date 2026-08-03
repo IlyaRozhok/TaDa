@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { useShortlist } from "@/features/shortlist/lib/useShortlist";
 import { selectUser } from "@/store/slices/authSlice";
@@ -11,34 +11,20 @@ interface ShortlistToggleButtonProps {
   showShortlist?: boolean;
   /** When true, show heart for any authenticated user (e.g. admin on units page). Default: only tenant. */
   showForAllRoles?: boolean;
-  onStatusChange?: (status: {
-    success: string | null;
-    error: string | null;
-  }) => void;
 }
 
 export default function ShortlistToggleButton({
   property,
   showShortlist = true,
   showForAllRoles = false,
-  onStatusChange,
 }: ShortlistToggleButtonProps) {
   const user = useSelector(selectUser);
 
   const {
     isShortlisted,
     loading: shortlistLoading,
-    error: shortlistError,
-    success: shortlistSuccess,
     handleShortlistToggle,
   } = useShortlist(property, showShortlist);
-
-  // Bubble success/error status to parent (for displaying in PropertyContent)
-  useEffect(() => {
-    if (onStatusChange) {
-      onStatusChange({ success: shortlistSuccess, error: shortlistError });
-    }
-  }, [shortlistSuccess, shortlistError, onStatusChange]);
 
   return (
     <>
