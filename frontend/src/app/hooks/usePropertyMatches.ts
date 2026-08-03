@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import { apiSlice } from "@/store/slices/apiSlice";
+import { matchingApi } from "@/store/api/matching.api";
 import type { AppDispatch } from "@/store/store";
 
 export interface PropertyMatchData {
@@ -61,11 +61,11 @@ export function usePropertyMatches(
           if (cancelled) return;
           try {
             const data = await dispatch(
-              apiSlice.endpoints.getPropertyMatch.initiate(id, {
+              matchingApi.endpoints.getPropertyMatch.initiate(id, {
                 subscribe: false,
               }),
             ).unwrap();
-            const score = data.matchPercentage ?? data.matchScore ?? 0;
+            const score = data.matchPercentage ?? 0;
             const categories = data.categories && Array.isArray(data.categories) ? data.categories : undefined;
             if (!cancelled) {
               results[id] = { matchScore: score, matchCategories: categories };

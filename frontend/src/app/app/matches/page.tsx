@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import {
-  matchingAPI,
-  DetailedMatchingResult,
-  Property,
-} from "../../lib/api";
+  useGetDetailedMatchesQuery,
+  type DetailedMatch,
+} from "@/store/api/matching.api";
+import { Property } from "@/app/types";
 import { selectUser } from "@/store/slices/authSlice";
 import MatchedPropertyGridWithLoader from "../../components/MatchedPropertyGridWithLoader";
 import DashboardHeader from "../../components/DashboardHeader";
@@ -36,15 +36,7 @@ interface MatchCategory {
 export default function MatchesPage() {
   const router = useRouter();
   const user = useSelector(selectUser);
-  const [detailedMatches, setDetailedMatches] = useState<
-    (DetailedMatchingResult & {
-      matchScore: number;
-      matchReasons: string[];
-    })[]
-  >([]);
-  const [loading, setLoading] = useState(true);
   const [sessionLoading, setSessionLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userPreferences, setUserPreferences] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"grid" | "detailed">("detailed");
   const [sortBy, setSortBy] = useState<"score" | "price" | "date">("score");
@@ -72,65 +64,34 @@ export default function MatchesPage() {
     initializeSession();
   }, []);
 
-  useEffect(() => {
-    // Only fetch matches after session manager is ready
-    if (sessionLoading) {
-      return;
-    }
+  // Only fetch matches after session manager is ready
+  const {
+    data: matchesData,
+    isLoading: loading,
+    error: queryError,
+  } = useGetDetailedMatchesQuery({ limit: 20 }, { skip: sessionLoading });
+  const error = queryError ? "Failed to load property matches" : null;
 
-    const fetchMatches = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        console.log("📡 Matches: Fetching detailed matches...");
-        const response = await matchingAPI.getDetailedMatches(20);
-
-        // Extract data from axios response
-        const matches = response?.data || response;
-        console.log("🔍 Raw matches response:", {
-          hasResponse: !!response,
-          hasData: !!response?.data,
-          matchesCount: Array.isArray(matches) ? matches.length : 0,
-        });
-
-        // Ensure matches is always an array and transform to legacy format
-        const matchesArray = Array.isArray(matches) ? matches : [];
-
-        // Transform new API format to legacy format for backward compatibility
-        const transformedMatches = matchesArray.map((match) => ({
-          ...match,
-          matchScore: match.matchPercentage || 0, // New field alias
-          matchCategories: match.categories || [], // Include categories for detailed breakdown
-          matchReasons: match.categories
-            ? match.categories
-                .filter(
-                  (cat: MatchCategory) =>
-                    cat.hasPreference &&
-                    cat.score > 0 &&
-                    cat.category !== "location",
-                ) // Only categories with preferences that matched
-                .map((cat: MatchCategory) => cat.reason)
-            : [],
-        }));
-
-        setDetailedMatches(transformedMatches);
-        console.log(
-          "✅ Matches: Detailed matches loaded:",
-          matchesArray.length,
-          "First match:",
-          transformedMatches[0]
-        );
-      } catch (err) {
-        console.error("❌ Matches: Error fetching matches:", err);
-        setError("Failed to load property matches");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMatches();
-  }, [sessionLoading]);
+  // Transform the API format to the legacy shape the grid renders
+  const detailedMatches = useMemo(
+    () =>
+      (matchesData ?? []).map((match: DetailedMatch) => ({
+        ...match,
+        matchScore: match.matchPercentage || 0,
+        matchCategories: match.categories || [],
+        matchReasons: match.categories
+          ? match.categories
+              .filter(
+                (cat: MatchCategory) =>
+                  cat.hasPreference &&
+                  cat.score > 0 &&
+                  cat.category !== "location",
+              ) // Only categories with preferences that matched
+              .map((cat: MatchCategory) => cat.reason)
+          : [],
+      })),
+    [matchesData],
+  );
 
   // Sort matches with robust handling
   const sortedMatches = useMemo(() => {
@@ -646,12 +607,6 @@ export default function MatchesPage() {
                                     </div>
                                   </div>
                                 ))}
-                              {matchResult.summary?.skipped > 0 && (
-                                <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
-                                  {matchResult.summary.skipped} categories
-                                  without preferences
-                                </div>
-                              )}
                             </div>
                           ) : (
                             /* Fallback to old matchReasons */

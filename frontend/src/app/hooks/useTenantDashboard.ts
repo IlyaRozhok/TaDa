@@ -1,18 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Property } from "../types";
-import {
-  propertiesAPI,
-  matchingAPI,
-  CategoryMatchResult,
-} from "../lib/api";
+import { CategoryMatchResult } from "../lib/api";
 import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 import { selectUser } from "@/store/slices/authSlice";
-import { apiSlice } from "@/store/slices/apiSlice";
 import { propertiesApi } from "@/store/api/properties.api";
+import { matchingApi } from "@/store/api/matching.api";
 
 type PropertiesApiState = Parameters<
   ReturnType<typeof propertiesApi.endpoints.getPublicProperties.select>
+>[0];
+type MatchingApiState = Parameters<
+  ReturnType<typeof matchingApi.endpoints.getMatchedProperties.select>
 >[0];
 import type { AppDispatch, RootState } from "@/store/store";
 import { useDebounce } from "./useDebounce";
@@ -101,11 +100,11 @@ export const useTenantDashboard = (
   // Seed initial state from RTK Query cache when available
   const cachedInitial = useSelector((state: RootState) =>
     useMatchedProperties
-      ? apiSlice.endpoints.getMatchedPropertiesPaginated.select({
+      ? matchingApi.endpoints.getMatchedProperties.select({
           page: 1,
           limit: 12,
           search: "",
-        })(state)
+        })(state as unknown as MatchingApiState)
       : propertiesApi.endpoints.getPublicProperties.select({
           page: 1,
           limit: 12,
@@ -221,18 +220,25 @@ export const useTenantDashboard = (
           } catch (searchError) {
             rtkPublicListError = searchError;
             console.warn(
-              "⚠️ Cached public endpoint failed, trying axios fallback...",
+              "⚠️ Cached public endpoint failed, retrying with a forced fetch...",
             );
           }
 
           try {
-            response = await propertiesAPI.getPublic(page, 12);
+            // Same retry the axios fallback used to be, over the same endpoint.
+            // The search is dropped here, as it always was on this path.
+            response = await dispatch(
+              propertiesApi.endpoints.getPublicProperties.initiate(
+                { page, limit: 12 },
+                { forceRefetch: true },
+              ),
+            ).unwrap();
           } catch {
             throw rtkPublicListError;
           }
 
-          const propertiesData = response.data?.data || response.data || [];
-          const totalCount = response.data?.total || propertiesData.length;
+          const propertiesData = response.data || [];
+          const totalCount = response.total || propertiesData.length;
 
           // Transform to MatchedProperty format and filter out invalid items
           const matchedProperties: MatchedProperty[] = propertiesData
@@ -249,7 +255,7 @@ export const useTenantDashboard = (
             matchedProperties,
             totalCount,
             currentPage: page,
-            totalPages: response.data?.totalPages || Math.ceil(totalCount / 12),
+            totalPages: response.totalPages || Math.ceil(totalCount / 12),
             loading: false,
           }));
           return;
@@ -262,7 +268,7 @@ export const useTenantDashboard = (
         if (useMatchedProperties) {
           // Use matched properties endpoint via RTK Query, which provides caching
           const responseData = await dispatch(
-            apiSlice.endpoints.getMatchedPropertiesPaginated.initiate({
+            matchingApi.endpoints.getMatchedProperties.initiate({
               page,
               limit: 12,
               search,
@@ -276,16 +282,14 @@ export const useTenantDashboard = (
           // Keep match-scored dataset, but show full inventory count in header when requested.
           if (useFullCountForHeader) {
             try {
-              const fullCountResponse = await propertiesAPI.getPublic(
-                1,
-                1,
-                search,
-              );
-              const fullCount =
-                fullCountResponse.data?.total ??
-                (Array.isArray(fullCountResponse.data?.data)
-                  ? fullCountResponse.data.data.length
-                  : undefined);
+              const fullCountResponse = await dispatch(
+                propertiesApi.endpoints.getPublicProperties.initiate({
+                  page: 1,
+                  limit: 1,
+                  search,
+                }),
+              ).unwrap();
+              const fullCount = fullCountResponse.total;
               if (typeof fullCount === "number" && fullCount >= 0) {
                 totalCount = fullCount;
               }
@@ -335,13 +339,16 @@ export const useTenantDashboard = (
         }));
       } catch (error: any) {
         console.error("❌ Failed to load properties:", error);
-        // Fallback to public endpoint on error
+        // Fallback to the public endpoint on error, forced past the cache
         try {
-          const fallbackResponse = await propertiesAPI.getPublic(page, 12, search);
-          const propertiesData =
-            fallbackResponse.data?.data || fallbackResponse.data || [];
-          const totalCount =
-            fallbackResponse.data?.total || propertiesData.length;
+          const fallbackResponse = await dispatch(
+            propertiesApi.endpoints.getPublicProperties.initiate(
+              { page, limit: 12, search },
+              { forceRefetch: true },
+            ),
+          ).unwrap();
+          const propertiesData = fallbackResponse.data || [];
+          const totalCount = fallbackResponse.total || propertiesData.length;
 
           // Transform to MatchedProperty format and filter out invalid items
           const matchedProperties: MatchedProperty[] = propertiesData
@@ -359,7 +366,7 @@ export const useTenantDashboard = (
             totalCount,
             currentPage: page,
             totalPages:
-              fallbackResponse.data?.totalPages || Math.ceil(totalCount / 12),
+              fallbackResponse.totalPages || Math.ceil(totalCount / 12),
             loading: false,
           }));
         } catch (fallbackError) {
