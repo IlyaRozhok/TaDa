@@ -148,6 +148,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                 properties.map((property) => (
                   <tr
                     key={property.id}
+                    data-testid="admin-property-row"
                     onClick={() => onView(property)}
                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >

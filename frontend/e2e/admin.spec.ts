@@ -40,6 +40,22 @@ test("admin Buildings tab renders", async ({ adminPage: page }) => {
   expect(page.url()).toMatch(/\/app\/admin\/panel/);
 });
 
+test("admin Properties tab shows a table with at least one row", async ({
+  adminPage: page,
+}) => {
+  await page.goto("/app/admin/panel");
+  await waitForPanelReady(page);
+
+  await page.getByTestId("admin-tab-properties").click();
+
+  // The list is a typed RTK Query fetch that only fires when this tab opens;
+  // a rendered row proves the query, the envelope and the section wiring.
+  await expect(page.getByTestId("admin-property-row").first()).toBeVisible({
+    timeout: 15_000,
+  });
+  expect(page.url()).toMatch(/\/app\/admin\/panel/);
+});
+
 test("admin Requests tab renders", async ({ adminPage: page }) => {
   await page.goto("/app/admin/panel");
   await waitForPanelReady(page);

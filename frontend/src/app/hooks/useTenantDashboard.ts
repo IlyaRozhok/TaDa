@@ -109,8 +109,8 @@ export const useTenantDashboard = (
           page: 1,
           limit: 12,
           search: "",
-          // The store's RootState is typed from apiSlice, so selectors of the
-          // other injected modules need their own view of the same state.
+          // The store's RootState is typed from the bare baseApi, so selectors
+          // of the injected modules need their own view of the same state.
         })(state as unknown as PropertiesApiState),
   );
 
