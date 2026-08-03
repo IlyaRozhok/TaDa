@@ -105,14 +105,6 @@ export const apiSlice = baseApi.injectEndpoints({
     }),
 
     // Tenant CV (current user's CV)
-    // Booking requests (admin)
-    getBookingRequests: builder.query({
-      query: (status?: string) => ({
-        url: "/booking-requests",
-        params: status ? { status } : undefined,
-      }),
-    }),
-
     // Preferences endpoints
     getPreferences: builder.query({
       query: () => "/preferences",
@@ -152,7 +144,6 @@ export const {
   useAddToShortlistMutation,
   useRemoveFromShortlistMutation,
   useGetShortlistQuery,
-  useGetBookingRequestsQuery,
   useGetPreferencesQuery,
   useCreatePreferencesMutation,
   useUpdatePreferencesMutation,

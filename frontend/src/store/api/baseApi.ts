@@ -50,7 +50,14 @@ const baseQueryWithAuth: BaseQueryFn<
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithAuth,
-  tagTypes: ["User", "Property", "Preferences", "Shortlist", "TenantCv"],
+  tagTypes: [
+    "User",
+    "Property",
+    "Preferences",
+    "Shortlist",
+    "TenantCv",
+    "BookingRequests",
+  ],
   // Left off deliberately: switching these on globally would refetch every
   // domain on every focus. Endpoints opt in individually where it earns its way.
   refetchOnMountOrArgChange: false,
