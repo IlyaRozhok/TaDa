@@ -25,7 +25,6 @@ import ViewPropertyModal from "../../../components/ViewPropertyModal";
 import { Copy, Check, X } from "lucide-react";
 import {
   buildingsAPI,
-  propertiesAPI,
 } from "../../../lib/api";
 import { Property } from "../../../types/property";
 import {
@@ -43,7 +42,10 @@ import {
 } from "lucide-react";
 import {
   useGetPropertiesQuery,
-} from "@/store/slices/apiSlice";
+  useCreatePropertyMutation,
+  useUpdatePropertyMutation,
+  useDeletePropertyMutation,
+} from "@/store/api/properties.api";
 import {
   useGetBookingRequestsQuery,
   useUpdateBookingRequestStatusMutation,
@@ -118,7 +120,6 @@ function AdminPanelContent() {
   // const user = useSelector(selectUser);
   // const isAuthenticated = useSelector(selectIsAuthenticated);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
-  const [properties, setProperties] = useState<Property[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(searchTerm, 400);
@@ -169,18 +170,18 @@ function AdminPanelContent() {
   const [updateBuilding] = useUpdateBuildingMutation();
   const [deleteBuilding] = useDeleteBuildingMutation();
 
-  // Admin properties list via RTK Query (with 5-minute cache)
-  const { data: propertiesQueryData, isLoading: isPropsQueryLoading } =
-    useGetPropertiesQuery({});
+  // Admin properties list, fetched only while its tab is open, like the
+  // other tabs. The endpoint is typed, so no envelope sniffing and no local
+  // mirror — the section renders straight off the cache.
+  const { data: propertiesData, isLoading: isPropsQueryLoading } =
+    useGetPropertiesQuery(undefined, {
+      skip: activeSection !== "properties",
+    });
+  const properties = propertiesData ?? [];
 
-  // Sync RTK Query data into local state used by the rest of the admin logic
-  useEffect(() => {
-    if (!propertiesQueryData) return;
-    const list = (propertiesQueryData as any).data || propertiesQueryData || [];
-    if (Array.isArray(list)) {
-      setProperties(list);
-    }
-  }, [propertiesQueryData]);
+  const [createProperty] = useCreatePropertyMutation();
+  const [updateProperty] = useUpdatePropertyMutation();
+  const [deleteProperty] = useDeletePropertyMutation();
 
   // Booking requests via RTK Query (5‑минутный кэш)
   const {
@@ -253,31 +254,21 @@ function AdminPanelContent() {
         setSelectedItem(null);
       } else if (activeSection === "properties") {
         const property = selectedItem as Property;
-        console.log("🗑️ Deleting property:", property.id);
 
-        const response = await propertiesAPI.delete(property.id);
-        console.log("✅ Delete response:", response);
+        // Tag invalidation drops the row from the refetched list.
+        await deleteProperty(property.id).unwrap();
 
-        if (response.status === 200 || response.status === 204) {
-          // Remove from local state
-          setProperties((prevProperties) =>
-            prevProperties.filter((p) => p.id !== property.id),
-          );
-
-          const propertyTitle =
-            property.title ||
-            property.id ||
-            property.apartment_number ||
-            "Property";
-          addNotification(
-            "success",
-            `Property "${propertyTitle}" deleted successfully`,
-          );
-          setShowModal(null);
-          setSelectedItem(null);
-        } else {
-          throw new Error("Unexpected response status");
-        }
+        const propertyTitle =
+          property.title ||
+          property.id ||
+          property.apartment_number ||
+          "Property";
+        addNotification(
+          "success",
+          `Property "${propertyTitle}" deleted successfully`,
+        );
+        setShowModal(null);
+        setSelectedItem(null);
       } else if (activeSection === "users") {
         const user = selectedItem as User;
         await deleteUser(user.id).unwrap();
@@ -423,29 +414,10 @@ function AdminPanelContent() {
   };
 
   const handleCreateProperty = async (data: any) => {
-    console.log(
-      "🎯 handleCreateProperty received data:",
-      JSON.stringify(data, null, 2),
-    );
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      console.log("📮 Sending to API:", JSON.stringify(data, null, 2));
-      const response = await fetch(`${apiUrl}/properties`, {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create property");
-      }
+      // Tag invalidation refetches the list; no manual reload needed.
+      await createProperty(data).unwrap();
 
       addNotification(
         "success",
@@ -454,24 +426,10 @@ function AdminPanelContent() {
         }" created successfully!`,
       );
       setShowModal(null);
-
-      // Reload properties
-      if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setProperties(data.data || data || []);
-        }
-      }
     } catch (error: any) {
       console.error("Error creating property:", error);
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to create property";
+        error?.data?.message || error?.message || "Failed to create property";
       addNotification("error", `Failed to create property: ${errorMessage}`);
       // Don't close modal on error - let user see the error and try again
     } finally {
@@ -482,39 +440,9 @@ function AdminPanelContent() {
   const handleUpdateProperty = async (id: string, data: any) => {
     setIsActionLoading(true);
     try {
-      console.log("🔄 Updating property:", {
-        id,
-        video: data.video,
-        videoType: typeof data.video,
-        videoLength: data.video?.length,
-        fullData: data,
-      });
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const response = await fetch(`${apiUrl}/properties/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update property");
-      }
-
-      const updatedProperty = await response.json();
-      console.log("✅ Property updated successfully:", {
-        id: updatedProperty.id,
-        video: updatedProperty.video,
-        videoType: typeof updatedProperty.video,
-        videoInData: data.video,
-        fullProperty: updatedProperty,
-      });
+      // The PATCH answers with the updated property; the still-mounted edit
+      // modal is re-fed from it while the list refetches by invalidation.
+      const updatedProperty = await updateProperty({ id, data }).unwrap();
 
       const propertyTitle =
         updatedProperty.title ||
@@ -526,41 +454,13 @@ function AdminPanelContent() {
         "success",
         `Property "${propertyTitle}" updated successfully!`,
       );
-
-      // Refresh properties list
-      if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const propertiesData = await response.json();
-          const updatedProperties = propertiesData.data || propertiesData || [];
-          console.log("🔄 Обновленный список properties:", {
-            count: updatedProperties.length,
-            updatedProperty: updatedProperties.find(
-              (p: Property) => p.id === id,
-            ),
-          });
-          setProperties(updatedProperties);
-
-          const updatedPropertyFromList = updatedProperties.find(
-            (p: Property) => p.id === id,
-          );
-          if (updatedPropertyFromList) {
-            console.log("📌 Установка selectedItem:", {
-              id: updatedPropertyFromList.id,
-              video: updatedPropertyFromList.video,
-            });
-            setSelectedItem(updatedPropertyFromList);
-          }
-        }
-      }
-
+      setSelectedItem(updatedProperty);
       setShowModal(null);
     } catch (error: any) {
       console.error("❌ Failed to update property:", error);
-      addNotification("error", `Failed to update property: ${error.message}`);
+      const errorMessage =
+        error?.data?.message || error?.message || "Failed to update property";
+      addNotification("error", `Failed to update property: ${errorMessage}`);
     } finally {
       setIsActionLoading(false);
     }
@@ -1009,6 +909,7 @@ function AdminPanelContent() {
             <button
               onClick={handleConfirmDelete}
               disabled={isActionLoading}
+              data-testid="confirm-delete"
               className="flex-1 px-4 py-2 cursor-pointer bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
             >
               {isActionLoading ? (

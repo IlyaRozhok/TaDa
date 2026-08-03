@@ -40,6 +40,46 @@ test("admin Buildings tab renders", async ({ adminPage: page }) => {
   expect(page.url()).toMatch(/\/app\/admin\/panel/);
 });
 
+test("admin Properties tab: rows render, create through the modal, delete", async ({
+  adminPage: page,
+}) => {
+  await page.goto("/app/admin/panel");
+  await waitForPanelReady(page);
+
+  await page.getByTestId("admin-tab-properties").click();
+
+  // The list is a typed RTK Query fetch that only fires when this tab opens;
+  // a rendered row proves the query, the envelope and the section wiring.
+  await expect(page.getByTestId("admin-property-row").first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const name = "e2e-crud-property";
+  const rowFor = () =>
+    page.getByTestId("admin-property-row").filter({ hasText: name });
+
+  // Idempotency: a previously interrupted run may have left the row behind.
+  while ((await rowFor().count()) > 0) {
+    await rowFor().first().getByTitle("Delete property").click();
+    await page.getByTestId("confirm-delete").click();
+    await expect(rowFor()).toHaveCount(0, { timeout: 15_000 });
+  }
+
+  // Create through the Add modal. The row must appear without any manual
+  // refetch — tag invalidation is the only thing refreshing the list.
+  await page.getByTestId("admin-add-property").click();
+  await page.getByPlaceholder("e.g. Modern 2BR Apartment").fill(name);
+  await page.getByTestId("property-modal-submit").click();
+  await expect(rowFor()).toHaveCount(1, { timeout: 15_000 });
+
+  // Delete through the confirm dialog; invalidation removes the row again.
+  await rowFor().first().getByTitle("Delete property").click();
+  await page.getByTestId("confirm-delete").click();
+  await expect(rowFor()).toHaveCount(0, { timeout: 15_000 });
+
+  expect(page.url()).toMatch(/\/app\/admin\/panel/);
+});
+
 test("admin Requests tab renders", async ({ adminPage: page }) => {
   await page.goto("/app/admin/panel");
   await waitForPanelReady(page);

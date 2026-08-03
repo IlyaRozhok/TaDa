@@ -148,15 +148,12 @@ export const buildingsAPI = {
 };
 
 /**
- * What is left of the properties axios group after the RTK Query migration
- * and the route sweep: the delete used by the admin panel (moves to RTK Query
- * with the admin CRUD step) and the three multipart uploads the panel modals
- * post before creating or updating a property — progress reporting and the
- * five-minute video timeout have no `fetchBaseQuery` equivalent.
+ * Only the uploads are left here. The JSON endpoints live in
+ * `store/api/properties.api.ts`; these three stay on axios because they post
+ * multipart bodies, and the video one reports progress and raises the timeout
+ * to five minutes — neither has an equivalent in `fetchBaseQuery`.
  */
 export const propertiesAPI = {
-  delete: (id: string) => api.delete(`/properties/${id}`),
-
   // Media upload endpoints
   uploadPhotos: async (files: File[]) => {
     const formData = new FormData();
