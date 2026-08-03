@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { Property } from "../types";
-import { useProperties } from "../hooks/useProperties";
+import { useGetPublicPropertiesQuery } from "@/store/api/properties.api";
 import PropertyCard from "./PropertyCard";
 
 // Helper function to generate random match percentage and status
@@ -138,20 +138,14 @@ export default function FeaturedPropertiesSlider() {
     [key: string]: { matchPercent: number; isPopular: boolean; isNew: boolean };
   }>({});
 
-  // Use the properties hook for public properties
-  const { properties, loading, error, fetchPublicProperties } = useProperties();
-
-  useEffect(() => {
-    const loadProperties = async () => {
-      try {
-        await fetchPublicProperties(1, 6);
-      } catch (err: any) {
-        console.error("Error fetching properties:", err);
-      }
-    };
-
-    loadProperties();
-  }, [fetchPublicProperties]);
+  // First six of the public catalogue
+  const {
+    data: propertiesPage,
+    isLoading: loading,
+    error: queryError,
+  } = useGetPublicPropertiesQuery({ page: 1, limit: 6 });
+  const properties = propertiesPage?.data ?? [];
+  const error = queryError ? "Failed to fetch properties" : null;
 
   // Update random data when properties change
   useEffect(() => {

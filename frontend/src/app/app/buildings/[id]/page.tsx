@@ -38,7 +38,7 @@ import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { notify } from "@/shared/lib/notify";
 import Footer from "../../../components/Footer";
 import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
-import { useGetPublicBuildingPropertiesQuery } from "@/store/slices/apiSlice";
+import { useGetPublicPropertiesAllQuery } from "@/store/api/properties.api";
 import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
@@ -168,16 +168,15 @@ export default function BuildingPublicPage() {
     data: propertiesData,
     isLoading: isPropsLoading,
     isFetching: isPropsFetching,
-  } = useGetPublicBuildingPropertiesQuery(
+  } = useGetPublicPropertiesAllQuery(
     { building_id: id as string },
     { skip: !id },
   );
 
-  const properties: Property[] = useMemo(() => {
-    if (!propertiesData) return [];
-    const raw = (propertiesData as any).data || propertiesData;
-    return Array.isArray(raw) ? (raw as Property[]) : [];
-  }, [propertiesData]);
+  const properties: Property[] = useMemo(
+    () => propertiesData?.data ?? [],
+    [propertiesData],
+  );
 
   // Derive error from RTK Query
   useEffect(() => {

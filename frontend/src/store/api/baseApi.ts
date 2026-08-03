@@ -23,6 +23,10 @@ const rawBaseQuery = fetchBaseQuery({
 const PUBLIC_ENDPOINTS = new Set([
   "getPublicTenantCv",
   "getPublicBuilding",
+  "getPublicProperties",
+  "getPublicPropertiesAll",
+  "getPublicProperty",
+  "getAllPublicPropertiesForBrowse",
 ]);
 
 /**

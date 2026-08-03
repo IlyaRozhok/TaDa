@@ -16,10 +16,8 @@ import {
   selectUser,
   selectIsAuthenticated,
 } from "@/store/slices/authSlice";
-import {
-  useGetPublicPropertyQuery,
-  useGetPropertyMatchQuery,
-} from "@/store/slices/apiSlice";
+import { useGetPublicPropertyQuery } from "@/store/api/properties.api";
+import { useGetPropertyMatchQuery } from "@/store/slices/apiSlice";
 import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import {
@@ -295,12 +293,11 @@ export default function PropertyPublicPage() {
     skip: !id,
   });
 
-  // Normalize property data directly from RTK Query (no промежуточного null-состояния)
-  const property: PropertyWithMedia | null = useMemo(() => {
-    if (!propertyData) return null;
-    const normalized = (propertyData as any).data || propertyData;
-    return normalized as PropertyWithMedia;
-  }, [propertyData]);
+  // The endpoint answers with the bare property, typed
+  const property: PropertyWithMedia | null = useMemo(
+    () => (propertyData ? (propertyData as PropertyWithMedia) : null),
+    [propertyData],
+  );
 
   // Load building media for gallery (append building photos after property photos)
   const { data: buildingData } = useGetPublicBuildingQuery(

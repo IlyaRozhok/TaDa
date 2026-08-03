@@ -9,6 +9,11 @@ import {
 import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 import { selectUser } from "@/store/slices/authSlice";
 import { apiSlice } from "@/store/slices/apiSlice";
+import { propertiesApi } from "@/store/api/properties.api";
+
+type PropertiesApiState = Parameters<
+  ReturnType<typeof propertiesApi.endpoints.getPublicProperties.select>
+>[0];
 import type { AppDispatch, RootState } from "@/store/store";
 import { useDebounce } from "./useDebounce";
 import { waitForSessionManager } from "../components/providers/SessionManager";
@@ -101,11 +106,13 @@ export const useTenantDashboard = (
           limit: 12,
           search: "",
         })(state)
-      : apiSlice.endpoints.getPublicPropertiesPaginated.select({
+      : propertiesApi.endpoints.getPublicProperties.select({
           page: 1,
           limit: 12,
           search: "",
-        })(state),
+          // The store's RootState is typed from apiSlice, so selectors of the
+          // other injected modules need their own view of the same state.
+        })(state as unknown as PropertiesApiState),
   );
 
   const [state, setState] = useState<DashboardState>(() => {
@@ -174,7 +181,7 @@ export const useTenantDashboard = (
 
         const loadPublicListFromCacheableEndpoint = async () => {
           const responseData = await dispatch(
-            apiSlice.endpoints.getPublicPropertiesPaginated.initiate({
+            propertiesApi.endpoints.getPublicProperties.initiate({
               page,
               limit: 12,
               search,
@@ -289,7 +296,7 @@ export const useTenantDashboard = (
         } else {
           // Full catalog: use RTK Query for cache on /app/units.
           const responseData = await dispatch(
-            apiSlice.endpoints.getPublicPropertiesPaginated.initiate({
+            propertiesApi.endpoints.getPublicProperties.initiate({
               page,
               limit: 12,
               search,
