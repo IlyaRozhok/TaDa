@@ -1,35 +1,35 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface PreferencesRow {
-  id: string;
-  user_id: string;
+  id: string | null;
+  user_id: string | null;
   user?: {
-    id: string;
-    full_name: string;
-    email: string;
-    roles: string[];
+    id: string | null;
+    full_name: string | null;
+    email: string | null;
+    roles: string[] | null;
   };
-  preferred_address?: string;
-  preferred_areas?: string[];
-  preferred_districts?: string[];
-  preferred_metro_stations?: string[];
-  move_in_date?: string;
-  min_price?: number;
-  max_price?: number;
-  min_bedrooms?: number;
-  max_bedrooms?: number;
-  min_bathrooms?: number;
-  max_bathrooms?: number;
-  furnishing?: string;
-  let_duration?: string;
-  designer_furniture?: boolean;
-  hobbies?: string[];
-  ideal_living_environment?: string;
-  pets?: string;
-  smoker?: boolean;
-  additional_info?: string;
-  created_at: string;
-  updated_at: string;
+  preferred_address?: string | null;
+  preferred_areas?: string[] | null;
+  preferred_districts?: string[] | null;
+  preferred_metro_stations?: string[] | null;
+  move_in_date?: string | null;
+  min_price?: number | null;
+  max_price?: number | null;
+  min_bedrooms?: number | null;
+  max_bedrooms?: number | null;
+  min_bathrooms?: number | null;
+  max_bathrooms?: number | null;
+  furnishing?: string | null;
+  let_duration?: string | null;
+  designer_furniture?: boolean | null;
+  hobbies?: string[] | null;
+  ideal_living_environment?: string | null;
+  pets?: string | null;
+  smoker?: boolean | null;
+  additional_info?: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface PreferencesState {

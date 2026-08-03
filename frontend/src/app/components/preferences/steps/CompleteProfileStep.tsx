@@ -9,8 +9,8 @@ import { PreferencesFormData, PreferencesFieldValue } from "@/entities/preferenc
 
 interface CompleteProfileStepProps {
   formData: PreferencesFormData;
-  onUpdate: (field: string, value: unknown) => void;
-  onToggle: (category: string, value: string) => void;
+  onUpdate: (field: keyof PreferencesFormData, value: PreferencesFieldValue) => void;
+  onToggle: (category: keyof PreferencesFormData, feature: string) => void;
 }
 
 /** Section 1: title wizard.step9.des.text2, options personal.growth.name1–7. */
