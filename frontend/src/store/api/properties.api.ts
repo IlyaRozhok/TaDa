@@ -1,5 +1,4 @@
 import { baseApi } from "@/store/api/baseApi";
-import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { Property } from "@/app/types";
 
 /**
@@ -80,39 +79,6 @@ export const propertiesApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Property", id }],
     }),
 
-    /**
-     * Every page of the public catalogue concatenated (limit 100 per request,
-     * the API max) — for browse views that filter and sort client-side, e.g.
-     * the map. The page loop lives here so consumers get one cached list.
-     */
-    getAllPublicPropertiesForBrowse: builder.query<Property[], void>({
-      async queryFn(_arg, _api, _extraOptions, fetchWithBQ) {
-        const all: Property[] = [];
-        let page = 1;
-        let totalPages = 1;
-        do {
-          const result = await fetchWithBQ({
-            url: "/properties/public/all",
-            params: { page, limit: 100 },
-          });
-          if (result.error) {
-            return { error: result.error as FetchBaseQueryError };
-          }
-          const body = result.data as PublicPropertiesPage;
-          all.push(...(body.data ?? []));
-          totalPages = body.totalPages ?? 1;
-          page += 1;
-        } while (page <= totalPages);
-        return { data: all };
-      },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: "Property" as const, id })),
-              { type: "Property" as const, id: "PUBLIC_LIST" },
-            ]
-          : [{ type: "Property" as const, id: "PUBLIC_LIST" }],
-    }),
   }),
 });
 
@@ -120,5 +86,4 @@ export const {
   useGetPublicPropertiesQuery,
   useGetPublicPropertiesAllQuery,
   useGetPublicPropertyQuery,
-  useGetAllPublicPropertiesForBrowseQuery,
 } = propertiesApi;

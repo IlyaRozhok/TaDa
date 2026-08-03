@@ -1,6 +1,5 @@
 import axios from "axios";
 import { logout } from "@/store/slices/authSlice";
-import { Property } from "@/app/types";
 
 // Create axios instance
 const api = axios.create({
@@ -53,32 +52,6 @@ export const authAPI = {
   getMe: () => api.get("/auth/me"),
 
   logout: () => api.post("/auth/logout"),
-};
-
-// Removed duplicate - see propertiesAPI definition below
-
-// Add matchingAPI for compatibility
-export const matchingAPI = {
-  getDetailedMatches: (limit?: number) =>
-    api.get("/matching/detailed-matches", { params: { limit } }),
-
-  // getMatches: (limit?: number) =>
-  //   api.get("/matching/matches", { params: { limit } }),
-
-  getRecommendations: (limit?: number) =>
-    api.get("/matching/recommendations", { params: { limit } }),
-
-  getMatchedPropertiesWithPagination: (
-    page?: number,
-    limit?: number,
-    search?: string,
-  ) =>
-    api.get("/matching/matched-properties", {
-      params: { page, limit, search },
-    }),
-
-  getPropertyMatch: (propertyId: string) =>
-    api.get(`/matching/property/${propertyId}`),
 };
 
 /**
@@ -174,19 +147,15 @@ export const buildingsAPI = {
   },
 };
 
+/**
+ * What is left of the properties axios group after the RTK Query migration
+ * and the route sweep: the delete used by the admin panel (moves to RTK Query
+ * with the admin CRUD step) and the three multipart uploads the panel modals
+ * post before creating or updating a property — progress reporting and the
+ * five-minute video timeout have no `fetchBaseQuery` equivalent.
+ */
 export const propertiesAPI = {
-  // Admin CRUD operations
-  getAll: (params?: any) => api.get("/properties", { params }),
-  getById: (id: string) => api.get(`/properties/${id}`),
-  create: (data: any) => api.post("/properties", data),
-  update: (id: string, data: any) => api.patch(`/properties/${id}`, data),
   delete: (id: string) => api.delete(`/properties/${id}`),
-
-  // Public endpoints
-  getAllPublic: (params?: any) => api.get("/properties/public/all", { params }),
-  getByIdPublic: (id: string) => api.get(`/properties/public/${id}`),
-  getPublic: (page: number = 1, limit: number = 12, search?: string) =>
-    api.get("/properties/public", { params: { page, limit, search } }),
 
   // Media upload endpoints
   uploadPhotos: async (files: File[]) => {
@@ -286,89 +255,6 @@ export const propertiesAPI = {
   },
 };
 
-export const propertyMediaAPI = {
-  uploadPropertyMedia: async (propertyId: string, file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const response = await api.post(
-        `/properties/${propertyId}/media`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
-  },
-  getPropertyMedia: async (propertyId: string) => {
-    const response = await api.get(`/properties/${propertyId}/media`);
-    return response.data;
-  },
-  deletePropertyMedia: async (propertyId: string, mediaId: string) => {
-    const response = await api.delete(
-      `/properties/${propertyId}/media/${mediaId}`,
-    );
-    return response.data;
-  },
-
-  updateMediaOrder: async (
-    propertyId: string,
-    mediaOrders: { id: string; order_index: number }[],
-  ) => {
-    const response = await api.put(`/properties/${propertyId}/media/order`, {
-      mediaOrders,
-    });
-    return response.data;
-  },
-};
-
-// Export types for compatibility
-export type { Property, PropertyMedia } from "../types";
-
-// Additional interfaces for useProperties
-export interface PropertyFilters {
-  search?: string;
-  location?: string;
-  min_price?: number;
-  max_price?: number;
-  property_type?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  furnishing?: string;
-  tenant_types?: string[];
-  amenities?: string[];
-  min_square_meters?: number;
-  max_square_meters?: number;
-}
-
-// Sorting and pagination options
-export interface SortOptions {
-  sortBy: "price" | "date" | "bedrooms" | "square_meters" | "relevance";
-  sortDirection: "asc" | "desc";
-}
-
-export interface PaginationOptions {
-  page: number;
-  limit: number;
-}
-
-// Combined filtering options
-export interface PropertyQueryOptions
-  extends PropertyFilters, SortOptions, PaginationOptions {}
-
-export interface MatchingResult {
-  properties: Property[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
-
-// Category match result from backend
 // Category match result from backend
 export interface CategoryMatchResult {
   category: string;
@@ -378,60 +264,6 @@ export interface CategoryMatchResult {
   reason: string;
   details?: string;
   hasPreference: boolean; // New field - indicates if user has set preference
-}
-
-// Detailed matching result from backend (updated structure)
-export interface DetailedMatchingResult {
-  property: Property;
-  totalScore: number;
-  maxPossibleScore: number;
-  matchPercentage: number; // This is the new matchScore
-  isPerfectMatch: boolean;
-  categories: CategoryMatchResult[];
-  summary: {
-    matched: number;
-    partial: number;
-    notMatched: number;
-    skipped: number; // New field - categories without preference
-  };
-}
-
-// Legacy compatibility - computed fields for backward compatibility
-export interface DetailedMatchingResultLegacy extends DetailedMatchingResult {
-  matchScore: number; // Alias for matchPercentage
-  matchReasons: string[]; // Computed from categories
-}
-
-// Category weights interface matching backend
-export interface CategoryWeights {
-  budget: number;
-  location: number;
-  bedrooms: number;
-  propertyType: number;
-  availability: number;
-  amenities: number;
-  occupation: number; // New lifestyle category
-  familyStatus: number; // New lifestyle category  
-  children: number; // New lifestyle category
-  bathrooms: number;
-  buildingStyle: number;
-  duration: number;
-  squareMeters: number;
-  furnishing: number;
-  smoking: number;
-  pets: number;
-  bills: number;
-}
-
-// Full matching response from backend
-export interface MatchingResponse {
-  results: DetailedMatchingResult[];
-  total: number;
-  preferences: {
-    id: string;
-    summary: string;
-  };
-  appliedWeights: CategoryWeights;
 }
 
 export default api;

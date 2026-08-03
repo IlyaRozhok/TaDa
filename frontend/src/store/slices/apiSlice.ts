@@ -16,23 +16,7 @@ export const apiSlice = baseApi.injectEndpoints({
       }),
       providesTags: ["Property"],
     }),
-    getProperty: builder.query({
-      query: (id) => `/properties/${id}`,
-      providesTags: ["Property"],
-    }),
-    createProperty: builder.mutation({
-      query: (formData) => ({
-        url: "/properties",
-        method: "POST",
-        body: formData,
-      }),
-      invalidatesTags: ["Property"],
-    }),
   }),
 });
 
-export const {
-  useGetPropertiesQuery,
-  useGetPropertyQuery,
-  useCreatePropertyMutation,
-} = apiSlice;
+export const { useGetPropertiesQuery } = apiSlice;
