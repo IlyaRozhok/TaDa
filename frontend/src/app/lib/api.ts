@@ -91,14 +91,13 @@ export const matchingAPI = {
     api.get(`/matching/property/${propertyId}`),
 };
 
+/**
+ * Only the uploads are left here. The JSON endpoints moved to
+ * `store/api/buildings.api.ts`; these four stay on axios because they post
+ * multipart bodies, and one of them reports upload progress and raises the
+ * timeout to five minutes — neither has an equivalent in `fetchBaseQuery`.
+ */
 export const buildingsAPI = {
-  getAll: (params?: any) => api.get("/buildings", { params }),
-  getById: (id: string) => api.get(`/buildings/${id}`),
-  getByIdPublic: (id: string) => api.get(`/buildings/public/${id}`),
-  create: (data: any) => api.post("/buildings", data),
-  update: (id: string, data: any) => api.patch(`/buildings/${id}`, data),
-  delete: (id: string) => api.delete(`/buildings/${id}`),
-  getOperators: () => api.get("/buildings/operators"),
   uploadLogo: async (file: File) => {
     const formData = new FormData();
     formData.append("logo", file);

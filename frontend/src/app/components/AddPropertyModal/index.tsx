@@ -150,7 +150,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       metro_stations: selectedBuilding.metro_stations || [],
       commute_times: selectedBuilding.commute_times || [],
       local_essentials: selectedBuilding.local_essentials || [],
-      operator_id: selectedBuilding.operator_id,
+      // A building without an operator leaves the field unset, which the form
+      // represents as an empty string — same as `address` just above.
+      operator_id: selectedBuilding.operator_id ?? "",
     };
     updateFormData(inheritedData);
   }, [selectedBuilding, formData.building_type, updateFormData]);

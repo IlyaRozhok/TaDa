@@ -18,10 +18,10 @@ import {
 } from "@/store/slices/authSlice";
 import {
   useGetPublicPropertyQuery,
-  useGetPublicBuildingQuery,
   useGetPreferencesQuery,
   useGetPropertyMatchQuery,
 } from "@/store/slices/apiSlice";
+import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import {
   useGetMyBookingRequestsQuery,
   useCreateBookingRequestMutation,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   X,
   Save,
@@ -10,8 +10,13 @@ import {
   Minus,
   GripVertical,
 } from "lucide-react";
-import { propertiesAPI, buildingsAPI } from "../lib/api";
+import { propertiesAPI } from "../lib/api";
 import { useLazyGetUsersQuery } from "@/store/api/users.api";
+import {
+  useGetBuildingsQuery,
+  useLazyGetBuildingQuery,
+  type Building as ApiBuilding,
+} from "@/store/api/buildings.api";
 import {
   Property,
   PropertyType,
@@ -58,6 +63,18 @@ interface ConciergeHours {
   from?: number;
   to?: number;
 }
+
+/**
+ * The building as this modal reads it. `smoking_area`, `commute_times` and
+ * `local_essentials` are **not** returned by the current backend — the form has
+ * always copied them from a building and always got `undefined`. Kept optional
+ * so the reset behaviour is unchanged; the drift is recorded in PROGRESS.
+ */
+type BuildingWithLegacyFields = ApiBuilding & {
+  smoking_area?: boolean;
+  commute_times?: CommuteTime[];
+  local_essentials?: LocalEssential[];
+};
 
 interface Building {
   id: string;
@@ -175,10 +192,15 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     operator_id: "",
   });
 
-  const [buildings, setBuildings] = useState<Building[]>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
-    null,
-  );
+  // The building dropdown, loaded only while the modal is open.
+  const { data: buildingsData } = useGetBuildingsQuery(undefined, {
+    skip: !isOpen,
+  });
+  const buildings = useMemo(() => buildingsData ?? [], [buildingsData]);
+  // Imperative on purpose: the details are pulled for whichever building the
+  // form points at, inside the effect that watches `building_id`.
+  const [fetchBuilding] = useLazyGetBuildingQuery();
+
   const [availableOperators, setAvailableOperators] = useState<OperatorOption[]>([]);
   const [operatorsLoading, setOperatorsLoading] = useState(false);
   // Lazy rather than a plain query: the loader below falls back to the
@@ -322,14 +344,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     }
   }, [property, isOpen]);
 
-  // Load buildings and operators when modal opens or building_type is private_landlord
+  // Load operators when the modal opens on a private-landlord property; the
+  // buildings list is a query above and needs no imperative trigger.
   useEffect(() => {
-    if (isOpen) {
-      loadBuildings();
-      // Load operators if building_type is already private_landlord
-      if (formData.building_type === "private_landlord") {
-        loadOperators();
-      }
+    if (isOpen && formData.building_type === "private_landlord") {
+      loadOperators();
     }
   }, [isOpen]);
 
@@ -346,16 +365,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       setAvailableOperators(operators);
     }
   }, [operators]);
-
-  const loadBuildings = async () => {
-    try {
-      const response = await buildingsAPI.getAll();
-      const buildingsData = response.data?.data || response.data || [];
-      setBuildings(buildingsData);
-    } catch (error) {
-      console.error("Failed to load buildings:", error);
-    }
-  };
 
   const loadOperators = async () => {
     try {
@@ -523,7 +532,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         commute_times: [],
         local_essentials: [],
       }));
-      setSelectedBuilding(null);
       setBuildingError(null);
       setBuildingTouched(false);
     } else if (
@@ -548,24 +556,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         commute_times: [],
         local_essentials: [],
       }));
-      setSelectedBuilding(null);
       setBuildingError(null);
       setBuildingTouched(false);
     }
     setPrevBuildingType(formData.building_type);
   }, [formData.building_type]);
-
-  // Update selectedBuilding when building_id changes
-  useEffect(() => {
-    if (formData.building_id && formData.building_type !== "private_landlord") {
-      const building = buildings.find((b) => b.id === formData.building_id);
-      if (building) {
-        setSelectedBuilding(building);
-      }
-    } else {
-      setSelectedBuilding(null);
-    }
-  }, [formData.building_id, formData.building_type, buildings]);
 
   // Load building details and populate inherited fields when a building is selected
   useEffect(() => {
@@ -576,8 +571,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         buildings.length > 0
       ) {
         try {
-          const response = await buildingsAPI.getById(formData.building_id);
-          const building = response.data;
+          const building: BuildingWithLegacyFields = await fetchBuilding(
+            formData.building_id,
+          ).unwrap();
           if (building) {
             // Always populate from building when building is selected (for linked properties)
             setFormData((prev) => ({

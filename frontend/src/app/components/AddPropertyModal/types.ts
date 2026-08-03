@@ -1,3 +1,5 @@
+import type { Building as ApiBuilding } from "@/store/api/buildings.api";
+
 export interface Pet {
   type: "dog" | "cat" | "other";
   customType?: string;
@@ -24,23 +26,17 @@ export interface ConciergeHours {
   to?: number;
 }
 
-export interface Building {
-  id: string;
-  name: string;
-  address: string;
-  operator_id: string;
-  tenant_type?: string[];
-  amenities?: string[];
-  pet_policy?: boolean;
-  pets?: Pet[] | null;
+/**
+ * The building as `GET /buildings` returns it, plus three fields this flow has
+ * always read from a building and the current backend does not send:
+ * `smoking_area`, `commute_times` and `local_essentials`. They stay optional so
+ * the form behaves exactly as before; the drift is recorded in PROGRESS.
+ */
+export type Building = ApiBuilding & {
   smoking_area?: boolean;
-  metro_stations?: MetroStation[];
   commute_times?: CommuteTime[];
   local_essentials?: LocalEssential[];
-  family_status?: string[];
-  occupation?: string[];
-  children?: string[];
-}
+};
 
 export interface User {
   id: string;

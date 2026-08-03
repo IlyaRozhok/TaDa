@@ -39,10 +39,10 @@ import { notify } from "@/shared/lib/notify";
 import Footer from "../../../components/Footer";
 import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
 import {
-  useGetPublicBuildingQuery,
   useGetPublicBuildingPropertiesQuery,
   useGetPreferencesQuery,
 } from "@/store/slices/apiSlice";
+import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
