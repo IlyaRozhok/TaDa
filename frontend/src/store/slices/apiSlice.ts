@@ -78,28 +78,6 @@ export const apiSlice = baseApi.injectEndpoints({
       providesTags: ["Property"],
       keepUnusedDataFor: 300,
     }),
-
-    // Preferences endpoints
-    getPreferences: builder.query({
-      query: () => "/preferences",
-      providesTags: ["Preferences"],
-    }),
-    createPreferences: builder.mutation({
-      query: (data) => ({
-        url: "/preferences",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Preferences"],
-    }),
-    updatePreferences: builder.mutation({
-      query: (data) => ({
-        url: "/preferences",
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Preferences"],
-    }),
   }),
 });
 
@@ -113,7 +91,4 @@ export const {
   useGetMatchedPropertiesPaginatedQuery,
   useGetRecommendationsQuery,
   useGetPropertyMatchQuery,
-  useGetPreferencesQuery,
-  useCreatePreferencesMutation,
-  useUpdatePreferencesMutation,
 } = apiSlice;

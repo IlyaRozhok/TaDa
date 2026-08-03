@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
-import { preferencesAPI } from "@/app/lib/api";
+import {
+  fetchPreferencesOnce,
+  useCreatePreferencesMutation,
+  useUpdatePreferencesMutation,
+  type PreferencesRow,
+} from "@/store/api/preferences.api";
 import {
   FormFieldErrors,
   PreferencesFormData, PreferencesFieldValue,
@@ -18,9 +23,21 @@ import { blockNavigation } from "@/app/utils/navigationGuard";
 
 const PREFERENCES_DRAFT_KEY = "preferencesDraft";
 
+/**
+ * The row the API returns, seen through the type the transformers are declared
+ * with. They consume and produce API shapes but are typed against the form's,
+ * and the two disagree on `furnishing` and a few neighbours. Bridging that in
+ * one named place keeps this migration to the transport layer; untangling the
+ * two shapes is step 5.2.
+ */
+const asFormShape = (row: PreferencesRow): Partial<PreferencesFormData> =>
+  row as unknown as Partial<PreferencesFormData>;
+
 export default function usePreferences(currentStepOffset: number = 0) {
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const [createPreferences] = useCreatePreferencesMutation();
+  const [updatePreferences] = useUpdatePreferencesMutation();
   const router = useRouter();
   const scrollPositionRef = useRef<number>(0);
   const hasCheckedAuthRef = useRef<boolean>(false);
@@ -268,14 +285,14 @@ export default function usePreferences(currentStepOffset: number = 0) {
   const loadExistingPreferences = async () => {
     try {
       console.log("🔄 Loading existing preferences...");
-      const response = await preferencesAPI.get();
+      const preferences = await fetchPreferencesOnce();
 
-      if (response.data) {
-        console.log("✅ API preferences loaded:", response.data);
-        setState((prev) => ({ ...prev, existingPreferences: response.data }));
+      if (preferences) {
+        console.log("✅ API preferences loaded:", preferences);
+        setState((prev) => ({ ...prev, existingPreferences: preferences }));
 
         // Transform API data to form format
-        const formData = transformApiDataForForm(response.data);
+        const formData = transformApiDataForForm(asFormShape(preferences));
         console.log("🔄 Transformed form data:", formData);
 
         // First, restore draft from localStorage if it exists (lower priority)
@@ -433,12 +450,14 @@ export default function usePreferences(currentStepOffset: number = 0) {
           return acc;
         }, {} as Partial<PreferencesFormData>);
 
-        // If no preferences exist, create new with this field
+        // If no preferences exist, create new with this field.
+        // This is what makes the row appear on the very first filled field —
+        // deliberate onboarding behaviour, see 6.8 in the plan. Unchanged here.
         if (!state.existingPreferences) {
-          const response = await preferencesAPI.create(updateData);
+          const created = await createPreferences(updateData).unwrap();
           setState((prev) => ({
             ...prev,
-            existingPreferences: response.data,
+            existingPreferences: created,
           }));
           return;
         }
@@ -467,7 +486,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
         }
 
         // Update preferences
-        await preferencesAPI.update(updateData);
+        await updatePreferences(updateData).unwrap();
 
         // Update existingPreferences in state
         setState((prev) => ({
@@ -631,39 +650,40 @@ export default function usePreferences(currentStepOffset: number = 0) {
       }
 
       // Use update if preferences exist, create if not
-      const response = state.existingPreferences
-        ? await preferencesAPI.update(dataToSend)
-        : await preferencesAPI.create(processedData);
+      const saved = state.existingPreferences
+        ? await updatePreferences(dataToSend).unwrap()
+        : await createPreferences(processedData).unwrap();
 
-      if (response.status >= 200 && response.status < 300) {
-        // Block navigation for 3 seconds after successful save
-        blockNavigation(3000);
+      // `unwrap()` throws on anything but a 2xx, so reaching this line is the
+      // success branch the status check used to guard.
+      // Block navigation for 3 seconds after successful save
+      blockNavigation(3000);
 
-        setState((prev) => ({
-          ...prev,
-          existingPreferences: response.data,
-        }));
+      setState((prev) => ({
+        ...prev,
+        existingPreferences: saved,
+      }));
 
-        // Clear saved step and draft from localStorage on successful save (Finish)
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("preferencesStep");
-          localStorage.removeItem(PREFERENCES_DRAFT_KEY);
-        }
-
-        // Reset success state after a short delay to avoid UI issues
-        setTimeout(() => {
-          setState((prev) => ({ ...prev, success: false }));
-        }, 100);
-
-        // Don't redirect, just return the response
-        return response;
-      } else {
-        handleSubmitError(response.data);
+      // Clear saved step and draft from localStorage on successful save (Finish)
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("preferencesStep");
+        localStorage.removeItem(PREFERENCES_DRAFT_KEY);
       }
+
+      // Reset success state after a short delay to avoid UI issues
+      setTimeout(() => {
+        setState((prev) => ({ ...prev, success: false }));
+      }, 100);
+
+      // Don't redirect, just return what the server stored
+      return saved;
     } catch (error: unknown) {
+      // A rejected mutation carries `{ status, data }`; keep reading the axios
+      // shape too, so nothing regresses if this is called with one.
       const errorData =
-        (error as { response?: { data?: unknown }; [key: string]: unknown })
-          ?.response?.data || error;
+        (error as { data?: unknown; response?: { data?: unknown } })?.data ||
+        (error as { response?: { data?: unknown } })?.response?.data ||
+        error;
 
       handleSubmitError(errorData);
     } finally {

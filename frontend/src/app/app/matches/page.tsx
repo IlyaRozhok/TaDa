@@ -6,7 +6,6 @@ import {
   matchingAPI,
   DetailedMatchingResult,
   Property,
-  preferencesAPI,
 } from "../../lib/api";
 import { selectUser } from "@/store/slices/authSlice";
 import MatchedPropertyGridWithLoader from "../../components/MatchedPropertyGridWithLoader";

@@ -13,7 +13,7 @@ import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/
 import axios from "axios";
 import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
-import { useGetPreferencesQuery } from "@/store/slices/apiSlice";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { store } from "@/store/store";
 import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";

@@ -2,7 +2,7 @@
 // Никакого оверинжиниринга, только необходимый минимум
 
 import { isNavigationBlocked } from "./navigationGuard";
-import { preferencesAPI } from "../lib/api";
+import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 
 // Простая функция для определения роли пользователя
 export function getUserRole(user: any): string {
@@ -78,14 +78,17 @@ export async function redirectAfterLogin(user: any, router: any) {
   // If not, redirect to onboarding
   if (user?.role === "tenant") {
     try {
-      const response = await preferencesAPI.get();
-      if (!response.data || !response.data.id) {
+      const preferences = await fetchPreferencesOnce();
+      if (!preferences || !preferences.id) {
         console.log(`🔄 New tenant user, redirecting to onboarding`);
         router.replace("/app/onboarding");
         return;
       }
     } catch (error: any) {
-      if (error.response?.status === 404) {
+      // A rejected query carries `{ status }`; the axios shape is kept so the
+      // 404 branch still fires whichever way this is called.
+      const status = error?.status ?? error?.response?.status;
+      if (status === 404) {
         console.log(
           `🔄 New tenant user (no preferences), redirecting to onboarding`,
         );

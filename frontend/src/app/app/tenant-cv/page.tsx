@@ -8,7 +8,7 @@ import Footer from "../../components/Footer";
 import TenantCvSkeleton from "../../components/ui/TenantCvSkeleton";
 import { notify } from "@/shared/lib/notify";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
-import { useGetPreferencesQuery } from "@/store/slices/apiSlice";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import {
   useGetTenantCvQuery,
   useCreateTenantCvShareMutation,
