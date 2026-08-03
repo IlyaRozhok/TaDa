@@ -62,10 +62,13 @@ export class BuildingController {
     return this.buildingService.create(createBuildingDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Get()
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get all buildings" })
   @ApiResponse({ status: 200, description: "List of buildings" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   async findAll(@Query("operator_id") operatorId?: string) {
     if (operatorId) {
       return await this.buildingService.findAllWithFreshUrls({
@@ -75,28 +78,37 @@ export class BuildingController {
     return await this.buildingService.findAllWithFreshUrls();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Get("operators")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get all operators" })
   @ApiResponse({ status: 200, description: "List of operators" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   getOperators() {
     return this.buildingService.getOperators();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Get(":id")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get a building by ID" })
   @ApiResponse({ status: 200, description: "Building found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
   async findOne(@Param("id") id: string) {
     return await this.buildingService.findOneWithFreshUrls(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Patch(":id")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Update a building" })
   @ApiResponse({ status: 200, description: "Building updated successfully" })
   @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
   update(
     @Param("id") id: string,
@@ -105,10 +117,13 @@ export class BuildingController {
     return this.buildingService.update(id, updateBuildingDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Delete(":id")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Delete a building" })
   @ApiResponse({ status: 200, description: "Building deleted successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
   @ApiResponse({
     status: 400,
