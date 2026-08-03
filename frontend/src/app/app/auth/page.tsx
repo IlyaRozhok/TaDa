@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, selectIsAuthenticated } from "@/store/slices/authSlice";
-import { fetchShortlist } from "@/store/slices/shortlistSlice";
 import { AppDispatch } from "@/store/store";
 import { authAPI } from "../../lib/api";
 import { redirectAfterLogin } from "../../utils/simpleRedirect";
@@ -51,11 +50,6 @@ export default function AuthPage() {
         .then(async (response) => {
           const user = response.data.user;
           dispatch(setUser({ user }));
-
-          // Load shortlist for tenant and admin users
-          if (user?.role === "tenant" || user?.role === "admin") {
-            dispatch(fetchShortlist());
-          }
 
           // Redirect based on role
           await redirectAfterLogin(user, router);

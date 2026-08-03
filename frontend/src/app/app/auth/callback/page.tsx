@@ -4,7 +4,6 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
-import { fetchShortlist } from "@/store/slices/shortlistSlice";
 import { AppDispatch } from "@/store/store";
 import { authAPI } from "../../../lib/api";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
@@ -112,11 +111,6 @@ function AuthCallbackContent() {
         // Update Redux store
         console.log("🔍 Updating Redux store with user data");
         dispatch(setUser({ user: profileResponse.data.user }));
-
-        // Initialize shortlist for tenant and admin users
-        if (profileResponse.data.user?.role === "tenant" || profileResponse.data.user?.role === "admin") {
-          dispatch(fetchShortlist());
-        }
 
         // Simple redirect based on user
         const user = profileResponse.data.user;

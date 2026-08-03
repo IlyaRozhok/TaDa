@@ -2,17 +2,16 @@
 
 import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import {
   CategoryMatchResult,
 } from "../../../lib/api";
 import type { Property, PropertyMedia } from "../../../types";
+import { useShortlistProperties } from "@/features/shortlist/lib/useShortlist";
 import {
-  addToShortlist,
-  removeFromShortlist,
-  selectShortlistProperties,
-} from "@/store/slices/shortlistSlice";
-import { AppDispatch } from "@/store/store";
+  useAddToShortlistMutation,
+  useRemoveFromShortlistMutation,
+} from "@/store/api/shortlist.api";
 import {
   selectUser,
   selectIsAuthenticated,
@@ -96,14 +95,16 @@ export default function PropertyPublicPage() {
   const params = useParams();
   const id = params && typeof params.id === "string" ? params.id : null;
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const shortlistProperties = useSelector(selectShortlistProperties);
+  const { data: shortlistProperties } = useShortlistProperties();
+  const [addToShortlist, { isLoading: addingToShortlist }] =
+    useAddToShortlistMutation();
+  const [removeFromShortlist, { isLoading: removingFromShortlist }] =
+    useRemoveFromShortlistMutation();
+  const shortlistLoading = addingToShortlist || removingFromShortlist;
   const [error, setError] = useState<string | null>(null);
-  const [isInShortlist, setIsInShortlist] = useState(false);
-  const [shortlistLoading, setShortlistLoading] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showFullBuildingDescription, setShowFullBuildingDescription] =
     useState(false);
@@ -422,24 +423,14 @@ export default function PropertyPublicPage() {
     );
   }, [id, isAuthenticated, isPropertyMatchFetching, propertyMatchData, user]);
 
-  // Check if property is in shortlist using Redux state (avoid API calls to prevent cycling)
-  useEffect(() => {
-    if (
-      !property ||
-      !isAuthenticated ||
-      !user ||
-      (user.role !== "tenant" && user.role !== "admin")
-    ) {
-      setIsInShortlist(false);
-      return;
-    }
-
-    // Check if current property is in shortlist from Redux state
-    const isPropertyInShortlist = shortlistProperties.some(
-      (shortlistProperty) => shortlistProperty.id === property.id,
-    );
-    setIsInShortlist(isPropertyInShortlist);
-  }, [property, isAuthenticated, user, shortlistProperties]);
+  // Read straight off the cached shortlist. The query is skipped for roles that
+  // have no shortlist, so it stays empty for them.
+  const isInShortlist = Boolean(
+    property &&
+      shortlistProperties?.some(
+        (shortlistProperty) => shortlistProperty.id === property.id,
+      ),
+  );
 
   const buildingGalleryImages: string[] = useMemo(() => {
     const images: string[] = [];
@@ -534,29 +525,19 @@ export default function PropertyPublicPage() {
       return;
     }
 
-    setShortlistLoading(true);
+    if (!property) {
+      return;
+    }
+
     try {
       if (isInShortlist) {
-        // Use Redux action instead of direct API call
-        await dispatch(removeFromShortlist(id as string)).unwrap();
-        setIsInShortlist(false);
-      } else {
-        // Use Redux action instead of direct API call
-        await dispatch(
-          addToShortlist({
-            propertyId: id as string,
-            property: property || undefined,
-          }),
-        ).unwrap();
-        setIsInShortlist(true);
+        await removeFromShortlist(property.id).unwrap();
+        return;
       }
+
+      await addToShortlist({ propertyId: property.id, property }).unwrap();
     } catch (error: unknown) {
-      // Keep error logging for errors, as per best practice
-      // But if you want to remove all console usage, comment out the next line:
-      // console.error("Shortlist error:", error);
       notify.error((error as Error)?.message || "Failed to update shortlist");
-    } finally {
-      setShortlistLoading(false);
     }
   };
 

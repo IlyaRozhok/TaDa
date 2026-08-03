@@ -85,26 +85,7 @@ export const apiSlice = baseApi.injectEndpoints({
       providesTags: ["Property"],
       keepUnusedDataFor: 300,
     }),
-    addToShortlist: builder.mutation({
-      query: (propertyId) => ({
-        url: `/shortlist/${propertyId}`,
-        method: "POST",
-      }),
-      invalidatesTags: ["Shortlist"],
-    }),
-    removeFromShortlist: builder.mutation({
-      query: (propertyId) => ({
-        url: `/shortlist/${propertyId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Shortlist"],
-    }),
-    getShortlist: builder.query({
-      query: () => "/shortlist",
-      providesTags: ["Shortlist"],
-    }),
 
-    // Tenant CV (current user's CV)
     // Preferences endpoints
     getPreferences: builder.query({
       query: () => "/preferences",
@@ -141,9 +122,6 @@ export const {
   useGetMatchedPropertiesPaginatedQuery,
   useGetRecommendationsQuery,
   useGetPropertyMatchQuery,
-  useAddToShortlistMutation,
-  useRemoveFromShortlistMutation,
-  useGetShortlistQuery,
   useGetPreferencesQuery,
   useCreatePreferencesMutation,
   useUpdatePreferencesMutation,

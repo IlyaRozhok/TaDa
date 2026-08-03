@@ -7,7 +7,6 @@ import {
   logout,
   setOnboardingCompleted,
 } from "@/store/slices/authSlice";
-import { fetchShortlist } from "@/store/slices/shortlistSlice";
 import { AppDispatch } from "@/store/store";
 import api, { preferencesAPI } from "../../lib/api";
 
@@ -38,8 +37,8 @@ export default function SessionManager() {
           console.log("Session restored for:", response.data.user.email);
 
           if (response.data.user.role === "tenant" || response.data.user.role === "admin") {
-            dispatch(fetchShortlist());
-
+            // The shortlist is no longer prefetched here: the RTK Query hook
+            // loads it when a screen that shows hearts mounts.
             if (!response.data.user.onboardingCompleted) {
               try {
                 const prefsResponse = await preferencesAPI.get();

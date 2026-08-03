@@ -78,27 +78,6 @@ export const preferencesAPI = {
 
 // Removed duplicate - see propertiesAPI definition below
 
-export const shortlistAPI = {
-  get: () => api.get("/shortlist").then((res) => res.data),
-  getAll: () => api.get("/shortlist").then((res) => res.data),
-  getCount: () =>
-    api.get("/shortlist/count").then((res) => res.data?.count || 0),
-
-  add: (propertyId: string) =>
-    api.post(`/shortlist/${propertyId}`).then((res) => res.data),
-
-  remove: (propertyId: string) =>
-    api.delete(`/shortlist/${propertyId}`).then((res) => res.data),
-
-  clear: () => api.delete("/shortlist").then((res) => res.data),
-
-  // Deprecated - should not be used anymore to avoid cycling calls
-  checkStatus: (propertyId: string) =>
-    api
-      .get(`/shortlist/check/${propertyId}`)
-      .then((res) => res.data?.isShortlisted || false),
-};
-
 // Add matchingAPI for compatibility
 export const matchingAPI = {
   getDetailedMatches: (limit?: number) =>
