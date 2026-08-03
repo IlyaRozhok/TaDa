@@ -166,6 +166,8 @@ export class PropertyController {
     }
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Post("upload/video")
   @Roles(UserRole.Admin, UserRole.Operator)
   @UseInterceptors(FileInterceptor("video"))
@@ -224,6 +226,8 @@ export class PropertyController {
     }
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   @Post("upload/documents")
   @Roles(UserRole.Admin, UserRole.Operator)
   @UseInterceptors(FileInterceptor("documents"))
