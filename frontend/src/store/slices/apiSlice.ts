@@ -8,11 +8,6 @@ import { baseApi } from "@/store/api/baseApi";
  */
 export const apiSlice = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getProfile: builder.query({
-      query: () => "/users/profile",
-      providesTags: ["User"],
-    }),
-
     // Properties endpoints
     getProperties: builder.query({
       query: (filters) => ({
@@ -111,7 +106,6 @@ export const apiSlice = baseApi.injectEndpoints({
 });
 
 export const {
-  useGetProfileQuery,
   useGetPropertiesQuery,
   useGetPropertyQuery,
   useGetPublicPropertyQuery,

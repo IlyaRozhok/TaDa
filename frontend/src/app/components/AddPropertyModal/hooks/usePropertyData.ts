@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { buildingsAPI, usersAPI } from "../../../lib/api";
+import { buildingsAPI } from "../../../lib/api";
+import { useLazyGetUsersQuery } from "@/store/api/users.api";
 import { Building, User } from "../types";
 
 export const usePropertyData = (operators: User[] = []) => {
+  // Lazy rather than a plain query: the fallback below only runs when the
+  // role-filtered call comes back empty, so the second request must stay
+  // imperative.
+  const [fetchUsers] = useLazyGetUsersQuery();
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [availableOperators, setAvailableOperators] = useState<User[]>([]);
@@ -32,17 +37,10 @@ export const usePropertyData = (operators: User[] = []) => {
     try {
       // First try: API with role filter (preferred)
       try {
-        const operatorsResponse = await usersAPI.getAll({ role: "operator" });
-        const raw =
-          operatorsResponse.data?.users ||
-          operatorsResponse.data?.data ||
-          operatorsResponse.data ||
-          [];
-
-        const list = Array.isArray(raw) ? raw : [];
+        const list = (await fetchUsers({ role: "operator" }).unwrap()).users;
 
         if (list.length > 0) {
-          setAvailableOperators(list as User[]);
+          setAvailableOperators(list);
           setOperatorsLoaded(true);
           return;
         }
@@ -51,17 +49,9 @@ export const usePropertyData = (operators: User[] = []) => {
       }
 
       // Fallback: load all users, then filter by role on client
-      const allUsersResponse = await usersAPI.getAll();
-      const rawUsers =
-        allUsersResponse.data?.users ||
-        allUsersResponse.data?.data ||
-        allUsersResponse.data ||
-        [];
-
-      const allUsers: User[] = Array.isArray(rawUsers) ? rawUsers : [];
+      const allUsers = (await fetchUsers().unwrap()).users;
       const onlyOperators = allUsers.filter(
-        (user) =>
-          (user as any).role === "operator" || (user as any).role === "Operator",
+        (user) => user.role === "operator" || user.role === "Operator",
       );
 
       setAvailableOperators(onlyOperators);

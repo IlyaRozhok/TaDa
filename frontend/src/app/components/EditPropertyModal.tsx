@@ -10,7 +10,8 @@ import {
   Minus,
   GripVertical,
 } from "lucide-react";
-import { propertiesAPI, buildingsAPI, usersAPI } from "../lib/api";
+import { propertiesAPI, buildingsAPI } from "../lib/api";
+import { useLazyGetUsersQuery } from "@/store/api/users.api";
 import {
   Property,
   PropertyType,
@@ -180,6 +181,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   );
   const [availableOperators, setAvailableOperators] = useState<OperatorOption[]>([]);
   const [operatorsLoading, setOperatorsLoading] = useState(false);
+  // Lazy rather than a plain query: the loader below falls back to the
+  // unfiltered list only when the role-filtered one comes back empty.
+  const [fetchUsers] = useLazyGetUsersQuery();
 
   // Validation errors state
   const [buildingError, setBuildingError] = useState<string | null>(null);
@@ -361,11 +365,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
       // Try to load operators with role filter first
       try {
-        console.log("🔍 Trying usersAPI.getAll({ role: 'operator' })");
-        const operatorsResponse = await usersAPI.getAll({ role: "operator" });
-        console.log("🔍 Operators API response:", operatorsResponse);
-        const operatorsData: OperatorOption[] =
-          operatorsResponse.data?.data || operatorsResponse.data || [];
+        const operatorsData: OperatorOption[] = (
+          await fetchUsers({ role: "operator" }).unwrap()
+        ).users;
         console.log(
           "✅ Operators loaded with role filter:",
           operatorsData.length,
@@ -415,16 +417,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       }
 
       // Fallback: load all users and filter
-      console.log("🔍 Falling back to usersAPI.getAll() without filter");
-      const response = await usersAPI.getAll();
-      console.log("🔍 All users API response:", response);
-      const usersData =
-        response.data?.users || response.data?.data || response.data || [];
+      console.log("🔍 Falling back to the unfiltered user list");
+      const usersData = (await fetchUsers().unwrap()).users;
       console.log("✅ All users loaded:", usersData.length, "users");
-      console.log("🔍 Users data sample:", usersData.slice(0, 3));
 
       // Filter only operators
-      const operatorsData = usersData.filter((user: User) => {
+      const operatorsData = usersData.filter((user) => {
         const isOperator = user.role === "operator" || user.role === "Operator";
         console.log(
           "🔍 User",

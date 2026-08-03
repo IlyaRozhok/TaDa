@@ -48,6 +48,12 @@ import {
   useGetBookingRequestsQuery,
   useUpdateBookingRequestStatusMutation,
 } from "@/store/api/bookingRequests.api";
+import {
+  useCreateUserMutation,
+  useDeleteUserMutation,
+  useGetUsersQuery,
+  useUpdateUserMutation,
+} from "@/store/api/users.api";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
 
@@ -79,16 +85,41 @@ interface Building {
   operator_id: string | null;
 }
 
+/**
+ * A rejected RTK Query mutation carries `{ status, data }`, axios carries
+ * `{ response: { data } }`, and a plain Error carries `message`. The panel now
+ * mixes all three, so the message is pulled out in one place.
+ */
+function apiErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as {
+      data?: { message?: unknown };
+      response?: { data?: { message?: unknown } };
+      message?: unknown;
+    };
+
+    if (typeof candidate.data?.message === "string") {
+      return candidate.data.message;
+    }
+    if (typeof candidate.response?.data?.message === "string") {
+      return candidate.response.data.message;
+    }
+    if (typeof candidate.message === "string") {
+      return candidate.message;
+    }
+  }
+
+  return fallback;
+}
+
 function AdminPanelContent() {
   // const user = useSelector(selectUser);
   // const isAuthenticated = useSelector(selectIsAuthenticated);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
-  const [users, setUsers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const debouncedSearch = useDebounce(searchTerm, 400);
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
@@ -112,6 +143,19 @@ function AdminPanelContent() {
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(
     null,
   );
+
+  // Users list via RTK Query. The mutations below invalidate it, so the table
+  // refreshes itself instead of every handler refetching by hand.
+  const { data: usersQueryData } = useGetUsersQuery(
+    { page, limit: 20, ...(debouncedSearch ? { search: debouncedSearch } : {}) },
+    { skip: activeSection !== "users" },
+  );
+  const users: User[] = usersQueryData?.users ?? [];
+  const totalPages = usersQueryData?.totalPages ?? 1;
+
+  const [createUser] = useCreateUserMutation();
+  const [updateUser] = useUpdateUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
 
   // Admin properties list via RTK Query (with 5-minute cache)
   const { data: propertiesQueryData, isLoading: isPropsQueryLoading } =
@@ -169,19 +213,7 @@ function AdminPanelContent() {
           "Content-Type": "application/json",
         };
 
-        if (activeSection === "users") {
-          const params = new URLSearchParams({ page: String(page), limit: "20" });
-          if (debouncedSearch) params.set("search", debouncedSearch);
-          const response = await fetch(`${apiUrl}/users?${params}`, {
-            credentials: "include",
-            headers,
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUsers(data.users || data || []);
-            setTotalPages(data.totalPages || 1);
-          }
-        } else if (activeSection === "buildings") {
+        if (activeSection === "buildings") {
           const response = await fetch(`${apiUrl}/buildings`, {
             credentials: "include",
             headers,
@@ -200,7 +232,9 @@ function AdminPanelContent() {
     };
 
     loadData();
-  }, [activeSection, debouncedSearch, page]);
+    // Only buildings are still loaded here; the users list is a query with its
+    // own search and page arguments.
+  }, [activeSection]);
 
   // Reset page when section changes
   useEffect(() => {
@@ -228,11 +262,6 @@ function AdminPanelContent() {
 
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
       if (activeSection === "buildings") {
         const building = selectedItem as Building;
         console.log("🗑️ Deleting building:", building.id);
@@ -284,32 +313,21 @@ function AdminPanelContent() {
         }
       } else if (activeSection === "users") {
         const user = selectedItem as User;
-        const response = await fetch(`${apiUrl}/users/${user.id}`, {
-          method: "DELETE",
-          credentials: "include",
-          headers,
-        });
+        await deleteUser(user.id).unwrap();
 
-        if (response.ok) {
-          setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
-          addNotification(
-            "success",
-            `User "${user.full_name || user.email}" deleted successfully`,
-          );
-          setShowModal(null);
-          setSelectedItem(null);
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to delete user");
-        }
+        addNotification(
+          "success",
+          `User "${user.full_name || user.email}" deleted successfully`,
+        );
+        setShowModal(null);
+        setSelectedItem(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Delete error:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to delete item. Please try again.";
-      addNotification("error", errorMessage);
+      addNotification(
+        "error",
+        apiErrorMessage(error, "Failed to delete item. Please try again."),
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -329,53 +347,25 @@ function AdminPanelContent() {
   }) => {
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const body: Record<string, any> = {
+      await createUser({
         full_name: data.full_name,
         email: data.email,
         role: data.role,
         password: data.password || "defaultPassword123",
-      };
-
-      if (data.role === "operator") {
-        body.is_private_landlord = data.is_private_landlord ?? false;
-      }
-
-      const response = await fetch(`${apiUrl}/users`, {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create user");
-      }
+        is_private_landlord: data.is_private_landlord,
+      }).unwrap();
 
       addNotification(
         "success",
         `User "${data.full_name}" created successfully!`,
       );
       setShowModal(null);
-
-      // Reload users list
-      if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const usersData = await response.json();
-          setUsers(usersData.users || usersData || []);
-        }
-      }
-    } catch (error: any) {
-      addNotification("error", `Failed to create user: ${error.message}`);
+      // The list refetches itself: the mutation invalidates User:LIST.
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        `Failed to create user: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -436,65 +426,28 @@ function AdminPanelContent() {
   ) => {
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const body: Record<string, any> = {
+      const updatedUser = await updateUser({
+        id,
         full_name: data.full_name,
         email: data.email,
         role: data.role,
-      };
-
-      if (data.role === "operator") {
-        body.is_private_landlord = data.is_private_landlord ?? false;
-      }
-
-      const response = await fetch(`${apiUrl}/users/${id}`, {
-        method: "PUT",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update user");
-      }
-
-      const updatedUser = await response.json();
-      console.log("✅ User updated successfully:", updatedUser);
+        is_private_landlord: data.is_private_landlord,
+      }).unwrap();
 
       addNotification(
         "success",
         `User "${data.full_name}" updated successfully!`,
       );
 
-      // Reload users list
-      if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const usersData = await response.json();
-          const updatedUsers = usersData.users || usersData || [];
-          setUsers(updatedUsers);
-
-          // Update selectedItem with the updated user from the list
-          const updatedUserFromList = updatedUsers.find(
-            (u: User) => u.id === id,
-          );
-          if (updatedUserFromList) {
-            setSelectedItem(updatedUserFromList);
-          }
-        }
-      }
-
+      // The endpoint answers with the updated user, so the open modal no longer
+      // has to wait for a second request to the list to catch up.
+      setSelectedItem(updatedUser);
       setShowModal(null);
-    } catch (error: any) {
-      addNotification("error", `Failed to update user: ${error.message}`);
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        `Failed to update user: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
