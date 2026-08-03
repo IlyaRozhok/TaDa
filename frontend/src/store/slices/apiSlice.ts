@@ -28,28 +28,6 @@ export const apiSlice = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Property"],
     }),
-
-    // Matching endpoints
-    getMatchedPropertiesPaginated: builder.query<
-      any,
-      { page?: number; limit?: number; search?: string }
-    >({
-      query: ({ page = 1, limit = 12, search } = {}) => ({
-        url: "/matching/matched-properties",
-        params: { page, limit, search },
-      }),
-      providesTags: ["Property"],
-      // Keep matched properties cached a bit longer for smoother navigation
-      keepUnusedDataFor: 300,
-    }),
-    getRecommendations: builder.query({
-      query: () => "/matching/recommendations",
-    }),
-    getPropertyMatch: builder.query<any, string>({
-      query: (propertyId) => `/matching/property/${propertyId}`,
-      providesTags: ["Property"],
-      keepUnusedDataFor: 300,
-    }),
   }),
 });
 
@@ -57,7 +35,4 @@ export const {
   useGetPropertiesQuery,
   useGetPropertyQuery,
   useCreatePropertyMutation,
-  useGetMatchedPropertiesPaginatedQuery,
-  useGetRecommendationsQuery,
-  useGetPropertyMatchQuery,
 } = apiSlice;

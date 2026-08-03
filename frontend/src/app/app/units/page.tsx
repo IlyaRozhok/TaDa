@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -15,7 +15,7 @@ import ListedPropertiesSection, {
   type SortOption,
 } from "../../components/ListedPropertiesSection";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
-import { matchingAPI } from "../../lib/api";
+import { useGetMatchedPropertiesQuery } from "@/store/api/matching.api";
 import { useDebounce } from "../../hooks/useDebounce";
 import Footer from "../../components/Footer";
 
@@ -54,70 +54,45 @@ function TenantDashboardContent() {
   }, [state.matchedProperties, matchByPropertyId]);
 
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
-  const [bestMatchState, setBestMatchState] = useState({
-    properties: [] as Array<{ property: any; matchScore: number; categories: any[] }>,
-    totalCount: 0,
-    currentPage: 1,
-    totalPages: 1,
-    loading: true,
-  });
+  const [bestMatchPage, setBestMatchPage] = useState(1);
+  const debouncedSearch = useDebounce(state.searchTerm, 300);
 
-  const loadBestMatch = useCallback(async (page: number, search: string) => {
-    setBestMatchState((prev) => ({ ...prev, loading: true }));
-    try {
-      const response = await matchingAPI.getMatchedPropertiesWithPagination(
-        page,
-        12,
-        search || undefined,
-      );
-      const { data, total, totalPages } = response.data;
-      const properties = (data || [])
-        .map((item: any) => ({
+  // The best-match dataset. Fetches only while it is the one displayed and the
+  // session is ready; search and page are query arguments, so typing or paging
+  // refetches through the cache instead of an imperative loader.
+  const {
+    data: bestMatchData,
+    isFetching: bestMatchLoading,
+    error: bestMatchError,
+  } = useGetMatchedPropertiesQuery(
+      {
+        page: bestMatchPage,
+        limit: 12,
+        search: debouncedSearch || undefined,
+      },
+      { skip: state.sessionLoading || sortBy !== "bestMatch" },
+    );
+
+  // A new search starts from the first page, as the old loader did.
+  useEffect(() => {
+    setBestMatchPage(1);
+  }, [debouncedSearch]);
+
+  const bestMatchProperties = useMemo(
+    () =>
+      (bestMatchData?.data ?? [])
+        .map((item) => ({
           property: item.property,
           matchScore: item.matchScore ?? 0,
           categories: item.categories ?? [],
         }))
-        .filter((item: any) => item.property?.id);
-      setBestMatchState({
-        properties,
-        totalCount: total ?? 0,
-        currentPage: page,
-        totalPages: totalPages ?? 1,
-        loading: false,
-      });
-    } catch (error) {
-      console.error("Failed to load best match properties:", error);
-      setBestMatchState((prev) => ({ ...prev, loading: false }));
-    }
-  }, []);
-
-  // Trigger initial best match load once session is ready (fires once)
-  const sessionReadyRef = useRef(false);
-  useEffect(() => {
-    if (!state.sessionLoading && !sessionReadyRef.current) {
-      sessionReadyRef.current = true;
-      void loadBestMatch(1, state.searchTerm);
-    }
-  }, [state.sessionLoading, loadBestMatch, state.searchTerm]);
-
-  // Reload best match when search changes (debounced), skipping initial mount
-  const debouncedSearch = useDebounce(state.searchTerm, 300);
-  const isFirstSearchRender = useRef(true);
-  useEffect(() => {
-    if (isFirstSearchRender.current) {
-      isFirstSearchRender.current = false;
-      return;
-    }
-    if (sortBy === "bestMatch") {
-      void loadBestMatch(1, debouncedSearch);
-    }
-  }, [debouncedSearch, sortBy, loadBestMatch]);
+        .filter((item) => item.property?.id),
+    [bestMatchData],
+  );
 
   const handleSortChange = (newSort: SortOption) => {
     setSortBy(newSort);
-    if (newSort === "bestMatch") {
-      void loadBestMatch(1, state.searchTerm);
-    } else {
+    if (newSort !== "bestMatch") {
       void loadProperties(state.searchTerm, 1);
     }
   };
@@ -130,7 +105,7 @@ function TenantDashboardContent() {
     }
 
     if (sortBy === "bestMatch") {
-      void loadBestMatch(page, state.searchTerm);
+      setBestMatchPage(page);
     } else {
       void loadProperties(state.searchTerm, page);
     }
@@ -205,15 +180,19 @@ function TenantDashboardContent() {
   }
 
   const displayProperties =
-    sortBy === "bestMatch" ? bestMatchState.properties : propertiesWithMatchScores;
+    sortBy === "bestMatch" ? bestMatchProperties : propertiesWithMatchScores;
+  // Loading until the first page arrives; a failed load shows the empty grid,
+  // which is what the old imperative loader did.
   const displayLoading =
-    sortBy === "bestMatch" ? bestMatchState.loading : state.loading;
+    sortBy === "bestMatch"
+      ? bestMatchLoading || (!bestMatchData && !bestMatchError)
+      : state.loading;
   const displayTotalCount =
-    sortBy === "bestMatch" ? bestMatchState.totalCount : state.totalCount;
+    sortBy === "bestMatch" ? (bestMatchData?.total ?? 0) : state.totalCount;
   const displayCurrentPage =
-    sortBy === "bestMatch" ? bestMatchState.currentPage : state.currentPage;
+    sortBy === "bestMatch" ? bestMatchPage : state.currentPage;
   const displayTotalPages =
-    sortBy === "bestMatch" ? bestMatchState.totalPages : state.totalPages;
+    sortBy === "bestMatch" ? (bestMatchData?.totalPages ?? 1) : state.totalPages;
 
   return (
     <div className="min-h-screen bg-white">

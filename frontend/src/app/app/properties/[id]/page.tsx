@@ -17,7 +17,7 @@ import {
   selectIsAuthenticated,
 } from "@/store/slices/authSlice";
 import { useGetPublicPropertyQuery } from "@/store/api/properties.api";
-import { useGetPropertyMatchQuery } from "@/store/slices/apiSlice";
+import { useGetPropertyMatchQuery } from "@/store/api/matching.api";
 import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import {
@@ -410,8 +410,7 @@ export default function PropertyPublicPage() {
       return;
     }
 
-    const score =
-      propertyMatchData.matchPercentage ?? propertyMatchData.matchScore ?? null;
+    const score = propertyMatchData.matchPercentage ?? null;
     setMatchScore(score);
     setMatchCategories(
       Array.isArray(propertyMatchData.categories)
