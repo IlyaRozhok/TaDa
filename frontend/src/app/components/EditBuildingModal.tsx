@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { X, Save, Plus, Minus, Upload, GripVertical } from "lucide-react";
-import { buildingsAPI, usersAPI } from "../lib/api";
+import { buildingsAPI } from "../lib/api";
+import { useGetUsersQuery } from "@/store/api/users.api";
 import {
   LONDON_DISTRICTS,
   AMENITIES_BY_CATEGORY,
@@ -238,50 +239,21 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
   // File input refs
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Operators state
-  const [operators, setOperators] = useState<Operator[]>([]);
-  const [operatorsLoading, setOperatorsLoading] = useState(false);
+  // Operators: the list is fetched only while the modal is open, with a high
+  // limit so every operator fits on one page.
+  const { data: operatorsPage, isFetching: operatorsLoading } = useGetUsersQuery(
+    { role: "operator", limit: 1000, page: 1 },
+    { skip: !isOpen },
+  );
 
-  // Load operators when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      const loadOperators = async () => {
-        setOperatorsLoading(true);
-        try {
-          // Fetch all operators using role filter and high limit
-          const response = await usersAPI.getAll({
-            role: "operator",
-            limit: 1000, // Get all operators
-            page: 1,
-          });
-
-          // Handle paginated response format: { users: [], total, page, limit, totalPages }
-          const responseData = response.data || {};
-          const operatorsList =
-            responseData.users ||
-            (Array.isArray(responseData) ? responseData : []) ||
-            [];
-
-          // Filter to ensure only operators (double check)
-          const filteredOperators = operatorsList.filter(
-            (user: any) => user.role === "operator" || user.role === "Operator",
-          );
-
-          console.log(
-            `✅ Loaded ${filteredOperators.length} operators from API`,
-          );
-          console.log("Operators list:", filteredOperators);
-          setOperators(filteredOperators);
-        } catch (error) {
-          console.error("Failed to load operators:", error);
-        } finally {
-          setOperatorsLoading(false);
-        }
-      };
-
-      loadOperators();
-    }
-  }, [isOpen]);
+  // Second pass on the role, kept from the previous implementation.
+  const operators: Operator[] = useMemo(
+    () =>
+      (operatorsPage?.users ?? []).filter(
+        (user) => user.role === "operator" || user.role === "Operator",
+      ),
+    [operatorsPage],
+  );
 
   useEffect(() => {
     if (building && isOpen) {

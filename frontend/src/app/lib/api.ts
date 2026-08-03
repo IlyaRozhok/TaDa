@@ -55,17 +55,6 @@ export const authAPI = {
   logout: () => api.post("/auth/logout"),
 };
 
-export const usersAPI = {
-  getMe: () => api.get("/auth/me"),
-
-  getAll: (params?: {
-    role?: string;
-    limit?: number;
-    page?: number;
-    search?: string;
-  }) => api.get("/users", { params }),
-};
-
 export const preferencesAPI = {
   get: () => api.get("/preferences"),
 
