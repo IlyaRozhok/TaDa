@@ -6,7 +6,7 @@ import { selectUser } from "@/store/slices/authSlice";
 import TaDaMap from "../../../components/TaDaMap";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import { Property } from "../../../types";
-import { loadAllPublicPropertiesForBrowse } from "../../../hooks/useProperties";
+import { useGetAllPublicPropertiesForBrowseQuery } from "@/store/api/properties.api";
 import { useRouter } from "next/navigation";
 import { geocodingService } from "../../../lib/geocoding";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -54,15 +54,24 @@ export default function PropertiesMapPage() {
     setFilteredProperties(filtered);
   }, [debouncedSearchTerm, properties]);
 
-  // Load properties from API
+  // Load properties from API (every page of the public catalogue, cached)
+  const { data: browseData, error: browseError } =
+    useGetAllPublicPropertiesForBrowseQuery(undefined, { skip: !user });
+
   useEffect(() => {
+    // Wait until the catalogue query settles either way.
+    if (!browseData && !browseError) return;
+
     const loadProperties = async () => {
       try {
         console.log("Starting to load properties...");
         setIsLoading(true);
         setError(null);
 
-        const propertiesData = await loadAllPublicPropertiesForBrowse();
+        if (browseError) {
+          throw browseError;
+        }
+        const propertiesData = browseData ?? [];
 
         if (propertiesData.length > 0) {
           console.log("Properties found, starting geocoding...");
@@ -306,7 +315,7 @@ export default function PropertiesMapPage() {
     } else {
       console.log("No user found");
     }
-  }, [user]);
+  }, [user, browseData, browseError]);
 
   const handlePropertyClick = (propertyId: string) => {
     const property = filteredProperties.find((p) => p.id === propertyId);

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { propertiesAPI } from "../../../lib/api";
+import { useGetPublicPropertiesAllQuery } from "@/store/api/properties.api";
 import { Property } from "../../../types";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
@@ -44,52 +44,45 @@ export default function OperatorPropertiesPage() {
     }
   }, [properties, debouncedSearchTerm]);
 
+  const {
+    data: publicPage,
+    isLoading: isQueryLoading,
+    error: queryError,
+  } = useGetPublicPropertiesAllQuery(undefined, { skip: !id });
+
   useEffect(() => {
-    const fetchOperatorProperties = async () => {
-      if (!id) return;
+    if (!id || isQueryLoading) return;
 
-      try {
-        setLoading(true);
-        const response = await propertiesAPI.getAllPublic();
+    if (queryError) {
+      console.error("Error fetching operator properties:", queryError);
+      setError("Failed to load operator properties");
+      notify.error("Failed to load operator properties");
+      setLoading(false);
+      return;
+    }
+    if (!publicPage) return;
 
-        // Handle API response format
-        let allProperties = [];
-        if (response.data && response.data.data) {
-          allProperties = response.data.data;
-        } else if (response.data && Array.isArray(response.data)) {
-          allProperties = response.data;
-        }
+    // Filter properties by operator (public API exposes operator_id, not full operator)
+    const operatorProperties = publicPage.data.filter((prop: Property) => {
+      const oid = prop.operator_id ?? prop.operator?.id;
+      return oid === id;
+    });
 
-        // Filter properties by operator (public API exposes operator_id, not full operator)
-        const operatorProperties = allProperties.filter((prop: Property) => {
-          const oid = prop.operator_id ?? prop.operator?.id;
-          return oid === id;
-        });
-
-        if (operatorProperties.length > 0) {
-          setOperator(
-            operatorProperties[0].operator ?? {
-              id: String(id),
-              full_name: "Operator",
-              email: "",
-            },
-          );
-          setProperties(operatorProperties);
-          setFilteredProperties(operatorProperties);
-        } else {
-          setError("No properties found for this operator");
-        }
-      } catch (err) {
-        console.error("Error fetching operator properties:", err);
-        setError("Failed to load operator properties");
-        notify.error("Failed to load operator properties");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOperatorProperties();
-  }, [id]);
+    if (operatorProperties.length > 0) {
+      setOperator(
+        operatorProperties[0].operator ?? {
+          id: String(id),
+          full_name: "Operator",
+          email: "",
+        },
+      );
+      setProperties(operatorProperties);
+      setFilteredProperties(operatorProperties);
+    } else {
+      setError("No properties found for this operator");
+    }
+    setLoading(false);
+  }, [id, publicPage, isQueryLoading, queryError]);
 
   // Filter properties based on search term
   useEffect(() => {

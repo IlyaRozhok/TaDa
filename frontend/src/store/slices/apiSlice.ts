@@ -20,34 +20,6 @@ export const apiSlice = baseApi.injectEndpoints({
       query: (id) => `/properties/${id}`,
       providesTags: ["Property"],
     }),
-    getPublicProperty: builder.query({
-      query: (id) => `/properties/public/${id}`,
-      providesTags: ["Property"],
-    }),
-    // Named after buildings but it is a properties route; it moves with the
-    // properties domain, not with store/api/buildings.api.ts.
-    getPublicBuildingProperties: builder.query<
-      any,
-      { building_id: string }
-    >({
-      query: ({ building_id }) => ({
-        url: "/properties/public/all",
-        params: { building_id },
-      }),
-      providesTags: ["Property"],
-      keepUnusedDataFor: 300,
-    }),
-    getPublicPropertiesPaginated: builder.query<
-      any,
-      { page?: number; limit?: number; search?: string }
-    >({
-      query: ({ page = 1, limit = 12, search } = {}) => ({
-        url: "/properties/public",
-        params: { page, limit, search },
-      }),
-      providesTags: ["Property"],
-      keepUnusedDataFor: 300,
-    }),
     createProperty: builder.mutation({
       query: (formData) => ({
         url: "/properties",
@@ -84,9 +56,6 @@ export const apiSlice = baseApi.injectEndpoints({
 export const {
   useGetPropertiesQuery,
   useGetPropertyQuery,
-  useGetPublicPropertyQuery,
-  useGetPublicBuildingPropertiesQuery,
-  useGetPublicPropertiesPaginatedQuery,
   useCreatePropertyMutation,
   useGetMatchedPropertiesPaginatedQuery,
   useGetRecommendationsQuery,

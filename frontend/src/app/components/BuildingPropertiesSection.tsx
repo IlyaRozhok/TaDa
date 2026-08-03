@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { propertiesAPI } from "../lib/api";
-import { Property } from "../types";
+import { useGetPublicPropertiesAllQuery } from "@/store/api/properties.api";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
@@ -27,43 +26,29 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
 }) => {
   const router = useRouter();
   const { t } = useTranslation();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: propertiesPage,
+    isLoading,
+    isUninitialized,
+  } = useGetPublicPropertiesAllQuery(
+    { building_id: buildingId },
+    { skip: !buildingId },
+  );
+  // A skipped query (no buildingId) keeps the skeleton, as the old
+  // fetch-in-effect did.
+  const loading = isLoading || isUninitialized;
+
+  const properties = useMemo(
+    () =>
+      (propertiesPage?.data ?? [])
+        .filter((prop) => prop.id !== currentPropertyId)
+        .slice(0, 3),
+    [propertiesPage, currentPropertyId],
+  );
 
   const propertyIds = useMemo(() => properties.map((p) => p.id), [properties]);
   const { matchByPropertyId } = usePropertyMatches(propertyIds);
-
-  useEffect(() => {
-    const fetchBuildingProperties = async () => {
-      try {
-        const response = await propertiesAPI.getAllPublic({
-          building_id: buildingId,
-        });
-
-        // Handle API response format
-        let allProperties = [];
-        if (response.data && response.data.data) {
-          allProperties = response.data.data;
-        } else if (response.data && Array.isArray(response.data)) {
-          allProperties = response.data;
-        }
-
-        const buildingProperties = allProperties.filter((prop: Property) => {
-          return prop.id !== currentPropertyId;
-        });
-
-        setProperties(buildingProperties.slice(0, 3));
-      } catch (error) {
-        console.error("Error fetching building properties:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (buildingId) {
-      fetchBuildingProperties();
-    }
-  }, [buildingId, currentPropertyId]);
 
   const getBuildingInitials = () => {
     if (!buildingName) return "";
