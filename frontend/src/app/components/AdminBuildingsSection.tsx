@@ -10,19 +10,14 @@ import {
   ExternalLink,
 } from "lucide-react";
 import CopyableId from "./CopyableId";
+import type { Building as ApiBuilding } from "@/store/api/buildings.api";
 
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  number_of_units: number;
-  type_of_unit: string[];
-  logo?: string;
-  video?: string;
-  photos?: string[];
-  documents?: string;
-  operator_id: string | null;
-}
+/**
+ * The rows come straight from `GET /buildings` and are handed back to the
+ * panel's handlers untouched, so this table speaks the endpoint's type rather
+ * than a copy of it that has to stay in step.
+ */
+type Building = ApiBuilding;
 
 interface AdminBuildingsSectionProps {
   buildings: Building[];

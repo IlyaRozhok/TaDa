@@ -54,6 +54,13 @@ import {
   useGetUsersQuery,
   useUpdateUserMutation,
 } from "@/store/api/users.api";
+import {
+  useCreateBuildingMutation,
+  useDeleteBuildingMutation,
+  useGetBuildingsQuery,
+  useUpdateBuildingMutation,
+  type Building as ApiBuilding,
+} from "@/store/api/buildings.api";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
 
@@ -72,18 +79,13 @@ interface User {
   is_private_landlord?: boolean | null;
 }
 
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  number_of_units: number;
-  type_of_unit: string[];
-  logo?: string;
-  video?: string;
-  photos?: string[];
-  documents?: string;
-  operator_id: string | null;
-}
+/**
+ * The panel no longer keeps its own copy of this shape: it hands the rows
+ * straight from the query to the sections and modals, so the endpoint's type
+ * is the honest one. The sections still carry their own narrower versions —
+ * folding those together is step 5.2.
+ */
+type Building = ApiBuilding;
 
 /**
  * A rejected RTK Query mutation carries `{ status, data }`, axios carries
@@ -116,7 +118,6 @@ function AdminPanelContent() {
   // const user = useSelector(selectUser);
   // const isAuthenticated = useSelector(selectIsAuthenticated);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
-  const [buildings, setBuildings] = useState<Building[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -156,6 +157,17 @@ function AdminPanelContent() {
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
+
+  // Buildings list, on the same footing: the section's mutations invalidate
+  // Building:LIST, so nothing here reloads the list by hand.
+  const { data: buildingsData } = useGetBuildingsQuery(undefined, {
+    skip: activeSection !== "buildings",
+  });
+  const buildings: Building[] = buildingsData ?? [];
+
+  const [createBuilding] = useCreateBuildingMutation();
+  const [updateBuilding] = useUpdateBuildingMutation();
+  const [deleteBuilding] = useDeleteBuildingMutation();
 
   // Admin properties list via RTK Query (with 5-minute cache)
   const { data: propertiesQueryData, isLoading: isPropsQueryLoading } =
@@ -203,39 +215,6 @@ function AdminPanelContent() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
-  // Load data based on active section
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-        const headers = {
-          "Content-Type": "application/json",
-        };
-
-        if (activeSection === "buildings") {
-          const response = await fetch(`${apiUrl}/buildings`, {
-            credentials: "include",
-            headers,
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setBuildings(data.data || data || []);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        addNotification("error", "Failed to load data");
-      } finally {
-        // no-op for requests: RTK Query управляет своим loading
-      }
-    };
-
-    loadData();
-    // Only buildings are still loaded here; the users list is a query with its
-    // own search and page arguments.
-  }, [activeSection]);
-
   // Reset page when section changes
   useEffect(() => {
     setPage(1);
@@ -264,26 +243,14 @@ function AdminPanelContent() {
     try {
       if (activeSection === "buildings") {
         const building = selectedItem as Building;
-        console.log("🗑️ Deleting building:", building.id);
+        await deleteBuilding(building.id).unwrap();
 
-        const response = await buildingsAPI.delete(building.id);
-        console.log("✅ Delete response:", response);
-
-        if (response.status === 200 || response.status === 204) {
-          // Remove from local state
-          setBuildings((prevBuildings) =>
-            prevBuildings.filter((b) => b.id !== building.id),
-          );
-
-          addNotification(
-            "success",
-            `Building "${building.name}" deleted successfully`,
-          );
-          setShowModal(null);
-          setSelectedItem(null);
-        } else {
-          throw new Error("Unexpected response status");
-        }
+        addNotification(
+          "success",
+          `Building "${building.name}" deleted successfully`,
+        );
+        setShowModal(null);
+        setSelectedItem(null);
       } else if (activeSection === "properties") {
         const property = selectedItem as Property;
         console.log("🗑️ Deleting property:", property.id);
@@ -371,45 +338,22 @@ function AdminPanelContent() {
     }
   };
 
-  const handleCreateBuilding = async (data: any) => {
+  const handleCreateBuilding = async (data: Partial<Building>) => {
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const response = await fetch(`${apiUrl}/buildings`, {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create building");
-      }
+      await createBuilding(data).unwrap();
 
       addNotification(
         "success",
         `Building "${data.name}" created successfully!`,
       );
       setShowModal(null);
-
-      // Reload buildings list
-      if (activeSection === "buildings") {
-        const response = await fetch(`${apiUrl}/buildings`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const buildingsData = await response.json();
-          setBuildings(buildingsData.data || buildingsData || []);
-        }
-      }
-    } catch (error: any) {
-      addNotification("error", `Failed to create building: ${error.message}`);
+      // The list refetches itself: the mutation invalidates Building:LIST.
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        `Failed to create building: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -453,69 +397,26 @@ function AdminPanelContent() {
     }
   };
 
-  const handleUpdateBuilding = async (id: string, data: any) => {
+  const handleUpdateBuilding = async (id: string, data: Partial<Building>) => {
     setIsActionLoading(true);
     try {
-      console.log("🔄 Updating building:", {
-        id,
-        data,
-        operator_id: data.operator_id,
-      });
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const response = await fetch(`${apiUrl}/buildings/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update building");
-      }
-
-      const updatedBuilding = await response.json();
-      console.log("✅ Building updated successfully:", updatedBuilding);
+      const updatedBuilding = await updateBuilding({ id, data }).unwrap();
 
       addNotification(
         "success",
         `Building "${data.name}" updated successfully!`,
       );
 
-      // Refresh buildings list and update selectedItem
-      if (activeSection === "buildings") {
-        const response = await fetch(`${apiUrl}/buildings`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const buildingsData = await response.json();
-          const updatedBuildings = buildingsData.data || buildingsData || [];
-          setBuildings(updatedBuildings);
-
-          // Update selectedItem with the updated building from the list
-          const updatedBuildingFromList = updatedBuildings.find(
-            (b: Building) => b.id === id,
-          );
-          if (updatedBuildingFromList) {
-            console.log(
-              "🔄 Updating selectedItem with:",
-              updatedBuildingFromList,
-            );
-            setSelectedItem(updatedBuildingFromList);
-          }
-        }
-      }
-
+      // The endpoint answers with the updated building, so the open modal no
+      // longer has to wait for a second request to the list to catch up.
+      setSelectedItem(updatedBuilding);
       setShowModal(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Failed to update building:", error);
-      addNotification("error", `Failed to update building: ${error.message}`);
+      addNotification(
+        "error",
+        `Failed to update building: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -781,21 +682,6 @@ function AdminPanelContent() {
                 "success",
                 `Building ID "${id}" copied to clipboard`,
               );
-            }}
-            onRefresh={() => {
-              if (activeSection === "buildings") {
-                const apiUrl =
-                  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-                fetch(`${apiUrl}/buildings`, {
-                  credentials: "include",
-                  headers: { "Content-Type": "application/json" },
-                })
-                  .then((response) => response.json())
-                  .then((data) => setBuildings(data.data || data || []))
-                  .catch((error) =>
-                    console.error("Error refreshing buildings:", error),
-                  );
-              }
             }}
           />
         );

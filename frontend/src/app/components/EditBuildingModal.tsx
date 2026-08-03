@@ -49,14 +49,15 @@ const NO_CHILDREN_VALUE = "no";
 interface Building {
   id: string;
   name: string;
-  address: string;
-  description?: string;
-  number_of_units: number;
+  // Nullable on the wire, and the form already treats a missing value as blank.
+  address: string | null;
+  description?: string | null;
+  number_of_units: number | null;
   type_of_unit: string[];
-  logo?: string;
-  video?: string;
+  logo?: string | null;
+  video?: string | null;
   photos?: string[];
-  documents?: string;
+  documents?: string | null;
   metro_stations?: Array<{ label: string; destination: number }>;
   commute_times?: Array<{ label: string; destination: number }>;
   local_essentials?: Array<{ label: string; destination: number }>;
@@ -68,7 +69,7 @@ interface Building {
     type: "dog" | "cat" | "other";
     customType?: string;
     size?: "small" | "medium" | "large";
-  }>;
+  }> | null;
   smoking_area?: boolean;
   tenant_type?: string[];
   family_status?: string[];

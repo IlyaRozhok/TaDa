@@ -24,10 +24,8 @@ export const apiSlice = baseApi.injectEndpoints({
       query: (id) => `/properties/public/${id}`,
       providesTags: ["Property"],
     }),
-    getPublicBuilding: builder.query({
-      query: (id) => `/buildings/public/${id}`,
-      providesTags: ["Property"],
-    }),
+    // Named after buildings but it is a properties route; it moves with the
+    // properties domain, not with store/api/buildings.api.ts.
     getPublicBuildingProperties: builder.query<
       any,
       { building_id: string }
@@ -109,7 +107,6 @@ export const {
   useGetPropertiesQuery,
   useGetPropertyQuery,
   useGetPublicPropertyQuery,
-  useGetPublicBuildingQuery,
   useGetPublicBuildingPropertiesQuery,
   useGetPublicPropertiesPaginatedQuery,
   useCreatePropertyMutation,

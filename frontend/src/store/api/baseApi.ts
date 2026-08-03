@@ -20,7 +20,10 @@ const rawBaseQuery = fetchBaseQuery({
  * about the visitor's own session — a signed-out reader opening a shared CV must
  * not be "logged out" as a side effect.
  */
-const PUBLIC_ENDPOINTS = new Set(["getPublicTenantCv"]);
+const PUBLIC_ENDPOINTS = new Set([
+  "getPublicTenantCv",
+  "getPublicBuilding",
+]);
 
 /**
  * Same 401 handling the axios instance has had all along: a rejected session
@@ -53,6 +56,7 @@ export const baseApi = createApi({
   tagTypes: [
     "User",
     "Property",
+    "Building",
     "Preferences",
     "Shortlist",
     "TenantCv",

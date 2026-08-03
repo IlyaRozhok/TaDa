@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { buildingsAPI } from "../../../lib/api";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLazyGetUsersQuery } from "@/store/api/users.api";
+import {
+  useGetBuildingsQuery,
+  type Building as ApiBuilding,
+} from "@/store/api/buildings.api";
 import { Building, User } from "../types";
 
 export const usePropertyData = (operators: User[] = []) => {
@@ -8,26 +11,15 @@ export const usePropertyData = (operators: User[] = []) => {
   // role-filtered call comes back empty, so the second request must stay
   // imperative.
   const [fetchUsers] = useLazyGetUsersQuery();
-  const [buildings, setBuildings] = useState<Building[]>([]);
+  const { data: buildingsData } = useGetBuildingsQuery();
+  const buildings: ApiBuilding[] = useMemo(
+    () => buildingsData ?? [],
+    [buildingsData],
+  );
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [availableOperators, setAvailableOperators] = useState<User[]>([]);
   const [operatorsLoading, setOperatorsLoading] = useState(false);
   const [operatorsLoaded, setOperatorsLoaded] = useState(false);
-
-  // Load buildings
-  useEffect(() => {
-    const loadBuildings = async () => {
-      try {
-        const response = await buildingsAPI.getAll();
-        const data = response?.data;
-        setBuildings(Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []);
-      } catch (error) {
-        console.error("Failed to load buildings:", error);
-      }
-    };
-
-    loadBuildings();
-  }, []);
 
   // Load operators (aligned with EditPropertyModal logic, but simplified for create flow)
   const loadOperators = async () => {
