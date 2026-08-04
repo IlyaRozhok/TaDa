@@ -1,4 +1,5 @@
-import { User, UpdateUserData } from '@/types/user';
+import { User } from "@/store/slices/authSlice";
+import { UpdateUserData } from "@/app/types/user";
 
 /**
  * Map a User object (from Redux / API) to the flat UpdateUserData shape

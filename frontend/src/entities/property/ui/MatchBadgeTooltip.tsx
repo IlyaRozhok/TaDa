@@ -22,13 +22,7 @@ import {
   Receipt,
 } from "lucide-react";
 
-interface MatchCategory {
-  category?: string;
-  name?: string;
-  score: number;
-  maxScore: number;
-  hasPreference?: boolean;
-}
+import type { MatchCategory } from "@/store/api/matching.api";
 
 interface MatchBadgeTooltipProps {
   /** When undefined and not loading, the badge is hidden (e.g. property cards without match data). */
@@ -374,10 +368,10 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                     ];
 
                     const aPriority = priorityOrder.indexOf(
-                      a.category || a.name || "",
+                      a.category,
                     );
                     const bPriority = priorityOrder.indexOf(
-                      b.category || b.name || "",
+                      b.category,
                     );
 
                     // First sort by match status
@@ -399,7 +393,7 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                   })
                   .map((category, index, sortedCategories) => {
                     const categoryName =
-                      category.category || category.name || "Unknown";
+                      category.category || "Unknown";
                     const contribution = category.score;
                     const weight = category.maxScore;
                     const scorePercentage = category.scorePercentage;

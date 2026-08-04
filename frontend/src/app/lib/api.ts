@@ -252,15 +252,4 @@ export const propertiesAPI = {
   },
 };
 
-// Category match result from backend
-export interface CategoryMatchResult {
-  category: string;
-  match: boolean;
-  score: number;
-  maxScore: number;
-  reason: string;
-  details?: string;
-  hasPreference: boolean; // New field - indicates if user has set preference
-}
-
 export default api;
