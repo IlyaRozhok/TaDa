@@ -6,28 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Property } from "../../../types";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  description?: string;
-  number_of_units: number;
-  type_of_unit: string[];
-  logo?: string;
-  video?: string;
-  photos?: string[];
-  documents?: string;
-  operator_id: string | null;
-  amenities?: string[];
-  districts?: Array<{ label: string; destination?: number }>;
-  areas?: Array<{ label: string; destination?: number }>;
-  metro_stations?: Array<{ label: string; destination?: number }>;
-  commute_times?: Array<{
-    label: string;
-    destination?: number;
-    method?: string;
-  }>;
-}
+import { Building as ApiBuilding } from "@/store/api/buildings.api";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share, ChevronLeft, ChevronRight, Home, Train } from "lucide-react";
@@ -46,7 +25,7 @@ import { useTranslation } from "../../../hooks/useTranslation";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
-type BuildingWithMedia = Building & {
+type BuildingWithMedia = ApiBuilding & {
   media?: Array<{
     id: string;
     url: string;
@@ -213,38 +192,20 @@ export default function BuildingPublicPage() {
   const { matchByPropertyId } = usePropertyMatches(displayedPropertyIds);
 
   const preferredAreas = useMemo(() => {
-    const raw = (building as any)?.areas;
-    if (!Array.isArray(raw) || raw.length === 0) return null;
-    const labels = raw
-      .map((a: any) => (typeof a === "string" ? a : a?.label))
-      .filter(Boolean);
+    const labels = (building?.areas ?? []).filter(Boolean);
     return labels.length > 0 ? labels.join(", ") : null;
   }, [building]);
 
   const preferredDistricts = useMemo(() => {
-    const raw = (building as any)?.districts;
-    if (!Array.isArray(raw) || raw.length === 0) return null;
-    const labels = raw
-      .map((d: any) => (typeof d === "string" ? d : d?.label))
-      .filter(Boolean);
+    const labels = (building?.districts ?? []).filter(Boolean);
     return labels.length > 0 ? labels.join(", ") : null;
   }, [building]);
 
   const preferredMetro = useMemo(() => {
-    let raw =
-      (building as any)?.metro_stations ??
-      (building as any)?.metroStations ??
-      (building as any)?.commute_times ??
-      (building as any)?.commuteTimes;
-
-    // Sometimes backends can return JSON columns as strings; handle safely.
-    if (typeof raw === "string") {
-      try {
-        raw = JSON.parse(raw);
-      } catch {
-        // keep raw as-is
-      }
-    }
+    // The camelCase and commute_times fallbacks this used to walk were dead:
+    // the API serves metro_stations, and the buildings commute_times column
+    // was dropped by migration 1767000000001.
+    const raw = building?.metro_stations;
 
     if (!Array.isArray(raw) || raw.length === 0) return null;
 

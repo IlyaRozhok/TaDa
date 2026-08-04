@@ -26,16 +26,8 @@ export interface ConciergeHours {
   to?: number;
 }
 
-/**
- * The building as `GET /buildings` returns it, plus two fields this flow has
- * always read from a building and the current backend does not send:
- * `commute_times` and `local_essentials`. They stay optional so the form
- * behaves exactly as before; the building-side cleanup is 5.2 PR 2.
- */
-export type Building = ApiBuilding & {
-  commute_times?: CommuteTime[];
-  local_essentials?: LocalEssential[];
-};
+/** The building exactly as `GET /buildings` returns it. */
+export type Building = ApiBuilding;
 
 export interface User {
   id: string;

@@ -183,11 +183,8 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
     areas: [] as string[],
     districts: [] as string[],
     amenities: [] as string[],
-    is_concierge: false,
-    concierge_hours: null as ConciergeHours | null,
     pet_policy: false,
     pets: null as Pet[] | null,
-    smoking_area: false,
     tenant_type: [] as string[],
     family_status: [] as string[],
     occupation: [] as string[],
@@ -538,7 +535,6 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
       }
       // Boolean fields - always include, even if false
       buildingData.pet_policy = formData.pet_policy;
-      buildingData.smoking_area = formData.smoking_area;
       if (formData.pets && formData.pets.length > 0) {
         buildingData.pets = formData.pets;
       }
@@ -575,12 +571,9 @@ const AddBuildingModal: React.FC<AddBuildingModalProps> = ({
           areas: [],
           districts: [],
           amenities: [],
-          is_concierge: false,
-          concierge_hours: null,
-          pet_policy: false,
+                pet_policy: false,
           pets: null,
-          smoking_area: false,
-          tenant_type: [] as string[],
+                tenant_type: [] as string[],
           family_status: [] as string[],
           occupation: [] as string[],
           children: [] as string[],

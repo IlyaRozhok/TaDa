@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { X, Save, Plus, Minus, Upload, GripVertical } from "lucide-react";
 import { buildingsAPI } from "../lib/api";
+import { Building } from "@/store/api/buildings.api";
 import { useGetUsersQuery } from "@/store/api/users.api";
 import {
   LONDON_DISTRICTS,
@@ -46,38 +47,6 @@ const CHILDREN_VALUES = [
 
 const NO_CHILDREN_VALUE = "no";
 
-interface Building {
-  id: string;
-  name: string;
-  // Nullable on the wire, and the form already treats a missing value as blank.
-  address: string | null;
-  description?: string | null;
-  number_of_units: number | null;
-  type_of_unit: string[];
-  logo?: string | null;
-  video?: string | null;
-  photos?: string[];
-  documents?: string | null;
-  metro_stations?: Array<{ label: string; destination: number }>;
-  commute_times?: Array<{ label: string; destination: number }>;
-  local_essentials?: Array<{ label: string; destination: number }>;
-  amenities?: string[];
-  is_concierge?: boolean;
-  concierge_hours?: { from: number; to: number } | null;
-  pet_policy?: boolean;
-  pets?: Array<{
-    type: "dog" | "cat" | "other";
-    customType?: string;
-    size?: "small" | "medium" | "large";
-  }> | null;
-  smoking_area?: boolean;
-  tenant_type?: string[];
-  family_status?: string[];
-  occupation?: string[];
-  children?: string[];
-  districts?: string[];
-  operator_id: string | null;
-}
 
 interface BuildingFormData {
   name: string;
@@ -90,18 +59,13 @@ interface BuildingFormData {
   photos?: string[];
   documents?: string;
   metro_stations?: Array<{ label: string; destination: number }>;
-  commute_times?: Array<{ label: string; destination: number }>;
-  local_essentials?: Array<{ label: string; destination: number }>;
   amenities?: string[];
-  is_concierge?: boolean;
-  concierge_hours?: { from: number; to: number } | null;
   pet_policy?: boolean;
   pets?: Array<{
     type: "dog" | "cat" | "other";
     customType?: string;
     size?: "small" | "medium" | "large";
   }> | null;
-  smoking_area?: boolean;
   tenant_type?: string[];
   family_status?: string[];
   occupation?: string[];
@@ -113,11 +77,6 @@ interface BuildingFormData {
 interface MetroStation {
   label: string;
   destination: number;
-}
-
-interface ConciergeHours {
-  from: number;
-  to: number;
 }
 
 interface Pet {
@@ -189,14 +148,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
     photos: [] as string[],
     documents: "",
     metro_stations: [] as MetroStation[],
-    commute_times: [] as Array<{ label: string; destination: number }>,
-    local_essentials: [] as Array<{ label: string; destination: number }>,
     amenities: [] as string[],
-    is_concierge: false,
-    concierge_hours: null as ConciergeHours | null,
     pet_policy: false,
     pets: null as Pet[] | null,
-    smoking_area: false,
     tenant_type: [] as string[],
     family_status: [] as string[],
     occupation: [] as string[],
@@ -285,14 +239,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
         photos: building.photos || [],
         documents: building.documents || "",
         metro_stations: building.metro_stations || [],
-        commute_times: building.commute_times || [],
-        local_essentials: building.local_essentials || [],
         amenities: building.amenities || [],
-        is_concierge: building.is_concierge || false,
-        concierge_hours: building.concierge_hours || null,
         pet_policy: building.pet_policy || false,
         pets: building.pets || null,
-        smoking_area: building.smoking_area || false,
         tenant_type:
           transformTenantTypeAPIToUI(
             (Array.isArray(building.tenant_type)
@@ -642,18 +591,11 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       if (formData.metro_stations && formData.metro_stations.length > 0) {
         buildingData.metro_stations = formData.metro_stations;
       }
-      if (formData.commute_times && formData.commute_times.length > 0) {
-        buildingData.commute_times = formData.commute_times;
-      }
-      if (formData.local_essentials && formData.local_essentials.length > 0) {
-        buildingData.local_essentials = formData.local_essentials;
-      }
       if (formData.amenities && formData.amenities.length > 0) {
         buildingData.amenities = formData.amenities;
       }
       // Boolean fields - always include, even if false
       buildingData.pet_policy = formData.pet_policy;
-      buildingData.smoking_area = formData.smoking_area;
       if (formData.pets && formData.pets.length > 0) {
         buildingData.pets = formData.pets;
       }
