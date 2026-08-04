@@ -1,11 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
-import { apiSlice } from "./slices/apiSlice";
+import { baseApi } from "@/store/api/baseApi";
 import authSlice from "./slices/authSlice";
 
 export const store = configureStore({
   reducer: {
-    [apiSlice.reducerPath]: apiSlice.reducer,
+    [baseApi.reducerPath]: baseApi.reducer,
     auth: authSlice,
   },
   middleware: (getDefaultMiddleware) =>
@@ -18,7 +18,7 @@ export const store = configureStore({
           "api.mutations", // RTK Query mutations
         ],
       },
-    }).concat(apiSlice.middleware),
+    }).concat(baseApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

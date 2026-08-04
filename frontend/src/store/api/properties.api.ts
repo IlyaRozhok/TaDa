@@ -1,5 +1,8 @@
 import { baseApi } from "@/store/api/baseApi";
 import { Property } from "@/app/types";
+// The admin routes answer with the full entity; the richer of the two
+// Property trees matches it. Folding the trees into one is step 5.2.
+import { Property as AdminProperty } from "@/app/types/property";
 
 /**
  * Envelope of the public properties routes: both `/properties/public` and
@@ -79,6 +82,53 @@ export const propertiesApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Property", id }],
     }),
 
+    /** Admin list, `GET /properties` — the API answers with a bare array. */
+    getProperties: builder.query<AdminProperty[], void>({
+      query: () => "/properties",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Property" as const, id })),
+              { type: "Property" as const, id: "LIST" },
+            ]
+          : [{ type: "Property" as const, id: "LIST" }],
+    }),
+
+    createProperty: builder.mutation<AdminProperty, Record<string, unknown>>({
+      query: (body) => ({ url: "/properties", method: "POST", body }),
+      invalidatesTags: [
+        { type: "Property", id: "LIST" },
+        { type: "Property", id: "PUBLIC_LIST" },
+        { type: "Property", id: "MATCHED_LIST" },
+      ],
+    }),
+
+    updateProperty: builder.mutation<
+      AdminProperty,
+      { id: string; data: Record<string, unknown> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/properties/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      // The row, the admin list and both public/matched lists are stale now.
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Property", id },
+        { type: "Property", id: "LIST" },
+        { type: "Property", id: "PUBLIC_LIST" },
+        { type: "Property", id: "MATCHED_LIST" },
+      ],
+    }),
+
+    deleteProperty: builder.mutation<void, string>({
+      query: (id) => ({ url: `/properties/${id}`, method: "DELETE" }),
+      invalidatesTags: [
+        { type: "Property", id: "LIST" },
+        { type: "Property", id: "PUBLIC_LIST" },
+        { type: "Property", id: "MATCHED_LIST" },
+      ],
+    }),
   }),
 });
 
@@ -86,4 +136,8 @@ export const {
   useGetPublicPropertiesQuery,
   useGetPublicPropertiesAllQuery,
   useGetPublicPropertyQuery,
+  useGetPropertiesQuery,
+  useCreatePropertyMutation,
+  useUpdatePropertyMutation,
+  useDeletePropertyMutation,
 } = propertiesApi;

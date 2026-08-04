@@ -414,6 +414,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             <button
               type="submit"
               disabled={isLoading || isSubmitting}
+              data-testid="property-modal-submit"
               className="px-6 py-2 bg-white text-black rounded-lg hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               <span>{isSubmitting ? "Saving..." : "Save Property"}</span>
