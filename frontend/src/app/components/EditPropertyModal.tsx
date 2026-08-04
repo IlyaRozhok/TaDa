@@ -64,34 +64,6 @@ interface ConciergeHours {
   to?: number;
 }
 
-/**
- * The building as this modal reads it. `commute_times` and `local_essentials`
- * are **not** returned by the current backend — the form has always copied
- * them from a building and always got `undefined`. Kept optional so the reset
- * behaviour is unchanged; the building-side cleanup is 5.2 PR 2.
- */
-type BuildingWithLegacyFields = ApiBuilding & {
-  commute_times?: CommuteTime[];
-  local_essentials?: LocalEssential[];
-};
-
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  operator_id: string;
-  tenant_type?: string[];
-  amenities?: string[];
-  pet_policy?: boolean;
-  pets?: Pet[] | null;
-  metro_stations?: MetroStation[];
-  commute_times?: CommuteTime[];
-  local_essentials?: LocalEssential[];
-  family_status?: string[];
-  occupation?: string[];
-  children?: string[];
-}
-
 const OCCUPATION_VALUES = [
   "student",
   "young-professional",
@@ -565,7 +537,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         buildings.length > 0
       ) {
         try {
-          const building: BuildingWithLegacyFields = await fetchBuilding(
+          const building = await fetchBuilding(
             formData.building_id,
           ).unwrap();
           if (building) {
@@ -583,8 +555,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               pet_policy: building.pet_policy || false,
               pets: building.pets || null,
               metro_stations: building.metro_stations || [],
-              commute_times: building.commute_times || [],
-              local_essentials: building.local_essentials || [],
             }));
           }
         } catch (error) {

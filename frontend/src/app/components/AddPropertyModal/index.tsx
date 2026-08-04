@@ -146,8 +146,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       pet_policy: selectedBuilding.pet_policy ?? false,
       pets: selectedBuilding.pets ?? null,
       metro_stations: selectedBuilding.metro_stations || [],
-      commute_times: selectedBuilding.commute_times || [],
-      local_essentials: selectedBuilding.local_essentials || [],
       // A building without an operator leaves the field unset, which the form
       // represents as an empty string — same as `address` just above.
       operator_id: selectedBuilding.operator_id ?? "",
