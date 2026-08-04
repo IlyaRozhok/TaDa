@@ -3,7 +3,9 @@
  */
 
 import { BaseEntity, ID } from './common';
-import { PropertyType, Furnishing, LetDuration } from './property';
+// The dead src/types/property.ts copy is gone; the enums live in the
+// canonical tree now. This whole file goes with PR 3 of step 5.2.
+import { PropertyType, Furnishing, LetDuration } from '@/app/types/property';
 
 export interface Preferences extends BaseEntity {
   user_id: ID;
