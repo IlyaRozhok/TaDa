@@ -256,12 +256,6 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-white/10">
-                  <span className="text-white/70">Outdoor Space</span>
-                  <span className="font-medium text-white">
-                    {property.outdoor_space ? "Yes" : "No"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-white/10">
                   <span className="text-white/70">Balcony</span>
                   <span className="font-medium text-white">
                     {property.balcony ? "Yes" : "No"}
@@ -427,22 +421,6 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
             </div>
           )}
 
-          {/* Smoking Area */}
-          {property.smoking_area !== undefined && (
-            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <Cigarette className="w-5 h-5" />
-                Smoking Area
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-white/70">Available:</span>
-                <span className="font-medium text-white">
-                  {property.smoking_area ? "Yes" : "No"}
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Metro Stations */}
           {property.metro_stations && property.metro_stations.length > 0 && (
             <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
@@ -519,17 +497,6 @@ const ViewPropertyModal: React.FC<ViewPropertyModalProps> = ({
               </div>
             )}
 
-          {/* Luxury Flag */}
-          {property.luxury !== undefined && (
-            <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
-              <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400" />
-                <span className="text-lg font-semibold text-white">
-                  {property.luxury ? "Luxury Property" : "Standard Property"}
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* Operator Info as JSON */}
           {property.operator && (

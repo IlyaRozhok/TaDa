@@ -243,10 +243,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             : null,
         bills: formData.bills || null,
         available_from: formData.available_from || null,
-        outdoor_space: formData.outdoor_space,
         balcony: formData.balcony,
         terrace: formData.terrace,
-        luxury: formData.luxury,
         address: formData.address || null,
         tenant_types: [
           ...new Set(transformTenantTypeUIToAPI(formData.tenant_types || [])),
@@ -258,7 +256,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         children: formData.children || [],
         pet_policy: formData.pet_policy,
         pets: formData.pets || null,
-        smoking_area: formData.smoking_area_prop,
         metro_stations: formData.metro_stations || [],
         commute_times: formData.commute_times || [],
         local_essentials: formData.local_essentials || [],

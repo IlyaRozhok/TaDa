@@ -1,8 +1,42 @@
 import { baseApi } from "@/store/api/baseApi";
-import { Property } from "@/app/types";
-// The admin routes answer with the full entity; the richer of the two
-// Property trees matches it. Folding the trees into one is step 5.2.
-import { Property as AdminProperty } from "@/app/types/property";
+import { Property } from "@/app/types/property";
+
+/**
+ * What the wire may deliver where the Property type promises numbers and
+ * arrays: TypeORM returns decimal columns as strings on the entity routes,
+ * and nullable array columns may come back null.
+ */
+type WireProperty = Omit<
+  Property,
+  "price" | "deposit" | "square_meters" | "photos"
+> & {
+  price?: number | string | null;
+  deposit?: number | string | null;
+  square_meters?: number | string | null;
+  photos?: string[] | null;
+};
+
+const toNumberOrNull = (value: number | string | null | undefined): number | null => {
+  if (value === null || value === undefined) return null;
+  const parsed = typeof value === "string" ? parseFloat(value) : value;
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+/** One place turns the wire payload into the Property the type declares. */
+export const normalizeProperty = (raw: WireProperty): Property => ({
+  ...raw,
+  price: toNumberOrNull(raw.price),
+  deposit: toNumberOrNull(raw.deposit),
+  square_meters: toNumberOrNull(raw.square_meters),
+  photos: raw.photos ?? [],
+});
+
+interface WirePropertiesPage {
+  data: WireProperty[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
 
 /**
  * Envelope of the public properties routes: both `/properties/public` and
@@ -15,6 +49,11 @@ export interface PublicPropertiesPage {
   page: number;
   totalPages: number;
 }
+
+const normalizePage = (page: WirePropertiesPage): PublicPropertiesPage => ({
+  ...page,
+  data: page.data.map(normalizeProperty),
+});
 
 export interface GetPublicPropertiesArgs {
   page?: number;
@@ -55,6 +94,7 @@ export const propertiesApi = baseApi.injectEndpoints({
           ...(args?.search ? { search: args.search } : {}),
         },
       }),
+      transformResponse: normalizePage,
       providesTags: listTags,
     }),
 
@@ -73,18 +113,21 @@ export const propertiesApi = baseApi.injectEndpoints({
           ? { building_id: args.building_id }
           : undefined,
       }),
+      transformResponse: normalizePage,
       providesTags: listTags,
     }),
 
     /** One public property, `GET /properties/public/:id` — a bare object. */
     getPublicProperty: builder.query<Property, string>({
       query: (id) => `/properties/public/${id}`,
+      transformResponse: normalizeProperty,
       providesTags: (_result, _error, id) => [{ type: "Property", id }],
     }),
 
     /** Admin list, `GET /properties` — the API answers with a bare array. */
-    getProperties: builder.query<AdminProperty[], void>({
+    getProperties: builder.query<Property[], void>({
       query: () => "/properties",
+      transformResponse: (raw: WireProperty[]) => raw.map(normalizeProperty),
       providesTags: (result) =>
         result
           ? [
@@ -94,8 +137,9 @@ export const propertiesApi = baseApi.injectEndpoints({
           : [{ type: "Property" as const, id: "LIST" }],
     }),
 
-    createProperty: builder.mutation<AdminProperty, Record<string, unknown>>({
+    createProperty: builder.mutation<Property, Record<string, unknown>>({
       query: (body) => ({ url: "/properties", method: "POST", body }),
+      transformResponse: normalizeProperty,
       invalidatesTags: [
         { type: "Property", id: "LIST" },
         { type: "Property", id: "PUBLIC_LIST" },
@@ -104,7 +148,7 @@ export const propertiesApi = baseApi.injectEndpoints({
     }),
 
     updateProperty: builder.mutation<
-      AdminProperty,
+      Property,
       { id: string; data: Record<string, unknown> }
     >({
       query: ({ id, data }) => ({
@@ -112,6 +156,7 @@ export const propertiesApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
+      transformResponse: normalizeProperty,
       // The row, the admin list and both public/matched lists are stale now.
       invalidatesTags: (_result, _error, { id }) => [
         { type: "Property", id },

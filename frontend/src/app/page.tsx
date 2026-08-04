@@ -149,7 +149,7 @@ export default function HomePage() {
       }
 
       // Search in description
-      if (property.description?.toLowerCase().includes(searchLower)) {
+      if (property.descriptions?.toLowerCase().includes(searchLower)) {
         return true;
       }
 
