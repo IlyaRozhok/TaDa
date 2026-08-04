@@ -35,7 +35,6 @@ export const useDropdownHelpers = (
       "children",
       "pet_policy",
       "pets",
-      "smoking_area_prop",
       "metro_stations",
     ];
     return (
