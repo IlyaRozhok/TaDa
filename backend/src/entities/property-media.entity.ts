@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  Index,
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { Property } from "./property.entity";
@@ -18,6 +19,7 @@ export class PropertyMedia {
   id: string;
 
   @ApiProperty({ description: "Property ID this media belongs to" })
+  @Index("idx_property_media_property_id")
   @Column("uuid")
   property_id: string;
 

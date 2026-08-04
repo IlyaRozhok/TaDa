@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  Index,
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
@@ -36,6 +37,7 @@ export class Property {
   apartment_number?: string;
 
   @ApiProperty({ description: "Building ID", required: false })
+  @Index("idx_properties_building_id")
   @Column("uuid", { nullable: true })
   building_id?: string;
 
@@ -259,6 +261,7 @@ export class Property {
     example: 2500,
     required: false,
   })
+  @Index("idx_properties_price")
   @Column("decimal", { precision: 10, scale: 2, nullable: true })
   price?: number;
 
@@ -275,6 +278,7 @@ export class Property {
     example: 2,
     required: false,
   })
+  @Index("idx_properties_bedrooms")
   @Column("int", { nullable: true })
   bedrooms?: number;
 
@@ -314,10 +318,12 @@ export class Property {
   @ApiProperty({
     description: "Operator ID (from building or direct assignment)",
   })
+  @Index("idx_properties_operator_id")
   @Column("uuid")
   operator_id: string;
 
   @ApiProperty({ description: "Property creation date" })
+  @Index("idx_properties_created_at")
   @CreateDateColumn()
   created_at: Date;
 
