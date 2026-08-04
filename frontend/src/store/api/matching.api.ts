@@ -1,5 +1,6 @@
 import { baseApi } from "@/store/api/baseApi";
-import { Property } from "@/app/types";
+import { Property } from "@/app/types/property";
+import { normalizeProperty } from "@/store/api/properties.api";
 
 /** One scored category of a match, as the backend calculates it. */
 export interface MatchCategory {
@@ -67,6 +68,15 @@ export const matchingApi = baseApi.injectEndpoints({
           limit: args?.limit ?? 12,
           ...(args?.search ? { search: args.search } : {}),
         },
+      }),
+      // The matching route serves raw entities, so the same decimal-string
+      // normalisation the properties endpoints do applies to each item.
+      transformResponse: (page: MatchedPropertiesPage) => ({
+        ...page,
+        data: page.data.map((item) => ({
+          ...item,
+          property: normalizeProperty(item.property),
+        })),
       }),
       providesTags: (result) =>
         result

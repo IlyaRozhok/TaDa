@@ -328,7 +328,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             : []
           : null,
         pet_policy: property.pet_policy || false,
-        smoking_area_prop: property.smoking_area || false,
+        // The smoking_area column was dropped from properties long ago; the
+        // read always produced undefined, so the toggle starts unchecked.
+        smoking_area_prop: false,
         metro_stations: parseArray(property.metro_stations),
         commute_times: parseArray(property.commute_times),
         local_essentials: parseArray(property.local_essentials),
@@ -942,7 +944,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         children: formData.children || [],
         pet_policy: formData.pet_policy,
         pets: formData.pets || null,
-        smoking_area: formData.smoking_area_prop,
         metro_stations: formData.metro_stations || [],
         commute_times: formData.commute_times || [],
         local_essentials: formData.local_essentials || [],
