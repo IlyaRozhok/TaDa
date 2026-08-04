@@ -65,13 +65,12 @@ interface ConciergeHours {
 }
 
 /**
- * The building as this modal reads it. `smoking_area`, `commute_times` and
- * `local_essentials` are **not** returned by the current backend — the form has
- * always copied them from a building and always got `undefined`. Kept optional
- * so the reset behaviour is unchanged; the drift is recorded in PROGRESS.
+ * The building as this modal reads it. `commute_times` and `local_essentials`
+ * are **not** returned by the current backend — the form has always copied
+ * them from a building and always got `undefined`. Kept optional so the reset
+ * behaviour is unchanged; the building-side cleanup is 5.2 PR 2.
  */
 type BuildingWithLegacyFields = ApiBuilding & {
-  smoking_area?: boolean;
   commute_times?: CommuteTime[];
   local_essentials?: LocalEssential[];
 };
@@ -85,7 +84,6 @@ interface Building {
   amenities?: string[];
   pet_policy?: boolean;
   pets?: Pet[] | null;
-  smoking_area?: boolean;
   metro_stations?: MetroStation[];
   commute_times?: CommuteTime[];
   local_essentials?: LocalEssential[];
@@ -185,7 +183,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     children: [] as string[],
     pets: null as Pet[] | null,
     pet_policy: false,
-    smoking_area_prop: false,
     metro_stations: [] as MetroStation[],
     commute_times: [] as CommuteTime[],
     local_essentials: [] as LocalEssential[],
@@ -328,9 +325,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             : []
           : null,
         pet_policy: property.pet_policy || false,
-        // The smoking_area column was dropped from properties long ago; the
-        // read always produced undefined, so the toggle starts unchecked.
-        smoking_area_prop: false,
         metro_stations: parseArray(property.metro_stations),
         commute_times: parseArray(property.commute_times),
         local_essentials: parseArray(property.local_essentials),
@@ -529,7 +523,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         children: [],
         pet_policy: false,
         pets: null,
-        smoking_area_prop: false,
         metro_stations: [],
         commute_times: [],
         local_essentials: [],
@@ -553,7 +546,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         children: [],
         pet_policy: false,
         pets: null,
-        smoking_area_prop: false,
         metro_stations: [],
         commute_times: [],
         local_essentials: [],
@@ -590,7 +582,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               children: building.children || [],
               pet_policy: building.pet_policy || false,
               pets: building.pets || null,
-              smoking_area_prop: building.smoking_area || false,
               metro_stations: building.metro_stations || [],
               commute_times: building.commute_times || [],
               local_essentials: building.local_essentials || [],
