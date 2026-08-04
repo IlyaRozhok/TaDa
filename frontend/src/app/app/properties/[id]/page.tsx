@@ -1498,7 +1498,6 @@ export default function PropertyPublicPage() {
           buildingId={property.building.id}
           buildingName={property.building.name}
           currentPropertyId={property.id}
-          operatorId={property.operator?.id}
           operatorName={property.operator?.full_name}
         />
       )}

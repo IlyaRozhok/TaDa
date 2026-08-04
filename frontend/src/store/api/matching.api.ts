@@ -32,16 +32,6 @@ export interface GetMatchedPropertiesArgs {
   search?: string;
 }
 
-/** One item of `GET /matching/detailed-matches` — a bare array of these. */
-export interface DetailedMatch {
-  property: Property;
-  matchScore: number;
-  matchPercentage: number;
-  matchReasons: string[];
-  perfectMatch: boolean;
-  categories: MatchCategory[];
-}
-
 /** `GET /matching/property/:id` — the backend's PropertyMatchResult. */
 export interface PropertyMatchResult {
   property: Property;
@@ -90,26 +80,6 @@ export const matchingApi = baseApi.injectEndpoints({
           : [{ type: "Property" as const, id: "MATCHED_LIST" }],
     }),
 
-    getDetailedMatches: builder.query<
-      DetailedMatch[],
-      { limit?: number } | void
-    >({
-      query: (args) => ({
-        url: "/matching/detailed-matches",
-        params: { limit: args?.limit ?? 20 },
-      }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ property }) => ({
-                type: "Property" as const,
-                id: property.id,
-              })),
-              { type: "Property" as const, id: "MATCHED_LIST" },
-            ]
-          : [{ type: "Property" as const, id: "MATCHED_LIST" }],
-    }),
-
     /** Match breakdown for one property; 404s when preferences are missing. */
     getPropertyMatch: builder.query<PropertyMatchResult, string>({
       query: (propertyId) => `/matching/property/${propertyId}`,
@@ -120,8 +90,5 @@ export const matchingApi = baseApi.injectEndpoints({
   }),
 });
 
-export const {
-  useGetMatchedPropertiesQuery,
-  useGetDetailedMatchesQuery,
-  useGetPropertyMatchQuery,
-} = matchingApi;
+export const { useGetMatchedPropertiesQuery, useGetPropertyMatchQuery } =
+  matchingApi;
