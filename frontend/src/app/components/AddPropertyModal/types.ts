@@ -1,4 +1,5 @@
 import type { Building as ApiBuilding } from "@/store/api/buildings.api";
+import type { AdminUser } from "@/store/api/users.api";
 
 export interface Pet {
   type: "dog" | "cat" | "other";
@@ -29,11 +30,8 @@ export interface ConciergeHours {
 /** The building exactly as `GET /buildings` returns it. */
 export type Building = ApiBuilding;
 
-export interface User {
-  id: string;
-  email: string;
-  full_name?: string;
-}
+// The operator dropdown works with the users API shape directly.
+export type User = AdminUser;
 
 export interface AddPropertyModalProps {
   isOpen: boolean;

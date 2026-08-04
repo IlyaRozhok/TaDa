@@ -6,7 +6,7 @@
 import React from "react";
 import PropertyCard from "@/entities/property/ui/PropertyCard";
 import { Property } from "../types";
-import { CategoryMatchResult } from "../lib/api";
+import type { MatchCategory as CategoryMatchResult } from "@/store/api/matching.api";
 
 interface EnhancedPropertyCardProps {
   property: Property;

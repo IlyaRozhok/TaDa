@@ -9,6 +9,3 @@ export interface UploadResponse {
   key: string;
   message?: string;
 }
-
-// Re-export Preferences from shared types
-export type { Preferences } from "@/types/preferences";

@@ -6,7 +6,7 @@ import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput } from "@/shared/ui";
 import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
-import { UpdateUserData } from "@/types/user";
+import { UpdateUserData } from "@/app/types/user";
 import { getCountryByCode, getDefaultCountry } from "@/shared/lib/countries";
 
 interface ProfileFormFieldsProps {

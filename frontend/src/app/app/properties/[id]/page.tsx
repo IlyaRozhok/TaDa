@@ -3,9 +3,7 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import {
-  CategoryMatchResult,
-} from "../../../lib/api";
+import type { MatchCategory as CategoryMatchResult } from "@/store/api/matching.api";
 import type { Property, PropertyMedia } from "../../../types";
 import { useShortlistProperties } from "@/features/shortlist/lib/useShortlist";
 import {

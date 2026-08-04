@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Property } from "../types";
-import { CategoryMatchResult } from "../lib/api";
+import type { MatchCategory as CategoryMatchResult } from "@/store/api/matching.api";
 import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 import { selectUser } from "@/store/slices/authSlice";
 import { propertiesApi } from "@/store/api/properties.api";
