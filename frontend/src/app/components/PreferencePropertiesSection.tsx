@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useGetPublicPropertiesAllQuery } from "@/store/api/properties.api";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
-import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";

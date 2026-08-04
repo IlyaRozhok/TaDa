@@ -4,7 +4,7 @@ import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
-import { PreferencesFormData } from "@/app/types/preferences";
+import { PreferencesFormData } from "@/entities/preferences/model/preferences";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { AMENITIES_VALUES } from "@/constants/amenities";
 

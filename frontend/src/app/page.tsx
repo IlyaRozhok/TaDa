@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
 import { Property } from "./types";
 import HomepagePropertyCard from "./components/HomepagePropertyCard";
-import PropertyCardSkeleton from "./components/PropertyCardSkeleton";
+import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import AuthModal from "./components/AuthModal";
 import DualLandingWrapper from "./components/DualLandingWrapper";
 import { Search, ChevronDown, MapPin } from "lucide-react";

@@ -3,7 +3,7 @@ import { useTranslation } from "../../../hooks/useTranslation";
 import { StepWrapper } from "../step-components/StepWrapper";
 import { StepContainer } from "../step-components/StepContainer";
 import { TextAreaField } from "../step-components/TextAreaField";
-import { PreferencesFormData, PreferencesFieldValue } from "@/app/types/preferences";
+import { PreferencesFormData, PreferencesFieldValue } from "@/entities/preferences/model/preferences";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 interface AboutYouStepProps {

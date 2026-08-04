@@ -86,15 +86,6 @@ export const shortlistApi = baseApi.injectEndpoints({
         }
       },
     }),
-
-    /**
-     * Wiping the whole list is rare and confirmed by a modal, so it invalidates
-     * rather than patches — the refetch is what proves the server agrees.
-     */
-    clearShortlist: builder.mutation<void, void>({
-      query: () => ({ url: "/shortlist", method: "DELETE" }),
-      invalidatesTags: [{ type: "Shortlist", id: "LIST" }],
-    }),
   }),
 });
 
@@ -102,5 +93,4 @@ export const {
   useGetShortlistQuery,
   useAddToShortlistMutation,
   useRemoveFromShortlistMutation,
-  useClearShortlistMutation,
 } = shortlistApi;

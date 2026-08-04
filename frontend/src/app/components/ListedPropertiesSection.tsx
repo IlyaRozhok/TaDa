@@ -6,7 +6,7 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Property } from "../types";
 import type { PreferencesRow } from "@/store/api/preferences.api";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
-import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 import { formatListingResultsCountLabel } from "../lib/formatListingResultsCount";
