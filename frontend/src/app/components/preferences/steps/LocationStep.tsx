@@ -4,7 +4,7 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { InputField } from "../ui/InputField";
 import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
-import { PreferencesFormData, PreferencesFieldValue } from "@/app/types/preferences";
+import { PreferencesFormData, PreferencesFieldValue } from "@/entities/preferences/model/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 import {

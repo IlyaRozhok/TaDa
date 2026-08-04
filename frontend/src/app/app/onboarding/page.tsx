@@ -23,7 +23,7 @@ import {
   PROFILE_STEP,
   PREFERENCES_START_STEP,
 } from "../../hooks/useOnboarding";
-import { usePreferences } from "../../hooks/usePreferences";
+import usePreferences from "@/features/preferences/lib/usePreferences";
 import { useTranslation } from "../../hooks/useTranslation";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 import LanguageDropdown from "../../components/LanguageDropdown";

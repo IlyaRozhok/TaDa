@@ -10,11 +10,9 @@ import {
   selectUser,
 } from "@/store/slices/authSlice";
 import { useShortlistProperties } from "@/features/shortlist/lib/useShortlist";
-import { useClearShortlistMutation } from "@/store/api/shortlist.api";
-import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
+import PropertyGridWithLoader from "@/widgets/property/PropertyGridWithLoader";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";
-import ConfirmModal from "../../components/ui/ConfirmModal";
 import { Heart, ChevronDown, Map } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { Property } from "../../types";
@@ -162,18 +160,14 @@ export default function ShortlistPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [sessionReady, setSessionReady] = useState(false);
-  const [showClearModal, setShowClearModal] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
 
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
 
   const { data, error: queryError, refetch } = useShortlistProperties();
-  const [clearShortlist, { isLoading: clearingShortlist }] =
-    useClearShortlistMutation();
 
   const properties = useMemo(() => data ?? [], [data]);
-  const count = properties.length;
   const error = shortlistErrorMessage(queryError);
 
   // Ready once the list has actually arrived — a background revalidation must
@@ -228,25 +222,6 @@ export default function ShortlistPage() {
 
   const handlePropertyClick = (propertyId: string) => {
     router.push(`/app/properties/${propertyId}`);
-  };
-
-  const handleClearShortlist = () => {
-    setShowClearModal(true);
-  };
-
-  const handleConfirmClear = async () => {
-    try {
-      await clearShortlist().unwrap();
-      setShowClearModal(false);
-    } catch (error) {
-      console.error("Failed to clear shortlist:", error);
-    }
-  };
-
-  const handleCloseClearModal = () => {
-    if (!clearingShortlist) {
-      setShowClearModal(false);
-    }
   };
 
   const handleRetry = () => {
@@ -350,22 +325,6 @@ export default function ShortlistPage() {
               </div>
             )}
           </div>
-
-          {/* Clear Shortlist Confirmation Modal */}
-          <ConfirmModal
-            isOpen={showClearModal}
-            onClose={handleCloseClearModal}
-            onConfirm={handleConfirmClear}
-            title="Clear Entire Shortlist"
-            message={`Are you sure you want to remove all ${count} ${
-              count === 1 ? "property" : "properties"
-            } from your shortlist? This action cannot be undone.`}
-            confirmText="Clear All"
-            cancelText="Keep Shortlist"
-            confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
-            icon="heart"
-            loading={clearingShortlist}
-          />
         </div>
       </div>
 

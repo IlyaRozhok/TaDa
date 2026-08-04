@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { IMaskInput } from "react-imask";
-import { cn } from "@/app/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 interface DateInputProps {
   label: string;

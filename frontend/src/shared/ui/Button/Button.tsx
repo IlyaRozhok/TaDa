@@ -1,6 +1,6 @@
 import React, { ButtonHTMLAttributes, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
-import { cn } from "@/app/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { colors, semanticColors } from "../tokens/colors";
 import { textStyles } from "../tokens/typography";
 import { spacing } from "../tokens/spacing";
