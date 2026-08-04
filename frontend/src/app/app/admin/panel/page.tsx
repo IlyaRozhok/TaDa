@@ -23,9 +23,6 @@ import EditBuildingModal from "../../../components/EditBuildingModal";
 import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
 import { Copy, Check, X } from "lucide-react";
-import {
-  buildingsAPI,
-} from "../../../lib/api";
 import { Property } from "../../../types/property";
 import {
   BookingRequest,
