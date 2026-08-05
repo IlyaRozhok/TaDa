@@ -1,0 +1,210 @@
+import React from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { Minus } from "lucide-react";
+import type { BuildingFormData, Pet } from "../types";
+
+interface PetPolicySectionProps {
+  formData: BuildingFormData;
+  setFormData: Dispatch<SetStateAction<BuildingFormData>>;
+  openDropdown: string | null;
+  setOpenDropdown: Dispatch<SetStateAction<string | null>>;
+  onToggleDropdown: (name: string) => void;
+  addPet: () => void;
+  updatePet: (index: number, field: keyof Pet, value: any) => void;
+  removePet: (index: number) => void;
+}
+
+export const PetPolicySection: React.FC<PetPolicySectionProps> = ({
+  formData,
+  setFormData,
+  openDropdown,
+  setOpenDropdown,
+  onToggleDropdown,
+  addPet,
+  updatePet,
+  removePet,
+}) => {
+  return (
+    <div className="space-y-4">
+      <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
+        Pet Policy
+      </h4>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="pet_policy"
+          checked={formData.pet_policy}
+          onChange={(e) =>
+            setFormData({ ...formData, pet_policy: e.target.checked })
+          }
+          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+        />
+        <label
+          htmlFor="pet_policy"
+          className="text-sm font-medium text-white/90"
+        >
+          Pets Allowed
+        </label>
+      </div>
+
+      {formData.pet_policy && (
+        <div className="ml-6 space-y-4">
+          {(formData.pets || []).map((pet, index) => (
+            <div
+              key={index}
+              className="border border-gray-200 rounded-md p-4"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h5 className="font-medium text-white">
+                  Pet {index + 1}
+                </h5>
+                <button
+                  type="button"
+                  onClick={() => removePet(index)}
+                  className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Type
+                  </label>
+                  <div className="relative" data-dropdown>
+                    <div
+                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                      onClick={() => onToggleDropdown(`pet_type_${index}`)}
+                    >
+                      <span className="capitalize">{pet.type}</span>
+                      <svg
+                        className="w-5 h-5 text-white/70"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                    {openDropdown === `pet_type_${index}` && (
+                      <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {["dog", "cat", "other"].map((type) => (
+                          <div
+                            key={type}
+                            className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${
+                              pet.type === type ? "bg-white/10" : ""
+                            }`}
+                            onClick={() => {
+                              updatePet(index, "type", type);
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            {type}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {pet.type === "other" && (
+                  <div>
+                    <label className="block text-sm font-medium text-white/90 mb-2">
+                      Custom Type
+                    </label>
+                    <input
+                      type="text"
+                      value={pet.customType || ""}
+                      onChange={(e) =>
+                        updatePet(index, "customType", e.target.value)
+                      }
+                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
+                      placeholder="e.g., Hamster"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Size (Optional)
+                  </label>
+                  <div className="relative" data-dropdown>
+                    <div
+                      className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
+                      onClick={() => onToggleDropdown(`pet_size_${index}`)}
+                    >
+                      <span
+                        className={
+                          pet.size ? "capitalize" : "text-white/50"
+                        }
+                      >
+                        {pet.size ? pet.size : "Not specified"}
+                      </span>
+                      <svg
+                        className="w-5 h-5 text-white/70"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                    {openDropdown === `pet_size_${index}` && (
+                      <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {[
+                          { value: "", label: "Not specified" },
+                          { value: "small", label: "Small" },
+                          { value: "medium", label: "Medium" },
+                          { value: "large", label: "Large" },
+                        ].map((size) => (
+                          <div
+                            key={size.value}
+                            className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
+                              (pet.size || "") === size.value
+                                ? "bg-white/10"
+                                : ""
+                            }`}
+                            onClick={() => {
+                              updatePet(
+                                index,
+                                "size",
+                                size.value || undefined,
+                              );
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            {size.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={addPet}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-200"
+          >
+            Add Pet Type
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
