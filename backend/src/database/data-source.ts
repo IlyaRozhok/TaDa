@@ -35,6 +35,13 @@ export const dataSourceOptions: DataSourceOptions = {
     TenantCv,
   ],
   migrations: [path.join(__dirname, "migrations/*{.ts,.js}")],
+  // "each" instead of the default "all": a migration may only opt out of its
+  // transaction (`transaction = false`) when the mode is "each" or "none", and
+  // `CREATE INDEX CONCURRENTLY` in AddPerformanceIndexes1785801600000 cannot
+  // run inside a transaction block. Under "each" every other migration keeps
+  // its own transaction — the difference from "all" is that a run of several
+  // pending migrations no longer rolls back the ones that already succeeded.
+  migrationsTransactionMode: "each",
   synchronize: process.env.NODE_ENV === "development",
   logging: process.env.NODE_ENV === "development",
   ssl: false,

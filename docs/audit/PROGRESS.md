@@ -1,6 +1,6 @@
 # PROGRESS — living refactoring tracker
 
-**Step 5.1 is CLOSED IN FULL (2026-08-04).** The whole data layer sits on RTK Query: eight domains (tenant-cv, booking-requests, shortlist, users, buildings, preferences, matching, properties) in typed `store/api/*.api.ts` files over one `baseApi`; `apiSlice.ts` is gone and `api.ts` is down to the axios instance with its 401 interceptor, `authAPI`, and the seven deliberately-axios multipart uploads. **5.2 is CLOSED IN FULL (2026-08-04)** — one type tree: `app/types/` for domain shapes, `entities/preferences/model` for wizard forms, `store/api/*` for wire shapes; `src/types/` deleted whole. **5.3 was split on 2026-08-04 after a fresh survey of `develop`:** the cheap residue shipped as **5.3b** (7 dead `shared/ui` files, 6 re-export shims, the dead Clear-shortlist flow — 15 files, −1281 lines, no relocations), and the relocation half is parked as **5.3c** in the backlog, deliberately, until after 5.4. Next per the owner: **6.1** (indexes — the cheapest win in the plan), then **5.4** (the god-modals).
+**Step 5.1 is CLOSED IN FULL (2026-08-04).** The whole data layer sits on RTK Query: eight domains (tenant-cv, booking-requests, shortlist, users, buildings, preferences, matching, properties) in typed `store/api/*.api.ts` files over one `baseApi`; `apiSlice.ts` is gone and `api.ts` is down to the axios instance with its 401 interceptor, `authAPI`, and the seven deliberately-axios multipart uploads. **5.2 is CLOSED IN FULL (2026-08-04)** — one type tree: `app/types/` for domain shapes, `entities/preferences/model` for wizard forms, `store/api/*` for wire shapes; `src/types/` deleted whole. **5.3 was split on 2026-08-04 after a fresh survey of `develop`:** the cheap residue shipped as **5.3b** (7 dead `shared/ui` files, 6 re-export shims, the dead Clear-shortlist flow — 15 files, −1281 lines, no relocations), and the relocation half is parked as **5.3c** in the backlog, deliberately, until after 5.4. **6.1 is closed (2026-08-04)** — ten indexes in one non-transactional `CONCURRENTLY` migration; the inventory was rebuilt from the live schema and corrects the plan in two places. Next per the owner: **5.4** (the god-modals).
 
 **Owner decision 2026-08-03 — the live-routes whitelist reshapes the plan's tail.** The frontend keeps exactly twelve routes (auth, onboarding, units, preferences, tenant-cv, profile, shortlist, properties/[id], buildings/[id], privacy, terms, admin/panel) plus the functionally required `/`, `/app/auth/callback` and `/cv/[uuid]`; everything else is confirmed junk and deleted with its cascade. Property create/edit live as modals inside the admin panel. This absorbs the old sub-PR E, cancels sub-PR D (the media-management UI lived only on the deleted edit page), and shrinks C. B (matching+units) is merged (#89), the route sweep is merged (#90) and verified on stage, admin CRUD is merged (#91); the trailing `api.ts` tidy-up PR closed the step.
 
@@ -169,7 +169,7 @@ sub-PRs (public catalogue · admin CRUD · media uploads · matching) rather tha
 
 | Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
-| 6.1 | Indexes on all FKs + matching filter columns, `CREATE INDEX CONCURRENTLY` | 🟢 | ⬜ | | | | R4. **The cheapest win.** Can be done in parallel after Phase 1 |
+| 6.1 | Indexes on all FKs + matching filter columns, `CREATE INDEX CONCURRENTLY` | 🟢 | ✅ | PR open | ⬜ | 2026-08-04 | R4. **Ten indexes, one migration, no behaviour change.** The inventory was rebuilt against the live schema rather than taken from the plan, and it differs from it in both directions — see the table below the phase. **Six FK indexes:** `properties.{building_id,operator_id}`, `property_media.property_id`, `booking_requests.property_id`, `shortlist."propertyId"`, `buildings.operator_id`. Postgres indexes PK and UNIQUE constraints but never a FK, so all six were bare — and **all twelve FKs in the schema are `ON DELETE CASCADE`**, which makes the gap worse than a slow join. Measured on a 50k-property / 200k-media / 20k-booking copy: deleting one building **3300 ms → 4.7 ms, a 698× difference**, because each cascade trigger was seq-scanning the child table per row. **Four skipped as already covered:** `booking_requests.tenant_id` and `shortlist."userId"` are the leading columns of composite uniques, `preferences.user_id` and `tenant_cvs.user_id` are UNIQUE outright (same for both profile tables). **Two skipped as a correction to the plan:** `bathrooms` and `furnishing` are listed there as matching filters but **never reach SQL at all** — both are read by the JS scoring engine in `matching-calculation.service.ts` after the rows are fetched; `grep` over every `where`/`andWhere` in the backend confirms it. **Four read-path indexes:** `properties.price` and `properties.bedrooms` (the two `applyPreFilters` predicates), an **expression** index on `LOWER(properties.property_type)` — the filter is `LOWER(property_type) IN (…)`, which a plain btree on the raw column cannot serve — and `properties.created_at`, which is **beyond the plan's list and was added deliberately**: every listing in `property.service.ts` and `matching.service.ts` ends in `orderBy("property.created_at","DESC")` with `skip`/`take`, and it turned out to be the single biggest win (see the note on the two unused indexes below). Verified: tsc exit 0, build exit 0, 13 unit tests, migration applies / reverts / re-applies cleanly on the local DB, all ten indexes `indisvalid`, and `schema:log` stays clean — the entity `@Index()` names are written to match the migration exactly, so a `synchronize` run cannot create a second copy under a generated name. **On prod the migration lands through the ordinary `mig:run:prod` deploy step and takes no write lock:** every statement is `CREATE INDEX CONCURRENTLY IF NOT EXISTS` |
 | 6.2 | Matching: remove N+1 and S3 presign in the loop, align the two read paths | 🟡 | ⬜ | | | | R15 |
 | 6.3 | Split `matching-calculation.service.ts` (1941 lines), unit tests first | 🔴 | ⬜ | | | | Domain documentation will appear as a byproduct |
 | 6.4 | Break the module cycles Auth ⇄ Users and Auth → TenantCv → Users | 🔴 | ⬜ | | | | R10 |
@@ -177,6 +177,75 @@ sub-PRs (public catalogue · admin CRUD · media uploads · matching) rather tha
 | 6.6 | `simple-array` → `jsonb` with data conversion | 🟡 | ⬜ | | | | R18. Needs a backup and a check on a copy of prod data |
 | 6.7 | Entity ownership: distribute across owner modules | 🟡 | ⬜ | | | | Do last — affects all imports |
 | 6.8 | Persist onboarding completion on the server (option B) + harden the flow itself | 🟡 | ⬜ | | | | An `onboarding_completed` column + migration + returning it in `/auth/me`; clean out `isOnboarded`/`setIsOnboarded`/`isProfileComplete` as a guard. Right now the flag is only in `localStorage` — **on another device the user lands back in onboarding**. **Also here — two findings from 2026-07-29** (see «Noticed along the way»): (1) an honest completion signal instead of «the `preferences` row exists»; (2) disable «Next» until the required fields are filled in, including nationality. Analyzed, design proposed, implementation deferred by the owner. After 1.7 |
+
+### 6.1 — the index inventory, measured on `develop` at 2026-08-04
+
+Built from `pg_constraint` / `pg_indexes` on the live schema plus a `grep` of every
+`where`/`andWhere` in the backend, not from the plan's list.
+
+| Table.column | Indexed before? | Action | Why |
+|---|---|---|---|
+| `properties.building_id` | no | ✅ `idx_properties_building_id` | FK · public catalogue filter · CASCADE |
+| `properties.operator_id` | no | ✅ `idx_properties_operator_id` | FK · admin list filter · CASCADE |
+| `property_media.property_id` | no | ✅ `idx_property_media_property_id` | FK · CASCADE (4 media rows per property) |
+| `booking_requests.property_id` | no — 2nd column of `UQ(tenant_id, property_id)` | ✅ `idx_booking_requests_property_id` | FK · CASCADE |
+| `shortlist."propertyId"` | no — 2nd column of `unique_user_property` | ✅ `idx_shortlist_property_id` | FK · CASCADE |
+| `buildings.operator_id` | no | ✅ `idx_buildings_operator_id` | FK · CASCADE |
+| `properties.price` | no | ✅ `idx_properties_price` | `applyPreFilters` budget predicate |
+| `properties.bedrooms` | no | ✅ `idx_properties_bedrooms` | `applyPreFilters` bedrooms predicate |
+| `LOWER(properties.property_type)` | no | ✅ `idx_properties_property_type_lower` | filter is `LOWER(property_type) IN (…)` — a plain btree cannot serve it |
+| `properties.created_at` | no | ✅ `idx_properties_created_at` | **beyond the plan's list**: the ORDER BY of every listing, with `skip`/`take` |
+| `booking_requests.tenant_id` | **yes** — leading column of the composite unique | ➖ skip | already served |
+| `shortlist."userId"` | **yes** — leading column of `unique_user_property` | ➖ skip | already served |
+| `preferences.user_id` | **yes** — UNIQUE | ➖ skip | already served |
+| `tenant_cvs.user_id` · `share_uuid` | **yes** — UNIQUE | ➖ skip | already served |
+| `tenant_profiles."userId"` · `operator_profiles."userId"` | **yes** — UNIQUE | ➖ skip | already served |
+| `properties.bathrooms` | no | ➖ **skip — plan is wrong** | never in any SQL; JS scoring only |
+| `properties.furnishing` | no | ➖ **skip — plan is wrong** | never in any SQL; JS scoring only |
+
+**Two of the ten are not currently chosen by the planner, and that is worth knowing
+before the next person wonders why.** On the 50k-row copy, `idx_properties_bedrooms`
+and `idx_properties_property_type_lower` are never picked: both predicates are written
+as `(col IS NULL OR …)` and both are ~20% selective, so a bitmap over them costs more
+than filtering, and `idx_properties_created_at` already supplies ordered output through
+an Index Scan Backward, which removes the sort the alternative plans were paying for.
+They are kept because they are exactly the columns the step was asked to index and
+production selectivity is unknown — a tenant who only accepts penthouses would use
+them — but if write cost on `properties` ever matters, these two are the first to drop.
+`idx_properties_price` **is** used (BitmapOr, when a budget is set), so the pre-filter
+half of the step is not theoretical.
+
+**Non-transactional migration — what it cost.** `CREATE INDEX CONCURRENTLY` cannot run
+inside a transaction, and TypeORM only honours a migration's `transaction = false` when
+`migrationsTransactionMode` is `"each"` or `"none"`; the data source had neither, so it
+defaulted to `"all"` and would have thrown `ForbiddenTransactionModeOverrideError`.
+`data-source.ts` now sets `migrationsTransactionMode: "each"`. **This is a real change
+to the migration runner, flagged rather than buried:** under `"all"` a run of several
+pending migrations shared one transaction and rolled back as a unit; under `"each"`
+each migration commits on its own, so a half-failed multi-migration run leaves the
+earlier ones applied. Every migration keeps its own transaction — only the grouping
+changes — and prod applies migrations one release at a time through an explicit step.
+
+**Revert needs a flag.** TypeORM honours `transaction = false` on the way up but not on
+the way down: `undoLastMigration` opens a transaction whenever the mode is anything but
+`"none"`, without consulting the migration, so plain `mig:revert` dies with
+«DROP INDEX CONCURRENTLY cannot run inside a transaction block». Added
+`mig:revert:notx` and `mig:revert:prod:notx` (`-t none`); both verified against this
+migration — 10 indexes dropped, then re-created by a second `mig:run`.
+
+**`EXPLAIN ANALYZE`, 50 000 properties / 200 000 media / 20 000 booking requests:**
+
+| Query (real, from the services) | Before | After | Plan after |
+|---|---|---|---|
+| Cascade `DELETE FROM buildings WHERE id = …` | 3300.7 ms | **4.7 ms** | FK triggers use the child indexes |
+| Media for one property | 9.9 ms, 5715 buffers | **0.050 ms**, 7 buffers | Bitmap Index Scan `idx_property_media_property_id` |
+| Catalogue first page, `ORDER BY created_at DESC LIMIT 12` | 2.93 ms, 1352 buffers | **0.031 ms**, 3 buffers | **Index Scan Backward** `idx_properties_created_at`, sort gone |
+| Catalogue filtered by `building_id` | 2.15 ms, 1355 buffers | **0.101 ms**, 105 buffers | Bitmap Index Scan `idx_properties_building_id` |
+| Booking requests for one property | 0.73 ms, 267 buffers | **0.042 ms**, 3 buffers | Index Scan `idx_booking_requests_property_id` |
+| `applyPreFilters` (budget + bedrooms + types) | 4.92 ms, 1352 buffers | **2.02 ms**, 345 buffers | BitmapOr on `idx_properties_price` |
+
+Measured on a throwaway `tada_index_probe` database cloned from the real schema and
+dropped afterwards; the local dev database only received the migration itself.
 
 ## Phase 7 — Preparing for scale
 
@@ -270,7 +339,7 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 
 | | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Steps | 56 | 21 | 0 | 29 | 0 | 6 |
+| Steps | 56 | 20 | 0 | 30 | 0 | 6 |
 
 Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.1 (skipped — absorbed by 2A.3), 2A.4 (stop-list), 2A.5 (backlog),
 5.3 (split into 5.3a done, 5.3b done, 5.3c backlog).

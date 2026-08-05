@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
@@ -291,6 +292,7 @@ export class Building {
   @JoinColumn({ name: "operator_id" })
   operator: User;
 
+  @Index("idx_buildings_operator_id")
   @Column({ type: "uuid", nullable: true })
   operator_id: string | null;
 

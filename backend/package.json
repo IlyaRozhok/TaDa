@@ -12,11 +12,13 @@
     "mig:gen": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
     "mig:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "mig:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "mig:revert:notx": "npm run typeorm -- migration:revert -d src/database/data-source.ts -t none",
     "typeorm:dev": "typeorm-ts-node-commonjs -d src/database/data-source.ts",
     "typeorm:prod": "typeorm -d dist/database/data-source.js",
     "mig:run:dev": "npm run typeorm:dev migration:run",
     "mig:run:prod": "npm run typeorm:prod migration:run",
     "mig:revert:prod": "npm run typeorm:prod migration:revert",
+    "mig:revert:prod:notx": "npm run typeorm:prod migration:revert -t none",
     "test": "jest --config jest.config.ts",
     "test:watch": "jest --config jest.config.ts --watch",
     "test:cov": "jest --config jest.config.ts --coverage"
