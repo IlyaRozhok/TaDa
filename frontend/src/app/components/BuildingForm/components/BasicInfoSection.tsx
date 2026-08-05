@@ -1,8 +1,14 @@
 import React from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { FormField, Input, Textarea } from "@/app/components/FormField";
+import { MultiSelectDropdown } from "@/app/components/form/MultiSelectDropdown";
 import { TYPE_OF_UNIT_OPTIONS } from "@/constants/admin-form-options";
 import type { BuildingFormData } from "../types";
+
+const TYPE_OF_UNIT_MS_OPTIONS = TYPE_OF_UNIT_OPTIONS.map((option) => ({
+  value: option,
+  label: option,
+}));
 
 interface BasicInfoSectionProps {
   formData: BuildingFormData;
@@ -176,90 +182,29 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         <label className="block text-sm font-medium text-white/90 mb-2">
           Type of Unit
         </label>
-        <div className="relative" data-dropdown>
-          <div
-            className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
-            onClick={() => onToggleDropdown("type_of_unit")}
-          >
-            <div className="flex flex-wrap gap-1 flex-1">
-              {formData.type_of_unit.length > 0 ? (
-                formData.type_of_unit.map((value) => (
-                  <span
-                    key={value}
-                    className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                  >
-                    {value}
-                    <button
-                      type="button"
-                      className="ml-1 text-white/70 hover:text-white"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData({
-                          ...formData,
-                          type_of_unit: formData.type_of_unit.filter(
-                            (t) => t !== value,
-                          ),
-                        });
-                      }}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))
-              ) : (
-                <span className="text-white/50">Select types...</span>
-              )}
-            </div>
-            <svg
-              className="w-5 h-5 text-white/70 ml-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-          {openDropdown === "type_of_unit" && (
-            <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {TYPE_OF_UNIT_OPTIONS.map((option) => (
-                <div
-                  key={option}
-                  className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                  onClick={() => {
-                    const newTypeOfUnit =
-                      formData.type_of_unit.includes(option)
-                        ? formData.type_of_unit.filter(
-                            (t) => t !== option,
-                          )
-                        : [
-                            ...new Set([
-                              ...formData.type_of_unit,
-                              option,
-                            ]),
-                          ];
-                    setFormData({
-                      ...formData,
-                      type_of_unit: newTypeOfUnit,
-                    });
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.type_of_unit.includes(option)}
-                    readOnly
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>{option}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <MultiSelectDropdown
+          name="type_of_unit"
+          values={formData.type_of_unit}
+          options={TYPE_OF_UNIT_MS_OPTIONS}
+          placeholder="Select types..."
+          openDropdown={openDropdown}
+          onToggleDropdown={onToggleDropdown}
+          onOptionClick={(option) => {
+            const newTypeOfUnit = formData.type_of_unit.includes(option)
+              ? formData.type_of_unit.filter((t) => t !== option)
+              : [...new Set([...formData.type_of_unit, option])];
+            setFormData({
+              ...formData,
+              type_of_unit: newTypeOfUnit,
+            });
+          }}
+          onChipRemove={(value) =>
+            setFormData({
+              ...formData,
+              type_of_unit: formData.type_of_unit.filter((t) => t !== value),
+            })
+          }
+        />
       </div>
     </>
   );
