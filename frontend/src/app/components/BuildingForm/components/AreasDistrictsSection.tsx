@@ -13,21 +13,26 @@ interface AreasDistrictsSectionProps {
   setFormData: Dispatch<SetStateAction<BuildingFormData>>;
   openDropdown: string | null;
   onToggleDropdown: (name: string) => void;
+  mode: "create" | "edit";
 }
 
 /**
  * Areas and Districts multi-selects. A fragment of two sibling blocks, so
  * the form's flat child order stays exactly as it was in the monolith.
+ * Edit mode never had an Areas control, so it renders Districts only; the
+ * districts testids exist only in edit, where the e2e drives them.
  */
 export const AreasDistrictsSection: React.FC<AreasDistrictsSectionProps> = ({
   formData,
   setFormData,
   openDropdown,
   onToggleDropdown,
+  mode,
 }) => {
   return (
     <>
       {/* Areas */}
+      {mode === "create" && (
       <div>
         <label className="block text-sm font-medium text-white/90 mb-2">
           Areas
@@ -107,6 +112,7 @@ export const AreasDistrictsSection: React.FC<AreasDistrictsSectionProps> = ({
           )}
         </div>
       </div>
+      )}
 
       {/* Districts */}
       <div>
@@ -115,6 +121,9 @@ export const AreasDistrictsSection: React.FC<AreasDistrictsSectionProps> = ({
         </label>
         <div className="relative" data-dropdown>
           <div
+            data-testid={
+              mode === "edit" ? "building-edit-districts" : undefined
+            }
             className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
             onClick={() => onToggleDropdown("districts")}
           >
@@ -162,7 +171,12 @@ export const AreasDistrictsSection: React.FC<AreasDistrictsSectionProps> = ({
             </svg>
           </div>
           {openDropdown === "districts" && (
-            <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            <div
+              data-testid={
+                mode === "edit" ? "building-edit-districts-options" : undefined
+              }
+              className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+            >
               {LONDON_DISTRICTS.map((district) => (
                 <div
                   key={district}

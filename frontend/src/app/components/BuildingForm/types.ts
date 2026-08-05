@@ -1,3 +1,5 @@
+import type { Building as ApiBuilding } from "@/store/api/buildings.api";
+
 export interface MetroStation {
   label: string;
   destination?: number;
@@ -58,6 +60,17 @@ export interface BuildingUploadResult {
   hasErrors: boolean;
 }
 
+/**
+ * Edit-mode tracking of existing media the user marked for removal. Create
+ * mode has nothing to remove, so its payload builder ignores this argument.
+ */
+export interface EditMediaState {
+  removedPhotos: string[];
+  removedLogo: boolean;
+  removedVideo: boolean;
+  removedDocuments: boolean;
+}
+
 export interface BuildingFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -65,9 +78,12 @@ export interface BuildingFormProps {
   onSubmit: (data: any) => Promise<void>;
   isLoading?: boolean;
   mode: "create" | "edit";
+  /** The building being edited; prefills the form in edit mode. */
+  building?: ApiBuilding | null;
   /** Mode-specific payload builder, supplied by the thin modal wrapper. */
   buildPayload: (
     formData: BuildingFormData,
     uploadResult: BuildingUploadResult,
+    media: EditMediaState,
   ) => any;
 }

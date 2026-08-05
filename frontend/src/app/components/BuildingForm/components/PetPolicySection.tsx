@@ -12,6 +12,7 @@ interface PetPolicySectionProps {
   addPet: () => void;
   updatePet: (index: number, field: keyof Pet, value: any) => void;
   removePet: (index: number) => void;
+  mode: "create" | "edit";
 }
 
 export const PetPolicySection: React.FC<PetPolicySectionProps> = ({
@@ -23,6 +24,7 @@ export const PetPolicySection: React.FC<PetPolicySectionProps> = ({
   addPet,
   updatePet,
   removePet,
+  mode,
 }) => {
   return (
     <div className="space-y-4">
@@ -199,7 +201,9 @@ export const PetPolicySection: React.FC<PetPolicySectionProps> = ({
           <button
             type="button"
             onClick={addPet}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-200"
+            className={`flex items-center gap-2 px-4 py-2 ${
+              mode === "edit" ? "bg-gray-100" : "bg-gray-200"
+            } text-black rounded-md hover:bg-gray-200`}
           >
             Add Pet Type
           </button>
