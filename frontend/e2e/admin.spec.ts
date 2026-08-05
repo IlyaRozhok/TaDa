@@ -159,7 +159,32 @@ test("admin Buildings tab: edit through the modal updates the row", async ({
   // save path silently dropping everything but the primary column.
   await nameInput.fill(edited);
   await page.getByTestId("building-edit-address").fill(address);
+
+  // Pick a district through the chip dropdown — the regression this spec
+  // pins down is districts being edited in the UI but dropped from the
+  // PATCH payload, so the save silently lost them.
+  const district = "Camden";
+  await page.getByTestId("building-edit-districts").click();
+  await page
+    .getByTestId("building-edit-districts-options")
+    .getByText(district, { exact: true })
+    .click();
+  await expect(page.getByTestId("building-edit-districts")).toContainText(
+    district,
+  );
+  // Close the options panel (it overlays the footer) by clicking outside it.
+  await nameInput.click();
+  await expect(
+    page.getByTestId("building-edit-districts-options"),
+  ).toBeHidden();
+
+  // The wire is the proof: the PATCH body must carry the district.
+  const patchRequest = page.waitForRequest(
+    (req) => req.method() === "PATCH" && /\/buildings\//.test(req.url()),
+  );
   await page.getByTestId("building-edit-submit").click();
+  const patch = await patchRequest;
+  expect(patch.postDataJSON().districts).toEqual([district]);
 
   // The modal closes on success and invalidation refreshes the list.
   await expect(page.getByTestId("building-edit-submit")).toBeHidden({
@@ -168,6 +193,14 @@ test("admin Buildings tab: edit through the modal updates the row", async ({
   await expect(rowFor(edited)).toHaveCount(1, { timeout: 15_000 });
   await expect(rowFor(name)).toHaveCount(0);
   await expect(rowFor(edited).first()).toContainText(address);
+
+  // Reopen the Edit modal: the district must have survived the round trip.
+  await rowFor(edited).first().getByTitle("Edit building").click();
+  await expect(page.getByTestId("building-edit-districts")).toContainText(
+    district,
+  );
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByTestId("building-edit-submit")).toBeHidden();
 
   await rowFor(edited).first().getByTitle("Delete building").click();
   await page.getByTestId("confirm-delete").click();

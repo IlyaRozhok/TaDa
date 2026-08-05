@@ -594,6 +594,9 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
       if (formData.amenities && formData.amenities.length > 0) {
         buildingData.amenities = formData.amenities;
       }
+      if (formData.districts && formData.districts.length > 0) {
+        buildingData.districts = formData.districts;
+      }
       // Boolean fields - always include, even if false
       buildingData.pet_policy = formData.pet_policy;
       if (formData.pets && formData.pets.length > 0) {
@@ -2261,6 +2264,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             </label>
             <div className="relative" data-dropdown>
               <div
+                data-testid="building-edit-districts"
                 className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
                 onClick={() => toggleDropdown("districts")}
               >
@@ -2308,7 +2312,10 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                 </svg>
               </div>
               {openDropdown === "districts" && (
-                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div
+                  data-testid="building-edit-districts-options"
+                  className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                >
                   {LONDON_DISTRICTS.map((district) => (
                     <div
                       key={district}
