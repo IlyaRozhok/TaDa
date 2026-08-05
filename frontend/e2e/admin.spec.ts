@@ -80,6 +80,151 @@ test("admin Properties tab: rows render, create through the modal, delete", asyn
   expect(page.url()).toMatch(/\/app\/admin\/panel/);
 });
 
+test("admin Buildings tab: create through the modal, delete", async ({
+  adminPage: page,
+}) => {
+  await page.goto("/app/admin/panel");
+  await waitForPanelReady(page);
+
+  await page.getByTestId("admin-tab-buildings").click();
+  // The section is mounted once its own header button renders.
+  await expect(page.getByTestId("admin-add-building")).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const name = "e2e-crud-building";
+  const rowFor = () =>
+    page.getByTestId("admin-building-row").filter({ hasText: name });
+
+  // Idempotency: a previously interrupted run may have left the row behind.
+  while ((await rowFor().count()) > 0) {
+    await rowFor().first().getByTitle("Delete building").click();
+    await page.getByTestId("confirm-delete").click();
+    await expect(rowFor()).toHaveCount(0, { timeout: 15_000 });
+  }
+
+  // Create through the Add modal. The row must appear without any manual
+  // refetch — tag invalidation is the only thing refreshing the list.
+  await page.getByTestId("admin-add-building").click();
+  await page.getByPlaceholder("e.g. The Grand Tower").fill(name);
+  await page.getByTestId("building-modal-submit").click();
+  await expect(rowFor()).toHaveCount(1, { timeout: 15_000 });
+
+  // Delete through the confirm dialog; invalidation removes the row again.
+  await rowFor().first().getByTitle("Delete building").click();
+  await page.getByTestId("confirm-delete").click();
+  await expect(rowFor()).toHaveCount(0, { timeout: 15_000 });
+
+  expect(page.url()).toMatch(/\/app\/admin\/panel/);
+});
+
+test("admin Buildings tab: edit through the modal updates the row", async ({
+  adminPage: page,
+}) => {
+  test.slow(); // create → edit → delete is three round trips
+  await page.goto("/app/admin/panel");
+  await waitForPanelReady(page);
+
+  await page.getByTestId("admin-tab-buildings").click();
+  await expect(page.getByTestId("admin-add-building")).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const name = "e2e-edit-building";
+  const edited = "e2e-edited-building";
+  const address = "e2e 42 Test Street";
+  const rowFor = (text: string) =>
+    page.getByTestId("admin-building-row").filter({ hasText: text });
+
+  // Idempotency: clean up leftovers under either name.
+  for (const leftover of [name, edited]) {
+    while ((await rowFor(leftover).count()) > 0) {
+      await rowFor(leftover).first().getByTitle("Delete building").click();
+      await page.getByTestId("confirm-delete").click();
+      await expect(rowFor(leftover)).toHaveCount(0, { timeout: 15_000 });
+    }
+  }
+
+  await page.getByTestId("admin-add-building").click();
+  await page.getByPlaceholder("e.g. The Grand Tower").fill(name);
+  await page.getByTestId("building-modal-submit").click();
+  await expect(rowFor(name)).toHaveCount(1, { timeout: 15_000 });
+
+  // Open the Edit modal from the row; the form must be prefilled.
+  await rowFor(name).first().getByTitle("Edit building").click();
+  const nameInput = page.getByTestId("building-edit-name");
+  await expect(nameInput).toHaveValue(name);
+
+  // Change two fields, not one: the second field guards against the
+  // save path silently dropping everything but the primary column.
+  await nameInput.fill(edited);
+  await page.getByTestId("building-edit-address").fill(address);
+  await page.getByTestId("building-edit-submit").click();
+
+  // The modal closes on success and invalidation refreshes the list.
+  await expect(page.getByTestId("building-edit-submit")).toBeHidden({
+    timeout: 15_000,
+  });
+  await expect(rowFor(edited)).toHaveCount(1, { timeout: 15_000 });
+  await expect(rowFor(name)).toHaveCount(0);
+  await expect(rowFor(edited).first()).toContainText(address);
+
+  await rowFor(edited).first().getByTitle("Delete building").click();
+  await page.getByTestId("confirm-delete").click();
+  await expect(rowFor(edited)).toHaveCount(0, { timeout: 15_000 });
+});
+
+test("admin Properties tab: edit through the modal updates the row", async ({
+  adminPage: page,
+}) => {
+  test.slow(); // create → edit → delete is three round trips
+  await page.goto("/app/admin/panel");
+  await waitForPanelReady(page);
+
+  await page.getByTestId("admin-tab-properties").click();
+  await expect(page.getByTestId("admin-property-row").first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const name = "e2e-edit-property";
+  const edited = "e2e-edited-property";
+  const rowFor = (text: string) =>
+    page.getByTestId("admin-property-row").filter({ hasText: text });
+
+  // Idempotency: clean up leftovers under either name.
+  for (const leftover of [name, edited]) {
+    while ((await rowFor(leftover).count()) > 0) {
+      await rowFor(leftover).first().getByTitle("Delete property").click();
+      await page.getByTestId("confirm-delete").click();
+      await expect(rowFor(leftover)).toHaveCount(0, { timeout: 15_000 });
+    }
+  }
+
+  await page.getByTestId("admin-add-property").click();
+  await page.getByPlaceholder("e.g. Modern 2BR Apartment").fill(name);
+  await page.getByTestId("property-modal-submit").click();
+  await expect(rowFor(name)).toHaveCount(1, { timeout: 15_000 });
+
+  // Open the Edit modal from the row; the title must be prefilled.
+  await rowFor(name).first().getByTitle("Edit property").click();
+  const titleInput = page.getByPlaceholder("Enter property title");
+  await expect(titleInput).toHaveValue(name);
+
+  await titleInput.fill(edited);
+  await page.getByTestId("property-edit-submit").click();
+
+  // The modal closes on success and invalidation refreshes the list.
+  await expect(page.getByTestId("property-edit-submit")).toBeHidden({
+    timeout: 15_000,
+  });
+  await expect(rowFor(edited)).toHaveCount(1, { timeout: 15_000 });
+  await expect(rowFor(name)).toHaveCount(0);
+
+  await rowFor(edited).first().getByTitle("Delete property").click();
+  await page.getByTestId("confirm-delete").click();
+  await expect(rowFor(edited)).toHaveCount(0, { timeout: 15_000 });
+});
+
 test("admin Requests tab renders", async ({ adminPage: page }) => {
   await page.goto("/app/admin/panel");
   await waitForPanelReady(page);
