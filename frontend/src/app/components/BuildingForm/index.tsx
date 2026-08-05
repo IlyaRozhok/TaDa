@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import {
+  buildingUnitTypeAPIToUI,
+  transformTenantTypeAPIToUI,
+} from "@/constants/mappings";
 import type { BuildingFormProps } from "./types";
 import { useBuildingForm } from "./hooks/useBuildingForm";
 import { useBuildingValidation } from "./hooks/useBuildingValidation";
@@ -11,6 +15,7 @@ import { useDropdownHelpers } from "./hooks/useDropdownHelpers";
 import { BasicInfoSection } from "./components/BasicInfoSection";
 import { TenantTargetingSection } from "./components/TenantTargetingSection";
 import { MediaSection } from "./components/MediaSection";
+import { EditMediaSection } from "./components/EditMediaSection";
 import { AmenitiesSection } from "./components/AmenitiesSection";
 import { PetPolicySection } from "./components/PetPolicySection";
 import { MetroStationsSection } from "./components/MetroStationsSection";
@@ -22,6 +27,7 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
   onSubmit,
   isLoading = false,
   mode,
+  building = null,
   buildPayload,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,9 +52,21 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
     documentFiles,
     setDocumentFiles,
     logoPreview,
+    setLogoPreview,
     videoPreview,
+    setVideoPreview,
     photoPreviews,
+    setPhotoPreviews,
     documentPreviews,
+    setDocumentPreviews,
+    removedPhotos,
+    setRemovedPhotos,
+    removedLogo,
+    setRemovedLogo,
+    removedVideo,
+    setRemovedVideo,
+    removedDocuments,
+    setRemovedDocuments,
     photoInputRef,
     uploadAllFiles,
     resetFiles,
@@ -63,7 +81,85 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
     addPet,
     removePet,
     updatePet,
-  } = useDropdownHelpers(setFormData);
+  } = useDropdownHelpers(setFormData, mode);
+
+  // Edit mode: prefill from the building whenever the modal (re)opens.
+  // The dependency list is deliberately narrower than the whole object,
+  // exactly as it was in the monolith.
+  useEffect(() => {
+    if (mode !== "edit") return;
+    if (building && isOpen) {
+      console.log("📥 Loading building data into form:", {
+        building_id: building.id,
+        operator_id: building.operator_id,
+        full_building: building,
+      });
+
+      setFormData({
+        name: building.name || "",
+        description: building.description || "",
+        address: building.address || "",
+        number_of_units: building.number_of_units || 1,
+        type_of_unit: [
+          ...new Set(
+            buildingUnitTypeAPIToUI(
+              (Array.isArray(building.type_of_unit)
+                ? building.type_of_unit
+                : building.type_of_unit != null
+                  ? [building.type_of_unit]
+                  : []) as string[],
+            ),
+          ),
+        ],
+        logo: building.logo || "",
+        video: building.video || "",
+        photos: building.photos || [],
+        documents: building.documents || "",
+        metro_stations: building.metro_stations || [],
+        areas: [],
+        amenities: building.amenities || [],
+        pet_policy: building.pet_policy || false,
+        pets: building.pets || null,
+        tenant_type:
+          transformTenantTypeAPIToUI(
+            (Array.isArray(building.tenant_type)
+              ? building.tenant_type
+              : building.tenant_type != null
+                ? [building.tenant_type]
+                : []) as string[],
+          ) || [],
+        family_status: Array.isArray(building.family_status)
+          ? building.family_status
+          : [],
+        occupation: Array.isArray(building.occupation)
+          ? building.occupation
+          : [],
+        children: Array.isArray(building.children) ? building.children : [],
+        districts: building.districts || [],
+        operator_id: building.operator_id || null,
+      });
+
+      console.log(
+        "✅ Form data initialized with operator_id:",
+        building.operator_id || null,
+      );
+      // Reset removed media when modal opens
+      setRemovedPhotos([]);
+      setRemovedLogo(false);
+      setRemovedVideo(false);
+      setRemovedDocuments(false);
+      // Reset file states
+      setLogoFile(null);
+      setVideoFile(null);
+      setPhotoFiles([]);
+      setDocumentFiles([]);
+      setLogoPreview(null);
+      setVideoPreview(null);
+      setPhotoPreviews([]);
+      setDocumentPreviews([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, building?.id, building?.operator_id]);
 
   // Handle field changes with validation
   const handleFieldChange = (field: string, value: any) => {
@@ -86,10 +182,14 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
       return;
     }
 
-    // Validate all fields
-    const isValid = validateAll(formData);
-    if (!isValid) {
-      return;
+    // Validate all fields — create mode only: the edit monolith never
+    // validated, and a rule like the name pattern would start rejecting
+    // buildings that already exist. Kept different on purpose.
+    if (mode === "create") {
+      const isValid = validateAll(formData);
+      if (!isValid) {
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -98,16 +198,28 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
       const uploadResult = await uploadAllFiles();
 
       // The thin modal wrapper owns the mode-specific payload shape
-      const buildingData = buildPayload(formData, uploadResult);
+      const buildingData = buildPayload(formData, uploadResult, {
+        removedPhotos,
+        removedLogo,
+        removedVideo,
+        removedDocuments,
+      });
 
       await onSubmit(buildingData);
-      if (!isLoading) {
+      // Edit mode never reset after submit — state is rebuilt by the
+      // prefill effect on the next open. Kept different on purpose.
+      if (mode === "create" && !isLoading) {
         resetForm();
         resetFiles();
         clearErrors();
       }
     } catch (error) {
-      console.error("Error submitting building:", error);
+      console.error(
+        mode === "edit"
+          ? "Error updating building:"
+          : "Error submitting building:",
+        error,
+      );
       throw error;
     } finally {
       setIsSubmitting(false);
@@ -158,6 +270,7 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
                 onFieldChange={handleFieldChange}
                 onFieldBlur={handleFieldBlur}
                 onToggleDropdown={toggleDropdown}
+                mode={mode}
               />
 
               <TenantTargetingSection
@@ -173,21 +286,51 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
           </div>
 
           {/* Media */}
-          <MediaSection
-            logoFile={logoFile}
-            setLogoFile={setLogoFile}
-            videoFile={videoFile}
-            setVideoFile={setVideoFile}
-            photoFiles={photoFiles}
-            setPhotoFiles={setPhotoFiles}
-            documentFiles={documentFiles}
-            setDocumentFiles={setDocumentFiles}
-            logoPreview={logoPreview}
-            videoPreview={videoPreview}
-            photoPreviews={photoPreviews}
-            documentPreviews={documentPreviews}
-            photoInputRef={photoInputRef}
-          />
+          {mode === "edit" && building ? (
+            <EditMediaSection
+              building={building}
+              formData={formData}
+              setFormData={setFormData}
+              logoFile={logoFile}
+              setLogoFile={setLogoFile}
+              videoFile={videoFile}
+              setVideoFile={setVideoFile}
+              photoFiles={photoFiles}
+              setPhotoFiles={setPhotoFiles}
+              documentFiles={documentFiles}
+              setDocumentFiles={setDocumentFiles}
+              logoPreview={logoPreview}
+              videoPreview={videoPreview}
+              photoPreviews={photoPreviews}
+              setPhotoPreviews={setPhotoPreviews}
+              documentPreviews={documentPreviews}
+              removedPhotos={removedPhotos}
+              setRemovedPhotos={setRemovedPhotos}
+              removedLogo={removedLogo}
+              setRemovedLogo={setRemovedLogo}
+              removedVideo={removedVideo}
+              setRemovedVideo={setRemovedVideo}
+              removedDocuments={removedDocuments}
+              setRemovedDocuments={setRemovedDocuments}
+              photoInputRef={photoInputRef}
+            />
+          ) : (
+            <MediaSection
+              logoFile={logoFile}
+              setLogoFile={setLogoFile}
+              videoFile={videoFile}
+              setVideoFile={setVideoFile}
+              photoFiles={photoFiles}
+              setPhotoFiles={setPhotoFiles}
+              documentFiles={documentFiles}
+              setDocumentFiles={setDocumentFiles}
+              logoPreview={logoPreview}
+              videoPreview={videoPreview}
+              photoPreviews={photoPreviews}
+              documentPreviews={documentPreviews}
+              photoInputRef={photoInputRef}
+            />
+          )}
 
           {/* Amenities */}
           <AmenitiesSection
@@ -207,6 +350,7 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
             addPet={addPet}
             updatePet={updatePet}
             removePet={removePet}
+            mode={mode}
           />
 
           {/* Metro Stations */}
@@ -215,6 +359,7 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
             addMetroStation={addMetroStation}
             updateMetroStation={updateMetroStation}
             removeMetroStation={removeMetroStation}
+            mode={mode}
           />
 
           {/* Areas and Districts */}
@@ -223,6 +368,7 @@ const BuildingForm: React.FC<BuildingFormProps> = ({
             setFormData={setFormData}
             openDropdown={openDropdown}
             onToggleDropdown={toggleDropdown}
+            mode={mode}
           />
 
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">

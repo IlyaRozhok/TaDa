@@ -4,6 +4,7 @@ import type { BuildingFormData, MetroStation, Pet } from "../types";
 
 export const useDropdownHelpers = (
   setFormData: Dispatch<SetStateAction<BuildingFormData>>,
+  mode: "create" | "edit",
 ) => {
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -26,12 +27,14 @@ export const useDropdownHelpers = (
     setOpenDropdown(openDropdown === name ? null : name);
   };
 
+  // A new row starts at 0 minutes in edit mode and empty in create mode —
+  // the two monoliths disagreed and the difference is kept on purpose.
   const addMetroStation = () => {
     setFormData((prev) => ({
       ...prev,
       metro_stations: [
         ...prev.metro_stations,
-        { label: "", destination: undefined },
+        { label: "", destination: mode === "edit" ? 0 : undefined },
       ],
     }));
   };

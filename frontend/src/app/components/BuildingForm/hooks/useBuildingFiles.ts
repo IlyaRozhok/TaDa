@@ -15,6 +15,12 @@ export const useBuildingFiles = () => {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [documentPreviews, setDocumentPreviews] = useState<string[]>([]);
 
+  // Track removed existing media (edit mode only)
+  const [removedPhotos, setRemovedPhotos] = useState<string[]>([]);
+  const [removedLogo, setRemovedLogo] = useState<boolean>(false);
+  const [removedVideo, setRemovedVideo] = useState<boolean>(false);
+  const [removedDocuments, setRemovedDocuments] = useState<boolean>(false);
+
   // File input refs
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -224,9 +230,21 @@ export const useBuildingFiles = () => {
     documentFiles,
     setDocumentFiles,
     logoPreview,
+    setLogoPreview,
     videoPreview,
+    setVideoPreview,
     photoPreviews,
+    setPhotoPreviews,
     documentPreviews,
+    setDocumentPreviews,
+    removedPhotos,
+    setRemovedPhotos,
+    removedLogo,
+    setRemovedLogo,
+    removedVideo,
+    setRemovedVideo,
+    removedDocuments,
+    setRemovedDocuments,
     photoInputRef,
     uploadAllFiles,
     resetFiles,
