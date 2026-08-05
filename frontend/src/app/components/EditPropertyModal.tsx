@@ -3005,6 +3005,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </button>
             <button
               type="submit"
+              data-testid="property-edit-submit"
               disabled={isLoading || isSubmitting}
               className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >

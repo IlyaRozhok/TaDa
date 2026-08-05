@@ -716,6 +716,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                 </label>
                 <input
                   type="text"
+                  data-testid="building-edit-name"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -731,6 +732,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
                 </label>
                 <input
                   type="text"
+                  data-testid="building-edit-address"
                   value={formData.address}
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
@@ -2347,6 +2349,7 @@ const EditBuildingModal: React.FC<EditBuildingModalProps> = ({
             </button>
             <button
               type="submit"
+              data-testid="building-edit-submit"
               disabled={isLoading || isSubmitting}
               className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >

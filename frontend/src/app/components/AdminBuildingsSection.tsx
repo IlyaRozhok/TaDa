@@ -113,6 +113,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
         </div>
         <button
           onClick={onAdd}
+          data-testid="admin-add-building"
           className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium flex items-center justify-center space-x-2"
         >
           <span>Add Building</span>
@@ -168,6 +169,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                 buildings.map((building) => (
                   <tr
                     key={building.id}
+                    data-testid="admin-building-row"
                     onClick={() => onView(building)}
                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >
