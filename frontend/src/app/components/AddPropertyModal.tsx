@@ -2,4 +2,4 @@
 // The new structure is in ./AddPropertyModal/ directory
 
 export { default } from "./AddPropertyModal/index";
-export * from "./AddPropertyModal/types";
+export * from "./PropertyForm/types";

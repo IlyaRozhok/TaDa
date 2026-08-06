@@ -2,19 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
-import { AddPropertyModalProps, Pet } from "./types";
-import { usePropertyForm } from "./hooks/usePropertyForm";
-import { usePropertyValidation } from "./hooks/usePropertyValidation";
-import { usePropertyData } from "./hooks/usePropertyData";
-import { usePropertyFiles } from "./hooks/usePropertyFiles";
-import { useDropdownHelpers } from "./hooks/useDropdownHelpers";
-import { BasicInfoSection } from "./components/BasicInfoSection";
-import { LocationSection } from "./components/LocationSection";
-import { PropertyDetailsSection } from "./components/PropertyDetailsSection";
-import { AmenitiesSection } from "./components/AmenitiesSection";
-import { ConciergePetsSmokingSection } from "./components/ConciergePetsSmokingSection";
-import { LocationDetailsSection } from "./components/LocationDetailsSection";
-import { MediaSection } from "./components/MediaSection";
+import { AddPropertyModalProps, Pet } from "@/app/components/PropertyForm/types";
+import { usePropertyForm } from "@/app/components/PropertyForm/hooks/usePropertyForm";
+import { usePropertyValidation } from "@/app/components/PropertyForm/hooks/usePropertyValidation";
+import { usePropertyData } from "@/app/components/PropertyForm/hooks/usePropertyData";
+import { usePropertyFiles } from "@/app/components/PropertyForm/hooks/usePropertyFiles";
+import { useDropdownHelpers } from "@/app/components/PropertyForm/hooks/useDropdownHelpers";
+import { BasicInfoSection } from "@/app/components/PropertyForm/components/BasicInfoSection";
+import { LocationSection } from "@/app/components/PropertyForm/components/LocationSection";
+import { PropertyDetailsSection } from "@/app/components/PropertyForm/components/PropertyDetailsSection";
+import { AmenitiesSection } from "@/app/components/PropertyForm/components/AmenitiesSection";
+import { ConciergePetsSmokingSection } from "@/app/components/PropertyForm/components/ConciergePetsSmokingSection";
+import { LocationDetailsSection } from "@/app/components/PropertyForm/components/LocationDetailsSection";
+import { MediaSection } from "@/app/components/PropertyForm/components/MediaSection";
 import { useLocalizedFormOptions } from "../../../shared/hooks/useLocalizedFormOptions";
 import {
   transformTenantTypeUIToAPI,
