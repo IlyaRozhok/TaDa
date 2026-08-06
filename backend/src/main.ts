@@ -22,6 +22,13 @@ async function bootstrap() {
   const logger = app.get(Logger);
   app.useLogger(logger);
 
+  // One proxy hop — nginx — sits in front of the API and forwards the client
+  // address in X-Forwarded-For. Without this Express reports nginx's own address
+  // as req.ip, so the rate limiter buckets every visitor together and a per-IP
+  // limit becomes a global one. That is harmless for endpoints nobody calls; it
+  // is not harmless for POST /auth/refresh, which the frontend now uses.
+  app.set("trust proxy", 1);
+
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(cookieParser());
 

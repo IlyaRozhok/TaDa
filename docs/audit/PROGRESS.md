@@ -1,5 +1,9 @@
 # PROGRESS — living refactoring tracker
 
+**Out-of-band bugfix in flight (2026-08-06): silent session refresh.** Reported by the
+owner — users were signed out a few hours in. See «Bugfixes outside the phase
+numbering» below; it does not move the phase order.
+
 **Step 5.1 is CLOSED IN FULL (2026-08-04).** The whole data layer sits on RTK Query: eight domains (tenant-cv, booking-requests, shortlist, users, buildings, preferences, matching, properties) in typed `store/api/*.api.ts` files over one `baseApi`; `apiSlice.ts` is gone and `api.ts` is down to the axios instance with its 401 interceptor, `authAPI`, and the seven deliberately-axios multipart uploads. **5.2 is CLOSED IN FULL (2026-08-04)** — one type tree: `app/types/` for domain shapes, `entities/preferences/model` for wizard forms, `store/api/*` for wire shapes; `src/types/` deleted whole. **5.3 was split on 2026-08-04 after a fresh survey of `develop`:** the cheap residue shipped as **5.3b** (7 dead `shared/ui` files, 6 re-export shims, the dead Clear-shortlist flow — 15 files, −1281 lines, no relocations), and the relocation half is parked as **5.3c** in the backlog, deliberately, until after 5.4. **6.1 is closed (2026-08-04)** — ten indexes in one non-transactional `CONCURRENTLY` migration; the inventory was rebuilt from the live schema and corrects the plan in two places. Next per the owner: **5.4** (the god-modals).
 
 **Owner decision 2026-08-03 — the live-routes whitelist reshapes the plan's tail.** The frontend keeps exactly twelve routes (auth, onboarding, units, preferences, tenant-cv, profile, shortlist, properties/[id], buildings/[id], privacy, terms, admin/panel) plus the functionally required `/`, `/app/auth/callback` and `/cv/[uuid]`; everything else is confirmed junk and deleted with its cascade. Property create/edit live as modals inside the admin panel. This absorbs the old sub-PR E, cancels sub-PR D (the media-management UI lived only on the deleted edit page), and shrinks C. B (matching+units) is merged (#89), the route sweep is merged (#90) and verified on stage, admin CRUD is merged (#91); the trailing `api.ts` tidy-up PR closed the step.
@@ -257,6 +261,55 @@ dropped afterwards; the local dev database only received the migration itself.
 | 7.4 | Metrics — `/metrics` or APM | 🟢 | ⬜ | | | | Right now visibility is zero, apart from Sentry |
 | 7.5 | Pagination — check all listings | 🟡 | ⬜ | | | | |
 | 7.6 | DB backup policy — lock it down and document it | 🟢 | ⬜ | | | | |
+
+---
+
+## Bugfixes outside the phase numbering
+
+Production defects reported by the owner. They do not belong to a phase and do not
+wait for one; each still gets its own branch and PR.
+
+| Date | What | Risk | Status | PR | Stage | Note |
+|---|---|---|---|---|---|---|
+| 2026-08-06 | **Users signed out a few hours into a session instead of staying in for the refresh window** | 🟡 | 🟡 | — | ⬜ | See below |
+
+**Root cause.** The frontend never called `POST /auth/refresh` — the string did not
+appear anywhere in `frontend/src`. The interceptor that did call it (mutex + queue +
+replay) shipped in `fdf91ee` on 2026-06-25 and was wiped out three days later by
+`7fc6a22`, a blanket `Revert "Merge pull request #18 …"` aimed at a property-description
+fix. The revert took the backend half with it; the backend half was rebuilt afterwards
+(`refreshTokens`, `refresh_token_hash`, rotation, the endpoint), the frontend half was
+not. Step 5.1 then modelled `baseQueryWithAuth` on the axios interceptor as it stood —
+i.e. copied the already-broken behaviour — so both clients answered 401 with `logout()`.
+The access cookie dies at 15 minutes; the visible sign-out lands whenever the first
+authenticated request after that happens, which the setup stretches out for hours
+(auth state is in-memory only, `SessionManager` calls `/auth/me` once per mount,
+`refetchOnFocus`/`refetchOnReconnect`/`refetchOnMountOrArgChange` are all off,
+`keepUnusedDataFor: 300`, no polling anywhere). Rotation was never reached, so it was
+never at fault.
+
+**Fix.** `baseQueryWithReauth` in `store/api/baseApi.ts` and the axios interceptor both
+renew through one shared coordinator (`app/lib/sessionRefresh.ts`) — a single in-flight
+promise, so a burst of simultaneous 401s across both clients produces one
+`POST /auth/refresh` instead of several that would rotate each other into
+«reuse detected». One replay per request; `logout()` only when the refresh itself fails.
+The axios path exemptions for `/preferences`, `/onboarding` and `/auth` are gone: they
+were a workaround for having no refresh, and they made the same 401 behave differently
+in the two clients. Token lifetimes now come from `JWT_ACCESS_EXPIRES_IN` and
+`JWT_REFRESH_EXPIRES_IN` **with the defaults compiled in** (`15m` / `30d`, in
+`common/config/auth-tokens.config.ts`), so the hosts need no environment edit; the
+refresh cookie's `maxAge` is derived from the same value instead of being a second,
+independent constant. Rotation itself is untouched, by the owner's decision.
+
+**`trust proxy` is now on** (`app.set("trust proxy", 1)` in `main.ts`). nginx forwards
+`X-Forwarded-For`, but Express was not told to trust it, so `req.ip` was nginx's own
+address and the throttler bucketed every visitor together — which would have turned the
+`1/s, 3/10s, 10/min` limit on `/auth/refresh` into a global one the moment the frontend
+started calling it.
+
+**After the merge, verify on stage:** sign in, leave the tab open, come back later and
+act — the session must be alive, with one `POST /auth/refresh` in the network log and no
+`Refresh token reuse or invalidation detected` in the API logs.
 
 ---
 

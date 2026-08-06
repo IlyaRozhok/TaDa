@@ -7,6 +7,7 @@ import {
 } from "@reduxjs/toolkit/query/react";
 
 import { logout } from "@/store/slices/authSlice";
+import { refreshSession } from "@/app/lib/sessionRefresh";
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api",
@@ -29,23 +30,41 @@ const PUBLIC_ENDPOINTS = new Set([
 ]);
 
 /**
- * Same 401 handling the axios instance has had all along: a rejected session
- * clears the store. Without this, the more traffic moves to RTK Query the more
- * often an expired session would leave the user on a broken page instead of
- * signed out.
+ * A 401 means the access token expired, not that the session ended: the refresh
+ * token behind it is good for a month. So the 401 is spent on renewing the pair
+ * and replaying the request, and only a refresh that itself fails clears the
+ * store.
+ *
+ * The refresh runs through the shared coordinator, so a screen that fires five
+ * queries at once — and the axios instance alongside it — produce one
+ * `POST /auth/refresh` between them rather than five that invalidate each other.
+ * The refresh call is not an endpoint of this API, so it cannot re-enter here.
  */
-const baseQueryWithAuth: BaseQueryFn<
+const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
   const result = await rawBaseQuery(args, api, extraOptions);
 
-  if (result.error?.status === 401 && !PUBLIC_ENDPOINTS.has(api.endpoint)) {
+  if (result.error?.status !== 401 || PUBLIC_ENDPOINTS.has(api.endpoint)) {
+    return result;
+  }
+
+  if (!(await refreshSession())) {
+    api.dispatch(logout());
+    return result;
+  }
+
+  // Exactly one retry. If a token minted seconds ago is refused too, the problem
+  // is not the token, and trying again would loop.
+  const retried = await rawBaseQuery(args, api, extraOptions);
+
+  if (retried.error?.status === 401) {
     api.dispatch(logout());
   }
 
-  return result;
+  return retried;
 };
 
 /**
@@ -55,7 +74,7 @@ const baseQueryWithAuth: BaseQueryFn<
  */
 export const baseApi = createApi({
   reducerPath: "api",
-  baseQuery: baseQueryWithAuth,
+  baseQuery: baseQueryWithReauth,
   tagTypes: [
     "User",
     "Property",
