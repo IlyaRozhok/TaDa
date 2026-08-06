@@ -116,17 +116,24 @@ push main|develop, PR→main
 ## 5. Docker и nginx
 
 `backend/Dockerfile` — корректный multi-stage (builder → production), non-root user `nestjs`,
-`npm ci --omit=dev`. Замечания:
+`npm ci --omit=dev`. Три замечания аудита — **все три закрыты**:
 
-1. **`HEALTHCHECK` в Dockerfile бьёт в `http://localhost:3001/health`** — такого маршрута нет,
-   глобальный префикс `api`, реальный путь `/api/health`. Healthcheck из Dockerfile всегда
-   возвращает 404 → unhealthy. На практике это не выстреливает, потому что `docker-compose.yml`
-   переопределяет healthcheck и использует правильный `/api/health`. Но при запуске образа
-   без compose контейнер будет вечно unhealthy.
-2. `RUN apk add --no-cache vips-dev fftw-dev` — нативные зависимости для `sharp`,
-   но **`sharp` отсутствует в `package.json`**. Мёртвый слой, раздувает образ.
-3. `COPY database ./database` копирует `backend/database/` — вторую, устаревшую папку миграций
-   (см. `02`, §5). В образ попадает мусор.
+1. ~~`HEALTHCHECK` бьёт в `/health`, такого маршрута нет — глобальный префикс `api`.~~
+   **Fixed in 3.2:** the probe now points at `/api/health` (`app.controller.ts:10`,
+   prefix set in `main.ts:46`). Compose had always overridden it with the correct path, so
+   nothing changes under compose; what changes is that the image is no longer permanently
+   unhealthy when run on its own.
+2. ~~`RUN apk add --no-cache vips-dev fftw-dev` — native deps for `sharp`, which is not a
+   dependency.~~ **Removed in 3.2.** `sharp` is absent from `package.json`, from
+   `package-lock.json` and from every line of source. The image went **901 MB → 572 MB**
+   (−329 MB, −36 %), measured by building both revisions of the file.
+3. ~~`COPY database ./database` ships the obsolete second migrations folder into the image.~~
+   Removed in 2.5 together with the folder itself.
+
+`frontend/Dockerfile`, `frontend/Dockerfile.dev` and `frontend/.dockerignore` **deleted in
+3.2**: the frontend deploys to Vercel, nothing in CI or compose referenced them, and
+`Dockerfile` could not have worked anyway — it copies `.next/standalone` while `next.config.ts`
+deliberately disables standalone output for Vercel.
 
 ### 5.1 Host reconciliation — step 3.1, closed 2026-08-06
 
@@ -235,7 +242,7 @@ after any host change. Question Q4 is closed.
 |---|---|
 | **Структурное логирование** | Нет. 88 `console.*` в backend, 427 в frontend. `Logger` из Nest использован 1 раз. Нет request-id, нет уровней, нет JSON-логов. |
 | **Автозапуск миграций** | Сломан молча — `migrations: ["dist/migrations/*.js"]` указывает не туда (детали в `02`, §5). |
-| **Кэш** | Отсутствует. Redis удалён **только из кода** бэкенда на `develop` (PR #44). В `docker-compose.yml` сервис `redis`, том `redis_data` и `depends_on: redis: condition: service_healthy` у backend **всё ещё на месте** — compose поднимает и ждёт готовности сервиса, которым никто не пользуется. Ветка `chore/remove-redis-compose` была удалена без мержа (2026-07-28), удаление делается заново в Фазе 3.2. Туда же: `REDIS_*` в `.env.production` и в `/opt/tada/.env` на хостах, осиротевший том и контейнер `tada-redis` на VPS. |
+| **Кэш** | Отсутствует, и теперь честно. Redis был удалён из кода в PR #44 и **из `docker-compose.yml` в 3.2** — сервис, том `redis_data` и `depends_on` у backend. Осталось host-действие: снести контейнер `tada-redis` и осиротевший том на обоих VPS и вычистить `REDIS_*` из `/opt/tada/.env`. **Порядок обязателен** — сначала деплой compose без `depends_on`, только потом снос контейнера, иначе backend не поднимется. Подробности и шаги — в `PROGRESS.md`, «3.2 host actions». |
 | **Очереди** | Отсутствуют. Все операции синхронные, включая загрузку в S3. |
 | **Rate limit при масштабировании** | Throttler хранит счётчики в памяти процесса. При >1 инстанса лимиты множатся на число инстансов. |
 | **Sentry на фронте** | Не подключён. Ошибки клиента не видны. |
