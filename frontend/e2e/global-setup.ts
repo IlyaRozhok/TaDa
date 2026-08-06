@@ -20,7 +20,7 @@ import * as path from "path";
 import { BASE_URL } from "./env";
 
 const AUTH_DIR = path.join(__dirname, ".auth");
-const BACKEND_ENV = path.join(__dirname, "..", "..", "backend", ".env");
+export const BACKEND_ENV = path.join(__dirname, "..", "..", "backend", ".env");
 
 /** Access-токен живёт 15 минут — столько же, сколько выдаёт приложение. */
 const ACCESS_TTL_SECONDS = 15 * 60;
@@ -96,7 +96,7 @@ const SEED_USERS: SeedUser[] = [
   },
 ];
 
-function parseEnvFile(file: string): Record<string, string> {
+export function parseEnvFile(file: string): Record<string, string> {
   if (!fs.existsSync(file)) {
     throw new Error(
       `e2e global-setup: не найден ${file}. Нужны DB_* и JWT_SECRET бэкенда.`,
@@ -114,7 +114,7 @@ function parseEnvFile(file: string): Record<string, string> {
   return env;
 }
 
-function createPsqlRunner(env: Record<string, string>) {
+export function createPsqlRunner(env: Record<string, string>) {
   const args = [
     "-h",
     env.DB_HOST ?? "localhost",
@@ -217,27 +217,37 @@ function seedUser(psql: (sql: string) => string, user: SeedUser): string {
   return id;
 }
 
-/** HS256-JWT с той же полезной нагрузкой, что выпускает AuthService. */
-function signAccessToken(
-  secret: string,
-  payload: { sub: string; email: string; role: Role },
-): string {
+/**
+ * HS256-JWT тем же алгоритмом и секретом, что и бэкенд. Claims передаются
+ * целиком, включая iat/exp: сессионным тестам нужны и просроченный access,
+ * и живой refresh, которых у обычного засева нет.
+ */
+export function signJwt(secret: string, claims: Record<string, unknown>): string {
   const base64url = (value: object): string =>
     Buffer.from(JSON.stringify(value)).toString("base64url");
 
-  const issuedAt = Math.floor(Date.now() / 1000);
   const header = base64url({ alg: "HS256", typ: "JWT" });
-  const body = base64url({
-    ...payload,
-    status: "active",
-    iat: issuedAt,
-    exp: issuedAt + ACCESS_TTL_SECONDS,
-  });
+  const body = base64url(claims);
   const signature = createHmac("sha256", secret)
     .update(`${header}.${body}`)
     .digest("base64url");
 
   return `${header}.${body}.${signature}`;
+}
+
+/** Access-токен с той же полезной нагрузкой, что выпускает AuthService. */
+function signAccessToken(
+  secret: string,
+  payload: { sub: string; email: string; role: Role },
+): string {
+  const issuedAt = Math.floor(Date.now() / 1000);
+
+  return signJwt(secret, {
+    ...payload,
+    status: "active",
+    iat: issuedAt,
+    exp: issuedAt + ACCESS_TTL_SECONDS,
+  });
 }
 
 function writeStorageState(user: SeedUser, userId: string, token: string): void {
