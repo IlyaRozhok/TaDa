@@ -287,6 +287,7 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
         }`}
         aria-busy={loading}
         aria-live="polite"
+        data-testid="match-badge"
       >
         {badgeLabel}
       </div>

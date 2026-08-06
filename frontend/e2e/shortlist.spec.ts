@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures";
 import { API_URL } from "./env";
+import { isBatchScores, isPerCardMatch } from "./matching-requests";
 
 /**
  * `POST|DELETE /shortlist/:propertyId` — one toggle. Deliberately not matching
@@ -32,12 +33,27 @@ test("tenant can heart a property, see it on shortlist, and un-heart it", async 
     firstCard.getByTestId("shortlist-toggle").click(),
   ]);
 
-  // Navigate to the shortlist page
+  // Navigate to the shortlist page, watching how its grid fetches match scores
+  const perCard: string[] = [];
+  const batches: string[] = [];
+  page.on("request", (request) => {
+    if (isPerCardMatch(request.url())) perCard.push(request.url());
+    if (isBatchScores(request.url())) batches.push(request.url());
+  });
+
   await page.goto("/app/shortlist");
 
   // At least one property should appear on the shortlist
   const shortlistCard = page.getByTestId("property-card").first();
   await expect(shortlistCard).toBeVisible({ timeout: 10_000 });
+
+  // The card shows its match percentage, and the whole grid was scored by one
+  // batch request rather than one request per card.
+  const badge = shortlistCard.getByTestId("match-badge");
+  await expect(badge).toBeVisible({ timeout: 10_000 });
+  await expect(badge).toHaveText(/\d+%/);
+  await expect.poll(() => batches.length, { timeout: 10_000 }).toBeGreaterThan(0);
+  expect(perCard).toHaveLength(0);
 
   // Un-heart the property, again waiting for the server to confirm
   await Promise.all([
