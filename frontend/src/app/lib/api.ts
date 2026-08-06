@@ -1,5 +1,6 @@
 import axios from "axios";
 import { logout } from "@/store/slices/authSlice";
+import { refreshSession } from "./sessionRefresh";
 
 // Create axios instance
 const api = axios.create({
@@ -12,25 +13,55 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Response interceptor - handle 401 errors
+function dispatchLogout() {
+  import("@/store/store").then(({ store }) => {
+    store.dispatch(logout());
+  });
+}
+
+/**
+ * Response interceptor — renew the session on 401, then replay the request.
+ *
+ * The renewal goes through the coordinator shared with RTK Query, so the two
+ * clients cannot each fire a refresh and invalidate one another's rotated token.
+ *
+ * There used to be a list of paths — /preferences, /onboarding, /auth — where a
+ * 401 was swallowed instead of signing the user out. That was a workaround for
+ * having no refresh at all: those flows 401 mid-wizard and losing the session
+ * there was the most visible way to lose work. With the refresh restored the
+ * exemption has nothing left to protect, and keeping it would mean the same 401
+ * signs the user out through RTK Query but not through here.
+ */
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      const currentPath = window.location.pathname;
+    const originalRequest = error.config;
 
-      if (
-        !currentPath.includes("/preferences") &&
-        !currentPath.includes("/auth") &&
-        !currentPath.includes("/onboarding")
-      ) {
-        import("@/store/store").then(({ store }) => {
-          store.dispatch(logout());
-        });
-      }
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry
+    ) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    // One replay per request: a fresh token that is still refused will not
+    // become acceptable on the third attempt.
+    originalRequest._retry = true;
+
+    if (!(await refreshSession())) {
+      dispatchLogout();
+      return Promise.reject(error);
+    }
+
+    try {
+      return await api(originalRequest);
+    } catch (retryError: any) {
+      if (retryError?.response?.status === 401) {
+        dispatchLogout();
+      }
+      return Promise.reject(retryError);
+    }
   },
 );
 
