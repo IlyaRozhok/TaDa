@@ -1,5 +1,6 @@
 import React from "react";
 import { Minus } from "lucide-react";
+import { SingleSelectDropdown } from "@/app/components/form/SingleSelectDropdown";
 import type { Dispatch, SetStateAction } from "react";
 import type { EditPropertyFormData } from "../types";
 import type { Pet } from "../types";
@@ -87,55 +88,24 @@ export const EditPetPolicySection: React.FC<EditPetPolicySectionProps> = ({
                         <label className="block text-sm font-medium text-white/90 mb-2">
                           Type
                         </label>
-                        <div className="relative" data-dropdown>
-                          <div
-                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
-                              isFieldReadonly
-                                ? "opacity-60 cursor-not-allowed"
-                                : "cursor-pointer"
-                            }`}
-                            onClick={() =>
-                              !isFieldReadonly &&
-                              toggleDropdown(`pet_type_${index}`)
-                            }
-                          >
-                            <span className="capitalize">{pet.type}</span>
-                            {!isFieldReadonly && (
-                              <svg
-                                className="w-5 h-5 text-white/70"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                          {!isFieldReadonly &&
-                            openDropdown === `pet_type_${index}` && (
-                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {["dog", "cat", "other"].map((type) => (
-                                  <div
-                                    key={type}
-                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${
-                                      pet.type === type ? "bg-white/10" : ""
-                                    }`}
-                                    onClick={() => {
-                                      updatePet(index, "type", type);
-                                      setOpenDropdown(null);
-                                    }}
-                                  >
-                                    {type}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                        </div>
+                        <SingleSelectDropdown
+                          name={`pet_type_${index}`}
+                          openDropdown={openDropdown}
+                          onToggleDropdown={toggleDropdown}
+                          readonly={isFieldReadonly}
+                          displayClassName="capitalize"
+                          display={pet.type}
+                          options={["dog", "cat", "other"].map((type) => ({
+                            value: type,
+                            content: type,
+                            selected: pet.type === type,
+                            className: "capitalize",
+                          }))}
+                          onSelect={(value) => {
+                            updatePet(index, "type", value);
+                            setOpenDropdown(null);
+                          }}
+                        />
                       </div>
 
                       {pet.type === "other" && (
@@ -165,72 +135,30 @@ export const EditPetPolicySection: React.FC<EditPetPolicySectionProps> = ({
                         <label className="block text-sm font-medium text-white/90 mb-2">
                           Size (Optional)
                         </label>
-                        <div className="relative" data-dropdown>
-                          <div
-                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
-                              isFieldReadonly
-                                ? "opacity-60 cursor-not-allowed"
-                                : "cursor-pointer"
-                            }`}
-                            onClick={() =>
-                              !isFieldReadonly &&
-                              toggleDropdown(`pet_size_${index}`)
-                            }
-                          >
-                            <span
-                              className={
-                                pet.size ? "capitalize" : "text-white/50"
-                              }
-                            >
-                              {pet.size ? pet.size : "Not specified"}
-                            </span>
-                            {!isFieldReadonly && (
-                              <svg
-                                className="w-5 h-5 text-white/70"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                          {!isFieldReadonly &&
-                            openDropdown === `pet_size_${index}` && (
-                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {[
-                                  { value: "", label: "Not specified" },
-                                  { value: "small", label: "Small" },
-                                  { value: "medium", label: "Medium" },
-                                  { value: "large", label: "Large" },
-                                ].map((size) => (
-                                  <div
-                                    key={size.value}
-                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                                      (pet.size || "") === size.value
-                                        ? "bg-white/10"
-                                        : ""
-                                    }`}
-                                    onClick={() => {
-                                      updatePet(
-                                        index,
-                                        "size",
-                                        size.value || undefined,
-                                      );
-                                      setOpenDropdown(null);
-                                    }}
-                                  >
-                                    {size.label}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                        </div>
+                        <SingleSelectDropdown
+                          name={`pet_size_${index}`}
+                          openDropdown={openDropdown}
+                          onToggleDropdown={toggleDropdown}
+                          readonly={isFieldReadonly}
+                          displayClassName={
+                            pet.size ? "capitalize" : "text-white/50"
+                          }
+                          display={pet.size ? pet.size : "Not specified"}
+                          options={[
+                            { value: "", label: "Not specified" },
+                            { value: "small", label: "Small" },
+                            { value: "medium", label: "Medium" },
+                            { value: "large", label: "Large" },
+                          ].map((size) => ({
+                            value: size.value,
+                            content: size.label,
+                            selected: (pet.size || "") === size.value,
+                          }))}
+                          onSelect={(value) => {
+                            updatePet(index, "size", value || undefined);
+                            setOpenDropdown(null);
+                          }}
+                        />
                       </div>
                     </div>
                   </div>

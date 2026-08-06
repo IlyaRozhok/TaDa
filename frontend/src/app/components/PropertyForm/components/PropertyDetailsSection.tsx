@@ -1,5 +1,6 @@
 import React from "react";
 import { FormField, Input, Textarea } from "../../FormField";
+import { SingleSelectDropdown } from "@/app/components/form/SingleSelectDropdown";
 import { PropertyFormData } from "../types";
 import { sqFtToSqM, formatSqMForForm } from "@/shared/lib/area";
 
@@ -50,60 +51,34 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
           error={errors.bedrooms}
           touched={touched.bedrooms}
         >
-          <div className="relative" data-dropdown>
-            <div
-              className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-              onClick={() => onToggleDropdown("bedrooms")}
-            >
-              <span
-                className={
-                  formData.bedrooms != null ? "text-white" : "text-white/50"
-                }
-              >
-                {formData.bedrooms != null
-                  ? formData.bedrooms >= 5
-                    ? "5+"
-                    : formData.bedrooms
-                  : "Select Bedrooms"}
-              </span>
-              <svg
-                className="w-5 h-5 text-white/70"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-            {openDropdown === "bedrooms" && (
-              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {BEDROOM_OPTIONS.map((value) => (
-                  <div
-                    key={value}
-                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                      (value === 5 &&
-                        formData.bedrooms != null &&
-                        formData.bedrooms >= 5) ||
-                      (value < 5 && formData.bedrooms === value)
-                        ? "bg-white/10"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      onFieldChange("bedrooms", value === 5 ? 5 : value);
-                      onToggleDropdown("bedrooms");
-                    }}
-                  >
-                    {value === 5 ? "5+" : value}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <SingleSelectDropdown
+            name="bedrooms"
+            openDropdown={openDropdown}
+            onToggleDropdown={onToggleDropdown}
+            displayClassName={
+              formData.bedrooms != null ? "text-white" : "text-white/50"
+            }
+            display={
+              formData.bedrooms != null
+                ? formData.bedrooms >= 5
+                  ? "5+"
+                  : formData.bedrooms
+                : "Select Bedrooms"
+            }
+            options={BEDROOM_OPTIONS.map((value) => ({
+              value: String(value),
+              content: value === 5 ? "5+" : value,
+              selected:
+                (value === 5 &&
+                  formData.bedrooms != null &&
+                  formData.bedrooms >= 5) ||
+                (value < 5 && formData.bedrooms === value),
+            }))}
+            onSelect={(value) => {
+              onFieldChange("bedrooms", Number(value));
+              onToggleDropdown("bedrooms");
+            }}
+          />
         </FormField>
 
         {/* Bathrooms dropdown */}
@@ -112,60 +87,34 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
           error={errors.bathrooms}
           touched={touched.bathrooms}
         >
-          <div className="relative" data-dropdown>
-            <div
-              className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-              onClick={() => onToggleDropdown("bathrooms")}
-            >
-              <span
-                className={
-                  formData.bathrooms != null ? "text-white" : "text-white/50"
-                }
-              >
-                {formData.bathrooms != null
-                  ? formData.bathrooms >= 4
-                    ? "4+"
-                    : formData.bathrooms
-                  : "Select Bathrooms"}
-              </span>
-              <svg
-                className="w-5 h-5 text-white/70"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-            {openDropdown === "bathrooms" && (
-              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {BATHROOM_OPTIONS.map((value) => (
-                  <div
-                    key={value}
-                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                      (value === 4 &&
-                        formData.bathrooms != null &&
-                        formData.bathrooms >= 4) ||
-                      (value < 4 && formData.bathrooms === value)
-                        ? "bg-white/10"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      onFieldChange("bathrooms", value === 4 ? 4 : value);
-                      onToggleDropdown("bathrooms");
-                    }}
-                  >
-                    {value === 4 ? "4+" : value}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <SingleSelectDropdown
+            name="bathrooms"
+            openDropdown={openDropdown}
+            onToggleDropdown={onToggleDropdown}
+            displayClassName={
+              formData.bathrooms != null ? "text-white" : "text-white/50"
+            }
+            display={
+              formData.bathrooms != null
+                ? formData.bathrooms >= 4
+                  ? "4+"
+                  : formData.bathrooms
+                : "Select Bathrooms"
+            }
+            options={BATHROOM_OPTIONS.map((value) => ({
+              value: String(value),
+              content: value === 4 ? "4+" : value,
+              selected:
+                (value === 4 &&
+                  formData.bathrooms != null &&
+                  formData.bathrooms >= 4) ||
+                (value < 4 && formData.bathrooms === value),
+            }))}
+            onSelect={(value) => {
+              onFieldChange("bathrooms", Number(value));
+              onToggleDropdown("bathrooms");
+            }}
+          />
         </FormField>
 
         <FormField label="Floor" error={errors.floor} touched={touched.floor}>

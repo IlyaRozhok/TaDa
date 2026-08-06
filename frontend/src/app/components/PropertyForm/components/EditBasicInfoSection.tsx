@@ -1,6 +1,7 @@
 import React from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { EditPropertyFormData, OperatorOption } from "../types";
+import { SingleSelectDropdown } from "@/app/components/form/SingleSelectDropdown";
 import type { Building as ApiBuilding } from "@/store/api/buildings.api";
 import { BuildingType, PropertyType } from "@/app/types/property";
 
@@ -222,63 +223,36 @@ export const EditBasicInfoSection: React.FC<EditBasicInfoSectionProps> = ({
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Building Type
               </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("building_type")}
-                >
-                  <span
-                    className={
-                      formData.building_type ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.building_type
-                      ? (buildingTypeOptions.find(
-                          (o) => o.value === formData.building_type,
-                        )?.label ??
-                        formData.building_type
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase()))
-                      : "Select Type"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "building_type" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {buildingTypeOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.building_type === option.value
-                            ? "bg-white/10"
-                            : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            building_type: option.value as BuildingType,
-                          });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <SingleSelectDropdown
+                name="building_type"
+                openDropdown={openDropdown}
+                onToggleDropdown={toggleDropdown}
+                displayClassName={
+                  formData.building_type ? "text-white" : "text-white/50"
+                }
+                display={
+                  formData.building_type
+                    ? (buildingTypeOptions.find(
+                        (o) => o.value === formData.building_type,
+                      )?.label ??
+                      formData.building_type
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase()))
+                    : "Select Type"
+                }
+                options={buildingTypeOptions.map((option) => ({
+                  value: option.value,
+                  content: option.label,
+                  selected: formData.building_type === option.value,
+                }))}
+                onSelect={(value) => {
+                  setFormData({
+                    ...formData,
+                    building_type: value as BuildingType,
+                  });
+                  setOpenDropdown(null);
+                }}
+              />
             </div>
 
             <div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { FormField, Input, Select } from "../../FormField";
+import { MultiSelectDropdown } from "@/app/components/form/MultiSelectDropdown";
 import { PropertyFormData } from "../types";
 import { useLocalizedFormOptions } from "../../../../shared/hooks/useLocalizedFormOptions";
 import { useTranslation } from "../../../hooks/useTranslation";
@@ -201,376 +202,111 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
         error={errors.tenant_types}
         touched={touched.tenant_types}
       >
-        <div className="relative" data-dropdown>
-          <div
-            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center ${
-              isReadonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-            }`}
-            onClick={() => !isReadonly && onToggleDropdown("tenant_types")}
-          >
-            <div className="flex flex-wrap gap-1 flex-1">
-              {(formData.tenant_types || []).length > 0 ? (
-                formData.tenant_types.map((value) => {
-                  const option = tenantTypeOptions.find(
-                    (opt) => opt.value === value,
-                  );
-                  return (
-                    <span
-                      key={value}
-                      className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                    >
-                      {option?.label ?? value}
-                      {!isReadonly && (
-                        <button
-                          type="button"
-                          className="ml-1 text-white/70 hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onFieldChange(
-                              "tenant_types",
-                              formData.tenant_types.filter((t) => t !== value),
-                            );
-                          }}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </span>
-                  );
-                })
-              ) : (
-                <span className="text-white/50">Select types...</span>
-              )}
-            </div>
-            {!isReadonly && (
-              <svg
-                className="w-5 h-5 text-white/70 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            )}
-          </div>
-          {!isReadonly && openDropdown === "tenant_types" && (
-            <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {tenantTypeOptions.map((option) => (
-                <div
-                  key={option.value}
-                  className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                  onClick={() => {
-                    const newTenantTypes = formData.tenant_types.includes(
-                      option.value,
-                    )
-                      ? formData.tenant_types.filter((t) => t !== option.value)
-                      : [...formData.tenant_types, option.value];
-                    onFieldChange("tenant_types", newTenantTypes);
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.tenant_types.includes(option.value)}
-                    readOnly
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>{option.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <MultiSelectDropdown
+          name="tenant_types"
+          values={formData.tenant_types || []}
+          options={tenantTypeOptions}
+          placeholder="Select types..."
+          openDropdown={openDropdown}
+          onToggleDropdown={onToggleDropdown}
+          readonly={isReadonly}
+          onOptionClick={(value) => {
+            const newTenantTypes = formData.tenant_types.includes(value)
+              ? formData.tenant_types.filter((t) => t !== value)
+              : [...formData.tenant_types, value];
+            onFieldChange("tenant_types", newTenantTypes);
+          }}
+          onChipRemove={(value) =>
+            onFieldChange(
+              "tenant_types",
+              formData.tenant_types.filter((t) => t !== value),
+            )
+          }
+        />
       </FormField>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField label="Occupation">
-          <div className="relative" data-dropdown>
-            <div
-              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
-                isReadonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-              }`}
-              onClick={() => !isReadonly && onToggleDropdown("occupation")}
-            >
-              <div className="flex flex-wrap gap-1 flex-1">
-                {(formData.occupation || []).length > 0 ? (
-                  (formData.occupation || []).map((value) => {
-                    const option = occupationOptions.find(
-                      (opt) => opt.value === value,
-                    );
-                    return (
-                      <span
-                        key={value}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                      >
-                        {option?.label ?? value}
-                        {!isReadonly && (
-                          <button
-                            type="button"
-                            className="ml-1 text-white/70 hover:text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onFieldChange(
-                                "occupation",
-                                (formData.occupation || []).filter(
-                                  (v) => v !== value,
-                                ),
-                              );
-                            }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </span>
-                    );
-                  })
-                ) : (
-                  <span className="text-white/50">Select occupations...</span>
-                )}
-              </div>
-              {!isReadonly && (
-                <svg
-                  className="w-5 h-5 text-white/70 ml-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              )}
-            </div>
-            {!isReadonly && openDropdown === "occupation" && (
-              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {occupationOptions.map((option) => (
-                  <div
-                    key={option.value}
-                    className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                    onClick={() => {
-                      const current = formData.occupation || [];
-                      const next = current.includes(option.value)
-                        ? current.filter((v) => v !== option.value)
-                        : [...current, option.value];
-                      onFieldChange("occupation", next);
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={(formData.occupation || []).includes(option.value)}
-                      readOnly
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{option.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <MultiSelectDropdown
+            name="occupation"
+            values={formData.occupation || []}
+            options={occupationOptions}
+            placeholder="Select occupations..."
+            openDropdown={openDropdown}
+            onToggleDropdown={onToggleDropdown}
+            focusRing={false}
+            readonly={isReadonly}
+            onOptionClick={(value) => {
+              const current = formData.occupation || [];
+              const next = current.includes(value)
+                ? current.filter((v) => v !== value)
+                : [...current, value];
+              onFieldChange("occupation", next);
+            }}
+            onChipRemove={(value) =>
+              onFieldChange(
+                "occupation",
+                (formData.occupation || []).filter((v) => v !== value),
+              )
+            }
+          />
         </FormField>
 
         <FormField label="Family Status">
-          <div className="relative" data-dropdown>
-            <div
-              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
-                isReadonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-              }`}
-              onClick={() => !isReadonly && onToggleDropdown("family_status")}
-            >
-              <div className="flex flex-wrap gap-1 flex-1">
-                {(formData.family_status || []).length > 0 ? (
-                  (formData.family_status || []).map((value) => {
-                    const option = familyStatusOptions.find(
-                      (opt) => opt.value === value,
-                    );
-                    return (
-                      <span
-                        key={value}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                      >
-                        {option?.label ?? value}
-                        {!isReadonly && (
-                          <button
-                            type="button"
-                            className="ml-1 text-white/70 hover:text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onFieldChange(
-                                "family_status",
-                                (formData.family_status || []).filter(
-                                  (v) => v !== value,
-                                ),
-                              );
-                            }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </span>
-                    );
-                  })
-                ) : (
-                  <span className="text-white/50">
-                    Select family statuses...
-                  </span>
-                )}
-              </div>
-              {!isReadonly && (
-                <svg
-                  className="w-5 h-5 text-white/70 ml-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              )}
-            </div>
-            {!isReadonly && openDropdown === "family_status" && (
-              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {familyStatusOptions.map((option) => (
-                  <div
-                    key={option.value}
-                    className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                    onClick={() => {
-                      const current = formData.family_status || [];
-                      const next = current.includes(option.value)
-                        ? current.filter((v) => v !== option.value)
-                        : [...current, option.value];
-                      onFieldChange("family_status", next);
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={(formData.family_status || []).includes(
-                        option.value,
-                      )}
-                      readOnly
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{option.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <MultiSelectDropdown
+            name="family_status"
+            values={formData.family_status || []}
+            options={familyStatusOptions}
+            placeholder="Select family statuses..."
+            openDropdown={openDropdown}
+            onToggleDropdown={onToggleDropdown}
+            focusRing={false}
+            readonly={isReadonly}
+            onOptionClick={(value) => {
+              const current = formData.family_status || [];
+              const next = current.includes(value)
+                ? current.filter((v) => v !== value)
+                : [...current, value];
+              onFieldChange("family_status", next);
+            }}
+            onChipRemove={(value) =>
+              onFieldChange(
+                "family_status",
+                (formData.family_status || []).filter((v) => v !== value),
+              )
+            }
+          />
         </FormField>
 
         <FormField label="Children">
-          <div className="relative" data-dropdown>
-            <div
-              className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
-                isReadonly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-              }`}
-              onClick={() => !isReadonly && onToggleDropdown("children")}
-            >
-              <div className="flex flex-wrap gap-1 flex-1">
-                {(formData.children || []).length > 0 ? (
-                  (formData.children || []).map((value) => {
-                    const option = childrenOptions.find(
-                      (opt) => opt.value === value,
-                    );
-                    return (
-                      <span
-                        key={value}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                      >
-                        {option?.label ?? value}
-                        {!isReadonly && (
-                          <button
-                            type="button"
-                            className="ml-1 text-white/70 hover:text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onFieldChange(
-                                "children",
-                                (formData.children || []).filter(
-                                  (v) => v !== value,
-                                ),
-                              );
-                            }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </span>
-                    );
-                  })
-                ) : (
-                  <span className="text-white/50">
-                    Select children statuses...
-                  </span>
-                )}
-              </div>
-              {!isReadonly && (
-                <svg
-                  className="w-5 h-5 text-white/70 ml-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              )}
-            </div>
-            {!isReadonly && openDropdown === "children" && (
-              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {childrenOptions.map((option) => {
-                  const isNoOption = option.value === "no";
-                  const isDisabled = hasNoChildrenSelected && !isNoOption;
-                  return (
-                    <div
-                      key={option.value}
-                      className={`px-4 py-2 text-white flex items-center space-x-2 ${
-                        isDisabled
-                          ? "opacity-50 cursor-not-allowed"
-                          : "hover:bg-white/20 cursor-pointer"
-                      }`}
-                      onClick={() => {
-                        if (isDisabled) return;
-                        const current = formData.children || [];
-                        const next = current.includes(option.value)
-                          ? current.filter((v) => v !== option.value)
-                          : option.value === "no"
-                            ? ["no"]
-                            : [
-                                ...current.filter((v) => v !== "no"),
-                                option.value,
-                              ];
-                        onFieldChange("children", next);
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(formData.children || []).includes(option.value)}
-                        disabled={isDisabled}
-                        readOnly
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>{option.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <MultiSelectDropdown
+            name="children"
+            values={formData.children || []}
+            options={childrenOptions.map((option) => ({
+              ...option,
+              disabled: hasNoChildrenSelected && option.value !== "no",
+            }))}
+            placeholder="Select children statuses..."
+            openDropdown={openDropdown}
+            onToggleDropdown={onToggleDropdown}
+            focusRing={false}
+            readonly={isReadonly}
+            onOptionClick={(value) => {
+              const current = formData.children || [];
+              const next = current.includes(value)
+                ? current.filter((v) => v !== value)
+                : value === "no"
+                  ? ["no"]
+                  : [...current.filter((v) => v !== "no"), value];
+              onFieldChange("children", next);
+            }}
+            onChipRemove={(value) =>
+              onFieldChange(
+                "children",
+                (formData.children || []).filter((v) => v !== value),
+              )
+            }
+          />
         </FormField>
       </div>
 
@@ -580,85 +316,28 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
         error={errors.let_duration}
         touched={touched.let_duration}
       >
-        <div className="relative" data-dropdown>
-          <div
-            className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center cursor-pointer"
-            onClick={() => onToggleDropdown("let_duration")}
-          >
-            <div className="flex flex-wrap gap-1 flex-1">
-              {(formData.let_duration || []).length > 0 ? (
-                formData.let_duration.map((value) => {
-                  const option = durationOptions.find(
-                    (opt) => opt.value === value,
-                  );
-                  return (
-                    <span
-                      key={value}
-                      className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                    >
-                      {option?.label ?? value}
-                      <button
-                        type="button"
-                        className="ml-1 text-white/70 hover:text-white"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onFieldChange(
-                            "let_duration",
-                            formData.let_duration.filter((d) => d !== value),
-                          );
-                        }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })
-              ) : (
-                <span className="text-white/50">Select duration...</span>
-              )}
-            </div>
-            <svg
-              className="w-5 h-5 text-white/70 ml-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-          {openDropdown === "let_duration" && (
-            <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {durationOptions.map((option) => (
-                <div
-                  key={option.value}
-                  className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                  onClick={() => {
-                    const current = formData.let_duration || [];
-                    const newDuration = current.includes(option.value)
-                      ? current.filter((d) => d !== option.value)
-                      : [...current, option.value];
-                    onFieldChange("let_duration", newDuration);
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={(formData.let_duration || []).includes(
-                      option.value,
-                    )}
-                    readOnly
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>{option.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <MultiSelectDropdown
+          name="let_duration"
+          values={formData.let_duration || []}
+          options={durationOptions}
+          placeholder="Select duration..."
+          openDropdown={openDropdown}
+          onToggleDropdown={onToggleDropdown}
+          readonly={false}
+          onOptionClick={(value) => {
+            const current = formData.let_duration || [];
+            const newDuration = current.includes(value)
+              ? current.filter((d) => d !== value)
+              : [...current, value];
+            onFieldChange("let_duration", newDuration);
+          }}
+          onChipRemove={(value) =>
+            onFieldChange(
+              "let_duration",
+              formData.let_duration.filter((d) => d !== value),
+            )
+          }
+        />
       </FormField>
     </div>
   );
