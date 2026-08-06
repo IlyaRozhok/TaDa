@@ -12,7 +12,7 @@ In late July 2026, an audit of the TaDa codebase (`docs/audit/00`–`05`) identi
 
 Ten days in, **134 commits across 59 merged pull requests** have taken the codebase through security hardening, a full CI/testing safety net, systematic dead-code removal, a single unified data layer, strict TypeScript, a from-scratch structured-logging and production-readiness pass, ten new database indexes, and the decomposition of the four largest files in the frontend (the "god-modals", originally ~10,200 lines) into shared, reusable form components. Net effect on the tracked diff: **+14.6k / −38.1k lines** (roughly −23.5k net) with the frontend's `public/` asset footprint cut from 38 MB to 13 MB.
 
-Every phase from 0 through 4 is fully closed. Phase 5 (frontend consolidation) is effectively done — one data layer, one type tree, the god-modals broken up — with a single PR pending merge. Phase 6 (backend) has landed its highest-value item (indexes) with the harder structural work (matching service split, module-cycle breakup) still ahead. Phase 7 (scale-readiness) has not started; nothing in it is currently blocking production. Three security holes discovered *during* the refactoring (unauthenticated building endpoints, unauthenticated media uploads, and a silent-session-refresh bug that signed users out after a few hours) were fixed and shipped as out-of-band hotfixes, independent of the phase schedule.
+Every phase from 0 through 5 is fully closed. Phase 5 (frontend consolidation) — one data layer, one type tree, the god-modals broken up — landed its final pull request on 2026-08-06. Phase 6 (backend) has landed its highest-value item (indexes) with the harder structural work (matching service split, module-cycle breakup) still ahead. Phase 7 (scale-readiness) has not started; nothing in it is currently blocking production. Three security holes discovered *during* the refactoring (unauthenticated building endpoints, unauthenticated media uploads, and a silent-session-refresh bug that signed users out after a few hours) were fixed and shipped as out-of-band hotfixes, independent of the phase schedule.
 
 The work has been governed throughout by one hard rule: **no step ships without the existing end-to-end test suite passing**, and every step is a single, independently revertible pull request. That discipline is why a 10-day window with this much change carries no open regressions.
 
@@ -28,11 +28,11 @@ The work has been governed throughout by one hard rule: **no step ships without 
 | **2A** | Operator-UI removal | ✅ Done | Non-functional operator dashboard (1,542 lines) removed; role and admin-CRUD kept |
 | **3** | Infrastructure & observability | 🟡 In progress | Structured logging, graceful shutdown and CORS-from-env done; host config reconciliation (3.1) and Redis compose cleanup (3.2) still open |
 | **4** | Targeted frontend fixes | ✅ Done | Tailwind config removed cleanly, `public/` cut 38→13 MB, ESLint repaired and enabled, TypeScript `strict` turned on |
-| **5** | Frontend consolidation | 🟡 Nearly done | One RTK Query data layer, one type tree, dead-code residue cleared, all four admin modals decomposed — final PR pending merge |
+| **5** | Frontend consolidation | ✅ Done | One RTK Query data layer, one type tree, dead-code residue cleared, all four admin modals decomposed onto shared form primitives |
 | **6** | Backend boundaries & data | 🟡 In progress | 10 DB indexes shipped (biggest single win of the program); matching-service split, module-cycle breakup, guard unification still open |
 | **7** | Scale preparation | ⬜ Not started | Redis-backed throttling, caching, queues, metrics, pagination audit, backup policy — none urgent at current load |
 
-**Overall: 30 of 56 tracked steps closed, 20 open, 6 not applicable (merged into other steps or deliberately deferred to backlog).**
+**Overall: 31 of 56 tracked steps closed, 19 open, 6 not applicable (merged into other steps or deliberately deferred to backlog).**
 
 ---
 
@@ -75,7 +75,7 @@ Four independent fixes, each shipped and verified separately:
 
 **Impact:** the codebase now has working, enforced type safety and linting for the first time — both were previously silently broken, meaning bugs of exactly this class had been shipping undetected.
 
-### Phase 5 — Frontend Consolidation (nearly complete)
+### Phase 5 — Frontend Consolidation
 The largest and highest-risk phase, done in the order the plan required: data layer first, then types, then structure.
 
 **One data layer.** The frontend previously ran four different mechanisms for talking to the backend (raw `fetch`, axios, a partial RTK Query slice, hand-written Redux thunks) — often two or three of them for the same domain simultaneously, with independent, drifting local-state mirrors. All eight business domains (tenant-cv, booking-requests, shortlist, users, buildings, preferences, matching, properties) were migrated to typed RTK Query endpoints, one pull request per domain. The old `apiSlice.ts` — the last multi-domain untyped file — is deleted entirely. A concrete bug this closed: an admin-panel operator filter had been silently returning zero results for over a year due to a response-shape mismatch that typing exposed and fixed.
@@ -92,7 +92,7 @@ The largest and highest-risk phase, done in the order the plan required: data la
 
 Every one of the eight sub-PRs that made up this decomposition ran the full e2e suite (which grew from 12 to 20 specs in step alongside it) and included a manual verification pass on a disposable record. One data-loss bug (`districts` field silently discarded on building edit) was found and fixed along the way — the new e2e coverage would have caught any regression of it going forward.
 
-**Status:** the final sub-PR (`refactor/property-dropdown-primitives`) is open and pending merge; once merged, Phase 5 is complete apart from two deliberately deferred, non-urgent items (pure code relocation with no behavior change, and hook deduplication — both backlogged by the owner's decision, not blocking).
+**Status:** the final sub-PR (`refactor/property-dropdown-primitives`, PR #106) merged into `develop` on 2026-08-06. Phase 5 is complete apart from two deliberately deferred, non-urgent items (pure code relocation with no behavior change, and hook deduplication — both backlogged by the owner's decision, not blocking).
 
 ---
 
@@ -144,7 +144,6 @@ This is the strongest evidence of return on the refactoring investment — every
 ## 6. What's Left / Roadmap
 
 **Immediate (days):**
-- Merge the final Phase 5 pull request (`refactor/property-dropdown-primitives`) — closes Phase 5 in full
 - Phase 3.1/3.2: pull the real nginx/compose config off the production and staging hosts and reconcile with the repository (currently the repo's `nginx/prod.conf` references a port the live compose file doesn't open — read-only investigation, low risk); remove the already-dead Redis service definition from `docker-compose.yml`
 
 **Near-term (weeks) — Phase 6, backend boundaries and data:**
