@@ -10,9 +10,9 @@
 
 In late July 2026, an audit of the TaDa codebase (`docs/audit/00`–`05`) identified 24 concrete risks ranging from a critical privilege-escalation hole to years of accumulated dead code, duplicated data layers, and a database with zero indexes. The owner approved an 8-phase remediation plan (Phase 0 → Phase 7), sequenced so that safety work and test coverage came first and higher-risk structural changes only started once a regression net existed to catch mistakes.
 
-Ten days in, **134 commits across 59 merged pull requests** have taken the codebase through security hardening, a full CI/testing safety net, systematic dead-code removal, a single unified data layer, strict TypeScript, a from-scratch structured-logging and production-readiness pass, ten new database indexes, and the decomposition of the four largest files in the frontend (the "god-modals", originally ~10,200 lines) into shared, reusable form components. Net effect on the tracked diff: **+14.6k / −38.1k lines** (roughly −23.5k net) with the frontend's `public/` asset footprint cut from 38 MB to 13 MB.
+Ten days in, **134 commits across 59 merged pull requests** have taken the codebase through security hardening, a full CI/testing safety net, systematic dead-code removal, a single unified data layer, strict TypeScript, a from-scratch structured-logging and production-readiness pass, ten new database indexes, a confirmed line-by-line match between the deployed infrastructure and the repository, and the decomposition of the four largest files in the frontend (the "god-modals", originally ~10,200 lines) into shared, reusable form components. Net effect on the tracked diff: **+14.6k / −38.1k lines** (roughly −23.5k net) with the frontend's `public/` asset footprint cut from 38 MB to 13 MB.
 
-Every phase from 0 through 5 is fully closed. Phase 5 (frontend consolidation) — one data layer, one type tree, the god-modals broken up — landed its final pull request on 2026-08-06. Phase 6 (backend) has landed its highest-value item (indexes) with the harder structural work (matching service split, module-cycle breakup) still ahead. Phase 7 (scale-readiness) has not started; nothing in it is currently blocking production. Three security holes discovered *during* the refactoring (unauthenticated building endpoints, unauthenticated media uploads, and a silent-session-refresh bug that signed users out after a few hours) were fixed and shipped as out-of-band hotfixes, independent of the phase schedule.
+Every phase from 0 through 5 is fully closed at the repository level — including Phase 3 (infrastructure and observability), whose last two steps landed on 2026-08-06: production and staging configuration were pulled directly off the hosts and reconciled against the repo, and Redis was fully removed from the deployment stack. Phase 5 (frontend consolidation) — one data layer, one type tree, the god-modals broken up — landed its final pull request the same day. Phase 6 (backend) has landed its highest-value item (indexes) with the harder structural work (matching service split, module-cycle breakup) still ahead. Phase 7 (scale-readiness) has not started; nothing in it is currently blocking production. Three security holes discovered *during* the refactoring (unauthenticated building endpoints, unauthenticated media uploads, and a silent-session-refresh bug that signed users out after a few hours) were fixed and shipped as out-of-band hotfixes, independent of the phase schedule.
 
 The work has been governed throughout by one hard rule: **no step ships without the existing end-to-end test suite passing**, and every step is a single, independently revertible pull request. That discipline is why a 10-day window with this much change carries no open regressions.
 
@@ -26,13 +26,13 @@ The work has been governed throughout by one hard rule: **no step ships without 
 | **1** | Safety net (tests + CI) | ✅ Done | Backend tests fixed and running, frontend type-check fixed, e2e raised to green, CI gates both apps, `.env.example` + README added |
 | **2** | Dead code removal | ✅ Done | 79+ dead files removed across two passes; dead API methods and backend junk removed |
 | **2A** | Operator-UI removal | ✅ Done | Non-functional operator dashboard (1,542 lines) removed; role and admin-CRUD kept |
-| **3** | Infrastructure & observability | 🟡 In progress | Structured logging, graceful shutdown and CORS-from-env done; host config reconciliation (3.1) and Redis compose cleanup (3.2) still open |
+| **3** | Infrastructure & observability | ✅ Done (repo) | Structured logging, graceful shutdown, CORS-from-env, host config reconciliation and Redis compose cleanup all shipped; three host-side deploy steps remain, tracked as an operational checklist, not code |
 | **4** | Targeted frontend fixes | ✅ Done | Tailwind config removed cleanly, `public/` cut 38→13 MB, ESLint repaired and enabled, TypeScript `strict` turned on |
 | **5** | Frontend consolidation | ✅ Done | One RTK Query data layer, one type tree, dead-code residue cleared, all four admin modals decomposed onto shared form primitives |
 | **6** | Backend boundaries & data | 🟡 In progress | 10 DB indexes shipped (biggest single win of the program); matching-service split, module-cycle breakup, guard unification still open |
 | **7** | Scale preparation | ⬜ Not started | Redis-backed throttling, caching, queues, metrics, pagination audit, backup policy — none urgent at current load |
 
-**Overall: 31 of 56 tracked steps closed, 19 open, 6 not applicable (merged into other steps or deliberately deferred to backlog).**
+**Overall: 32 of 56 tracked steps closed, 18 open, 6 not applicable (merged into other steps or deliberately deferred to backlog).**
 
 ---
 
@@ -64,6 +64,24 @@ A systematic, resolver-verified sweep (each file's reachability from the app's a
 - Backend junk: an obsolete second migrations folder that was shipping into the Docker image, a dead DTO, broken npm scripts
 
 **Impact:** the operator dashboard in particular was a real product risk disguised as a feature — any operator who logged in saw a permanently empty screen with no visible error. It's gone; the operator *role* and the admin-side building-linking flow that actually need it are untouched.
+
+### Phase 3 — Infrastructure and Observability
+Two host-facing risks from the audit got the same treatment as the security work: establish the facts first, on a read-only basis, before changing anything.
+
+**3.1 — Host configuration reconciliation.** The audit had flagged a real-looking discrepancy — the repository's `nginx/prod.conf` proxied to port 3002 while `docker-compose.yml` published 3001, yet production was serving traffic regardless. Both hosts were read directly (read-only, nothing modified) to find out why. The answer: **the repository's nginx configs were dead files that nothing had ever deployed.** Both production and staging nginx are hand-managed through Certbot, live under the `api.` subdomains, and proxy to `127.0.0.1:3001` — port 3002 has never been listened on anywhere. The repo's nginx configs were rewritten to mirror the real host configuration, headed with a note that the live host is the source of truth. Separately confirmed in the same pass: **`docker-compose.yml` on both hosts is byte-identical to the repository** (zero drift), and the Swagger credentials the audit worried might be missing in production **are in fact set on both hosts** — that particular risk never existed.
+
+**3.2 — Redis and Docker image cleanup.** Redis was removed from the application code weeks earlier, but `docker-compose.yml` still declared the `redis` service, its volume, and a `depends_on` health check on it — all three are now gone, and `docker compose config` resolves with zero references to Redis. The backend `Dockerfile` also carried unused native build dependencies left over from an image library the code no longer uses, and a `HEALTHCHECK` pointed at a path that always returned 404. Both fixed. The unused (and in one case genuinely broken) frontend `Dockerfile`s were deleted outright — the frontend deploys through Vercel, not Docker, and always has.
+
+| Metric | Before | After |
+|---|---|---|
+| Backend Docker image size | 901 MB | **572 MB (−36%)** |
+| `docker-compose.yml` Redis references | service + volume + health dependency | 0 |
+| Backend `HEALTHCHECK` target | `/health` (always 404) | `/api/health` (real endpoint) |
+| Frontend Dockerfiles in the repo | 3 (one broken, all unused) | 0 |
+
+**Operational follow-up — host actions, not code.** The repository side of Phase 3 is done, but three changes still require a human on the actual servers, in this order, after the compose change above has deployed to each host: (1) remove the now-orphaned `tada-redis` container and its volume, since `docker-compose.yml` no longer manages either; (2) delete the dead `REDIS_*` and related unused variables from `/opt/tada/.env` on both hosts; (3) set `JWT_REFRESH_EXPIRES_IN=30d` on both hosts, or remove the variable entirely so the application's built-in default applies — the hosts currently carry an env value that silently overrides the refresh-window fix shipped in the session-refresh bugfix. None of this blocks other work; it is a deploy checklist, not a development task. One small, code-side item from this phase's original scope also remains open and unstarted — 3.3b, extending the backend's structured-logging pattern to the frontend — now unblocked (it was waiting on the ESLint fix and Phase 5, both done) but not yet picked up.
+
+**Impact:** production and staging infrastructure is now provably what the repository says it is, closing a long-standing question mark over which config was actually live, and the backend's deployed image is more than a third smaller — which speeds up every future deploy.
 
 ### Phase 4 — Targeted Frontend Fixes
 Four independent fixes, each shipped and verified separately:
@@ -123,6 +141,7 @@ This is the strongest evidence of return on the refactoring investment — every
 | Commits (this program, 10 days) | — | **134** | — |
 | Net lines changed (tracked diff) | — | +14.6k / −38.1k | **≈ −23.5k net** |
 | `public/` asset size | 38 MB | 13 MB | **−66%** |
+| Backend Docker image size | 901 MB | 572 MB | **−36%** |
 | God-modal stack (largest 4 files) | ~10,200 lines, largest 3,057 | ~8,550 lines, largest well under 1,100 | **−16%, one monolith per file eliminated** |
 | Duplicate dropdown implementations | 25 copies | 2 shared primitives | **−92%** |
 | E2E test cases | ~0 reliably green | **21**, 8 spec files | from nothing to a real safety net |
@@ -143,10 +162,11 @@ This is the strongest evidence of return on the refactoring investment — every
 
 ## 6. What's Left / Roadmap
 
-**Immediate (days):**
-- Phase 3.1/3.2: pull the real nginx/compose config off the production and staging hosts and reconcile with the repository (currently the repo's `nginx/prod.conf` references a port the live compose file doesn't open — read-only investigation, low risk); remove the already-dead Redis service definition from `docker-compose.yml`
+**Immediate (days) — operational, not code:**
+- Host follow-up for Phase 3.2: remove the now-orphaned `tada-redis` container and its volume, delete the dead `REDIS_*`/session-related variables from `/opt/tada/.env`, and set `JWT_REFRESH_EXPIRES_IN=30d` on both hosts. Three deploy-checklist items, already documented, no code change required
+- 3.3b: extend the backend's structured-logging pattern to the frontend's `console.*` calls — now unblocked, not yet started
 
-**Near-term (weeks) — Phase 6, backend boundaries and data:**
+**Next up — Phase 6, backend boundaries and data:**
 - Fix the matching service's N+1 query and per-item S3 presign-in-a-loop pattern
 - Split the 1,941-line matching-calculation service (unit-test-first, since it's pure scoring logic with no DB dependency — the safest kind of large-file split)
 - Break the `Auth ⇄ Users` and `Auth → TenantCv → Users` circular module dependencies currently held together with `forwardRef`
