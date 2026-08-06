@@ -4,6 +4,14 @@
 owner — users were signed out a few hours in. See «Bugfixes outside the phase
 numbering» below; it does not move the phase order.
 
+**Step 3.2 — repo part done (2026-08-06).** Redis is out of `docker-compose.yml` (service,
+volume and `depends_on` alike), the backend image lost the dead `sharp` native deps
+(**901 MB → 572 MB**) and got its `HEALTHCHECK` pointed at the route that actually exists, and
+the three dead `frontend/Docker*` files are deleted. **Two host actions remain and their order
+matters — deploy this first, remove `tada-redis` second**; see «3.2 host actions» under the
+Phase 3 table. Phase 3 closes when those are done on both hosts (3.3b aside, which is parked
+behind 4.3 and Phase 5 by the owner's decision).
+
 **Step 3.1 is closed (2026-08-06) — the infrastructure question is settled.** Both VPSes were
 read read-only; nothing on a host was changed. `docker-compose.yml` on prod and stage is
 identical to the repository with no local drift, which makes the automated deploy safe as it
@@ -138,10 +146,38 @@ Can be run in parallel: **6.1** (after Phase 1), **Phase 4** (in parallel with P
 | Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
 | 3.1 | Pull the real compose/nginx/env from prod and stage, record the discrepancies | 🟡 | ✅ | `chore/reconcile-infra-configs` | ⬜ | 2026-08-06 | R8, Q4 **closed.** Both hosts read read-only; no host was modified. **compose on both hosts is byte-identical to the repo** — `git status` clean, no diff in infra files, so the automated deploy applies exactly what is written here. **The repo's two `nginx/*.conf` were dead files that nothing deployed:** nginx is host-managed by hand + Certbot (`/etc/nginx/sites-enabled/tada-prod`, `/etc/nginx/sites-enabled/api.stage.ta-da.co`), serves the **`api.` subdomains**, proxies **`location /` → `127.0.0.1:3001`**, `client_max_body_size 50M`; stage has WebSocket upgrade headers, prod does not. **Port 3002 has never been listened on by anything** — it lived only in the repo file. Both `.conf` files rewritten as reference mirrors with a header saying the host wins. Also settled: `SWAGGER_*` **are** set on both hosts (the 401-for-everyone risk was inferred from the local gitignored `.env.production` and does not exist), `SENTRY_DSN` is prod-only, the dead env vars are really there. Full table and per-row decisions in `01-overview.md` §5.1. **Two host actions fall out — see «Noticed along the way»: the JWT TTL override, and prod being ~35 commits behind `develop`** |
-| 3.2 | Infrastructure cleanup: **remove redis from `docker-compose.yml`**, `REDIS_*` from env, `sharp` from the Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ⬜ | | | | R22. After 3.1 — **unblocked 2026-08-06.** ⚠️ **Redis in compose is NOT removed** — the `chore/remove-redis-compose` branch was deleted without merging (2026-07-28). In `develop` the `redis` service, `redis_data` volume, and `depends_on` are still in place. The work has to be redone as part of 3.2. **Host actions confirmed by 3.1**, to be done alongside the compose edit: (1) `tada-redis` is running on both VPSes — Up 3 months on prod, Up 5 weeks on stage — and must be stopped and removed along with the `redis_data` volume after the compose change lands; (2) `REDIS_*`, `BCRYPT_ROUNDS`, `SESSION_CLEANUP_INTERVAL`, `MAX_SESSIONS_PER_DEVICE` are present in `/opt/tada/.env` on both and read by no line of code — delete them there too, or the cleanup is repo-only. Note `depends_on: redis: condition: service_healthy` means backend does not start without a healthy redis, so the compose edit and the container removal have to happen in that order |
+| 3.2 | Infrastructure cleanup: **remove redis from `docker-compose.yml`**, `REDIS_*` from env, `sharp` from the Dockerfile, `HEALTHCHECK` → `/api/health`, `frontend/Dockerfile*` | 🟢 | ✅ repo part | `chore/remove-redis-and-dockerfile-cleanup` | ⬜ | 2026-08-06 | R22. **Repo part done; two host actions remain, and their order matters — see below.** Redone from scratch, as the `chore/remove-redis-compose` branch had been deleted without merging (2026-07-28). **compose:** the `redis` service, the `redis_data` volume and `backend`'s `depends_on: redis: condition: service_healthy` are gone — the file is down to one service and one network, and `docker compose config` resolves clean with zero occurrences of `redis`, `depends_on`, `volumes` or `6379` (validated against a copy with the host `env_file` path stubbed, since `/opt/tada/.env` does not exist locally). **Dockerfile:** dropped `apk add vips-dev fftw-dev` — `sharp` is in neither `package.json`, nor the lockfile, nor a line of source; the image goes **901 MB → 572 MB (−329 MB, −36 %)**, measured by building both revisions. `HEALTHCHECK` moved from `/health` to `/api/health` (`app.controller.ts:10` under the `api` global prefix set in `main.ts:46`), so the image is no longer permanently unhealthy when run outside compose — until now only the compose-level override hid it. **`frontend/Dockerfile`, `Dockerfile.dev` and `.dockerignore` deleted:** nothing references them (the only «Dockerfile» mention in CI is a comment about the backend one), and `Dockerfile` was **broken as well as dead** — it copies `.next/standalone`, which `next.config.ts` explicitly disables for Vercel. Checks: tsc exit 0, `npm run build` exit 0, **`docker build ./backend` exit 0**, baked healthcheck verified via `docker inspect`. `.env.example` notes that `REDIS_*` now also has to go from the hosts |
 | 3.3 | Structured logger + request-id; strip `console.*`; Sentry on the frontend | 🟡 | ✅ | merged #65 + #66 | ✅ | 2026-07-31 | R9. **Backend half only** (owner's decision, 2026-07-31): the frontend half waits for 4.3 (broken ESLint) and Phase 5. Added `nestjs-pino` + `pino` + `pino-http` (`pino-pretty` in dev): JSON to stdout in prod, pretty in dev, access logs where there were none. `X-Request-Id` is reused from the proxy when sent and generated otherwise, and returned in the response. `redact` hides `authorization`, `cookie` and `set-cookie` — **verified by eye on a live 200 request**. `/api/health` is out of the access log. `SentryGlobalFilter` now logs 5xx with a stack and 4xx as a warning, both with the request id. All 16 application `console.*` replaced; the 72 in migrations left alone. Checks: build exit 0, 13 unit, **16/16 frontend e2e**. Merged (#65). **Hardened afterwards** (`chore/finish-logging-hardening`, PR open): each 5xx now produces exactly one error line, and the backend service has json-file rotation |
 | 3.3b | Frontend half of 3.3: `console.*` and Sentry | 🟡 | ⬜ | | | | Split out of 3.3 by owner's decision. Blocked by 4.3 (ESLint) and touches files Phase 5 rewrites |
 | 3.4 | Prod bits and pieces: `enableShutdownHooks`, CORS from env, `SWAGGER_*` in env | 🟢 | ✅ | merged #67 | ✅ | 2026-07-31 | `enableShutdownHooks()` before `listen`. CORS reads `CORS_ORIGIN` as a comma-separated list and **merges it into the previous hardcoded list instead of replacing it** — deliberate deviation from the brief, see the note below. `credentials: true`, methods and headers unchanged. `CORS_ORIGIN` moved out of the «no longer read» block in `.env.example`; the `SWAGGER_*` comment now states that production requires both. Checks: build exit 0, 13 unit, **16/16 e2e**, live CORS preflight and an authenticated cookie request from `http://localhost:3000`, SIGTERM exits cleanly. PR open, **not merged** |
+
+### 3.2 host actions — the order is not optional
+
+On `develop` today, `backend` declares `depends_on: redis: condition: service_healthy`.
+While that line is live on a host, **removing the `tada-redis` container makes the backend
+refuse to start** — compose will wait for a healthy dependency that no longer exists. So:
+
+1. **Merge this PR and let it deploy** to the host you are working on. The deploy runs
+   `git pull` + `docker compose build/up`, which is what removes the `depends_on` from the
+   host's copy of the file. Confirm afterwards: `docker ps` shows `tada-backend` healthy, and
+   `/api/health` still answers 200.
+2. **Only then**, on that host: `docker rm -f tada-redis`, then drop the orphaned volume
+   (`docker volume ls | grep redis` → `docker volume rm <name>`; compose will not remove it
+   for you, the service that owned it is gone from the file).
+3. In the same pass, delete from `/opt/tada/.env`: `REDIS_HOST`, `REDIS_PORT`,
+   `REDIS_PASSWORD`, `REDIS_DB`, `BCRYPT_ROUNDS`, `SESSION_CLEANUP_INTERVAL`,
+   `MAX_SESSIONS_PER_DEVICE` — all confirmed present by 3.1, all read by no line of code.
+   Restart the container so the file is re-read.
+
+Do stage first, in full, then prod. Nothing here is reversible by a `git revert`, which is the
+other reason not to run it ahead of the deploy.
+
+**Two host actions from 3.1 are still open and are not part of this step** — the JWT refresh
+TTL override, and prod running far behind `develop`. Both are in «Noticed along the way».
+
+**Phase 3 closes when steps 1–3 above are done on both hosts.** The only remaining item in the
+phase is 3.3b (the frontend half of logging), which is parked behind 4.3 and Phase 5 by the
+owner's decision and is tracked as its own step rather than as unfinished infrastructure.
 
 ## Phase 4 — Targeted frontend fixes
 
@@ -410,7 +446,7 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 
 | | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Steps | 56 | 19 | 0 | 31 | 0 | 6 |
+| Steps | 56 | 18 | 0 | 32 | 0 | 6 |
 
 Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.1 (skipped — absorbed by 2A.3), 2A.4 (stop-list), 2A.5 (backlog),
 5.3 (split into 5.3a done, 5.3b done, 5.3c backlog).
