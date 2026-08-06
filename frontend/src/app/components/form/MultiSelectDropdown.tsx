@@ -38,6 +38,21 @@ interface MultiSelectDropdownProps {
    * classes, some did not. Kept per call site so the markup is unchanged.
    */
   focusRing?: boolean;
+  /**
+   * The property forms' inheritance lock. Passing a boolean (even false)
+   * switches the toggle to the property template — the class order the
+   * property monolith used, with the cursor/opacity pair at the end — and
+   * when true it hides the chip ×, the caret and the options panel and
+   * ignores toggle clicks, exactly as the "(from building)" lock did.
+   * Omit entirely for the building forms' static templates.
+   */
+  readonly?: boolean;
+  /**
+   * The locked-state classes of the property template. The amenities
+   * dropdowns lock softer (`cursor-default opacity-80`) than the tenant
+   * targeting ones — kept per call site.
+   */
+  readonlyClassName?: string;
   /** Chip label override (amenities translate the stored label). */
   getChipLabel?: (value: string) => React.ReactNode;
   toggleTestId?: string;
@@ -48,6 +63,23 @@ const TOGGLE_WITH_FOCUS =
   "w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center";
 const TOGGLE_WITHOUT_FOCUS =
   "w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white cursor-pointer min-h-[40px] flex items-center";
+
+const toggleClass = (
+  focusRing: boolean,
+  readonly: boolean | undefined,
+  readonlyClassName: string,
+) => {
+  if (readonly === undefined) {
+    return focusRing ? TOGGLE_WITH_FOCUS : TOGGLE_WITHOUT_FOCUS;
+  }
+  return `w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg ${
+    focusRing
+      ? "focus:ring-2 focus:ring-white/50 focus:border-white/40 "
+      : ""
+  }text-white min-h-[40px] flex items-center ${
+    readonly ? readonlyClassName : "cursor-pointer"
+  }`;
+};
 
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   name,
@@ -60,6 +92,8 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   onOptionClick,
   onChipRemove,
   focusRing = true,
+  readonly,
+  readonlyClassName = "opacity-60 cursor-not-allowed",
   getChipLabel,
   toggleTestId,
   optionsTestId,
@@ -104,8 +138,8 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     <div className="relative" data-dropdown>
       <div
         data-testid={toggleTestId}
-        className={focusRing ? TOGGLE_WITH_FOCUS : TOGGLE_WITHOUT_FOCUS}
-        onClick={() => onToggleDropdown(name)}
+        className={toggleClass(focusRing, readonly, readonlyClassName)}
+        onClick={() => !readonly && onToggleDropdown(name)}
       >
         <div className="flex flex-wrap gap-1 flex-1">
           {values.length > 0 ? (
@@ -115,37 +149,41 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                 className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
               >
                 {labelFor(value)}
-                <button
-                  type="button"
-                  className="ml-1 text-white/70 hover:text-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onChipRemove(value);
-                  }}
-                >
-                  ×
-                </button>
+                {!readonly && (
+                  <button
+                    type="button"
+                    className="ml-1 text-white/70 hover:text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChipRemove(value);
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
               </span>
             ))
           ) : (
             <span className="text-white/50">{placeholder}</span>
           )}
         </div>
-        <svg
-          className="w-5 h-5 text-white/70 ml-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        {!readonly && (
+          <svg
+            className="w-5 h-5 text-white/70 ml-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        )}
       </div>
-      {openDropdown === name && (
+      {!readonly && openDropdown === name && (
         <div
           data-testid={optionsTestId}
           className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto"

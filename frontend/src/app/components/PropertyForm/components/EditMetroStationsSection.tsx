@@ -1,6 +1,5 @@
 import React from "react";
 import { Minus } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
 import type { EditPropertyFormData } from "../types";
 import type { MetroStation } from "../types";
 
