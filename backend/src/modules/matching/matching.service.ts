@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, SelectQueryBuilder } from "typeorm";
+import { In, Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "@/entities";
 import { Preferences } from "@/entities";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
@@ -9,6 +9,7 @@ import {
   PropertyMatchResult,
   MatchingOptions,
   MatchingResponse,
+  MatchScoresResponse,
   CategoryWeights,
   DEFAULT_WEIGHTS,
 } from "./interfaces/matching.interfaces";
@@ -196,6 +197,51 @@ export class MatchingService {
       preferences,
       DEFAULT_WEIGHTS
     );
+  }
+
+  /**
+   * Score a batch of properties for one user — the card grids' read path.
+   *
+   * This is `getPropertyMatch` for many ids at once and must stay numerically
+   * identical to it: same entity shape (no relations, exactly as `findOne`
+   * loads it), same `MatchingCalculationService`, same `DEFAULT_WEIGHTS`.
+   * A user with no preferences gets an empty map rather than a 404 — a grid
+   * asking for scores is not an error case, it simply has nothing to show.
+   */
+  async getMatchScores(
+    propertyIds: string[],
+    userId: string
+  ): Promise<MatchScoresResponse> {
+    const uniqueIds = [...new Set(propertyIds)];
+
+    const preferences = await this.preferencesRepository.findOne({
+      where: { user_id: userId },
+    });
+
+    if (!preferences || uniqueIds.length === 0) {
+      return { scores: {} };
+    }
+
+    const properties = await this.propertyRepository.find({
+      where: { id: In(uniqueIds) },
+    });
+
+    const scores: MatchScoresResponse["scores"] = {};
+
+    for (const property of properties) {
+      const result = this.calculationService.calculateMatch(
+        property,
+        preferences,
+        DEFAULT_WEIGHTS
+      );
+
+      scores[property.id] = {
+        matchScore: result.matchPercentage,
+        categories: result.categories,
+      };
+    }
+
+    return { scores };
   }
 
   /**

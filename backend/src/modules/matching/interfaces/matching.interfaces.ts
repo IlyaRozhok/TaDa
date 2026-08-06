@@ -88,6 +88,24 @@ export interface PropertyMatchResult {
 }
 
 /**
+ * One property's score as the card grids consume it: the percentage for the
+ * badge and the breakdown for its tooltip. Deliberately carries no property —
+ * the caller already has the listing it asked scores for.
+ */
+export interface PropertyMatchScore {
+  matchScore: number;
+  categories: CategoryMatchResult[];
+}
+
+/**
+ * Response of the batch scoring route, keyed by property id. Ids the user may
+ * not see, and ids that do not exist, are simply absent from the map.
+ */
+export interface MatchScoresResponse {
+  scores: Record<string, PropertyMatchScore>;
+}
+
+/**
  * Matching request options
  */
 export interface MatchingOptions {

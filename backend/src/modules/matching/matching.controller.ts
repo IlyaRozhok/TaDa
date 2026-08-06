@@ -1,7 +1,11 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  Post,
   Query,
   UseGuards,
   Request,
@@ -13,8 +17,9 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from "@nestjs/swagger";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { MatchingService } from "./matching.service";
+import { GetMatchScoresDto } from "./dto/get-match-scores.dto";
 
 @ApiTags("Matching")
 @Controller("matching")
@@ -119,6 +124,27 @@ export class MatchingController {
   ) {
     const userId = req.user.id;
     return this.matchingService.getPropertyMatch(propertyId, userId);
+  }
+
+  /**
+   * Score a batch of properties in one request.
+   * Card grids read their badges from here instead of asking per card.
+   */
+  @Post("scores")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get match scores for a batch of properties",
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      "Map of property id to match score and category breakdown. Empty when the user has no preferences",
+  })
+  async getMatchScores(@Request() req: any, @Body() body: GetMatchScoresDto) {
+    const userId = req.user.id;
+    return this.matchingService.getMatchScores(body.propertyIds, userId);
   }
 
   /**
