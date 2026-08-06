@@ -6,21 +6,24 @@ import { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
+import { accessTokenTtl, refreshTokenTtl } from "@/common/config/auth-tokens.config";
 
 const isProd = () => process.env.NODE_ENV === "production";
 
+// Each cookie outlives its token by exactly nothing: the `maxAge` comes from the
+// same lifetime the token was signed with, so the two can no longer drift apart.
 const accessCookieOptions = () => ({
   httpOnly: true,
   secure: isProd(),
   sameSite: "lax" as const,
-  maxAge: 15 * 60 * 1000, // 15 minutes
+  maxAge: accessTokenTtl().ms,
 });
 
 const refreshCookieOptions = () => ({
   httpOnly: true,
   secure: isProd(),
   sameSite: "lax" as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  maxAge: refreshTokenTtl().ms,
 });
 
 @Controller("auth")

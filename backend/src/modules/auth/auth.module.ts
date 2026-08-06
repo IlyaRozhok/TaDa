@@ -13,6 +13,7 @@ import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
+import { accessTokenTtl } from "@/common/config/auth-tokens.config";
 
 @Module({
   imports: [
@@ -32,8 +33,10 @@ import { TenantCvModule } from "../tenant-cv/tenant-cv.module";
         }
         return {
           secret,
+          // Every sign call passes its own `expiresIn`, which wins over this one.
+          // It stays as the floor for anything signed without an explicit lifetime.
           signOptions: {
-            expiresIn: configService.get("JWT_ACCESS_EXPIRES_IN", "1d"),
+            expiresIn: accessTokenTtl().value,
           },
         };
       },
