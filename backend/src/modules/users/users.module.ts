@@ -1,4 +1,4 @@
-import { Module, forwardRef } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { UsersService } from "./users.service";
@@ -12,7 +12,6 @@ import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { OperatorProfile } from "../../entities/operator-profile.entity";
 import { Preferences } from "../../entities/preferences.entity";
 import { TenantCv } from "../../entities/tenant-cv.entity";
-import { AuthModule } from "../auth/auth.module";
 import { S3Service } from "../../common/services/s3.service";
 
 @Module({
@@ -24,7 +23,6 @@ import { S3Service } from "../../common/services/s3.service";
       Preferences,
       TenantCv,
     ]),
-    forwardRef(() => AuthModule),
   ],
   controllers: [UsersController],
   providers: [
