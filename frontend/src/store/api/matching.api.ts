@@ -49,10 +49,21 @@ export interface PropertyMatchResult {
   };
 }
 
+/** One property's score as the card grids consume it. */
+export interface PropertyMatchScore {
+  matchScore: number;
+  categories: MatchCategory[];
+}
+
+/** Envelope of `POST /matching/scores`, keyed by property id. */
+export interface MatchScoresResponse {
+  scores: Record<string, PropertyMatchScore>;
+}
+
 /**
  * Read endpoints of the matching domain. All of them require a session — none
- * goes into the base query's public endpoints. This PR is the data layer only;
- * the backend's N+1 and S3 presigning in the scoring loop stay with Phase 6.2.
+ * goes into the base query's public endpoints. The backend's full-table scoring
+ * pass and its presigning loop stay with the next sub-PR of Phase 6.2.
  */
 export const matchingApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -97,8 +108,39 @@ export const matchingApi = baseApi.injectEndpoints({
         { type: "Property", id: propertyId },
       ],
     }),
+
+    /**
+     * Scores for a whole grid in one request. A POST because a grid's worth of
+     * UUIDs does not belong in a URL, but a query rather than a mutation: it
+     * reads, so it must stay cached and deduplicated like any other read.
+     *
+     * The ids are sorted into the cache key, so two grids showing the same
+     * properties in a different order share one cache entry and one request.
+     */
+    getMatchScores: builder.query<MatchScoresResponse, string[]>({
+      query: (propertyIds) => ({
+        url: "/matching/scores",
+        method: "POST",
+        body: { propertyIds },
+      }),
+      serializeQueryArgs: ({ endpointName, queryArgs }) =>
+        `${endpointName}(${[...queryArgs].sort().join(",")})`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...Object.keys(result.scores).map((id) => ({
+                type: "Property" as const,
+                id,
+              })),
+              { type: "Property" as const, id: "MATCH_SCORES" },
+            ]
+          : [{ type: "Property" as const, id: "MATCH_SCORES" }],
+    }),
   }),
 });
 
-export const { useGetMatchedPropertiesQuery, useGetPropertyMatchQuery } =
-  matchingApi;
+export const {
+  useGetMatchedPropertiesQuery,
+  useGetPropertyMatchQuery,
+  useGetMatchScoresQuery,
+} = matchingApi;

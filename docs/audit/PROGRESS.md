@@ -1,5 +1,16 @@
 # PROGRESS — living refactoring tracker
 
+**Current step: 6.2, sub-PR A done (2026-08-06), B and C next.** The matching step was
+split into three after a read-only survey, and the survey corrects R15's wording in three
+places — the presigning is local SigV4 signing, not network calls; there is no ORM N+1
+inside a request; and the real cost is `matched-properties` loading and scoring the whole
+table on every request. Sub-PR A removes the fan-out the owner saw in the logs: card grids
+now score through one `POST /matching/scores` instead of one `GET /matching/property/:id`
+per card — `/app/units` on its default sort went from N requests to **zero**, since that
+view's data already carries the scores. Details, measurements and the sub-PR table are
+under «6.2 — the survey behind the three sub-PRs». Sub-PR B (backend perf) waits on this
+merging.
+
 **Out-of-band bugfix in flight (2026-08-06): silent session refresh.** Reported by the
 owner — users were signed out a few hours in. See «Bugfixes outside the phase
 numbering» below; it does not move the phase order.
@@ -222,7 +233,7 @@ sub-PRs (public catalogue · admin CRUD · media uploads · matching) rather tha
 | Step | Description | Risk | Status | PR | Stage | Date | Note |
 |---|---|---|---|---|---|---|---|
 | 6.1 | Indexes on all FKs + matching filter columns, `CREATE INDEX CONCURRENTLY` | 🟢 | ✅ | PR open | ⬜ | 2026-08-04 | R4. **Ten indexes, one migration, no behaviour change.** The inventory was rebuilt against the live schema rather than taken from the plan, and it differs from it in both directions — see the table below the phase. **Six FK indexes:** `properties.{building_id,operator_id}`, `property_media.property_id`, `booking_requests.property_id`, `shortlist."propertyId"`, `buildings.operator_id`. Postgres indexes PK and UNIQUE constraints but never a FK, so all six were bare — and **all twelve FKs in the schema are `ON DELETE CASCADE`**, which makes the gap worse than a slow join. Measured on a 50k-property / 200k-media / 20k-booking copy: deleting one building **3300 ms → 4.7 ms, a 698× difference**, because each cascade trigger was seq-scanning the child table per row. **Four skipped as already covered:** `booking_requests.tenant_id` and `shortlist."userId"` are the leading columns of composite uniques, `preferences.user_id` and `tenant_cvs.user_id` are UNIQUE outright (same for both profile tables). **Two skipped as a correction to the plan:** `bathrooms` and `furnishing` are listed there as matching filters but **never reach SQL at all** — both are read by the JS scoring engine in `matching-calculation.service.ts` after the rows are fetched; `grep` over every `where`/`andWhere` in the backend confirms it. **Four read-path indexes:** `properties.price` and `properties.bedrooms` (the two `applyPreFilters` predicates), an **expression** index on `LOWER(properties.property_type)` — the filter is `LOWER(property_type) IN (…)`, which a plain btree on the raw column cannot serve — and `properties.created_at`, which is **beyond the plan's list and was added deliberately**: every listing in `property.service.ts` and `matching.service.ts` ends in `orderBy("property.created_at","DESC")` with `skip`/`take`, and it turned out to be the single biggest win (see the note on the two unused indexes below). Verified: tsc exit 0, build exit 0, 13 unit tests, migration applies / reverts / re-applies cleanly on the local DB, all ten indexes `indisvalid`, and `schema:log` stays clean — the entity `@Index()` names are written to match the migration exactly, so a `synchronize` run cannot create a second copy under a generated name. **On prod the migration lands through the ordinary `mig:run:prod` deploy step and takes no write lock:** every statement is `CREATE INDEX CONCURRENTLY IF NOT EXISTS` |
-| 6.2 | Matching: remove N+1 and S3 presign in the loop, align the two read paths | 🟡 | ⬜ | | | | R15 |
+| 6.2 | Matching: remove N+1 and S3 presign in the loop, align the two read paths | 🟡 | 🟡 sub-PR A done | `perf/matching-batch-scores` | ⬜ | 2026-08-06 | R15. **Split into three sub-PRs by owner's decision (2026-08-06) after a read-only survey; A is done, B and C are not started.** See the sub-PR table below the phase for the survey's findings, which correct the plan's wording in three places. **Sub-PR A — the fan-out (this branch):** `POST /matching/scores` takes up to 100 ids (class-validator: non-empty UUID array, `ArrayMaxSize(100)`) and answers `{scores: {[id]: {matchScore, categories}}}` — one preferences read, one `IN` query, and the **same `MatchingCalculationService` with the same `DEFAULT_WEIGHTS`** the per-card route uses, so it is a second caller of the scoring engine and not a second copy of it. **Parity verified numerically, not assumed:** for a tenant with a fully filled preferences row, the batch answer and three separate `GET /matching/property/:id` answers agree on `matchPercentage` (39/31/33) and are **byte-identical on all 17 categories**. On the frontend `usePropertyMatches` is one `useGetMatchScoresQuery` instead of `Promise.all` over per-id `initiate(subscribe:false)` — that option meant nothing was cached or deduplicated, so identical grids re-fetched. Ids are sorted into the cache key. **`/app/units` is gated on `sortBy`:** its default best-match sort renders the dataset whose response already carries scores, while the hook was scoring the *full-catalogue* dataset that sort never displays — pure waste, now zero requests; switching sort issues exactly one batch (verified in the browser, badge renders 31%). **Measured on the three screens** (local DB has 3 properties, so read N=3 as «one per card»): units **3 → 0** per-card, shortlist **3 → 1** batch, detail page **3 → 1 own + 1 batch**. **The no-preferences case is fixed:** the per-card route 404s, so a page produced one swallowed 404 per card (3/3 confirmed); the batch answers 200 `{}`. Route validation checked: empty array/non-UUID/101 ids → 400, no session → 401, unknown-but-valid id → 200 and simply absent from the map. Coverage added where there was none — `data-testid="match-badge"` (**attribute only**) plus a spec asserting units and detail cards show a percentage and no longer fan out, and the same assertion inside the existing shortlist test, which already owns that page's state. Checks: backend tsc/build exit 0, 21 unit; frontend type-check exit 0 (strict), lint 0 errors, build exit 0; **23/23 e2e** (was 21, +2 new). **PR open, not merged** |
 | 6.3 | Split `matching-calculation.service.ts` (1941 lines), unit tests first | 🔴 | ⬜ | | | | Domain documentation will appear as a byproduct |
 | 6.4 | Break the module cycles Auth ⇄ Users and Auth → TenantCv → Users | 🔴 | ⬜ | | | | R10 |
 | 6.5 | Unify the guards — keep only `@Auth` | 🟡 | ⬜ | | | | Affects all controllers |
@@ -298,6 +309,58 @@ migration — 10 indexes dropped, then re-created by a second `mig:run`.
 
 Measured on a throwaway `tada_index_probe` database cloned from the real schema and
 dropped afterwards; the local dev database only received the migration itself.
+
+### 6.2 — the survey behind the three sub-PRs, and three corrections to R15
+
+Read-only survey on `develop`, 2026-08-06. **The plan's and `02-backend-map.md`'s wording
+for R15 is wrong in three places** and should be read as follows.
+
+**1. The presigning is not «N calls to the presigner» — there is no network in it.**
+`getSignedUrl` from `@aws-sdk/s3-request-presigner` is local SigV4 signing (HMAC-SHA256);
+nothing leaves the process. Measured against the SDK in `backend/node_modules`:
+**0.15–0.25 ms per URL** (120 sequential 29.5 ms, 600 sequential 116 ms, 120 in
+`Promise.all` 15.5 ms). A page of 12 properties × ~10 photos is therefore ~20–30 ms of
+**CPU on the single event loop** — real, and worth removing under concurrency, but not
+the round trips the audit describes.
+
+**2. There is no ORM-level N+1 inside a matching request.** `Property` declares no
+`eager` and no lazy relations, `MatchingCalculationService` injects no repository, and
+no `where`/`find` sits inside any loop in `matching.service.ts`. What the owner saw in
+the logs is the **frontend fan-out** — one `GET /matching/property/:id` per card — which
+is what sub-PR A removes.
+
+**3. The dominant backend cost is neither of those.**
+`getMatchedPropertiesWithPagination` runs `qb.getMany()` **with no limit** and two
+`leftJoinAndSelect`s, then scores **every** property through all 17 categories, on
+**every** request — every page and every debounced keystroke — to return 12 rows. That
+is O(whole table) per request and it belongs to sub-PR B. The full-inventory ranking
+itself is deliberate (the comment on the query says so) and the owner confirmed it stays;
+only loading and hydrating every row is avoidable, via a lean scoring projection plus a
+second query that hydrates the page's 12 with joins and presigns them.
+
+**The two read paths, and what «align» turned out to mean.** The domain is read two ways:
+`getMatchesForUser` applies SQL pre-filters and no joins, `getMatchedPropertiesWithPagination`
+applies joins and no pre-filters — so the same property can be visible in one and hidden
+in the other. Owner's decision (2026-08-06): **the shared path shows the whole inventory
+ranked, and the pre-filters become an optional flag.** Separately, four of the six matching
+routes — `/matches`, `/top-matches`, `/detailed-matches`, `/recommendations` — have **zero
+callers** in `src` and `e2e` (the frontend's last one went in 5.1 PR 7c); the owner has
+confirmed there are no external consumers, so sub-PR C removes the three thin wrappers and
+routes what remains through one private loader.
+
+| Sub-PR | Scope | Status |
+|---|---|---|
+| **A** | `POST /matching/scores`, `usePropertyMatches` on one batch query, `/app/units` gated on `sortBy`, match-badge coverage | ✅ done, `perf/matching-batch-scores`, not merged |
+| **B** | Two-phase query in `matched-properties` (lean scoring projection → hydrate the page's 12 with joins), presigned-URL cache with TTL, `extractS3KeyFromUrl` regex hoisted | ⬜ not started |
+| **C** | One shared read path with pre-filters as a flag, delete the three dead wrapper routes, adopt-or-delete `MatchingCacheService` | ⬜ not started, owner's two decisions recorded above |
+
+**What sub-PR A deliberately did not do.** The two «more properties» grids on the detail
+page still make one batch each rather than one between them: each owns its own query, and
+`PreferencePropertiesSection` reshuffles per mount by design, so hoisting their ids into
+the page would change that behaviour. Detail page went 7 matching requests → 3 (1 own
+per-card + 2 batches on real data; 2 on the 3-property local DB, where both grids resolve
+to the same ids and share the cache entry). Folding the last two belongs to component
+work, not to this step. The scoring engine itself (1941 lines) was not touched — that is 6.3.
 
 ## Phase 7 — Preparing for scale
 
@@ -440,6 +503,9 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 | 2026-08-05 | `EditBuildingModal.tsx` | ~~**`districts` edits are silently discarded on save**: the field is collected in form state and rendered as a working multi-select, but `handleSubmit` never adds it to `buildingData`.~~ **Fixed in 5.4 PR1** (`fix/building-districts-save`): the payload builder gained the same conditional-inclusion block `AddBuildingModal` had; the building-edit e2e now asserts the PATCH body carries the district and that it survives a modal reopen. One same-class quirk remains by design (matches `amenities`): clearing the last district is not persisted, since empty arrays are omitted from the edit payload | ✅ closed in 5.4 PR1 |
 | 2026-08-05 | `EditPropertyModal.tsx`, `loadOperators` | **Hardcoded mock operators in a production path**: when the operators list comes back empty, the dropdown is filled with `mock-op-1`/`mock-op-2` («Test Operator 1/2», `operator1@test.com`) and a mock id would be submitted verbatim as `operator_id`. Only fires with zero operators in the DB, but it is test data in prod. Owner decision pending: fix in a small PR before the property split (PR4b) or drop the fallback as part of it | 5.4 / owner |
 | 2026-08-05 | all four admin modals, behaviour quirks | **Preserved byte-for-byte during the 5.4 split; each is a product/UX call, not cleanup.** Upload failures are silent — `uploadAllFiles` returns `hasErrors` and nobody reads it, so a failed photo upload saves the entity without photos and only `console.error`s; the documents input accepts multiple PDFs but only `results[0].url` is kept; a selected operator cannot be cleared (no «None» option); `normalizeNumber` in the property submit coerces `0` to `null`, so floor 0 (ground floor) is unrepresentable; `available_from` goes through `toISOString()` with a timezone-shift risk near midnight; `commute_times`/`local_essentials` live in property form state, prefill and payload but have **no UI at all**; Add and Edit building disagree on validation (Add has `useFormValidation` on 3 fields, Edit has none) and on payload conditional-inclusion rules — one concrete consequence: emptying an array field entirely (all districts, all amenities) is not persisted, because empty arrays are omitted from the payload; AddBuildingModal does not reset its state on Cancel. Any deliberate change to these comes after the split, with its own PR | product / after 5.4 |
+| 2026-08-06 | `matching/services/matching-cache.service.ts` | **149 lines of dead cache.** `MatchingCacheService` is registered as a provider in `MatchingModule` but injected into nothing — `grep` over the whole backend finds no constructor that takes it. It carries a `Map` with TTL, key builders for three query shapes and per-user/per-property invalidation, i.e. roughly what sub-PR B needs for the scored-order cache. Adopt it there or delete it; leaving a provider nobody uses is the worst of the three | 6.2 sub-PR C (adopt-or-delete decided in B) |
+| 2026-08-06 | `matching.service.getPropertyMatch` | **A user with no preferences gets a 404 per card.** The per-card route throws `NotFoundException("User preferences not found")`, and `usePropertyMatches` swallowed it silently, so a tenant who had not filled the wizard loaded a catalogue page as N failed requests — confirmed live, 3/3 on the local DB. The new batch route answers `200 {"scores":{}}` instead. **The per-card route still behaves the old way** and is still used by the property detail page; whether that 404 is the right answer for a signed-in user with an empty profile is a product question, not a perf one | 6.2 sub-PR C / product |
+| 2026-08-06 | `e2e`, local runs | **The suite is flaky against a local stack, and it is the throttler, not the tests.** `ThrottlerModule` allows 15 req/s and 60 req/10s per IP (`app.module.ts:37`); Playwright's 5 workers share one tenant and one loopback address, so runs produce **90× HTTP 429** — 32 on `/auth/me`, 30 on `/auth/refresh`, 22 on `/preferences`, i.e. the session bootstrap, not the feature under test. Failures rotate across unrelated specs. **Verified pre-existing:** stashing the 6.2 sub-PR A changes and re-running on plain `develop` reproduces it at the same rate. Running each spec file on its own is green 23/23. Options are a higher limit for `NODE_ENV=test`, a per-worker tenant, or `workers: 1` in CI — none of them belong to a perf step | test tooling / 4.3 |
 | 2026-08-05 | all four admin modals, hygiene | Dead weight the 5.4 PRs will clear under the touched-lines rule as they rewrite each area: ~25 emoji `console.log`s per modal (some dumping whole entities), hardcoded Russian error strings in the upload validation of otherwise-English modals, dead imports (`Save`, `Plus`, `Trash2`, `Select`, `commonRules`, `ApiBuilding`), the unused `ConciergeHours` interface in three files, dead `documentPreview` state + effect and the dead `formDataWithoutOperator` destructure in `EditPropertyModal`, the unused `operators` prop the panel never passes, duplicated `loadOperators` effects, the leftover `role: "operator" \|\| "Operator"` double filters, and the `throw error` re-throws after `catch` in every submit handler (unhandled rejections — the parent already handles failures) | 5.4 PRs, touched lines only |
 
 ## Summary

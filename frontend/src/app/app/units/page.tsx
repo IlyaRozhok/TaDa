@@ -29,6 +29,10 @@ function TenantDashboardContent() {
       persistenceKey: "units-dashboard-filters",
     });
 
+  const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
+  const [bestMatchPage, setBestMatchPage] = useState(1);
+  const debouncedSearch = useDebounce(state.searchTerm, 300);
+
   const propertyIdsForMatches = useMemo(
     () =>
       state.matchedProperties
@@ -37,7 +41,11 @@ function TenantDashboardContent() {
     [state.matchedProperties],
   );
 
-  const { matchByPropertyId } = usePropertyMatches(propertyIdsForMatches);
+  // Only the other sorts need scores fetched: the best-match dataset already
+  // carries them, so the default view costs no extra request at all.
+  const { matchByPropertyId } = usePropertyMatches(propertyIdsForMatches, {
+    enabled: sortBy !== "bestMatch",
+  });
 
   const propertiesWithMatchScores = useMemo(() => {
     return state.matchedProperties.map((m) => {
@@ -52,10 +60,6 @@ function TenantDashboardContent() {
       };
     });
   }, [state.matchedProperties, matchByPropertyId]);
-
-  const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
-  const [bestMatchPage, setBestMatchPage] = useState(1);
-  const debouncedSearch = useDebounce(state.searchTerm, 300);
 
   // The best-match dataset. Fetches only while it is the one displayed and the
   // session is ready; search and page are query arguments, so typing or paging
