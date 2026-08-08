@@ -8,7 +8,6 @@ import { S3Service } from "../../common/services/s3.service";
 import { MatchingService } from "./matching.service";
 import { MatchingController } from "./matching.controller";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
-import { MatchingCacheService } from "./services/matching-cache.service";
 
 @Module({
   imports: [
@@ -19,7 +18,6 @@ import { MatchingCacheService } from "./services/matching-cache.service";
   providers: [
     MatchingService,
     MatchingCalculationService,
-    MatchingCacheService,
     S3Service,
   ],
   exports: [MatchingService, MatchingCalculationService],
