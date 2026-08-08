@@ -17,6 +17,8 @@ import { BuildingModule } from "./modules/building/building.module";
 import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
 import { S3Module } from "./common/services/s3.module";
+import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
+import { RolesGuard } from "@/common/guards/roles.guard";
 import { typeOrmConfig } from "./database/typeorm.config";
 import {SentryModule} from "@sentry/nestjs/setup";
 import { LoggerModule } from "nestjs-pino";
@@ -65,10 +67,23 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     BookingRequestModule,
   ],
   controllers: [AppController],
+  // APP_GUARDs run in declaration order: rate limiting first, then
+  // authentication, then role checks — so RolesGuard always sees a populated
+  // `request.user` and never has to guess. Mounting the pair globally is what
+  // makes `@Roles(...)` impossible to leave inert: the guard that reads the
+  // metadata is no longer something a route has to remember to attach.
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

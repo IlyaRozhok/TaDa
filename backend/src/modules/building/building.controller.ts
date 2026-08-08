@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
   Query,
   UseInterceptors,
   UploadedFile,
@@ -24,10 +23,9 @@ import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import { BuildingService } from "./building.service";
 import { CreateBuildingDto } from "./dto/create-building.dto";
 import { UpdateBuildingDto } from "./dto/update-building.dto";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../../common/guards/roles.guard";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { UserRole } from "../../entities/user.entity";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { UserRole } from "@/entities/user.entity";
+import { Public } from "@/common/decorators/public.decorator";
 import { S3Service } from "../../common/services/s3.service";
 
 @ApiTags("buildings")
@@ -42,6 +40,7 @@ export class BuildingController {
 
   // Public endpoints - MUST be before protected routes
   @Get("public/:id")
+  @Public()
   @ApiOperation({ summary: "Get a public building by ID (no auth required)" })
   @ApiResponse({ status: 200, description: "Building found" })
   @ApiResponse({ status: 404, description: "Building not found" })
@@ -50,7 +49,6 @@ export class BuildingController {
   }
 
   // Protected endpoints below
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post()
   @Roles(UserRole.Admin)
@@ -62,7 +60,6 @@ export class BuildingController {
     return this.buildingService.create(createBuildingDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Get()
   @Roles(UserRole.Admin)
@@ -78,7 +75,6 @@ export class BuildingController {
     return await this.buildingService.findAllWithFreshUrls();
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Get("operators")
   @Roles(UserRole.Admin)
@@ -89,7 +85,6 @@ export class BuildingController {
     return this.buildingService.getOperators();
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Get(":id")
   @Roles(UserRole.Admin)
@@ -101,7 +96,6 @@ export class BuildingController {
     return await this.buildingService.findOneWithFreshUrls(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Patch(":id")
   @Roles(UserRole.Admin)
@@ -117,7 +111,6 @@ export class BuildingController {
     return this.buildingService.update(id, updateBuildingDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Delete(":id")
   @Roles(UserRole.Admin)
@@ -133,7 +126,6 @@ export class BuildingController {
     return await this.buildingService.remove(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/logo")
   @Roles(UserRole.Admin)
@@ -172,7 +164,6 @@ export class BuildingController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/video")
   @Roles(UserRole.Admin)
@@ -211,7 +202,6 @@ export class BuildingController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/photos")
   @Roles(UserRole.Admin)
@@ -264,7 +254,6 @@ export class BuildingController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/documents")
   @Roles(UserRole.Admin)

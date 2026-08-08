@@ -7,7 +7,6 @@ import {
   Param,
   Post,
   Query,
-  UseGuards,
   Request,
 } from "@nestjs/common";
 import {
@@ -17,7 +16,6 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from "@nestjs/swagger";
-import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { MatchingService } from "./matching.service";
 import { GetMatchScoresDto } from "./dto/get-match-scores.dto";
 
@@ -30,7 +28,6 @@ export class MatchingController {
    * Get match details for a specific property
    */
   @Get("property/:propertyId")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get match details for a specific property" })
   @ApiResponse({
@@ -51,7 +48,6 @@ export class MatchingController {
    */
   @Post("scores")
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Get match scores for a batch of properties",
@@ -77,7 +73,6 @@ export class MatchingController {
    * has always had.
    */
   @Get("matched-properties")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary:

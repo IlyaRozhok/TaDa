@@ -7,7 +7,6 @@ import {
   Body,
   UseInterceptors,
   ClassSerializerInterceptor,
-  UseGuards,
   Req,
   Query,
   Param,
@@ -25,10 +24,8 @@ import {
 import { UsersService } from "./users.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { User } from "@/entities";
-import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
+import { UserRole } from "@/entities/user.entity";
 import { Roles } from "@/common/decorators/roles.decorator";
-import { RolesGuard } from "@/common/guards/roles.guard";
-import { Auth } from "@/common/decorators/auth.decorator";
 import { toUserResponse } from "./user.mapper";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -41,7 +38,6 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get("profile")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Get current user profile" })
   @ApiResponse({
@@ -55,7 +51,6 @@ export class UsersController {
   }
 
   @Put("profile")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Update current user profile" })
   @ApiResponse({
@@ -72,7 +67,6 @@ export class UsersController {
   }
 
   @Post("avatar")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Upload avatar for current user" })
   @ApiResponse({
@@ -93,7 +87,6 @@ export class UsersController {
   }
 
   @Delete("account")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Delete current user account" })
   @ApiResponse({
@@ -106,8 +99,7 @@ export class UsersController {
   }
 
   @Get("")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
+  @Roles(UserRole.Admin)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Get all users (admin only)" })
   @ApiResponse({ status: 200, description: "List of users", type: [User] })
@@ -135,8 +127,7 @@ export class UsersController {
   }
 
   @Post("")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
+  @Roles(UserRole.Admin)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Create user (admin only)" })
   @ApiResponse({ status: 201, description: "User created", type: User })
@@ -146,8 +137,7 @@ export class UsersController {
   }
 
   @Put(":id")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
+  @Roles(UserRole.Admin)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Update user by id (admin only)" })
   @ApiResponse({ status: 200, description: "User updated", type: User })
@@ -160,8 +150,7 @@ export class UsersController {
   }
 
   @Delete(":id")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
+  @Roles(UserRole.Admin)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Delete user by id (admin only)" })
   @ApiResponse({ status: 200, description: "User deleted" })
@@ -171,7 +160,7 @@ export class UsersController {
   }
 
   @Put(":id/role")
-  @Auth("admin")
+  @Roles(UserRole.Admin)
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Update user role (admin only)" })
   @ApiResponse({ status: 200, description: "User role updated", type: User })

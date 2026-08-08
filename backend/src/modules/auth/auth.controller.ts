@@ -1,10 +1,10 @@
 import { Controller, Post, UseGuards, Get, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { Request, Response } from "express";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { User } from "../../entities/user.entity";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { Public } from "@/common/decorators/public.decorator";
+import { User } from "@/entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
 import { accessTokenTtl, refreshTokenTtl } from "@/common/config/auth-tokens.config";
 
@@ -31,13 +31,16 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Get("me")
-  @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser() user: User) {
     const fullUser = await this.authService.findUserWithProfile(user.id);
     return { user: fullUser };
   }
 
+  // Public by necessity: the caller's access token is expired — that is the
+  // reason it is calling. The refresh_token cookie is the credential here, and
+  // it is checked below, not by a guard.
   @Post("refresh")
+  @Public()
   @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
@@ -53,7 +56,10 @@ export class AuthController {
     return { message: "Tokens refreshed successfully" };
   }
 
+  // Logging out must work even with a dead access token, otherwise the cookies
+  // that are the problem can never be cleared.
   @Post("logout")
+  @Public()
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
     if (refreshToken) {
@@ -66,12 +72,16 @@ export class AuthController {
 
   // --- Google OAuth ---
 
+  // `@Public()` is what lets the Google guard below ever run: without it the
+  // global JWT guard rejects the request before the OAuth handshake starts.
   @Get("google")
+  @Public()
   @UseGuards(AuthGuard("google"))
   @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
   async googleAuth() {}
 
   @Get("google/callback")
+  @Public()
   @UseGuards(AuthGuard("google"))
   @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
   async googleCallback(@Req() req: Request, @Res() res: Response) {

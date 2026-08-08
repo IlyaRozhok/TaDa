@@ -10,23 +10,29 @@ import {
   Query,
   Param,
 } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from "@nestjs/swagger";
 
 import { PreferencesService } from "./preferences.service";
 import { CreatePreferencesDto } from "./dto/create-preferences.dto";
 import { UpdatePreferencesDto } from "./dto/update-preferences.dto";
-import { Preferences } from "../../entities/preferences.entity";
-import { Auth } from "../../common/decorators/auth.decorator";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { User } from "../../entities/user.entity";
+import { Preferences } from "@/entities/preferences.entity";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { User, UserRole } from "@/entities/user.entity";
 
 @ApiTags("Preferences")
+@ApiBearerAuth()
 @Controller("preferences")
 export class PreferencesController {
   constructor(private readonly preferencesService: PreferencesService) {}
 
   @Get("all")
-  @Auth("admin")
+  @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get all preferences (Admin only)" })
   @ApiResponse({
     status: 200,
@@ -58,7 +64,7 @@ export class PreferencesController {
   }
 
   @Post()
-  @Auth("tenant", "admin")
+  @Roles(UserRole.Tenant, UserRole.Admin)
   @ApiOperation({ summary: "Save current user preferences (tenant or admin)" })
   @ApiResponse({
     status: 201,
@@ -82,7 +88,7 @@ export class PreferencesController {
   }
 
   @Get()
-  @Auth("tenant", "admin")
+  @Roles(UserRole.Tenant, UserRole.Admin)
   @ApiOperation({ summary: "Get current user preferences" })
   @ApiResponse({
     status: 200,
@@ -99,7 +105,7 @@ export class PreferencesController {
   }
 
   @Put()
-  @Auth("tenant", "admin")
+  @Roles(UserRole.Tenant, UserRole.Admin)
   @ApiOperation({ summary: "Update current user preferences" })
   @ApiResponse({
     status: 200,
@@ -118,7 +124,7 @@ export class PreferencesController {
   }
 
   @Delete()
-  @Auth("tenant", "admin")
+  @Roles(UserRole.Tenant, UserRole.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "Delete current user preferences" })
   @ApiResponse({
@@ -134,7 +140,7 @@ export class PreferencesController {
   }
 
   @Put("admin/:userId")
-  @Auth("admin")
+  @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Update user preferences (Admin only)" })
   @ApiResponse({
     status: 200,
@@ -153,7 +159,7 @@ export class PreferencesController {
   }
 
   @Delete("admin/:userId")
-  @Auth("admin")
+  @Roles(UserRole.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "Clear user preferences (Admin only)" })
   @ApiResponse({

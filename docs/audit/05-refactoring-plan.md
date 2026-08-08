@@ -555,10 +555,23 @@ N обращений к презайнеру на страницу. Батчит
 Попутно убрать прямые импорты `TenantCvService` из `auth.service.ts` и
 `preferences.service.ts` в обход публичного API модуля.
 
-### 6.5 🟡 Унифицировать guard'ы
-Сейчас два способа: `@UseGuards(JwtAuthGuard, RolesGuard) + @Roles(...)` и `@Auth(...)`.
-Оставить один (`@Auth`) — тогда отсутствие декоратора на маршруте станет заметно глазом.
-Механическая замена, но затрагивает все контроллеры → прогон e2e обязателен.
+### 6.5 🟡 Unify the guards
+
+**Amended 2026-08-08 (owner's decision). The original wording of this step —
+«keep only `@Auth`» — was rejected in favour of global guards + `@Public()`,
+because `@Auth` everywhere fails *open*: a route whose decorator is forgotten
+becomes anonymous, and it looks exactly like a route that is public on purpose.
+Global guards fail *closed* — a new route with no decorator comes out protected,
+and `@Roles(...)` can no longer be inert, because the guard that reads it is
+mounted globally instead of being something each route must remember to attach.**
+
+There were two conventions: `@UseGuards(JwtAuthGuard, RolesGuard) + @Roles(...)`
+and `@Auth(...)`. Both are gone. `JwtAuthGuard` and `RolesGuard` are `APP_GUARD`s
+registered in `app.module.ts` after `ThrottlerGuard`; authentication is the
+default and `@Public()` is the only opt-out. `RolesGuard`'s logic is unchanged —
+only where it is mounted changed.
+
+Mechanical, but it touches every controller → an e2e run is mandatory.
 
 ### 6.6 🟡 `simple-array` → `jsonb` (R18)
 `Building.photos`, `OperatorProfile.{operating_areas,property_types,services}`.
