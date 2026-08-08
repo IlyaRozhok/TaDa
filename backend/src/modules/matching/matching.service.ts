@@ -14,6 +14,45 @@ import {
   DEFAULT_WEIGHTS,
 } from "./interfaces/matching.interfaces";
 
+/**
+ * Every `Property` column the scoring engine reads, taken from
+ * `matching-calculation.service.ts` rather than guessed: those are the only
+ * fields the ranking pass needs, so it selects these and nothing else.
+ *
+ * `address` and `metro_stations` are read by `matchLocation`, which is
+ * currently unreachable — `calculateMatch` pushes seventeen categories and
+ * location is not one of them. They are kept in the projection anyway, so that
+ * wiring location back in (6.3) does not silently score every property as
+ * having no location data.
+ *
+ * `id` is the join back to the hydration query, `created_at` is the tie-break
+ * order. Neither is read by the scoring engine.
+ */
+const SCORING_COLUMNS = [
+  "id",
+  "created_at",
+  "address",
+  "amenities",
+  "available_from",
+  "balcony",
+  "bathrooms",
+  "bedrooms",
+  "bills",
+  "building_type",
+  "children",
+  "furnishing",
+  "let_duration",
+  "metro_stations",
+  "pet_policy",
+  "pets",
+  "price",
+  "property_amenities",
+  "property_type",
+  "square_meters",
+  "tenant_types",
+  "terrace",
+] as const;
+
 @Injectable()
 export class MatchingService {
   constructor(
@@ -348,22 +387,23 @@ export class MatchingService {
       where: { user_id: userId },
     });
 
-    // Build base query with joins
-    const qb = this.propertyRepository
-      .createQueryBuilder("property")
-      .leftJoinAndSelect("property.building", "building")
-      .leftJoinAndSelect("property.operator", "operator");
-
-    if (search) {
-      const searchPattern = `%${search}%`;
-      qb.andWhere(
-        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)",
-        { search: searchPattern },
-      );
-    }
+    // One predicate, used by both read paths below. It reads `building.name`,
+    // so any query applying it has to join the building.
+    const searchPredicate =
+      "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)";
+    const searchParameters = { search: `%${search ?? ""}%` };
 
     if (!preferences) {
       // No preferences — use DB-level pagination (no scoring needed)
+      const qb = this.propertyRepository
+        .createQueryBuilder("property")
+        .leftJoinAndSelect("property.building", "building")
+        .leftJoinAndSelect("property.operator", "operator");
+
+      if (search) {
+        qb.andWhere(searchPredicate, searchParameters);
+      }
+
       const total = await qb.getCount();
       const skip = (page - 1) * limit;
 
@@ -397,9 +437,31 @@ export class MatchingService {
       };
     }
 
+    // Phase 1 — rank.
+    //
     // No SQL pre-filters here — we score ALL properties so the "Best Match"
     // sort shows every property ranked by compatibility, not a filtered subset.
-    const candidates = await qb.getMany();
+    // That is the reason this cannot paginate in SQL, and the reason it selects
+    // only the scoring columns: the ranking pass reads the whole table, so it
+    // must not also hydrate two joined relations and every unused column for
+    // rows that will never be returned.
+    const rankingQb = this.propertyRepository
+      .createQueryBuilder("property")
+      .select(SCORING_COLUMNS.map((column) => `property.${column}`))
+      // The sort below is stable, so this decides the order of equal scores.
+      // The previous single query had no ORDER BY on this path at all, leaving
+      // ties to whatever order the scan happened to produce.
+      .orderBy("property.created_at", "DESC");
+
+    if (search) {
+      // A join, not a joinAndSelect: the search predicate reads `building.name`
+      // but the ranking pass has no use for the building's columns.
+      rankingQb
+        .leftJoin("property.building", "building")
+        .andWhere(searchPredicate, searchParameters);
+    }
+
+    const candidates = await rankingQb.getMany();
 
     // Score remaining candidates in JS
     const matchResults: PropertyMatchResult[] = candidates.map((property) =>
@@ -417,12 +479,23 @@ export class MatchingService {
     const skip = (page - 1) * limit;
     const paginatedResults = matchResults.slice(skip, skip + limit);
 
+    // Phase 2 — hydrate only the page. The relations and the presigned photo
+    // URLs are paid for by the rows that are actually returned.
+    const pageIds = paginatedResults.map((result) => result.property.id);
+    const hydratedById = await this.hydratePropertiesById(pageIds);
+
     const data = await Promise.all(
-      paginatedResults.map(async (result) => ({
-        property: await this.updatePhotosUrls(result.property),
-        matchScore: result.matchPercentage,
-        categories: result.categories,
-      }))
+      paginatedResults
+        // A property deleted between the two queries drops out rather than
+        // being served in its ranking-only form, with no relations or photos.
+        .filter((result) => hydratedById.has(result.property.id))
+        .map(async (result) => ({
+          property: await this.updatePhotosUrls(
+            hydratedById.get(result.property.id)!,
+          ),
+          matchScore: result.matchPercentage,
+          categories: result.categories,
+        }))
     );
 
     return {
@@ -431,6 +504,28 @@ export class MatchingService {
       page,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Load full entities, with their relations, for one page's worth of ids.
+   * Returned as a map because the database does not honour the order of an
+   * `IN` list and the caller's order is the ranking.
+   */
+  private async hydratePropertiesById(
+    ids: string[]
+  ): Promise<Map<string, Property>> {
+    if (ids.length === 0) {
+      return new Map();
+    }
+
+    const properties = await this.propertyRepository
+      .createQueryBuilder("property")
+      .leftJoinAndSelect("property.building", "building")
+      .leftJoinAndSelect("property.operator", "operator")
+      .whereInIds(ids)
+      .getMany();
+
+    return new Map(properties.map((property) => [property.id, property]));
   }
 
   /**
