@@ -8,8 +8,6 @@ import {
   Body,
   UploadedFile,
   UseInterceptors,
-  Query,
-  UseGuards,
   Request,
   BadRequestException,
 } from "@nestjs/common";
@@ -18,20 +16,17 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiConsumes,
   ApiBody,
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { PropertyMediaService } from "./property-media.service";
-import { PropertyMedia } from "../../entities/property-media.entity";
-import { Auth } from "../../common/decorators/auth.decorator";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { User } from "../../entities/user.entity";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { PropertyMedia } from "@/entities/property-media.entity";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { User, UserRole } from "@/entities/user.entity";
 
 @ApiTags("Property Media")
 @Controller("properties/:propertyId/media")
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class PropertyMediaController {
   constructor(private readonly propertyMediaService: PropertyMediaService) {}
@@ -91,7 +86,7 @@ export class PropertyMediaController {
   }
 
   @Put("order")
-  @Auth("operator", "admin")
+  @Roles(UserRole.Operator, UserRole.Admin)
   @ApiOperation({
     summary: "Update media display order",
     description: "Update the display order of media files for a property",

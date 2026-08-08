@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
@@ -26,10 +25,9 @@ import { PropertyService } from "./property.service";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { FindPropertiesDto } from "./dto/find-properties.dto";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../../common/guards/roles.guard";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { UserRole } from "../../entities/user.entity";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { UserRole } from "@/entities/user.entity";
+import { Public } from "@/common/decorators/public.decorator";
 import { S3Service } from "../../common/services/s3.service";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../entities/user.entity";
@@ -46,6 +44,7 @@ export class PropertyController {
 
   // Public endpoints - MUST be before protected routes
   @Get("public/all")
+  @Public()
   @ApiOperation({ summary: "Get all public properties (no auth required)" })
   @ApiResponse({
     status: 200,
@@ -61,6 +60,7 @@ export class PropertyController {
   }
 
   @Get("public/:id")
+  @Public()
   @ApiOperation({ summary: "Get a public property by ID (no auth required)" })
   @ApiResponse({ status: 200, description: "Property found" })
   @ApiResponse({ status: 404, description: "Property not found" })
@@ -69,6 +69,7 @@ export class PropertyController {
   }
 
   @Get("public")
+  @Public()
   @ApiOperation({
     summary: "Get paginated public properties (no auth required)",
   })
@@ -86,7 +87,6 @@ export class PropertyController {
   }
 
   // Protected endpoints below
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/photos")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -166,7 +166,6 @@ export class PropertyController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/video")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -226,7 +225,6 @@ export class PropertyController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/documents")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -287,7 +285,6 @@ export class PropertyController {
   }
 
   // CRUD endpoints - after upload endpoints
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post()
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -302,7 +299,6 @@ export class PropertyController {
     return this.propertyService.create(createPropertyDto, user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Get()
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -321,7 +317,6 @@ export class PropertyController {
     });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Get(":id")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -332,7 +327,6 @@ export class PropertyController {
     return await this.propertyService.findOneWithFreshUrls(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Patch(":id")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -347,7 +341,6 @@ export class PropertyController {
     return this.propertyService.update(id, updatePropertyDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Delete(":id")
   @Roles(UserRole.Admin, UserRole.Operator)

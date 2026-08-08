@@ -7,7 +7,6 @@ import {
   Post,
   Query,
   Request,
-  UseGuards,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -18,18 +17,15 @@ import {
 import { BookingRequestService } from "./booking-request.service";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import { UpdateBookingStatusDto } from "./dto/update-booking-status.dto";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../../common/guards/roles.guard";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { UserRole } from "../../entities/user.entity";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { UserRole } from "@/entities/user.entity";
 import {
   BookingRequest,
   BookingRequestStatus,
-} from "../../entities/booking-request.entity";
+} from "@/entities/booking-request.entity";
 
 @ApiTags("booking-requests")
 @Controller("booking-requests")
-@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class BookingRequestController {
   constructor(private readonly bookingRequestService: BookingRequestService) {}
