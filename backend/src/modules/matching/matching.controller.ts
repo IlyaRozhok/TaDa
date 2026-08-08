@@ -27,87 +27,6 @@ export class MatchingController {
   constructor(private readonly matchingService: MatchingService) {}
 
   /**
-   * Get matched properties for the current user
-   */
-  @Get("matches")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: "Get matched properties for current user" })
-  @ApiQuery({
-    name: "limit",
-    required: false,
-    type: Number,
-    description: "Max results",
-  })
-  @ApiQuery({
-    name: "minScore",
-    required: false,
-    type: Number,
-    description: "Minimum match score (0-100)",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "List of matched properties with scores",
-  })
-  async getMatches(
-    @Request() req: any,
-    @Query("limit") limit?: number,
-    @Query("minScore") minScore?: number
-  ) {
-    const userId = req.user.id;
-    return this.matchingService.getMatchesForUser(userId, {
-      limit: limit ? Number(limit) : 50,
-      minScore: minScore ? Number(minScore) : 0,
-    });
-  }
-
-  /**
-   * Get top matches (simplified for property cards)
-   */
-  @Get("top-matches")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: "Get top matched properties (simplified)" })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: "List of top matched properties",
-  })
-  async getTopMatches(@Request() req: any, @Query("limit") limit?: number) {
-    const userId = req.user.id;
-    return this.matchingService.getTopMatches(
-      userId,
-      limit ? Number(limit) : 20
-    );
-  }
-
-  /**
-   * Get detailed matches with full category breakdown
-   * This is the main endpoint for the matches page
-   */
-  @Get("detailed-matches")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Get detailed matched properties with category breakdown",
-  })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: "List of matched properties with detailed category scores",
-  })
-  async getDetailedMatches(
-    @Request() req: any,
-    @Query("limit") limit?: number
-  ) {
-    const userId = req.user.id;
-    return this.matchingService.getDetailedMatches(
-      userId,
-      limit ? Number(limit) : 20
-    );
-  }
-
-  /**
    * Get match details for a specific property
    */
   @Get("property/:propertyId")
@@ -148,43 +67,32 @@ export class MatchingController {
   }
 
   /**
-   * Get recommendations based on preferences
-   * Similar to matches but with additional filtering
-   */
-  @Get("recommendations")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: "Get property recommendations" })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: "List of recommended properties",
-  })
-  async getRecommendations(
-    @Request() req: any,
-    @Query("limit") limit?: number
-  ) {
-    const userId = req.user.id;
-    // For recommendations, we want higher quality matches
-    return this.matchingService.getMatchesForUser(userId, {
-      limit: limit ? Number(limit) : 10,
-      minScore: 60, // Only show properties with 60%+ match
-    });
-  }
-
-  /**
-   * Get matched properties with pagination and search
-   * Returns properties with calculated matching scores, sorted by match score
+   * The single read path for matched properties: the whole inventory ranked by
+   * match score, paginated and searchable.
+   *
+   * `prefilters` is the opt-in successor of the deleted `/matches` route. That
+   * route narrowed the candidate set in SQL before scoring, which is why the
+   * same property could be visible here and hidden there. Off by default, so
+   * the default answer is the full inventory ranked — the behaviour this route
+   * has always had.
    */
   @Get("matched-properties")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Get matched properties with pagination and search (sorted by match score)",
+    summary:
+      "Get matched properties with pagination and search (sorted by match score)",
   })
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
   @ApiQuery({ name: "search", required: false, type: String })
+  @ApiQuery({
+    name: "prefilters",
+    required: false,
+    type: Boolean,
+    description:
+      "Pass `true` to drop properties that fall outside the user's budget, bedroom and property-type preferences before scoring. Default `false` — the whole inventory is ranked. Ignored for a user with no preferences, which is what the filters are derived from",
+  })
   @ApiResponse({
     status: 200,
     description: "Paginated list of matched properties sorted by match score",
@@ -193,13 +101,15 @@ export class MatchingController {
     @Request() req: any,
     @Query("page") page?: string,
     @Query("limit") limit?: string,
-    @Query("search") search?: string
+    @Query("search") search?: string,
+    @Query("prefilters") prefilters?: string
   ) {
     const userId = req.user.id;
     return this.matchingService.getMatchedPropertiesWithPagination(userId, {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 12,
       search,
+      prefilters: prefilters === "true",
     });
   }
 }
