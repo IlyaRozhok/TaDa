@@ -1,5 +1,4 @@
-import { Property } from "../../../entities/property.entity";
-import { Preferences } from "../../../entities/preferences.entity";
+import { Property } from "@/entities/property.entity";
 
 /**
  * Category weights for matching algorithm
@@ -105,31 +104,3 @@ export interface MatchScoresResponse {
   scores: Record<string, PropertyMatchScore>;
 }
 
-/**
- * Matching request options
- */
-export interface MatchingOptions {
-  weights?: Partial<CategoryWeights>;
-  minScore?: number;
-  limit?: number;
-  includePartialMatches?: boolean;
-  /**
-   * Minimum match percentage for a property to be visible.
-   * Properties below this threshold will be filtered out.
-   * Default: 0 (show all)
-   */
-  minVisibleScore?: number;
-}
-
-/**
- * API response format
- */
-export interface MatchingResponse {
-  results: PropertyMatchResult[];
-  total: number;
-  preferences: {
-    id: string;
-    summary: string;
-  };
-  appliedWeights: CategoryWeights;
-}
