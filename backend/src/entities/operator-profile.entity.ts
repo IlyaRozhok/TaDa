@@ -60,30 +60,6 @@ export class OperatorProfile {
   years_experience: number;
 
   @ApiProperty({
-    description: "Areas of operation",
-    example: ["Central London", "East London"],
-    type: [String],
-  })
-  @Column("simple-array", { nullable: true })
-  operating_areas: string[];
-
-  @ApiProperty({
-    description: "Types of properties managed",
-    example: ["Residential", "Commercial"],
-    type: [String],
-  })
-  @Column("simple-array", { nullable: true })
-  property_types: string[];
-
-  @ApiProperty({
-    description: "Services offered",
-    example: ["Property Management", "Lettings", "Sales"],
-    type: [String],
-  })
-  @Column("simple-array", { nullable: true })
-  services: string[];
-
-  @ApiProperty({
     description: "Business description",
     example: "We specialize in luxury residential properties in Central London",
   })

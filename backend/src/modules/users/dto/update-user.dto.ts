@@ -111,16 +111,6 @@ export class UpdateUserDto {
   work_style?: string;
 
   @ApiPropertyOptional({
-    description: "Lifestyle preferences as array of strings",
-    example: ["social", "quiet", "active"],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  lifestyle?: string[];
-
-  @ApiPropertyOptional({
     description: "Pet ownership information",
     example: "cat",
     enum: ["none", "cat", "dog", "other"],

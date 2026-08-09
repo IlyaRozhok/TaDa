@@ -47,14 +47,6 @@ export class TenantProfile {
   work_style: string;
 
   @ApiProperty({
-    description: "Lifestyle preferences as array of strings",
-    example: ["Active", "Social", "Quiet"],
-    type: [String],
-  })
-  @Column("simple-array", { nullable: true })
-  lifestyle: string[];
-
-  @ApiProperty({
     description: "Ideal living environment preference",
     example: "social",
     enum: [
@@ -81,7 +73,7 @@ export class TenantProfile {
     example: ["property-id-1", "property-id-2"],
     type: [String],
   })
-  @Column("simple-array", { nullable: true })
+  @Column({ type: "jsonb", nullable: true })
   shortlisted_properties: string[];
 
   @ApiProperty({ description: "Profile creation date" })
