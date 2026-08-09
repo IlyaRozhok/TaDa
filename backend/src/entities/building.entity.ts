@@ -153,7 +153,7 @@ export class Building {
     type: [String],
     required: false,
   })
-  @Column("simple-array", { nullable: true, default: "" })
+  @Column({ type: "jsonb", nullable: true, default: [] })
   photos: string[];
 
   @ApiProperty({

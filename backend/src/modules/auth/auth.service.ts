@@ -140,7 +140,6 @@ export class AuthService {
       occupation: "",
       industry: "",
       work_style: "",
-      lifestyle: [],
       ideal_living_environment: "",
       additional_info: "",
       shortlisted_properties: [],

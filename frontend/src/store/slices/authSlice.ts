@@ -40,7 +40,6 @@ export interface User {
     age_range?: string;
     industry?: string;
     work_style?: string;
-    lifestyle?: string[];
     ideal_living_environment?: string;
     additional_info?: string;
     shortlisted_properties?: string[];
@@ -53,7 +52,6 @@ export interface User {
     avatar_url?: string;
     business_address?: string;
     years_experience?: number;
-    operating_areas?: string[];
     business_description?: string;
   };
 }
