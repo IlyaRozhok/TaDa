@@ -89,7 +89,9 @@ export class OperatorProfile {
   updated_at: Date;
 
   // Relations
-  @OneToOne(() => User, (user) => user.operatorProfile)
+  @OneToOne(() => User, (user) => user.operatorProfile, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn()
   user: User;
 

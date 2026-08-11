@@ -29,7 +29,7 @@ export class Shortlist {
   propertyId: string;
 
   @ApiProperty({ description: "User who shortlisted the property" })
-  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @ManyToOne(() => User, (user) => user.shortlists, { onDelete: "CASCADE" })
   @JoinColumn({ name: "userId" })
   user: User;
 

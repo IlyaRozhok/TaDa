@@ -434,7 +434,7 @@ export class Preferences {
 
   // ==================== RELATIONS ====================
 
-  @OneToOne(() => User, (user) => user.preferences)
+  @OneToOne(() => User, (user) => user.preferences, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
   user: User;
 }

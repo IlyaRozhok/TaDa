@@ -163,8 +163,10 @@ export class UsersService {
       }
     }
 
-    // Удалить все связанные данные
-    await this.userProfileService.deleteUserData(user);
+    // Deleting the user row is enough: preferences, tenant/operator profiles,
+    // the tenant CV, shortlist entries, buildings, properties and booking
+    // requests all hang off `users.id` with ON DELETE CASCADE.
+    await this.userRepository.remove(user);
   }
 
   /**

@@ -1,19 +1,13 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User } from "../../../entities/user.entity";
-import { TenantProfile } from "../../../entities/tenant-profile.entity";
-import { OperatorProfile } from "../../../entities/operator-profile.entity";
-import { Preferences } from "../../../entities/preferences.entity";
+import { User } from "@/entities/user.entity";
+import { Preferences } from "@/entities/preferences.entity";
 import { UpdateUserDto } from "../dto/update-user.dto";
 
 @Injectable()
 export class UserProfileService {
   constructor(
-    @InjectRepository(TenantProfile)
-    private tenantProfileRepository: Repository<TenantProfile>,
-    @InjectRepository(OperatorProfile)
-    private operatorProfileRepository: Repository<OperatorProfile>,
     @InjectRepository(Preferences)
     private preferencesRepository: Repository<Preferences>
   ) {}
@@ -46,22 +40,5 @@ export class UserProfileService {
     if (updateUserDto.hobbies) preferences.hobbies = updateUserDto.hobbies;
 
     await this.preferencesRepository.save(preferences);
-  }
-
-  async deleteUserData(user: User): Promise<void> {
-    // Delete preferences
-    if (user.preferences) {
-      await this.preferencesRepository.remove(user.preferences);
-    }
-
-    // Delete tenant profile
-    if (user.tenantProfile) {
-      await this.tenantProfileRepository.remove(user.tenantProfile);
-    }
-
-    // Delete operator profile
-    if (user.operatorProfile) {
-      await this.operatorProfileRepository.remove(user.operatorProfile);
-    }
   }
 }
