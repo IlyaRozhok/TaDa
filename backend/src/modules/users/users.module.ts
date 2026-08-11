@@ -11,18 +11,11 @@ import { User } from "@/entities/user.entity";
 import { TenantProfile } from "@/entities/tenant-profile.entity";
 import { OperatorProfile } from "@/entities/operator-profile.entity";
 import { Preferences } from "@/entities/preferences.entity";
-import { TenantCv } from "@/entities/tenant-cv.entity";
 import { S3Service } from "@/common/services/s3.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      User,
-      TenantProfile,
-      OperatorProfile,
-      Preferences,
-      TenantCv,
-    ]),
+    TypeOrmModule.forFeature([User, TenantProfile, OperatorProfile, Preferences]),
   ],
   controllers: [UsersController],
   providers: [

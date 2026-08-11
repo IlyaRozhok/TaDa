@@ -10,19 +10,12 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { User } from "@/entities/user.entity";
 import { TenantProfile } from "@/entities/tenant-profile.entity";
-import { OperatorProfile } from "@/entities/operator-profile.entity";
-import { Preferences } from "@/entities/preferences.entity";
 import { TenantCvModule } from "@/modules/tenant-cv/tenant-cv.module";
 import { accessTokenTtl } from "@/common/config/auth-tokens.config";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      User,
-      TenantProfile,
-      OperatorProfile,
-      Preferences,
-    ]),
+    TypeOrmModule.forFeature([User, TenantProfile]),
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -47,12 +40,6 @@ import { accessTokenTtl } from "@/common/config/auth-tokens.config";
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, GoogleStrategy],
-  exports: [
-    AuthService,
-    JwtStrategy,
-    GoogleStrategy,
-    PassportModule,
-    TypeOrmModule,
-  ],
+  exports: [AuthService, JwtStrategy, GoogleStrategy, PassportModule],
 })
 export class AuthModule {}

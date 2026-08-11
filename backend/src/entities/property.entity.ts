@@ -332,7 +332,9 @@ export class Property {
   updated_at: Date;
 
   // Relations
-  @ManyToOne(() => User, (user) => user.id, {
+  // Unidirectional: `User` has no `properties` collection, so there is no
+  // inverse side to name here.
+  @ManyToOne(() => User, {
     onDelete: "CASCADE",
   })
   @JoinColumn({ name: "operator_id" })

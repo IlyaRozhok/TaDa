@@ -85,7 +85,7 @@ export class TenantProfile {
   updated_at: Date;
 
   // Relations
-  @OneToOne(() => User, (user) => user.tenantProfile)
+  @OneToOne(() => User, (user) => user.tenantProfile, { onDelete: "CASCADE" })
   @JoinColumn()
   user: User;
 
