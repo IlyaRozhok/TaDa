@@ -29,6 +29,7 @@ import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
+import CopyableId from "@/app/components/CopyableId";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
 import { notify } from "@/shared/lib/notify";
@@ -906,8 +907,13 @@ export default function PropertyPublicPage() {
                 {publishDate.toLocaleDateString("en-GB")}
               </span>
               <span className="hidden sm:inline text-gray-500">•</span>
-              <span className="text-xs sm:text-sm text-gray-500">
-                ID: {property?.id}
+              <span className="text-xs sm:text-sm text-gray-500 inline-flex items-center gap-1">
+                ID:{" "}
+                <CopyableId
+                  id={property?.id}
+                  maxLength={5}
+                  className="text-xs sm:text-sm text-gray-500"
+                />
               </span>
             </div>
           </div>
