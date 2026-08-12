@@ -108,6 +108,42 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
+      # ---------------------------------------------------------------------
+      # Pre-deploy database backup — LAUNCH_PLAN item 1.
+      #
+      # Runs BEFORE git pull / build / migrate, and a non-zero exit fails the
+      # whole job so that nothing is deployed. That is the point: the release
+      # runs migrations against a populated production database, and
+      # `migrationsTransactionMode: "each"` (data-source.ts) means a failure
+      # halfway through leaves earlier migrations committed. The only floor
+      # under that is a dump taken minutes earlier.
+      #
+      # We call the INSTALLED path (/usr/local/bin/tada-db-backup), not the one
+      # in the repo checkout: at this point `git pull` has not run yet, so the
+      # checkout is still at the previous release and may not contain the
+      # script at all. Install it once with the "Install DB backup" workflow
+      # (.github/workflows/backup-setup.yml).
+      #
+      # Staging deliberately does NOT do this: there is no backup.env on that
+      # host and the bucket holds production data only.
+      # ---------------------------------------------------------------------
+      - name: Pre-deploy database backup
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+
+            if [ ! -x /usr/local/bin/tada-db-backup ]; then
+              echo "::error::/usr/local/bin/tada-db-backup is missing. Run the 'Install DB backup' workflow once before deploying."
+              exit 1
+            fi
+
+            /usr/local/bin/tada-db-backup --pre-deploy
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -124,6 +160,20 @@ jobs:
             docker compose build backend
             docker compose up -d --no-deps backend
 
+            # TODO(LAUNCH_PLAN #4): migrate BEFORE serving new code.
+            # As written, the new image starts serving against the OLD schema
+            # for at least these 10 seconds — and indefinitely if the migration
+            # below then fails, because nothing gates the running container on
+            # its exit status. The correct shape is: run migrations in a
+            # one-shot container on the new image, and only `up -d --wait` on
+            # success.
+            # Deliberately NOT changed in the backup PR: the `--wait` gate is
+            # only meaningful once /api/health actually touches the database
+            # (LAUNCH_PLAN #5), and reordering the production deploy path is
+            # exactly the kind of change that must be rehearsed against a
+            # restored copy of prod first (LAUNCH_PLAN #2) rather than shipped
+            # alongside something else. The pre-deploy backup step above is
+            # what makes that rehearsal — and this ordering fix — safe to do.
             echo "Waiting for backend to be healthy..."
             sleep 10
             docker compose exec -T backend npm run mig:run:prod

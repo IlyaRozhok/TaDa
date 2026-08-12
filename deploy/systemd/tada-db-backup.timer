@@ -1,0 +1,41 @@
+# Schedule for tada-db-backup.service — every 6 hours.
+#
+# Install:
+#   sudo install -m 0644 deploy/systemd/tada-db-backup.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now tada-db-backup.timer
+#
+# Verify it is alive and when it next fires:
+#   systemctl list-timers tada-db-backup.timer
+#
+# Note: `enable --now` starts the TIMER, not a backup. To take one immediately:
+#   sudo systemctl start tada-db-backup.service
+
+[Unit]
+Description=Run the TaDa database backup every 6 hours
+Documentation=https://github.com/IlyaRozhok/TaDa/blob/develop/docs/ops/BACKUP_RUNBOOK.md
+
+[Timer]
+Unit=tada-db-backup.service
+
+# 00:00, 06:00, 12:00, 18:00 server time.
+OnCalendar=*-*-* 00/6:00:00
+
+# Also take one 15 minutes after boot: a host that was down over a scheduled
+# slot should not wait up to 6 hours for its first dump.
+OnBootSec=15min
+
+# If the machine was off (or the unit was masked) when a run was due, take that
+# run as soon as it can. This is what makes a missed window catch up instead of
+# silently disappearing.
+Persistent=true
+
+# Spread the start over 5 minutes so the dump does not land on the same instant
+# as any other top-of-the-hour job.
+RandomizedDelaySec=300
+
+# Wall-clock alignment tolerance; keeps the timer cheap for the kernel.
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

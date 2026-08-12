@@ -1,0 +1,62 @@
+# TaDa production database backup — one-shot unit driven by tada-db-backup.timer.
+#
+# Install (done for you by .github/workflows/backup-setup.yml — these are the
+# manual equivalents, for when the workflow is not an option):
+#
+#   sudo install -m 0644 deploy/systemd/tada-db-backup.service /etc/systemd/system/
+#   sudo install -m 0644 deploy/systemd/tada-db-backup.timer   /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now tada-db-backup.timer
+#
+# Check it:
+#   systemctl status tada-db-backup.timer
+#   systemctl list-timers tada-db-backup.timer
+#   journalctl -u tada-db-backup.service -n 50 --no-pager
+#
+# Run it by hand right now:
+#   sudo systemctl start tada-db-backup.service
+
+[Unit]
+Description=TaDa production database backup (pg_dump -> gzip -> S3)
+Documentation=https://github.com/IlyaRozhok/TaDa/blob/develop/docs/ops/BACKUP_RUNBOOK.md
+# The upload needs DNS and routing to be up, and the dump needs the cluster.
+Wants=network-online.target
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+
+# Runs as the deploy user, which has passwordless sudo — the script needs it for
+# `sudo -u postgres pg_dump`. NoNewPrivileges MUST stay off (its default) or that
+# sudo call cannot work.
+User=deploy
+Group=deploy
+
+# Belt and braces: the script reads /opt/tada/backup.env itself, but loading it
+# here too means the aws CLI has credentials even if someone invokes the script
+# in a way that bypasses its own reader. The leading `-` makes a missing file a
+# non-fatal condition at unit level — the script then fails with a clear message
+# instead of systemd failing with an opaque one.
+EnvironmentFile=-/opt/tada/backup.env
+
+ExecStart=/usr/local/bin/tada-db-backup
+
+# The dump can take a while if the database ever grows; fail rather than hang
+# forever, so the timer's next run is not blocked by a stuck one.
+TimeoutStartSec=1800
+
+# Light hardening. Do NOT tighten to ProtectSystem=strict: the script writes to
+# /var/backups/tada and /var/log/tada-backup.log.
+PrivateTmp=false
+ProtectSystem=full
+ProtectHome=true
+
+# systemd 235+; both directories must stay writable by the deploy user.
+ReadWritePaths=/var/backups/tada /var/log
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tada-db-backup
+
+[Install]
+WantedBy=multi-user.target
