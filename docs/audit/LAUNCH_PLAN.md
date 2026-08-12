@@ -58,18 +58,34 @@ Twelve items. Legend for **OWNER**: `code` = a coding session can do it ·
 `pg_dump` prod, restore it to a scratch database on the same host, and diff row counts
 per table. A dump nobody has restored is not a backup.
 
-**Shipped on `feat/db-backup` (2026-08-12):** `scripts/db-backup.sh` and
-`scripts/db-restore.sh`, systemd unit + 6-hourly timer under `deploy/systemd/`, a
+**Shipped on `feat/db-backup` (2026-08-12), then reworked on
+`feat/db-backup-sudofree`:** `scripts/db-backup.sh` and `scripts/db-restore.sh`, a
 pre-deploy backup step in `deploy.yml` that **fails the production deploy if the dump
 fails**, a one-click installer workflow (Actions → *Install DB backup*), and
 `docs/ops/BACKUP_RUNBOOK.md` — including the rehearsal procedure this item and item 2
-need. Verified end to end locally against a throwaway PG 16, not against prod.
+need.
+
+**What the first install attempt taught us (2026-08-12).** The installer ran on prod and
+**confirmed every inferred fact** — PostgreSQL **16.14** client and server, `tada_prod` /
+`tada_user` / port 5432, password set, 38 G disk with 29 G free — then failed cleanly at
+the package step on **`sudo: a password is required`**, before any writes. The host does
+not give the deploy user passwordless sudo. Everything was reworked to need **zero root**:
+the dump connects over **TCP as `tada_user`** with the password from `/opt/tada/.env`
+instead of `sudo -u postgres`; the AWS CLI installs into `$HOME`; the systemd units were
+deleted in favour of the **user crontab**; all state lives under `$HOME`. Note the one
+real cost: cron has **no `Persistent=true` catch-up**, so a run missed while the host is
+down is skipped rather than caught up.
 
 **Still owner/ops, and still the gate:**
-1. Add the two GitHub secrets `BACKUP_AWS_ACCESS_KEY_ID` / `BACKUP_AWS_SECRET_ACCESS_KEY`.
-2. Run the *Install DB backup* workflow (it prints `psql -V`, the server version,
-   `DB_NAME` and `df -h`, so it also confirms the PG-16 / `tada_prod` assumptions).
-3. Do the restore rehearsal in §6 of the runbook and record the row-count diff. **That
+1. Secrets `BACKUP_AWS_ACCESS_KEY_ID` / `BACKUP_AWS_SECRET_ACCESS_KEY` — **already added.**
+2. Re-run the *Install DB backup* workflow against `feat/db-backup-sudofree` (or `main`
+   once merged). It needs no root and re-prints the facts.
+3. **Before the rehearsal, one superuser action on the host console** (details in
+   BACKUP_RUNBOOK §5.1): `ALTER ROLE tada_user CREATEDB;` and widen the `pg_hba.conf`
+   line from `tada_prod` to `all` for `tada_user`. Without these, a restore onto a
+   *scratch* database is rejected — the restore script detects both up front and prints
+   the exact fix. Backups and a restore onto production are unaffected.
+4. Do the restore rehearsal in §6 of the runbook and record the row-count diff. **That
    is what closes this item** — the tooling does not.
 
 **Why:** the release runs 5 migrations onto a populated prod, and **the run is not
