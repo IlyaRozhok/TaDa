@@ -536,6 +536,15 @@ export default function PropertyPublicPage() {
     }
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      notify.success("Link copied to clipboard!");
+    } catch {
+      notify.error("Could not copy link");
+    }
+  };
+
   const handleBookApartment = () => {
     if (!property) {
       return;
@@ -870,6 +879,18 @@ export default function PropertyPublicPage() {
                 {property.title || "Property Title"}
               </h1>
               <button
+                onClick={handleCopyLink}
+                type="button"
+                className="min-w-[44px] h-11 px-2.5 rounded-full border border-gray-300 text-gray-600 hover:border-gray-500 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                aria-label="Copy link to property"
+              >
+                <img
+                  src="/export-icon.svg"
+                  alt=""
+                  className="w-[14px] h-[18px] pointer-events-none shrink-0"
+                />
+              </button>
+              <button
                 onClick={handleShortlistToggle}
                 disabled={shortlistLoading}
                 type="button"
@@ -912,7 +933,8 @@ export default function PropertyPublicPage() {
                 <CopyableId
                   id={property?.id}
                   maxLength={5}
-                  className="text-xs sm:text-sm text-gray-500"
+                  onCopy={() => notify.success("Copied to clipboard!")}
+                  className="text-xs sm:text-sm text-gray-500 cursor-pointer"
                 />
               </span>
             </div>
