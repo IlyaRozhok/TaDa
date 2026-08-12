@@ -515,7 +515,7 @@ work, not to this step. The scoring engine itself (1941 lines) was not touched �
 | 7.3 | Queues — move media upload to S3 out of the HTTP handler | 🟡 | ⬜ | | | | |
 | 7.4 | Metrics — `/metrics` or APM | 🟢 | ⬜ | | | | Right now visibility is zero, apart from Sentry |
 | 7.5 | Pagination — check all listings | 🟡 | ⬜ | | | | |
-| 7.6 | DB backup policy — lock it down and document it | 🟢 | ⬜ | | | | |
+| 7.6 | DB backup policy — lock it down and document it | 🟢 | 🟡 | `feat/db-backup` | — | 2026-08-12 | **Code is done; the host install is the remaining half.** `scripts/db-backup.sh` (`pg_dump -Fc` over the unix socket as `postgres` → gzip → `/var/backups/tada` → `s3://tada-db-backups/daily/`, `--pre-deploy` writes to the `pre-deploy/` prefix instead), `scripts/db-restore.sh` (scratch DB by default; production needs `--force-prod` **and** a typed confirmation on a real tty; prints exact per-table row counts), `deploy/systemd/tada-db-backup.{service,timer}` (every 6h, `Persistent=true`, `OnBootSec=15min`), a pre-deploy backup step in `deploy.yml` that **fails the production deploy if the dump fails**, a `workflow_dispatch` installer (`backup-setup.yml`), and `docs/ops/BACKUP_RUNBOOK.md`. `DB_NAME` is read from `/opt/tada/.env`, never hardcoded, and the script refuses to run if `DB_HOST` is not local — dumping over the socket while the app talks to another host would produce a confident backup of the wrong database. The uploader IAM user is **write-only** (`ListBucket` + `PutObject`, no `GetObject`/`DeleteObject`), which is why upload verification uses `aws s3 ls` rather than `head-object`, and why **restores need the owner's own AWS credentials** — documented in the runbook. Verified locally against a throwaway PG 16 in Docker with a mocked `aws`: happy path, `--pre-deploy` prefix, pruning to 3, and every failure path returning its documented exit code (dump 3, empty 4, upload 5, config 2); restore round-tripped 137/42/90 rows exactly and refused both prod paths. shellcheck 0.11.0 clean. **Not done here:** installing it on the host, and the first real restore rehearsal — LAUNCH_PLAN items 1–2. Alerting on backup failure is deliberately deferred, §7 of the runbook |
 
 ---
 
@@ -663,7 +663,7 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 
 | | Total | ⬜ todo | 🟡 in progress | ✅ done | ⛔ blocked | ➖ not a task |
 |---|---|---|---|---|---|---|
-| Steps | 56 | 10 | 2 | 38 | 0 | 6 |
+| Steps | 56 | 9 | 3 | 38 | 0 | 6 |
 
 Not tasks: 1.6 (removed), 2.4 (moved to 2A), 2A.1 (skipped — absorbed by 2A.3), 2A.4 (stop-list), 2A.5 (backlog),
 5.3 (split into 5.3a done, 5.3b done, 5.3c backlog).
