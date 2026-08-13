@@ -7,8 +7,13 @@ const nextConfig: NextConfig = {
   compress: true,
   trailingSlash: false,
   images: {
-    // Enable image optimization for Vercel
-    unoptimized: false,
+    // Image optimization is disabled: galleries feed presigned S3 URLs into
+    // next/image, and a fresh X-Amz-Signature on every request makes each view
+    // a new "source image", so the optimizer never caches and the Vercel quota
+    // drained -> HTTP 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED on every
+    // <Image>. With unoptimized: true every <Image> renders a plain <img> at
+    // the raw src. Revisit once media is served over stable/CDN URLs.
+    unoptimized: true,
     formats: ["image/webp", "image/avif"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
