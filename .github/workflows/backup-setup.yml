@@ -261,6 +261,20 @@ jobs:
               exit 1
             fi
 
+            # Sanitize before writing.
+            #
+            # A secret pasted from the IAM console's accessKeys.csv very often
+            # carries a trailing CR (the file is CRLF) or stray surrounding
+            # whitespace. GitHub stores that verbatim, it lands in backup.env,
+            # and the AWS CLI folds it into the SigV4 Authorization header —
+            # where it surfaces at upload time as the singularly unhelpful
+            #   AuthorizationHeaderMalformed: the authorization header requires
+            #   three components: Credential, SignedHeaders, and Signature
+            # long after the dump itself has succeeded. Strip CR, LF and
+            # leading/trailing whitespace. The values are never echoed.
+            AKID="$(printf '%s' "$BACKUP_AWS_ACCESS_KEY_ID" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            ASAK="$(printf '%s' "$BACKUP_AWS_SECRET_ACCESS_KEY" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
             # umask first so the file is never briefly group/world readable.
             # Values go through a heredoc and are never echoed.
             umask 077
@@ -268,8 +282,8 @@ jobs:
             # Credentials for the write-only tada-backup-uploader IAM user, plus
             # the database host probed at install time.
             # Managed by .github/workflows/backup-setup.yml — do not edit by hand.
-            AWS_ACCESS_KEY_ID=${BACKUP_AWS_ACCESS_KEY_ID}
-            AWS_SECRET_ACCESS_KEY=${BACKUP_AWS_SECRET_ACCESS_KEY}
+            AWS_ACCESS_KEY_ID=${AKID}
+            AWS_SECRET_ACCESS_KEY=${ASAK}
             AWS_DEFAULT_REGION=${BACKUP_REGION}
             BACKUP_BUCKET=${BACKUP_BUCKET}
             BACKUP_DB_HOST=${DB_HOST_USED}
@@ -279,6 +293,36 @@ jobs:
             echo "wrote ${BACKUP_ENV}:"
             ls -l "$BACKUP_ENV"
             echo "keys present: $(grep -cE '^[A-Z_]+=' "$BACKUP_ENV") (expect 5)"
+
+            # Preflight the credential SHAPE, so a malformed secret fails here
+            # with a sentence you can act on rather than in STEP 7 as an S3
+            # error that points at nothing. Only lengths and pass/fail are
+            # printed — never any part of the values.
+            CREDS_OK=1
+
+            if printf '%s' "$AKID" | grep -qE '^AKIA[A-Z0-9]{16}$'; then
+              echo "access key id: length ${#AKID} — format OK"
+            else
+              echo "access key id: length ${#AKID} — format BAD (expected AKIA + 16 upper-case alphanumerics, 20 total)"
+              CREDS_OK=0
+            fi
+
+            if [ "${#ASAK}" -eq 40 ]; then
+              echo "secret key:    length ${#ASAK} — OK"
+            else
+              echo "secret key:    length ${#ASAK} — BAD (expected exactly 40)"
+              CREDS_OK=0
+            fi
+
+            if printf '%s' "$ASAK" | grep -q '[[:space:]]'; then
+              echo "secret key:    contains whitespace — BAD"
+              CREDS_OK=0
+            fi
+
+            if [ "$CREDS_OK" -ne 1 ]; then
+              echo "::error::BACKUP_AWS_* secret looks malformed (len/format) — re-check the GitHub secret. Re-copy the value from accessKeys.csv without the trailing newline/CR or any surrounding spaces, and re-save it in Settings -> Secrets and variables -> Actions."
+              exit 1
+            fi
 
             echo
             echo "==================================================================="
