@@ -1,4 +1,5 @@
 {
+  "admin.type.of.unit.maisonette": "Maisonette",
   "amenities.name1": "Gemeinschaftsbüros",
   "amenities.name10": "Fahrradabstellraum",
   "amenities.name11": "Zoom-Kabinen",
@@ -224,7 +225,7 @@
   "landing.tenant.web.sm.text2": "Insider-Tipps und Miet-Know-how für ein stressfreies Leben in London",
   "listing.building.details.sectionTitle": "Gebäudedetails",
   "listing.features.access.binArea": "Lagerbereich für Behälter",
-  "listing.features.access.floorLevel": "Erdgeschoss",
+  "listing.features.access.floorLevel": "Ebenerdiger Zugang",
   "listing.features.access.lift": "Aufzug",
   "listing.features.access.secureEntry": "Sicheres Zugangssystem",
   "listing.features.access.title": "Gebäude &amp; Zugang",
@@ -294,6 +295,7 @@
   "listing.property.viewingRequest.contactMethod": "Wählen Sie Ihre bevorzugte Kontaktmethode",
   "listing.property.viewingRequest.submit": "Anfrage senden",
   "listing.property.viewingRequest.title": "Besichtigungstermin vereinbaren",
+  "listing.squere.meters.title": "Quadratmeter (m²)",
   "listing.viewingRequest.notes": "Zusätzliche Anmerkungen zur Anfrage",
   "listing.viewingRequest.notesPlaceholder": "Weitere Details oder Fragen zur Besichtigung",
   "living.env.name1": "Ruhig und friedlich",

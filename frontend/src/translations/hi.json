@@ -1,4 +1,5 @@
 {
+  "admin.type.of.unit.maisonette": "मैज़ोनेट",
   "amenities.name1": "सह-कार्य स्थल",
   "amenities.name10": "बाइक भंडारण",
   "amenities.name11": "ज़ूम बूथ",
@@ -224,7 +225,7 @@
   "landing.tenant.web.sm.text2": "लंदन में तनावमुक्त जीवन जीने के लिए अंदरूनी टिप्स और किराये से जुड़ी जानकारी",
   "listing.building.details.sectionTitle": "भवन विवरण",
   "listing.features.access.binArea": "कचरा/रीसाइक्लिंग बिन भंडारण क्षेत्र",
-  "listing.features.access.floorLevel": "ग्राउंड-लेवल",
+  "listing.features.access.floorLevel": "जमीनी स्तर",
   "listing.features.access.lift": "लिफ़्ट",
   "listing.features.access.secureEntry": "नियंत्रित प्रवेश प्रणाली",
   "listing.features.access.title": "भवन और प्रवेश",
@@ -294,6 +295,7 @@
   "listing.property.viewingRequest.contactMethod": "अपनी पसंदीदा संपर्क विधि चुनें",
   "listing.property.viewingRequest.submit": "अनुरोध भेजा",
   "listing.property.viewingRequest.title": "देखने का अनुरोध करें",
+  "listing.squere.meters.title": "वर्ग मीटर",
   "listing.viewingRequest.notes": "अनुरोध के लिए नोट्स",
   "listing.viewingRequest.notesPlaceholder": "व्यूइंग से जुड़ी कोई भी जानकारी या प्रश्न जोड़ें",
   "living.env.name1": "शांत और सुकून भरा",

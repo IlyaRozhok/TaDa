@@ -1,4 +1,5 @@
 {
+  "admin.type.of.unit.maisonette": "Duplex",
   "amenities.name1": "Espaces de coworking",
   "amenities.name10": "Local à vélos",
   "amenities.name11": "Cabines Zoom",
@@ -224,7 +225,7 @@
   "landing.tenant.web.sm.text2": "Conseils d'initiés et savoir-faire en matière de location pour une vie sans stress à Londres",
   "listing.building.details.sectionTitle": "Caractéristiques du bâtiment",
   "listing.features.access.binArea": "Local à poubelles",
-  "listing.features.access.floorLevel": "Niveau d’étage",
+  "listing.features.access.floorLevel": "Niveau du sol",
   "listing.features.access.lift": "Ascenseur",
   "listing.features.access.secureEntry": "Système d’accès sécurisé",
   "listing.features.access.title": "Immeuble & accès",
@@ -294,6 +295,7 @@
   "listing.property.viewingRequest.contactMethod": "Choisissez votre moyen de contact préféré",
   "listing.property.viewingRequest.submit": "Envoyer une demande",
   "listing.property.viewingRequest.title": "Demander une visite",
+  "listing.squere.meters.title": "m²",
   "listing.viewingRequest.notes": "Remarques sur votre demande",
   "listing.viewingRequest.notesPlaceholder": "Ajoutez ici vos remarques ou questions concernant votre visite",
   "living.env.name1": "Calme et paisible",

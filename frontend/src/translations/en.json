@@ -1,4 +1,5 @@
 {
+  "admin.type.of.unit.maisonette": "Maisonette",
   "amenities.name1": "Co-working spaces",
   "amenities.name10": "Bike storage",
   "amenities.name11": "Zoom Booths",
@@ -224,7 +225,7 @@
   "landing.tenant.web.sm.text2": "Insider tips and rental know-how for stress-free London Living",
   "listing.building.details.sectionTitle": "Building details",
   "listing.features.access.binArea": "Bin storage area",
-  "listing.features.access.floorLevel": "Floor level",
+  "listing.features.access.floorLevel": "Ground Level",
   "listing.features.access.lift": "Lift",
   "listing.features.access.secureEntry": "Secure entry system",
   "listing.features.access.title": "Building & Access",
@@ -294,7 +295,7 @@
   "listing.property.viewingRequest.contactMethod": "Select your preferred contact method",
   "listing.property.viewingRequest.submit": "Send request",
   "listing.property.viewingRequest.title": "Request a viewing",
-  "listing.squere.meters.title": "Square Meters",
+  "listing.squere.meters.title": " Square Meters",
   "listing.viewingRequest.notes": "Notes for your request",
   "listing.viewingRequest.notesPlaceholder": "Add any details or questions about your viewing",
   "living.env.name1": "Quiet & peaceful",

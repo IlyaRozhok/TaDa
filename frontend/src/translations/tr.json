@@ -1,4 +1,5 @@
 {
+  "admin.type.of.unit.maisonette": "Dubleks",
   "amenities.name1": "Ortak Çalışma Alanları",
   "amenities.name10": "Bisiklet deposu",
   "amenities.name11": "Zoom Kabinleri",
@@ -224,7 +225,7 @@
   "landing.tenant.web.sm.text2": "Stressiz bir Londra yaşamı için içeriden ipuçları ve kiralama bilgileri",
   "listing.building.details.sectionTitle": "Bina detayları",
   "listing.features.access.binArea": "Çöp konteyneri alanı",
-  "listing.features.access.floorLevel": "Zemin seviyesi",
+  "listing.features.access.floorLevel": "Zemin Seviyesi",
   "listing.features.access.lift": "Asansör",
   "listing.features.access.secureEntry": "Güvenli giriş sistemi",
   "listing.features.access.title": "Bina ve Erişim",
@@ -294,6 +295,7 @@
   "listing.property.viewingRequest.contactMethod": "Tercih ettiğiniz iletişim yöntemini seçin",
   "listing.property.viewingRequest.submit": "Talep gönder",
   "listing.property.viewingRequest.title": "Görmek için randevu alın",
+  "listing.squere.meters.title": "Metrekare",
   "listing.viewingRequest.notes": "Talebinizle ilgili notlar",
   "listing.viewingRequest.notesPlaceholder": "Görüntülemeyle ilgili ayrıntıları veya sorularınızı ekleyin",
   "living.env.name1": "Sessiz ve huzurlu",

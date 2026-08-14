@@ -933,7 +933,7 @@ export default function PropertyPublicPage() {
                 <CopyableId
                   id={property?.id}
                   maxLength={5}
-                  onCopy={() => notify.success("Copied to clipboard!")}
+                  onCopy={() => notify.success(t(generalKeys.toast.copySuccess))}
                   className="text-xs sm:text-sm text-gray-500 cursor-pointer"
                 />
               </span>

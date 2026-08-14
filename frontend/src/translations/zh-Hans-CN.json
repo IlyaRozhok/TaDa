@@ -1,4 +1,5 @@
 {
+  "admin.type.of.unit.maisonette": "复式公寓",
   "amenities.name1": "联合办公空间",
   "amenities.name10": "自行车存放处",
   "amenities.name11": "Zoom 隔音室",
@@ -224,7 +225,7 @@
   "landing.tenant.web.sm.text2": "伦敦生活零压力：内部人士的租房诀窍与实用指南",
   "listing.building.details.sectionTitle": "建筑细节",
   "listing.features.access.binArea": "垃圾桶存放区",
-  "listing.features.access.floorLevel": "所在楼层",
+  "listing.features.access.floorLevel": "地面层",
   "listing.features.access.lift": "电梯",
   "listing.features.access.secureEntry": "门禁系统",
   "listing.features.access.title": "楼宇与出入",
@@ -294,6 +295,7 @@
   "listing.property.viewingRequest.contactMethod": "请选择您偏好的联系方式",
   "listing.property.viewingRequest.submit": "发送请求",
   "listing.property.viewingRequest.title": "预约看房",
+  "listing.squere.meters.title": "平方米",
   "listing.viewingRequest.notes": "看房预约备注",
   "listing.viewingRequest.notesPlaceholder": "补充关于看房预约的任何信息或问题",
   "living.env.name1": "宁静而平和",
