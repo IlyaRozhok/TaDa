@@ -7,6 +7,8 @@ import { TenantCvResponse } from "../../types/tenantCv";
 import Footer from "../../components/Footer";
 import TenantCvSkeleton from "../../components/ui/TenantCvSkeleton";
 import { notify } from "@/shared/lib/notify";
+import { useTranslation } from "@/app/hooks/useTranslation";
+import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import {
@@ -16,6 +18,7 @@ import {
 import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";
 
 export default function TenantCvPage() {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [manualCopyLoading, setManualCopyLoading] = useState(false);
@@ -218,7 +221,7 @@ export default function TenantCvPage() {
       const url = `${window.location.origin}/cv/${uuid}`;
       copied = await copyTextToClipboardAsync(url);
       if (copied) {
-        notify.success("Link copied to clipboard!");
+        notify.success(t(generalKeys.toast.copySuccess));
         setShowManualCopy(false);
       } else {
         setShowManualCopy(true);
@@ -247,7 +250,7 @@ export default function TenantCvPage() {
       // IMPORTANT: synchronous path for Safari clipboard restrictions.
       const copied = execCommandCopy(shareUrl);
       if (copied) {
-        notify.success("Link copied to clipboard!");
+        notify.success(t(generalKeys.toast.copySuccess));
         setShowManualCopy(false);
       } else {
         if (!isSafariLike()) {

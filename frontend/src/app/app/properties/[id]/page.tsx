@@ -539,7 +539,7 @@ export default function PropertyPublicPage() {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      notify.success("Link copied to clipboard!");
+      notify.success(t(generalKeys.toast.copySuccess));
     } catch {
       notify.error("Could not copy link");
     }
@@ -933,7 +933,7 @@ export default function PropertyPublicPage() {
                 <CopyableId
                   id={property?.id}
                   maxLength={5}
-                  onCopy={() => notify.success("Copied to clipboard!")}
+                  onCopy={() => notify.success(t(generalKeys.toast.copySuccess))}
                   className="text-xs sm:text-sm text-gray-500 cursor-pointer"
                 />
               </span>
