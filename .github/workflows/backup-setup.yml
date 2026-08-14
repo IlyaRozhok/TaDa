@@ -2,20 +2,28 @@ name: Install DB backup
 
 # One-time (and safely repeatable) installer for the production database backup.
 #
+# ZERO SUDO. The production SSH user does not have passwordless sudo — the first
+# attempt at this installer died on `sudo: a password is required` (2026-08-12),
+# cleanly and before any writes. Everything below therefore happens with the
+# ordinary privileges of that user: files under $HOME, the AWS CLI installed
+# into $HOME, and scheduling via that user's crontab instead of a system systemd
+# timer.
+#
 # What it does on the production host, in order:
-#   1. Prints the facts we inferred — psql/pg_dump version, server version,
-#      DB_NAME from /opt/tada/.env (password masked), disk free.
-#   2. Installs awscli and a matching postgresql-client, only if missing.
-#   3. Installs scripts/db-backup.sh and scripts/db-restore.sh into
-#      /usr/local/bin, and the systemd unit + timer into /etc/systemd/system.
-#   4. Creates /var/backups/tada and /var/log/tada-backup.log owned by deploy.
-#   5. Writes /opt/tada/backup.env (chmod 600, owned by deploy) from the
-#      BACKUP_AWS_* GitHub secrets.
-#   6. Enables the 6-hourly timer.
+#   1. Prints the facts — psql/pg_dump version, server version, DB_* from
+#      /opt/tada/.env (password masked), whether the role can create databases,
+#      and df -h.
+#   2. Installs AWS CLI v2 into $HOME/.local if `aws` is not already available.
+#   3. Probes which host:port actually authenticates (172.18.0.1, 127.0.0.1,
+#      localhost) and records the winner.
+#   4. Installs the scripts into $HOME/.local/bin.
+#   5. Writes $HOME/.config/tada/backup.env (chmod 600) from the BACKUP_AWS_*
+#      GitHub secrets, including the probed BACKUP_DB_HOST.
+#   6. Installs an every-6-hours entry in the user crontab, idempotently.
 #   7. Runs ONE backup and confirms with `aws s3 ls` that the object landed.
 #
-# Everything is idempotent: re-running re-installs the same files and re-enables
-# the same timer. It never drops, deletes or restores anything.
+# Everything is idempotent: re-running re-installs the same files and rewrites
+# the same crontab block. It never drops, deletes or restores anything.
 #
 # Required GitHub secrets:
 #   VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_PORT   (already used by deploy.yml)
@@ -80,110 +88,169 @@ jobs:
 
             APP_DIR=/opt/tada/app
             ENV_FILE=/opt/tada/.env
-            BACKUP_ENV=/opt/tada/backup.env
-            STAGING_DIR=/var/backups/tada
-            LOG_FILE=/var/log/tada-backup.log
+            BIN_DIR="$HOME/.local/bin"
+            CONF_DIR="$HOME/.config/tada"
+            BACKUP_ENV="$CONF_DIR/backup.env"
+            STAGING_DIR="$HOME/.local/var/backups/tada"
+            LOG_DIR="$HOME/.local/var/log"
+            LOG_FILE="$LOG_DIR/tada-backup.log"
+            CRON_LOG="$LOG_DIR/tada-backup-cron.log"
+
+            export PATH="$BIN_DIR:$PATH"
 
             echo "==================================================================="
-            echo "STEP 1 — facts about this host (confirming what we assumed)"
+            echo "STEP 1 — facts about this host"
             echo "==================================================================="
             echo "whoami:          $(whoami)"
+            echo "home:            $HOME"
             echo "pg_dump:         $(pg_dump --version 2>/dev/null || echo 'NOT INSTALLED')"
             echo "psql:            $(psql --version 2>/dev/null || echo 'NOT INSTALLED')"
 
-            SERVER_VERSION="$(sudo -u postgres psql -tAc 'SHOW server_version' 2>/dev/null || echo 'unreachable')"
-            echo "server_version:  ${SERVER_VERSION}"
+            if [ ! -r "$ENV_FILE" ]; then
+              echo "::error::${ENV_FILE} is not readable by $(whoami)"
+              exit 1
+            fi
+
+            read_env() {
+              line="$(grep -E "^[[:space:]]*(export[[:space:]]+)?$1=" "$ENV_FILE" | tail -n 1 || true)"
+              value="${line#*=}"
+              value="${value%$'\r'}"
+              case "$value" in
+                \"*\") value="${value#\"}"; value="${value%\"}" ;;
+                \'*\') value="${value#\'}"; value="${value%\'}" ;;
+              esac
+              printf '%s' "$value"
+            }
+
+            DB_NAME="$(read_env DB_NAME)"
+            DB_USER="$(read_env DB_USER)"
+            DB_PORT="$(read_env DB_PORT)"
+            DB_PASSWORD="$(read_env DB_PASSWORD)"
+            DB_PORT="${DB_PORT:-5432}"
 
             echo "--- /opt/tada/.env (password masked) ---"
-            if [ -r "$ENV_FILE" ]; then
-              grep -E '^[[:space:]]*(export[[:space:]]+)?DB_(HOST|PORT|USER|NAME)=' "$ENV_FILE" || true
-              if grep -qE '^[[:space:]]*(export[[:space:]]+)?DB_PASSWORD=' "$ENV_FILE"; then
-                echo "DB_PASSWORD=******** (set)"
-              else
-                echo "DB_PASSWORD is NOT set"
-              fi
-            else
-              echo "::error::${ENV_FILE} is not readable"
+            echo "DB_NAME=${DB_NAME}"
+            echo "DB_USER=${DB_USER}"
+            echo "DB_PORT=${DB_PORT}"
+            echo "DB_HOST=$(read_env DB_HOST)   <- container-only name, not used by the backup"
+            if [ -n "$DB_PASSWORD" ]; then echo "DB_PASSWORD=******** (set)"; else echo "DB_PASSWORD is NOT set"; fi
+
+            if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
+              echo "::error::DB_NAME, DB_USER and DB_PASSWORD must all be set in ${ENV_FILE}"
               exit 1
             fi
 
             echo "--- disk ---"
-            df -h / /var 2>/dev/null || df -h
+            df -h "$HOME" / 2>/dev/null || df -h
 
             echo
             echo "==================================================================="
-            echo "STEP 2 — packages"
+            echo "STEP 2 — AWS CLI (userspace, no root)"
             echo "==================================================================="
-
-            # Only touch apt if something is actually missing; an install run
-            # should not upgrade half the host as a side effect.
-            NEED_APT=0
-            command -v aws >/dev/null 2>&1 || NEED_APT=1
-            command -v pg_dump >/dev/null 2>&1 || NEED_APT=1
-
-            if [ "$NEED_APT" -eq 1 ]; then
-              echo "installing missing packages..."
-              sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-              command -v aws >/dev/null 2>&1 || \
-                sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq awscli
-              command -v pg_dump >/dev/null 2>&1 || \
-                sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq postgresql-client-16
+            if command -v aws >/dev/null 2>&1; then
+              echo "aws already available: $(command -v aws) — $(aws --version 2>&1)"
             else
-              echo "aws and pg_dump are already present — nothing to install"
+              echo "installing AWS CLI v2 into \$HOME/.local (no root required)"
+              mkdir -p "$BIN_DIR" "$HOME/.local/aws-cli"
+              TMP_AWS="$(mktemp -d)"
+              case "$(uname -m)" in
+                aarch64|arm64) AWS_ZIP_URL="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" ;;
+                *)             AWS_ZIP_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" ;;
+              esac
+              echo "downloading ${AWS_ZIP_URL}"
+              curl -fsSL "$AWS_ZIP_URL" -o "$TMP_AWS/awscliv2.zip"
+
+              # `unzip` is not guaranteed to be installed and we cannot apt-get
+              # it without root; python3 is always present on this host.
+              if command -v unzip >/dev/null 2>&1; then
+                unzip -q "$TMP_AWS/awscliv2.zip" -d "$TMP_AWS"
+              else
+                echo "unzip missing — extracting with python3"
+                python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" \
+                  "$TMP_AWS/awscliv2.zip" "$TMP_AWS"
+                chmod +x "$TMP_AWS/aws/install" "$TMP_AWS/aws/dist/aws" 2>/dev/null || true
+              fi
+
+              "$TMP_AWS/aws/install" -i "$HOME/.local/aws-cli" -b "$BIN_DIR" --update
+              rm -rf "$TMP_AWS"
+              echo "installed: $(command -v aws) — $(aws --version 2>&1)"
             fi
 
-            command -v aws >/dev/null 2>&1 || {
-              echo "::error::aws CLI is still missing. Install AWS CLI v2 by hand (see BACKUP_RUNBOOK.md) and re-run."
+            command -v aws >/dev/null 2>&1 || { echo "::error::aws CLI still not on PATH"; exit 1; }
+            command -v pg_dump >/dev/null 2>&1 || { echo "::error::pg_dump not found"; exit 1; }
+
+            echo
+            echo "==================================================================="
+            echo "STEP 3 — probe the database host"
+            echo "==================================================================="
+            # /opt/tada/.env says DB_HOST=host.docker.internal, which resolves
+            # only inside a container. Postgres listens on localhost,172.18.0.1
+            # and pg_hba grants this role over 172.18.0.0/16, so probe for real.
+            export PGPASSWORD="$DB_PASSWORD"
+            DB_HOST_USED=""
+            for candidate in 172.18.0.1 127.0.0.1 localhost; do
+              printf 'probing %s:%s ... ' "$candidate" "$DB_PORT"
+              if psql -h "$candidate" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                      -v ON_ERROR_STOP=1 -tAc 'SELECT 1' >/dev/null 2>&1; then
+                echo "OK"
+                DB_HOST_USED="$candidate"
+                break
+              fi
+              echo "no"
+            done
+
+            if [ -z "$DB_HOST_USED" ]; then
+              echo "::error::No candidate host authenticated for ${DB_USER}@${DB_NAME}. Check listen_addresses and pg_hba.conf."
               exit 1
-            }
-            command -v pg_dump >/dev/null 2>&1 || {
-              echo "::error::pg_dump is still missing."
-              exit 1
-            }
+            fi
+            echo "using DB host: ${DB_HOST_USED}"
+
+            SERVER_VERSION="$(psql -h "$DB_HOST_USED" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc 'SHOW server_version')"
+            echo "server_version:  ${SERVER_VERSION}"
 
             # pg_dump must be at least as new as the server, or the dump fails.
             DUMP_MAJOR="$(pg_dump --version | sed -E 's/.* ([0-9]+).*/\1/')"
             SERVER_MAJOR="$(printf '%s' "$SERVER_VERSION" | sed -E 's/^([0-9]+).*/\1/')"
             echo "pg_dump major=${DUMP_MAJOR}, server major=${SERVER_MAJOR}"
-            if [ "$SERVER_MAJOR" -gt 0 ] 2>/dev/null && [ "$DUMP_MAJOR" -lt "$SERVER_MAJOR" ]; then
-              echo "::error::pg_dump ${DUMP_MAJOR} is older than the server (${SERVER_MAJOR}). Install postgresql-client-${SERVER_MAJOR}."
+            if [ "$DUMP_MAJOR" -lt "$SERVER_MAJOR" ]; then
+              echo "::error::pg_dump ${DUMP_MAJOR} is older than the server (${SERVER_MAJOR})."
               exit 1
+            fi
+
+            # Read-only preflight for the RESTORE path: creating a scratch
+            # database needs CREATEDB. Reported now so the rehearsal
+            # (LAUNCH_PLAN #1/#2) does not discover it later.
+            CAN_CREATEDB="$(psql -h "$DB_HOST_USED" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+              -tAc 'SELECT rolcreatedb FROM pg_roles WHERE rolname = current_user' || echo '?')"
+            echo "role ${DB_USER} has CREATEDB: ${CAN_CREATEDB}  (needed only for restore-to-scratch)"
+            if [ "$CAN_CREATEDB" != "t" ]; then
+              echo "note: the rehearsal restore will need 'ALTER ROLE ${DB_USER} CREATEDB;' plus a pg_hba line — see BACKUP_RUNBOOK.md §5"
             fi
 
             echo
             echo "==================================================================="
-            echo "STEP 3 — install scripts and systemd units from ref '${INSTALL_REF}'"
+            echo "STEP 4 — install scripts from ref '${INSTALL_REF}' into \$HOME/.local/bin"
             echo "==================================================================="
+            mkdir -p "$BIN_DIR" "$CONF_DIR" "$STAGING_DIR" "$LOG_DIR"
+            chmod 0700 "$CONF_DIR" "$STAGING_DIR"
+            touch "$LOG_FILE" "$CRON_LOG"
+            chmod 0600 "$LOG_FILE" "$CRON_LOG"
 
             # `git show` reads straight out of the object database, so the
             # deployed working tree at ${APP_DIR} is not touched at all.
             git -C "$APP_DIR" fetch --quiet origin "$INSTALL_REF"
 
             install_from_git() {
-              src="$1"; dest="$2"; mode="$3"
-              tmp="$(mktemp)"
-              git -C "$APP_DIR" show "origin/${INSTALL_REF}:${src}" > "$tmp"
-              sudo install -m "$mode" -o root -g root "$tmp" "$dest"
-              rm -f "$tmp"
-              echo "installed ${dest} (mode ${mode})"
+              src="$1"; dest="$2"
+              git -C "$APP_DIR" show "origin/${INSTALL_REF}:${src}" > "$dest.tmp"
+              mv "$dest.tmp" "$dest"
+              chmod 0755 "$dest"
+              echo "installed ${dest}"
             }
 
-            install_from_git scripts/db-backup.sh  /usr/local/bin/tada-db-backup  0755
-            install_from_git scripts/db-restore.sh /usr/local/bin/tada-db-restore 0755
-            install_from_git deploy/systemd/tada-db-backup.service /etc/systemd/system/tada-db-backup.service 0644
-            install_from_git deploy/systemd/tada-db-backup.timer   /etc/systemd/system/tada-db-backup.timer   0644
-
-            echo
-            echo "==================================================================="
-            echo "STEP 4 — directories and log file"
-            echo "==================================================================="
-            sudo mkdir -p "$STAGING_DIR"
-            sudo chown "$(whoami)":"$(id -gn)" "$STAGING_DIR"
-            sudo chmod 0750 "$STAGING_DIR"
-            sudo touch "$LOG_FILE"
-            sudo chown "$(whoami)":"$(id -gn)" "$LOG_FILE"
-            sudo chmod 0640 "$LOG_FILE"
-            ls -ld "$STAGING_DIR" "$LOG_FILE"
+            install_from_git scripts/db-backup.sh  "$BIN_DIR/tada-db-backup"
+            install_from_git scripts/db-restore.sh "$BIN_DIR/tada-db-restore"
+            ls -l "$BIN_DIR"
 
             echo
             echo "==================================================================="
@@ -194,32 +261,90 @@ jobs:
               exit 1
             fi
 
-            # umask first so the file is never briefly world-readable. Values are
-            # written through a heredoc, never echoed.
+            # Sanitize before writing.
+            #
+            # A secret pasted from the IAM console's accessKeys.csv very often
+            # carries a trailing CR (the file is CRLF) or stray surrounding
+            # whitespace. GitHub stores that verbatim, it lands in backup.env,
+            # and the AWS CLI folds it into the SigV4 Authorization header —
+            # where it surfaces at upload time as the singularly unhelpful
+            #   AuthorizationHeaderMalformed: the authorization header requires
+            #   three components: Credential, SignedHeaders, and Signature
+            # long after the dump itself has succeeded. Strip CR, LF and
+            # leading/trailing whitespace. The values are never echoed.
+            AKID="$(printf '%s' "$BACKUP_AWS_ACCESS_KEY_ID" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            ASAK="$(printf '%s' "$BACKUP_AWS_SECRET_ACCESS_KEY" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+            # umask first so the file is never briefly group/world readable.
+            # Values go through a heredoc and are never echoed.
             umask 077
-            cat > /tmp/backup.env.$$ <<EOF
-            # Credentials for the write-only tada-backup-uploader IAM user.
+            cat > "$BACKUP_ENV" <<EOF
+            # Credentials for the write-only tada-backup-uploader IAM user, plus
+            # the database host probed at install time.
             # Managed by .github/workflows/backup-setup.yml — do not edit by hand.
-            AWS_ACCESS_KEY_ID=${BACKUP_AWS_ACCESS_KEY_ID}
-            AWS_SECRET_ACCESS_KEY=${BACKUP_AWS_SECRET_ACCESS_KEY}
+            AWS_ACCESS_KEY_ID=${AKID}
+            AWS_SECRET_ACCESS_KEY=${ASAK}
             AWS_DEFAULT_REGION=${BACKUP_REGION}
             BACKUP_BUCKET=${BACKUP_BUCKET}
+            BACKUP_DB_HOST=${DB_HOST_USED}
             EOF
-            sudo install -m 0600 -o "$(whoami)" -g "$(id -gn)" /tmp/backup.env.$$ "$BACKUP_ENV"
-            rm -f /tmp/backup.env.$$
+            chmod 0600 "$BACKUP_ENV"
             umask 022
             echo "wrote ${BACKUP_ENV}:"
             ls -l "$BACKUP_ENV"
-            echo "keys present: $(grep -cE '^[A-Z_]+=' "$BACKUP_ENV") (expect 4)"
+            echo "keys present: $(grep -cE '^[A-Z_]+=' "$BACKUP_ENV") (expect 5)"
+
+            # Preflight the credential SHAPE, so a malformed secret fails here
+            # with a sentence you can act on rather than in STEP 7 as an S3
+            # error that points at nothing. Only lengths and pass/fail are
+            # printed — never any part of the values.
+            CREDS_OK=1
+
+            if printf '%s' "$AKID" | grep -qE '^AKIA[A-Z0-9]{16}$'; then
+              echo "access key id: length ${#AKID} — format OK"
+            else
+              echo "access key id: length ${#AKID} — format BAD (expected AKIA + 16 upper-case alphanumerics, 20 total)"
+              CREDS_OK=0
+            fi
+
+            if [ "${#ASAK}" -eq 40 ]; then
+              echo "secret key:    length ${#ASAK} — OK"
+            else
+              echo "secret key:    length ${#ASAK} — BAD (expected exactly 40)"
+              CREDS_OK=0
+            fi
+
+            if printf '%s' "$ASAK" | grep -q '[[:space:]]'; then
+              echo "secret key:    contains whitespace — BAD"
+              CREDS_OK=0
+            fi
+
+            if [ "$CREDS_OK" -ne 1 ]; then
+              echo "::error::BACKUP_AWS_* secret looks malformed (len/format) — re-check the GitHub secret. Re-copy the value from accessKeys.csv without the trailing newline/CR or any surrounding spaces, and re-save it in Settings -> Secrets and variables -> Actions."
+              exit 1
+            fi
 
             echo
             echo "==================================================================="
-            echo "STEP 6 — enable the timer"
+            echo "STEP 6 — schedule via the user crontab"
             echo "==================================================================="
-            sudo systemctl daemon-reload
-            sudo systemctl enable --now tada-db-backup.timer
-            systemctl status tada-db-backup.timer --no-pager || true
-            systemctl list-timers tada-db-backup.timer --no-pager || true
+            # A system systemd timer would need root. cron for this user does
+            # not. The trade-off: cron has no equivalent of systemd's
+            # Persistent=true, so a run missed while the host was down is simply
+            # skipped rather than caught up. The pre-deploy backup in deploy.yml
+            # covers the case that matters most; the rest is a 6-hour window.
+            CRON_TMP="$(mktemp)"
+            crontab -l 2>/dev/null | sed '/# BEGIN tada-db-backup/,/# END tada-db-backup/d' > "$CRON_TMP" || true
+            cat >> "$CRON_TMP" <<EOF
+            # BEGIN tada-db-backup (managed by .github/workflows/backup-setup.yml — do not edit)
+            PATH=${BIN_DIR}:/usr/local/bin:/usr/bin:/bin
+            0 */6 * * * ${BIN_DIR}/tada-db-backup >> ${CRON_LOG} 2>&1
+            # END tada-db-backup
+            EOF
+            crontab "$CRON_TMP"
+            rm -f "$CRON_TMP"
+            echo "--- crontab -l ---"
+            crontab -l
 
             echo
             echo "==================================================================="
@@ -230,7 +355,7 @@ jobs:
               exit 0
             fi
 
-            /usr/local/bin/tada-db-backup
+            "$BIN_DIR/tada-db-backup"
 
             echo "--- objects under today's daily/ prefix ---"
             # Subshell so the credentials never leak into the rest of the session.
@@ -246,5 +371,5 @@ jobs:
             ls -lh "$STAGING_DIR"
 
             echo
-            echo "Backup is installed and verified end to end."
+            echo "Backup is installed and verified end to end. No root was used."
             echo "Next: read docs/ops/BACKUP_RUNBOOK.md and rehearse a restore (LAUNCH_PLAN #1/#2)."

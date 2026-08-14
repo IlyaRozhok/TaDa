@@ -118,11 +118,15 @@ jobs:
       # halfway through leaves earlier migrations committed. The only floor
       # under that is a dump taken minutes earlier.
       #
-      # We call the INSTALLED path (/usr/local/bin/tada-db-backup), not the one
-      # in the repo checkout: at this point `git pull` has not run yet, so the
-      # checkout is still at the previous release and may not contain the
+      # We call the INSTALLED path ($HOME/.local/bin/tada-db-backup), not the
+      # one in the repo checkout: at this point `git pull` has not run yet, so
+      # the checkout is still at the previous release and may not contain the
       # script at all. Install it once with the "Install DB backup" workflow
       # (.github/workflows/backup-setup.yml).
+      #
+      # The path is under $HOME rather than /usr/local/bin because this host
+      # gives the SSH user no passwordless sudo — see the header of
+      # scripts/db-backup.sh.
       #
       # Staging deliberately does NOT do this: there is no backup.env on that
       # host and the bucket holds production data only.
@@ -137,12 +141,12 @@ jobs:
           script: |
             set -e
 
-            if [ ! -x /usr/local/bin/tada-db-backup ]; then
-              echo "::error::/usr/local/bin/tada-db-backup is missing. Run the 'Install DB backup' workflow once before deploying."
+            if [ ! -x "$HOME/.local/bin/tada-db-backup" ]; then
+              echo "::error::$HOME/.local/bin/tada-db-backup is missing. Run the 'Install DB backup' workflow once before deploying."
               exit 1
             fi
 
-            /usr/local/bin/tada-db-backup --pre-deploy
+            "$HOME/.local/bin/tada-db-backup" --pre-deploy
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3

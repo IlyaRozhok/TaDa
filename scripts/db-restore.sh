@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# TaDa database restore — deliberately paranoid.
+# TaDa database restore — deliberately paranoid, and sudo-free.
 #
-#   S3 key or local .dump.gz  ->  gunzip  ->  pg_restore  ->  TARGET database
+#   S3 key or local .dump.gz  ->  gunzip  ->  pg_restore (TCP + password)
 #
 # This script exists for two jobs:
 #
@@ -13,79 +13,95 @@
 #      guarded: it needs --force-prod AND an interactively typed confirmation.
 #
 # The default target is a SCRATCH database, never production. Restoring is
-# destructive (`--clean --if-exists` drops every object it is about to recreate),
-# so the safe thing must be the thing that happens when you type nothing.
+# destructive (`--clean --if-exists` drops every object it is about to
+# recreate), so the safe thing must be what happens when you type nothing.
 #
-# AWS credentials — read this before wondering why S3 download fails:
+# NO SUDO ANYWHERE. Like db-backup.sh, this connects over TCP as the application
+# role using the password from /opt/tada/.env, because the production SSH user
+# has no passwordless sudo. Two things follow that you will meet in practice:
+#
+#   * Creating a scratch database needs the CREATEDB attribute on the role.
+#   * Connecting to a scratch database needs a pg_hba.conf line covering it.
+#     Production's pg_hba currently grants tada_user on database `tada_prod`
+#     only, so a scratch restore will be REJECTED until that line is widened.
+#     This script detects both cases up front and prints the exact fix rather
+#     than failing halfway through a restore. Applying the fix needs root on
+#     the host (console), one time — see §5 of the runbook.
+#
+# AWS credentials — read this before wondering why an S3 download fails:
 #
 #   The `tada-backup-uploader` IAM user used by db-backup.sh is WRITE-ONLY
 #   (s3:ListBucket + s3:PutObject only). It CANNOT s3:GetObject, so it cannot
 #   download anything. That is the point: a compromised app host can add
 #   backups but cannot read or destroy them.
 #
-#   Therefore restoring from S3 uses the OWNER's own AWS credentials (an admin
-#   profile configured with `aws configure --profile tada-owner`, or exported
-#   AWS_* variables in the shell you run this in) — NOT /opt/tada/backup.env.
-#   Pass --profile to pick one. If you point this script at a local file
-#   instead, no AWS credentials are needed at all.
+#   Restoring from S3 therefore uses the OWNER's own AWS credentials — an admin
+#   profile (`aws configure --profile tada-owner`) or exported AWS_* variables
+#   in your shell — NOT ~/.config/tada/backup.env. Pass --profile to pick one.
+#   Restoring from a local file needs no AWS credentials at all.
 #
 # Exit codes:
 #   0  success
-#   2  configuration / usage problem
+#   2  configuration / usage / prerequisites not met
 #   3  download or decompression failed
 #   4  refused — target is production without the required confirmation
 #   5  pg_restore reported errors
+#   8  no database host could be reached and authenticated
 #
 set -euo pipefail
 
 readonly PROGRAM_NAME="tada-db-restore"
 
+export PATH="${HOME}/.local/bin:${PATH}"
+
 ENV_FILE="${ENV_FILE:-/opt/tada/.env}"
+BACKUP_ENV_FILE="${BACKUP_ENV_FILE:-${HOME}/.config/tada/backup.env}"
 TARGET_DB="${TARGET_DB:-tada_restore_check}"     # scratch by default, on purpose
-WORK_DIR="${WORK_DIR:-/var/backups/tada/restore}"
+WORK_DIR="${WORK_DIR:-${HOME}/.local/var/backups/tada/restore}"
 AWS_PROFILE_NAME=""
 FORCE_PROD=0
 SOURCE=""
 KEEP_WORK=0
-
-# Same reasoning as in db-backup.sh: reach the local cluster as the postgres
-# superuser over the unix socket. Overridable for local dry runs.
-PG_SUDO="${PG_SUDO:-sudo -u postgres}"
+FORCED_DB_HOST=""
+DB_HOST_CANDIDATES="${DB_HOST_CANDIDATES:-172.18.0.1 127.0.0.1 localhost}"
 
 usage() {
     cat <<'EOF'
 Usage: db-restore.sh --source <s3-key-or-uri-or-local-file> [options]
 
 Restores a TaDa dump into a target database and prints per-table row counts.
+Connects over TCP with a password; needs no root and no sudo.
 
 Required:
   --source SRC            One of:
                             s3://tada-db-backups/daily/2026/08/12/x.dump.gz
                             daily/2026/08/12/x.dump.gz   (key; bucket implied)
-                            /var/backups/tada/x.dump.gz  (local file)
+                            ~/.local/var/backups/tada/x.dump.gz  (local file)
 
 Options:
   --target DB             Database to restore INTO. Default: tada_restore_check
-                          It is created if it does not exist.
+                          Created if it does not exist (needs CREATEDB).
   --bucket NAME           Bucket for bare keys. Default: tada-db-backups
   --profile NAME          AWS CLI profile to download with. Use the OWNER's
                           admin profile — the backup uploader cannot GetObject.
+  --db-host HOST          Skip probing and use this host.
   --force-prod            Required (together with a typed confirmation) to
                           restore onto the production database.
-  --env-file PATH         App env file, read to learn the prod DB name so we
-                          can refuse to overwrite it. Default: /opt/tada/.env
+  --env-file PATH         App env file. Default: /opt/tada/.env
+  --backup-env-file PATH  Backup env file; only BACKUP_DB_HOST is read from it.
+                          Default: $HOME/.config/tada/backup.env
   --work-dir PATH         Scratch space for downloads/decompression.
-                          Default: /var/backups/tada/restore
+                          Default: $HOME/.local/var/backups/tada/restore
   --keep-work             Do not delete the decompressed dump afterwards.
   -h, --help              This text.
 
 Examples:
-  # Rehearsal: last night's prod dump onto a scratch DB (LAUNCH_PLAN #1/#2)
+  # Rehearsal: a prod dump onto a scratch DB (LAUNCH_PLAN #1/#2)
   ./db-restore.sh --source daily/2026/08/12/tada_prod_20260812_030000.dump.gz \
                   --profile tada-owner
 
-  # Incident: restore production from a local dump (will prompt for typed confirmation)
-  ./db-restore.sh --source /var/backups/tada/tada_prod_20260812_030000.dump.gz \
+  # Incident: restore production from a local dump (prompts for confirmation)
+  ./db-restore.sh --source ~/.local/var/backups/tada/tada_prod_20260812_030000.dump.gz \
                   --target tada_prod --force-prod
 EOF
 }
@@ -145,7 +161,9 @@ while [ $# -gt 0 ]; do
         --target)     TARGET_DB="${2:?--target needs a value}"; shift ;;
         --bucket)     BUCKET="${2:?--bucket needs a value}"; shift ;;
         --profile)    AWS_PROFILE_NAME="${2:?--profile needs a value}"; shift ;;
+        --db-host)    FORCED_DB_HOST="${2:?--db-host needs a value}"; shift ;;
         --env-file)   ENV_FILE="${2:?--env-file needs a path}"; shift ;;
+        --backup-env-file) BACKUP_ENV_FILE="${2:?--backup-env-file needs a path}"; shift ;;
         --work-dir)   WORK_DIR="${2:?--work-dir needs a path}"; shift ;;
         --force-prod) FORCE_PROD=1 ;;
         --keep-work)  KEEP_WORK=1 ;;
@@ -160,14 +178,60 @@ command -v pg_restore >/dev/null 2>&1 || die 2 "pg_restore not found on PATH"
 command -v psql >/dev/null 2>&1 || die 2 "psql not found on PATH"
 
 # ---------------------------------------------------------------------------
+# Connection settings
+# ---------------------------------------------------------------------------
+[ -r "$ENV_FILE" ] || die 2 "app env file not readable: ${ENV_FILE}"
+
+PROD_DB="$(read_env_var "$ENV_FILE" DB_NAME)"
+DB_USER="$(read_env_var "$ENV_FILE" DB_USER)"
+DB_PORT="$(read_env_var "$ENV_FILE" DB_PORT)"
+DB_PASSWORD="$(read_env_var "$ENV_FILE" DB_PASSWORD)"
+DB_PORT="${DB_PORT:-5432}"
+
+[ -n "$PROD_DB" ]     || die 2 "DB_NAME is not set in ${ENV_FILE}"
+[ -n "$DB_USER" ]     || die 2 "DB_USER is not set in ${ENV_FILE}"
+[ -n "$DB_PASSWORD" ] || die 2 "DB_PASSWORD is not set in ${ENV_FILE}"
+
+# DB_HOST from the app env file is `host.docker.internal` and resolves only
+# inside a container — never use it here. See db-backup.sh.
+export PGPASSWORD="$DB_PASSWORD"
+
+RECORDED_DB_HOST="$(read_env_var "$BACKUP_ENV_FILE" BACKUP_DB_HOST)"
+
+can_connect_db() {
+    # Bounded, so a black-holed candidate address cannot hang an incident.
+    PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-5}" \
+    psql -h "$1" -p "$DB_PORT" -U "$DB_USER" -d "$2" \
+         -v ON_ERROR_STOP=1 -tAc 'SELECT 1' >/dev/null 2>&1
+}
+
+# --db-host wins outright; otherwise try the host the installer recorded first,
+# then the standard candidates. Same order as db-backup.sh.
+if [ -n "$FORCED_DB_HOST" ]; then
+    host_candidates="$FORCED_DB_HOST"
+else
+    host_candidates="${RECORDED_DB_HOST} ${DB_HOST_CANDIDATES}"
+fi
+
+DB_HOST_USED=""
+for candidate in $host_candidates; do
+    if can_connect_db "$candidate" "$PROD_DB"; then
+        DB_HOST_USED="$candidate"
+        break
+    fi
+done
+[ -n "$DB_HOST_USED" ] || die 8 "no candidate host accepted a connection for ${DB_USER}@${PROD_DB} (tried:${host_candidates})"
+log "connected to ${DB_HOST_USED}:${DB_PORT} as ${DB_USER}"
+
+psql_t() { psql -h "$DB_HOST_USED" -p "$DB_PORT" -U "$DB_USER" -v ON_ERROR_STOP=1 -tA "$@"; }
+
+# ---------------------------------------------------------------------------
 # Guard: never overwrite production by accident.
 #
 # "Production" is whatever DB_NAME the app is configured with, not a hardcoded
 # string — a renamed prod database must stay protected.
 # ---------------------------------------------------------------------------
-PROD_DB="$(read_env_var "$ENV_FILE" DB_NAME)"
-
-if [ -n "$PROD_DB" ] && [ "$TARGET_DB" = "$PROD_DB" ]; then
+if [ "$TARGET_DB" = "$PROD_DB" ]; then
     log "TARGET IS THE PRODUCTION DATABASE: ${TARGET_DB}"
 
     [ "$FORCE_PROD" -eq 1 ] || die 4 "refusing to restore onto production without --force-prod"
@@ -177,7 +241,7 @@ if [ -n "$PROD_DB" ] && [ "$TARGET_DB" = "$PROD_DB" ]; then
     [ -t 0 ] || die 4 "refusing: production restore requires an interactive terminal"
 
     printf '\n'
-    printf '  This will DROP AND REPLACE every object in "%s" on this host.\n' "$TARGET_DB"
+    printf '  This will DROP AND REPLACE every object in "%s" on %s.\n' "$TARGET_DB" "$DB_HOST_USED"
     printf '  Source: %s\n' "$SOURCE"
     printf '  There is no undo. Take a fresh backup first if you have not.\n\n'
     printf '  Type exactly: restore %s\n  > ' "$TARGET_DB"
@@ -189,7 +253,44 @@ if [ -n "$PROD_DB" ] && [ "$TARGET_DB" = "$PROD_DB" ]; then
     log "production restore confirmed by operator"
 fi
 
+# ---------------------------------------------------------------------------
+# Prerequisites for a NON-production target, checked before we download
+# anything. Both failures below need a one-time change by someone with root on
+# the host, and both are far cheaper to learn about here than mid-restore.
+# ---------------------------------------------------------------------------
+if [ "$TARGET_DB" != "$PROD_DB" ]; then
+    target_exists="$(psql_t -d "$PROD_DB" -c "SELECT 1 FROM pg_database WHERE datname = '${TARGET_DB}'" || true)"
+
+    if [ "$target_exists" != "1" ]; then
+        can_create="$(psql_t -d "$PROD_DB" -c "SELECT rolcreatedb FROM pg_roles WHERE rolname = current_user" || true)"
+        if [ "$can_create" != "t" ]; then
+            log "role ${DB_USER} does not have CREATEDB, so ${TARGET_DB} cannot be created over this connection."
+            log "One-time fix, as a superuser on the host console:"
+            log "    ALTER ROLE ${DB_USER} CREATEDB;"
+            log "Alternatively create the database yourself and re-run:"
+            log "    CREATE DATABASE ${TARGET_DB} OWNER ${DB_USER};"
+            die 2 "cannot create target database ${TARGET_DB}"
+        fi
+        log "creating database ${TARGET_DB}"
+        psql_t -d "$PROD_DB" -c "CREATE DATABASE \"${TARGET_DB}\"" >/dev/null
+    else
+        log "database ${TARGET_DB} already exists — its contents will be replaced"
+    fi
+
+    # pg_hba is per-database. Production grants tada_user on tada_prod only, so
+    # a brand new scratch database is unreachable until a line covers it.
+    if ! can_connect_db "$DB_HOST_USED" "$TARGET_DB"; then
+        log "the database exists but this role cannot CONNECT to it over TCP — almost certainly pg_hba.conf."
+        log "One-time fix, as root on the host, in pg_hba.conf:"
+        log "    host    all    ${DB_USER}    172.18.0.0/16    scram-sha-256"
+        log "(i.e. widen the existing '${PROD_DB}'-only line to 'all'), then:"
+        log "    psql -c 'SELECT pg_reload_conf();'   # or: systemctl reload postgresql"
+        die 2 "cannot connect to target database ${TARGET_DB}"
+    fi
+fi
+
 mkdir -p "$WORK_DIR" || die 2 "cannot create work dir ${WORK_DIR}"
+chmod 0700 "$WORK_DIR" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # Obtain the dump
@@ -236,37 +337,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# The dump has to be readable by the postgres user, which is a different user
-# than the one running this script.
-chmod 0644 "$dump_path"
-
-# ---------------------------------------------------------------------------
-# Create the target database if needed
-# ---------------------------------------------------------------------------
-db_exists="$($PG_SUDO psql -tAc "SELECT 1 FROM pg_database WHERE datname = '${TARGET_DB}'" postgres || true)"
-if [ "$db_exists" != "1" ]; then
-    log "creating database ${TARGET_DB}"
-    $PG_SUDO createdb "$TARGET_DB" || die 2 "could not create database ${TARGET_DB}"
-else
-    log "database ${TARGET_DB} already exists — its contents will be replaced"
-fi
-
 # ---------------------------------------------------------------------------
 # Restore
 #
 #   --clean --if-exists  drop objects before recreating them, tolerating absence
-#   --no-owner           the scratch DB is owned by whoever ran this, not by
-#                        tada_user, and we do not want ownership errors
-#
-# pg_restore exits non-zero on errors but also emits warnings that are normal
-# for --clean on a fresh database ("does not exist, skipping"). We surface the
-# full output and treat a non-zero exit as a failure — with the exception that
-# is called out in the runbook.
+#   --no-owner           do not try to reassign ownership; over a non-superuser
+#                        connection those commands would fail anyway
 # ---------------------------------------------------------------------------
-log "restoring into ${TARGET_DB} (this drops and recreates every object)"
+log "restoring into ${TARGET_DB} on ${DB_HOST_USED} (this drops and recreates every object)"
 restore_log="${WORK_DIR}/restore_$(date '+%Y%m%d_%H%M%S').log"
 
-if $PG_SUDO pg_restore --clean --if-exists --no-owner --dbname "$TARGET_DB" "$dump_path" >"$restore_log" 2>&1; then
+if pg_restore -h "$DB_HOST_USED" -p "$DB_PORT" -U "$DB_USER" \
+              --clean --if-exists --no-owner \
+              --dbname "$TARGET_DB" "$dump_path" >"$restore_log" 2>&1; then
     log "pg_restore completed cleanly"
 else
     log "pg_restore reported errors — full output in ${restore_log}:"
@@ -282,7 +365,7 @@ fi
 # ---------------------------------------------------------------------------
 log "row counts in ${TARGET_DB}:"
 
-tables="$($PG_SUDO psql -tA -d "$TARGET_DB" -c \
+tables="$(psql_t -d "$TARGET_DB" -c \
     "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename")"
 
 if [ -z "$tables" ]; then
@@ -296,7 +379,7 @@ printf '\n%-45s %12s\n' "TABLE" "ROWS"
 printf '%-45s %12s\n' "---------------------------------------------" "------------"
 while IFS= read -r table; do
     [ -n "$table" ] || continue
-    count="$($PG_SUDO psql -tA -d "$TARGET_DB" -c "SELECT count(*) FROM public.\"${table}\"")"
+    count="$(psql_t -d "$TARGET_DB" -c "SELECT count(*) FROM public.\"${table}\"")"
     printf '%-45s %12s\n' "$table" "$count"
     total_rows=$((total_rows + count))
     table_count=$((table_count + 1))
