@@ -24,6 +24,7 @@ import { hasPreferencesLocationFilled } from "@/entities/preferences/model/prefe
 import { useTranslation } from "../../../hooks/useTranslation";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
+import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
 
 type BuildingWithMedia = ApiBuilding & {
   media?: Array<{
@@ -278,7 +279,7 @@ export default function BuildingPublicPage() {
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href);
-        notify.success("Link copied to clipboard!");
+        notify.success(t(generalKeys.toast.copySuccess));
       } catch (err) {
         notify.error("Failed to copy link");
       }
