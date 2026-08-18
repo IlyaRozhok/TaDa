@@ -93,83 +93,28 @@ const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void })
         </div>
       </div>
 
-      {/* MacBook positioned on the right side - desktop and tablets */}
-      <div className="absolute right-[-8%] lg:right-[-10%] xl:right-[-12%] 2xl:right-[-15%] top-1/2 transform -translate-y-1/2 z-20 hidden lg:block mt-1.5">
-        <div className="relative">
-          {/* MacBook frame - responsive sizes */}
-          <Image
-            src="/laptop.png"
-            alt="MacBook Pro"
-            width={900}
-            height={600}
-            className="w-[500px] lg:w-[580px] xl:w-[750px] 2xl:w-[900px] h-auto drop-shadow-2xl"
-            priority
-          />
-
-          {/* MacBook logo on the back */}
-          <div className="absolute bottom-[6%] left-1/2 transform -translate-x-1/2">
-            <Image
-              src="/macbook-logo.png"
-              alt="MacBook Logo"
-              width={55}
-              height={0}
-              className="h-2.5"
-            />
-          </div>
-
-          {/* Website screenshot overlay on MacBook screen */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[82%] h-[88%] mt-[-4%] overflow-hidden rounded-lg">
-              <Image
-                src="/tada-stage.webp"
-                alt="TADA Property Website"
-                width={800}
-                height={600}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>
-          </div>
-        </div>
+      {/* App preview positioned on the right side - desktop and tablets */}
+      <div className="absolute right-[-16%] top-1/2 transform -translate-y-1/2 z-20 hidden lg:block w-[62%] max-w-[1450px]">
+        <Image
+          src="/tada-stage.webp"
+          alt="TADA Property Website"
+          width={1176}
+          height={660}
+          className="w-full h-auto rounded-4xl shadow-2xl"
+          priority
+        />
       </div>
 
-      {/* Mobile MacBook - smaller and centered */}
+      {/* Mobile app preview - centered */}
       <div className="relative z-10 mt-8 px-4 lg:hidden">
-        <div className="relative max-w-xl sm:max-w-2xl mx-auto">
-          <Image
-            src="/laptop.png"
-            alt="MacBook Pro"
-            width={600}
-            height={400}
-            className="w-full h-auto drop-shadow-2xl"
-            priority
-          />
-
-          {/* MacBook logo on the back */}
-          <div className="absolute bottom-[6%] left-1/2 transform -translate-x-1/2">
-            <Image
-              src="/macbook-logo.png"
-              alt="MacBook Logo"
-              width={50}
-              height={0}
-              className="h-1.5 sm:h-2"
-            />
-          </div>
-
-          {/* Website screenshot overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[82%] h-[88%] mt-[-4%] overflow-hidden rounded-lg">
-              <Image
-                src="/tada-stage.webp"
-                alt="TADA Property Website"
-                width={600}
-                height={400}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>
-          </div>
-        </div>
+        <Image
+          src="/tada-stage.webp"
+          alt="TADA Property Website"
+          width={1176}
+          height={660}
+          className="w-full sm:max-w-2xl mx-auto h-auto rounded-xl shadow-2xl"
+          priority
+        />
       </div>
     </section>
   );
