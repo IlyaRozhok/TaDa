@@ -23,13 +23,13 @@ const HeroSection = () => {
       </div>
 
       {/* App preview positioned on the right side - desktop and tablets */}
-      <div className="absolute right-[2%] top-1/2 transform -translate-y-1/2 z-20 hidden lg:block w-[46%] max-w-[900px]">
+      <div className="absolute right-[-16%] top-[52.7%] transform -translate-y-1/2 z-20 hidden lg:block w-[62%] max-w-[1450px]">
         <Image
           src="/tada-stage.webp"
           alt="TADA Property Website"
           width={1176}
           height={660}
-          className="w-full h-auto rounded-2xl shadow-2xl"
+          className="w-full h-auto rounded-4xl shadow-2xl"
           priority
         />
       </div>
