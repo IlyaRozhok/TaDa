@@ -5,6 +5,7 @@ import {
   useRemoveFromShortlistMutation,
 } from "@/store/api/shortlist.api";
 import { selectUser } from "@/store/slices/authSlice";
+import { track } from "@/lib/analytics/ga";
 import { Property } from "@/app/types";
 
 /**
@@ -52,10 +53,18 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
     try {
       if (isShortlisted) {
         await removeFromShortlist(property.id).unwrap();
+        track({
+          name: "property_unfavorited",
+          params: { property_id: property.id },
+        });
         return;
       }
 
       await addToShortlist({ propertyId: property.id, property }).unwrap();
+      track({
+        name: "property_favorited",
+        params: { property_id: property.id },
+      });
     } catch (error: unknown) {
       // The optimistic patch has already been rolled back, so the heart is back
       // where it was; nothing renders this message today.

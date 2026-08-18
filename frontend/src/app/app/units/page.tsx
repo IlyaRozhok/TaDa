@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -17,6 +17,11 @@ import ListedPropertiesSection, {
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { useGetMatchedPropertiesQuery } from "@/store/api/matching.api";
 import { useDebounce } from "../../hooks/useDebounce";
+import {
+  sanitizeSearchQuery,
+  SORT_TYPE_BY_SORT_OPTION,
+} from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/ga";
 import Footer from "../../components/Footer";
 
 function TenantDashboardContent() {
@@ -43,9 +48,12 @@ function TenantDashboardContent() {
 
   // Only the other sorts need scores fetched: the best-match dataset already
   // carries them, so the default view costs no extra request at all.
-  const { matchByPropertyId } = usePropertyMatches(propertyIdsForMatches, {
-    enabled: sortBy !== "bestMatch",
-  });
+  const { matchByPropertyId, loading: matchScoresLoading } = usePropertyMatches(
+    propertyIdsForMatches,
+    {
+      enabled: sortBy !== "bestMatch",
+    },
+  );
 
   const propertiesWithMatchScores = useMemo(() => {
     return state.matchedProperties.map((m) => {
@@ -94,7 +102,82 @@ function TenantDashboardContent() {
     [bestMatchData],
   );
 
+  // One results_viewed per distinct feed load — a new sort, page or search is a
+  // new load, a re-render of the same one is not.
+  const trackedFeedRef = useRef<string | null>(null);
+
+  const feedItems =
+    sortBy === "bestMatch" ? bestMatchProperties : propertiesWithMatchScores;
+
+  // The best-match payload carries its own scores; every other sort fetches
+  // them separately, so the event waits for that request rather than reporting
+  // an average of zeros.
+  const feedLoading =
+    sortBy === "bestMatch"
+      ? bestMatchLoading || (!bestMatchData && !bestMatchError)
+      : state.loading || matchScoresLoading;
+
+  const feedCount =
+    sortBy === "bestMatch" ? (bestMatchData?.total ?? 0) : state.totalCount;
+
+  const feedPage = sortBy === "bestMatch" ? bestMatchPage : state.currentPage;
+
+  useEffect(() => {
+    if (feedLoading) {
+      return;
+    }
+
+    const feedKey = `${sortBy}|${feedPage}|${debouncedSearch}`;
+
+    if (trackedFeedRef.current === feedKey) {
+      return;
+    }
+
+    trackedFeedRef.current = feedKey;
+
+    const scores = feedItems
+      .map((item) => item.matchScore)
+      .filter((score): score is number => typeof score === "number");
+
+    const avgMatchScore = scores.length
+      ? Math.round(
+          (scores.reduce((sum, score) => sum + score, 0) / scores.length) * 10,
+        ) / 10
+      : 0;
+
+    track({
+      name: "results_viewed",
+      params: { results_count: feedCount, avg_match_score: avgMatchScore },
+    });
+  }, [
+    feedLoading,
+    feedItems,
+    feedCount,
+    feedPage,
+    sortBy,
+    debouncedSearch,
+  ]);
+
+  // The debounced value, so a typed word is one event rather than one per
+  // keystroke. The query is sanitised before it leaves the app.
+  useEffect(() => {
+    const query = debouncedSearch.trim();
+
+    if (!query) {
+      return;
+    }
+
+    track({
+      name: "search_performed",
+      params: { query: sanitizeSearchQuery(query) },
+    });
+  }, [debouncedSearch]);
+
   const handleSortChange = (newSort: SortOption) => {
+    track({
+      name: "results_sorted",
+      params: { sort_type: SORT_TYPE_BY_SORT_OPTION[newSort] },
+    });
     setSortBy(newSort);
     if (newSort !== "bestMatch") {
       void loadProperties(state.searchTerm, 1);

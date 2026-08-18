@@ -24,6 +24,8 @@ import {
   PREFERENCES_START_STEP,
 } from "../../hooks/useOnboarding";
 import usePreferences from "@/features/preferences/lib/usePreferences";
+import { isOnboardingStepNumber, STEP_NAMES } from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/ga";
 import { useTranslation } from "../../hooks/useTranslation";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 import LanguageDropdown from "../../components/LanguageDropdown";
@@ -71,7 +73,24 @@ export default function OnboardingPage() {
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const hasCheckedPreferences = useRef(false);
+  const hasTrackedStart = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * One `onboarding_step_completed` for the step the user is leaving.
+   * `STEP_NAMES` maps the number to the frozen name; nothing here names a step
+   * itself.
+   */
+  const trackStepCompleted = useCallback((step: number) => {
+    if (!isOnboardingStepNumber(step)) {
+      return;
+    }
+
+    track({
+      name: "onboarding_step_completed",
+      params: { step_number: step, step_name: STEP_NAMES[step] },
+    });
+  }, []);
 
   const {
     state,
@@ -96,6 +115,7 @@ export default function OnboardingPage() {
         if (success) {
           // Set isOnboarded to true after profile is saved
           dispatch(setIsOnboarded(true));
+          trackStepCompleted(state.currentStep);
           handleProfileComplete();
           // Scroll to top when transitioning to preferences
           scrollToTop();
@@ -103,6 +123,7 @@ export default function OnboardingPage() {
       } else {
         // Set isOnboarded to true even if save function doesn't exist
         dispatch(setIsOnboarded(true));
+        trackStepCompleted(state.currentStep);
         handleProfileComplete();
         // Scroll to top when transitioning to preferences
         scrollToTop();
@@ -162,8 +183,12 @@ export default function OnboardingPage() {
       if (user?.id) {
         localStorage.setItem(`onboarding_completed_${user.id}`, "1");
       }
+      // Done on the last step both completes step 16 and completes the flow.
+      trackStepCompleted(state.currentStep);
+      track({ name: "onboarding_completed", params: {} });
       await handlePreferencesComplete();
     } else {
+      trackStepCompleted(state.currentStep);
       await preferencesHook.nextStep();
       // Scroll to top after step change
       scrollToTop();
@@ -236,6 +261,22 @@ export default function OnboardingPage() {
 
     checkUserStatus();
   }, [sessionReady, isAuthenticated, user, onboardingCompleted, router]);
+
+  // Only a genuine start counts. Step and phase are persisted to localStorage,
+  // so a user resuming mid-flow arrives on a later step and must not be counted
+  // as starting again.
+  useEffect(() => {
+    if (loading || hasTrackedStart.current) {
+      return;
+    }
+
+    if (state.currentStep !== 1 || state.currentPhase !== "intro") {
+      return;
+    }
+
+    hasTrackedStart.current = true;
+    track({ name: "onboarding_started", params: {} });
+  }, [loading, state.currentStep, state.currentPhase]);
 
   if (!sessionReady || loading) {
     return (
@@ -312,6 +353,8 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={() => {
+                  trackStepCompleted(state.currentStep);
+
                   if (state.currentStep < 3) {
                     setCurrentStep(state.currentStep + 1);
                   } else {

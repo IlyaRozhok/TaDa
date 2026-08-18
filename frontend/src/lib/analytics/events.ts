@@ -102,6 +102,19 @@ export const STEP_NAMES: Readonly<
   16: "bio",
 };
 
+/**
+ * Narrows a raw step counter to a step of the flow.
+ *
+ * The onboarding page carries `currentStep` as a plain number, so this is what
+ * keeps `STEP_NAMES` total: a step outside 1..16 is not reported rather than
+ * reported with an undefined name.
+ */
+export function isOnboardingStepNumber(
+  step: number,
+): step is OnboardingStepNumber {
+  return Number.isInteger(step) && step >= 1 && step <= 16;
+}
+
 /** The internal sort keys of the results feed, as `ListedPropertiesSection` names them. */
 type UiSortOption =
   | "bestMatch"
