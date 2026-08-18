@@ -106,7 +106,7 @@ export class CreatePropertyDto {
   @ApiProperty({
     description: "Property type",
     example: "apartment",
-    enum: ["apartment", "house", "studio", "penthouse", "duplex"],
+    enum: ["apartment", "house", "studio", "penthouse", "duplex", "maisonette"],
     required: false,
   })
   @IsOptional()

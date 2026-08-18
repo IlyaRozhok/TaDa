@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
 import { AppDispatch } from "@/store/store";
+import { setAnalyticsUser, track } from "@/lib/analytics/ga";
 import { authAPI } from "../../../lib/api";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
 
@@ -114,6 +115,22 @@ function AuthCallbackContent() {
 
         // Simple redirect based on user
         const user = profileResponse.data.user;
+
+        // Analytics identity first, so the sign-in event below is attributed
+        // and gated by role. The internal UUID is sent — never email or phone.
+        setAnalyticsUser({ id: user.id, role: user.role });
+
+        // `is_new` is set by the backend only when this request created the
+        // account, which is the one moment a registration is distinguishable
+        // from a repeat sign-in. This runs on the OAuth callback alone: session
+        // restore on later page loads must not count as a login.
+        const isNewUser = searchParams?.get("is_new") === "1";
+
+        if (isNewUser) {
+          track({ name: "sign_up", params: { method: "google" } });
+        } else {
+          track({ name: "login", params: { method: "google" } });
+        }
         console.log("🔄 OAuth callback: Redirecting user", {
           email: user.email,
           role: user.role,

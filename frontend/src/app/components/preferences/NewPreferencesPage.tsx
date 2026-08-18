@@ -8,6 +8,7 @@ import { useTranslation } from "@/app/hooks/useTranslation";
 import { onboardingKeys } from "@/app/lib/translationsKeys/onboardingTranslationKeys";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { getRedirectPath } from "@/app/utils/simpleRedirect";
+import { track } from "@/lib/analytics/ga";
 import {
   LifestylePreferencesStep,
   LocationStep,
@@ -208,6 +209,13 @@ export default function NewPreferencesPage({
     try {
       await savePreferences();
       console.log("✅ Preferences saved successfully");
+
+      // Standalone /app/preferences only. During onboarding this component runs
+      // under external navigation (`externalStep`) and finishing the wizard is
+      // onboarding_completed, not a preferences change.
+      if (externalStep === undefined) {
+        track({ name: "preferences_changed", params: {} });
+      }
 
       // Call onComplete callback if provided (for onboarding flow)
       if (onComplete) {

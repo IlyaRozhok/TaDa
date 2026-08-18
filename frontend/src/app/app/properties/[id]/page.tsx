@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import type { MatchCategory as CategoryMatchResult } from "@/store/api/matching.api";
@@ -32,6 +38,7 @@ import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleto
 import CopyableId from "@/app/components/CopyableId";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
+import { track } from "@/lib/analytics/ga";
 import { notify } from "@/shared/lib/notify";
 import { formatAreaDisplay } from "@/shared/lib/area";
 import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
@@ -418,6 +425,36 @@ export default function PropertyPublicPage() {
     );
   }, [id, isAuthenticated, isPropertyMatchFetching, propertyMatchData, user]);
 
+  // property_viewed fires once per property, and only once the real match score
+  // has arrived. The score is the point of the event, so firing on mount would
+  // report a null where the matching quality belongs.
+  const trackedPropertyViewRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!property || typeof matchScore !== "number") {
+      return;
+    }
+
+    if (trackedPropertyViewRef.current === property.id) {
+      return;
+    }
+
+    trackedPropertyViewRef.current = property.id;
+
+    track({
+      name: "property_viewed",
+      params: {
+        property_id: property.id,
+        building_id: property.building_id ?? property.building?.id ?? null,
+        match_score: matchScore,
+        price_pcm: property.price ?? null,
+        beds: property.bedrooms ?? null,
+        // listing_type is deliberately not sent: no on_market/off_market field
+        // exists on the property. See ListingType in lib/analytics/events.ts.
+      },
+    });
+  }, [property, matchScore]);
+
   // Read straight off the cached shortlist. The query is skipped for roles that
   // have no shortlist, so it stays empty for them.
   const isInShortlist = Boolean(
@@ -527,10 +564,18 @@ export default function PropertyPublicPage() {
     try {
       if (isInShortlist) {
         await removeFromShortlist(property.id).unwrap();
+        track({
+          name: "property_unfavorited",
+          params: { property_id: property.id },
+        });
         return;
       }
 
       await addToShortlist({ propertyId: property.id, property }).unwrap();
+      track({
+        name: "property_favorited",
+        params: { property_id: property.id },
+      });
     } catch (error: unknown) {
       notify.error((error as Error)?.message || "Failed to update shortlist");
     }
@@ -599,6 +644,17 @@ export default function PropertyPublicPage() {
     setBookingMoveOutDate(null);
     setBookingDescription("");
     setIsBookingModalOpen(true);
+
+    // After the auth and role guards above, so clicks that bounce the user to
+    // sign-in are not counted as opening the form. Paired with
+    // viewing_requested, this is what measures drop-off on the request form.
+    track({
+      name: "viewing_modal_opened",
+      params: {
+        property_id: property.id,
+        match_score: matchScore ?? 0,
+      },
+    });
   };
 
   const handleSendBookingRequest = async () => {
@@ -671,6 +727,22 @@ export default function PropertyPublicPage() {
         date_to: dateTo,
         description: bookingDescription.trim() || undefined,
       }).unwrap();
+
+      // The end of the tracked funnel, and only after the backend accepted the
+      // request: `.unwrap()` throws otherwise, so reaching this line is the
+      // success signal. Nothing past this point is tracked.
+      track({
+        name: "viewing_requested",
+        params: {
+          property_id: property.id,
+          building_id: property.building_id ?? property.building?.id ?? null,
+          match_score: matchScore ?? 0,
+          price_pcm: property.price ?? null,
+          has_dates: Boolean(dateFrom || dateTo),
+          has_notes: Boolean(bookingDescription.trim()),
+        },
+      });
+
       setIsBookingModalOpen(false);
       notify.success(t(listingNotificationKeys.viewingRequestSentMessage));
     } catch (err: any) {

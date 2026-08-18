@@ -93,8 +93,16 @@ export class AuthService {
     return user;
   }
 
-  async googleAuth(googleUser: any): Promise<User> {
+  /**
+   * Signs a Google user in, creating the account on first contact.
+   *
+   * `isNew` is what separates a registration from a repeat sign-in. Only this
+   * method can tell the two apart — by the time the caller has a `User` the
+   * distinction is gone — so it is reported rather than recomputed downstream.
+   */
+  async googleAuth(googleUser: any): Promise<{ user: User; isNew: boolean }> {
     let user = await this.userRepository.findOne({ where: { google_id: googleUser.google_id } });
+    const isNew = !user;
 
     if (!user) {
       user = this.userRepository.create({
@@ -131,7 +139,7 @@ export class AuthService {
       user = await this.userRepository.save(user);
     }
 
-    return user;
+    return { user, isNew };
   }
 
   private async createTenantProfile(user: User): Promise<void> {
