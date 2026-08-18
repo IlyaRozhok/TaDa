@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Repository } from "typeorm";
 import {
   BookingRequest,
@@ -11,7 +12,10 @@ import {
 } from "../../entities/booking-request.entity";
 import { Property } from "../../entities/property.entity";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
-import { TenantCv } from "../../entities/tenant-cv.entity";
+import {
+  BookingRequestedEvent,
+  NotificationEvents,
+} from "@/modules/notifications/events/notification.events";
 
 @Injectable()
 export class BookingRequestService {
@@ -19,7 +23,8 @@ export class BookingRequestService {
     @InjectRepository(BookingRequest)
     private readonly bookingRequestRepository: Repository<BookingRequest>,
     @InjectRepository(Property)
-    private readonly propertyRepository: Repository<Property>
+    private readonly propertyRepository: Repository<Property>,
+    private readonly eventEmitter: EventEmitter2
   ) {}
 
   async create(
@@ -74,7 +79,11 @@ export class BookingRequestService {
       existing.date_from = dateFrom;
       existing.date_to = dateTo;
       existing.description = description;
-      return this.bookingRequestRepository.save(existing);
+      const resubmitted = await this.bookingRequestRepository.save(existing);
+
+      this.emitBookingRequested(resubmitted, property, false);
+
+      return resubmitted;
     }
 
     const request = this.bookingRequestRepository.create({
@@ -90,10 +99,57 @@ export class BookingRequestService {
 
     const saved = await this.bookingRequestRepository.save(request);
 
-    return this.bookingRequestRepository.findOneOrFail({
+    const created = await this.bookingRequestRepository.findOneOrFail({
       where: { id: saved.id },
       relations: ["property", "tenant"],
     });
+
+    this.emitBookingRequested(created, property, true);
+
+    return created;
+  }
+
+  /**
+   * Announces a booking request to whoever is listening — today, the internal
+   * notification service. Fire-and-forget: `emit` returns before any listener
+   * finishes, so a failing mailbox cannot turn a saved request into a 500.
+   *
+   * The tenant relation is present on the first-create path (reloaded with
+   * relations) but not on the resubmit path, where the entity was only saved.
+   * Both are handled rather than forcing an extra query for an email body.
+   */
+  private emitBookingRequested(
+    booking: BookingRequest,
+    property: Property,
+    isFirstRequest: boolean
+  ): void {
+    this.eventEmitter.emit(NotificationEvents.BookingRequested, {
+      bookingId: booking.id,
+      isFirstRequest,
+      // Distinguishes each resubmit from the original and from one another, so
+      // the dedupe key does not swallow a genuinely new submission.
+      revision: new Date(booking.updated_at ?? Date.now()).toISOString(),
+      property: {
+        id: property.id,
+        title: property.title ?? null,
+        address: property.address ?? null,
+      },
+      tenant: {
+        id: booking.tenant_id,
+        name: booking.tenant?.full_name ?? null,
+        email: booking.tenant?.email ?? booking.email ?? null,
+      },
+      dateFrom: booking.date_from
+        ? new Date(booking.date_from).toISOString().slice(0, 10)
+        : null,
+      dateTo: booking.date_to
+        ? new Date(booking.date_to).toISOString().slice(0, 10)
+        : null,
+      emailProvided: Boolean(booking.email),
+      phoneProvided: Boolean(booking.phone_number),
+      descriptionProvided: Boolean(booking.description),
+      message: booking.description ?? null,
+    } satisfies BookingRequestedEvent);
   }
 
   async findAll(status?: BookingRequestStatus): Promise<BookingRequest[]> {

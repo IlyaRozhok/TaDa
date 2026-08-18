@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Repository } from "typeorm";
 import { createHash } from "crypto";
 import { User, UserRole, UserStatus } from "../../entities/user.entity";
@@ -8,6 +9,10 @@ import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
 import { S3Service } from "../../common/services/s3.service";
 import { accessTokenTtl, refreshTokenTtl } from "@/common/config/auth-tokens.config";
+import {
+  NotificationEvents,
+  UserRegisteredEvent,
+} from "@/modules/notifications/events/notification.events";
 
 @Injectable()
 export class AuthService {
@@ -19,6 +24,7 @@ export class AuthService {
     private jwtService: JwtService,
     private tenantCvService: TenantCvService,
     private s3Service: S3Service,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private hashToken(token: string): string {
@@ -119,6 +125,19 @@ export class AuthService {
       user = await this.userRepository.save(user);
       await this.createTenantProfile(user);
       await this.tenantCvService.ensureShareUuid(user.id);
+
+      // Emitted only on the branch that created the account. `emit` dispatches
+      // synchronously and returns; the listener is async and swallows its own
+      // errors, so nothing here can reach the try/catch in the OAuth callback
+      // that would otherwise redirect a successful sign-in to an error page.
+      this.eventEmitter.emit(NotificationEvents.UserRegistered, {
+        userId: user.id,
+        email: user.email,
+        name: user.full_name ?? null,
+        role: user.role,
+        createdAt: user.created_at,
+        source: "google_oauth",
+      } satisfies UserRegisteredEvent);
     } else {
       if (user.status !== UserStatus.Active) {
         throw new UnauthorizedException("Account is suspended or inactive");
