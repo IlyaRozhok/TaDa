@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { CONSENT_STORAGE_KEY, type CookieConsentDecision } from "../consent";
 import { resolveAvgMatchScore, sanitizeSearchQuery } from "../events";
 import {
+  initAnalytics,
   isAnalyticsEnabled,
   resetAnalyticsForTests,
   setAnalyticsUser,
@@ -17,15 +19,34 @@ import {
 
 type FakeWindow = {
   location: { hostname: string };
+  localStorage: Pick<Storage, "getItem" | "setItem">;
   dataLayer?: unknown[];
   gtag?: (...args: unknown[]) => void;
 };
 
-/** Installs a minimal browser global and returns everything gtag received. */
-function installWindow(hostname: string): unknown[][] {
+/**
+ * Installs a minimal browser global and returns everything gtag received.
+ *
+ * Consent defaults to "accepted" so every pre-existing case still describes a
+ * fully enabled production browser; the consent gate has its own cases below.
+ */
+function installWindow(
+  hostname: string,
+  consent: CookieConsentDecision | null = "accepted",
+): unknown[][] {
   const calls: unknown[][] = [];
+  const store = new Map<string, string>();
+
+  if (consent) {
+    store.set(CONSENT_STORAGE_KEY, consent);
+  }
+
   const fake: FakeWindow = {
     location: { hostname },
+    localStorage: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+    },
     gtag: (...args: unknown[]) => {
       calls.push(args);
     },
@@ -57,7 +78,8 @@ describe("shouldInitAnalytics", () => {
     measurementId: "G-TESTID123",
     vercelEnv: "production",
     hostname: "ta-da.co",
-  };
+    consent: "granted",
+  } as const;
 
   it("passes when all three conditions hold", () => {
     expect(shouldInitAnalytics(valid)).toBe(true);
@@ -104,6 +126,131 @@ describe("shouldInitAnalytics", () => {
 
   it("fails when the hostname is missing", () => {
     expect(shouldInitAnalytics({ ...valid, hostname: null })).toBe(false);
+  });
+
+  it("fails until consent is granted — the unanswered banner case", () => {
+    expect(shouldInitAnalytics({ ...valid, consent: "unset" })).toBe(false);
+  });
+
+  it("fails when consent is denied", () => {
+    expect(shouldInitAnalytics({ ...valid, consent: "denied" })).toBe(false);
+  });
+
+  it("still fails on staging even with consent granted", () => {
+    expect(
+      shouldInitAnalytics({
+        ...valid,
+        vercelEnv: "preview",
+        hostname: "stage.ta-da.co",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("the consent gate", () => {
+  it("keeps analytics disabled in production until the banner is answered", () => {
+    stubProductionEnv();
+    installWindow("ta-da.co", null);
+
+    expect(isAnalyticsEnabled()).toBe(false);
+  });
+
+  it("keeps analytics disabled when the banner was rejected", () => {
+    stubProductionEnv();
+    installWindow("ta-da.co", "rejected");
+
+    expect(isAnalyticsEnabled()).toBe(false);
+  });
+
+  it("sends nothing to gtag before consent — no init, no events", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", null);
+
+    initAnalytics();
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    track({ name: "login", params: { method: "google" } });
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("sends nothing to gtag after a rejection", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "rejected");
+
+    initAnalytics();
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    track({ name: "login", params: { method: "google" } });
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("initialises once consent is granted", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "accepted");
+
+    initAnalytics();
+
+    expect(calls).toContainEqual([
+      "config",
+      "G-TESTID123",
+      { send_page_view: false },
+    ]);
+  });
+
+  it("declares Consent Mode v2 defaults as denied before configuring", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "accepted");
+
+    initAnalytics();
+
+    const defaultIndex = calls.findIndex(
+      ([kind, mode]) => kind === "consent" && mode === "default",
+    );
+    const configIndex = calls.findIndex(([kind]) => kind === "config");
+
+    expect(calls[defaultIndex]?.[2]).toEqual({
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+      analytics_storage: "denied",
+    });
+    expect(defaultIndex).toBeGreaterThanOrEqual(0);
+    expect(defaultIndex).toBeLessThan(configIndex);
+  });
+
+  it("grants only analytics_storage on acceptance, never the ad signals", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "accepted");
+
+    initAnalytics();
+
+    expect(calls).toContainEqual([
+      "consent",
+      "update",
+      { analytics_storage: "granted" },
+    ]);
+  });
+
+  it("still refuses to initialise on staging once consent is granted", () => {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TESTID123");
+    vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");
+    const calls = installWindow("stage.ta-da.co", "accepted");
+
+    initAnalytics();
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    track({ name: "login", params: { method: "google" } });
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("still drops events for admins once consent is granted", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "accepted");
+
+    setAnalyticsUser({ id: "admin-1", role: "admin" });
+    track({ name: "property_favorited", params: { property_id: "p1" } });
+
+    expect(calls.filter(([kind]) => kind === "event")).toHaveLength(0);
   });
 });
 

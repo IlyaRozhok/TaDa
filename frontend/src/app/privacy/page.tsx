@@ -3,6 +3,7 @@
 import React from "react";
 import Footer from "../components/Footer";
 import Link from "next/link";
+import CookieSettingsButton from "../components/CookieSettingsButton";
 
 const PrivacyPolicyPage = () => {
   return (
@@ -443,6 +444,9 @@ const PrivacyPolicyPage = () => {
                 or consent-management settings and can withdraw consent at any
                 time.
               </p>
+              {/* Reopens the consent banner so a stored decision can be
+                  changed — the withdrawal route the paragraph above promises. */}
+              <CookieSettingsButton className="mb-6" />
             </div>
           </section>
 

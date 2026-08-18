@@ -5,6 +5,7 @@ import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
 import EmailJSInitializer from "./components/EmailJSInitializer";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 import { I18nProvider } from "./contexts/I18nContext";
 import AppToaster from "./components/AppToaster";
 import { Suspense } from "react";
@@ -70,6 +71,7 @@ export default function RootLayout({
                 <AnalyticsProvider />
                 <EmailJSInitializer />
                 {children}
+                <CookieConsentBanner />
                 <AppToaster />
             </ReduxProvider>
           </I18nProvider>

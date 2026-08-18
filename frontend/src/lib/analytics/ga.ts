@@ -7,14 +7,20 @@
  *
  * Staging must never reach the production GA4 property. `stage.ta-da.co` is a
  * branch deployment of the same Vercel project as production, so a single check
- * is not enough — three independent conditions have to hold at once, and any
+ * is not enough — four independent conditions have to hold at once, and any
  * one of them failing keeps GA4 uninitialised and every event a no-op:
  *
  *   1. `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set (Vercel Production scope only).
  *   2. `NEXT_PUBLIC_VERCEL_ENV === "production"` (develop deploys are "preview").
  *   3. `window.location.hostname` is one of the production hosts.
+ *   4. The user has granted analytics consent in the cookie banner.
+ *
+ * The consent condition is opt-in for everyone, with no geo-gating: until the
+ * banner is answered with Accept, the stored decision is "unset", the guard
+ * fails and gtag.js is never even requested.
  */
 
+import { readAnalyticsConsent, type AnalyticsConsent } from "./consent";
 import type { AnalyticsEvent } from "./events";
 
 /** Hosts the production GA4 property is allowed to receive traffic from. */
@@ -23,11 +29,12 @@ export const PROD_HOSTNAMES: readonly string[] = ["ta-da.co", "www.ta-da.co"];
 /** Only tenants move through the tracked funnel; admins and operators do not. */
 const TRACKED_ROLE = "tenant";
 
-/** The three inputs the guard chain reads, passed in so it can be tested. */
+/** The four inputs the guard chain reads, passed in so it can be tested. */
 export interface AnalyticsEnvironment {
   measurementId: string | null | undefined;
   vercelEnv: string | null | undefined;
   hostname: string | null | undefined;
+  consent: AnalyticsConsent;
 }
 
 type GtagFn = (...args: unknown[]) => void;
@@ -40,7 +47,7 @@ interface GtagWindow extends Window {
 /**
  * The guard chain, as a pure function.
  *
- * All three conditions must hold. Kept separate from the browser globals so it
+ * All four conditions must hold. Kept separate from the browser globals so it
  * can be unit-tested without a DOM.
  */
 export function shouldInitAnalytics(env: AnalyticsEnvironment): boolean {
@@ -60,6 +67,12 @@ export function shouldInitAnalytics(env: AnalyticsEnvironment): boolean {
     return false;
   }
 
+  // Opt-in: anything other than an explicit grant — including "unset", which is
+  // what an unanswered banner reads as — keeps analytics off.
+  if (env.consent !== "granted") {
+    return false;
+  }
+
   return true;
 }
 
@@ -70,6 +83,7 @@ export function readAnalyticsEnvironment(): AnalyticsEnvironment {
     vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV,
     hostname:
       typeof window === "undefined" ? null : window.location.hostname,
+    consent: readAnalyticsConsent(),
   };
 }
 
@@ -105,9 +119,29 @@ function ensureGtagStub(win: GtagWindow): void {
 }
 
 /**
+ * Google Consent Mode v2 defaults: everything denied.
+ *
+ * Pushed before `config`, which is what Consent Mode requires — a default that
+ * arrives after the measurement id has already been configured is ignored. The
+ * ad_* signals are denied permanently: this property runs no advertising and
+ * the banner never asks for it.
+ */
+function setConsentModeDefaults(win: GtagWindow): void {
+  win.gtag?.("consent", "default", {
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+    analytics_storage: "denied",
+  });
+}
+
+/**
  * Sets up the dataLayer and configures the measurement id. Safe to call more
  * than once. The gtag.js script itself is loaded by `AnalyticsProvider`; the
  * stub queues everything sent before it arrives.
+ *
+ * Only reached once consent is granted, so the Consent Mode dance is short:
+ * defaults denied, then a single update granting `analytics_storage`.
  */
 export function initAnalytics(): void {
   if (initialized || !isAnalyticsEnabled()) {
@@ -123,12 +157,43 @@ export function initAnalytics(): void {
   const win = window as GtagWindow;
   ensureGtagStub(win);
 
+  setConsentModeDefaults(win);
+
   win.gtag?.("js", new Date());
   // This is a single-page app: page_view is not what the funnel measures, and
   // the automatic one would fire on the wrong routes anyway.
   win.gtag?.("config", measurementId, { send_page_view: false });
 
+  win.gtag?.("consent", "update", { analytics_storage: "granted" });
+
   initialized = true;
+}
+
+/**
+ * Re-applies the stored decision to a session that is already running.
+ *
+ * Accepting is handled by `initAnalytics`. This exists for the other direction:
+ * a user who accepted and then rejected in the same session has a live gtag.js
+ * that must be told to stop using storage. `track()` is already a no-op by then
+ * — the guard chain sees "denied" — but the running tag is not ours to leave in
+ * a granted state.
+ */
+export function syncAnalyticsConsent(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (readAnalyticsConsent() === "granted") {
+    initAnalytics();
+    return;
+  }
+
+  if (!initialized) {
+    return;
+  }
+
+  const win = window as GtagWindow;
+  win.gtag?.("consent", "update", { analytics_storage: "denied" });
 }
 
 /** The subset of the signed-in user analytics is allowed to see. */
