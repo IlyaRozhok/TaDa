@@ -27,6 +27,7 @@ export function useLocalizedFormOptions() {
     { value: "penthouse", label: t("property.type.name4") }, // "Penthouse"
     { value: "room", label: t("property.type.name5") }, // "En-suite room"
     { value: "room", label: t("property.type.name6") }, // "Room" (duplicate value, different label)
+    { value: "maisonette", label: t("admin.type.of.unit.maisonette") }, // "Maisonette"
   ];
 
   // Building Unit Types - derived from property types + bedroom counts
@@ -37,6 +38,7 @@ export function useLocalizedFormOptions() {
     { value: "3-bed", label: "3 bedrooms" },
     { value: "Duplex", label: "Duplex" },
     { value: "penthouse", label: t("property.type.name4") }, // "Penthouse"
+    { value: "maisonette", label: t("admin.type.of.unit.maisonette") }, // "Maisonette"
   ];
 
   // Furnishing Options - only the 3 from preferences step 3 (Furnishing), same as locales

@@ -90,6 +90,7 @@ export const PROPERTY_TYPE_UI_TO_API: Record<string, string> = {
   Penthouse: "penthouse", // property.type.name4
   "En-suite room": "room", // property.type.name5
   Room: "room", // property.type.name6
+  Maisonette: "maisonette", // admin.type.of.unit.maisonette
 };
 
 export const PROPERTY_TYPE_API_TO_UI: Record<string, string> = {
@@ -99,6 +100,7 @@ export const PROPERTY_TYPE_API_TO_UI: Record<string, string> = {
   penthouse: "Penthouse",
   room: "Room", // Default for both room types
   house: "House", // Additional admin form value
+  maisonette: "Maisonette",
 };
 
 /** One API value can map to multiple UI options (so En-suite room and Room both display when API has "room"). */
@@ -109,6 +111,7 @@ export const PROPERTY_TYPE_API_TO_UI_MULTI: Record<string, string[]> = {
   penthouse: ["Penthouse"],
   room: ["En-suite room", "Room"],
   house: ["House"],
+  maisonette: ["Maisonette"],
 };
 
 // ==================== UNIT TYPE MAPPING (Building) ====================
@@ -121,6 +124,7 @@ export const UNIT_TYPE_UI_TO_API: Record<string, string> = {
   Penthouse: "penthouse",
   "En-suite room": "3-bed",
   Room: "Duplex",
+  Maisonette: "maisonette",
 };
 
 export const UNIT_TYPE_API_TO_UI: Record<string, string> = {
@@ -130,9 +134,10 @@ export const UNIT_TYPE_API_TO_UI: Record<string, string> = {
   penthouse: "Penthouse",
   "3-bed": "En-suite room",
   Duplex: "Room",
+  maisonette: "Maisonette",
 };
 
-/** Building form load: API value → UI label. 1:1 so all 6 options restore. */
+/** Building form load: API value → UI label. 1:1 so all 7 options restore. */
 export const BUILDING_UNIT_TYPE_API_TO_UI: Record<string, string> = {
   "1-bed": "Apartment",
   "2-bed": "Flat",
@@ -140,6 +145,7 @@ export const BUILDING_UNIT_TYPE_API_TO_UI: Record<string, string> = {
   penthouse: "Penthouse",
   "3-bed": "En-suite room",
   Duplex: "Room",
+  maisonette: "Maisonette",
 };
 
 // ==================== FURNISHING MAPPING ====================
@@ -521,6 +527,7 @@ const PROPERTY_TYPE_API_TO_KEY: Record<string, string> = {
   penthouse: "property.type.name4",
   room: "property.type.name5",
   house: "property.type.name1",
+  maisonette: "admin.type.of.unit.maisonette",
 };
 
 const FURNISHING_API_TO_KEY: Record<string, string> = {

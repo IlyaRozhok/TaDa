@@ -3,12 +3,19 @@ import type { Dispatch, SetStateAction } from "react";
 import { FormField, Input, Textarea } from "@/app/components/FormField";
 import { MultiSelectDropdown } from "@/app/components/form/MultiSelectDropdown";
 import { TYPE_OF_UNIT_OPTIONS } from "@/constants/admin-form-options";
+import { useTranslation } from "@/app/hooks/useTranslation";
 import type { BuildingFormData } from "../types";
 
-const TYPE_OF_UNIT_MS_OPTIONS = TYPE_OF_UNIT_OPTIONS.map((option) => ({
-  value: option,
-  label: option,
-}));
+/**
+ * Localazy keys for the type-of-unit options. The original six options are
+ * hardcoded English here and stay that way; only options with an entry below
+ * are translated, everything else falls back to the option string itself.
+ */
+const TYPE_OF_UNIT_LABEL_KEYS: Partial<
+  Record<(typeof TYPE_OF_UNIT_OPTIONS)[number], string>
+> = {
+  Maisonette: "admin.type.of.unit.maisonette",
+};
 
 interface BasicInfoSectionProps {
   formData: BuildingFormData;
@@ -43,6 +50,17 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   onToggleDropdown,
   mode,
 }) => {
+  const { t } = useTranslation();
+
+  const typeOfUnitOptions = React.useMemo(
+    () =>
+      TYPE_OF_UNIT_OPTIONS.map((option) => {
+        const key = TYPE_OF_UNIT_LABEL_KEYS[option];
+        return { value: option, label: key ? t(key) : option };
+      }),
+    [t],
+  );
+
   return (
     <>
       {mode === "edit" ? (
@@ -185,8 +203,12 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         <MultiSelectDropdown
           name="type_of_unit"
           values={formData.type_of_unit}
-          options={TYPE_OF_UNIT_MS_OPTIONS}
+          options={typeOfUnitOptions}
           placeholder="Select types..."
+          getChipLabel={(value) =>
+            typeOfUnitOptions.find((option) => option.value === value)?.label ??
+            value
+          }
           openDropdown={openDropdown}
           onToggleDropdown={onToggleDropdown}
           onOptionClick={(option) => {
