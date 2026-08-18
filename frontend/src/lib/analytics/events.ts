@@ -239,18 +239,29 @@ export type AnalyticsEvent =
         units_available: number;
       };
     }
-  /** "Book your viewing" opened the request modal. */
+  /**
+   * "Book your viewing" opened the request modal.
+   *
+   * `match_score` is optional, and omitted when the match query has not
+   * resolved or has failed. A fallback value cannot be used: `0` is a valid
+   * score, so a fabricated one would be indistinguishable from a genuine zero
+   * match. The event still fires without it — the drop-off it measures against
+   * `viewing_requested` matters more than the score on any single event.
+   */
   | {
       name: "viewing_modal_opened";
-      params: { property_id: string; match_score: number };
+      params: { property_id: string; match_score?: number };
     }
-  /** "Send request" accepted by the backend. End of the tracked funnel. */
+  /**
+   * "Send request" accepted by the backend. End of the tracked funnel.
+   * `match_score` is optional for the same reason as on `viewing_modal_opened`.
+   */
   | {
       name: "viewing_requested";
       params: {
         property_id: string;
         building_id: string | null;
-        match_score: number;
+        match_score?: number;
         price_pcm: number | null;
         has_dates: boolean;
         has_notes: boolean;

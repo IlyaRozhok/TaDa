@@ -95,6 +95,16 @@ type PropertyWithMedia = Property & {
   bills?: string | null;
 };
 
+/**
+ * The match score as an analytics param fragment: present only when the score
+ * is real. While the match query is unresolved or failed there is nothing to
+ * report, and a fallback `0` would be indistinguishable from a genuine zero
+ * match — so the param is left out instead of being fabricated.
+ */
+function matchScoreParam(score: number | null): { match_score?: number } {
+  return typeof score === "number" ? { match_score: score } : {};
+}
+
 export default function PropertyPublicPage() {
   const params = useParams();
   const id = params && typeof params.id === "string" ? params.id : null;
@@ -652,7 +662,7 @@ export default function PropertyPublicPage() {
       name: "viewing_modal_opened",
       params: {
         property_id: property.id,
-        match_score: matchScore ?? 0,
+        ...matchScoreParam(matchScore),
       },
     });
   };
@@ -736,7 +746,7 @@ export default function PropertyPublicPage() {
         params: {
           property_id: property.id,
           building_id: property.building_id ?? property.building?.id ?? null,
-          match_score: matchScore ?? 0,
+          ...matchScoreParam(matchScore),
           price_pcm: property.price ?? null,
           has_dates: Boolean(dateFrom || dateTo),
           has_notes: Boolean(bookingDescription.trim()),
