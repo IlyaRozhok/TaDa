@@ -95,13 +95,18 @@ export class AuthController {
         return res.redirect(`${frontendUrl}/app/auth/callback?error=no_user_data`);
       }
 
-      const user = await this.authService.googleAuth(req.user);
+      const { user, isNew } = await this.authService.googleAuth(req.user);
       const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
       res.cookie("access_token", accessToken, accessCookieOptions());
       res.cookie("refresh_token", refreshToken, refreshCookieOptions());
 
-      return res.redirect(`${frontendUrl}/app/auth/callback?success=true`);
+      // `is_new` distinguishes a registration from a repeat sign-in. Only this
+      // request knows: /auth/me answers the same either way, and the frontend
+      // needs the difference to report sign_up separately from login.
+      const isNewParam = isNew ? "&is_new=1" : "";
+
+      return res.redirect(`${frontendUrl}/app/auth/callback?success=true${isNewParam}`);
     } catch {
       return res.redirect(`${frontendUrl}/app/auth/callback?error=auth_failed`);
     }
