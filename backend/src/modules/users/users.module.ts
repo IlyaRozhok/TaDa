@@ -1,4 +1,4 @@
-import { Module, forwardRef } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { UsersService } from "./users.service";
@@ -7,24 +7,15 @@ import { UserProfileService } from "./services/user-profile.service";
 import { UserRoleService } from "./services/user-role.service";
 import { UserQueryService } from "./services/user-query.service";
 import { UserAdminService } from "./services/user-admin.service";
-import { User } from "../../entities/user.entity";
-import { TenantProfile } from "../../entities/tenant-profile.entity";
-import { OperatorProfile } from "../../entities/operator-profile.entity";
-import { Preferences } from "../../entities/preferences.entity";
-import { TenantCv } from "../../entities/tenant-cv.entity";
-import { AuthModule } from "../auth/auth.module";
-import { S3Service } from "../../common/services/s3.service";
+import { User } from "@/entities/user.entity";
+import { TenantProfile } from "@/entities/tenant-profile.entity";
+import { OperatorProfile } from "@/entities/operator-profile.entity";
+import { Preferences } from "@/entities/preferences.entity";
+import { S3Service } from "@/common/services/s3.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      User,
-      TenantProfile,
-      OperatorProfile,
-      Preferences,
-      TenantCv,
-    ]),
-    forwardRef(() => AuthModule),
+    TypeOrmModule.forFeature([User, TenantProfile, OperatorProfile, Preferences]),
   ],
   controllers: [UsersController],
   providers: [

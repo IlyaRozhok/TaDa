@@ -16,22 +16,6 @@ export class TenantProfile {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ApiProperty({ description: "Full name of the tenant", example: "John Doe" })
-  @Column({ nullable: true })
-  full_name: string;
-
-  @ApiProperty({ description: "First name of the tenant", example: "John" })
-  @Column({ nullable: true })
-  first_name: string;
-
-  @ApiProperty({ description: "Last name of the tenant", example: "Doe" })
-  @Column({ nullable: true })
-  last_name: string;
-
-  @ApiProperty({ description: "Address of the tenant", example: "123 Main St, London" })
-  @Column({ nullable: true })
-  address: string;
-
   @ApiProperty({
     description: "Age range of the tenant",
     example: "25-34",
@@ -39,21 +23,6 @@ export class TenantProfile {
   })
   @Column({ nullable: true })
   age_range: string;
-
-  @ApiProperty({
-    description: "Tenant phone number",
-    example: "+44 7700 900123",
-  })
-  @Column({ nullable: true })
-  phone: string;
-
-  @ApiProperty({ description: "Tenant date of birth", example: "1990-01-15" })
-  @Column({ type: "date", nullable: true })
-  date_of_birth: Date;
-
-  @ApiProperty({ description: "Tenant nationality", example: "British" })
-  @Column({ nullable: true })
-  nationality: string;
 
   @ApiProperty({
     description: "Tenant occupation",
@@ -76,14 +45,6 @@ export class TenantProfile {
   })
   @Column({ nullable: true })
   work_style: string;
-
-  @ApiProperty({
-    description: "Lifestyle preferences as array of strings",
-    example: ["Active", "Social", "Quiet"],
-    type: [String],
-  })
-  @Column("simple-array", { nullable: true })
-  lifestyle: string[];
 
   @ApiProperty({
     description: "Ideal living environment preference",
@@ -112,7 +73,7 @@ export class TenantProfile {
     example: ["property-id-1", "property-id-2"],
     type: [String],
   })
-  @Column("simple-array", { nullable: true })
+  @Column({ type: "jsonb", nullable: true })
   shortlisted_properties: string[];
 
   @ApiProperty({ description: "Profile creation date" })
@@ -124,7 +85,7 @@ export class TenantProfile {
   updated_at: Date;
 
   // Relations
-  @OneToOne(() => User, (user) => user.tenantProfile)
+  @OneToOne(() => User, (user) => user.tenantProfile, { onDelete: "CASCADE" })
   @JoinColumn()
   user: User;
 

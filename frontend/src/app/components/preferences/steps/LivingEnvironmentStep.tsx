@@ -5,12 +5,12 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
-import { PreferencesFormData } from "@/entities/preferences/model/preferences";
+import { PreferencesFormData, PreferencesFieldValue } from "@/entities/preferences/model/preferences";
 
 interface LivingEnvironmentStepProps {
   formData: PreferencesFormData;
-  onUpdate: (field: string, value: unknown) => void;
-  onToggle: (category: string, value: string) => void;
+  onUpdate: (field: keyof PreferencesFormData, value: PreferencesFieldValue) => void;
+  onToggle: (category: keyof PreferencesFormData, feature: string) => void;
 }
 
 /** Section 1: title wizard.step10.des.text1, options living.env.name1–7. */

@@ -36,4 +36,8 @@ export const generalKeys = {
     operatorCtaButton: "landing.operators.web.contact.popup.btn",
     tenantCtaButton: "landing.tenant.web.hero.btn",
   },
+  toast: {
+    /** Success toast shown after a link is copied to the clipboard */
+    copySuccess: "toast.copy.success",
+  },
 };

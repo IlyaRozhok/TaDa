@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test("auth page renders Google login button", async ({ page }) => {
   await page.goto("/app/auth");
-  const googleBtn = page.getByRole("button", { name: /google/i });
+  const googleBtn = page.getByTestId("google-login");
   await expect(googleBtn).toBeVisible();
 });
 

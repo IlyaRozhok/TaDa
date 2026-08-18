@@ -23,11 +23,6 @@ import EditBuildingModal from "../../../components/EditBuildingModal";
 import EditPropertyModal from "../../../components/EditPropertyModal";
 import ViewPropertyModal from "../../../components/ViewPropertyModal";
 import { Copy, Check, X } from "lucide-react";
-import {
-  bookingRequestsAPI,
-  buildingsAPI,
-  propertiesAPI,
-} from "../../../lib/api";
 import { Property } from "../../../types/property";
 import {
   BookingRequest,
@@ -44,8 +39,27 @@ import {
 } from "lucide-react";
 import {
   useGetPropertiesQuery,
+  useCreatePropertyMutation,
+  useUpdatePropertyMutation,
+  useDeletePropertyMutation,
+} from "@/store/api/properties.api";
+import {
   useGetBookingRequestsQuery,
-} from "@/store/slices/apiSlice";
+  useUpdateBookingRequestStatusMutation,
+} from "@/store/api/bookingRequests.api";
+import {
+  useCreateUserMutation,
+  useDeleteUserMutation,
+  useGetUsersQuery,
+  useUpdateUserMutation,
+} from "@/store/api/users.api";
+import {
+  useCreateBuildingMutation,
+  useDeleteBuildingMutation,
+  useGetBuildingsQuery,
+  useUpdateBuildingMutation,
+  type Building as ApiBuilding,
+} from "@/store/api/buildings.api";
 
 type AdminSection = "users" | "buildings" | "properties" | "requests";
 
@@ -64,30 +78,47 @@ interface User {
   is_private_landlord?: boolean | null;
 }
 
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  number_of_units: number;
-  type_of_unit: string[];
-  logo?: string;
-  video?: string;
-  photos?: string[];
-  documents?: string;
-  operator_id: string | null;
+/**
+ * The panel no longer keeps its own copy of this shape: it hands the rows
+ * straight from the query to the sections and modals, so the endpoint's type
+ * is the honest one. The sections still carry their own narrower versions —
+ * folding those together is step 5.2.
+ */
+type Building = ApiBuilding;
+
+/**
+ * A rejected RTK Query mutation carries `{ status, data }`, axios carries
+ * `{ response: { data } }`, and a plain Error carries `message`. The panel now
+ * mixes all three, so the message is pulled out in one place.
+ */
+function apiErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as {
+      data?: { message?: unknown };
+      response?: { data?: { message?: unknown } };
+      message?: unknown;
+    };
+
+    if (typeof candidate.data?.message === "string") {
+      return candidate.data.message;
+    }
+    if (typeof candidate.response?.data?.message === "string") {
+      return candidate.response.data.message;
+    }
+    if (typeof candidate.message === "string") {
+      return candidate.message;
+    }
+  }
+
+  return fallback;
 }
 
 function AdminPanelContent() {
   // const user = useSelector(selectUser);
   // const isAuthenticated = useSelector(selectIsAuthenticated);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
-  const [users, setUsers] = useState<User[]>([]);
-  const [buildings, setBuildings] = useState<Building[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const debouncedSearch = useDebounce(searchTerm, 400);
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
@@ -112,18 +143,42 @@ function AdminPanelContent() {
     null,
   );
 
-  // Admin properties list via RTK Query (with 5-minute cache)
-  const { data: propertiesQueryData, isLoading: isPropsQueryLoading } =
-    useGetPropertiesQuery({});
+  // Users list via RTK Query. The mutations below invalidate it, so the table
+  // refreshes itself instead of every handler refetching by hand.
+  const { data: usersQueryData } = useGetUsersQuery(
+    { page, limit: 20, ...(debouncedSearch ? { search: debouncedSearch } : {}) },
+    { skip: activeSection !== "users" },
+  );
+  const users: User[] = usersQueryData?.users ?? [];
+  const totalPages = usersQueryData?.totalPages ?? 1;
 
-  // Sync RTK Query data into local state used by the rest of the admin logic
-  useEffect(() => {
-    if (!propertiesQueryData) return;
-    const list = (propertiesQueryData as any).data || propertiesQueryData || [];
-    if (Array.isArray(list)) {
-      setProperties(list);
-    }
-  }, [propertiesQueryData]);
+  const [createUser] = useCreateUserMutation();
+  const [updateUser] = useUpdateUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
+
+  // Buildings list, on the same footing: the section's mutations invalidate
+  // Building:LIST, so nothing here reloads the list by hand.
+  const { data: buildingsData } = useGetBuildingsQuery(undefined, {
+    skip: activeSection !== "buildings",
+  });
+  const buildings: Building[] = buildingsData ?? [];
+
+  const [createBuilding] = useCreateBuildingMutation();
+  const [updateBuilding] = useUpdateBuildingMutation();
+  const [deleteBuilding] = useDeleteBuildingMutation();
+
+  // Admin properties list, fetched only while its tab is open, like the
+  // other tabs. The endpoint is typed, so no envelope sniffing and no local
+  // mirror — the section renders straight off the cache.
+  const { data: propertiesData, isLoading: isPropsQueryLoading } =
+    useGetPropertiesQuery(undefined, {
+      skip: activeSection !== "properties",
+    });
+  const properties = propertiesData ?? [];
+
+  const [createProperty] = useCreatePropertyMutation();
+  const [updateProperty] = useUpdatePropertyMutation();
+  const [deleteProperty] = useDeletePropertyMutation();
 
   // Booking requests via RTK Query (5‑минутный кэш)
   const {
@@ -135,13 +190,10 @@ function AdminPanelContent() {
     skip: activeSection !== "requests",
   });
 
-  useEffect(() => {
-    if (!bookingQueryData) return;
-    const list = (bookingQueryData as any).data || bookingQueryData || [];
-    if (Array.isArray(list)) {
-      setRequests(list);
-    }
-  }, [bookingQueryData]);
+  const [updateBookingStatus] = useUpdateBookingRequestStatusMutation();
+
+  // The query is the list; transformResponse already unwrapped it.
+  const requests = bookingQueryData ?? [];
 
   // Notification management
   const addNotification = (
@@ -160,49 +212,6 @@ function AdminPanelContent() {
   const removeNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
-
-  // Load data based on active section
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-        const headers = {
-          "Content-Type": "application/json",
-        };
-
-        if (activeSection === "users") {
-          const params = new URLSearchParams({ page: String(page), limit: "20" });
-          if (debouncedSearch) params.set("search", debouncedSearch);
-          const response = await fetch(`${apiUrl}/users?${params}`, {
-            credentials: "include",
-            headers,
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUsers(data.users || data || []);
-            setTotalPages(data.totalPages || 1);
-          }
-        } else if (activeSection === "buildings") {
-          const response = await fetch(`${apiUrl}/buildings`, {
-            credentials: "include",
-            headers,
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setBuildings(data.data || data || []);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        addNotification("error", "Failed to load data");
-      } finally {
-        // no-op for requests: RTK Query управляет своим loading
-      }
-    };
-
-    loadData();
-  }, [activeSection, debouncedSearch, page]);
 
   // Reset page when section changes
   useEffect(() => {
@@ -230,88 +239,50 @@ function AdminPanelContent() {
 
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
       if (activeSection === "buildings") {
         const building = selectedItem as Building;
-        console.log("🗑️ Deleting building:", building.id);
+        await deleteBuilding(building.id).unwrap();
 
-        const response = await buildingsAPI.delete(building.id);
-        console.log("✅ Delete response:", response);
-
-        if (response.status === 200 || response.status === 204) {
-          // Remove from local state
-          setBuildings((prevBuildings) =>
-            prevBuildings.filter((b) => b.id !== building.id),
-          );
-
-          addNotification(
-            "success",
-            `Building "${building.name}" deleted successfully`,
-          );
-          setShowModal(null);
-          setSelectedItem(null);
-        } else {
-          throw new Error("Unexpected response status");
-        }
+        addNotification(
+          "success",
+          `Building "${building.name}" deleted successfully`,
+        );
+        setShowModal(null);
+        setSelectedItem(null);
       } else if (activeSection === "properties") {
         const property = selectedItem as Property;
-        console.log("🗑️ Deleting property:", property.id);
 
-        const response = await propertiesAPI.delete(property.id);
-        console.log("✅ Delete response:", response);
+        // Tag invalidation drops the row from the refetched list.
+        await deleteProperty(property.id).unwrap();
 
-        if (response.status === 200 || response.status === 204) {
-          // Remove from local state
-          setProperties((prevProperties) =>
-            prevProperties.filter((p) => p.id !== property.id),
-          );
-
-          const propertyTitle =
-            property.title ||
-            property.id ||
-            property.apartment_number ||
-            "Property";
-          addNotification(
-            "success",
-            `Property "${propertyTitle}" deleted successfully`,
-          );
-          setShowModal(null);
-          setSelectedItem(null);
-        } else {
-          throw new Error("Unexpected response status");
-        }
+        const propertyTitle =
+          property.title ||
+          property.id ||
+          property.apartment_number ||
+          "Property";
+        addNotification(
+          "success",
+          `Property "${propertyTitle}" deleted successfully`,
+        );
+        setShowModal(null);
+        setSelectedItem(null);
       } else if (activeSection === "users") {
         const user = selectedItem as User;
-        const response = await fetch(`${apiUrl}/users/${user.id}`, {
-          method: "DELETE",
-          credentials: "include",
-          headers,
-        });
+        await deleteUser(user.id).unwrap();
 
-        if (response.ok) {
-          setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
-          addNotification(
-            "success",
-            `User "${user.full_name || user.email}" deleted successfully`,
-          );
-          setShowModal(null);
-          setSelectedItem(null);
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to delete user");
-        }
+        addNotification(
+          "success",
+          `User "${user.full_name || user.email}" deleted successfully`,
+        );
+        setShowModal(null);
+        setSelectedItem(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Delete error:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to delete item. Please try again.";
-      addNotification("error", errorMessage);
+      addNotification(
+        "error",
+        apiErrorMessage(error, "Failed to delete item. Please try again."),
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -331,97 +302,46 @@ function AdminPanelContent() {
   }) => {
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const body: Record<string, any> = {
+      await createUser({
         full_name: data.full_name,
         email: data.email,
         role: data.role,
         password: data.password || "defaultPassword123",
-      };
-
-      if (data.role === "operator") {
-        body.is_private_landlord = data.is_private_landlord ?? false;
-      }
-
-      const response = await fetch(`${apiUrl}/users`, {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create user");
-      }
+        is_private_landlord: data.is_private_landlord,
+      }).unwrap();
 
       addNotification(
         "success",
         `User "${data.full_name}" created successfully!`,
       );
       setShowModal(null);
-
-      // Reload users list
-      if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const usersData = await response.json();
-          setUsers(usersData.users || usersData || []);
-        }
-      }
-    } catch (error: any) {
-      addNotification("error", `Failed to create user: ${error.message}`);
+      // The list refetches itself: the mutation invalidates User:LIST.
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        `Failed to create user: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
   };
 
-  const handleCreateBuilding = async (data: any) => {
+  const handleCreateBuilding = async (data: Partial<Building>) => {
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const response = await fetch(`${apiUrl}/buildings`, {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create building");
-      }
+      await createBuilding(data).unwrap();
 
       addNotification(
         "success",
         `Building "${data.name}" created successfully!`,
       );
       setShowModal(null);
-
-      // Reload buildings list
-      if (activeSection === "buildings") {
-        const response = await fetch(`${apiUrl}/buildings`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const buildingsData = await response.json();
-          setBuildings(buildingsData.data || buildingsData || []);
-        }
-      }
-    } catch (error: any) {
-      addNotification("error", `Failed to create building: ${error.message}`);
+      // The list refetches itself: the mutation invalidates Building:LIST.
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        `Failed to create building: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -438,162 +358,63 @@ function AdminPanelContent() {
   ) => {
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const body: Record<string, any> = {
+      const updatedUser = await updateUser({
+        id,
         full_name: data.full_name,
         email: data.email,
         role: data.role,
-      };
-
-      if (data.role === "operator") {
-        body.is_private_landlord = data.is_private_landlord ?? false;
-      }
-
-      const response = await fetch(`${apiUrl}/users/${id}`, {
-        method: "PUT",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update user");
-      }
-
-      const updatedUser = await response.json();
-      console.log("✅ User updated successfully:", updatedUser);
+        is_private_landlord: data.is_private_landlord,
+      }).unwrap();
 
       addNotification(
         "success",
         `User "${data.full_name}" updated successfully!`,
       );
 
-      // Reload users list
-      if (activeSection === "users") {
-        const response = await fetch(`${apiUrl}/users`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const usersData = await response.json();
-          const updatedUsers = usersData.users || usersData || [];
-          setUsers(updatedUsers);
-
-          // Update selectedItem with the updated user from the list
-          const updatedUserFromList = updatedUsers.find(
-            (u: User) => u.id === id,
-          );
-          if (updatedUserFromList) {
-            setSelectedItem(updatedUserFromList);
-          }
-        }
-      }
-
+      // The endpoint answers with the updated user, so the open modal no longer
+      // has to wait for a second request to the list to catch up.
+      setSelectedItem(updatedUser);
       setShowModal(null);
-    } catch (error: any) {
-      addNotification("error", `Failed to update user: ${error.message}`);
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        `Failed to update user: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
   };
 
-  const handleUpdateBuilding = async (id: string, data: any) => {
+  const handleUpdateBuilding = async (id: string, data: Partial<Building>) => {
     setIsActionLoading(true);
     try {
-      console.log("🔄 Updating building:", {
-        id,
-        data,
-        operator_id: data.operator_id,
-      });
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const response = await fetch(`${apiUrl}/buildings/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update building");
-      }
-
-      const updatedBuilding = await response.json();
-      console.log("✅ Building updated successfully:", updatedBuilding);
+      const updatedBuilding = await updateBuilding({ id, data }).unwrap();
 
       addNotification(
         "success",
         `Building "${data.name}" updated successfully!`,
       );
 
-      // Refresh buildings list and update selectedItem
-      if (activeSection === "buildings") {
-        const response = await fetch(`${apiUrl}/buildings`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const buildingsData = await response.json();
-          const updatedBuildings = buildingsData.data || buildingsData || [];
-          setBuildings(updatedBuildings);
-
-          // Update selectedItem with the updated building from the list
-          const updatedBuildingFromList = updatedBuildings.find(
-            (b: Building) => b.id === id,
-          );
-          if (updatedBuildingFromList) {
-            console.log(
-              "🔄 Updating selectedItem with:",
-              updatedBuildingFromList,
-            );
-            setSelectedItem(updatedBuildingFromList);
-          }
-        }
-      }
-
+      // The endpoint answers with the updated building, so the open modal no
+      // longer has to wait for a second request to the list to catch up.
+      setSelectedItem(updatedBuilding);
       setShowModal(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Failed to update building:", error);
-      addNotification("error", `Failed to update building: ${error.message}`);
+      addNotification(
+        "error",
+        `Failed to update building: ${apiErrorMessage(error, "Unknown error")}`,
+      );
     } finally {
       setIsActionLoading(false);
     }
   };
 
   const handleCreateProperty = async (data: any) => {
-    console.log(
-      "🎯 handleCreateProperty received data:",
-      JSON.stringify(data, null, 2),
-    );
     setIsActionLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      console.log("📮 Sending to API:", JSON.stringify(data, null, 2));
-      const response = await fetch(`${apiUrl}/properties`, {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create property");
-      }
+      // Tag invalidation refetches the list; no manual reload needed.
+      await createProperty(data).unwrap();
 
       addNotification(
         "success",
@@ -602,24 +423,10 @@ function AdminPanelContent() {
         }" created successfully!`,
       );
       setShowModal(null);
-
-      // Reload properties
-      if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setProperties(data.data || data || []);
-        }
-      }
     } catch (error: any) {
       console.error("Error creating property:", error);
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to create property";
+        error?.data?.message || error?.message || "Failed to create property";
       addNotification("error", `Failed to create property: ${errorMessage}`);
       // Don't close modal on error - let user see the error and try again
     } finally {
@@ -630,39 +437,9 @@ function AdminPanelContent() {
   const handleUpdateProperty = async (id: string, data: any) => {
     setIsActionLoading(true);
     try {
-      console.log("🔄 Updating property:", {
-        id,
-        video: data.video,
-        videoType: typeof data.video,
-        videoLength: data.video?.length,
-        fullData: data,
-      });
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      const response = await fetch(`${apiUrl}/properties/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers,
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update property");
-      }
-
-      const updatedProperty = await response.json();
-      console.log("✅ Property updated successfully:", {
-        id: updatedProperty.id,
-        video: updatedProperty.video,
-        videoType: typeof updatedProperty.video,
-        videoInData: data.video,
-        fullProperty: updatedProperty,
-      });
+      // The PATCH answers with the updated property; the still-mounted edit
+      // modal is re-fed from it while the list refetches by invalidation.
+      const updatedProperty = await updateProperty({ id, data }).unwrap();
 
       const propertyTitle =
         updatedProperty.title ||
@@ -674,41 +451,13 @@ function AdminPanelContent() {
         "success",
         `Property "${propertyTitle}" updated successfully!`,
       );
-
-      // Refresh properties list
-      if (activeSection === "properties") {
-        const response = await fetch(`${apiUrl}/properties`, {
-          credentials: "include",
-          headers,
-        });
-        if (response.ok) {
-          const propertiesData = await response.json();
-          const updatedProperties = propertiesData.data || propertiesData || [];
-          console.log("🔄 Обновленный список properties:", {
-            count: updatedProperties.length,
-            updatedProperty: updatedProperties.find(
-              (p: Property) => p.id === id,
-            ),
-          });
-          setProperties(updatedProperties);
-
-          const updatedPropertyFromList = updatedProperties.find(
-            (p: Property) => p.id === id,
-          );
-          if (updatedPropertyFromList) {
-            console.log("📌 Установка selectedItem:", {
-              id: updatedPropertyFromList.id,
-              video: updatedPropertyFromList.video,
-            });
-            setSelectedItem(updatedPropertyFromList);
-          }
-        }
-      }
-
+      setSelectedItem(updatedProperty);
       setShowModal(null);
     } catch (error: any) {
       console.error("❌ Failed to update property:", error);
-      addNotification("error", `Failed to update property: ${error.message}`);
+      const errorMessage =
+        error?.data?.message || error?.message || "Failed to update property";
+      addNotification("error", `Failed to update property: ${errorMessage}`);
     } finally {
       setIsActionLoading(false);
     }
@@ -720,12 +469,8 @@ function AdminPanelContent() {
   ) => {
     try {
       setUpdatingRequestId(id);
-      const updated = await bookingRequestsAPI.updateStatus(id, status);
-      setRequests((prev) =>
-        prev.map((request) =>
-          request.id === id ? { ...request, ...updated } : request,
-        ),
-      );
+      await updateBookingStatus({ id, status }).unwrap();
+      // The list refetches itself — invalidatesTags on the mutation.
       addNotification("success", "Booking status updated");
     } catch (error: any) {
       const message =
@@ -744,6 +489,7 @@ function AdminPanelContent() {
       <nav className="space-y-4 p-4">
         <button
           onClick={() => setActiveSection("users")}
+          data-testid="admin-tab-users"
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all cursor-pointer duration-200 cursor-pointer ${
             activeSection === "users"
               ? "bg-gray-100 text-black"
@@ -755,6 +501,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("buildings")}
+          data-testid="admin-tab-buildings"
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
             activeSection === "buildings"
               ? "bg-gray-100 text-black"
@@ -766,6 +513,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("properties")}
+          data-testid="admin-tab-properties"
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
             activeSection === "properties"
               ? "bg-gray-100 text-black"
@@ -777,6 +525,7 @@ function AdminPanelContent() {
         </button>
         <button
           onClick={() => setActiveSection("requests")}
+          data-testid="admin-tab-requests"
           className={`w-full flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all duration-200 ${
             activeSection === "requests"
               ? "bg-gray-100 text-black"
@@ -830,21 +579,6 @@ function AdminPanelContent() {
                 "success",
                 `Building ID "${id}" copied to clipboard`,
               );
-            }}
-            onRefresh={() => {
-              if (activeSection === "buildings") {
-                const apiUrl =
-                  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-                fetch(`${apiUrl}/buildings`, {
-                  credentials: "include",
-                  headers: { "Content-Type": "application/json" },
-                })
-                  .then((response) => response.json())
-                  .then((data) => setBuildings(data.data || data || []))
-                  .catch((error) =>
-                    console.error("Error refreshing buildings:", error),
-                  );
-              }
             }}
           />
         );
@@ -1172,6 +906,7 @@ function AdminPanelContent() {
             <button
               onClick={handleConfirmDelete}
               disabled={isActionLoading}
+              data-testid="confirm-delete"
               className="flex-1 px-4 py-2 cursor-pointer bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
             >
               {isActionLoading ? (

@@ -2,25 +2,17 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
+import type { SerializedError } from "@reduxjs/toolkit";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import {
   selectIsAuthenticated,
   selectUser,
 } from "@/store/slices/authSlice";
-import {
-  fetchShortlist,
-  clearShortlist,
-  selectShortlistProperties,
-  selectShortlistLoading,
-  selectShortlistError,
-  selectShortlistCount,
-  clearError,
-} from "@/store/slices/shortlistSlice";
-import { AppDispatch } from "@/store/store";
-import PropertyGridWithLoader from "../../components/PropertyGridWithLoader";
+import { useShortlistProperties } from "@/features/shortlist/lib/useShortlist";
+import PropertyGridWithLoader from "@/widgets/property/PropertyGridWithLoader";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { usePropertyMatches } from "../../hooks/usePropertyMatches";
-import ConfirmModal from "../../components/ui/ConfirmModal";
 import { Heart, ChevronDown, Map } from "lucide-react";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { Property } from "../../types";
@@ -142,27 +134,46 @@ function sortProperties(
   }
 }
 
+/** RTK Query hands back either a transport error or a serialized one. */
+function shortlistErrorMessage(
+  error: FetchBaseQueryError | SerializedError | undefined,
+): string | null {
+  if (!error) return null;
+
+  if ("status" in error) {
+    const body = error.data;
+    if (
+      body &&
+      typeof body === "object" &&
+      "message" in body &&
+      typeof (body as { message: unknown }).message === "string"
+    ) {
+      return (body as { message: string }).message;
+    }
+    return `Request failed with status ${error.status}`;
+  }
+
+  return error.message ?? "Failed to load shortlist";
+}
+
 export default function ShortlistPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
   const [sessionReady, setSessionReady] = useState(false);
-  const [hasRequestedShortlist, setHasRequestedShortlist] = useState(false);
-  const [shortlistRequestInFlight, setShortlistRequestInFlight] =
-    useState(false);
-  const [showClearModal, setShowClearModal] = useState(false);
-  const [clearingShortlist, setClearingShortlist] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
 
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
-  const properties = useSelector(selectShortlistProperties);
-  const loading = useSelector(selectShortlistLoading);
-  const error = useSelector(selectShortlistError);
-  const count = useSelector(selectShortlistCount);
 
-  const isShortlistReady =
-    hasRequestedShortlist && !loading && !shortlistRequestInFlight;
+  const { data, error: queryError, refetch } = useShortlistProperties();
+
+  const properties = useMemo(() => data ?? [], [data]);
+  const error = shortlistErrorMessage(queryError);
+
+  // Ready once the list has actually arrived — a background revalidation must
+  // not blank the grid, and the empty state must not flash before the first
+  // response.
+  const isShortlistReady = data !== undefined;
 
   const isEmptyShortlist = isShortlistReady && properties.length === 0;
   const shouldShowShortlistHeader = isShortlistReady && properties.length > 0;
@@ -192,22 +203,6 @@ export default function ShortlistPage() {
     initializeSession();
   }, []);
 
-  // Fetch shortlist on component mount (tenant and admin can use shortlist)
-  useEffect(() => {
-    if (
-      sessionReady &&
-      isAuthenticated &&
-      user &&
-      (user.role === "tenant" || user.role === "admin")
-    ) {
-      setHasRequestedShortlist(true);
-      setShortlistRequestInFlight(true);
-      dispatch(fetchShortlist()).finally(() => {
-        setShortlistRequestInFlight(false);
-      });
-    }
-  }, [dispatch, sessionReady, isAuthenticated, user]);
-
   // Redirect if not authenticated or role cannot access shortlist (only after session is ready)
   useEffect(() => {
     if (!sessionReady) return; // Don't redirect until session is ready
@@ -217,9 +212,10 @@ export default function ShortlistPage() {
       return;
     }
 
-    // Tenant and admin can access shortlist; others go to dashboard
+    // Tenant and admin can access shortlist; others go to the units listing
+    // (the dashboard routes are gone).
     if (user.role !== "tenant" && user.role !== "admin") {
-      router.push("/app/dashboard");
+      router.push("/app/units");
       return;
     }
   }, [sessionReady, isAuthenticated, user, router]);
@@ -228,44 +224,8 @@ export default function ShortlistPage() {
     router.push(`/app/properties/${propertyId}`);
   };
 
-  const handleRefresh = () => {
-    dispatch(clearError());
-    setHasRequestedShortlist(true);
-    setShortlistRequestInFlight(true);
-    dispatch(fetchShortlist()).finally(() => {
-      setShortlistRequestInFlight(false);
-    });
-  };
-
-  const handleClearShortlist = () => {
-    setShowClearModal(true);
-  };
-
-  const handleConfirmClear = async () => {
-    setClearingShortlist(true);
-    try {
-      await dispatch(clearShortlist()).unwrap();
-      setShowClearModal(false);
-    } catch (error) {
-      console.error("Failed to clear shortlist:", error);
-    } finally {
-      setClearingShortlist(false);
-    }
-  };
-
-  const handleCloseClearModal = () => {
-    if (!clearingShortlist) {
-      setShowClearModal(false);
-    }
-  };
-
   const handleRetry = () => {
-    dispatch(clearError());
-    setHasRequestedShortlist(true);
-    setShortlistRequestInFlight(true);
-    dispatch(fetchShortlist()).finally(() => {
-      setShortlistRequestInFlight(false);
-    });
+    refetch();
   };
 
   // Show error state
@@ -365,22 +325,6 @@ export default function ShortlistPage() {
               </div>
             )}
           </div>
-
-          {/* Clear Shortlist Confirmation Modal */}
-          <ConfirmModal
-            isOpen={showClearModal}
-            onClose={handleCloseClearModal}
-            onConfirm={handleConfirmClear}
-            title="Clear Entire Shortlist"
-            message={`Are you sure you want to remove all ${count} ${
-              count === 1 ? "property" : "properties"
-            } from your shortlist? This action cannot be undone.`}
-            confirmText="Clear All"
-            cancelText="Keep Shortlist"
-            confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
-            icon="heart"
-            loading={clearingShortlist}
-          />
         </div>
       </div>
 

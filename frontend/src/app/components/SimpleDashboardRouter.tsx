@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   selectUser,
   selectIsAuthenticated,
-  selectIsOnboarded,
+  selectOnboardingCompleted,
 } from "@/store/slices/authSlice";
 import { waitForSessionManager } from "./providers/SessionManager";
 
@@ -21,7 +21,7 @@ export default function SimpleDashboardRouter({
 }: SimpleDashboardRouterProps) {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isOnboarded = useSelector(selectIsOnboarded);
+  const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const router = useRouter();
   const [sessionInitialized, setSessionInitialized] = useState(false);
 
@@ -52,7 +52,7 @@ export default function SimpleDashboardRouter({
       userRole: user?.role,
       requiredRole,
       userEmail: user?.email,
-      isOnboarded,
+      onboardingCompleted,
       currentPath:
         typeof window !== "undefined" ? window.location.pathname : "",
       sessionInitialized,
@@ -75,7 +75,7 @@ export default function SimpleDashboardRouter({
     // Skip this check if already on onboarding page to avoid redirect loop
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "";
-    if (!isOnboarded && !currentPath.includes("/onboarding")) {
+    if (!onboardingCompleted && !currentPath.includes("/onboarding")) {
       console.log("❌ User not onboarded, redirecting to /app/onboarding");
       router.replace("/app/onboarding");
       return;
@@ -84,7 +84,7 @@ export default function SimpleDashboardRouter({
     // Check role if required
     if (requiredRole) {
       const userRole = user.role || "tenant";
-      const hasAccess = userRole === requiredRole || userRole === "admin" || (requiredRole === "admin" && userRole === "operator");
+      const hasAccess = userRole === requiredRole || userRole === "admin";
 
       console.log("🔍 Role check:", {
         userRole,
@@ -94,16 +94,16 @@ export default function SimpleDashboardRouter({
       });
 
       if (!hasAccess) {
-        console.log(
-          `❌ Access denied, redirecting to /app/dashboard/${userRole}`
-        );
-        router.replace(`/app/dashboard/${userRole}`);
+        // The dashboard routes are gone; the units listing is the safe
+        // landing every role can open.
+        console.log("❌ Access denied, redirecting to /app/units");
+        router.replace("/app/units");
         return;
       } else {
         console.log("✅ Access granted");
       }
     }
-  }, [sessionInitialized, isAuthenticated, user, isOnboarded, requiredRole, router]);
+  }, [sessionInitialized, isAuthenticated, user, onboardingCompleted, requiredRole, router]);
 
 
 

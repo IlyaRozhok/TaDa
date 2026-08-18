@@ -5,13 +5,12 @@ import {
   Param,
   Post,
   Put,
-  UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { TenantCvService } from "./tenant-cv.service";
 import { UpdateTenantCvDto } from "./dto/update-tenant-cv.dto";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { Public } from "@/common/decorators/public.decorator";
 
 @ApiTags("Tenant CV")
 @Controller("tenant-cv")
@@ -19,7 +18,6 @@ export class TenantCvController {
   constructor(private readonly tenantCvService: TenantCvService) {}
 
   @Get("me")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async getMyCv(@CurrentUser() user: any) {
     return this.tenantCvService.getForUser(user.id);
@@ -27,14 +25,12 @@ export class TenantCvController {
 
   /** Alias for GET /me — any authenticated user (tenant, admin, operator) */
   @Get("current")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async getCurrentCv(@CurrentUser() user: any) {
     return this.tenantCvService.getForUser(user.id);
   }
 
   @Put()
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async updateMyCv(
     @CurrentUser() user: any,
@@ -44,13 +40,14 @@ export class TenantCvController {
   }
 
   @Post("share")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async createShareLink(@CurrentUser() user: any) {
     return this.tenantCvService.ensureShareUuid(user.id);
   }
 
+  /** The share link: anyone holding the uuid can read the CV. */
   @Get(":share_uuid")
+  @Public()
   async getPublicCv(@Param("share_uuid") shareUuid: string) {
     return this.tenantCvService.getByShareUuid(shareUuid);
   }

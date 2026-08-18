@@ -66,7 +66,9 @@ export interface PropertyMedia {
   id: string;
   property_id: string;
   url: string;
-  s3_url?: string;
+  /** Optional optimized variants; nullable columns on the media entity. */
+  thumbnail_url?: string | null;
+  medium_url?: string | null;
   type: "image" | "video";
   mime_type: string;
   original_filename: string;
@@ -77,54 +79,61 @@ export interface PropertyMedia {
   updated_at: string;
 }
 
+/**
+ * The one Property type, shaped by what the API actually sends. Two routes
+ * serve it: the admin routes answer with the full entity, the public routes
+ * with the narrower PublicPropertyResponse projection — so entity fields the
+ * projection omits are optional here, and nullable columns admit null.
+ * Decimal columns (price, deposit, square_meters) arrive as strings from
+ * TypeORM on the admin routes; the data layer normalises them to numbers
+ * (see store/api/properties.api.ts), so they are numbers here.
+ */
 export interface Property {
   id: string;
-  apartment_number: string;
-  title?: string;
-  descriptions: string;
-  price: number;
-  deposit: number;
-  available_from: string;
-  bills: Bills;
-  property_type: PropertyType;
-  bedrooms: number;
-  bathrooms: number;
-  building_type: BuildingType;
-  furnishing: Furnishing;
-  let_duration: LetDuration;
-  floor: number;
-  outdoor_space?: boolean;
-  balcony: boolean;
-  terrace: boolean;
-  luxury?: boolean;
-  square_meters: number;
+  title: string | null;
+  descriptions: string | null;
+  address: string | null;
+  price: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  square_meters: number | null;
   photos: string[];
-  media?: PropertyMedia[];
-  video?: string;
-  documents?: string;
-  operator_id: string;
-  building_id: string;
+  building_type: BuildingType | null;
+  property_type: PropertyType | null;
+  furnishing: Furnishing | null;
+  available_from: string | null;
   created_at: string;
-  updated_at: string;
-  // Inherited fields from building
-  address?: string;
-  tenant_types?: string[];
+  operator_id: string | null;
   amenities?: string[];
+  property_amenities?: string[];
+  deposit?: number | null;
+  bills?: Bills | null;
+  // Entity fields the public projection does not expose
+  apartment_number?: string | null;
+  building_id?: string | null;
+  let_duration?: LetDuration | null;
+  floor?: number | null;
+  balcony?: boolean;
+  terrace?: boolean;
+  media?: PropertyMedia[];
+  video?: string | null;
+  documents?: string | null;
+  updated_at?: string;
+  tenant_types?: string[];
   family_status?: string[];
   occupation?: string[];
   children?: string[];
-  pet_policy?: boolean;
+  pet_policy?: boolean | null;
   pets?: Pet[] | null;
-  smoking_area?: boolean;
   metro_stations?: MetroStation[];
   commute_times?: CommuteTime[];
   local_essentials?: LocalEssential[];
   building?: {
     id: string;
     name: string;
-    address: string;
+    address?: string | null;
     logo?: string | null;
-  };
+  } | null;
   operator?: {
     id: string;
     email: string;

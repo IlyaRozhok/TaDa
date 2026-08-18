@@ -158,7 +158,7 @@ export default function UserDropdown({
     .toUpperCase()
     .slice(0, 2);
   const hasCompletedOnboarding = Boolean(
-    user.onboardingCompleted ?? user.isOnboarded,
+    user.onboardingCompleted,
   );
 
   return (
@@ -215,7 +215,7 @@ export default function UserDropdown({
               "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.65), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.35), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.16), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.45)",
           }}
         >
-          <div className="max-h-64 overflow-y-auto rounded-xl relative">
+          <div className="rounded-xl relative">
             <div className="px-3 sm:px-4 py-3 border-b border-white/15">
               <div className="flex items-center gap-3">
                 <div className="relative w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-medium text-white flex-shrink-0 overflow-hidden">

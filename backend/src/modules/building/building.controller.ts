@@ -6,11 +6,11 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
   Query,
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  Logger,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -23,15 +23,16 @@ import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import { BuildingService } from "./building.service";
 import { CreateBuildingDto } from "./dto/create-building.dto";
 import { UpdateBuildingDto } from "./dto/update-building.dto";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../../common/guards/roles.guard";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { UserRole } from "../../entities/user.entity";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { UserRole } from "@/entities/user.entity";
+import { Public } from "@/common/decorators/public.decorator";
 import { S3Service } from "../../common/services/s3.service";
 
 @ApiTags("buildings")
 @Controller("buildings")
 export class BuildingController {
+  private readonly logger = new Logger(BuildingController.name);
+
   constructor(
     private readonly buildingService: BuildingService,
     private readonly s3Service: S3Service,
@@ -39,6 +40,7 @@ export class BuildingController {
 
   // Public endpoints - MUST be before protected routes
   @Get("public/:id")
+  @Public()
   @ApiOperation({ summary: "Get a public building by ID (no auth required)" })
   @ApiResponse({ status: 200, description: "Building found" })
   @ApiResponse({ status: 404, description: "Building not found" })
@@ -47,7 +49,6 @@ export class BuildingController {
   }
 
   // Protected endpoints below
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post()
   @Roles(UserRole.Admin)
@@ -59,10 +60,12 @@ export class BuildingController {
     return this.buildingService.create(createBuildingDto);
   }
 
+  @ApiBearerAuth()
   @Get()
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get all buildings" })
   @ApiResponse({ status: 200, description: "List of buildings" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   async findAll(@Query("operator_id") operatorId?: string) {
     if (operatorId) {
       return await this.buildingService.findAllWithFreshUrls({
@@ -72,28 +75,34 @@ export class BuildingController {
     return await this.buildingService.findAllWithFreshUrls();
   }
 
+  @ApiBearerAuth()
   @Get("operators")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get all operators" })
   @ApiResponse({ status: 200, description: "List of operators" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   getOperators() {
     return this.buildingService.getOperators();
   }
 
+  @ApiBearerAuth()
   @Get(":id")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Get a building by ID" })
   @ApiResponse({ status: 200, description: "Building found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
   async findOne(@Param("id") id: string) {
     return await this.buildingService.findOneWithFreshUrls(id);
   }
 
+  @ApiBearerAuth()
   @Patch(":id")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Update a building" })
   @ApiResponse({ status: 200, description: "Building updated successfully" })
   @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
   update(
     @Param("id") id: string,
@@ -102,10 +111,12 @@ export class BuildingController {
     return this.buildingService.update(id, updateBuildingDto);
   }
 
+  @ApiBearerAuth()
   @Delete(":id")
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "Delete a building" })
   @ApiResponse({ status: 200, description: "Building deleted successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
   @ApiResponse({
     status: 400,
@@ -115,7 +126,6 @@ export class BuildingController {
     return await this.buildingService.remove(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/logo")
   @Roles(UserRole.Admin)
@@ -149,12 +159,11 @@ export class BuildingController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading logo ${file.originalname}:`, error);
+      this.logger.error(`Error uploading logo ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload logo: ${error.message}`);
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/video")
   @Roles(UserRole.Admin)
@@ -188,12 +197,11 @@ export class BuildingController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading video ${file.originalname}:`, error);
+      this.logger.error(`Error uploading video ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload video: ${error.message}`);
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/photos")
   @Roles(UserRole.Admin)
@@ -230,7 +238,7 @@ export class BuildingController {
           key: uploadResult.key,
         };
       } catch (error) {
-        console.error(`Error uploading photo ${file.originalname}:`, error);
+        this.logger.error(`Error uploading photo ${file.originalname}`, error?.stack ?? String(error));
         throw new Error(
           `Failed to upload ${file.originalname}: ${error.message}`,
         );
@@ -241,12 +249,11 @@ export class BuildingController {
       const results = await Promise.all(uploadPromises);
       return results;
     } catch (error) {
-      console.error("Photo upload failed:", error);
+      this.logger.error("Photo upload failed", error?.stack ?? String(error));
       throw error;
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/documents")
   @Roles(UserRole.Admin)
@@ -283,7 +290,7 @@ export class BuildingController {
           key: uploadResult.key,
         };
       } catch (error) {
-        console.error(`Error uploading document ${file.originalname}:`, error);
+        this.logger.error(`Error uploading document ${file.originalname}`, error?.stack ?? String(error));
         throw new Error(
           `Failed to upload ${file.originalname}: ${error.message}`,
         );
@@ -294,7 +301,7 @@ export class BuildingController {
       const results = await Promise.all(uploadPromises);
       return results;
     } catch (error) {
-      console.error("Document upload failed:", error);
+      this.logger.error("Document upload failed", error?.stack ?? String(error));
       throw error;
     }
   }

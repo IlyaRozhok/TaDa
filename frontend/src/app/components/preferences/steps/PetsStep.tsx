@@ -4,13 +4,13 @@ import { StepContainer } from "../step-components/StepContainer";
 import { StepHeader } from "../step-components/StepHeader";
 import { SelectionButton } from "../step-components/SelectionButton";
 import { InputField } from "../ui/InputField";
-import { PreferencesFormData } from "@/app/types/preferences";
+import { PreferencesFormData, PreferencesFieldValue } from "@/entities/preferences/model/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { wizardKeys } from "../../../lib/translationsKeys/wizardTranslationKeys";
 
 interface PetsStepProps {
   formData: PreferencesFormData;
-  onUpdate: (field: keyof PreferencesFormData, value: unknown) => void;
+  onUpdate: (field: keyof PreferencesFormData, value: PreferencesFieldValue) => void;
 }
 
 // Pet type values stored in form (labels from pet.type.name1–5)

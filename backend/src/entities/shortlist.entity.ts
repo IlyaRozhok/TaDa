@@ -6,6 +6,7 @@ import {
   JoinColumn,
   Unique,
   Column,
+  Index,
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { User } from "./user.entity";
@@ -23,11 +24,12 @@ export class Shortlist {
   userId: string;
 
   @ApiProperty({ description: "Property ID that was shortlisted" })
+  @Index("idx_shortlist_property_id")
   @Column("uuid")
   propertyId: string;
 
   @ApiProperty({ description: "User who shortlisted the property" })
-  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @ManyToOne(() => User, (user) => user.shortlists, { onDelete: "CASCADE" })
   @JoinColumn({ name: "userId" })
   user: User;
 

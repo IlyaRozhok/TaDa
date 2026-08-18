@@ -2,7 +2,7 @@
 // Никакого оверинжиниринга, только необходимый минимум
 
 import { isNavigationBlocked } from "./navigationGuard";
-import { preferencesAPI } from "../lib/api";
+import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 
 // Простая функция для определения роли пользователя
 export function getUserRole(user: any): string {
@@ -45,27 +45,25 @@ export function getRedirectPath(user: any): string {
     return "/";
   }
 
-  // Если нет роли - выбрать роль
+  // A user without a role (the column is nullable) has nowhere of their own to
+  // go, so they land on the public page.
   if (!user.role) {
-    return "/?needsRole=true";
+    return "/";
   }
 
   // Определяем основную роль (с поддержкой множественных ролей)
   const primaryRole = getPrimaryRole(user);
 
-  // В зависимости от основной роли - на соответствующий дашборд
+  // Every known role lands on the units listing. Operators used to get their own
+  // dashboard; that layer was removed, so they follow the same path as the rest.
   switch (primaryRole) {
     case "admin":
-      return "/app/units";
     case "operator":
-      return "/app/dashboard/operator";
     case "tenant":
       return "/app/units";
     default:
-      console.warn(
-        `⚠️ Unknown role "${user.role}", redirecting to role selection`,
-      );
-      return "/?needsRole=true";
+      console.warn(`⚠️ Unknown role "${user.role}", redirecting to the home page`);
+      return "/";
   }
 }
 
@@ -80,14 +78,17 @@ export async function redirectAfterLogin(user: any, router: any) {
   // If not, redirect to onboarding
   if (user?.role === "tenant") {
     try {
-      const response = await preferencesAPI.get();
-      if (!response.data || !response.data.id) {
+      const preferences = await fetchPreferencesOnce();
+      if (!preferences || !preferences.id) {
         console.log(`🔄 New tenant user, redirecting to onboarding`);
         router.replace("/app/onboarding");
         return;
       }
     } catch (error: any) {
-      if (error.response?.status === 404) {
+      // A rejected query carries `{ status }`; the axios shape is kept so the
+      // 404 branch still fires whichever way this is called.
+      const status = error?.status ?? error?.response?.status;
+      if (status === 404) {
         console.log(
           `🔄 New tenant user (no preferences), redirecting to onboarding`,
         );

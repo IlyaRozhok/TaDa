@@ -1,16 +1,66 @@
-import { Catch, ArgumentsHost } from '@nestjs/common';
+import { Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import type { HttpServer } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import * as Sentry from '@sentry/nestjs';
+import type { PinoLogger } from 'nestjs-pino';
 
 @Catch()
 export class SentryGlobalFilter extends BaseExceptionFilter {
+    constructor(
+        applicationRef: HttpServer,
+        private readonly logger: PinoLogger,
+    ) {
+        super(applicationRef);
+    }
+
     catch(exception: unknown, host: ArgumentsHost) {
         // Не логируем 4xx — это ошибки клиента, не баги
         const status = this.getHttpStatus(exception);
         if (!status || status >= 500) {
             Sentry.captureException(exception);
         }
+
+        this.log(exception, status, host);
         super.catch(exception, host);
+    }
+
+    /**
+     * Nest's BaseExceptionFilter logs everything that is not an HttpException,
+     * and nothing that is — so an HttpException carrying a 500 used to leave no
+     * trace at all. That gap is what this fills, and only that: writing a line
+     * for the unknown errors as well would print each of them twice.
+     *
+     * The line Nest writes goes through the same pino logger and carries the
+     * request under `req`, so the request id survives either way.
+     */
+    private log(exception: unknown, status: number | null, host: ArgumentsHost) {
+        if (!(exception instanceof HttpException)) {
+            return;
+        }
+
+        const request = host.switchToHttp().getRequest();
+        const context = {
+            reqId: request?.id,
+            method: request?.method,
+            path: request?.url,
+            statusCode: status ?? 500,
+        };
+        const message =
+            exception instanceof Error ? exception.message : String(exception);
+
+        if (status && status < 500) {
+            // Client errors are worth counting, not worth a stack trace.
+            this.logger.warn(context, message);
+            return;
+        }
+
+        this.logger.error(
+            {
+                ...context,
+                stack: exception instanceof Error ? exception.stack : undefined,
+            },
+            message,
+        );
     }
 
     private getHttpStatus(exception: unknown): number | null {

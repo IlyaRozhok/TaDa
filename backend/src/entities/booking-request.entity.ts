@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Unique,
+  Index,
 } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { Property } from "./property.entity";
@@ -34,6 +35,7 @@ export class BookingRequest {
   id: string;
 
   @ApiProperty({ description: "Requested property ID" })
+  @Index("idx_booking_requests_property_id")
   @Column("uuid")
   property_id: string;
 

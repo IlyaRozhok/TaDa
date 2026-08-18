@@ -2,28 +2,26 @@
 
 import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
-import {
-  bookingRequestsAPI,
-  CategoryMatchResult,
-} from "../../../lib/api";
+import { useSelector } from "react-redux";
+import type { MatchCategory as CategoryMatchResult } from "@/store/api/matching.api";
 import type { Property, PropertyMedia } from "../../../types";
+import { useShortlistProperties } from "@/features/shortlist/lib/useShortlist";
 import {
-  addToShortlist,
-  removeFromShortlist,
-  selectShortlistProperties,
-} from "@/store/slices/shortlistSlice";
-import { AppDispatch } from "@/store/store";
+  useAddToShortlistMutation,
+  useRemoveFromShortlistMutation,
+} from "@/store/api/shortlist.api";
 import {
   selectUser,
   selectIsAuthenticated,
 } from "@/store/slices/authSlice";
+import { useGetPublicPropertyQuery } from "@/store/api/properties.api";
+import { useGetPropertyMatchQuery } from "@/store/api/matching.api";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
+import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import {
-  useGetPublicPropertyQuery,
-  useGetPublicBuildingQuery,
-  useGetPreferencesQuery,
-  useGetPropertyMatchQuery,
-} from "@/store/slices/apiSlice";
+  useGetMyBookingRequestsQuery,
+  useCreateBookingRequestMutation,
+} from "@/store/api/bookingRequests.api";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share } from "lucide-react";
@@ -31,6 +29,7 @@ import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
+import CopyableId from "@/app/components/CopyableId";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { MatchBadgeTooltip } from "@/entities/property/ui/MatchBadgeTooltip";
 import { notify } from "@/shared/lib/notify";
@@ -93,14 +92,16 @@ export default function PropertyPublicPage() {
   const params = useParams();
   const id = params && typeof params.id === "string" ? params.id : null;
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const shortlistProperties = useSelector(selectShortlistProperties);
+  const { data: shortlistProperties } = useShortlistProperties();
+  const [addToShortlist, { isLoading: addingToShortlist }] =
+    useAddToShortlistMutation();
+  const [removeFromShortlist, { isLoading: removingFromShortlist }] =
+    useRemoveFromShortlistMutation();
+  const shortlistLoading = addingToShortlist || removingFromShortlist;
   const [error, setError] = useState<string | null>(null);
-  const [isInShortlist, setIsInShortlist] = useState(false);
-  const [shortlistLoading, setShortlistLoading] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showFullBuildingDescription, setShowFullBuildingDescription] =
     useState(false);
@@ -113,7 +114,6 @@ export default function PropertyPublicPage() {
     [],
   );
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [hasBookingRequest, setHasBookingRequest] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingInlineError, setBookingInlineError] = useState<string | null>(
     null,
@@ -292,12 +292,11 @@ export default function PropertyPublicPage() {
     skip: !id,
   });
 
-  // Normalize property data directly from RTK Query (no промежуточного null-состояния)
-  const property: PropertyWithMedia | null = useMemo(() => {
-    if (!propertyData) return null;
-    const normalized = (propertyData as any).data || propertyData;
-    return normalized as PropertyWithMedia;
-  }, [propertyData]);
+  // The endpoint answers with the bare property, typed
+  const property: PropertyWithMedia | null = useMemo(
+    () => (propertyData ? (propertyData as PropertyWithMedia) : null),
+    [propertyData],
+  );
 
   // Load building media for gallery (append building photos after property photos)
   const { data: buildingData } = useGetPublicBuildingQuery(
@@ -371,33 +370,23 @@ export default function PropertyPublicPage() {
     return () => clearTimeout(t);
   }, [redirecting429, router]);
 
-  // Load existing booking request for this tenant/property
-  useEffect(() => {
-    const loadBookingRequest = async () => {
-      if (
-        !isAuthenticated ||
-        !user ||
-        (user.role !== "tenant" && user.role !== "admin") ||
-        !id
-      ) {
-        setHasBookingRequest(false);
-        return;
-      }
-      try {
-        const data = await bookingRequestsAPI.mine(id as string);
-        if (Array.isArray(data) && data.length > 0) {
-          setHasBookingRequest(true);
-        } else {
-          setHasBookingRequest(false);
-        }
-      } catch (err) {
-        // silently ignore to not block page
-        setHasBookingRequest(false);
-      }
-    };
+  // Whether this tenant already asked to view this property. The query owns
+  // it now, so creating a request refreshes the answer by tag invalidation
+  // instead of the page setting a boolean on itself.
+  const [createBookingRequest] = useCreateBookingRequestMutation();
 
-    loadBookingRequest();
-  }, [id, isAuthenticated, user]);
+  const canHaveBookingRequest =
+    Boolean(id) &&
+    isAuthenticated &&
+    (user?.role === "tenant" || user?.role === "admin");
+
+  const { data: myBookingRequests } = useGetMyBookingRequestsQuery(
+    id as string,
+    { skip: !canHaveBookingRequest },
+  );
+
+  const hasBookingRequest =
+    canHaveBookingRequest && (myBookingRequests?.length ?? 0) > 0;
 
   // Load match score for authenticated users (cached via RTK Query)
   useEffect(() => {
@@ -420,8 +409,7 @@ export default function PropertyPublicPage() {
       return;
     }
 
-    const score =
-      propertyMatchData.matchPercentage ?? propertyMatchData.matchScore ?? null;
+    const score = propertyMatchData.matchPercentage ?? null;
     setMatchScore(score);
     setMatchCategories(
       Array.isArray(propertyMatchData.categories)
@@ -430,24 +418,14 @@ export default function PropertyPublicPage() {
     );
   }, [id, isAuthenticated, isPropertyMatchFetching, propertyMatchData, user]);
 
-  // Check if property is in shortlist using Redux state (avoid API calls to prevent cycling)
-  useEffect(() => {
-    if (
-      !property ||
-      !isAuthenticated ||
-      !user ||
-      (user.role !== "tenant" && user.role !== "admin")
-    ) {
-      setIsInShortlist(false);
-      return;
-    }
-
-    // Check if current property is in shortlist from Redux state
-    const isPropertyInShortlist = shortlistProperties.some(
-      (shortlistProperty) => shortlistProperty.id === property.id,
-    );
-    setIsInShortlist(isPropertyInShortlist);
-  }, [property, isAuthenticated, user, shortlistProperties]);
+  // Read straight off the cached shortlist. The query is skipped for roles that
+  // have no shortlist, so it stays empty for them.
+  const isInShortlist = Boolean(
+    property &&
+      shortlistProperties?.some(
+        (shortlistProperty) => shortlistProperty.id === property.id,
+      ),
+  );
 
   const buildingGalleryImages: string[] = useMemo(() => {
     const images: string[] = [];
@@ -542,29 +520,28 @@ export default function PropertyPublicPage() {
       return;
     }
 
-    setShortlistLoading(true);
+    if (!property) {
+      return;
+    }
+
     try {
       if (isInShortlist) {
-        // Use Redux action instead of direct API call
-        await dispatch(removeFromShortlist(id as string)).unwrap();
-        setIsInShortlist(false);
-      } else {
-        // Use Redux action instead of direct API call
-        await dispatch(
-          addToShortlist({
-            propertyId: id as string,
-            property: property || undefined,
-          }),
-        ).unwrap();
-        setIsInShortlist(true);
+        await removeFromShortlist(property.id).unwrap();
+        return;
       }
+
+      await addToShortlist({ propertyId: property.id, property }).unwrap();
     } catch (error: unknown) {
-      // Keep error logging for errors, as per best practice
-      // But if you want to remove all console usage, comment out the next line:
-      // console.error("Shortlist error:", error);
       notify.error((error as Error)?.message || "Failed to update shortlist");
-    } finally {
-      setShortlistLoading(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      notify.success(t(generalKeys.toast.copySuccess));
+    } catch {
+      notify.error("Could not copy link");
     }
   };
 
@@ -574,7 +551,7 @@ export default function PropertyPublicPage() {
     }
 
     if (!isAuthenticated || !user) {
-      router.push("/auth/login");
+      router.push("/app/auth");
       return;
     }
 
@@ -686,14 +663,14 @@ export default function PropertyPublicPage() {
 
     try {
       setBookingLoading(true);
-      await bookingRequestsAPI.create(property.id, {
+      await createBookingRequest({
+        propertyId: property.id,
         email: email || undefined,
         phone_number: hasPhone ? bookingPhone.trim() : undefined,
         date_from: dateFrom,
         date_to: dateTo,
         description: bookingDescription.trim() || undefined,
-      });
-      setHasBookingRequest(true);
+      }).unwrap();
       setIsBookingModalOpen(false);
       notify.success(t(listingNotificationKeys.viewingRequestSentMessage));
     } catch (err: any) {
@@ -820,7 +797,24 @@ export default function PropertyPublicPage() {
     );
   }
 
-  const publishDate = new Date(property?.created_at || Date.now());
+  // Everything below dereferences `property` directly. The guards above cover
+  // the states this page has a screen for; what is left is a refetch that has
+  // not produced data yet — the same thing the skeleton represents. Without
+  // this the render reached `property.building_type` on a null and threw.
+  if (!property) {
+    return (
+      <div className="min-h-screen bg-white">
+        <TenantUniversalHeader
+          showPreferencesButton={true}
+          preferencesCount={preferencesFilledCount}
+        />
+        <PropertyDetailSkeleton />
+        <Footer />
+      </div>
+    );
+  }
+
+  const publishDate = new Date(property.created_at || Date.now());
 
   const buildingTypeLabel = (() => {
     const raw = property.building_type
@@ -885,6 +879,18 @@ export default function PropertyPublicPage() {
                 {property.title || "Property Title"}
               </h1>
               <button
+                onClick={handleCopyLink}
+                type="button"
+                className="min-w-[44px] h-11 px-2.5 rounded-full border border-gray-300 text-gray-600 hover:border-gray-500 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                aria-label="Copy link to property"
+              >
+                <img
+                  src="/export-icon.svg"
+                  alt=""
+                  className="w-[14px] h-[18px] pointer-events-none shrink-0"
+                />
+              </button>
+              <button
                 onClick={handleShortlistToggle}
                 disabled={shortlistLoading}
                 type="button"
@@ -922,8 +928,14 @@ export default function PropertyPublicPage() {
                 {publishDate.toLocaleDateString("en-GB")}
               </span>
               <span className="hidden sm:inline text-gray-500">•</span>
-              <span className="text-xs sm:text-sm text-gray-500">
-                ID: {property?.id}
+              <span className="text-xs sm:text-sm text-gray-500 inline-flex items-center gap-1">
+                ID:{" "}
+                <CopyableId
+                  id={property?.id}
+                  maxLength={5}
+                  onCopy={() => notify.success(t(generalKeys.toast.copySuccess))}
+                  className="text-xs sm:text-sm text-gray-500 cursor-pointer"
+                />
               </span>
             </div>
           </div>
@@ -1208,6 +1220,7 @@ export default function PropertyPublicPage() {
                 </div>
 
                 <Button
+                  data-testid="book-viewing"
                   className="w-full bg-black hover:bg-black/85 cursor-pointer text-white py-3 sm:py-4 rounded-full text-sm sm:text-base font-semibold mb-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   onClick={handleBookApartment}
                   disabled={bookingLoading || hasBookingRequest}
@@ -1511,7 +1524,6 @@ export default function PropertyPublicPage() {
           buildingId={property.building.id}
           buildingName={property.building.name}
           currentPropertyId={property.id}
-          operatorId={property.operator?.id}
           operatorName={property.operator?.full_name}
         />
       )}

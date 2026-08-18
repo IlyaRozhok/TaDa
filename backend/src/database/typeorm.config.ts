@@ -1,4 +1,5 @@
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
+import { join } from "path";
 
 export const typeOrmConfig = (env: NodeJS.ProcessEnv): TypeOrmModuleOptions => {
   const isDev = env.NODE_ENV === "development";
@@ -13,8 +14,8 @@ export const typeOrmConfig = (env: NodeJS.ProcessEnv): TypeOrmModuleOptions => {
     autoLoadEntities: true,
     synchronize: isDev ? env.TYPEORM_SYNCHRONIZE === "true" : false,
     logging: env.TYPEORM_LOGGING === "true",
-    migrationsRun: !isDev,
-    migrations: ["dist/migrations/*.js"],
+    migrationsRun: false,
+    migrations: [join(__dirname, "migrations/*.js")],
     ssl: env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
   };
 };

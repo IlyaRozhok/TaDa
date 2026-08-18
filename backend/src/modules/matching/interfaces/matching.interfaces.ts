@@ -1,5 +1,4 @@
-import { Property } from "../../../entities/property.entity";
-import { Preferences } from "../../../entities/preferences.entity";
+import { Property } from "@/entities/property.entity";
 
 /**
  * Category weights for matching algorithm
@@ -88,30 +87,20 @@ export interface PropertyMatchResult {
 }
 
 /**
- * Matching request options
+ * One property's score as the card grids consume it: the percentage for the
+ * badge and the breakdown for its tooltip. Deliberately carries no property —
+ * the caller already has the listing it asked scores for.
  */
-export interface MatchingOptions {
-  weights?: Partial<CategoryWeights>;
-  minScore?: number;
-  limit?: number;
-  includePartialMatches?: boolean;
-  /**
-   * Minimum match percentage for a property to be visible.
-   * Properties below this threshold will be filtered out.
-   * Default: 0 (show all)
-   */
-  minVisibleScore?: number;
+export interface PropertyMatchScore {
+  matchScore: number;
+  categories: CategoryMatchResult[];
 }
 
 /**
- * API response format
+ * Response of the batch scoring route, keyed by property id. Ids the user may
+ * not see, and ids that do not exist, are simply absent from the map.
  */
-export interface MatchingResponse {
-  results: PropertyMatchResult[];
-  total: number;
-  preferences: {
-    id: string;
-    summary: string;
-  };
-  appliedWeights: CategoryWeights;
+export interface MatchScoresResponse {
+  scores: Record<string, PropertyMatchScore>;
 }
+

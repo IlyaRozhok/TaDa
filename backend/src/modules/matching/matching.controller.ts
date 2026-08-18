@@ -1,9 +1,12 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  Post,
   Query,
-  UseGuards,
   Request,
 } from "@nestjs/common";
 import {
@@ -13,8 +16,8 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from "@nestjs/swagger";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { MatchingService } from "./matching.service";
+import { GetMatchScoresDto } from "./dto/get-match-scores.dto";
 
 @ApiTags("Matching")
 @Controller("matching")
@@ -22,91 +25,9 @@ export class MatchingController {
   constructor(private readonly matchingService: MatchingService) {}
 
   /**
-   * Get matched properties for the current user
-   */
-  @Get("matches")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: "Get matched properties for current user" })
-  @ApiQuery({
-    name: "limit",
-    required: false,
-    type: Number,
-    description: "Max results",
-  })
-  @ApiQuery({
-    name: "minScore",
-    required: false,
-    type: Number,
-    description: "Minimum match score (0-100)",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "List of matched properties with scores",
-  })
-  async getMatches(
-    @Request() req: any,
-    @Query("limit") limit?: number,
-    @Query("minScore") minScore?: number
-  ) {
-    const userId = req.user.id;
-    return this.matchingService.getMatchesForUser(userId, {
-      limit: limit ? Number(limit) : 50,
-      minScore: minScore ? Number(minScore) : 0,
-    });
-  }
-
-  /**
-   * Get top matches (simplified for property cards)
-   */
-  @Get("top-matches")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: "Get top matched properties (simplified)" })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: "List of top matched properties",
-  })
-  async getTopMatches(@Request() req: any, @Query("limit") limit?: number) {
-    const userId = req.user.id;
-    return this.matchingService.getTopMatches(
-      userId,
-      limit ? Number(limit) : 20
-    );
-  }
-
-  /**
-   * Get detailed matches with full category breakdown
-   * This is the main endpoint for the matches page
-   */
-  @Get("detailed-matches")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Get detailed matched properties with category breakdown",
-  })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: "List of matched properties with detailed category scores",
-  })
-  async getDetailedMatches(
-    @Request() req: any,
-    @Query("limit") limit?: number
-  ) {
-    const userId = req.user.id;
-    return this.matchingService.getDetailedMatches(
-      userId,
-      limit ? Number(limit) : 20
-    );
-  }
-
-  /**
    * Get match details for a specific property
    */
   @Get("property/:propertyId")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get match details for a specific property" })
   @ApiResponse({
@@ -122,43 +43,51 @@ export class MatchingController {
   }
 
   /**
-   * Get recommendations based on preferences
-   * Similar to matches but with additional filtering
+   * Score a batch of properties in one request.
+   * Card grids read their badges from here instead of asking per card.
    */
-  @Get("recommendations")
-  @UseGuards(JwtAuthGuard)
+  @Post("scores")
+  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Get property recommendations" })
-  @ApiQuery({ name: "limit", required: false, type: Number })
+  @ApiOperation({
+    summary: "Get match scores for a batch of properties",
+  })
   @ApiResponse({
     status: 200,
-    description: "List of recommended properties",
+    description:
+      "Map of property id to match score and category breakdown. Empty when the user has no preferences",
   })
-  async getRecommendations(
-    @Request() req: any,
-    @Query("limit") limit?: number
-  ) {
+  async getMatchScores(@Request() req: any, @Body() body: GetMatchScoresDto) {
     const userId = req.user.id;
-    // For recommendations, we want higher quality matches
-    return this.matchingService.getMatchesForUser(userId, {
-      limit: limit ? Number(limit) : 10,
-      minScore: 60, // Only show properties with 60%+ match
-    });
+    return this.matchingService.getMatchScores(body.propertyIds, userId);
   }
 
   /**
-   * Get matched properties with pagination and search
-   * Returns properties with calculated matching scores, sorted by match score
+   * The single read path for matched properties: the whole inventory ranked by
+   * match score, paginated and searchable.
+   *
+   * `prefilters` is the opt-in successor of the deleted `/matches` route. That
+   * route narrowed the candidate set in SQL before scoring, which is why the
+   * same property could be visible here and hidden there. Off by default, so
+   * the default answer is the full inventory ranked — the behaviour this route
+   * has always had.
    */
   @Get("matched-properties")
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Get matched properties with pagination and search (sorted by match score)",
+    summary:
+      "Get matched properties with pagination and search (sorted by match score)",
   })
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
   @ApiQuery({ name: "search", required: false, type: String })
+  @ApiQuery({
+    name: "prefilters",
+    required: false,
+    type: Boolean,
+    description:
+      "Pass `true` to drop properties that fall outside the user's budget, bedroom and property-type preferences before scoring. Default `false` — the whole inventory is ranked. Ignored for a user with no preferences, which is what the filters are derived from",
+  })
   @ApiResponse({
     status: 200,
     description: "Paginated list of matched properties sorted by match score",
@@ -167,13 +96,15 @@ export class MatchingController {
     @Request() req: any,
     @Query("page") page?: string,
     @Query("limit") limit?: string,
-    @Query("search") search?: string
+    @Query("search") search?: string,
+    @Query("prefilters") prefilters?: string
   ) {
     const userId = req.user.id;
     return this.matchingService.getMatchedPropertiesWithPagination(userId, {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 12,
       search,
+      prefilters: prefilters === "true",
     });
   }
 }

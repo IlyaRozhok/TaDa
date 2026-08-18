@@ -4,7 +4,6 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
-import { fetchShortlist } from "@/store/slices/shortlistSlice";
 import { AppDispatch } from "@/store/store";
 import { authAPI } from "../../../lib/api";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
@@ -65,9 +64,10 @@ function AuthCallbackContent() {
           // Store registration ID in sessionStorage for role selection
           sessionStorage.setItem("googleRegistrationId", registrationId);
 
-          // Redirect to home page for role selection
-          console.log("✅ Redirecting to role selection");
-          router.replace("/?needsRole=true&isGoogleAuth=true");
+          // There is no role-selection screen: nothing reads needsRole, so the
+          // parameter only ever decorated a plain visit to the home page.
+          console.log("✅ Redirecting to the home page");
+          router.replace("/");
           return;
         }
 
@@ -111,11 +111,6 @@ function AuthCallbackContent() {
         // Update Redux store
         console.log("🔍 Updating Redux store with user data");
         dispatch(setUser({ user: profileResponse.data.user }));
-
-        // Initialize shortlist for tenant and admin users
-        if (profileResponse.data.user?.role === "tenant" || profileResponse.data.user?.role === "admin") {
-          dispatch(fetchShortlist());
-        }
 
         // Simple redirect based on user
         const user = profileResponse.data.user;

@@ -40,7 +40,6 @@ export interface User {
     age_range?: string;
     industry?: string;
     work_style?: string;
-    lifestyle?: string[];
     ideal_living_environment?: string;
     additional_info?: string;
     shortlisted_properties?: string[];
@@ -53,7 +52,6 @@ export interface User {
     avatar_url?: string;
     business_address?: string;
     years_experience?: number;
-    operating_areas?: string[];
     business_description?: string;
   };
 }
@@ -95,7 +93,21 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<{ user: User }>) => {
       const { user } = action.payload;
       const onboarded = user.isOnboarded ?? isProfileComplete(user);
-      state.user = { ...user, isOnboarded: onboarded };
+      // Onboarding completion is an explicit, persisted flag: the server does
+      // not track it and it cannot be reliably inferred (preferences are saved
+      // incrementally, so their existence does not mean the flow finished).
+      // Hydrate it from localStorage so a page refresh keeps completed users out
+      // of onboarding.
+      let completed = user.onboardingCompleted ?? false;
+      if (!completed && typeof window !== "undefined" && user.id) {
+        completed =
+          localStorage.getItem(`onboarding_completed_${user.id}`) === "1";
+      }
+      state.user = {
+        ...user,
+        isOnboarded: onboarded,
+        onboardingCompleted: completed,
+      };
       state.isAuthenticated = true;
     },
     logout: (state) => {
@@ -166,7 +178,17 @@ export const selectAuth = (state: { auth: AuthState }) => state.auth;
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectIsAuthenticated = (state: { auth: AuthState }) =>
   state.auth.isAuthenticated;
-export const selectIsOnboarded = (state: { auth: AuthState }) =>
-  state.auth.user?.isOnboarded ?? false;
+/**
+ * Единственный источник истины для «онбординг пройден».
+ *
+ * selectIsOnboarded убран: он отдавал isProfileComplete(), то есть «профиль
+ * заполнен», а это другой вопрос. Онбординг не собирает address и nationality,
+ * поэтому у прошедшего его пользователя профиль обычно неполон — и гварды,
+ * стоявшие на isOnboarded, выбрасывали такого пользователя обратно в онбординг.
+ *
+ * Поле user.isOnboarded пока остаётся: оно пишется через setIsOnboarded по ходу
+ * флоу. Вычистить его вместе с isProfileComplete и перенести признак на сервер —
+ * шаг 6.8 плана.
+ */
 export const selectOnboardingCompleted = (state: { auth: AuthState }) =>
   state.auth.user?.onboardingCompleted ?? false;

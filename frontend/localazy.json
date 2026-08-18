@@ -9,6 +9,10 @@
 
   "download": {
     "includeSourceLang": true,
-    "files": "src/translations/${lang}.json"
+    "files": [
+      {
+        "output": "src/translations/${lang}.json"
+      }
+    ]
   }
 }

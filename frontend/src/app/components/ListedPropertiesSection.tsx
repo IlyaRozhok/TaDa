@@ -3,9 +3,10 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Property, Preferences } from "../types";
+import { Property } from "../types";
+import type { PreferencesRow } from "@/store/api/preferences.api";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
-import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 import { formatListingResultsCountLabel } from "../lib/formatListingResultsCount";
@@ -38,7 +39,8 @@ interface ListedPropertiesSectionProps {
     }>;
   }>;
   loading: boolean;
-  userPreferences?: Preferences;
+  // What the dashboard actually holds: the API row from fetchPreferencesOnce.
+  userPreferences?: PreferencesRow;
   totalCount?: number;
   currentPage?: number;
   totalPages?: number;

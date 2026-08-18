@@ -6,28 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Property } from "../../../types";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  description?: string;
-  number_of_units: number;
-  type_of_unit: string[];
-  logo?: string;
-  video?: string;
-  photos?: string[];
-  documents?: string;
-  operator_id: string | null;
-  amenities?: string[];
-  districts?: Array<{ label: string; destination?: number }>;
-  areas?: Array<{ label: string; destination?: number }>;
-  metro_stations?: Array<{ label: string; destination?: number }>;
-  commute_times?: Array<{
-    label: string;
-    destination?: number;
-    method?: string;
-  }>;
-}
+import { Building as ApiBuilding } from "@/store/api/buildings.api";
 import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share, ChevronLeft, ChevronRight, Home, Train } from "lucide-react";
@@ -38,17 +17,16 @@ import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { notify } from "@/shared/lib/notify";
 import Footer from "../../../components/Footer";
 import { usePropertyMatches } from "../../../hooks/usePropertyMatches";
-import {
-  useGetPublicBuildingQuery,
-  useGetPublicBuildingPropertiesQuery,
-  useGetPreferencesQuery,
-} from "@/store/slices/apiSlice";
+import { useGetPublicPropertiesAllQuery } from "@/store/api/properties.api";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
+import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
+import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
 
-type BuildingWithMedia = Building & {
+type BuildingWithMedia = ApiBuilding & {
   media?: Array<{
     id: string;
     url: string;
@@ -170,16 +148,15 @@ export default function BuildingPublicPage() {
     data: propertiesData,
     isLoading: isPropsLoading,
     isFetching: isPropsFetching,
-  } = useGetPublicBuildingPropertiesQuery(
+  } = useGetPublicPropertiesAllQuery(
     { building_id: id as string },
     { skip: !id },
   );
 
-  const properties: Property[] = useMemo(() => {
-    if (!propertiesData) return [];
-    const raw = (propertiesData as any).data || propertiesData;
-    return Array.isArray(raw) ? (raw as Property[]) : [];
-  }, [propertiesData]);
+  const properties: Property[] = useMemo(
+    () => propertiesData?.data ?? [],
+    [propertiesData],
+  );
 
   // Derive error from RTK Query
   useEffect(() => {
@@ -216,38 +193,20 @@ export default function BuildingPublicPage() {
   const { matchByPropertyId } = usePropertyMatches(displayedPropertyIds);
 
   const preferredAreas = useMemo(() => {
-    const raw = (building as any)?.areas;
-    if (!Array.isArray(raw) || raw.length === 0) return null;
-    const labels = raw
-      .map((a: any) => (typeof a === "string" ? a : a?.label))
-      .filter(Boolean);
+    const labels = (building?.areas ?? []).filter(Boolean);
     return labels.length > 0 ? labels.join(", ") : null;
   }, [building]);
 
   const preferredDistricts = useMemo(() => {
-    const raw = (building as any)?.districts;
-    if (!Array.isArray(raw) || raw.length === 0) return null;
-    const labels = raw
-      .map((d: any) => (typeof d === "string" ? d : d?.label))
-      .filter(Boolean);
+    const labels = (building?.districts ?? []).filter(Boolean);
     return labels.length > 0 ? labels.join(", ") : null;
   }, [building]);
 
   const preferredMetro = useMemo(() => {
-    let raw =
-      (building as any)?.metro_stations ??
-      (building as any)?.metroStations ??
-      (building as any)?.commute_times ??
-      (building as any)?.commuteTimes;
-
-    // Sometimes backends can return JSON columns as strings; handle safely.
-    if (typeof raw === "string") {
-      try {
-        raw = JSON.parse(raw);
-      } catch {
-        // keep raw as-is
-      }
-    }
+    // The camelCase and commute_times fallbacks this used to walk were dead:
+    // the API serves metro_stations, and the buildings commute_times column
+    // was dropped by migration 1767000000001.
+    const raw = building?.metro_stations;
 
     if (!Array.isArray(raw) || raw.length === 0) return null;
 
@@ -320,7 +279,7 @@ export default function BuildingPublicPage() {
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href);
-        notify.success("Link copied to clipboard!");
+        notify.success(t(generalKeys.toast.copySuccess));
       } catch (err) {
         notify.error("Failed to copy link");
       }
@@ -362,6 +321,21 @@ export default function BuildingPublicPage() {
               Go Back
             </Button>
           </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // The guards above only fire once the request has settled, so a refetch with
+  // no data yet falls through to a body that dereferences `building` directly.
+  // Show the same skeleton the first load uses instead of throwing on null.
+  if (!building) {
+    return (
+      <div className="min-h-screen bg-white">
+        <TenantUniversalHeader preferencesCount={preferencesFilledCount} />
+        <div className="pt-24 sm:pt-28 lg:pt-32">
+          <PropertyDetailSkeleton />
         </div>
         <Footer />
       </div>

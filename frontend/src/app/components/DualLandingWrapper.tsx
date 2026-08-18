@@ -48,7 +48,7 @@ const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void })
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/tenant-hero-bg.png"
+          src="/tenant-hero-bg.webp"
           alt="Background"
           fill
           priority
@@ -74,10 +74,10 @@ const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void })
       {/* Text content positioned on the left */}
       <div className="relative z-20 mt-12 container mx-auto px-4 pt-24 md:pt-32 lg:pt-0 lg:flex lg:items-center lg:min-h-screen">
         <div className="text-white space-y-4 md:space-y-6 lg:space-y-6 xl:space-y-8 w-full lg:max-w-[45%] xl:max-w-[50%] 2xl:max-w-[55%]">
-          <h1 className="font-sf-pro font-semibold text-5xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-7xl 2xl:text-8xl max-w-[700px] 2xl:leading-[100px]">
+          <h1 className="font-semibold text-5xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-7xl 2xl:text-8xl max-w-[700px] 2xl:leading-[100px]">
             {t(tenantKeys.hero.title)}
           </h1>
-          <p className="font-sf-pro font-regular text-lg sm:text-xl md:text-xl lg:text-lg xl:text-xl 2xl:text-2xl leading-6 sm:leading-7 lg:leading-6 xl:leading-7 2xl:leading-8 tracking-[0.22px] max-w-xl md:max-w-2xl lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
+          <p className="font-regular text-lg sm:text-xl md:text-xl lg:text-lg xl:text-xl 2xl:text-2xl leading-6 sm:leading-7 lg:leading-6 xl:leading-7 2xl:leading-8 tracking-[0.22px] max-w-xl md:max-w-2xl lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
             {t(tenantKeys.hero.subtitle)}
           </p>
 
@@ -93,83 +93,28 @@ const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void })
         </div>
       </div>
 
-      {/* MacBook positioned on the right side - desktop and tablets */}
-      <div className="absolute right-[-8%] lg:right-[-10%] xl:right-[-12%] 2xl:right-[-15%] top-1/2 transform -translate-y-1/2 z-20 hidden lg:block mt-1.5">
-        <div className="relative">
-          {/* MacBook frame - responsive sizes */}
-          <Image
-            src="/laptop.png"
-            alt="MacBook Pro"
-            width={900}
-            height={600}
-            className="w-[500px] lg:w-[580px] xl:w-[750px] 2xl:w-[900px] h-auto drop-shadow-2xl"
-            priority
-          />
-
-          {/* MacBook logo on the back */}
-          <div className="absolute bottom-[6%] left-1/2 transform -translate-x-1/2">
-            <Image
-              src="/macbook-logo.png"
-              alt="MacBook Logo"
-              width={55}
-              height={0}
-              className="h-2.5"
-            />
-          </div>
-
-          {/* Website screenshot overlay on MacBook screen */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[82%] h-[88%] mt-[-4%] overflow-hidden rounded-lg">
-              <Image
-                src="/tada-stage.png"
-                alt="TADA Property Website"
-                width={800}
-                height={600}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>
-          </div>
-        </div>
+      {/* App preview positioned on the right side - desktop and tablets */}
+      <div className="absolute right-[-16%] top-1/2 transform -translate-y-1/2 z-20 hidden lg:block w-[62%] max-w-[1450px]">
+        <Image
+          src="/tada-stage.webp"
+          alt="TADA Property Website"
+          width={1176}
+          height={660}
+          className="w-full h-auto rounded-4xl shadow-2xl"
+          priority
+        />
       </div>
 
-      {/* Mobile MacBook - smaller and centered */}
+      {/* Mobile app preview - centered */}
       <div className="relative z-10 mt-8 px-4 lg:hidden">
-        <div className="relative max-w-xl sm:max-w-2xl mx-auto">
-          <Image
-            src="/laptop.png"
-            alt="MacBook Pro"
-            width={600}
-            height={400}
-            className="w-full h-auto drop-shadow-2xl"
-            priority
-          />
-
-          {/* MacBook logo on the back */}
-          <div className="absolute bottom-[6%] left-1/2 transform -translate-x-1/2">
-            <Image
-              src="/macbook-logo.png"
-              alt="MacBook Logo"
-              width={50}
-              height={0}
-              className="h-1.5 sm:h-2"
-            />
-          </div>
-
-          {/* Website screenshot overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[82%] h-[88%] mt-[-4%] overflow-hidden rounded-lg">
-              <Image
-                src="/tada-stage.png"
-                alt="TADA Property Website"
-                width={600}
-                height={400}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>
-          </div>
-        </div>
+        <Image
+          src="/tada-stage.webp"
+          alt="TADA Property Website"
+          width={1176}
+          height={660}
+          className="w-full sm:max-w-2xl mx-auto h-auto rounded-xl shadow-2xl"
+          priority
+        />
       </div>
     </section>
   );
@@ -227,7 +172,7 @@ const TenantsCardsSection = ({ onContactClick }: { onContactClick?: () => void }
         {/* Section Header */}
         <div className="container mx-auto px-4">
           <div className="text-start mb-8 md:mb-16">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-black lg:max-w-4xl lg:mx-0 mx-auto mt-6">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-black lg:max-w-4xl lg:mx-0 mx-auto mt-6">
               {t(tenantKeys.rentSection.title)}
             </h2>
             <p className="text-black text-lg lg:max-w-[500px] lg:mx-0 mx-auto mt-6">
@@ -290,7 +235,7 @@ const TenantsBTRSection = () => {
       <div className="container mx-auto px-4">
         {/* Section Title */}
         <div className="text-center">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 mb-8">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-gray-900 mb-8">
             {t(tenantKeys.btr.title)}
           </h2>
         </div>
@@ -396,7 +341,7 @@ const TenantsFeaturesSection = () => {
       {/* Section Header with padding */}
       <div className="container mx-auto px-4 mb-12">
         <div className="text-start">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl lg:mx-0 mx-auto mb-8">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-gray-900 leading-tight max-w-4xl lg:mx-0 mx-auto mb-8">
             {t(tenantKeys.relocation.title)}
           </h2>
           <p className="text-gray-700 text-lg max-w-2xl lg:mx-0 mx-auto">
@@ -471,7 +416,7 @@ const GenerationRentSection = ({
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="mb-16">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl mb-3 mt-4">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold text-gray-900 leading-tight max-w-4xl mb-3 mt-4">
             {t(tenantKeys.generation.title)}
           </h2>
           <p className="text-gray-900 text-lg mb-12 max-w-xl">

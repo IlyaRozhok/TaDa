@@ -99,7 +99,7 @@ export class TenantCv {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, (user) => user.tenantCv, { onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
   user: User;
 }

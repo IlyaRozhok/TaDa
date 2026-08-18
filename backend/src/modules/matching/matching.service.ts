@@ -1,17 +1,54 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, SelectQueryBuilder } from "typeorm";
+import { In, Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "@/entities";
 import { Preferences } from "@/entities";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { S3Service } from "@/common/services/s3.service";
 import {
   PropertyMatchResult,
-  MatchingOptions,
-  MatchingResponse,
-  CategoryWeights,
+  MatchScoresResponse,
   DEFAULT_WEIGHTS,
 } from "./interfaces/matching.interfaces";
+
+/**
+ * Every `Property` column the scoring engine reads, taken from
+ * `matching-calculation.service.ts` rather than guessed: those are the only
+ * fields the ranking pass needs, so it selects these and nothing else.
+ *
+ * `address` and `metro_stations` are read by `matchLocation`, which is
+ * currently unreachable — `calculateMatch` pushes seventeen categories and
+ * location is not one of them. They are kept in the projection anyway, so that
+ * wiring location back in (6.3) does not silently score every property as
+ * having no location data.
+ *
+ * `id` is the join back to the hydration query, `created_at` is the tie-break
+ * order. Neither is read by the scoring engine.
+ */
+const SCORING_COLUMNS = [
+  "id",
+  "created_at",
+  "address",
+  "amenities",
+  "available_from",
+  "balcony",
+  "bathrooms",
+  "bedrooms",
+  "bills",
+  "building_type",
+  "children",
+  "furnishing",
+  "let_duration",
+  "metro_stations",
+  "pet_policy",
+  "pets",
+  "price",
+  "property_amenities",
+  "property_type",
+  "square_meters",
+  "tenant_types",
+  "terrace",
+] as const;
 
 @Injectable()
 export class MatchingService {
@@ -31,9 +68,14 @@ export class MatchingService {
   }
 
   /**
-   * Build a query with SQL pre-filters based on user preferences.
-   * Uses generous ranges so partial matches are NOT excluded — the JS
-   * scoring engine handles exact scoring and partial credit.
+   * Narrow the candidate set in SQL before the scoring pass runs.
+   *
+   * Opt-in, via `?prefilters=true` on `matched-properties`. This used to be
+   * unconditional on the deleted `/matches` route and absent from the paginated
+   * one, which is how the same property could be visible in one read of the
+   * domain and missing from the other. The ranges are generous on purpose so
+   * near misses survive to be scored — the JS engine handles partial credit;
+   * this only drops rows that could never rank.
    */
   private applyPreFilters(
     qb: SelectQueryBuilder<Property>,
@@ -81,94 +123,6 @@ export class MatchingService {
   }
 
   /**
-   * Get matched properties for a user
-   */
-  async getMatchesForUser(
-    userId: string,
-    options: MatchingOptions = {}
-  ): Promise<MatchingResponse> {
-    const preferences = await this.preferencesRepository.findOne({
-      where: { user_id: userId },
-    });
-
-    if (!preferences) {
-      throw new NotFoundException("User preferences not found");
-    }
-
-    // Pre-filter in SQL, then score in JS
-    const qb = this.propertyRepository
-      .createQueryBuilder("property")
-      .orderBy("property.created_at", "DESC");
-
-    this.applyPreFilters(qb, preferences);
-
-    const properties = await qb.getMany();
-
-    return this.calculateMatches(properties, preferences, options);
-  }
-
-  /**
-   * Calculate matches for given properties and preferences
-   */
-  async calculateMatches(
-    properties: Property[],
-    preferences: Preferences,
-    options: MatchingOptions = {}
-  ): Promise<MatchingResponse> {
-    const {
-      weights = {},
-      minScore = 0,
-      limit = 50,
-      includePartialMatches = true,
-      minVisibleScore = 0,
-    } = options;
-
-    const appliedWeights: CategoryWeights = {
-      ...DEFAULT_WEIGHTS,
-      ...weights,
-    };
-
-    // Calculate match for each property
-    const results: PropertyMatchResult[] = properties.map((property) =>
-      this.calculationService.calculateMatch(
-        property,
-        preferences,
-        appliedWeights
-      )
-    );
-
-    // Filter by minimum score
-    let filteredResults = results.filter((r) => r.matchPercentage >= minScore);
-
-    if (minVisibleScore > 0) {
-      filteredResults = filteredResults.filter(
-        (r) => r.matchPercentage >= minVisibleScore
-      );
-    }
-
-    if (!includePartialMatches) {
-      filteredResults = filteredResults.filter((r) => r.isPerfectMatch);
-    }
-
-    // Sort by match percentage (descending)
-    filteredResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
-
-    const limitedResults = filteredResults.slice(0, limit);
-
-    const summary = this.generatePreferencesSummary(preferences);
-
-    return {
-      results: limitedResults,
-      total: filteredResults.length,
-      preferences: {
-        id: preferences.id,
-        summary,
-      },
-      appliedWeights,
-    };
-  }
-
-  /**
    * Get detailed match for a specific property
    */
   async getPropertyMatch(
@@ -199,75 +153,58 @@ export class MatchingService {
   }
 
   /**
-   * Get top matches (simplified response for cards)
+   * Score a batch of properties for one user — the card grids' read path.
+   *
+   * This is `getPropertyMatch` for many ids at once and must stay numerically
+   * identical to it: same entity shape (no relations, exactly as `findOne`
+   * loads it), same `MatchingCalculationService`, same `DEFAULT_WEIGHTS`.
+   * A user with no preferences gets an empty map rather than a 404 — a grid
+   * asking for scores is not an error case, it simply has nothing to show.
    */
-  async getTopMatches(
-    userId: string,
-    limit: number = 20
-  ): Promise<
-    {
-      property: Property;
-      matchScore: number;
-      matchReasons: string[];
-      perfectMatch: boolean;
-    }[]
-  > {
-    const response = await this.getMatchesForUser(userId, { limit });
+  async getMatchScores(
+    propertyIds: string[],
+    userId: string
+  ): Promise<MatchScoresResponse> {
+    const uniqueIds = [...new Set(propertyIds)];
 
-    return response.results.map((result) => ({
-      property: result.property,
-      matchScore: result.matchPercentage,
-      matchReasons: result.categories
-        .filter((c) => c.match)
-        .map((c) => c.reason),
-      perfectMatch: result.isPerfectMatch,
-    }));
-  }
+    const preferences = await this.preferencesRepository.findOne({
+      where: { user_id: userId },
+    });
 
-  /**
-   * Get detailed matches with full category breakdown
-   */
-  async getDetailedMatches(
-    userId: string,
-    limit: number = 20
-  ): Promise<
-    {
-      property: Property;
-      matchScore: number;
-      matchPercentage: number;
-      matchReasons: string[];
-      perfectMatch: boolean;
-      categories: {
-        category: string;
-        match: boolean;
-        score: number;
-        maxScore: number;
-        reason: string;
-        details?: string;
-        hasPreference: boolean;
-      }[];
-    }[]
-  > {
-    const response = await this.getMatchesForUser(userId, { limit });
+    if (!preferences || uniqueIds.length === 0) {
+      return { scores: {} };
+    }
 
-    return Promise.all(
-      response.results.map(async (result) => ({
-        property: await this.updatePhotosUrls(result.property),
+    const properties = await this.propertyRepository.find({
+      where: { id: In(uniqueIds) },
+    });
+
+    const scores: MatchScoresResponse["scores"] = {};
+
+    for (const property of properties) {
+      const result = this.calculationService.calculateMatch(
+        property,
+        preferences,
+        DEFAULT_WEIGHTS
+      );
+
+      scores[property.id] = {
         matchScore: result.matchPercentage,
-        matchPercentage: result.matchPercentage,
-        matchReasons: result.categories
-          .filter((c) => c.match)
-          .map((c) => c.reason),
-        perfectMatch: result.isPerfectMatch,
         categories: result.categories,
-      }))
-    );
+      };
+    }
+
+    return { scores };
   }
 
   /**
-   * Get matched properties with pagination and search.
-   * SQL pre-filters eliminate obviously non-matching properties before
-   * the JS scoring engine runs, avoiding loading ALL properties into memory.
+   * The single read path for matched properties: the whole inventory ranked by
+   * match score, paginated and searchable. Every screen that shows matched
+   * listings reads it from here.
+   *
+   * `options.prefilters` narrows the candidate set in SQL first — see
+   * `applyPreFilters`. Off by default; it exists so the behaviour of the
+   * deleted `/matches` route stays reachable rather than being dropped.
    */
   async getMatchedPropertiesWithPagination(
     userId: string,
@@ -275,6 +212,7 @@ export class MatchingService {
       page?: number;
       limit?: number;
       search?: string;
+      prefilters?: boolean;
     } = {}
   ): Promise<{
     data: Array<{
@@ -302,22 +240,25 @@ export class MatchingService {
       where: { user_id: userId },
     });
 
-    // Build base query with joins
-    const qb = this.propertyRepository
-      .createQueryBuilder("property")
-      .leftJoinAndSelect("property.building", "building")
-      .leftJoinAndSelect("property.operator", "operator");
-
-    if (search) {
-      const searchPattern = `%${search}%`;
-      qb.andWhere(
-        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)",
-        { search: searchPattern },
-      );
-    }
+    // One predicate, used by both read paths below. It reads `building.name`,
+    // so any query applying it has to join the building.
+    const searchPredicate =
+      "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)";
+    const searchParameters = { search: `%${search ?? ""}%` };
 
     if (!preferences) {
-      // No preferences — use DB-level pagination (no scoring needed)
+      // No preferences — use DB-level pagination (no scoring needed).
+      // `options.prefilters` is derived from preferences, so it has nothing to
+      // apply here and is ignored rather than answering with an empty page.
+      const qb = this.propertyRepository
+        .createQueryBuilder("property")
+        .leftJoinAndSelect("property.building", "building")
+        .leftJoinAndSelect("property.operator", "operator");
+
+      if (search) {
+        qb.andWhere(searchPredicate, searchParameters);
+      }
+
       const total = await qb.getCount();
       const skip = (page - 1) * limit;
 
@@ -351,9 +292,35 @@ export class MatchingService {
       };
     }
 
-    // No SQL pre-filters here — we score ALL properties so the "Best Match"
+    // Phase 1 — rank.
+    //
+    // By default no SQL pre-filters: we score ALL properties so the "Best Match"
     // sort shows every property ranked by compatibility, not a filtered subset.
-    const candidates = await qb.getMany();
+    // That is the reason this cannot paginate in SQL, and the reason it selects
+    // only the scoring columns: the ranking pass reads the whole table, so it
+    // must not also hydrate two joined relations and every unused column for
+    // rows that will never be returned.
+    const rankingQb = this.propertyRepository
+      .createQueryBuilder("property")
+      .select(SCORING_COLUMNS.map((column) => `property.${column}`))
+      // The sort below is stable, so this decides the order of equal scores.
+      // The previous single query had no ORDER BY on this path at all, leaving
+      // ties to whatever order the scan happened to produce.
+      .orderBy("property.created_at", "DESC");
+
+    if (options.prefilters) {
+      this.applyPreFilters(rankingQb, preferences);
+    }
+
+    if (search) {
+      // A join, not a joinAndSelect: the search predicate reads `building.name`
+      // but the ranking pass has no use for the building's columns.
+      rankingQb
+        .leftJoin("property.building", "building")
+        .andWhere(searchPredicate, searchParameters);
+    }
+
+    const candidates = await rankingQb.getMany();
 
     // Score remaining candidates in JS
     const matchResults: PropertyMatchResult[] = candidates.map((property) =>
@@ -371,12 +338,23 @@ export class MatchingService {
     const skip = (page - 1) * limit;
     const paginatedResults = matchResults.slice(skip, skip + limit);
 
+    // Phase 2 — hydrate only the page. The relations and the presigned photo
+    // URLs are paid for by the rows that are actually returned.
+    const pageIds = paginatedResults.map((result) => result.property.id);
+    const hydratedById = await this.hydratePropertiesById(pageIds);
+
     const data = await Promise.all(
-      paginatedResults.map(async (result) => ({
-        property: await this.updatePhotosUrls(result.property),
-        matchScore: result.matchPercentage,
-        categories: result.categories,
-      }))
+      paginatedResults
+        // A property deleted between the two queries drops out rather than
+        // being served in its ranking-only form, with no relations or photos.
+        .filter((result) => hydratedById.has(result.property.id))
+        .map(async (result) => ({
+          property: await this.updatePhotosUrls(
+            hydratedById.get(result.property.id)!,
+          ),
+          matchScore: result.matchPercentage,
+          categories: result.categories,
+        }))
     );
 
     return {
@@ -388,31 +366,24 @@ export class MatchingService {
   }
 
   /**
-   * Generate a human-readable summary of preferences
+   * Load full entities, with their relations, for one page's worth of ids.
+   * Returned as a map because the database does not honour the order of an
+   * `IN` list and the caller's order is the ranking.
    */
-  private generatePreferencesSummary(preferences: Preferences): string {
-    const parts: string[] = [];
-
-    if (preferences.min_price || preferences.max_price) {
-      parts.push(
-        `Budget: £${preferences.min_price || 0}-£${
-          preferences.max_price || "∞"
-        }`
-      );
+  private async hydratePropertiesById(
+    ids: string[]
+  ): Promise<Map<string, Property>> {
+    if (ids.length === 0) {
+      return new Map();
     }
 
-    if (preferences.bedrooms?.length) {
-      parts.push(`${preferences.bedrooms.join("/")} bed`);
-    }
+    const properties = await this.propertyRepository
+      .createQueryBuilder("property")
+      .leftJoinAndSelect("property.building", "building")
+      .leftJoinAndSelect("property.operator", "operator")
+      .whereInIds(ids)
+      .getMany();
 
-    if (preferences.property_types?.length) {
-      parts.push(preferences.property_types.join("/"));
-    }
-
-    if (preferences.pet_policy) {
-      parts.push("Pet-friendly");
-    }
-
-    return parts.length > 0 ? parts.join(" • ") : "No preferences set";
+    return new Map(properties.map((property) => [property.id, property]));
   }
 }

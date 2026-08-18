@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { usePreferences } from "@/app/hooks/usePreferences";
+import usePreferences from "@/features/preferences/lib/usePreferences";
 import { useTranslation } from "@/app/hooks/useTranslation";
 import { onboardingKeys } from "@/app/lib/translationsKeys/onboardingTranslationKeys";
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";

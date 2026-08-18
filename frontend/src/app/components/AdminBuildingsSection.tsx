@@ -10,19 +10,14 @@ import {
   ExternalLink,
 } from "lucide-react";
 import CopyableId from "./CopyableId";
+import type { Building as ApiBuilding } from "@/store/api/buildings.api";
 
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  number_of_units: number;
-  type_of_unit: string[];
-  logo?: string;
-  video?: string;
-  photos?: string[];
-  documents?: string;
-  operator_id: string | null;
-}
+/**
+ * The rows come straight from `GET /buildings` and are handed back to the
+ * panel's handlers untouched, so this table speaks the endpoint's type rather
+ * than a copy of it that has to stay in step.
+ */
+type Building = ApiBuilding;
 
 interface AdminBuildingsSectionProps {
   buildings: Building[];
@@ -118,6 +113,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
         </div>
         <button
           onClick={onAdd}
+          data-testid="admin-add-building"
           className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium flex items-center justify-center space-x-2"
         >
           <span>Add Building</span>
@@ -173,6 +169,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                 buildings.map((building) => (
                   <tr
                     key={building.id}
+                    data-testid="admin-building-row"
                     onClick={() => onView(building)}
                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >

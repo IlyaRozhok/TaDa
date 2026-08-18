@@ -23,11 +23,7 @@ export const toUserResponse = (user: User): UserResponse => ({
   status: user.status,
   full_name: user.full_name,
   avatar_url: user.avatar_url,
-  phone:
-    (user as any).phone ||
-    (user as any).tenantProfile?.phone ||
-    (user as any).operatorProfile?.phone ||
-    null,
+  phone: user.phone || null,
   provider: user.provider,
   google_id: user.google_id,
   email_verified: user.email_verified,

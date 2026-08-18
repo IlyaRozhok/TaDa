@@ -101,7 +101,7 @@ export class UserQueryService {
 
     if (search) {
       queryBuilder.andWhere(
-        "(user.email ILIKE :search OR user.full_name ILIKE :search OR tenantProfile.full_name ILIKE :search OR operatorProfile.full_name ILIKE :search)",
+        "(user.email ILIKE :search OR user.full_name ILIKE :search)",
         { search: `%${search}%` }
       );
     }
@@ -139,16 +139,13 @@ export class UserQueryService {
     };
   }
 
+  /**
+   * Loads the bare user row for deletion. Child relations are deliberately not
+   * loaded: every one of them cascades from `users.id` in the database, so
+   * hydrating them would only make the ORM issue DELETEs the FKs already cover.
+   */
   async findOneForDeletion(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: [
-        "preferences",
-        "tenantProfile",
-        "operatorProfile",
-        "shortlists",
-      ],
-    });
+    const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);

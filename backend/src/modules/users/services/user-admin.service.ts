@@ -6,14 +6,12 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
-import { User, UserRole, UserStatus } from "../../../entities/user.entity";
-import { TenantProfile } from "../../../entities/tenant-profile.entity";
-import { OperatorProfile } from "../../../entities/operator-profile.entity";
-import { Preferences } from "../../../entities/preferences.entity";
-import { TenantCv } from "../../../entities/tenant-cv.entity";
+import { User, UserRole, UserStatus } from "@/entities/user.entity";
+import { TenantProfile } from "@/entities/tenant-profile.entity";
+import { OperatorProfile } from "@/entities/operator-profile.entity";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
-import { USER_CONSTANTS } from "../../../common/constants/user.constants";
+import { USER_CONSTANTS } from "@/common/constants/user.constants";
 
 @Injectable()
 export class UserAdminService {
@@ -23,11 +21,7 @@ export class UserAdminService {
     @InjectRepository(TenantProfile)
     private tenantProfileRepository: Repository<TenantProfile>,
     @InjectRepository(OperatorProfile)
-    private operatorProfileRepository: Repository<OperatorProfile>,
-    @InjectRepository(Preferences)
-    private preferencesRepository: Repository<Preferences>,
-    @InjectRepository(TenantCv)
-    private tenantCvRepository: Repository<TenantCv>
+    private operatorProfileRepository: Repository<OperatorProfile>
   ) {}
 
   /**
@@ -122,43 +116,19 @@ export class UserAdminService {
   }
 
   /**
-   * Удалить пользователя администратором
-   * Fixed: Added TenantCv deletion to handle FK constraint
+   * Delete a user as an admin. Children are not removed by hand: every table
+   * that references `users.id` does so with ON DELETE CASCADE, so dropping the
+   * user row takes the profiles, CV, shortlist entries, buildings, properties
+   * and booking requests with it. This is the same mechanism the self-service
+   * path in `UsersService.deleteAccount` relies on.
    */
   async deleteUser(id: string): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: [
-        "preferences",
-        "tenantProfile",
-        "operatorProfile",
-        "tenantCv",
-        "shortlists",
-      ],
-    });
+    const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    // Удалить связанные данные
-    if (user.preferences) {
-      await this.preferencesRepository.remove(user.preferences);
-    }
-
-    if (user.tenantProfile) {
-      await this.tenantProfileRepository.remove(user.tenantProfile);
-    }
-
-    if (user.operatorProfile) {
-      await this.operatorProfileRepository.remove(user.operatorProfile);
-    }
-
-    if (user.tenantCv) {
-      await this.tenantCvRepository.remove(user.tenantCv);
-    }
-
-    // Удалить пользователя
     await this.userRepository.remove(user);
   }
 
@@ -199,14 +169,9 @@ export class UserAdminService {
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
-      full_name: "",
-      phone: "",
-      date_of_birth: undefined,
-      nationality: "",
       occupation: "",
       industry: "",
       work_style: "",
-      lifestyle: [],
       ideal_living_environment: "",
       additional_info: "",
       shortlisted_properties: [],
@@ -224,19 +189,12 @@ export class UserAdminService {
   ): Promise<void> {
     const operatorProfile = this.operatorProfileRepository.create({
       userId: user.id,
-      full_name: "",
-      phone: "",
       company_name: "",
-      date_of_birth: undefined,
-      nationality: "",
       business_address: "",
       company_registration: "",
       vat_number: "",
       license_number: "",
       years_experience: undefined,
-      operating_areas: [],
-      property_types: [],
-      services: [],
       business_description: "",
       website: "",
       linkedin: "",

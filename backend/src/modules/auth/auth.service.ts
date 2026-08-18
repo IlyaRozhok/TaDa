@@ -7,6 +7,7 @@ import { User, UserRole, UserStatus } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
 import { TenantCvService } from "../tenant-cv/tenant-cv.service";
 import { S3Service } from "../../common/services/s3.service";
+import { accessTokenTtl, refreshTokenTtl } from "@/common/config/auth-tokens.config";
 
 @Injectable()
 export class AuthService {
@@ -28,11 +29,11 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         { sub: user.id, email: user.email, role: user.role, status: user.status },
-        { expiresIn: "15m" },
+        { expiresIn: accessTokenTtl().value },
       ),
       this.jwtService.signAsync(
         { sub: user.id, type: "refresh" },
-        { expiresIn: "7d" },
+        { expiresIn: refreshTokenTtl().value },
       ),
     ]);
 
@@ -136,12 +137,9 @@ export class AuthService {
   private async createTenantProfile(user: User): Promise<void> {
     const tenantProfile = this.tenantProfileRepository.create({
       userId: user.id,
-      phone: "",
-      nationality: "",
       occupation: "",
       industry: "",
       work_style: "",
-      lifestyle: [],
       ideal_living_environment: "",
       additional_info: "",
       shortlisted_properties: [],

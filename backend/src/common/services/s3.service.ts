@@ -15,6 +15,16 @@ export interface S3UploadResult {
   key: string;
 }
 
+/**
+ * How long a signed URL is reused before it is signed again. Signing hands out
+ * a URL valid for `PRESIGN_EXPIRES_IN` seconds, so a cache entry served at the
+ * very end of its life still has 23 of those 24 hours left.
+ */
+const PRESIGN_CACHE_TTL_MS = 60 * 60 * 1000;
+
+/** Hard ceiling on cached entries; the oldest is evicted past it. */
+const PRESIGN_CACHE_MAX_ENTRIES = 5000;
+
 @Injectable()
 export class S3Service {
   private readonly logger = new Logger(S3Service.name);
@@ -23,6 +33,20 @@ export class S3Service {
   private keyPrefix: string;
   private isDevMode: boolean;
   private uploadsDir: string;
+  /**
+   * Signed URLs by `key|expiresIn`. Signing is local SigV4 — no network — but
+   * it is ~0.2 ms of CPU on the one event loop, and a catalogue page signs one
+   * URL per photo per property, which is where that adds up.
+   *
+   * In-process on purpose: there is one backend container and no Redis since
+   * step 3.2. Insertion order doubles as the LRU order — a hit re-inserts.
+   */
+  private readonly presignCache = new Map<
+    string,
+    { url: string; expiresAt: number }
+  >();
+  /** Extracts the object key from a URL of our own bucket. Built once — the URL form never changes. */
+  private bucketUrlPattern: RegExp;
 
   constructor(private configService: ConfigService) {
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
@@ -42,6 +66,7 @@ export class S3Service {
         this.s3Client = null as any;
         this.bucketName = bucketName;
         this.keyPrefix = "tada-media/";
+        this.bucketUrlPattern = S3Service.buildBucketUrlPattern(bucketName);
 
         // Create uploads directory if it doesn't exist
         if (!fs.existsSync(this.uploadsDir)) {
@@ -65,6 +90,18 @@ export class S3Service {
 
     this.bucketName = bucketName;
     this.keyPrefix = "tada-media/";
+    this.bucketUrlPattern = S3Service.buildBucketUrlPattern(bucketName);
+  }
+
+  /**
+   * Pattern for a URL of the configured bucket, so staging, production and
+   * local buckets are all handled without hardcoding names.
+   */
+  private static buildBucketUrlPattern(bucketName: string): RegExp {
+    const escapedBucket = bucketName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(
+      `https://${escapedBucket}\\.s3\\.[^.]+\\.amazonaws\\.com/([^?]+)`,
+    );
   }
 
   /**
@@ -208,13 +245,24 @@ export class S3Service {
       return `${backendUrl}/uploads/${key}`;
     }
 
+    const cacheKey = `${key}|${expiresIn}`;
+    const cached = this.presignCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      // Re-insert so insertion order stays least-recently-used first.
+      this.presignCache.delete(cacheKey);
+      this.presignCache.set(cacheKey, cached);
+      return cached.url;
+    }
+
     try {
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: key,
       });
 
-      return await getSignedUrl(this.s3Client, command, { expiresIn });
+      const url = await getSignedUrl(this.s3Client, command, { expiresIn });
+      this.cachePresignedUrl(cacheKey, url);
+      return url;
     } catch (error) {
       this.logger.error(`Failed to generate presigned URL for ${key}`, {
         message: error.message,
@@ -222,6 +270,23 @@ export class S3Service {
         bucket: this.bucketName,
       });
       return null;
+    }
+  }
+
+  /**
+   * Store a freshly signed URL, evicting the least recently used entries once
+   * the ceiling is reached. Expired entries are dropped on the way past.
+   */
+  private cachePresignedUrl(cacheKey: string, url: string): void {
+    this.presignCache.set(cacheKey, {
+      url,
+      expiresAt: Date.now() + PRESIGN_CACHE_TTL_MS,
+    });
+
+    while (this.presignCache.size > PRESIGN_CACHE_MAX_ENTRIES) {
+      const oldest = this.presignCache.keys().next();
+      if (oldest.done) break;
+      this.presignCache.delete(oldest.value);
     }
   }
 
@@ -280,13 +345,7 @@ export class S3Service {
    */
   extractS3KeyFromUrl(url: string): string | null {
     try {
-      // Build a pattern from the configured bucket name so any environment works.
-      const escapedBucket = this.bucketName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const dynamicPattern = new RegExp(
-        `https://${escapedBucket}\\.s3\\.[^.]+\\.amazonaws\\.com/([^?]+)`,
-      );
-
-      const match = url.match(dynamicPattern);
+      const match = url.match(this.bucketUrlPattern);
       if (match && match[1]) {
         return decodeURIComponent(match[1]);
       }

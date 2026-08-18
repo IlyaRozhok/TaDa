@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, selectIsAuthenticated } from "@/store/slices/authSlice";
-import { fetchShortlist } from "@/store/slices/shortlistSlice";
 import { AppDispatch } from "@/store/store";
 import { authAPI } from "../../lib/api";
 import { redirectAfterLogin } from "../../utils/simpleRedirect";
@@ -52,11 +51,6 @@ export default function AuthPage() {
           const user = response.data.user;
           dispatch(setUser({ user }));
 
-          // Load shortlist for tenant and admin users
-          if (user?.role === "tenant" || user?.role === "admin") {
-            dispatch(fetchShortlist());
-          }
-
           // Redirect based on role
           await redirectAfterLogin(user, router);
         })
@@ -84,7 +78,7 @@ export default function AuthPage() {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/tenant-hero-bg.png"
+          src="/tenant-hero-bg.webp"
           alt="Background"
           fill
           priority
@@ -139,6 +133,7 @@ export default function AuthPage() {
             {/* Google Auth */}
             <div className="w-full">
               <button
+                data-testid="google-login"
                 onClick={handleGoogleAuth}
                 className="w-full cursor-pointer flex items-center justify-center gap-3 py-3 px-4 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg hover:bg-white/20 transition-colors font-medium text-white"
               >

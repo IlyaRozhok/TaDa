@@ -2,19 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
-import { AddPropertyModalProps, Pet } from "./types";
-import { usePropertyForm } from "./hooks/usePropertyForm";
-import { usePropertyValidation } from "./hooks/usePropertyValidation";
-import { usePropertyData } from "./hooks/usePropertyData";
-import { usePropertyFiles } from "./hooks/usePropertyFiles";
-import { useDropdownHelpers } from "./hooks/useDropdownHelpers";
-import { BasicInfoSection } from "./components/BasicInfoSection";
-import { LocationSection } from "./components/LocationSection";
-import { PropertyDetailsSection } from "./components/PropertyDetailsSection";
-import { AmenitiesSection } from "./components/AmenitiesSection";
-import { ConciergePetsSmokingSection } from "./components/ConciergePetsSmokingSection";
-import { LocationDetailsSection } from "./components/LocationDetailsSection";
-import { MediaSection } from "./components/MediaSection";
+import { AddPropertyModalProps, Pet } from "@/app/components/PropertyForm/types";
+import { usePropertyForm } from "@/app/components/PropertyForm/hooks/usePropertyForm";
+import { usePropertyValidation } from "@/app/components/PropertyForm/hooks/usePropertyValidation";
+import { usePropertyData } from "@/app/components/PropertyForm/hooks/usePropertyData";
+import { usePropertyFiles } from "@/app/components/PropertyForm/hooks/usePropertyFiles";
+import { useDropdownHelpers } from "@/app/components/PropertyForm/hooks/useDropdownHelpers";
+import { BasicInfoSection } from "@/app/components/PropertyForm/components/BasicInfoSection";
+import { LocationSection } from "@/app/components/PropertyForm/components/LocationSection";
+import { PropertyDetailsSection } from "@/app/components/PropertyForm/components/PropertyDetailsSection";
+import { AmenitiesSection } from "@/app/components/PropertyForm/components/AmenitiesSection";
+import { ConciergePetsSmokingSection } from "@/app/components/PropertyForm/components/ConciergePetsSmokingSection";
+import { LocationDetailsSection } from "@/app/components/PropertyForm/components/LocationDetailsSection";
+import { MediaSection } from "@/app/components/PropertyForm/components/MediaSection";
 import { useLocalizedFormOptions } from "../../../shared/hooks/useLocalizedFormOptions";
 import {
   transformTenantTypeUIToAPI,
@@ -103,7 +103,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         children: [] as string[],
         pet_policy: false,
         pets: null as Pet[] | null,
-        smoking_area_prop: false,
         metro_stations: [],
         commute_times: [],
         local_essentials: [],
@@ -146,11 +145,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       children: selectedBuilding.children || [],
       pet_policy: selectedBuilding.pet_policy ?? false,
       pets: selectedBuilding.pets ?? null,
-      smoking_area_prop: selectedBuilding.smoking_area ?? false,
       metro_stations: selectedBuilding.metro_stations || [],
-      commute_times: selectedBuilding.commute_times || [],
-      local_essentials: selectedBuilding.local_essentials || [],
-      operator_id: selectedBuilding.operator_id,
+      // A building without an operator leaves the field unset, which the form
+      // represents as an empty string — same as `address` just above.
+      operator_id: selectedBuilding.operator_id ?? "",
     };
     updateFormData(inheritedData);
   }, [selectedBuilding, formData.building_type, updateFormData]);
@@ -193,7 +191,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       if (photoFiles.length > 0) {
         const photoResults = await propertiesAPI.uploadPhotos(photoFiles);
         uploadedPhotoUrls = Array.isArray(photoResults)
-          ? photoResults.map((r: { url?: string }) => r.url).filter(Boolean)
+          ? photoResults
+              .map((r: { url?: string }) => r.url)
+              .filter((url): url is string => Boolean(url))
           : [];
       }
       if (videoFile) {
@@ -239,10 +239,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             : null,
         bills: formData.bills || null,
         available_from: formData.available_from || null,
-        outdoor_space: formData.outdoor_space,
         balcony: formData.balcony,
         terrace: formData.terrace,
-        luxury: formData.luxury,
         address: formData.address || null,
         tenant_types: [
           ...new Set(transformTenantTypeUIToAPI(formData.tenant_types || [])),
@@ -254,7 +252,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         children: formData.children || [],
         pet_policy: formData.pet_policy,
         pets: formData.pets || null,
-        smoking_area: formData.smoking_area_prop,
         metro_stations: formData.metro_stations || [],
         commute_times: formData.commute_times || [],
         local_essentials: formData.local_essentials || [],
@@ -410,6 +407,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             <button
               type="submit"
               disabled={isLoading || isSubmitting}
+              data-testid="property-modal-submit"
               className="px-6 py-2 bg-white text-black rounded-lg hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               <span>{isSubmitting ? "Saving..." : "Save Property"}</span>

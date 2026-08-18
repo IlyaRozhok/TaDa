@@ -4,21 +4,34 @@ alwaysApply: true
 
 You are a senior frontend architect working on the TaDa project.
 
+> READ FIRST: `CLAUDE.md` in the repo root, then `docs/audit/PROGRESS.md`.
+> `docs/audit/` is the single source of truth. `docs/archive/` is historical — ignore it.
+> These rules are subordinate to `CLAUDE.md`; if they conflict, `CLAUDE.md` wins.
+
 Tech stack:
 
-- Next.js (App/Pages router)
-- TypeScript
-- Redux Toolkit
-- Tailwind CSS + SCSS modules
+- Next.js 16 — **App Router only** (no Pages Router)
+- React 19, TypeScript
+- Redux Toolkit + RTK Query
+- Tailwind CSS v4 + SCSS modules
 
 Business context:
 
-- Rental platform with two roles: Tenant and Operator.
-- Core domains: Auth, User, Property, Matching, Shortlist, Tenant CV, Preferences, Dashboard, Building
+- Rental platform. Roles in the data model: Tenant, Operator, Admin.
+- Operator has NO frontend flow — properties are created from the admin panel.
+  The operator UI is being removed (plan phase 2А). The role and admin-side CRUD
+  of operators stay: they are needed to link buildings to operators.
+- Core domains: Auth, User, Property, Matching, Shortlist, Tenant CV, Preferences, Building
+
+Architecture decision (made by the owner, not up for debate):
+
+- Target structure is **App Router native**: route-specific code colocated under
+  `app/app/[route]/_components/`, shared code in flat top-level folders.
+- **FSD is abandoned.** Do NOT propose moving code into `entities/`, `features/`,
+  `widgets/` or `shared/` — those layers are being dismantled, not extended.
 
 High-level goals:
 - Make the codebase clean, modular, and easy to extend.
-- Reuse UI and logic via shared/components/lib where it makes sense.
 - Gradually remove unused / dead code, assets and styles.
 - DO NOT break existing behaviour or user flows.
 
@@ -38,9 +51,11 @@ GLOBAL RULES
 2. Refactoring workflow
    For ANY refactor request:
 
+   0. CHECK SCOPE: the current step comes from `docs/audit/PROGRESS.md`.
+      Do not work outside it. One step = one PR.
    1. First ANALYZE:
       - List main problems and code smells (too big component, duplicated logic, mixed concerns, etc.).
-      - Identify what can be moved to entities/features/widgets/shared.
+      - Identify what can be colocated under the route or moved to shared `components/` / `lib/`.
    2. Then PROPOSE a small step-by-step plan for THIS scope only (for example: “step 1 – extract pure helpers, step 2 – split UI subcomponents, step 3 – move to features/…”).
    3. Only after the plan – produce a PATCH/DIFF for the current step.
       - Mention all files you will modify in this step.
@@ -54,7 +69,8 @@ GLOBAL RULES
    - Move heavy logic out of JSX into hooks, helpers, or feature/entity modules.
    - Avoid inline functions and objects inside JSX when they can be safely extracted.
    - Keep Redux slices lean: UI logic in components/features, domain logic in slices / thunks.
-   - Avoid duplication: if similar UI/logic appears in several places, suggest extracting it into entities/_ or shared/_.
+   - Avoid duplication: if similar UI/logic appears in several places, suggest extracting it
+     into the shared `components/` or `lib/` folder — NOT into FSD layers.
 
 5. Cleanup of unused code and assets
 

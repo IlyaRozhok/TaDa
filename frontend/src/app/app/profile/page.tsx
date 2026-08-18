@@ -10,9 +10,10 @@ import {
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import Footer from "../../components/Footer";
 import { UnifiedProfileForm } from "../../../features/profile/update-profile/ui/UnifiedProfileForm";
+import axios from "axios";
 import { authAPI } from "../../lib/api";
 import ProfilePageSkeleton from "./ProfilePageSkeleton";
-import { useGetPreferencesQuery } from "@/store/slices/apiSlice";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { store } from "@/store/store";
 import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";
@@ -87,7 +88,7 @@ export default function ProfilePage() {
         const hasSession = !!storeUser?.id && isAuthenticated;
 
         if (!hasSession) {
-          router.replace("/app/auth/login");
+          router.replace("/app/auth");
           return;
         }
 
@@ -121,8 +122,8 @@ export default function ProfilePage() {
         console.error("Failed to fetch profile:", err);
         if (isMounted) {
           setHasError(true);
-          if (err.response?.status === 401) {
-            router.replace("/app/auth/login");
+          if (axios.isAxiosError(err) && err.response?.status === 401) {
+            router.replace("/app/auth");
             return;
           }
         }

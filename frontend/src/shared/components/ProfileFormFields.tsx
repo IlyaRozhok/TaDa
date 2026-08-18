@@ -6,7 +6,7 @@ import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput } from "@/shared/ui";
 import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
-import { UpdateUserData } from "@/types/user";
+import { UpdateUserData } from "@/app/types/user";
 import { getCountryByCode, getDefaultCountry } from "@/shared/lib/countries";
 
 interface ProfileFormFieldsProps {
@@ -32,7 +32,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const handlePhoneChange = useCallback((value: string) => {
+  const handlePhoneChange = useCallback((value: string | undefined) => {
     // Combine country code with phone number for storage
     const country = getCountryByCode(phoneCountryCode) || getDefaultCountry();
     if (value) {

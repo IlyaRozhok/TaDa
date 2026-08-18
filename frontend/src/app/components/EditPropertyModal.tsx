@@ -1,80 +1,47 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { X } from "lucide-react";
+import { propertiesAPI } from "@/app/lib/api";
+import { useLazyGetUsersQuery } from "@/store/api/users.api";
 import {
-  X,
-  Save,
-  Trash2,
-  Upload,
-  Plus,
-  Minus,
-  GripVertical,
-} from "lucide-react";
-import { propertiesAPI, buildingsAPI, usersAPI } from "../lib/api";
+  useGetBuildingsQuery,
+  useLazyGetBuildingQuery,
+} from "@/store/api/buildings.api";
 import {
-  Property,
-  PropertyType,
+  Bills,
   BuildingType,
   Furnishing,
-  Bills,
-} from "../types/property";
+  Property,
+  PropertyType,
+} from "@/app/types/property";
 import type { User } from "@/store/slices/authSlice";
-import { useLocalizedFormOptions } from "../../shared/hooks/useLocalizedFormOptions";
-import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITIES_BY_CATEGORY } from "@/constants/admin-form-options";
-import { translateAmenityStoredLabel } from "@/constants/amenities";
-import { useTranslation } from "../hooks/useTranslation";
-import { wizardKeys } from "../lib/translationsKeys/wizardTranslationKeys";
-import { sqFtToSqM, sqMToSqFt, formatSqMForForm } from "@/shared/lib/area";
+import { useLocalizedFormOptions } from "@/shared/hooks/useLocalizedFormOptions";
+import { useTranslation } from "@/app/hooks/useTranslation";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
+import { sqMToSqFt } from "@/shared/lib/area";
 import {
   transformTenantTypeUIToAPI,
   transformTenantTypeAPIToUI,
   transformDurationUIToAPIArray,
   transformDurationAPIToUIArray,
 } from "@/constants/mappings";
-
-interface Pet {
-  type: "dog" | "cat" | "other";
-  customType?: string;
-  size?: "small" | "medium" | "large";
-}
-
-interface MetroStation {
-  label: string;
-  destination?: number;
-}
-
-interface CommuteTime {
-  label: string;
-  destination?: number;
-}
-
-interface LocalEssential {
-  label: string;
-  destination?: number;
-}
-
-interface ConciergeHours {
-  from?: number;
-  to?: number;
-}
-
-interface Building {
-  id: string;
-  name: string;
-  address: string;
-  operator_id: string;
-  tenant_type?: string[];
-  amenities?: string[];
-  pet_policy?: boolean;
-  pets?: Pet[] | null;
-  smoking_area?: boolean;
-  metro_stations?: MetroStation[];
-  commute_times?: CommuteTime[];
-  local_essentials?: LocalEssential[];
-  family_status?: string[];
-  occupation?: string[];
-  children?: string[];
-}
+import type {
+  CommuteTime,
+  EditPropertyFormData,
+  LocalEssential,
+  MetroStation,
+  OperatorOption,
+  Pet,
+} from "@/app/components/PropertyForm/types";
+import { useEditPropertyFiles } from "@/app/components/PropertyForm/hooks/useEditPropertyFiles";
+import { EditBasicInfoSection } from "@/app/components/PropertyForm/components/EditBasicInfoSection";
+import { EditTenantTargetingSection } from "@/app/components/PropertyForm/components/EditTenantTargetingSection";
+import { EditPropertyDetailsSection } from "@/app/components/PropertyForm/components/EditPropertyDetailsSection";
+import { EditAmenitiesSection } from "@/app/components/PropertyForm/components/EditAmenitiesSection";
+import { EditPetPolicySection } from "@/app/components/PropertyForm/components/EditPetPolicySection";
+import { EditMetroStationsSection } from "@/app/components/PropertyForm/components/EditMetroStationsSection";
+import { EditPropertyMediaSection } from "@/app/components/PropertyForm/components/EditPropertyMediaSection";
 
 const OCCUPATION_VALUES = [
   "student",
@@ -119,7 +86,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EditPropertyFormData>({
     title: "",
     apartment_number: "",
     descriptions: "",
@@ -153,19 +120,25 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     children: [] as string[],
     pets: null as Pet[] | null,
     pet_policy: false,
-    smoking_area_prop: false,
     metro_stations: [] as MetroStation[],
     commute_times: [] as CommuteTime[],
     local_essentials: [] as LocalEssential[],
     operator_id: "",
   });
+  // The building dropdown, loaded only while the modal is open.
+  const { data: buildingsData } = useGetBuildingsQuery(undefined, {
+    skip: !isOpen,
+  });
+  const buildings = useMemo(() => buildingsData ?? [], [buildingsData]);
+  // Imperative on purpose: the details are pulled for whichever building the
+  // form points at, inside the effect that watches `building_id`.
+  const [fetchBuilding] = useLazyGetBuildingQuery();
 
-  const [buildings, setBuildings] = useState<Building[]>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
-    null,
-  );
-  const [availableOperators, setAvailableOperators] = useState<User[]>([]);
+  const [availableOperators, setAvailableOperators] = useState<OperatorOption[]>([]);
   const [operatorsLoading, setOperatorsLoading] = useState(false);
+  // Lazy rather than a plain query: the loader below falls back to the
+  // unfiltered list only when the role-filtered one comes back empty.
+  const [fetchUsers] = useLazyGetUsersQuery();
 
   // Validation errors state
   const [buildingError, setBuildingError] = useState<string | null>(null);
@@ -174,33 +147,29 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   // Dropdown open states
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // File states for new uploads
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [documentFile, setDocumentFile] = useState<File | null>(null);
-
-  // Preview URLs for new uploads
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [documentPreview, setDocumentPreview] = useState<string | null>(null);
-
-  // Track removed existing media
-  const [removedPhotos, setRemovedPhotos] = useState<string[]>([]);
-  const [removedVideo, setRemovedVideo] = useState(false);
-  const [removedDocuments, setRemovedDocuments] = useState(false);
-
-  // Drag and drop state for photos
-  const [draggedPhotoIndex, setDraggedPhotoIndex] = useState<number | null>(
-    null,
-  );
-  const [draggedPhotoFileIndex, setDraggedPhotoFileIndex] = useState<
-    number | null
-  >(null);
-
-  // Refs
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const documentInputRef = useRef<HTMLInputElement>(null);
+  const {
+    photoFiles,
+    setPhotoFiles,
+    videoFile,
+    setVideoFile,
+    documentFile,
+    setDocumentFile,
+    photoPreviews,
+    setPhotoPreviews,
+    videoPreview,
+    removedPhotos,
+    setRemovedPhotos,
+    removedVideo,
+    setRemovedVideo,
+    removedDocuments,
+    setRemovedDocuments,
+    photoInputRef,
+    videoInputRef,
+    documentInputRef,
+    handlePhotoChange,
+    removeNewPhoto,
+    removeExistingPhoto,
+  } = useEditPropertyFiles();
 
   // Localized options (same as preferences)
   const {
@@ -288,7 +257,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             : []
           : null,
         pet_policy: property.pet_policy || false,
-        smoking_area_prop: property.smoking_area || false,
         metro_stations: parseArray(property.metro_stations),
         commute_times: parseArray(property.commute_times),
         local_essentials: parseArray(property.local_essentials),
@@ -304,14 +272,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     }
   }, [property, isOpen]);
 
-  // Load buildings and operators when modal opens or building_type is private_landlord
+  // Load operators when the modal opens on a private-landlord property; the
+  // buildings list is a query above and needs no imperative trigger.
   useEffect(() => {
-    if (isOpen) {
-      loadBuildings();
-      // Load operators if building_type is already private_landlord
-      if (formData.building_type === "private_landlord") {
-        loadOperators();
-      }
+    if (isOpen && formData.building_type === "private_landlord") {
+      loadOperators();
     }
   }, [isOpen]);
 
@@ -329,16 +294,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     }
   }, [operators]);
 
-  const loadBuildings = async () => {
-    try {
-      const response = await buildingsAPI.getAll();
-      const buildingsData = response.data?.data || response.data || [];
-      setBuildings(buildingsData);
-    } catch (error) {
-      console.error("Failed to load buildings:", error);
-    }
-  };
-
   const loadOperators = async () => {
     try {
       console.log("🔄 Loading operators in EditPropertyModal...");
@@ -347,11 +302,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
       // Try to load operators with role filter first
       try {
-        console.log("🔍 Trying usersAPI.getAll({ role: 'operator' })");
-        const operatorsResponse = await usersAPI.getAll({ role: "operator" });
-        console.log("🔍 Operators API response:", operatorsResponse);
-        const operatorsData =
-          operatorsResponse.data?.data || operatorsResponse.data || [];
+        const operatorsData: OperatorOption[] = (
+          await fetchUsers({ role: "operator" }).unwrap()
+        ).users;
         console.log(
           "✅ Operators loaded with role filter:",
           operatorsData.length,
@@ -359,7 +312,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         );
 
         if (operatorsData.length > 0) {
-          let finalOperators = operatorsData;
+          let finalOperators: OperatorOption[] = operatorsData;
 
           // If the current property's operator is not in the list, add it
           if (
@@ -401,16 +354,12 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       }
 
       // Fallback: load all users and filter
-      console.log("🔍 Falling back to usersAPI.getAll() without filter");
-      const response = await usersAPI.getAll();
-      console.log("🔍 All users API response:", response);
-      const usersData =
-        response.data?.users || response.data?.data || response.data || [];
+      console.log("🔍 Falling back to the unfiltered user list");
+      const usersData = (await fetchUsers().unwrap()).users;
       console.log("✅ All users loaded:", usersData.length, "users");
-      console.log("🔍 Users data sample:", usersData.slice(0, 3));
 
       // Filter only operators
-      const operatorsData = usersData.filter((user: User) => {
+      const operatorsData = usersData.filter((user) => {
         const isOperator = user.role === "operator" || user.role === "Operator";
         console.log(
           "🔍 User",
@@ -424,7 +373,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       });
       console.log("✅ Filtered operators:", operatorsData.length, "operators");
 
-      let finalOperators = operatorsData;
+      let finalOperators: OperatorOption[] = operatorsData;
 
       // If no real operators found, use mock data
       if (operatorsData.length === 0) {
@@ -506,12 +455,10 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         children: [],
         pet_policy: false,
         pets: null,
-        smoking_area_prop: false,
         metro_stations: [],
         commute_times: [],
         local_essentials: [],
       }));
-      setSelectedBuilding(null);
       setBuildingError(null);
       setBuildingTouched(false);
     } else if (
@@ -531,29 +478,15 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         children: [],
         pet_policy: false,
         pets: null,
-        smoking_area_prop: false,
         metro_stations: [],
         commute_times: [],
         local_essentials: [],
       }));
-      setSelectedBuilding(null);
       setBuildingError(null);
       setBuildingTouched(false);
     }
     setPrevBuildingType(formData.building_type);
   }, [formData.building_type]);
-
-  // Update selectedBuilding when building_id changes
-  useEffect(() => {
-    if (formData.building_id && formData.building_type !== "private_landlord") {
-      const building = buildings.find((b) => b.id === formData.building_id);
-      if (building) {
-        setSelectedBuilding(building);
-      }
-    } else {
-      setSelectedBuilding(null);
-    }
-  }, [formData.building_id, formData.building_type, buildings]);
 
   // Load building details and populate inherited fields when a building is selected
   useEffect(() => {
@@ -564,8 +497,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         buildings.length > 0
       ) {
         try {
-          const response = await buildingsAPI.getById(formData.building_id);
-          const building = response.data;
+          const building = await fetchBuilding(
+            formData.building_id,
+          ).unwrap();
           if (building) {
             // Always populate from building when building is selected (for linked properties)
             setFormData((prev) => ({
@@ -580,10 +514,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               children: building.children || [],
               pet_policy: building.pet_policy || false,
               pets: building.pets || null,
-              smoking_area_prop: building.smoking_area || false,
               metro_stations: building.metro_stations || [],
-              commute_times: building.commute_times || [],
-              local_essentials: building.local_essentials || [],
             }));
           }
         } catch (error) {
@@ -613,69 +544,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   // Toggle dropdown helper
   const toggleDropdown = (name: string) => {
     setOpenDropdown(openDropdown === name ? null : name);
-  };
-
-  // Photo previews for new uploads
-  useEffect(() => {
-    if (photoFiles.length === 0) {
-      setPhotoPreviews([]);
-      return;
-    }
-
-    const objectUrls = photoFiles.map((file) => URL.createObjectURL(file));
-    setPhotoPreviews(objectUrls);
-
-    return () => {
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [photoFiles]);
-
-  // Video preview for new upload
-  useEffect(() => {
-    if (!videoFile) {
-      setVideoPreview(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(videoFile);
-    setVideoPreview(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [videoFile]);
-
-  // Document preview for new upload
-  useEffect(() => {
-    if (!documentFile) {
-      setDocumentPreview(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(documentFile);
-    setDocumentPreview(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [documentFile]);
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setPhotoFiles((prev) => [...prev, ...newFiles]);
-      if (photoInputRef.current) {
-        photoInputRef.current.value = "";
-      }
-    }
-  };
-
-  const removeNewPhoto = (index: number) => {
-    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const removeExistingPhoto = (photoUrl: string) => {
-    setRemovedPhotos((prev) => [...prev, photoUrl]);
   };
 
   // Helper to check if fields are readonly (not private_landlord and has building selected)
@@ -934,7 +802,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         children: formData.children || [],
         pet_policy: formData.pet_policy,
         pets: formData.pets || null,
-        smoking_area: formData.smoking_area_prop,
         metro_stations: formData.metro_stations || [],
         commute_times: formData.commute_times || [],
         local_essentials: formData.local_essentials || [],
@@ -1000,7 +867,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const displayPhotos = formData.photos.filter(
     (photo) => !removedPhotos.includes(photo),
   );
-
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8">
@@ -1027,1181 +893,46 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         >
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Title *
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                placeholder="Enter property title"
-                required
-              />
-            </div>
+            <EditBasicInfoSection
+              formData={formData}
+              setFormData={setFormData}
+              openDropdown={openDropdown}
+              setOpenDropdown={setOpenDropdown}
+              toggleDropdown={toggleDropdown}
+              buildings={buildings}
+              availableOperators={availableOperators}
+              operatorsLoading={operatorsLoading}
+              buildingError={buildingError}
+              setBuildingError={setBuildingError}
+              buildingTouched={buildingTouched}
+              setBuildingTouched={setBuildingTouched}
+              isFieldReadonly={isFieldReadonly}
+              buildingTypeOptions={buildingTypeOptions}
+              propertyTypeOptions={propertyTypeOptions}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Apartment Number
-              </label>
-              <input
-                type="text"
-                value={formData.apartment_number}
-                onChange={(e) =>
-                  setFormData({ ...formData, apartment_number: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
-            </div>
+            <EditTenantTargetingSection
+              formData={formData}
+              setFormData={setFormData}
+              openDropdown={openDropdown}
+              toggleDropdown={toggleDropdown}
+              isFieldReadonly={isFieldReadonly}
+              tenantTypeOptions={tenantTypeOptions}
+              occupationOptions={occupationOptions}
+              familyStatusOptions={familyStatusOptions}
+              childrenOptions={childrenOptions}
+              hasNoChildrenSelected={hasNoChildrenSelected}
+            />
 
-            {formData.building_type !== "private_landlord" ? (
-              <div data-building-field>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  Building *
-                </label>
-                <div className="relative" data-dropdown>
-                  <div
-                    className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between ${
-                      buildingError && buildingTouched
-                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                        : "border-white/20"
-                    }`}
-                    onClick={() => {
-                      toggleDropdown("building");
-                      setBuildingTouched(true);
-                    }}
-                  >
-                    <span
-                      className={
-                        formData.building_id ? "text-white" : "text-white/50"
-                      }
-                    >
-                      {formData.building_id
-                        ? buildings.find((b) => b.id === formData.building_id)
-                            ?.name +
-                          " - " +
-                          buildings.find((b) => b.id === formData.building_id)
-                            ?.address
-                        : "Select Building"}
-                    </span>
-                    <svg
-                      className="w-5 h-5 text-white/70"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                  {openDropdown === "building" && (
-                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {buildings.map((building) => (
-                        <div
-                          key={building.id}
-                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${
-                            formData.building_id === building.id
-                              ? "bg-white/10"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              building_id: building.id,
-                            });
-                            setBuildingError(null);
-                            setOpenDropdown(null);
-                          }}
-                        >
-                          {building.name} - {building.address}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {buildingError && buildingTouched && (
-                  <p className="mt-1 text-sm text-red-500">{buildingError}</p>
-                )}
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  Operator
-                </label>
-                <div className="relative" data-dropdown>
-                  <div
-                    className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                    onClick={() => toggleDropdown("operator")}
-                  >
-                    <span
-                      className={
-                        formData.operator_id ? "text-white" : "text-white/50"
-                      }
-                    >
-                      {operatorsLoading
-                        ? "Loading operators..."
-                        : formData.operator_id
-                          ? availableOperators.find(
-                              (o) => o.id === formData.operator_id,
-                            )?.full_name ||
-                            availableOperators.find(
-                              (o) => o.id === formData.operator_id,
-                            )?.email
-                          : "Select Operator"}
-                    </span>
-                    <svg
-                      className="w-5 h-5 text-white/70"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                  {openDropdown === "operator" && !operatorsLoading && (
-                    <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {availableOperators.map((operator) => (
-                        <div
-                          key={operator.id}
-                          className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center ${
-                            formData.operator_id === operator.id
-                              ? "bg-white/10"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              operator_id: operator.id,
-                            });
-                            setOpenDropdown(null);
-                          }}
-                        >
-                          {operator.full_name || operator.email}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Building Type
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("building_type")}
-                >
-                  <span
-                    className={
-                      formData.building_type ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.building_type
-                      ? (buildingTypeOptions.find(
-                          (o) => o.value === formData.building_type,
-                        )?.label ??
-                        formData.building_type
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase()))
-                      : "Select Type"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "building_type" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {buildingTypeOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.building_type === option.value
-                            ? "bg-white/10"
-                            : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            building_type: option.value as BuildingType,
-                          });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Price (£ PCM)
-              </label>
-              <input
-                type="number"
-                value={formData.price || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    price:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Deposit (£)
-              </label>
-              <input
-                type="number"
-                value={formData.deposit || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    deposit:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Available From
-              </label>
-              <input
-                type="date"
-                value={formData.available_from || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    available_from: e.target.value || null,
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Property Type
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("property_type")}
-                >
-                  <span
-                    className={
-                      formData.property_type ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.property_type
-                      ? (propertyTypeOptions.find(
-                          (o) => o.value === formData.property_type,
-                        )?.label ?? formData.property_type)
-                      : "Select Type"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "property_type" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {propertyTypeOptions.map((option, idx) => (
-                      <div
-                        key={`${option.value}-${idx}`}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.property_type === option.value
-                            ? "bg-white/10"
-                            : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            property_type: option.value as PropertyType,
-                          });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Address field - readonly if linked to building */}
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Address{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
-                )}
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                readOnly={isFieldReadonly}
-                className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${
-                  isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-              />
-            </div>
-
-            {/* Tenant Type multi-select dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Tenant Types{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
-                )}
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center ${
-                    isFieldReadonly
-                      ? "opacity-60 cursor-not-allowed"
-                      : "cursor-pointer"
-                  }`}
-                  onClick={() =>
-                    !isFieldReadonly && toggleDropdown("tenant_types")
-                  }
-                >
-                  <div className="flex flex-wrap gap-1 flex-1">
-                    {formData.tenant_types.length > 0 ? (
-                      formData.tenant_types.map((value) => {
-                        const option = tenantTypeOptions.find(
-                          (opt) => opt.value === value,
-                        );
-                        return (
-                          <span
-                            key={value}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                          >
-                            {option?.label ?? value}
-                            {!isFieldReadonly && (
-                              <button
-                                type="button"
-                                className="ml-1 text-white/70 hover:text-white"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setFormData({
-                                    ...formData,
-                                    tenant_types: formData.tenant_types.filter(
-                                      (t) => t !== value,
-                                    ),
-                                  });
-                                }}
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-white/50">Select types...</span>
-                    )}
-                  </div>
-                  {!isFieldReadonly && (
-                    <svg
-                      className="w-5 h-5 text-white/70 ml-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
-                </div>
-                {!isFieldReadonly && openDropdown === "tenant_types" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {tenantTypeOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                        onClick={() => {
-                          const newTenantTypes = formData.tenant_types.includes(
-                            option.value,
-                          )
-                            ? formData.tenant_types.filter(
-                                (t) => t !== option.value,
-                              )
-                            : [...formData.tenant_types, option.value];
-                          setFormData({
-                            ...formData,
-                            tenant_types: newTenantTypes,
-                          });
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.tenant_types.includes(option.value)}
-                          readOnly
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{option.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Occupation{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
-                )}
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
-                    isFieldReadonly
-                      ? "opacity-60 cursor-not-allowed"
-                      : "cursor-pointer"
-                  }`}
-                  onClick={() => !isFieldReadonly && toggleDropdown("occupation")}
-                >
-                  <div className="flex flex-wrap gap-1 flex-1">
-                    {(formData.occupation || []).length > 0 ? (
-                      (formData.occupation || []).map((value) => {
-                        const option = occupationOptions.find(
-                          (opt) => opt.value === value,
-                        );
-                        return (
-                          <span
-                            key={value}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                          >
-                            {option?.label ?? value}
-                            {!isFieldReadonly && (
-                              <button
-                                type="button"
-                                className="ml-1 text-white/70 hover:text-white"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setFormData({
-                                    ...formData,
-                                    occupation: (formData.occupation || []).filter(
-                                      (v) => v !== value,
-                                    ),
-                                  });
-                                }}
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-white/50">Select occupations...</span>
-                    )}
-                  </div>
-                  {!isFieldReadonly && (
-                    <svg
-                      className="w-5 h-5 text-white/70 ml-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
-                </div>
-                {!isFieldReadonly && openDropdown === "occupation" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {occupationOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                        onClick={() => {
-                          const current = formData.occupation || [];
-                          const next = current.includes(option.value)
-                            ? current.filter((v) => v !== option.value)
-                            : [...current, option.value];
-                          setFormData({ ...formData, occupation: next });
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={(formData.occupation || []).includes(
-                            option.value,
-                          )}
-                          readOnly
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{option.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Family Status{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
-                )}
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
-                    isFieldReadonly
-                      ? "opacity-60 cursor-not-allowed"
-                      : "cursor-pointer"
-                  }`}
-                  onClick={() =>
-                    !isFieldReadonly && toggleDropdown("family_status")
-                  }
-                >
-                  <div className="flex flex-wrap gap-1 flex-1">
-                    {(formData.family_status || []).length > 0 ? (
-                      (formData.family_status || []).map((value) => {
-                        const option = familyStatusOptions.find(
-                          (opt) => opt.value === value,
-                        );
-                        return (
-                          <span
-                            key={value}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                          >
-                            {option?.label ?? value}
-                            {!isFieldReadonly && (
-                              <button
-                                type="button"
-                                className="ml-1 text-white/70 hover:text-white"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setFormData({
-                                    ...formData,
-                                    family_status: (
-                                      formData.family_status || []
-                                    ).filter((v) => v !== value),
-                                  });
-                                }}
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-white/50">
-                        Select family statuses...
-                      </span>
-                    )}
-                  </div>
-                  {!isFieldReadonly && (
-                    <svg
-                      className="w-5 h-5 text-white/70 ml-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
-                </div>
-                {!isFieldReadonly && openDropdown === "family_status" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {familyStatusOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                        onClick={() => {
-                          const current = formData.family_status || [];
-                          const next = current.includes(option.value)
-                            ? current.filter((v) => v !== option.value)
-                            : [...current, option.value];
-                          setFormData({ ...formData, family_status: next });
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={(formData.family_status || []).includes(
-                            option.value,
-                          )}
-                          readOnly
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{option.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Children{" "}
-                {isFieldReadonly && (
-                  <span className="text-white/50 text-xs">(from building)</span>
-                )}
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center ${
-                    isFieldReadonly
-                      ? "opacity-60 cursor-not-allowed"
-                      : "cursor-pointer"
-                  }`}
-                  onClick={() => !isFieldReadonly && toggleDropdown("children")}
-                >
-                  <div className="flex flex-wrap gap-1 flex-1">
-                    {(formData.children || []).length > 0 ? (
-                      (formData.children || []).map((value) => {
-                        const option = childrenOptions.find(
-                          (opt) => opt.value === value,
-                        );
-                        return (
-                          <span
-                            key={value}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                          >
-                            {option?.label ?? value}
-                            {!isFieldReadonly && (
-                              <button
-                                type="button"
-                                className="ml-1 text-white/70 hover:text-white"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setFormData({
-                                    ...formData,
-                                    children: (formData.children || []).filter(
-                                      (v) => v !== value,
-                                    ),
-                                  });
-                                }}
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-white/50">
-                        Select children statuses...
-                      </span>
-                    )}
-                  </div>
-                  {!isFieldReadonly && (
-                    <svg
-                      className="w-5 h-5 text-white/70 ml-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
-                </div>
-                {!isFieldReadonly && openDropdown === "children" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {childrenOptions.map((option) => {
-                      const isNoOption = option.value === "no";
-                      const isDisabled = hasNoChildrenSelected && !isNoOption;
-                      return (
-                        <div
-                          key={option.value}
-                          className={`px-4 py-2 text-white flex items-center space-x-2 ${
-                            isDisabled
-                              ? "opacity-50 cursor-not-allowed"
-                              : "hover:bg-white/20 cursor-pointer"
-                          }`}
-                          onClick={() => {
-                            if (isDisabled) return;
-                            const current = formData.children || [];
-                            const next = current.includes(option.value)
-                              ? current.filter((v) => v !== option.value)
-                              : option.value === "no"
-                                ? ["no"]
-                                : [
-                                    ...current.filter((v) => v !== "no"),
-                                    option.value,
-                                  ];
-                            setFormData({ ...formData, children: next });
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={(formData.children || []).includes(
-                              option.value,
-                            )}
-                            disabled={isDisabled}
-                            readOnly
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span>{option.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Furnishing
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("furnishing")}
-                >
-                  <span
-                    className={
-                      formData.furnishing ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.furnishing
-                      ? (furnishingOptions.find(
-                          (o) => o.value === formData.furnishing,
-                        )?.label ??
-                        formData.furnishing
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase()))
-                      : "Select Type"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "furnishing" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {furnishingOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.furnishing === option.value
-                            ? "bg-white/10"
-                            : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            furnishing: option.value as Furnishing,
-                          });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Let Duration
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center"
-                  onClick={() => toggleDropdown("let_duration")}
-                >
-                  <div className="flex flex-wrap gap-1 flex-1">
-                    {(formData.let_duration || []).length > 0 ? (
-                      (formData.let_duration || []).map((value) => {
-                        const option = durationOptions.find(
-                          (opt) => opt.value === value,
-                        );
-                        return (
-                          <span
-                            key={value}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                          >
-                            {option?.label ?? value}
-                            <button
-                              type="button"
-                              className="ml-1 text-white/70 hover:text-white"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFormData({
-                                  ...formData,
-                                  let_duration: (
-                                    formData.let_duration || []
-                                  ).filter((d) => d !== value),
-                                });
-                              }}
-                            >
-                              ×
-                            </button>
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-white/50">Select duration...</span>
-                    )}
-                  </div>
-                  <svg
-                    className="w-5 h-5 text-white/70 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "let_duration" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {durationOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                        onClick={() => {
-                          const current = formData.let_duration || [];
-                          const newDuration = current.includes(option.value)
-                            ? current.filter((d) => d !== option.value)
-                            : [...current, option.value];
-                          setFormData({
-                            ...formData,
-                            let_duration: newDuration,
-                          });
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={(formData.let_duration || []).includes(
-                            option.value,
-                          )}
-                          readOnly
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{option.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Bills
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("bills")}
-                >
-                  <span
-                    className={formData.bills ? "text-white" : "text-white/50"}
-                  >
-                    {formData.bills
-                      ? formData.bills.charAt(0).toUpperCase() +
-                        formData.bills.slice(1)
-                      : "Select Option"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "bills" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {Object.values(Bills).map((type) => (
-                      <div
-                        key={type}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          formData.bills === type ? "bg-white/10" : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({ ...formData, bills: type });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Bedrooms
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("bedrooms")}
-                >
-                  <span
-                    className={
-                      formData.bedrooms ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.bedrooms
-                      ? formData.bedrooms >= 5
-                        ? "5+"
-                        : formData.bedrooms
-                      : "Select Bedrooms"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "bedrooms" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <div
-                        key={value}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          (value === 5 &&
-                            formData.bedrooms &&
-                            formData.bedrooms >= 5) ||
-                          (value < 5 && formData.bedrooms === value)
-                            ? "bg-white/10"
-                            : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            bedrooms: value,
-                          });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {value === 5 ? "5+" : value}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Bathrooms
-              </label>
-              <div className="relative" data-dropdown>
-                <div
-                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white cursor-pointer min-h-[40px] flex items-center justify-between"
-                  onClick={() => toggleDropdown("bathrooms")}
-                >
-                  <span
-                    className={
-                      formData.bathrooms ? "text-white" : "text-white/50"
-                    }
-                  >
-                    {formData.bathrooms
-                      ? formData.bathrooms >= 4
-                        ? "4+"
-                        : formData.bathrooms
-                      : "Select Bathrooms"}
-                  </span>
-                  <svg
-                    className="w-5 h-5 text-white/70"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {openDropdown === "bathrooms" && (
-                  <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {[1, 2, 3, 4].map((value) => (
-                      <div
-                        key={value}
-                        className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                          (value === 4 &&
-                            formData.bathrooms &&
-                            formData.bathrooms >= 4) ||
-                          (value < 4 && formData.bathrooms === value)
-                            ? "bg-white/10"
-                            : ""
-                        }`}
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            bathrooms: value,
-                          });
-                          setOpenDropdown(null);
-                        }}
-                      >
-                        {value === 4 ? "4+" : value}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Floor
-              </label>
-              <input
-                type="number"
-                value={formData.floor || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    floor:
-                      e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                min="0"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Square Feet
-              </label>
-              <input
-                type="number"
-                value={formData.square_feet ?? ""}
-                onChange={(e) => {
-                  const raw =
-                    e.target.value === "" ? null : Number(e.target.value);
-                  const sqFt = raw != null && !isNaN(raw) ? raw : null;
-                  setFormData({
-                    ...formData,
-                    square_feet: sqFt,
-                    square_meters: sqFt == null ? null : sqFtToSqM(sqFt),
-                  });
-                }}
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                min="0"
-                step="0.1"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Square Meters
-              </label>
-              <input
-                type="text"
-                value={formatSqMForForm(formData.square_meters)}
-                readOnly
-                tabIndex={-1}
-                placeholder="—"
-                className="w-full px-4 py-2 bg-white/5 backdrop-blur-[5px] border border-white/20 rounded-lg text-white/70 placeholder-white/50 cursor-not-allowed"
-              />
-            </div>
+            <EditPropertyDetailsSection
+              formData={formData}
+              setFormData={setFormData}
+              openDropdown={openDropdown}
+              setOpenDropdown={setOpenDropdown}
+              toggleDropdown={toggleDropdown}
+              furnishingOptions={furnishingOptions}
+              durationOptions={durationOptions}
+            />
           </div>
 
           {/* Description */}
@@ -2249,779 +980,61 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           </div>
 
           {/* Property Features - Amenities (multi-select dropdown, same as building) */}
-          <div>
-            <label className="block text-sm font-medium text-white/90 mb-2">
-              Amenities{" "}
-              {isFieldReadonly && (
-                <span className="text-white/50 text-xs">(from building)</span>
-              )}
-            </label>
-            <div className="relative" data-dropdown>
-              <div
-                className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center ${
-                  isFieldReadonly
-                    ? "cursor-default opacity-80"
-                    : "cursor-pointer"
-                }`}
-                onClick={() => !isFieldReadonly && toggleDropdown("amenities")}
-              >
-                <div className="flex flex-wrap gap-1 flex-1">
-                  {(formData.amenities || []).length > 0 ? (
-                    (formData.amenities || []).map((amenity) => (
-                      <span
-                        key={amenity}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                      >
-                        {translateAmenityStoredLabel(amenity, t)}
-                        {!isFieldReadonly && (
-                          <button
-                            type="button"
-                            className="ml-1 text-white/70 hover:text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFormData({
-                                ...formData,
-                                amenities: (formData.amenities || []).filter(
-                                  (a) => a !== amenity,
-                                ),
-                              });
-                            }}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-white/50">Select amenities...</span>
-                  )}
-                </div>
-                {!isFieldReadonly && (
-                  <svg
-                    className="w-5 h-5 text-white/70 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                )}
-              </div>
-              {!isFieldReadonly && openDropdown === "amenities" && (
-                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {AMENITIES_BY_CATEGORY.map((category) => (
-                    <div key={category.title}>
-                      <div className="px-4 py-2 text-xs font-semibold text-white/70 border-b border-white/10 sticky top-0 bg-gray-900/95">
-                        {category.title}
-                      </div>
-                      {category.values.map((amenity) => (
-                        <div
-                          key={amenity}
-                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                          onClick={() => toggleAmenity(amenity)}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={(formData.amenities || []).includes(
-                              amenity,
-                            )}
-                            readOnly
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span>{translateAmenityStoredLabel(amenity, t)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* What's Included (apartment-level features) */}
-          <div>
-            <label className="block text-sm font-medium text-white/90 mb-2">
-              What's Included
-            </label>
-            <div className="relative" data-dropdown>
-              <div
-                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-white min-h-[40px] flex items-center cursor-pointer"
-                onClick={() => toggleDropdown("property_amenities")}
-              >
-                <div className="flex flex-wrap gap-1 flex-1">
-                  {(formData.property_amenities || []).length > 0 ? (
-                    (formData.property_amenities || []).map((amenity) => (
-                      <span
-                        key={amenity}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-white/20 text-white"
-                      >
-                        {amenity}
-                        <button
-                          type="button"
-                          className="ml-1 text-white/70 hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFormData({
-                              ...formData,
-                              property_amenities: (formData.property_amenities || []).filter(
-                                (a) => a !== amenity,
-                              ),
-                            });
-                          }}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-white/50">Select features...</span>
-                  )}
-                </div>
-                <svg className="w-5 h-5 text-white/70 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-              {openDropdown === "property_amenities" && (
-                <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {PROPERTY_AMENITIES_BY_CATEGORY.map((category) => (
-                    <div key={category.titleKey}>
-                      <div className="px-4 py-2 text-xs font-semibold text-white/70 border-b border-white/10 sticky top-0 bg-gray-900/95">
-                        {t(category.titleKey)}
-                      </div>
-                      {category.values.map((amenity) => (
-                        <div
-                          key={amenity}
-                          className="px-4 py-2 hover:bg-white/20 cursor-pointer text-white flex items-center space-x-2"
-                          onClick={() => togglePropertyAmenity(amenity)}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={(formData.property_amenities || []).includes(amenity)}
-                            readOnly
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span>{amenity}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <EditAmenitiesSection
+            formData={formData}
+            setFormData={setFormData}
+            openDropdown={openDropdown}
+            toggleDropdown={toggleDropdown}
+            isFieldReadonly={isFieldReadonly}
+            toggleAmenity={toggleAmenity}
+            togglePropertyAmenity={togglePropertyAmenity}
+          />
 
           {/* Pets */}
-          <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Pet Policy{" "}
-              {isFieldReadonly && (
-                <span className="text-white/50 text-xs">(from building)</span>
-              )}
-            </h4>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="pet_policy_property_edit"
-                checked={formData.pet_policy}
-                onChange={(e) =>
-                  !isFieldReadonly &&
-                  setFormData({ ...formData, pet_policy: e.target.checked })
-                }
-                disabled={isFieldReadonly}
-                className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${
-                  isFieldReadonly ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-              />
-              <label
-                htmlFor="pet_policy_property_edit"
-                className="text-sm font-medium text-white/90"
-              >
-                Pets Allowed
-              </label>
-            </div>
-
-            {formData.pet_policy && (
-              <div className="ml-6 space-y-4">
-                {(formData.pets || []).map((pet, index) => (
-                  <div
-                    key={index}
-                    className="border border-gray-200 rounded-md p-4"
-                  >
-                    <div className="flex justify-between items-center mb-4">
-                      <h5 className="font-medium text-white">
-                        Pet {index + 1}
-                      </h5>
-                      {!isFieldReadonly && (
-                        <button
-                          type="button"
-                          onClick={() => removePet(index)}
-                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-white/90 mb-2">
-                          Type
-                        </label>
-                        <div className="relative" data-dropdown>
-                          <div
-                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
-                              isFieldReadonly
-                                ? "opacity-60 cursor-not-allowed"
-                                : "cursor-pointer"
-                            }`}
-                            onClick={() =>
-                              !isFieldReadonly &&
-                              toggleDropdown(`pet_type_${index}`)
-                            }
-                          >
-                            <span className="capitalize">{pet.type}</span>
-                            {!isFieldReadonly && (
-                              <svg
-                                className="w-5 h-5 text-white/70"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                          {!isFieldReadonly &&
-                            openDropdown === `pet_type_${index}` && (
-                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {["dog", "cat", "other"].map((type) => (
-                                  <div
-                                    key={type}
-                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white capitalize ${
-                                      pet.type === type ? "bg-white/10" : ""
-                                    }`}
-                                    onClick={() => {
-                                      updatePet(index, "type", type);
-                                      setOpenDropdown(null);
-                                    }}
-                                  >
-                                    {type}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-
-                      {pet.type === "other" && (
-                        <div>
-                          <label className="block text-sm font-medium text-white/90 mb-2">
-                            Custom Type
-                          </label>
-                          <input
-                            type="text"
-                            value={pet.customType || ""}
-                            onChange={(e) =>
-                              !isFieldReadonly &&
-                              updatePet(index, "customType", e.target.value)
-                            }
-                            readOnly={isFieldReadonly}
-                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 ${
-                              isFieldReadonly
-                                ? "opacity-60 cursor-not-allowed"
-                                : ""
-                            }`}
-                            placeholder="e.g., Hamster"
-                          />
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="block text-sm font-medium text-white/90 mb-2">
-                          Size (Optional)
-                        </label>
-                        <div className="relative" data-dropdown>
-                          <div
-                            className={`w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white min-h-[40px] flex items-center justify-between ${
-                              isFieldReadonly
-                                ? "opacity-60 cursor-not-allowed"
-                                : "cursor-pointer"
-                            }`}
-                            onClick={() =>
-                              !isFieldReadonly &&
-                              toggleDropdown(`pet_size_${index}`)
-                            }
-                          >
-                            <span
-                              className={
-                                pet.size ? "capitalize" : "text-white/50"
-                              }
-                            >
-                              {pet.size ? pet.size : "Not specified"}
-                            </span>
-                            {!isFieldReadonly && (
-                              <svg
-                                className="w-5 h-5 text-white/70"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                          {!isFieldReadonly &&
-                            openDropdown === `pet_size_${index}` && (
-                              <div className="absolute z-20 w-full mt-1 bg-gray-900/95 backdrop-blur-[10px] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {[
-                                  { value: "", label: "Not specified" },
-                                  { value: "small", label: "Small" },
-                                  { value: "medium", label: "Medium" },
-                                  { value: "large", label: "Large" },
-                                ].map((size) => (
-                                  <div
-                                    key={size.value}
-                                    className={`px-4 py-2 hover:bg-white/20 cursor-pointer text-white ${
-                                      (pet.size || "") === size.value
-                                        ? "bg-white/10"
-                                        : ""
-                                    }`}
-                                    onClick={() => {
-                                      updatePet(
-                                        index,
-                                        "size",
-                                        size.value || undefined,
-                                      );
-                                      setOpenDropdown(null);
-                                    }}
-                                  >
-                                    {size.label}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {!isFieldReadonly && (
-                  <button
-                    type="button"
-                    onClick={addPet}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-black rounded-md hover:bg-gray-200"
-                  >
-                    Add Pet Type
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          <EditPetPolicySection
+            formData={formData}
+            setFormData={setFormData}
+            openDropdown={openDropdown}
+            setOpenDropdown={setOpenDropdown}
+            toggleDropdown={toggleDropdown}
+            isFieldReadonly={isFieldReadonly}
+            addPet={addPet}
+            updatePet={updatePet}
+            removePet={removePet}
+          />
 
           {/* Metro Stations */}
-          <div className="space-y-4">
-            <h4 className="text-md font-semibold text-white border-b border-white/10 pb-2">
-              Metro Stations
-            </h4>
-
-            {formData.metro_stations.map((station, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={station.label}
-                  onChange={(e) =>
-                    updateMetroStation(index, "label", e.target.value)
-                  }
-                  className="flex-1 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
-                  placeholder="Station name"
-                />
-                <input
-                  type="number"
-                  value={station.destination ?? ""}
-                  onChange={(e) => {
-                    const inputVal = e.target.value;
-                    if (inputVal === "") {
-                      updateMetroStation(index, "destination", undefined);
-                    } else {
-                      const val = Math.max(0, parseInt(inputVal) || 0);
-                      updateMetroStation(index, "destination", val);
-                    }
-                  }}
-                  className="w-24 px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                  placeholder="min"
-                  min="0"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeMetroStation(index)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addMetroStation}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200"
-            >
-              Add Metro Station
-            </button>
-          </div>
+          <EditMetroStationsSection
+            formData={formData}
+            addMetroStation={addMetroStation}
+            updateMetroStation={updateMetroStation}
+            removeMetroStation={removeMetroStation}
+          />
 
           {/* Media Uploads */}
-          <div className="space-y-4">
-            {/* Existing Photos */}
-            {displayPhotos.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <label className="block text-sm font-medium text-white/90">
-                    Current Photos ({displayPhotos.length})
-                  </label>
-                  <span className="text-xs text-white/60">Drag to reorder</span>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {displayPhotos.map((photo, index) => (
-                    <div
-                      key={`existing-photo-${photo}-${index}`}
-                      draggable
-                      onDragStart={(e) => {
-                        setDraggedPhotoIndex(index);
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = "move";
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (
-                          draggedPhotoIndex === null ||
-                          draggedPhotoIndex === index
-                        ) {
-                          setDraggedPhotoIndex(null);
-                          return;
-                        }
-
-                        const newPhotos = [...displayPhotos];
-                        const [draggedPhoto] = newPhotos.splice(
-                          draggedPhotoIndex,
-                          1,
-                        );
-                        newPhotos.splice(index, 0, draggedPhoto);
-
-                        // Update formData with new order
-                        setFormData((prev) => ({
-                          ...prev,
-                          photos: newPhotos,
-                        }));
-
-                        setDraggedPhotoIndex(null);
-                      }}
-                      className={`relative group cursor-move transition-all ${
-                        draggedPhotoIndex === index ? "opacity-50 scale-95" : ""
-                      }`}
-                    >
-                      <img
-                        src={photo}
-                        alt={`Current ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg"
-                        draggable={false}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                        <div className="absolute bottom-1 left-1">
-                          <div className="p-0.5 bg-white/20 rounded-full">
-                            <GripVertical className="w-3 h-3 text-white" />
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeExistingPhoto(photo)}
-                          className="absolute top-1 right-1 p-1 bg-red-500/90 text-white rounded-full hover:bg-red-600 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* New Photos */}
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                Add New Photos
-              </label>
-              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                />
-                <div className="flex flex-col items-center justify-center">
-                  <Upload className="w-8 h-8 text-white/70 mb-2" />
-                  <p className="text-sm text-white/90 font-medium">
-                    Click to upload photos
-                  </p>
-                  <p className="text-xs text-white/60 mt-1">
-                    PNG, JPG - Multiple files allowed
-                  </p>
-                </div>
-              </label>
-              {photoPreviews.length > 0 && (
-                <div className="mt-2 grid grid-cols-4 gap-2">
-                  {photoPreviews.map((preview, index) => (
-                    <div
-                      key={`new-photo-${index}-${photoFiles[index]?.name}-${photoFiles[index]?.size}`}
-                      draggable
-                      onDragStart={(e) => {
-                        setDraggedPhotoFileIndex(index);
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = "move";
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (
-                          draggedPhotoFileIndex === null ||
-                          draggedPhotoFileIndex === index
-                        ) {
-                          setDraggedPhotoFileIndex(null);
-                          return;
-                        }
-
-                        const newFiles = [...photoFiles];
-                        const [draggedFile] = newFiles.splice(
-                          draggedPhotoFileIndex,
-                          1,
-                        );
-                        newFiles.splice(index, 0, draggedFile);
-
-                        // Update both photoFiles and photoPreviews to maintain order
-                        setPhotoFiles(newFiles);
-
-                        // Update previews order
-                        const newPreviews = [...photoPreviews];
-                        const [draggedPreview] = newPreviews.splice(
-                          draggedPhotoFileIndex,
-                          1,
-                        );
-                        newPreviews.splice(index, 0, draggedPreview);
-                        setPhotoPreviews(newPreviews);
-
-                        setDraggedPhotoFileIndex(null);
-                      }}
-                      className={`relative group cursor-move transition-all ${
-                        draggedPhotoFileIndex === index
-                          ? "opacity-50 scale-95"
-                          : ""
-                      }`}
-                    >
-                      <img
-                        src={preview}
-                        alt={`New ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border-2 border-green-500"
-                        draggable={false}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                        <div className="absolute bottom-1 left-1">
-                          <div className="p-0.5 bg-white/20 rounded-full">
-                            <GripVertical className="w-3 h-3 text-white" />
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeNewPhoto(index)}
-                          className="absolute top-1 right-1 p-1 bg-red-500/90 text-white rounded-full hover:bg-red-600 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Video */}
-            <div>
-              {formData.video && !removedVideo && (
-                <div className="mb-2">
-                  <label className="block text-sm font-medium text-white/90 mb-2">
-                    Current Video
-                  </label>
-                  <div className="relative">
-                    <video
-                      src={formData.video}
-                      className="w-full h-32 object-cover rounded-lg"
-                      controls
-                      onError={(e) => {
-                        console.error("❌ Ошибка загрузки видео:", {
-                          src: formData.video,
-                          error: e,
-                        });
-                      }}
-                      onLoadedData={() => {
-                        console.log(
-                          "✅ Видео успешно загружено:",
-                          formData.video,
-                        );
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setRemovedVideo(true)}
-                      className="absolute top-1 right-1 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                {formData.video && !removedVideo
-                  ? "Replace Video"
-                  : "Add Video"}
-              </label>
-              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setVideoFile(e.target.files[0]);
-                    }
-                  }}
-                  className="hidden"
-                />
-                <div className="flex flex-col items-center justify-center">
-                  <Upload className="w-8 h-8 text-white/70 mb-2" />
-                  <p className="text-sm text-white/90 font-medium">
-                    Click to upload video
-                  </p>
-                  <p className="text-xs text-white/60 mt-1">MP4, AVI</p>
-                </div>
-              </label>
-              {videoPreview && (
-                <div className="mt-2 relative">
-                  <video
-                    src={videoPreview}
-                    className="w-full h-32 object-cover rounded-lg border-2 border-green-500"
-                    controls
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setVideoFile(null);
-                      if (videoInputRef.current) {
-                        videoInputRef.current.value = "";
-                      }
-                    }}
-                    className="absolute top-1 right-1 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Documents */}
-            <div>
-              {formData.documents && !removedDocuments && (
-                <div className="mb-2">
-                  <label className="block text-sm font-medium text-white/90 mb-2">
-                    Current Document
-                  </label>
-                  <div className="flex items-center justify-between p-2 bg-slate-100 rounded-lg">
-                    <a
-                      href={formData.documents}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      View Document
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => setRemovedDocuments(true)}
-                      className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-              <label className="block text-sm font-medium text-white/90 mb-2">
-                {formData.documents && !removedDocuments
-                  ? "Replace Document"
-                  : "Add Document"}
-              </label>
-              <label className="relative flex flex-col items-center justify-center w-full border-2 border-white/20 border-dashed rounded-lg cursor-pointer bg-white/5 hover:bg-white/10 transition-colors p-6">
-                <input
-                  ref={documentInputRef}
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setDocumentFile(e.target.files[0]);
-                    }
-                  }}
-                  className="hidden"
-                />
-                <div className="flex flex-col items-center justify-center">
-                  <Upload className="w-8 h-8 text-white/70 mb-2" />
-                  <p className="text-sm text-white/90 font-medium">
-                    Click to upload document
-                  </p>
-                  <p className="text-xs text-white/60 mt-1">PDF file</p>
-                </div>
-              </label>
-              {documentFile && (
-                <div className="mt-2 flex items-center justify-between p-2 bg-green-100 rounded-lg">
-                  <span className="text-sm text-white/90">
-                    {documentFile.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDocumentFile(null);
-                      if (documentInputRef.current) {
-                        documentInputRef.current.value = "";
-                      }
-                    }}
-                    className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-full border border-white/20"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          <EditPropertyMediaSection
+            formData={formData}
+            setFormData={setFormData}
+            displayPhotos={displayPhotos}
+            removeExistingPhoto={removeExistingPhoto}
+            removeNewPhoto={removeNewPhoto}
+            handlePhotoChange={handlePhotoChange}
+            photoFiles={photoFiles}
+            setPhotoFiles={setPhotoFiles}
+            photoPreviews={photoPreviews}
+            setPhotoPreviews={setPhotoPreviews}
+            videoPreview={videoPreview}
+            setVideoFile={setVideoFile}
+            documentFile={documentFile}
+            setDocumentFile={setDocumentFile}
+            removedVideo={removedVideo}
+            setRemovedVideo={setRemovedVideo}
+            removedDocuments={removedDocuments}
+            setRemovedDocuments={setRemovedDocuments}
+            photoInputRef={photoInputRef}
+            videoInputRef={videoInputRef}
+            documentInputRef={documentInputRef}
+          />
 
           {/* Footer */}
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-white/10">
@@ -3035,6 +1048,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             </button>
             <button
               type="submit"
+              data-testid="property-edit-submit"
               disabled={isLoading || isSubmitting}
               className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >

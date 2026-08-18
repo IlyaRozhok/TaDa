@@ -7,18 +7,19 @@ import { TenantCvResponse } from "../../types/tenantCv";
 import Footer from "../../components/Footer";
 import TenantCvSkeleton from "../../components/ui/TenantCvSkeleton";
 import { notify } from "@/shared/lib/notify";
+import { useTranslation } from "@/app/hooks/useTranslation";
+import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
+import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import {
   useGetTenantCvQuery,
   useCreateTenantCvShareMutation,
-  useGetPreferencesQuery,
-} from "@/store/slices/apiSlice";
+} from "@/store/api/tenantCv.api";
 import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";
 
 export default function TenantCvPage() {
-  const [data, setData] = useState<TenantCvResponse | null>(null);
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [manualCopyLoading, setManualCopyLoading] = useState(false);
   const [showManualCopy, setShowManualCopy] = useState(false);
@@ -118,6 +119,8 @@ export default function TenantCvPage() {
     error: cvQueryError,
   } = useGetTenantCvQuery(undefined, {
     skip: !sessionReady,
+    // Own CV changes rarely; a minute-old copy is fine, older is not.
+    refetchOnMountOrArgChange: 60,
   });
 
   const [createShare] = useCreateTenantCvShareMutation();
@@ -180,20 +183,18 @@ export default function TenantCvPage() {
     return undefined;
   }
 
-  // Normalize and store data in local state (so existing view API не меняется)
-  useEffect(() => {
-    if (!cvQueryData) return;
-    const cvData =
-      ((cvQueryData as any).data as TenantCvResponse) ||
-      (cvQueryData as TenantCvResponse);
-    setData(cvData);
-    setError(null);
+  // `data` and `shareUrl` come straight from the query now: transformResponse
+  // unwraps the payload, and the share mutation invalidates the CV tag, so a new
+  // share_uuid arrives by refetch instead of being patched in by hand.
+  const data = cvQueryData ?? null;
 
-    if (cvData.share_uuid && typeof window !== "undefined") {
-      setShareUrl(`${window.location.origin}/cv/${cvData.share_uuid}`);
-      setShowManualCopy(false);
-    }
-  }, [cvQueryData]);
+  const shareUrl = useMemo(
+    () =>
+      data?.share_uuid && typeof window !== "undefined"
+        ? `${window.location.origin}/cv/${data.share_uuid}`
+        : null,
+    [data?.share_uuid],
+  );
 
   // Handle errors from RTK Query
   useEffect(() => {
@@ -218,10 +219,9 @@ export default function TenantCvPage() {
         return;
       }
       const url = `${window.location.origin}/cv/${uuid}`;
-      setShareUrl(url);
       copied = await copyTextToClipboardAsync(url);
       if (copied) {
-        notify.success("Link copied to clipboard!");
+        notify.success(t(generalKeys.toast.copySuccess));
         setShowManualCopy(false);
       } else {
         setShowManualCopy(true);
@@ -250,7 +250,7 @@ export default function TenantCvPage() {
       // IMPORTANT: synchronous path for Safari clipboard restrictions.
       const copied = execCommandCopy(shareUrl);
       if (copied) {
-        notify.success("Link copied to clipboard!");
+        notify.success(t(generalKeys.toast.copySuccess));
         setShowManualCopy(false);
       } else {
         if (!isSafariLike()) {

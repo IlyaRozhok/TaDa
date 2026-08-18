@@ -89,6 +89,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
         </div>
         <button
           onClick={onAdd}
+          data-testid="admin-add-property"
           className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium flex items-center justify-center space-x-2"
         >
           <span>Add Property</span>
@@ -148,6 +149,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                 properties.map((property) => (
                   <tr
                     key={property.id}
+                    data-testid="admin-property-row"
                     onClick={() => onView(property)}
                     className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                   >

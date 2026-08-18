@@ -4,7 +4,6 @@ import {
   Post,
   Delete,
   Param,
-  UseGuards,
   Request,
   HttpStatus,
 } from "@nestjs/common";
@@ -15,12 +14,10 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { ShortlistService } from "./shortlist.service";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { Property } from "../../entities/property.entity";
+import { Property } from "@/entities/property.entity";
 
 @ApiTags("shortlist")
 @Controller("shortlist")
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ShortlistController {
   constructor(private readonly shortlistService: ShortlistService) {}

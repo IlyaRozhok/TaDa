@@ -48,7 +48,7 @@ const TenantsSection = () => {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/operator-reinvent-bg.png"
+          src="/operator-reinvent-bg.webp"
           alt="Background"
           fill
           priority
@@ -65,7 +65,7 @@ const TenantsSection = () => {
             <p className="text-white text-2xl font-medium mb-4 mt-5">
               {t(operatorKeys.rent.label)}
             </p>
-            <h2 className="text-4xl md:text-5xl lg:text-7xl font-sf-pro font-semibold text-white leading-tight max-w-4xl lg:mx-0 mx-auto">
+            <h2 className="text-4xl md:text-5xl lg:text-7xl font-semibold text-white leading-tight max-w-4xl lg:mx-0 mx-auto">
               {t(operatorKeys.rent.title)}
             </h2>
             <p className="text-white text-2xl mt-6 lg:mx-0 mx-auto">

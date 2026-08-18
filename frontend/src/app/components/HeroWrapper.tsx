@@ -25,7 +25,7 @@ const HeroWrapper = () => {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/operator-hero-bg.png"
+          src="/operator-hero-bg.webp"
           alt="Background"
           fill
           priority

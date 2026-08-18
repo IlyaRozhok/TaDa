@@ -45,19 +45,11 @@ export default function RootLayout({
         />
         <meta httpEquiv="Expires" content="0" />
 
-        {/* Preload critical hero background images */}
-        <link
-          rel="preload"
-          as="image"
-          href="/tenant-hero-bg.png"
-          fetchPriority="high"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/tenant-landing-bg.png"
-          fetchPriority="high"
-        />
+        {/* No hand-written image preloads here. They sat in the root layout, so
+            every route paid for them, and neither one helped: the hero is
+            rendered by <Image priority>, which emits its own preload for the
+            optimised URL, so preloading the raw PNG only fetched a second copy
+            the page never used. */}
 
         {/* EmailJS Script */}
         <script

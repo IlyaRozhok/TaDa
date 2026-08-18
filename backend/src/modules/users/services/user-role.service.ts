@@ -1,27 +1,29 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { QueryRunner, Repository } from "typeorm";
-import { User, UserRole } from "../../../entities/user.entity";
-import { TenantProfile } from "../../../entities/tenant-profile.entity";
-import { OperatorProfile } from "../../../entities/operator-profile.entity";
-import { Preferences } from "../../../entities/preferences.entity";
-import { UserProfileService } from "./user-profile.service";
+import { User, UserRole } from "@/entities/user.entity";
+import { OperatorProfile, Preferences, TenantProfile } from "@/entities";
 
 @Injectable()
 export class UserRoleService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(TenantProfile)
-    private tenantProfileRepository: Repository<TenantProfile>,
-    @InjectRepository(OperatorProfile)
-    private operatorProfileRepository: Repository<OperatorProfile>,
-    @InjectRepository(Preferences)
-    private preferencesRepository: Repository<Preferences>,
-    private userProfileService: UserProfileService
   ) {}
 
   async updateUserRole(userId: string, role: UserRole | string): Promise<User> {
+    const roleEnum = Object.values(UserRole).find((r) => r === role);
+
+    if (!roleEnum) {
+      throw new BadRequestException(
+        `Invalid role "${role}". Allowed: ${Object.values(UserRole).join(", ")}`
+      );
+    }
+
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ["tenantProfile", "operatorProfile", "preferences"],
@@ -30,12 +32,6 @@ export class UserRoleService {
     if (!user) {
       throw new NotFoundException("User not found");
     }
-
-    // Convert string to enum if needed
-    const roleEnum =
-      typeof role === "string"
-        ? Object.values(UserRole).find((r) => r === role) || UserRole.Tenant
-        : role;
 
     const oldRole = user.role;
 
@@ -114,7 +110,6 @@ export class UserRoleService {
     if (!user.operatorProfile) {
       const operatorProfile = queryRunner.manager.create(OperatorProfile, {
         userId: user.id,
-        full_name: user.full_name || user.tenantProfile?.full_name,
       });
       await queryRunner.manager.save(OperatorProfile, operatorProfile);
     }
@@ -133,7 +128,6 @@ export class UserRoleService {
     if (!user.tenantProfile) {
       const tenantProfile = queryRunner.manager.create(TenantProfile, {
         userId: user.id,
-        full_name: user.full_name || user.operatorProfile?.full_name,
       });
       await queryRunner.manager.save(TenantProfile, tenantProfile);
     }
@@ -170,7 +164,6 @@ export class UserRoleService {
     // Create tenant profile and preferences for admin becoming tenant
     const tenantProfile = queryRunner.manager.create(TenantProfile, {
       userId: user.id,
-      full_name: user.full_name,
     });
     await queryRunner.manager.save(TenantProfile, tenantProfile);
 
@@ -187,7 +180,6 @@ export class UserRoleService {
     // Create operator profile for admin becoming operator
     const operatorProfile = queryRunner.manager.create(OperatorProfile, {
       userId: user.id,
-      full_name: user.full_name,
     });
     await queryRunner.manager.save(OperatorProfile, operatorProfile);
   }

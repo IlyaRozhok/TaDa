@@ -1,6 +1,6 @@
 import React, { ButtonHTMLAttributes, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
-import { cn } from "@/app/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { colors, semanticColors } from "../tokens/colors";
 import { textStyles } from "../tokens/typography";
 import { spacing } from "../tokens/spacing";
@@ -78,7 +78,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const sizeStyles = {
       xs: `px-[${spacing[2]}] py-[${spacing[1]}] text-xs`,
-      sm: `px-[${spacing[3]}] py-[${spacing[1.5]}] text-sm`,
+      sm: `px-[${spacing[3]}] py-[${spacing[1]}] text-sm`,
       md: `px-[${spacing[4]}] py-[${spacing[2]}] text-sm`,
       lg: `px-[${spacing[6]}] py-[${spacing[3]}] text-base`,
       xl: `px-[${spacing[8]}] py-[${spacing[4]}] text-lg`,

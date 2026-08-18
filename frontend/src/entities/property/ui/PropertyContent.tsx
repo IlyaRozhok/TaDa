@@ -26,7 +26,8 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
   const { t } = useTranslation();
   const k = listingPropertyKeys.card;
 
-  const formatPrice = (price: number | string) => {
+  const formatPrice = (price: number | string | null) => {
+    if (price === null) return "£0";
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
     if (isNaN(numPrice)) return "£0";
 
@@ -37,9 +38,7 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
     }).format(numPrice);
   };
 
-  const areaSqm =
-    property.square_meters ?? property.total_area ?? property.living_area;
-  const areaDisplay = formatAreaDisplay(areaSqm);
+  const areaDisplay = formatAreaDisplay(property.square_meters);
 
   const availabilityText = property.available_from
     ? (() => {
@@ -56,7 +55,6 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
     : "Available now";
 
   const attributeParts: string[] = [];
-  if (property.is_btr) attributeParts.push("Built to rent");
   if (property.property_type) {
     const raw = String(property.property_type).toLowerCase();
     const typeKey = getPropertyTypeTranslationKey(raw);

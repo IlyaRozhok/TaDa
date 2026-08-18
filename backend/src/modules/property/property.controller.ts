@@ -7,10 +7,10 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  Logger,
 } from "@nestjs/common";
 import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import {
@@ -25,10 +25,9 @@ import { PropertyService } from "./property.service";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { FindPropertiesDto } from "./dto/find-properties.dto";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../../common/guards/roles.guard";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { UserRole } from "../../entities/user.entity";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { UserRole } from "@/entities/user.entity";
+import { Public } from "@/common/decorators/public.decorator";
 import { S3Service } from "../../common/services/s3.service";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "../../entities/user.entity";
@@ -36,6 +35,8 @@ import { User } from "../../entities/user.entity";
 @ApiTags("properties")
 @Controller("properties")
 export class PropertyController {
+  private readonly logger = new Logger(PropertyController.name);
+
   constructor(
     private readonly propertyService: PropertyService,
     private readonly s3Service: S3Service,
@@ -43,6 +44,7 @@ export class PropertyController {
 
   // Public endpoints - MUST be before protected routes
   @Get("public/all")
+  @Public()
   @ApiOperation({ summary: "Get all public properties (no auth required)" })
   @ApiResponse({
     status: 200,
@@ -58,6 +60,7 @@ export class PropertyController {
   }
 
   @Get("public/:id")
+  @Public()
   @ApiOperation({ summary: "Get a public property by ID (no auth required)" })
   @ApiResponse({ status: 200, description: "Property found" })
   @ApiResponse({ status: 404, description: "Property not found" })
@@ -66,6 +69,7 @@ export class PropertyController {
   }
 
   @Get("public")
+  @Public()
   @ApiOperation({
     summary: "Get paginated public properties (no auth required)",
   })
@@ -83,7 +87,6 @@ export class PropertyController {
   }
 
   // Protected endpoints below
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post("upload/photos")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -147,7 +150,7 @@ export class PropertyController {
           key: uploadResult.key,
         };
       } catch (error) {
-        console.error(`Error uploading photo ${file.originalname}:`, error);
+        this.logger.error(`Error uploading photo ${file.originalname}`, error?.stack ?? String(error));
         throw new Error(
           `Failed to upload ${file.originalname}: ${error.message}`,
         );
@@ -158,11 +161,12 @@ export class PropertyController {
       const results = await Promise.all(uploadPromises);
       return results;
     } catch (error) {
-      console.error("Photo upload failed:", error);
+      this.logger.error("Photo upload failed", error?.stack ?? String(error));
       throw error;
     }
   }
 
+  @ApiBearerAuth()
   @Post("upload/video")
   @Roles(UserRole.Admin, UserRole.Operator)
   @UseInterceptors(FileInterceptor("video"))
@@ -216,11 +220,12 @@ export class PropertyController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading video ${file.originalname}:`, error);
+      this.logger.error(`Error uploading video ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload video: ${error.message}`);
     }
   }
 
+  @ApiBearerAuth()
   @Post("upload/documents")
   @Roles(UserRole.Admin, UserRole.Operator)
   @UseInterceptors(FileInterceptor("documents"))
@@ -274,13 +279,12 @@ export class PropertyController {
         key: uploadResult.key,
       };
     } catch (error) {
-      console.error(`Error uploading document ${file.originalname}:`, error);
+      this.logger.error(`Error uploading document ${file.originalname}`, error?.stack ?? String(error));
       throw new Error(`Failed to upload document: ${error.message}`);
     }
   }
 
   // CRUD endpoints - after upload endpoints
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Post()
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -295,7 +299,6 @@ export class PropertyController {
     return this.propertyService.create(createPropertyDto, user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Get()
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -314,7 +317,6 @@ export class PropertyController {
     });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Get(":id")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -325,7 +327,6 @@ export class PropertyController {
     return await this.propertyService.findOneWithFreshUrls(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Patch(":id")
   @Roles(UserRole.Admin, UserRole.Operator)
@@ -340,7 +341,6 @@ export class PropertyController {
     return this.propertyService.update(id, updatePropertyDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Delete(":id")
   @Roles(UserRole.Admin, UserRole.Operator)

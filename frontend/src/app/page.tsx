@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
 import { Property } from "./types";
 import HomepagePropertyCard from "./components/HomepagePropertyCard";
-import PropertyCardSkeleton from "./components/PropertyCardSkeleton";
+import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import AuthModal from "./components/AuthModal";
 import DualLandingWrapper from "./components/DualLandingWrapper";
 import { Search, ChevronDown, MapPin } from "lucide-react";
@@ -149,7 +149,7 @@ export default function HomePage() {
       }
 
       // Search in description
-      if (property.description?.toLowerCase().includes(searchLower)) {
+      if (property.descriptions?.toLowerCase().includes(searchLower)) {
         return true;
       }
 
@@ -426,7 +426,7 @@ export default function HomePage() {
                         personalized matches based on your preferences.
                       </p>
                       <button
-                        onClick={() => router.push("/app/properties")}
+                        onClick={() => router.push("/app/units")}
                         className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                       >
                         View All Properties

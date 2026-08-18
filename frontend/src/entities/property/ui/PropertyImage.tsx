@@ -44,9 +44,6 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
       const featuredImage = property.media?.[0];
       return featuredImage ? getOptimizedMediaUrl(featuredImage) : getOptimizedMediaUrl(property.media[0]);
     }
-    if (property.images && property.images.length > 0) {
-      return property.images[0];
-    }
     if (property.photos && property.photos.length > 0) {
       return property.photos[0];
     }
@@ -152,7 +149,7 @@ export const PropertyImage: React.FC<PropertyImageProps> = ({
 
       <img
         src={effectiveImageUrl}
-        alt={property.title}
+        alt={property.title ?? "Property"}
         className={`w-full h-full object-cover rounded-xl transition-opacity duration-300 ${
           imageLoaded || isLoaded ? "opacity-100" : "opacity-0"
         }`}

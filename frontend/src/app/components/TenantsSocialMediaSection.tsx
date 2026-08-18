@@ -12,19 +12,19 @@ const TenantsSocialMediaSection = () => {
   const socialCards = [
     {
       id: 1,
-      image: "/img_social_00.png",
+      image: "/img_social_00.webp",
     },
     {
       id: 2,
-      image: "/img_social_01.png",
+      image: "/img_social_01.webp",
     },
     {
       id: 3,
-      image: "/img_social_02.png",
+      image: "/img_social_02.webp",
     },
     {
       id: 4,
-      image: "/img_social_03.png",
+      image: "/img_social_03.webp",
     },
   ];
 
@@ -53,7 +53,7 @@ const TenantsSocialMediaSection = () => {
           <p className="text-gray-600 text-lg font-medium mb-2 mt-10">
             {t(tenantKeys.social.label)}
           </p>
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-sf-pro font-semibold text-gray-900 max-w-4xl">
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-semibold text-gray-900 max-w-4xl">
             {t(tenantKeys.social.title)}
           </h2>
           <p className="text-gray-600 text-lg mt-8 max-w-md">
@@ -101,13 +101,13 @@ const TenantsSocialMediaSection = () => {
 
         {/* Additional Content Section */}
         <div className="md:mt-20 md:mb-20 mb-10">
-          <h3 className="text-2xl md:text-4xl lg:text-5xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl mb-8">
+          <h3 className="text-2xl md:text-4xl lg:text-5xl font-semibold text-gray-900 leading-tight max-w-4xl mb-8">
             <span className="bg-gradient-to-r from-[#909447] to-[#1D1D1F] bg-clip-text text-transparent">
               {t(tenantKeys.social.gradientTextTop)}
             </span>
           </h3>
 
-          <h4 className="text-2xl text-black md:text-4xl lg:text-5xl font-sf-pro font-semibold leading-tight max-w-[780px] ml-[30%]">
+          <h4 className="text-2xl text-black md:text-4xl lg:text-5xl font-semibold leading-tight max-w-[780px] ml-[30%]">
             <span className="bg-gradient-to-r from-[#ECC5C5] to-[#1D1D1F] bg-clip-text text-transparent">
               {t(tenantKeys.social.gradientTextBottom)}
             </span>

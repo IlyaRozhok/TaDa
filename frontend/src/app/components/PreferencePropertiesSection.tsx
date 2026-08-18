@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { propertiesAPI } from "../lib/api";
-import { Property } from "../types";
+import { useGetPublicPropertiesAllQuery } from "@/store/api/properties.api";
 import EnhancedPropertyCard from "./EnhancedPropertyCard";
-import PropertyCardSkeleton from "./PropertyCardSkeleton";
+import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
@@ -20,45 +19,27 @@ const PreferencePropertiesSection: React.FC<
 > = ({ currentPropertyId, currentOperatorId }) => {
   const router = useRouter();
   const { t } = useTranslation();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: propertiesPage, isLoading: loading } =
+    useGetPublicPropertiesAllQuery();
+
+  // Filter out the current property and same-operator listings, then shuffle
+  // and take 3. The memo is per component instance, so every mount reshuffles
+  // even when the list comes from the cache — same behaviour the refetching
+  // effect had.
+  const properties = useMemo(() => {
+    const otherProperties = (propertiesPage?.data ?? []).filter((prop) => {
+      const isDifferentProperty = prop.id !== currentPropertyId;
+      const isDifferentOperator =
+        !currentOperatorId || prop.operator?.id !== currentOperatorId;
+      return isDifferentProperty && isDifferentOperator;
+    });
+    const shuffled = [...otherProperties].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  }, [propertiesPage, currentPropertyId, currentOperatorId]);
 
   const propertyIds = useMemo(() => properties.map((p) => p.id), [properties]);
   const { matchByPropertyId } = usePropertyMatches(propertyIds);
-
-  useEffect(() => {
-    const fetchPreferenceProperties = async () => {
-      try {
-        const response = await propertiesAPI.getAllPublic();
-
-        // Handle API response format
-        let allProperties = [];
-        if (response.data && response.data.data) {
-          allProperties = response.data.data;
-        } else if (response.data && Array.isArray(response.data)) {
-          allProperties = response.data;
-        }
-
-        // Filter out current property and properties from the same operator
-        const otherProperties = allProperties.filter((prop: Property) => {
-          const isDifferentProperty = prop.id !== currentPropertyId;
-          const isDifferentOperator =
-            !currentOperatorId || prop.operator?.id !== currentOperatorId;
-          return isDifferentProperty && isDifferentOperator;
-        });
-
-        // Shuffle and take first 3
-        const shuffled = otherProperties.sort(() => 0.5 - Math.random());
-        setProperties(shuffled.slice(0, 3));
-      } catch (error) {
-        console.error("Error fetching preference properties:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPreferenceProperties();
-  }, [currentPropertyId, currentOperatorId]);
 
   if (loading) {
     return (

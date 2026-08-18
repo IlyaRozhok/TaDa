@@ -22,14 +22,14 @@ const AboutUsSection = () => {
       id: 2,
       name: t(operatorKeys.about.card2.name),
       position: t(operatorKeys.about.card2.position),
-      image: "/dima.png",
+      image: "/dima.webp",
       description: t(operatorKeys.about.card2.description),
     },
     {
       id: 3,
       name: t(operatorKeys.about.card3.name),
       position: t(operatorKeys.about.card3.position),
-      image: "/ilya.png",
+      image: "/ilya.jpg",
       description: t(operatorKeys.about.card3.description),
     },
   ];
@@ -43,7 +43,7 @@ const AboutUsSection = () => {
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-8 md:mb-16">
-          <h2 className="text-4xl md:text-5xl lg:text-8xl font-sf-pro font-semibold text-gray-900 leading-tight mb-8 mt-2">
+          <h2 className="text-4xl md:text-5xl lg:text-8xl font-semibold text-gray-900 leading-tight mb-8 mt-2">
             {t(operatorKeys.about.title)}
           </h2>
           <p className="text-gray-600 text-lg max-w-xl mx-auto">
@@ -122,7 +122,7 @@ const AboutUsSection = () => {
 
         {/* Mission Statement */}
         <div className="text-center mt-2 md:mb-0 mb-10">
-          <blockquote className="text-2xl md:text-3xl lg:text-3xl font-sf-pro font-semibold text-gray-900 leading-tight max-w-4xl mx-auto">
+          <blockquote className="text-2xl md:text-3xl lg:text-3xl font-semibold text-gray-900 leading-tight max-w-4xl mx-auto">
             {t(operatorKeys.about.missions)}
           </blockquote>
         </div>

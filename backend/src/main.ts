@@ -5,27 +5,39 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
-import { AppModule } from "./app.module";
+import { Logger, PinoLogger } from "nestjs-pino";
+import { AppModule } from "@/app.module";
 import * as path from "path";
-import { SentryGlobalFilter } from "./common/filters/sentry-exception.filter";
+import { SentryGlobalFilter } from "@/common/filters/sentry-exception.filter";
+import { resolveCorsOrigins } from "@/common/config/cors.config";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false, // отключаем встроенный body parser NestJS, используем свой ниже
+    // Hold Nest's own startup messages until useLogger below, so they come out
+    // in the same format as everything else instead of the default console.
+    bufferLogs: true,
   });
+
+  const logger = app.get(Logger);
+  app.useLogger(logger);
+
+  // One proxy hop — nginx — sits in front of the API and forwards the client
+  // address in X-Forwarded-For. Without this Express reports nginx's own address
+  // as req.ip, so the rate limiter buckets every visitor together and a per-IP
+  // limit becomes a global one. That is harmless for endpoints nobody calls; it
+  // is not harmless for POST /auth/refresh, which the frontend now uses.
+  app.set("trust proxy", 1);
+
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(cookieParser());
 
   app.use(require("express").json({ limit: "10mb" }));
   app.use(require("express").urlencoded({ limit: "10mb", extended: true }));
   app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://ta-da.co",
-      "https://www.ta-da.co",
-      "https://stage.ta-da.co",
-    ],
+    origin: resolveCorsOrigins(process.env.CORS_ORIGIN),
+    // Authentication is a JWT in an httpOnly cookie — without this the browser
+    // sends no cookie and every authenticated call fails.
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -42,7 +54,11 @@ async function bootstrap() {
   );
 
     const { httpAdapter } = app.get(HttpAdapterHost);
-    app.useGlobalFilters(new SentryGlobalFilter(httpAdapter));
+    // PinoLogger is transient-scoped, so it has to be resolved, not fetched.
+    // The filter passes the request id explicitly, so an instance created
+    // outside a request context is enough.
+    const pinoLogger = await app.resolve(PinoLogger);
+    app.useGlobalFilters(new SentryGlobalFilter(httpAdapter, pinoLogger));
 
   const swaggerCfg = new DocumentBuilder()
     .setTitle("TaDa Rental Platform API")
@@ -84,10 +100,14 @@ async function bootstrap() {
 
   SwaggerModule.setup("api/docs", app, document);
 
+  // Let Nest close the database pool and finish in-flight requests when the
+  // container gets SIGTERM, instead of dying mid-request on every deploy.
+  app.enableShutdownHooks();
+
   const port = process.env.PORT ?? 5001;
   await app.listen(port, "0.0.0.0");
 
-  console.log(`Swagger: http://localhost:${port}/api/docs`);
+  logger.log(`Swagger: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();
