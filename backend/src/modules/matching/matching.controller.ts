@@ -90,7 +90,8 @@ export class MatchingController {
   })
   @ApiResponse({
     status: 200,
-    description: "Paginated list of matched properties sorted by match score",
+    description:
+      "Paginated list of matched properties sorted by match score. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when nothing was scored (no preferences, or no property matched)",
   })
   async getMatchedPropertiesWithPagination(
     @Request() req: any,

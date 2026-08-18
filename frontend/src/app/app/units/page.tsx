@@ -18,6 +18,7 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 import { useGetMatchedPropertiesQuery } from "@/store/api/matching.api";
 import { useDebounce } from "../../hooks/useDebounce";
 import {
+  resolveAvgMatchScore,
   sanitizeSearchQuery,
   SORT_TYPE_BY_SORT_OPTION,
 } from "@/lib/analytics/events";
@@ -82,20 +83,26 @@ function TenantDashboardContent() {
     });
   }, [state.matchedProperties, matchByPropertyId]);
 
-  // The best-match dataset. Fetches only while it is the one displayed and the
-  // session is ready; search and page are query arguments, so typing or paging
-  // refetches through the cache instead of an imperative loader.
+  // The best-match dataset. Search and page are query arguments, so typing or
+  // paging refetches through the cache instead of an imperative loader.
+  //
+  // It is subscribed under every sort, not only its own, because its envelope
+  // carries `avgMatchScore` — the mean over the whole matched set, which
+  // `results_viewed` reports whatever the feed is sorted by. Under another sort
+  // only that number is read, and the arguments are pinned to page 1: the
+  // aggregate is page-independent, so the entry the default view already
+  // populated is reused rather than a second one being fetched per page turn.
   const {
     data: bestMatchData,
     isFetching: bestMatchLoading,
     error: bestMatchError,
   } = useGetMatchedPropertiesQuery(
       {
-        page: bestMatchPage,
+        page: sortBy === "bestMatch" ? bestMatchPage : 1,
         limit: 12,
         search: debouncedSearch || undefined,
       },
-      { skip: state.sessionLoading || sortBy !== "bestMatch" },
+      { skip: state.sessionLoading },
     );
 
   // A new search starts from the first page, as the old loader did.
@@ -130,9 +137,12 @@ function TenantDashboardContent() {
    * score map — rather than `bestMatchProperties` / `propertiesWithMatchScores`,
    * both of which substitute 0 for a missing score so the cards can render.
    *
-   * The loaded feed is one page of the result set: the API serves 12 at a time
-   * and exposes no aggregate over the rest, so this averages the page the user
-   * is looking at while `results_count` stays the server-side total behind it.
+   * This is the fallback population, not the reported one: the server now sends
+   * `avgMatchScore` over the whole matched set, and that is what the event
+   * carries. These page-level scores are what `resolveAvgMatchScore` falls back
+   * to when the aggregate is missing — an older payload, or a set with nothing
+   * to average. They still gate the event: an unresolved page means the feed
+   * itself has not settled, whatever the aggregate says.
    */
   const feedMatchScores = useMemo<number[] | null>(() => {
     if (sortBy === "bestMatch") {
@@ -176,11 +186,21 @@ function TenantDashboardContent() {
 
   // The best-match payload carries its own scores; every other sort fetches
   // them separately, so the event waits for that request rather than reporting
-  // an average of zeros.
+  // an average of zeros. Under those sorts it also waits for the matched-set
+  // envelope, which is where the aggregate comes from — settling on an error
+  // rather than hanging, since the fallback below covers a failed load.
+  const matchedSetSettled =
+    !bestMatchLoading && Boolean(bestMatchData || bestMatchError);
+
   const feedLoading =
     sortBy === "bestMatch"
       ? bestMatchLoading || (!bestMatchData && !bestMatchError)
-      : state.loading || matchScoresLoading;
+      : state.loading || matchScoresLoading || !matchedSetSettled;
+
+  // The aggregate over the whole matched set, as the server computed it. It is
+  // a property of the tenant and the search, not of the sort, so the same
+  // number describes every sort of the same feed.
+  const feedAvgMatchScore = bestMatchData?.avgMatchScore;
 
   const feedCount =
     sortBy === "bestMatch" ? (bestMatchData?.total ?? 0) : state.totalCount;
@@ -200,15 +220,13 @@ function TenantDashboardContent() {
 
     trackedFeedRef.current = feedKey;
 
-    // One decimal, as before. An empty feed reports 0 with a `results_count` of
-    // 0 beside it: the mean of nothing, not a score that failed to arrive.
-    const avgMatchScore = feedMatchScores.length
-      ? Math.round(
-          (feedMatchScores.reduce((sum, score) => sum + score, 0) /
-            feedMatchScores.length) *
-            10,
-        ) / 10
-      : 0;
+    // The server's full-set mean, or the resolved page as a sample of it. An
+    // empty feed reports 0 with a `results_count` of 0 beside it: the mean of
+    // nothing, not a score that failed to arrive.
+    const avgMatchScore = resolveAvgMatchScore(
+      feedAvgMatchScore,
+      feedMatchScores,
+    );
 
     track({
       name: "results_viewed",
@@ -217,6 +235,7 @@ function TenantDashboardContent() {
   }, [
     feedLoading,
     feedMatchScores,
+    feedAvgMatchScore,
     feedCount,
     feedPage,
     sortBy,
