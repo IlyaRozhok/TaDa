@@ -155,14 +155,25 @@ export class CreateBuildingDto {
     description: "Types of units in the building",
     example: ["2-bed", "3-bed"],
     type: [String],
-    enum: ["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"],
+    enum: [
+      "studio",
+      "1-bed",
+      "2-bed",
+      "3-bed",
+      "Duplex",
+      "penthouse",
+      "maisonette",
+    ],
     required: false,
   })
   @IsOptional()
   @IsArray()
-  @IsEnum(["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse"], {
-    each: true,
-  })
+  @IsEnum(
+    ["studio", "1-bed", "2-bed", "3-bed", "Duplex", "penthouse", "maisonette"],
+    {
+      each: true,
+    },
+  )
   type_of_unit?: UnitType[];
 
   @ApiProperty({

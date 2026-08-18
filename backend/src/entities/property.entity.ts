@@ -60,7 +60,15 @@ export class Property {
   @ApiProperty({
     description: "Property type",
     example: "apartment",
-    enum: ["apartment", "house", "studio", "penthouse", "en-suite room", "room"],
+    enum: [
+      "apartment",
+      "house",
+      "studio",
+      "penthouse",
+      "maisonette",
+      "en-suite room",
+      "room",
+    ],
     required: false,
   })
   @Column({ nullable: true })

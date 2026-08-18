@@ -59,6 +59,7 @@ export const TYPE_OF_UNIT_OPTIONS = [
   "Penthouse",
   "En-suite room",
   "Room",
+  "Maisonette",
 ] as const;
 
 // ==================== PROPERTY TYPES ====================
@@ -69,6 +70,7 @@ export const PROPERTY_TYPE_OPTIONS = [
   { value: "penthouse", label: "Penthouse" },
   { value: "room", label: "Room" },
   { value: "house", label: "House" },
+  { value: "maisonette", label: "Maisonette" },
 ] as const;
 
 // ==================== FURNISHING OPTIONS ====================

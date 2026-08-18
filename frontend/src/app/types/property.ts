@@ -5,6 +5,7 @@ export enum PropertyType {
   Room = "room",
   Studio = "studio",
   Penthouse = "penthouse",
+  Maisonette = "maisonette",
 }
 
 export enum BuildingType {
