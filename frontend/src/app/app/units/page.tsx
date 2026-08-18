@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -37,6 +37,19 @@ function TenantDashboardContent() {
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
   const [bestMatchPage, setBestMatchPage] = useState(1);
   const debouncedSearch = useDebounce(state.searchTerm, 300);
+
+  // True once the user has typed in the search box. The search box is the only
+  // caller of `setSearchTerm`, so nothing else can raise it — which is what
+  // keeps `search_performed` off a term restored from sessionStorage.
+  const searchTypedRef = useRef(false);
+
+  const handleSearchChange = useCallback(
+    (term: string) => {
+      searchTypedRef.current = true;
+      setSearchTerm(term);
+    },
+    [setSearchTerm],
+  );
 
   const propertyIdsForMatches = useMemo(
     () =>
@@ -106,8 +119,60 @@ function TenantDashboardContent() {
   // new load, a re-render of the same one is not.
   const trackedFeedRef = useRef<string | null>(null);
 
-  const feedItems =
-    sortBy === "bestMatch" ? bestMatchProperties : propertiesWithMatchScores;
+  /**
+   * The population behind `avg_match_score`: the match score of every item of
+   * the loaded feed that has actually resolved.
+   *
+   * `null` means "not resolved yet" and holds the event back. The distinction
+   * has to be made here because 0 is a valid score: an item defaulted to 0 by
+   * the mappings above is indistinguishable from a genuine zero match once
+   * averaged. So this reads the payloads — the best-match response and the
+   * score map — rather than `bestMatchProperties` / `propertiesWithMatchScores`,
+   * both of which substitute 0 for a missing score so the cards can render.
+   *
+   * The loaded feed is one page of the result set: the API serves 12 at a time
+   * and exposes no aggregate over the rest, so this averages the page the user
+   * is looking at while `results_count` stays the server-side total behind it.
+   */
+  const feedMatchScores = useMemo<number[] | null>(() => {
+    if (sortBy === "bestMatch") {
+      if (!bestMatchData) {
+        // A failed load renders an empty grid — a real, empty feed rather than
+        // an unresolved one. Anything else is still in flight.
+        return bestMatchError ? [] : null;
+      }
+
+      return bestMatchData.data
+        .filter((item) => item.property?.id)
+        .map((item) => item.matchScore)
+        .filter((score): score is number => typeof score === "number");
+    }
+
+    // Every other sort scores the page through `usePropertyMatches`, so a score
+    // counts as resolved only once its id is in that map.
+    if (propertyIdsForMatches.length === 0) {
+      return [];
+    }
+
+    if (matchScoresLoading) {
+      return null;
+    }
+
+    const resolved = propertyIdsForMatches
+      .map((id) => matchByPropertyId[id]?.matchScore)
+      .filter((score): score is number => typeof score === "number");
+
+    // An empty map is what a user with no preferences gets back. The 0 that
+    // would follow is fabricated, not measured, so the event waits instead.
+    return resolved.length ? resolved : null;
+  }, [
+    sortBy,
+    bestMatchData,
+    bestMatchError,
+    propertyIdsForMatches,
+    matchByPropertyId,
+    matchScoresLoading,
+  ]);
 
   // The best-match payload carries its own scores; every other sort fetches
   // them separately, so the event waits for that request rather than reporting
@@ -123,7 +188,7 @@ function TenantDashboardContent() {
   const feedPage = sortBy === "bestMatch" ? bestMatchPage : state.currentPage;
 
   useEffect(() => {
-    if (feedLoading) {
+    if (feedLoading || feedMatchScores === null) {
       return;
     }
 
@@ -135,13 +200,13 @@ function TenantDashboardContent() {
 
     trackedFeedRef.current = feedKey;
 
-    const scores = feedItems
-      .map((item) => item.matchScore)
-      .filter((score): score is number => typeof score === "number");
-
-    const avgMatchScore = scores.length
+    // One decimal, as before. An empty feed reports 0 with a `results_count` of
+    // 0 beside it: the mean of nothing, not a score that failed to arrive.
+    const avgMatchScore = feedMatchScores.length
       ? Math.round(
-          (scores.reduce((sum, score) => sum + score, 0) / scores.length) * 10,
+          (feedMatchScores.reduce((sum, score) => sum + score, 0) /
+            feedMatchScores.length) *
+            10,
         ) / 10
       : 0;
 
@@ -151,7 +216,7 @@ function TenantDashboardContent() {
     });
   }, [
     feedLoading,
-    feedItems,
+    feedMatchScores,
     feedCount,
     feedPage,
     sortBy,
@@ -160,7 +225,16 @@ function TenantDashboardContent() {
 
   // The debounced value, so a typed word is one event rather than one per
   // keystroke. The query is sanitised before it leaves the app.
+  //
+  // The flag is what separates typing from restoration: `state.searchTerm` is
+  // seeded from sessionStorage when the feed is re-entered, and that seeded
+  // value reaches this debounce exactly as a keystroke would, so by the time it
+  // arrives here the two are indistinguishable. Only the input sets the flag.
   useEffect(() => {
+    if (!searchTypedRef.current) {
+      return;
+    }
+
     const query = debouncedSearch.trim();
 
     if (!query) {
@@ -204,7 +278,7 @@ function TenantDashboardContent() {
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader
           searchTerm={state.searchTerm}
-          onSearchChange={setSearchTerm}
+          onSearchChange={handleSearchChange}
           preferencesCount={state.preferencesFilledCount}
         />
 
@@ -285,7 +359,7 @@ function TenantDashboardContent() {
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
         searchTerm={state.searchTerm}
-        onSearchChange={setSearchTerm}
+        onSearchChange={handleSearchChange}
         preferencesCount={state.preferencesFilledCount}
       />
 
