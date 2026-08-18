@@ -3,6 +3,7 @@ import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
+import AnalyticsProvider from "./components/providers/AnalyticsProvider";
 import EmailJSInitializer from "./components/EmailJSInitializer";
 import { I18nProvider } from "./contexts/I18nContext";
 import AppToaster from "./components/AppToaster";
@@ -66,6 +67,7 @@ export default function RootLayout({
           <I18nProvider>
             <ReduxProvider>
                 <SessionManager />
+                <AnalyticsProvider />
                 <EmailJSInitializer />
                 {children}
                 <AppToaster />

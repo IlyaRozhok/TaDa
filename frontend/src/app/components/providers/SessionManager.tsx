@@ -8,6 +8,7 @@ import {
   setOnboardingCompleted,
 } from "@/store/slices/authSlice";
 import { AppDispatch } from "@/store/store";
+import { setAnalyticsUser } from "@/lib/analytics/ga";
 import api from "../../lib/api";
 import { fetchPreferencesOnce } from "@/store/api/preferences.api";
 
@@ -36,6 +37,14 @@ export default function SessionManager() {
         if (response.data && response.data.user) {
           dispatch(setUser({ user: response.data.user }));
           console.log("Session restored for:", response.data.user.email);
+
+          // Restoring a session re-binds the analytics identity but is NOT a
+          // login: this runs on every page load, and only the OAuth callback
+          // emits sign_up/login.
+          setAnalyticsUser({
+            id: response.data.user.id,
+            role: response.data.user.role,
+          });
 
           if (response.data.user.role === "tenant" || response.data.user.role === "admin") {
             // The shortlist is no longer prefetched here: the RTK Query hook
