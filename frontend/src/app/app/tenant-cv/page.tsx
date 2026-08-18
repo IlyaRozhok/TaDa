@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
 import { TenantCvView } from "../../components/tenant-cv/TenantCvView";
 import { TenantCvResponse } from "../../types/tenantCv";
@@ -16,6 +16,7 @@ import {
   useCreateTenantCvShareMutation,
 } from "@/store/api/tenantCv.api";
 import { hasPreferencesLocationFilled } from "../../../entities/preferences/model/preferences";
+import { track } from "@/lib/analytics/ga";
 
 export default function TenantCvPage() {
   const { t } = useTranslation();
@@ -123,6 +124,19 @@ export default function TenantCvPage() {
     refetchOnMountOrArgChange: 60,
   });
 
+  // The tenant's own CV. The public /cv/[uuid] view is somebody else reading a
+  // shared link and is not this event.
+  const hasTrackedCvView = useRef(false);
+
+  useEffect(() => {
+    if (!cvQueryData || hasTrackedCvView.current) {
+      return;
+    }
+
+    hasTrackedCvView.current = true;
+    track({ name: "tenant_cv_viewed", params: {} });
+  }, [cvQueryData]);
+
   const [createShare] = useCreateTenantCvShareMutation();
   const { data: preferencesQueryData } = useGetPreferencesQuery(undefined, {
     skip: !sessionReady,
@@ -219,6 +233,11 @@ export default function TenantCvPage() {
         return;
       }
       const url = `${window.location.origin}/cv/${uuid}`;
+
+      // The share link exists at this point. Whether the clipboard write below
+      // succeeds is a browser detail, not a different user intent.
+      track({ name: "profile_shared", params: {} });
+
       copied = await copyTextToClipboardAsync(url);
       if (copied) {
         notify.success(t(generalKeys.toast.copySuccess));

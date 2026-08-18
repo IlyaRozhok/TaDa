@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 // import { useSelector, useDispatch } from "react-redux";
 import { Property } from "../../../types";
@@ -25,6 +25,7 @@ import { useTranslation } from "../../../hooks/useTranslation";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
+import { track } from "@/lib/analytics/ga";
 
 type BuildingWithMedia = ApiBuilding & {
   media?: Array<{
@@ -263,6 +264,33 @@ export default function BuildingPublicPage() {
     const amenities = building.amenities.map(formatAmenityName);
     return showAllOffers ? amenities : amenities.slice(0, 9);
   }, [building?.amenities, showAllOffers]);
+
+  // Once per building, after both the building and its unit list have landed:
+  // units_available is the length of that list, so firing earlier would report
+  // a building with no units available.
+  const trackedBuildingViewRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!building || isPropsLoading || isPropsFetching) {
+      return;
+    }
+
+    if (trackedBuildingViewRef.current === building.id) {
+      return;
+    }
+
+    trackedBuildingViewRef.current = building.id;
+
+    track({
+      name: "building_viewed",
+      params: {
+        building_id: building.id,
+        // Nullable on the entity; reported as 0 rather than omitted.
+        units_total: building.number_of_units ?? 0,
+        units_available: properties.length,
+      },
+    });
+  }, [building, properties, isPropsLoading, isPropsFetching]);
 
   const handleShare = async () => {
     if (navigator.share) {
