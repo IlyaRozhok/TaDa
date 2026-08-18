@@ -25,6 +25,13 @@ export interface MatchedPropertiesPage {
   total: number;
   page: number;
   totalPages: number;
+  /**
+   * Mean match score over the whole matched set — the population `total`
+   * counts, not the page in `data`. `null` when nothing was scored (a user
+   * with no preferences, or a search that matched no property), and absent
+   * from a payload served by a backend older than this field.
+   */
+  avgMatchScore?: number | null;
 }
 
 export interface GetMatchedPropertiesArgs {

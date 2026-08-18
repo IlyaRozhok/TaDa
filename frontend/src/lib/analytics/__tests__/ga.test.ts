@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { sanitizeSearchQuery } from "../events";
+import { resolveAvgMatchScore, sanitizeSearchQuery } from "../events";
 import {
   isAnalyticsEnabled,
   resetAnalyticsForTests,
@@ -216,6 +216,30 @@ describe("setAnalyticsUser", () => {
     track({ name: "onboarding_started", params: {} });
 
     expect(calls.filter(([kind]) => kind === "event")).toHaveLength(0);
+  });
+});
+
+describe("resolveAvgMatchScore", () => {
+  it("reports the server's full-set mean, not the page it was given", () => {
+    expect(resolveAvgMatchScore(63.4, [90, 88, 85])).toBe(63.4);
+  });
+
+  it("reports a full-set mean of zero as zero", () => {
+    expect(resolveAvgMatchScore(0, [90, 88])).toBe(0);
+  });
+
+  it("falls back to the resolved page when the server sends no aggregate", () => {
+    // An older payload, and a set the server had nothing to average.
+    expect(resolveAvgMatchScore(undefined, [80, 71, 62])).toBe(71);
+    expect(resolveAvgMatchScore(null, [80, 71, 62])).toBe(71);
+  });
+
+  it("rounds the fallback to one decimal", () => {
+    expect(resolveAvgMatchScore(undefined, [80, 75, 71])).toBe(75.3);
+  });
+
+  it("reports the mean of nothing as 0 — the empty-feed case", () => {
+    expect(resolveAvgMatchScore(null, [])).toBe(0);
   });
 });
 

@@ -171,6 +171,44 @@ export function sanitizeSearchQuery(raw: string): string | undefined {
 }
 
 /**
+ * The value `results_viewed.avg_match_score` reports.
+ *
+ * The server-side number wins whenever it is there: it is the mean over the
+ * whole matched set, so it describes the same population as `results_count`
+ * beside it. Only that pairing makes the parameter usable in GA4 — an average
+ * of the twelve cards on screen against a count of several hundred describes
+ * two different things.
+ *
+ * `serverAvg` is absent on a payload from a backend without the field, and
+ * `null` when the server had nothing to average. Both fall back to the mean of
+ * the scores that did resolve on the loaded page — a page-sized sample of the
+ * same set, which is what this event reported before the server owned the
+ * aggregate, and still better than reporting nothing.
+ *
+ * `resolvedPageScores` must contain only scores that actually arrived: a caller
+ * that pads it with zeros for unresolved cards gets a fabricated average back,
+ * which is exactly what this parameter must never carry.
+ */
+export function resolveAvgMatchScore(
+  serverAvg: number | null | undefined,
+  resolvedPageScores: readonly number[],
+): number {
+  if (typeof serverAvg === "number" && Number.isFinite(serverAvg)) {
+    return serverAvg;
+  }
+
+  if (resolvedPageScores.length === 0) {
+    // The mean of nothing, reported beside a `results_count` of 0.
+    return 0;
+  }
+
+  const total = resolvedPageScores.reduce((sum, score) => sum + score, 0);
+
+  // One decimal, matching what the server rounds to.
+  return Math.round((total / resolvedPageScores.length) * 10) / 10;
+}
+
+/**
  * Every event the tenant funnel emits.
  *
  * KYC and referencing events are intentionally absent: no KYC or referencing
@@ -198,7 +236,12 @@ export type AnalyticsEvent =
   | { name: "profile_shared"; params: Record<string, never> }
   /** Opened own Tenant CV (not the public /cv/[uuid] view). */
   | { name: "tenant_cv_viewed"; params: Record<string, never> }
-  /** Results feed loaded, with scores resolved. */
+  /**
+   * Results feed loaded, with scores resolved. Both parameters describe the
+   * same population: `results_count` is the server-side total behind the feed,
+   * and `avg_match_score` the mean over that same set — see
+   * `resolveAvgMatchScore` for what happens when the server cannot supply it.
+   */
   | {
       name: "results_viewed";
       params: { results_count: number; avg_match_score: number };
