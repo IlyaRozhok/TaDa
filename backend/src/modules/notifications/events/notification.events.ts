@@ -53,11 +53,15 @@ export interface BookingRequestedEvent {
     id: string;
     name: string | null;
     email: string | null;
+    /**
+     * Contact phone the tenant typed into the booking form, not the one on
+     * their profile. The support inbox calls this number, so it carries the
+     * real value rather than a "provided: yes" flag — the recipient is a fixed
+     * internal address, never the tenant.
+     */
+    phone: string | null;
   };
   dateFrom: string | null;
   dateTo: string | null;
-  phoneProvided: boolean;
-  emailProvided: boolean;
-  descriptionProvided: boolean;
   message: string | null;
 }
