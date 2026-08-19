@@ -50,6 +50,26 @@ const SCORING_COLUMNS = [
   "terrace",
 ] as const;
 
+/**
+ * The mean match score of a whole scored set, to one decimal.
+ *
+ * `null` when there is nothing to average — a user with no preferences, or a
+ * filter that matched no property. That is not the same as a mean of 0, and the
+ * two must not collapse: analytics reads this number, and a fabricated 0 is
+ * indistinguishable from a genuine set of zero matches once it is reported.
+ */
+export function averageMatchPercentage(
+  results: Array<{ matchPercentage: number }>,
+): number | null {
+  if (results.length === 0) {
+    return null;
+  }
+
+  const total = results.reduce((sum, result) => sum + result.matchPercentage, 0);
+
+  return Math.round((total / results.length) * 10) / 10;
+}
+
 @Injectable()
 export class MatchingService {
   constructor(
@@ -231,6 +251,13 @@ export class MatchingService {
     total: number;
     page: number;
     totalPages: number;
+    /**
+     * Mean match score over the ENTIRE matched set — the same population
+     * `total` counts, not the page in `data`. Sort- and page-independent: it is
+     * a property of this tenant and these filters, so every consumer of the
+     * feed can report it beside `total` and describe one population with both.
+     */
+    avgMatchScore: number | null;
   }> {
     const page = options.page || 1;
     const limit = options.limit || 12;
@@ -289,6 +316,8 @@ export class MatchingService {
         total,
         page,
         totalPages: Math.ceil(total / limit),
+        // Nothing was scored on this path, so there is no average to report.
+        avgMatchScore: null,
       };
     }
 
@@ -334,6 +363,10 @@ export class MatchingService {
     // Sort by match percentage (descending)
     matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
+    // Taken over the whole scored set, before the slice below: the page is a
+    // window on this population, not the population itself.
+    const avgMatchScore = averageMatchPercentage(matchResults);
+
     const total = matchResults.length;
     const skip = (page - 1) * limit;
     const paginatedResults = matchResults.slice(skip, skip + limit);
@@ -362,6 +395,7 @@ export class MatchingService {
       total,
       page,
       totalPages: Math.ceil(total / limit),
+      avgMatchScore,
     };
   }
 

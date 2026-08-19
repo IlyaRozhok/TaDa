@@ -6,11 +6,14 @@ import {
   Post,
   Put,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import { TenantCvService } from "./tenant-cv.service";
 import { UpdateTenantCvDto } from "./dto/update-tenant-cv.dto";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
 import { Public } from "@/common/decorators/public.decorator";
+import { Roles } from "@/common/decorators/roles.decorator";
+import { UserRole } from "@/entities/user.entity";
 
 @ApiTags("Tenant CV")
 @Controller("tenant-cv")
@@ -37,6 +40,25 @@ export class TenantCvController {
     @Body() payload: UpdateTenantCvDto,
   ) {
     return this.tenantCvService.updateForUser(user.id, payload);
+  }
+
+  /**
+   * Finish step of onboarding. Notifies support the first time and only the
+   * first time — see `TenantCvService.markCompleted`.
+   *
+   * Throttled well below the global default because this is one of the three
+   * routes that can cause an outbound email: an authenticated tenant hammering
+   * it cannot turn into SES spend, even though the idempotency guard already
+   * means only the first call would send anything.
+   */
+  @Post("complete")
+  @Roles(UserRole.Tenant)
+  @ApiBearerAuth()
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: "Mark tenant onboarding as completed (idempotent)" })
+  @ApiResponse({ status: 201, description: "Completion recorded" })
+  async completeMyCv(@CurrentUser() user: any) {
+    return this.tenantCvService.markCompleted(user.id);
   }
 
   @Post("share")

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Repository } from "typeorm";
 import { v4 as uuidv4 } from "uuid";
 import { TenantCv } from "../../entities/tenant-cv.entity";
@@ -8,6 +9,10 @@ import { TenantCvResponseDto } from "./dto/tenant-cv-response.dto";
 import { UserQueryService } from "../users/services/user-query.service";
 import { buildTenantCvResponse } from "./tenant-cv.mapper";
 import { S3Service } from "../../common/services/s3.service";
+import {
+  NotificationEvents,
+  TenantCvCompletedEvent,
+} from "@/modules/notifications/events/notification.events";
 
 @Injectable()
 export class TenantCvService {
@@ -15,7 +20,8 @@ export class TenantCvService {
     @InjectRepository(TenantCv)
     private readonly tenantCvRepository: Repository<TenantCv>,
     private readonly userQueryService: UserQueryService,
-    private readonly s3Service: S3Service
+    private readonly s3Service: S3Service,
+    private readonly eventEmitter: EventEmitter2
   ) {}
 
   async getForUser(userId: string): Promise<TenantCvResponseDto> {
@@ -66,6 +72,40 @@ export class TenantCvService {
     return {
       ...dto,
       profile: { ...dto.profile, avatar_url: fresh },
+    };
+  }
+
+  /**
+   * Marks onboarding finished. Idempotent by design: the frontend calls this
+   * from the Finish step, which a user can reach again by navigating back, and
+   * a double-click would otherwise send support a second "CV completed" email.
+   *
+   * `completed_at` is the guard rather than a dedupe key alone — the write and
+   * the event are decided by the same null check, so a repeat call is a no-op
+   * in the database as well as in the mailbox.
+   */
+  async markCompleted(
+    userId: string
+  ): Promise<{ completed_at: Date; already_completed: boolean }> {
+    const cv = await this.getOrCreateCv(userId);
+
+    if (cv.completed_at) {
+      return { completed_at: cv.completed_at, already_completed: true };
+    }
+
+    cv.completed_at = new Date();
+    const saved = await this.tenantCvRepository.save(cv);
+
+    const user = await this.userQueryService.findOneWithProfiles(userId);
+    this.eventEmitter.emit(NotificationEvents.TenantCvCompleted, {
+      userId,
+      email: user.email,
+      name: user.full_name ?? null,
+    } satisfies TenantCvCompletedEvent);
+
+    return {
+      completed_at: saved.completed_at as Date,
+      already_completed: false,
     };
   }
 

@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { EventEmitterModule } from "@nestjs/event-emitter";
+import { ScheduleModule } from "@nestjs/schedule";
 import { APP_GUARD } from "@nestjs/core";
 
 import { AppController } from "./app.controller";
@@ -16,6 +18,7 @@ import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { BuildingModule } from "./modules/building/building.module";
 import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { S3Module } from "./common/services/s3.module";
 import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { RolesGuard } from "@/common/guards/roles.guard";
@@ -53,6 +56,12 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
         limit: 200, // 200 requests per minute
       }
     ]),
+    // Producers emit through EventEmitter2 and return; the notification
+    // listeners are the only subscribers. Registering it here is what keeps
+    // auth/users/booking-requests free of any dependency on notifications.
+    EventEmitterModule.forRoot(),
+    // Drives the notification retry sweep. Nothing else schedules work today.
+    ScheduleModule.forRoot(),
     S3Module,
 
     AuthModule,
@@ -65,6 +74,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     BuildingModule,
     TenantCvModule,
     BookingRequestModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   // APP_GUARDs run in declaration order: rate limiting first, then

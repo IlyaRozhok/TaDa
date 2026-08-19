@@ -4,7 +4,9 @@ import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
+import PageViewTracker from "./components/providers/PageViewTracker";
 import EmailJSInitializer from "./components/EmailJSInitializer";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 import { I18nProvider } from "./contexts/I18nContext";
 import AppToaster from "./components/AppToaster";
 import { Suspense } from "react";
@@ -68,8 +70,16 @@ export default function RootLayout({
             <ReduxProvider>
                 <SessionManager />
                 <AnalyticsProvider />
+                {/* Its own boundary: the tracker reads useSearchParams(),
+                    and without one the whole app tree it sits in loses static
+                    rendering — the landing page's prerendered HTML collapses
+                    to the fallback and is client-rendered instead. */}
+                <Suspense fallback={null}>
+                  <PageViewTracker />
+                </Suspense>
                 <EmailJSInitializer />
                 {children}
+                <CookieConsentBanner />
                 <AppToaster />
             </ReduxProvider>
           </I18nProvider>

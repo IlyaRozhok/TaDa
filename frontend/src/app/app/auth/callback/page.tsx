@@ -5,7 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
 import { AppDispatch } from "@/store/store";
-import { setAnalyticsUser, track } from "@/lib/analytics/ga";
+import {
+  setAnalyticsUser,
+  setAttributionUserProperties,
+  track,
+} from "@/lib/analytics/ga";
 import { authAPI } from "../../../lib/api";
 import { redirectAfterLogin } from "../../../utils/simpleRedirect";
 
@@ -119,6 +123,13 @@ function AuthCallbackContent() {
         // Analytics identity first, so the sign-in event below is attributed
         // and gated by role. The internal UUID is sent — never email or phone.
         setAnalyticsUser({ id: user.id, role: user.role });
+
+        // The ad click that brought this visitor in, captured on the landing
+        // page before Google took the browser away and stored since. Set before
+        // the event below, not after: a user property does not attach to an
+        // event that has already been sent, and `sign_up` is the conversion
+        // this has to be attributable to.
+        setAttributionUserProperties();
 
         // `is_new` is set by the backend only when this request created the
         // account, which is the one moment a registration is distinguishable

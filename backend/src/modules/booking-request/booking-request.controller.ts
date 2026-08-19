@@ -14,6 +14,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import { BookingRequestService } from "./booking-request.service";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import { UpdateBookingStatusDto } from "./dto/update-booking-status.dto";
@@ -30,8 +31,12 @@ import {
 export class BookingRequestController {
   constructor(private readonly bookingRequestService: BookingRequestService) {}
 
+  // Tighter than the global default: this route sends an email, so its ceiling
+  // is set by what it costs rather than by what browsing feels like. A resubmit
+  // is a legitimate repeat, hence a minute-window that allows a few.
   @Post()
   @Roles(UserRole.Tenant, UserRole.Admin)
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 3, ttl: 10000 }, long: { limit: 15, ttl: 60000 } })
   @ApiOperation({ summary: "Create a booking request (tenant or admin)" })
   @ApiResponse({ status: 201, description: "Booking request created" })
   async create(

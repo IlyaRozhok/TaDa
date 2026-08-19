@@ -171,6 +171,91 @@ export function sanitizeSearchQuery(raw: string): string | undefined {
 }
 
 /**
+ * The value `results_viewed.avg_match_score` reports.
+ *
+ * The server-side number wins whenever it is there: it is the mean over the
+ * whole matched set, so it describes the same population as `results_count`
+ * beside it. Only that pairing makes the parameter usable in GA4 — an average
+ * of the twelve cards on screen against a count of several hundred describes
+ * two different things.
+ *
+ * `serverAvg` is absent on a payload from a backend without the field, and
+ * `null` when the server had nothing to average. Both fall back to the mean of
+ * the scores that did resolve on the loaded page — a page-sized sample of the
+ * same set, which is what this event reported before the server owned the
+ * aggregate, and still better than reporting nothing.
+ *
+ * `resolvedPageScores` must contain only scores that actually arrived: a caller
+ * that pads it with zeros for unresolved cards gets a fabricated average back,
+ * which is exactly what this parameter must never carry.
+ */
+export function resolveAvgMatchScore(
+  serverAvg: number | null | undefined,
+  resolvedPageScores: readonly number[],
+): number {
+  if (typeof serverAvg === "number" && Number.isFinite(serverAvg)) {
+    return serverAvg;
+  }
+
+  if (resolvedPageScores.length === 0) {
+    // The mean of nothing, reported beside a `results_count` of 0.
+    return 0;
+  }
+
+  const total = resolvedPageScores.reduce((sum, score) => sum + score, 0);
+
+  // One decimal, matching what the server rounds to.
+  return Math.round((total / resolvedPageScores.length) * 10) / 10;
+}
+
+/** What GA4's `page_view` carries. */
+export interface PageViewParams {
+  /** Full URL of the page, query string included. */
+  page_location: string;
+  /** Path and query, without the origin. */
+  page_path: string;
+  /** `document.title` at the moment of the view. */
+  page_title: string;
+}
+
+/**
+ * A page view. Deliberately *not* a member of `AnalyticsEvent`.
+ *
+ * Everything in that union goes through `track()`, which drops the event unless
+ * a signed-in tenant is the one doing it. That gate is right for the funnel and
+ * wrong for this: the visits Google Ads has to be able to see are the ones by a
+ * visitor who has not signed in and has no role at all. So `page_view` is a
+ * type of its own and `trackPageView()` in `ga.ts` sends it, sharing the same
+ * environment guards and skipping only the role check.
+ */
+export type PageViewEvent = { name: "page_view"; params: PageViewParams };
+
+/**
+ * Assembles the parameters of one page view.
+ *
+ * `page_location` must carry the query string. Google reads `gclid` and the
+ * `utm_*` parameters out of it, so a truncated location silently un-attributes
+ * every paid click that lands on the site — which is the whole reason this
+ * event exists. The hash is left out: it is not part of what Google reads, and
+ * a hash change does not produce a navigation the tracker sees anyway.
+ */
+export function buildPageViewParams(
+  origin: string,
+  pathname: string,
+  search: string,
+  title: string,
+): PageViewParams {
+  const query = search ? (search.startsWith("?") ? search : `?${search}`) : "";
+  const path = `${pathname}${query}`;
+
+  return {
+    page_location: `${origin}${path}`,
+    page_path: path,
+    page_title: title,
+  };
+}
+
+/**
  * Every event the tenant funnel emits.
  *
  * KYC and referencing events are intentionally absent: no KYC or referencing
@@ -198,7 +283,12 @@ export type AnalyticsEvent =
   | { name: "profile_shared"; params: Record<string, never> }
   /** Opened own Tenant CV (not the public /cv/[uuid] view). */
   | { name: "tenant_cv_viewed"; params: Record<string, never> }
-  /** Results feed loaded, with scores resolved. */
+  /**
+   * Results feed loaded, with scores resolved. Both parameters describe the
+   * same population: `results_count` is the server-side total behind the feed,
+   * and `avg_match_score` the mean over that same set — see
+   * `resolveAvgMatchScore` for what happens when the server cannot supply it.
+   */
   | {
       name: "results_viewed";
       params: { results_count: number; avg_match_score: number };
@@ -239,18 +329,29 @@ export type AnalyticsEvent =
         units_available: number;
       };
     }
-  /** "Book your viewing" opened the request modal. */
+  /**
+   * "Book your viewing" opened the request modal.
+   *
+   * `match_score` is optional, and omitted when the match query has not
+   * resolved or has failed. A fallback value cannot be used: `0` is a valid
+   * score, so a fabricated one would be indistinguishable from a genuine zero
+   * match. The event still fires without it — the drop-off it measures against
+   * `viewing_requested` matters more than the score on any single event.
+   */
   | {
       name: "viewing_modal_opened";
-      params: { property_id: string; match_score: number };
+      params: { property_id: string; match_score?: number };
     }
-  /** "Send request" accepted by the backend. End of the tracked funnel. */
+  /**
+   * "Send request" accepted by the backend. End of the tracked funnel.
+   * `match_score` is optional for the same reason as on `viewing_modal_opened`.
+   */
   | {
       name: "viewing_requested";
       params: {
         property_id: string;
         building_id: string | null;
-        match_score: number;
+        match_score?: number;
         price_pcm: number | null;
         has_dates: boolean;
         has_notes: boolean;

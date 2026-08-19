@@ -20,6 +20,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 
 import { UsersService } from "./users.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -126,8 +127,11 @@ export class UsersController {
     };
   }
 
+  // Admin-only and email-triggering; a human filling in a form does not need
+  // more than this, and the limit caps what a stolen admin token could spend.
   @Post("")
   @Roles(UserRole.Admin)
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 5, ttl: 10000 }, long: { limit: 20, ttl: 60000 } })
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Create user (admin only)" })
   @ApiResponse({ status: 201, description: "User created", type: User })

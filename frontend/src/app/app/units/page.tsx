@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -18,6 +18,7 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 import { useGetMatchedPropertiesQuery } from "@/store/api/matching.api";
 import { useDebounce } from "../../hooks/useDebounce";
 import {
+  resolveAvgMatchScore,
   sanitizeSearchQuery,
   SORT_TYPE_BY_SORT_OPTION,
 } from "@/lib/analytics/events";
@@ -37,6 +38,19 @@ function TenantDashboardContent() {
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
   const [bestMatchPage, setBestMatchPage] = useState(1);
   const debouncedSearch = useDebounce(state.searchTerm, 300);
+
+  // True once the user has typed in the search box. The search box is the only
+  // caller of `setSearchTerm`, so nothing else can raise it — which is what
+  // keeps `search_performed` off a term restored from sessionStorage.
+  const searchTypedRef = useRef(false);
+
+  const handleSearchChange = useCallback(
+    (term: string) => {
+      searchTypedRef.current = true;
+      setSearchTerm(term);
+    },
+    [setSearchTerm],
+  );
 
   const propertyIdsForMatches = useMemo(
     () =>
@@ -69,20 +83,26 @@ function TenantDashboardContent() {
     });
   }, [state.matchedProperties, matchByPropertyId]);
 
-  // The best-match dataset. Fetches only while it is the one displayed and the
-  // session is ready; search and page are query arguments, so typing or paging
-  // refetches through the cache instead of an imperative loader.
+  // The best-match dataset. Search and page are query arguments, so typing or
+  // paging refetches through the cache instead of an imperative loader.
+  //
+  // It is subscribed under every sort, not only its own, because its envelope
+  // carries `avgMatchScore` — the mean over the whole matched set, which
+  // `results_viewed` reports whatever the feed is sorted by. Under another sort
+  // only that number is read, and the arguments are pinned to page 1: the
+  // aggregate is page-independent, so the entry the default view already
+  // populated is reused rather than a second one being fetched per page turn.
   const {
     data: bestMatchData,
     isFetching: bestMatchLoading,
     error: bestMatchError,
   } = useGetMatchedPropertiesQuery(
       {
-        page: bestMatchPage,
+        page: sortBy === "bestMatch" ? bestMatchPage : 1,
         limit: 12,
         search: debouncedSearch || undefined,
       },
-      { skip: state.sessionLoading || sortBy !== "bestMatch" },
+      { skip: state.sessionLoading },
     );
 
   // A new search starts from the first page, as the old loader did.
@@ -106,16 +126,81 @@ function TenantDashboardContent() {
   // new load, a re-render of the same one is not.
   const trackedFeedRef = useRef<string | null>(null);
 
-  const feedItems =
-    sortBy === "bestMatch" ? bestMatchProperties : propertiesWithMatchScores;
+  /**
+   * The population behind `avg_match_score`: the match score of every item of
+   * the loaded feed that has actually resolved.
+   *
+   * `null` means "not resolved yet" and holds the event back. The distinction
+   * has to be made here because 0 is a valid score: an item defaulted to 0 by
+   * the mappings above is indistinguishable from a genuine zero match once
+   * averaged. So this reads the payloads — the best-match response and the
+   * score map — rather than `bestMatchProperties` / `propertiesWithMatchScores`,
+   * both of which substitute 0 for a missing score so the cards can render.
+   *
+   * This is the fallback population, not the reported one: the server now sends
+   * `avgMatchScore` over the whole matched set, and that is what the event
+   * carries. These page-level scores are what `resolveAvgMatchScore` falls back
+   * to when the aggregate is missing — an older payload, or a set with nothing
+   * to average. They still gate the event: an unresolved page means the feed
+   * itself has not settled, whatever the aggregate says.
+   */
+  const feedMatchScores = useMemo<number[] | null>(() => {
+    if (sortBy === "bestMatch") {
+      if (!bestMatchData) {
+        // A failed load renders an empty grid — a real, empty feed rather than
+        // an unresolved one. Anything else is still in flight.
+        return bestMatchError ? [] : null;
+      }
+
+      return bestMatchData.data
+        .filter((item) => item.property?.id)
+        .map((item) => item.matchScore)
+        .filter((score): score is number => typeof score === "number");
+    }
+
+    // Every other sort scores the page through `usePropertyMatches`, so a score
+    // counts as resolved only once its id is in that map.
+    if (propertyIdsForMatches.length === 0) {
+      return [];
+    }
+
+    if (matchScoresLoading) {
+      return null;
+    }
+
+    const resolved = propertyIdsForMatches
+      .map((id) => matchByPropertyId[id]?.matchScore)
+      .filter((score): score is number => typeof score === "number");
+
+    // An empty map is what a user with no preferences gets back. The 0 that
+    // would follow is fabricated, not measured, so the event waits instead.
+    return resolved.length ? resolved : null;
+  }, [
+    sortBy,
+    bestMatchData,
+    bestMatchError,
+    propertyIdsForMatches,
+    matchByPropertyId,
+    matchScoresLoading,
+  ]);
 
   // The best-match payload carries its own scores; every other sort fetches
   // them separately, so the event waits for that request rather than reporting
-  // an average of zeros.
+  // an average of zeros. Under those sorts it also waits for the matched-set
+  // envelope, which is where the aggregate comes from — settling on an error
+  // rather than hanging, since the fallback below covers a failed load.
+  const matchedSetSettled =
+    !bestMatchLoading && Boolean(bestMatchData || bestMatchError);
+
   const feedLoading =
     sortBy === "bestMatch"
       ? bestMatchLoading || (!bestMatchData && !bestMatchError)
-      : state.loading || matchScoresLoading;
+      : state.loading || matchScoresLoading || !matchedSetSettled;
+
+  // The aggregate over the whole matched set, as the server computed it. It is
+  // a property of the tenant and the search, not of the sort, so the same
+  // number describes every sort of the same feed.
+  const feedAvgMatchScore = bestMatchData?.avgMatchScore;
 
   const feedCount =
     sortBy === "bestMatch" ? (bestMatchData?.total ?? 0) : state.totalCount;
@@ -123,7 +208,7 @@ function TenantDashboardContent() {
   const feedPage = sortBy === "bestMatch" ? bestMatchPage : state.currentPage;
 
   useEffect(() => {
-    if (feedLoading) {
+    if (feedLoading || feedMatchScores === null) {
       return;
     }
 
@@ -135,15 +220,13 @@ function TenantDashboardContent() {
 
     trackedFeedRef.current = feedKey;
 
-    const scores = feedItems
-      .map((item) => item.matchScore)
-      .filter((score): score is number => typeof score === "number");
-
-    const avgMatchScore = scores.length
-      ? Math.round(
-          (scores.reduce((sum, score) => sum + score, 0) / scores.length) * 10,
-        ) / 10
-      : 0;
+    // The server's full-set mean, or the resolved page as a sample of it. An
+    // empty feed reports 0 with a `results_count` of 0 beside it: the mean of
+    // nothing, not a score that failed to arrive.
+    const avgMatchScore = resolveAvgMatchScore(
+      feedAvgMatchScore,
+      feedMatchScores,
+    );
 
     track({
       name: "results_viewed",
@@ -151,7 +234,8 @@ function TenantDashboardContent() {
     });
   }, [
     feedLoading,
-    feedItems,
+    feedMatchScores,
+    feedAvgMatchScore,
     feedCount,
     feedPage,
     sortBy,
@@ -160,7 +244,16 @@ function TenantDashboardContent() {
 
   // The debounced value, so a typed word is one event rather than one per
   // keystroke. The query is sanitised before it leaves the app.
+  //
+  // The flag is what separates typing from restoration: `state.searchTerm` is
+  // seeded from sessionStorage when the feed is re-entered, and that seeded
+  // value reaches this debounce exactly as a keystroke would, so by the time it
+  // arrives here the two are indistinguishable. Only the input sets the flag.
   useEffect(() => {
+    if (!searchTypedRef.current) {
+      return;
+    }
+
     const query = debouncedSearch.trim();
 
     if (!query) {
@@ -204,7 +297,7 @@ function TenantDashboardContent() {
       <div className="min-h-screen bg-white">
         <TenantUniversalHeader
           searchTerm={state.searchTerm}
-          onSearchChange={setSearchTerm}
+          onSearchChange={handleSearchChange}
           preferencesCount={state.preferencesFilledCount}
         />
 
@@ -285,7 +378,7 @@ function TenantDashboardContent() {
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
         searchTerm={state.searchTerm}
-        onSearchChange={setSearchTerm}
+        onSearchChange={handleSearchChange}
         preferencesCount={state.preferencesFilledCount}
       />
 
