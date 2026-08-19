@@ -138,6 +138,7 @@ export class BookingRequestService {
         id: booking.tenant_id,
         name: booking.tenant?.full_name ?? null,
         email: booking.tenant?.email ?? booking.email ?? null,
+        phone: booking.phone_number ?? null,
       },
       dateFrom: booking.date_from
         ? new Date(booking.date_from).toISOString().slice(0, 10)
@@ -145,9 +146,6 @@ export class BookingRequestService {
       dateTo: booking.date_to
         ? new Date(booking.date_to).toISOString().slice(0, 10)
         : null,
-      emailProvided: Boolean(booking.email),
-      phoneProvided: Boolean(booking.phone_number),
-      descriptionProvided: Boolean(booking.description),
       message: booking.description ?? null,
     } satisfies BookingRequestedEvent);
   }

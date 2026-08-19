@@ -88,12 +88,14 @@ function bookingEvent(
     isFirstRequest: true,
     revision: "2026-08-18T10:00:00.000Z",
     property: { id: "prop-1", title: "Flat 2B", address: "1 Test Road" },
-    tenant: { id: "user-1", name: "New User", email: "new@example.com" },
+    tenant: {
+      id: "user-1",
+      name: "New User",
+      email: "new@example.com",
+      phone: "+44 7700 900123",
+    },
     dateFrom: "2026-09-01",
     dateTo: null,
-    phoneProvided: true,
-    emailProvided: true,
-    descriptionProvided: false,
     message: null,
     ...overrides,
   };
@@ -229,7 +231,12 @@ describe("NotificationsService", () => {
     it("always takes the address from the channel, never from the payload", async () => {
       await build().handleBookingRequested(
         bookingEvent({
-          tenant: { id: "u", name: "Attacker", email: "attacker@evil.test" },
+          tenant: {
+            id: "u",
+            name: "Attacker",
+            email: "attacker@evil.test",
+            phone: null,
+          },
         }),
       );
 
