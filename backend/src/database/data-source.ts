@@ -10,6 +10,7 @@ import { Shortlist } from "../entities/shortlist.entity";
 import { Building } from "../entities/building.entity";
 import { BookingRequest } from "../entities/booking-request.entity";
 import { TenantCv } from "../entities/tenant-cv.entity";
+import { Notification } from "../entities/notification.entity";
 import * as path from "path";
 
 // Load environment variables
@@ -33,6 +34,7 @@ export const dataSourceOptions: DataSourceOptions = {
     Building,
     BookingRequest,
     TenantCv,
+    Notification,
   ],
   migrations: [path.join(__dirname, "migrations/*{.ts,.js}")],
   // "each" instead of the default "all": a migration may only opt out of its

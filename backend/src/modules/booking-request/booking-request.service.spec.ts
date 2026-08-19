@@ -1,0 +1,141 @@
+import { EventEmitter2 } from "@nestjs/event-emitter";
+
+import { BookingRequestService } from "./booking-request.service";
+import { BookingRequestStatus } from "@/entities/booking-request.entity";
+import { NotificationEvents } from "@/modules/notifications/events/notification.events";
+
+/**
+ * The @Unique(tenant_id, property_id) constraint means a second request for the
+ * same property is an update, not an insert. Both paths must announce
+ * themselves, and the resubmit must be distinguishable — the config flag that
+ * silences resubmits lives in the listener, so the flag it reads is the
+ * `isFirstRequest` field emitted here.
+ */
+describe("BookingRequestService.create — notification event", () => {
+  const dto = {
+    property_id: "prop-1",
+    email: "tenant@example.com",
+    phone_number: "+44 7000 000000",
+    date_from: "2026-09-01",
+    date_to: "2027-09-01",
+    description: "Looking forward to a viewing",
+  };
+
+  const property = {
+    id: "prop-1",
+    title: "Flat 2B",
+    address: "1 Test Road",
+  };
+
+  let bookingRepository: any;
+  let propertyRepository: any;
+  let eventEmitter: EventEmitter2;
+  let service: BookingRequestService;
+
+  beforeEach(() => {
+    bookingRepository = {
+      findOne: jest.fn().mockResolvedValue(null),
+      findOneOrFail: jest.fn(),
+      create: jest.fn((values: any) => values),
+      save: jest.fn(async (booking: any) => ({ id: "booking-1", ...booking })),
+    };
+    propertyRepository = { findOne: jest.fn().mockResolvedValue(property) };
+    eventEmitter = { emit: jest.fn() } as unknown as EventEmitter2;
+
+    service = new BookingRequestService(
+      bookingRepository,
+      propertyRepository,
+      eventEmitter,
+    );
+  });
+
+  it("emits with isFirstRequest true on a first create", async () => {
+    bookingRepository.findOneOrFail.mockResolvedValue({
+      id: "booking-1",
+      tenant_id: "user-1",
+      email: dto.email,
+      phone_number: dto.phone_number,
+      description: dto.description,
+      date_from: new Date("2026-09-01T00:00:00.000Z"),
+      date_to: new Date("2027-09-01T00:00:00.000Z"),
+      updated_at: new Date("2026-08-18T10:00:00.000Z"),
+      tenant: { id: "user-1", full_name: "Tenant One", email: dto.email },
+    });
+
+    await service.create(dto as any, "user-1");
+
+    expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      NotificationEvents.BookingRequested,
+      expect.objectContaining({
+        bookingId: "booking-1",
+        isFirstRequest: true,
+        property: { id: "prop-1", title: "Flat 2B", address: "1 Test Road" },
+        dateFrom: "2026-09-01",
+        dateTo: "2027-09-01",
+        emailProvided: true,
+        phoneProvided: true,
+        descriptionProvided: true,
+        message: dto.description,
+      }),
+    );
+  });
+
+  it("emits with isFirstRequest false when the tenant re-submits", async () => {
+    bookingRepository.findOne.mockResolvedValue({
+      id: "booking-1",
+      tenant_id: "user-1",
+      property_id: "prop-1",
+      status: BookingRequestStatus.CancelBooking,
+      updated_at: new Date("2026-08-10T10:00:00.000Z"),
+      tenant: { id: "user-1", full_name: "Tenant One", email: dto.email },
+    });
+
+    await service.create(dto as any, "user-1");
+
+    expect(bookingRepository.findOneOrFail).not.toHaveBeenCalled();
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      NotificationEvents.BookingRequested,
+      expect.objectContaining({
+        bookingId: "booking-1",
+        isFirstRequest: false,
+      }),
+    );
+  });
+
+  it("gives each resubmit its own revision, so none is deduped away", async () => {
+    const emitted: any[] = [];
+    (eventEmitter.emit as jest.Mock).mockImplementation(
+      (_name: string, payload: any) => emitted.push(payload),
+    );
+
+    for (const stamp of ["2026-08-10T10:00:00.000Z", "2026-08-11T11:00:00.000Z"]) {
+      bookingRepository.findOne.mockResolvedValue({
+        id: "booking-1",
+        tenant_id: "user-1",
+        property_id: "prop-1",
+        updated_at: new Date(stamp),
+      });
+      await service.create(dto as any, "user-1");
+    }
+
+    expect(emitted[0].revision).not.toEqual(emitted[1].revision);
+  });
+
+  it("emits nothing when validation rejects the request", async () => {
+    await expect(
+      service.create({ property_id: "prop-1" } as any, "user-1"),
+    ).rejects.toThrow("email or phone_number is required");
+
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it("emits nothing when the property does not exist", async () => {
+    propertyRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.create(dto as any, "user-1")).rejects.toThrow(
+      "Property not found",
+    );
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+});

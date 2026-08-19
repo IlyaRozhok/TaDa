@@ -26,6 +26,7 @@ import {
 import usePreferences from "@/features/preferences/lib/usePreferences";
 import { isOnboardingStepNumber, STEP_NAMES } from "@/lib/analytics/events";
 import { track } from "@/lib/analytics/ga";
+import { useCompleteTenantCvMutation } from "@/store/api/tenantCv.api";
 import { useTranslation } from "../../hooks/useTranslation";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 import LanguageDropdown from "../../components/LanguageDropdown";
@@ -72,6 +73,7 @@ export default function OnboardingPage() {
   const [isPreferencesValid, setIsPreferencesValid] = useState(true);
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [completeTenantCv] = useCompleteTenantCvMutation();
   const hasCheckedPreferences = useRef(false);
   const hasTrackedStart = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -186,6 +188,15 @@ export default function OnboardingPage() {
       // Done on the last step both completes step 16 and completes the flow.
       trackStepCompleted(state.currentStep);
       track({ name: "onboarding_completed", params: {} });
+      // Tells the backend to notify support. Deliberately not awaited and
+      // never allowed to reject: the user has finished onboarding either way,
+      // and an internal notification is not worth blocking them on. The server
+      // side is idempotent, so a retry from a back-navigation is harmless.
+      completeTenantCv()
+        .unwrap()
+        .catch(() => {
+          /* internal notification only — nothing for the user to act on */
+        });
       await handlePreferencesComplete();
     } else {
       trackStepCompleted(state.currentStep);

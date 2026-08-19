@@ -91,6 +91,14 @@ export class TenantCv {
   @Column({ type: "varchar", nullable: true })
   referencing_status?: string | null;
 
+  @ApiProperty({
+    description:
+      "When the tenant finished onboarding. Null until the Finish step is reached; set once and never cleared.",
+    required: false,
+  })
+  @Column({ type: "timestamp", nullable: true })
+  completed_at?: Date | null;
+
   @ApiProperty({ description: "Creation timestamp" })
   @CreateDateColumn()
   created_at: Date;

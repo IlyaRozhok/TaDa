@@ -28,6 +28,22 @@ export const tenantCvApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * Records that the tenant finished onboarding, which is what notifies
+     * support. Idempotent on the server: only the first call stamps
+     * `completed_at` and only the first call sends anything, so a user who
+     * navigates back to Finish and clicks again costs nothing.
+     */
+    completeTenantCv: builder.mutation<
+      { completed_at: string; already_completed: boolean },
+      void
+    >({
+      query: () => ({ url: "/tenant-cv/complete", method: "POST" }),
+      transformResponse:
+        unwrap<{ completed_at: string; already_completed: boolean }>,
+      invalidatesTags: [{ type: "TenantCv", id: "ME" }],
+    }),
+
+    /**
      * Creates the share link. Invalidating the CV is what makes `share_uuid`
      * appear on screen — previously the page patched its own local copy.
      */
@@ -42,5 +58,6 @@ export const tenantCvApi = baseApi.injectEndpoints({
 export const {
   useGetTenantCvQuery,
   useGetPublicTenantCvQuery,
+  useCompleteTenantCvMutation,
   useCreateTenantCvShareMutation,
 } = tenantCvApi;

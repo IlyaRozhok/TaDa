@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
 import { User, UserRole, UserStatus } from "@/entities/user.entity";
@@ -12,6 +13,10 @@ import { OperatorProfile } from "@/entities/operator-profile.entity";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
 import { USER_CONSTANTS } from "@/common/constants/user.constants";
+import {
+  NotificationEvents,
+  UserRegisteredEvent,
+} from "@/modules/notifications/events/notification.events";
 
 @Injectable()
 export class UserAdminService {
@@ -21,7 +26,8 @@ export class UserAdminService {
     @InjectRepository(TenantProfile)
     private tenantProfileRepository: Repository<TenantProfile>,
     @InjectRepository(OperatorProfile)
-    private operatorProfileRepository: Repository<OperatorProfile>
+    private operatorProfileRepository: Repository<OperatorProfile>,
+    private eventEmitter: EventEmitter2
   ) {}
 
   /**
@@ -69,6 +75,17 @@ export class UserAdminService {
     } else if (role === UserRole.Operator) {
       await this.createOperatorProfile(savedUser, is_private_landlord);
     }
+
+    // An admin-created account is still a registration as far as support is
+    // concerned, so it goes through the same event as the Google path.
+    this.eventEmitter.emit(NotificationEvents.UserRegistered, {
+      userId: savedUser.id,
+      email: savedUser.email,
+      name: savedUser.full_name ?? null,
+      role: savedUser.role,
+      createdAt: savedUser.created_at,
+      source: "admin_created",
+    } satisfies UserRegisteredEvent);
 
     return savedUser;
   }
