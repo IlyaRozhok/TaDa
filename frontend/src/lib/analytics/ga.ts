@@ -23,8 +23,9 @@
  * a `consent update`. Nothing is stored on the device until it does.
  */
 
+import { readStoredAttribution } from "./attribution";
 import { readAnalyticsConsent, type AnalyticsConsent } from "./consent";
-import type { AnalyticsEvent } from "./events";
+import type { AnalyticsEvent, PageViewParams } from "./events";
 
 /** Hosts the production GA4 property is allowed to receive traffic from. */
 export const PROD_HOSTNAMES: readonly string[] = ["ta-da.co", "www.ta-da.co"];
@@ -97,6 +98,19 @@ export function isAnalyticsEnabled(): boolean {
 
 let initialized = false;
 let currentRole: string | null = null;
+
+/**
+ * `page_location` of the last page view sent, for de-duplication.
+ *
+ * Module state rather than a ref in the tracker component: it has to outlive
+ * the component, because React 19 Strict Mode mounts an effect, tears it down
+ * and mounts it again on the same first load. A ref would survive that one, but
+ * not a remount of the tracker itself, and either would send the load twice.
+ *
+ * Only *consecutive* repeats are dropped, so leaving a page and coming back to
+ * it is still a second view.
+ */
+let lastPageLocation: string | null = null;
 
 /**
  * The standard gtag stub. `dataLayer.push(arguments)` has to receive the real
@@ -202,8 +216,14 @@ export function initAnalytics(): void {
   setConsentModeDefaults(win);
 
   win.gtag?.("js", new Date());
-  // This is a single-page app: page_view is not what the funnel measures, and
-  // the automatic one would fire on the wrong routes anyway.
+  // Exactly one `config`, for exactly one measurement id, guarded by
+  // `initialized`. That is what keeps the GA4 client id (`_ga`) continuous:
+  // configuring twice would restart measurement and could hand the same visitor
+  // a second client id across the sign-in boundary, splitting one user into two.
+  //
+  // `send_page_view: false` because the automatic view fires on `config` only —
+  // once per full page load, never on a client-side route change, and before
+  // this app's route has settled. `trackPageView` sends every view instead.
   win.gtag?.("config", measurementId, { send_page_view: false });
 
   initialized = true;
@@ -278,8 +298,70 @@ export function track(event: AnalyticsEvent): void {
   win.gtag?.("event", event.name, event.params);
 }
 
+/**
+ * Sends one page view.
+ *
+ * Separate from `track()` on purpose: it shares the environment guards — server,
+ * staging, previews and local development send nothing — but skips the role
+ * gate, because the visits Google Ads pays for are anonymous by definition. It
+ * also runs whatever the banner has been answered: under Consent Mode v2 a
+ * denied visitor still produces a cookieless ping, which is what Google models
+ * conversions from, and withholding the view would throw that away.
+ *
+ * The same `page_location` twice in a row is dropped. `gtag config` runs with
+ * `send_page_view: false`, so this is the only source of page views and there
+ * is nothing to collide with — the duplicates worth guarding against are the
+ * ones React produces, not gtag.
+ */
+export function trackPageView(params: PageViewParams): void {
+  if (!isAnalyticsEnabled() || params.page_location === lastPageLocation) {
+    return;
+  }
+
+  initAnalytics();
+
+  lastPageLocation = params.page_location;
+
+  const win = window as GtagWindow;
+  win.gtag?.("event", "page_view", params);
+}
+
+/**
+ * Publishes the stored ad click as GA4 user properties.
+ *
+ * User properties rather than event parameters: they are user-scoped, so one
+ * call attributes the `sign_up` conversion that follows it *and* every later
+ * event in the session, and the frozen `{ method }` parameter set of `sign_up`
+ * stays as it is. Adding the six values to that event instead would attribute
+ * the conversion and nothing after it.
+ *
+ * Must be called before the event it should attribute — a user property set
+ * afterwards does not attach retroactively.
+ *
+ * The values are the campaign strings and the opaque click id, never PII. They
+ * have to be registered as user-scoped custom dimensions in the GA4 admin
+ * before they show up in reports.
+ */
+export function setAttributionUserProperties(): void {
+  if (!isAnalyticsEnabled()) {
+    return;
+  }
+
+  const attribution = readStoredAttribution();
+
+  if (!attribution) {
+    return;
+  }
+
+  initAnalytics();
+
+  const win = window as GtagWindow;
+  win.gtag?.("set", "user_properties", { ...attribution });
+}
+
 /** Test seam: clears the module's state between cases. */
 export function resetAnalyticsForTests(): void {
   initialized = false;
   currentRole = null;
+  lastPageLocation = null;
 }

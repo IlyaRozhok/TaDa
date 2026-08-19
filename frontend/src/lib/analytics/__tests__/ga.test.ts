@@ -1,15 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ATTRIBUTION_COOKIE_KEY, type Attribution } from "../attribution";
 import { CONSENT_STORAGE_KEY, type CookieConsentDecision } from "../consent";
-import { resolveAvgMatchScore, sanitizeSearchQuery } from "../events";
+import {
+  buildPageViewParams,
+  resolveAvgMatchScore,
+  sanitizeSearchQuery,
+} from "../events";
 import {
   initAnalytics,
   isAnalyticsEnabled,
   resetAnalyticsForTests,
   setAnalyticsUser,
+  setAttributionUserProperties,
   shouldInitAnalytics,
   syncAnalyticsConsent,
   track,
+  trackPageView,
 } from "../ga";
 
 /**
@@ -61,6 +68,19 @@ function installWindow(
 
 function removeWindow(): void {
   delete (globalThis as { window?: unknown }).window;
+  delete (globalThis as { document?: unknown }).document;
+}
+
+/**
+ * Installs a read-only `document.cookie` holding a stored ad click, the way the
+ * landing page would have left it before the OAuth round trip.
+ */
+function seedStoredAttribution(attribution: Attribution): void {
+  const cookie = `${ATTRIBUTION_COOKIE_KEY}=${encodeURIComponent(
+    JSON.stringify(attribution),
+  )}`;
+
+  (globalThis as { document?: unknown }).document = { cookie };
 }
 
 /** The full production configuration, as one call. */
@@ -436,6 +456,252 @@ describe("setAnalyticsUser", () => {
     track({ name: "onboarding_started", params: {} });
 
     expect(calls.filter(([kind]) => kind === "event")).toHaveLength(0);
+  });
+});
+
+describe("buildPageViewParams", () => {
+  it("keeps the query string in page_location — this is where gclid lives", () => {
+    expect(
+      buildPageViewParams(
+        "https://ta-da.co",
+        "/",
+        "gclid=CjAbC123&utm_source=google",
+        "TaDa - Rental Platform",
+      ),
+    ).toEqual({
+      page_location: "https://ta-da.co/?gclid=CjAbC123&utm_source=google",
+      page_path: "/?gclid=CjAbC123&utm_source=google",
+      page_title: "TaDa - Rental Platform",
+    });
+  });
+
+  it("omits the question mark when there is no query", () => {
+    expect(
+      buildPageViewParams("https://ta-da.co", "/app/units", "", "Units"),
+    ).toEqual({
+      page_location: "https://ta-da.co/app/units",
+      page_path: "/app/units",
+      page_title: "Units",
+    });
+  });
+
+  it("accepts a search string that already carries its question mark", () => {
+    expect(
+      buildPageViewParams("https://ta-da.co", "/", "?page=2", "TaDa").page_path,
+    ).toBe("/?page=2");
+  });
+});
+
+describe("trackPageView", () => {
+  const pageView = (path: string, search = "", title = "TaDa") =>
+    buildPageViewParams("https://ta-da.co", path, search, title);
+
+  const pageViews = (calls: unknown[][]) =>
+    calls.filter(([kind, name]) => kind === "event" && name === "page_view");
+
+  it("sends the first load, with the query string intact", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    trackPageView(pageView("/", "gclid=CjAbC123&utm_campaign=london"));
+
+    expect(pageViews(calls)).toEqual([
+      [
+        "event",
+        "page_view",
+        {
+          page_location: "https://ta-da.co/?gclid=CjAbC123&utm_campaign=london",
+          page_path: "/?gclid=CjAbC123&utm_campaign=london",
+          page_title: "TaDa",
+        },
+      ],
+    ]);
+  });
+
+  it("sends it for a visitor with no account — the paid landing case", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    // No setAnalyticsUser: nobody is signed in, so `track()` would drop this.
+    trackPageView(pageView("/"));
+
+    expect(pageViews(calls)).toHaveLength(1);
+  });
+
+  it("sends it before the banner has been answered", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", null);
+
+    trackPageView(pageView("/"));
+
+    expect(pageViews(calls)).toHaveLength(1);
+  });
+
+  it("sends it after the banner was rejected — Consent Mode handles the rest", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "rejected");
+
+    trackPageView(pageView("/"));
+
+    expect(pageViews(calls)).toHaveLength(1);
+  });
+
+  it("sends exactly one view when the effect runs twice for the same URL", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    // Strict Mode: mount, unmount, mount, all on the same first load.
+    trackPageView(pageView("/"));
+    trackPageView(pageView("/"));
+
+    expect(pageViews(calls)).toHaveLength(1);
+  });
+
+  it("sends one view per route change", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    trackPageView(pageView("/"));
+    trackPageView(pageView("/app/units"));
+    trackPageView(pageView("/app/properties/p1"));
+
+    expect(pageViews(calls).map((call) => call[2])).toEqual([
+      expect.objectContaining({ page_path: "/" }),
+      expect.objectContaining({ page_path: "/app/units" }),
+      expect.objectContaining({ page_path: "/app/properties/p1" }),
+    ]);
+  });
+
+  it("treats a changed query string on the same path as a new view", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    trackPageView(pageView("/app/units", "page=1"));
+    trackPageView(pageView("/app/units", "page=2"));
+
+    expect(pageViews(calls)).toHaveLength(2);
+  });
+
+  it("counts a return to a page already visited", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    trackPageView(pageView("/"));
+    trackPageView(pageView("/app/units"));
+    trackPageView(pageView("/"));
+
+    expect(pageViews(calls)).toHaveLength(3);
+  });
+
+  it("configures gtag before sending the view", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    trackPageView(pageView("/"));
+
+    const configIndex = calls.findIndex(([kind]) => kind === "config");
+    const viewIndex = calls.findIndex(
+      ([kind, name]) => kind === "event" && name === "page_view",
+    );
+
+    expect(configIndex).toBeGreaterThanOrEqual(0);
+    expect(viewIndex).toBeGreaterThan(configIndex);
+  });
+
+  it("configures gtag once across a whole session of navigations", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    trackPageView(pageView("/"));
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    trackPageView(pageView("/app/units"));
+
+    expect(calls.filter(([kind]) => kind === "config")).toHaveLength(1);
+  });
+
+  it("sends nothing on staging", () => {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TESTID123");
+    vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");
+    const calls = installWindow("stage.ta-da.co");
+
+    trackPageView(pageView("/"));
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does nothing on the server", () => {
+    stubProductionEnv();
+
+    expect(() => trackPageView(pageView("/"))).not.toThrow();
+  });
+});
+
+describe("setAttributionUserProperties", () => {
+  const stored = {
+    gclid: "CjAbC123",
+    utm_source: "google",
+    utm_medium: "cpc",
+    utm_campaign: "london_rent",
+  };
+
+  it("publishes the stored click before the sign_up it attributes", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+    seedStoredAttribution(stored);
+
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    setAttributionUserProperties();
+    track({ name: "sign_up", params: { method: "google" } });
+
+    const propertiesIndex = calls.findIndex(
+      ([kind, target]) => kind === "set" && target === "user_properties",
+    );
+    const signUpIndex = calls.findIndex(
+      ([kind, name]) => kind === "event" && name === "sign_up",
+    );
+
+    expect(calls[propertiesIndex]?.[2]).toEqual(stored);
+    expect(signUpIndex).toBeGreaterThan(propertiesIndex);
+  });
+
+  it("leaves the frozen sign_up parameter set untouched", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+    seedStoredAttribution(stored);
+
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    setAttributionUserProperties();
+    track({ name: "sign_up", params: { method: "google" } });
+
+    expect(calls).toContainEqual(["event", "sign_up", { method: "google" }]);
+  });
+
+  it("sends nothing when no click was ever stored", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co");
+
+    setAttributionUserProperties();
+
+    expect(
+      calls.filter(([, target]) => target === "user_properties"),
+    ).toHaveLength(0);
+  });
+
+  it("sends nothing on staging", () => {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TESTID123");
+    vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");
+    const calls = installWindow("stage.ta-da.co");
+    seedStoredAttribution(stored);
+
+    setAttributionUserProperties();
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does nothing on the server", () => {
+    stubProductionEnv();
+
+    expect(() => setAttributionUserProperties()).not.toThrow();
   });
 });
 

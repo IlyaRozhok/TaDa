@@ -208,6 +208,53 @@ export function resolveAvgMatchScore(
   return Math.round((total / resolvedPageScores.length) * 10) / 10;
 }
 
+/** What GA4's `page_view` carries. */
+export interface PageViewParams {
+  /** Full URL of the page, query string included. */
+  page_location: string;
+  /** Path and query, without the origin. */
+  page_path: string;
+  /** `document.title` at the moment of the view. */
+  page_title: string;
+}
+
+/**
+ * A page view. Deliberately *not* a member of `AnalyticsEvent`.
+ *
+ * Everything in that union goes through `track()`, which drops the event unless
+ * a signed-in tenant is the one doing it. That gate is right for the funnel and
+ * wrong for this: the visits Google Ads has to be able to see are the ones by a
+ * visitor who has not signed in and has no role at all. So `page_view` is a
+ * type of its own and `trackPageView()` in `ga.ts` sends it, sharing the same
+ * environment guards and skipping only the role check.
+ */
+export type PageViewEvent = { name: "page_view"; params: PageViewParams };
+
+/**
+ * Assembles the parameters of one page view.
+ *
+ * `page_location` must carry the query string. Google reads `gclid` and the
+ * `utm_*` parameters out of it, so a truncated location silently un-attributes
+ * every paid click that lands on the site — which is the whole reason this
+ * event exists. The hash is left out: it is not part of what Google reads, and
+ * a hash change does not produce a navigation the tracker sees anyway.
+ */
+export function buildPageViewParams(
+  origin: string,
+  pathname: string,
+  search: string,
+  title: string,
+): PageViewParams {
+  const query = search ? (search.startsWith("?") ? search : `?${search}`) : "";
+  const path = `${pathname}${query}`;
+
+  return {
+    page_location: `${origin}${path}`,
+    page_path: path,
+    page_title: title,
+  };
+}
+
 /**
  * Every event the tenant funnel emits.
  *

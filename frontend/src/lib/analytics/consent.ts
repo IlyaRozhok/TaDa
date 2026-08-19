@@ -15,6 +15,8 @@
  * or whose storage is unreadable, gets no analytics.
  */
 
+import { readCookie, writeCookie } from "./cookies";
+
 /** What the banner stores. Kept as-is: users already have these values. */
 export type CookieConsentDecision = "accepted" | "rejected";
 
@@ -32,35 +34,6 @@ export const CONSENT_CHANGED_EVENT = "tada:cookieConsentChanged";
 
 /** Fired to reopen the banner so a decision can be changed. */
 export const CONSENT_REOPEN_EVENT = "tada:openCookieSettings";
-
-function readCookieValue(name: string): string | null {
-  if (typeof document === "undefined") return null;
-
-  const encodedName = encodeURIComponent(name);
-  const match = document.cookie.match(
-    new RegExp(`(?:^|; )${encodedName}=([^;]*)`),
-  );
-
-  if (!match) return null;
-  try {
-    return decodeURIComponent(match[1] ?? "");
-  } catch {
-    return match[1] ?? null;
-  }
-}
-
-function writeCookieValue(name: string, value: string) {
-  if (typeof document === "undefined") return;
-
-  const maxAgeSeconds = CONSENT_MAX_AGE_DAYS * 24 * 60 * 60;
-  const isSecure = window.location.protocol === "https:";
-
-  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
-    value,
-  )}; max-age=${maxAgeSeconds}; path=/; SameSite=Lax${
-    isSecure ? "; Secure" : ""
-  }`;
-}
 
 /**
  * The stored decision, or null if the user has not answered.
@@ -80,7 +53,7 @@ export function readConsentDecision(): CookieConsentDecision | null {
     // localStorage can be unavailable (private mode, blocked storage).
   }
 
-  const raw = stored ?? readCookieValue(CONSENT_COOKIE_KEY);
+  const raw = stored ?? readCookie(CONSENT_COOKIE_KEY);
 
   return raw === "accepted" || raw === "rejected" ? raw : null;
 }
@@ -115,7 +88,7 @@ export function persistConsentDecision(decision: CookieConsentDecision): void {
     // localStorage can be unavailable (private mode, blocked storage).
   }
 
-  writeCookieValue(CONSENT_COOKIE_KEY, decision);
+  writeCookie(CONSENT_COOKIE_KEY, decision, CONSENT_MAX_AGE_DAYS);
 
   window.dispatchEvent(
     new CustomEvent(CONSENT_CHANGED_EVENT, { detail: { decision } }),
