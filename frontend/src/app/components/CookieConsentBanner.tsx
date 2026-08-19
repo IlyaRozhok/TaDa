@@ -18,9 +18,14 @@ import {
  * The cookie consent banner.
  *
  * Previously lived inline in the landing page and was shown to signed-out
- * visitors only. It is mounted from the root layout now because consent is what
- * gates GA4, and the funnel GA4 measures happens after sign-in: a banner the
- * signed-in half of the audience never saw could never be answered by them.
+ * visitors only. It is mounted from the root layout now: the funnel GA4
+ * measures happens after sign-in, so a banner the signed-in half of the
+ * audience never saw could never be answered by them.
+ *
+ * Binary, one non-essential category: Accept all grants the four Consent Mode
+ * v2 signals, Reject non-essential denies them. It does not touch gtag itself —
+ * it stores the decision and `AnalyticsProvider` turns that into a consent
+ * update.
  *
  * Asked once. Once a decision is stored the banner stays down on every later
  * visit, whichever way the user answered; the only way back is the
@@ -67,9 +72,9 @@ export default function CookieConsentBanner() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
 
-      // Dismissing an unanswered banner is a refusal, not a deferral: nothing
-      // non-essential may load until it is answered, so record the rejection.
-      // Once a decision exists, Escape only closes the panel and leaves it be.
+      // Dismissing an unanswered banner is a refusal, not a deferral: the
+      // signals stay denied either way, so record the rejection and stop
+      // waiting. Once a decision exists, Escape only closes the panel.
       if (decided) {
         setOpen(false);
       } else {
@@ -102,7 +107,7 @@ export default function CookieConsentBanner() {
           <p className="mt-2 text-gray-800">
             {label(
               "cookies.analytics.notice",
-              "Analytics cookies help us understand how the platform is used. They stay off unless you accept, and you can change your choice at any time in our Privacy Policy.",
+              "Analytics and advertising cookies help us understand how the platform is used. Nothing is stored on your device until you accept, and you can change your choice at any time in our Privacy Policy.",
             )}
           </p>
 
@@ -112,7 +117,7 @@ export default function CookieConsentBanner() {
               onClick={handleAccept}
               className="bg-black cursor-pointer text-white px-10 py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             >
-              {t("cookies.button.accept")}
+              {label("cookies.button.accept", "Accept all")}
             </button>
 
             <button
@@ -120,7 +125,7 @@ export default function CookieConsentBanner() {
               onClick={handleReject}
               className="text-gray-900 cursor-pointer font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 rounded-md px-2 py-1"
             >
-              {t("cookies.button.reject")}
+              {label("cookies.button.reject", "Reject non-essential")}
             </button>
 
             <Link

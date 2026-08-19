@@ -7,17 +7,20 @@
  *
  * Staging must never reach the production GA4 property. `stage.ta-da.co` is a
  * branch deployment of the same Vercel project as production, so a single check
- * is not enough — four independent conditions have to hold at once, and any
+ * is not enough — three independent conditions have to hold at once, and any
  * one of them failing keeps GA4 uninitialised and every event a no-op:
  *
  *   1. `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set (Vercel Production scope only).
  *   2. `NEXT_PUBLIC_VERCEL_ENV === "production"` (develop deploys are "preview").
  *   3. `window.location.hostname` is one of the production hosts.
- *   4. The user has granted analytics consent in the cookie banner.
  *
- * The consent condition is opt-in for everyone, with no geo-gating: until the
- * banner is answered with Accept, the stored decision is "unset", the guard
- * fails and gtag.js is never even requested.
+ * Consent is deliberately *not* one of them. Google Consent Mode v2 wants the
+ * tag present from the first pageview with every signal denied, sending
+ * cookieless pings it can model conversions from; withholding the tag entirely
+ * until someone clicks Accept throws that modelling away. So gtag.js loads for
+ * everyone on production, `consent default` denies all four signals before
+ * anything else reaches the dataLayer, and the banner's answer arrives later as
+ * a `consent update`. Nothing is stored on the device until it does.
  */
 
 import { readAnalyticsConsent, type AnalyticsConsent } from "./consent";
@@ -29,12 +32,11 @@ export const PROD_HOSTNAMES: readonly string[] = ["ta-da.co", "www.ta-da.co"];
 /** Only tenants move through the tracked funnel; admins and operators do not. */
 const TRACKED_ROLE = "tenant";
 
-/** The four inputs the guard chain reads, passed in so it can be tested. */
+/** The three inputs the guard chain reads, passed in so it can be tested. */
 export interface AnalyticsEnvironment {
   measurementId: string | null | undefined;
   vercelEnv: string | null | undefined;
   hostname: string | null | undefined;
-  consent: AnalyticsConsent;
 }
 
 type GtagFn = (...args: unknown[]) => void;
@@ -47,8 +49,9 @@ interface GtagWindow extends Window {
 /**
  * The guard chain, as a pure function.
  *
- * All four conditions must hold. Kept separate from the browser globals so it
- * can be unit-tested without a DOM.
+ * All three conditions must hold. Kept separate from the browser globals so it
+ * can be unit-tested without a DOM. Consent is not consulted here — it governs
+ * what the tag may *store*, not whether the tag exists.
  */
 export function shouldInitAnalytics(env: AnalyticsEnvironment): boolean {
   const measurementId = env.measurementId?.trim();
@@ -67,12 +70,6 @@ export function shouldInitAnalytics(env: AnalyticsEnvironment): boolean {
     return false;
   }
 
-  // Opt-in: anything other than an explicit grant — including "unset", which is
-  // what an unanswered banner reads as — keeps analytics off.
-  if (env.consent !== "granted") {
-    return false;
-  }
-
   return true;
 }
 
@@ -83,7 +80,6 @@ export function readAnalyticsEnvironment(): AnalyticsEnvironment {
     vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV,
     hostname:
       typeof window === "undefined" ? null : window.location.hostname,
-    consent: readAnalyticsConsent(),
   };
 }
 
@@ -118,21 +114,66 @@ function ensureGtagStub(win: GtagWindow): void {
   }
 }
 
+/** The four Consent Mode v2 signals, all denied. The pre-choice state. */
+const DENIED_SIGNALS = {
+  ad_storage: "denied",
+  ad_user_data: "denied",
+  ad_personalization: "denied",
+  analytics_storage: "denied",
+} as const;
+
+/** The same four, all granted. What "Accept all" means. */
+const GRANTED_SIGNALS = {
+  ad_storage: "granted",
+  ad_user_data: "granted",
+  ad_personalization: "granted",
+  analytics_storage: "granted",
+} as const;
+
+/**
+ * How long gtag.js holds a ping back waiting for the banner's answer, in ms.
+ *
+ * Without it the tag fires its first cookieless ping immediately and a user who
+ * clicks Accept a moment later is measured as if they had refused. 500ms is
+ * Google's suggested value: long enough for a click on a banner that is already
+ * on screen, short enough not to lose the pageview.
+ */
+const CONSENT_WAIT_FOR_UPDATE_MS = 500;
+
 /**
  * Google Consent Mode v2 defaults: everything denied.
  *
- * Pushed before `config`, which is what Consent Mode requires — a default that
- * arrives after the measurement id has already been configured is ignored. The
- * ad_* signals are denied permanently: this property runs no advertising and
- * the banner never asks for it.
+ * Must be pushed before `config` — a default arriving after the measurement id
+ * has been configured is ignored, and the tag would have already behaved as if
+ * consent were granted.
  */
 function setConsentModeDefaults(win: GtagWindow): void {
   win.gtag?.("consent", "default", {
-    ad_storage: "denied",
-    ad_user_data: "denied",
-    ad_personalization: "denied",
-    analytics_storage: "denied",
+    ...DENIED_SIGNALS,
+    wait_for_update: CONSENT_WAIT_FOR_UPDATE_MS,
   });
+}
+
+/**
+ * Pushes the banner's answer to gtag as a Consent Mode update.
+ *
+ * Binary by design: the banner offers one non-essential category, so Accept
+ * grants all four signals and Reject denies all four. "unset" sends nothing —
+ * the default already denies everything, and staying silent is what lets
+ * `wait_for_update` do its job.
+ */
+function updateConsentSignals(consent: AnalyticsConsent): void {
+  if (typeof window === "undefined" || consent === "unset") {
+    return;
+  }
+
+  const win = window as GtagWindow;
+
+  win.gtag?.(
+    "consent",
+    "update",
+    consent === "granted" ? { ...GRANTED_SIGNALS } : { ...DENIED_SIGNALS },
+  );
 }
 
 /**
@@ -140,8 +181,9 @@ function setConsentModeDefaults(win: GtagWindow): void {
  * than once. The gtag.js script itself is loaded by `AnalyticsProvider`; the
  * stub queues everything sent before it arrives.
  *
- * Only reached once consent is granted, so the Consent Mode dance is short:
- * defaults denied, then a single update granting `analytics_storage`.
+ * Runs for every production visitor, whatever they have or have not answered.
+ * The order is the one Consent Mode v2 requires: default (all denied) → js →
+ * config → replay of the stored decision, if there is one.
  */
 export function initAnalytics(): void {
   if (initialized || !isAnalyticsEnabled()) {
@@ -164,36 +206,31 @@ export function initAnalytics(): void {
   // the automatic one would fire on the wrong routes anyway.
   win.gtag?.("config", measurementId, { send_page_view: false });
 
-  win.gtag?.("consent", "update", { analytics_storage: "granted" });
-
   initialized = true;
+
+  // A returning visitor already answered: replay it now so the tag does not sit
+  // out its `wait_for_update` window waiting for a banner that will not appear.
+  updateConsentSignals(readAnalyticsConsent());
 }
 
 /**
- * Re-applies the stored decision to a session that is already running.
+ * Brings the running tag in line with the stored decision.
  *
- * Accepting is handled by `initAnalytics`. This exists for the other direction:
- * a user who accepted and then rejected in the same session has a live gtag.js
- * that must be told to stop using storage. `track()` is already a no-op by then
- * — the guard chain sees "denied" — but the running tag is not ours to leave in
- * a granted state.
+ * Called when the banner is answered and when another tab answers it. On a
+ * session that has not initialised yet this initialises, which replays the
+ * decision as part of the bootstrap; otherwise it sends the update on its own.
  */
 export function syncAnalyticsConsent(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (readAnalyticsConsent() === "granted") {
-    initAnalytics();
+  if (!isAnalyticsEnabled()) {
     return;
   }
 
   if (!initialized) {
+    initAnalytics();
     return;
   }
 
-  const win = window as GtagWindow;
-  win.gtag?.("consent", "update", { analytics_storage: "denied" });
+  updateConsentSignals(readAnalyticsConsent());
 }
 
 /** The subset of the signed-in user analytics is allowed to see. */

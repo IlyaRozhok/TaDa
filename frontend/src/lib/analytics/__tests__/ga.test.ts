@@ -8,6 +8,7 @@ import {
   resetAnalyticsForTests,
   setAnalyticsUser,
   shouldInitAnalytics,
+  syncAnalyticsConsent,
   track,
 } from "../ga";
 
@@ -27,12 +28,13 @@ type FakeWindow = {
 /**
  * Installs a minimal browser global and returns everything gtag received.
  *
- * Consent defaults to "accepted" so every pre-existing case still describes a
- * fully enabled production browser; the consent gate has its own cases below.
+ * `consent` seeds the stored banner decision. It defaults to null — nobody has
+ * answered — because that is the state the tag has to work in: under Consent
+ * Mode v2 it loads anyway, with every signal denied.
  */
 function installWindow(
   hostname: string,
-  consent: CookieConsentDecision | null = "accepted",
+  consent: CookieConsentDecision | null = null,
 ): unknown[][] {
   const calls: unknown[][] = [];
   const store = new Map<string, string>();
@@ -78,7 +80,6 @@ describe("shouldInitAnalytics", () => {
     measurementId: "G-TESTID123",
     vercelEnv: "production",
     hostname: "ta-da.co",
-    consent: "granted",
   } as const;
 
   it("passes when all three conditions hold", () => {
@@ -128,65 +129,31 @@ describe("shouldInitAnalytics", () => {
     expect(shouldInitAnalytics({ ...valid, hostname: null })).toBe(false);
   });
 
-  it("fails until consent is granted — the unanswered banner case", () => {
-    expect(shouldInitAnalytics({ ...valid, consent: "unset" })).toBe(false);
-  });
-
-  it("fails when consent is denied", () => {
-    expect(shouldInitAnalytics({ ...valid, consent: "denied" })).toBe(false);
-  });
-
-  it("still fails on staging even with consent granted", () => {
-    expect(
-      shouldInitAnalytics({
-        ...valid,
-        vercelEnv: "preview",
-        hostname: "stage.ta-da.co",
-      }),
-    ).toBe(false);
-  });
 });
 
-describe("the consent gate", () => {
-  it("keeps analytics disabled in production until the banner is answered", () => {
-    stubProductionEnv();
-    installWindow("ta-da.co", null);
+describe("Consent Mode v2", () => {
+  const DENIED = {
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+    analytics_storage: "denied",
+  };
 
-    expect(isAnalyticsEnabled()).toBe(false);
-  });
+  const GRANTED = {
+    ad_storage: "granted",
+    ad_user_data: "granted",
+    ad_personalization: "granted",
+    analytics_storage: "granted",
+  };
 
-  it("keeps analytics disabled when the banner was rejected", () => {
-    stubProductionEnv();
-    installWindow("ta-da.co", "rejected");
+  const consentUpdates = (calls: unknown[][]) =>
+    calls.filter(([kind, mode]) => kind === "consent" && mode === "update");
 
-    expect(isAnalyticsEnabled()).toBe(false);
-  });
-
-  it("sends nothing to gtag before consent — no init, no events", () => {
+  it("loads on production before anyone has answered the banner", () => {
     stubProductionEnv();
     const calls = installWindow("ta-da.co", null);
 
-    initAnalytics();
-    setAnalyticsUser({ id: "user-1", role: "tenant" });
-    track({ name: "login", params: { method: "google" } });
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it("sends nothing to gtag after a rejection", () => {
-    stubProductionEnv();
-    const calls = installWindow("ta-da.co", "rejected");
-
-    initAnalytics();
-    setAnalyticsUser({ id: "user-1", role: "tenant" });
-    track({ name: "login", params: { method: "google" } });
-
-    expect(calls).toHaveLength(0);
-  });
-
-  it("initialises once consent is granted", () => {
-    stubProductionEnv();
-    const calls = installWindow("ta-da.co", "accepted");
+    expect(isAnalyticsEnabled()).toBe(true);
 
     initAnalytics();
 
@@ -197,7 +164,89 @@ describe("the consent gate", () => {
     ]);
   });
 
-  it("declares Consent Mode v2 defaults as denied before configuring", () => {
+  it("loads on production even after the banner was rejected", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "rejected");
+
+    expect(isAnalyticsEnabled()).toBe(true);
+    initAnalytics();
+
+    expect(calls).toContainEqual([
+      "config",
+      "G-TESTID123",
+      { send_page_view: false },
+    ]);
+  });
+
+  it("sends funnel events for a tenant who has not answered the banner", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", null);
+
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    track({ name: "login", params: { method: "google" } });
+
+    expect(calls).toContainEqual(["event", "login", { method: "google" }]);
+  });
+
+  it("sends funnel events for a tenant who rejected — storage is what is denied, not measurement", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "rejected");
+
+    setAnalyticsUser({ id: "user-1", role: "tenant" });
+    track({ name: "login", params: { method: "google" } });
+
+    expect(calls).toContainEqual(["event", "login", { method: "google" }]);
+  });
+
+  it("defaults all four signals to denied, with wait_for_update, before config", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", null);
+
+    initAnalytics();
+
+    const defaultIndex = calls.findIndex(
+      ([kind, mode]) => kind === "consent" && mode === "default",
+    );
+    const jsIndex = calls.findIndex(([kind]) => kind === "js");
+    const configIndex = calls.findIndex(([kind]) => kind === "config");
+
+    expect(defaultIndex).toBeGreaterThanOrEqual(0);
+    expect(calls[defaultIndex]?.[2]).toEqual({
+      ...DENIED,
+      wait_for_update: 500,
+    });
+    expect(defaultIndex).toBeLessThan(jsIndex);
+    expect(defaultIndex).toBeLessThan(configIndex);
+  });
+
+  it("sends no consent update before a choice — wait_for_update is left to do its job", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", null);
+
+    initAnalytics();
+
+    expect(consentUpdates(calls)).toHaveLength(0);
+  });
+
+  it("grants all four signals when the stored decision is Accept", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "accepted");
+
+    initAnalytics();
+
+    expect(calls).toContainEqual(["consent", "update", GRANTED]);
+  });
+
+  it("denies all four signals explicitly when the stored decision is Reject", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "rejected");
+
+    initAnalytics();
+
+    expect(consentUpdates(calls)).toEqual([["consent", "update", DENIED]]);
+  });
+
+  it("replays the stored decision after the default, not before it", () => {
     stubProductionEnv();
     const calls = installWindow("ta-da.co", "accepted");
 
@@ -206,44 +255,68 @@ describe("the consent gate", () => {
     const defaultIndex = calls.findIndex(
       ([kind, mode]) => kind === "consent" && mode === "default",
     );
-    const configIndex = calls.findIndex(([kind]) => kind === "config");
+    const updateIndex = calls.findIndex(
+      ([kind, mode]) => kind === "consent" && mode === "update",
+    );
 
-    expect(calls[defaultIndex]?.[2]).toEqual({
-      ad_storage: "denied",
-      ad_user_data: "denied",
-      ad_personalization: "denied",
-      analytics_storage: "denied",
-    });
-    expect(defaultIndex).toBeGreaterThanOrEqual(0);
-    expect(defaultIndex).toBeLessThan(configIndex);
+    expect(updateIndex).toBeGreaterThan(defaultIndex);
   });
 
-  it("grants only analytics_storage on acceptance, never the ad signals", () => {
+  it("pushes the update when the banner is answered mid-session", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", null);
+
+    initAnalytics();
+    expect(consentUpdates(calls)).toHaveLength(0);
+
+    // What the banner does: store the decision, then let the provider sync.
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "accepted");
+    syncAnalyticsConsent();
+
+    expect(consentUpdates(calls)).toEqual([["consent", "update", GRANTED]]);
+  });
+
+  it("pushes a denied update when the answer is withdrawn mid-session", () => {
     stubProductionEnv();
     const calls = installWindow("ta-da.co", "accepted");
 
     initAnalytics();
 
-    expect(calls).toContainEqual([
-      "consent",
-      "update",
-      { analytics_storage: "granted" },
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "rejected");
+    syncAnalyticsConsent();
+
+    expect(consentUpdates(calls)).toEqual([
+      ["consent", "update", GRANTED],
+      ["consent", "update", DENIED],
     ]);
   });
 
-  it("still refuses to initialise on staging once consent is granted", () => {
+  it("initialises on the first sync if the session had not bootstrapped yet", () => {
+    stubProductionEnv();
+    const calls = installWindow("ta-da.co", "accepted");
+
+    syncAnalyticsConsent();
+
+    expect(calls.findIndex(([kind]) => kind === "config")).toBeGreaterThanOrEqual(
+      0,
+    );
+    expect(consentUpdates(calls)).toEqual([["consent", "update", GRANTED]]);
+  });
+
+  it("sends nothing at all on staging, whatever the stored decision", () => {
     vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TESTID123");
     vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");
     const calls = installWindow("stage.ta-da.co", "accepted");
 
     initAnalytics();
+    syncAnalyticsConsent();
     setAnalyticsUser({ id: "user-1", role: "tenant" });
     track({ name: "login", params: { method: "google" } });
 
     expect(calls).toHaveLength(0);
   });
 
-  it("still drops events for admins once consent is granted", () => {
+  it("still drops funnel events for admins once consent is granted", () => {
     stubProductionEnv();
     const calls = installWindow("ta-da.co", "accepted");
 
