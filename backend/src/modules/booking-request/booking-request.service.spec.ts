@@ -71,11 +71,16 @@ describe("BookingRequestService.create — notification event", () => {
         bookingId: "booking-1",
         isFirstRequest: true,
         property: { id: "prop-1", title: "Flat 2B", address: "1 Test Road" },
+        // The phone travels as a value, not a flag: the support inbox has to
+        // be able to call it.
+        tenant: {
+          id: "user-1",
+          name: "Tenant One",
+          email: dto.email,
+          phone: dto.phone_number,
+        },
         dateFrom: "2026-09-01",
         dateTo: "2027-09-01",
-        emailProvided: true,
-        phoneProvided: true,
-        descriptionProvided: true,
         message: dto.description,
       }),
     );
