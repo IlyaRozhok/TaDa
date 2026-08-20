@@ -296,7 +296,7 @@ export class PropertyController {
     @Body() createPropertyDto: CreatePropertyDto,
     @CurrentUser() user: User,
   ) {
-    return this.propertyService.create(createPropertyDto, user.id);
+    return this.propertyService.create(createPropertyDto, user.id, user.role);
   }
 
   @ApiBearerAuth()
@@ -308,12 +308,17 @@ export class PropertyController {
     description: "Properties retrieved successfully",
   })
   async findAll(
+    @CurrentUser() user: User,
     @Query("building_id") building_id?: string,
     @Query("operator_id") operator_id?: string,
   ) {
+    // Operators are always scoped to their own properties;
+    // only admins may list everything or filter by an arbitrary operator.
+    const operatorFilter =
+      user.role === UserRole.Admin ? operator_id : user.id;
     return await this.propertyService.findAllWithFreshUrls({
       building_id,
-      operator_id,
+      operator_id: operatorFilter,
     });
   }
 
@@ -323,8 +328,12 @@ export class PropertyController {
   @ApiOperation({ summary: "Get a property by ID" })
   @ApiResponse({ status: 200, description: "Property found" })
   @ApiResponse({ status: 404, description: "Property not found" })
-  async findOne(@Param("id") id: string) {
-    return await this.propertyService.findOneWithFreshUrls(id);
+  async findOne(@Param("id") id: string, @CurrentUser() user: User) {
+    return await this.propertyService.findOneWithFreshUrls(
+      id,
+      user.id,
+      user.role,
+    );
   }
 
   @ApiBearerAuth()
@@ -337,8 +346,14 @@ export class PropertyController {
   update(
     @Param("id") id: string,
     @Body() updatePropertyDto: UpdatePropertyDto,
+    @CurrentUser() user: User,
   ) {
-    return this.propertyService.update(id, updatePropertyDto);
+    return this.propertyService.update(
+      id,
+      updatePropertyDto,
+      user.id,
+      user.role,
+    );
   }
 
   @ApiBearerAuth()
@@ -347,7 +362,7 @@ export class PropertyController {
   @ApiOperation({ summary: "Delete a property" })
   @ApiResponse({ status: 200, description: "Property deleted successfully" })
   @ApiResponse({ status: 404, description: "Property not found" })
-  remove(@Param("id") id: string) {
-    return this.propertyService.remove(id);
+  remove(@Param("id") id: string, @CurrentUser() user: User) {
+    return this.propertyService.remove(id, user.id, user.role);
   }
 }

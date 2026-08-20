@@ -7,9 +7,7 @@ import {
   IsBoolean,
   IsEmail,
   IsDateString,
-  IsEnum,
 } from "class-validator";
-import { UserRole, UserStatus } from "../../../entities/user.entity";
 
 export class UpdateUserDto {
   @ApiPropertyOptional({
@@ -168,23 +166,10 @@ export class UpdateUserDto {
   @IsString()
   additional_info?: string;
 
-  @ApiPropertyOptional({
-    description: "Account status",
-    example: UserStatus.Active,
-    enum: UserStatus,
-  })
-  @IsOptional()
-  @IsEnum(UserStatus)
-  status?: UserStatus;
-
-  @ApiPropertyOptional({
-    description: "User role",
-    example: UserRole.Tenant,
-    enum: UserRole,
-  })
-  @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
+  // `status` and `role` are deliberately NOT accepted here: this DTO backs the
+  // self-service PUT /users/profile, and a user must never change their own
+  // account status (e.g. lift a suspension) or role. Admin flows use
+  // AdminUpdateUserDto / UserRoleService instead.
 
   // Operator-specific fields
   @ApiPropertyOptional({

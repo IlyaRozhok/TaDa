@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import { UserRole } from "@/entities/user.entity";
 import { Property } from "../../entities/property.entity";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
@@ -25,6 +30,7 @@ export class PropertyService {
   async create(
     createPropertyDto: CreatePropertyDto,
     userId: string,
+    userRole: string,
   ): Promise<Property> {
     let building: Building | null = null;
 
@@ -38,6 +44,13 @@ export class PropertyService {
       if (!building) {
         throw new NotFoundException("Building not found");
       }
+
+      // Non-admins may only attach properties to buildings they own
+      if (userRole !== UserRole.Admin && building.operator_id !== userId) {
+        throw new ForbiddenException(
+          "You can only create properties in your own buildings",
+        );
+      }
     }
 
     // Prepare data
@@ -48,9 +61,13 @@ export class PropertyService {
 
     // Handle building vs private landlord logic
     if (createPropertyDto.building_type === "private_landlord") {
-      // For private landlord, link directly to operator
+      // For private landlord, link directly to operator.
+      // Only admins may assign the property to another operator.
       propertyData.building_id = undefined;
-      propertyData.operator_id = createPropertyDto.operator_id || userId;
+      propertyData.operator_id =
+        userRole === UserRole.Admin && createPropertyDto.operator_id
+          ? createPropertyDto.operator_id
+          : userId;
       // Use provided values for inherited fields
       propertyData.address = createPropertyDto.address;
       propertyData.tenant_types = createPropertyDto.tenant_types || [];
@@ -102,8 +119,11 @@ export class PropertyService {
   async update(
     id: string,
     updatePropertyDto: UpdatePropertyDto,
+    userId: string,
+    userRole: string,
   ): Promise<Property> {
     const property = await this.findOne(id);
+    this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
     const updateData: Partial<Property> = {};
 
     // Handle building type changes
@@ -112,9 +132,10 @@ export class PropertyService {
       updatePropertyDto.building_type !== property.building_type
     ) {
       if (updatePropertyDto.building_type === "private_landlord") {
-        // Unlink from building and link directly to operator
+        // Unlink from building and link directly to operator.
+        // Only admins may reassign the property to another operator.
         updateData.building_id = undefined;
-        if (updatePropertyDto.operator_id) {
+        if (updatePropertyDto.operator_id && userRole === UserRole.Admin) {
           updateData.operator_id = updatePropertyDto.operator_id;
         }
         // The inherited fields will be updated below
@@ -128,6 +149,13 @@ export class PropertyService {
 
           if (!building) {
             throw new NotFoundException("Building not found");
+          }
+
+          // Non-admins may only link properties to buildings they own
+          if (userRole !== UserRole.Admin && building.operator_id !== userId) {
+            throw new ForbiddenException(
+              "You can only link properties to your own buildings",
+            );
           }
 
           updateData.building_id = updatePropertyDto.building_id;
@@ -157,6 +185,13 @@ export class PropertyService {
 
       if (!building) {
         throw new NotFoundException("Building not found");
+      }
+
+      // Non-admins may only link properties to buildings they own
+      if (userRole !== UserRole.Admin && building.operator_id !== userId) {
+        throw new ForbiddenException(
+          "You can only link properties to your own buildings",
+        );
       }
 
       updateData.building_id = updatePropertyDto.building_id;
@@ -295,9 +330,21 @@ export class PropertyService {
     return queryBuilder.getMany();
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, userId: string, userRole: string): Promise<void> {
     const property = await this.findOne(id);
+    this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
     await this.propertyRepository.remove(property);
+  }
+
+  private ensureOwnerOrAdmin(
+    operatorId: string | null | undefined,
+    userId: string,
+    userRole: string,
+  ): void {
+    if (userRole === UserRole.Admin) return;
+    if (!operatorId || operatorId !== userId) {
+      throw new ForbiddenException("You can only manage your own properties");
+    }
   }
 
   private async updatePhotosUrls(property: Property): Promise<Property> {
@@ -314,17 +361,26 @@ export class PropertyService {
   }
 
   /**
-   * Find property by ID with updated photo URLs
+   * Find property by ID with updated photo URLs.
+   * Operators can only read their own properties; admins can read any.
    */
-  async findOneWithFreshUrls(id: string): Promise<Property> {
+  async findOneWithFreshUrls(
+    id: string,
+    userId: string,
+    userRole: string,
+  ): Promise<Property> {
     const property = await this.findOne(id);
+    this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
     return await this.updatePhotosUrls(property);
   }
 
   /**
    * Find all properties with updated photo URLs
    */
-  async findAllWithFreshUrls(params?: any): Promise<Property[]> {
+  async findAllWithFreshUrls(params?: {
+    building_id?: string;
+    operator_id?: string;
+  }): Promise<Property[]> {
     const properties = await this.findAll(params);
     return await Promise.all(
       properties.map((property) => this.updatePhotosUrls(property)),

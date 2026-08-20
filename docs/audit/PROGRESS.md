@@ -1,5 +1,8 @@
 # PROGRESS — living refactoring tracker
 
+**Out-of-band security batch in flight (2026-08-20)** — five week-1 fixes from an external
+review in one PR at the owner's request; see «Bugfixes outside the phase numbering».
+
 **Current step: 6.7 done (2026-08-10) — entity ownership is fixed and PHASE 6 IS CLOSED,
 on `phase/6.7-entity-ownership`, PR pending.** The step deliberately did **not** do what
 §6.7 literally says. Moving the entity files into owner modules is 71 files of import churn
@@ -526,6 +529,7 @@ wait for one; each still gets its own branch and PR.
 
 | Date | What | Risk | Status | PR | Stage | Note |
 |---|---|---|---|---|---|---|
+| 2026-08-20 | **Security-hardening batch (external review, week-1 items): property IDOR, self-service status change, noindex on prod, hardcoded EmailJS keys, hollow health check** | 🟡 | 🟡 | — | ⬜ | Five fixes in one PR at the owner's explicit request — see «2026-08-20 security batch» below |
 | 2026-08-06 | **Users signed out a few hours into a session instead of staying in for the refresh window** | 🟡 | 🟡 | — | ⬜ | See below |
 
 **Root cause.** The frontend never called `POST /auth/refresh` — the string did not
@@ -565,6 +569,43 @@ started calling it.
 **After the merge, verify on stage:** sign in, leave the tab open, come back later and
 act — the session must be alive, with one `POST /auth/refresh` in the network log and no
 `Refresh token reuse or invalidation detected` in the API logs.
+
+### 2026-08-20 security batch
+
+Findings from an external code review; the owner asked for the week-1 set as a single PR,
+deliberately departing from one-step-one-PR. What it does:
+
+1. **Property object-level authorization.** `PATCH/DELETE/GET /properties/:id` checked the
+   role but never the owner: any operator could read, edit or delete any other operator's
+   listing, `operator_id` was accepted from the request body on create/update (listing
+   spoofing), and `GET /properties` without `?operator_id=` returned the whole table.
+   `PropertyService` now enforces owner-or-admin on every path (same pattern as
+   `PropertyMediaService.ensureOwnerOrAdmin`), only admins may set or reassign
+   `operator_id` or attach properties to other operators' buildings, and the protected
+   list is always scoped to the caller unless the caller is an admin.
+2. **Self-service suspension lift.** `PUT /users/profile` applied `status` from the body,
+   so a suspended user could re-activate themselves; `role` sat in the same DTO unused.
+   Both fields are removed from `UpdateUserDto` (admin flows use `AdminUpdateUserDto` /
+   `UserRoleService`). `JwtStrategy.validate` now rejects non-active accounts, mirroring
+   the refresh-path check — before this, suspension only took effect when the 15-minute
+   access token expired.
+3. **`noindex` was unconditional.** The root layout hardcoded
+   `noindex,nofollow,noarchive,nosnippet,noimageindex` for every environment — the
+   production marketplace was invisible to search engines. Indexing is now allowed
+   exactly when `NEXT_PUBLIC_VERCEL_ENV === "production"`, with matching `robots.ts` and
+   a `sitemap.ts` that lists the static pages plus public property pages.
+4. **EmailJS keys moved to environment variables** (`EMAILJS_*`, documented in
+   `.env.example`); the route answers 503 when unset. Host action: set the three vars in
+   Vercel and rotate the exposed key. The route itself is still slated for removal in
+   notifications PR2 (see «Noticed along the way»).
+5. **Health check touches the database.** `/api/health` runs `SELECT 1` and answers 503
+   when the DB is unreachable — LAUNCH_PLAN #5 done, which leaves the deploy reorder
+   (LAUNCH_PLAN #4) blocked only on the restore rehearsal (#2). The deploy workflow now
+   also prints an unmissable `::error` with remediation when a migration fails after the
+   new container is already serving.
+
+**Not included, still open from week 1:** installing the backup toolchain and rehearsing a
+restore (host actions — the deploy-order fix stays parked behind them).
 
 ---
 
