@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 
+// Serves the EmailJS configuration to the client (see EmailJSInitializer).
+// The values are read from server-side environment variables (Vercel project
+// settings / .env.local) so they never live in the repository or the bundle.
 export async function GET() {
-  // Прямые значения из Vercel Environment Variables
-  const config = {
-    serviceId: "service_6pn9c83",
-    templateId: "template_bgp9fyr",
-    publicKey: "n0_0RE2RxeO-ugY3W",
-  };
+  const serviceId = process.env.EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID;
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY;
 
-  console.log("EmailJS Config API - returning hardcoded values");
+  if (!serviceId || !templateId || !publicKey) {
+    return NextResponse.json(
+      { success: false, error: "EmailJS is not configured" },
+      { status: 503 },
+    );
+  }
 
   return NextResponse.json({
     success: true,
-    config,
+    config: { serviceId, templateId, publicKey },
   });
 }

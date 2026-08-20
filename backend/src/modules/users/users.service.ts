@@ -72,7 +72,6 @@ export class UsersService {
 
     if (updateUserDto.email)                    updates.email      = updateUserDto.email.toLowerCase();
     if (updateUserDto.avatar_url !== undefined)  updates.avatar_url = updateUserDto.avatar_url;
-    if (updateUserDto.status)                   updates.status     = updateUserDto.status;
     if (firstName !== undefined)                updates.first_name = firstName;
     if (lastName  !== undefined)                updates.last_name  = lastName;
     if (updateUserDto.address !== undefined)    updates.address    = updateUserDto.address;

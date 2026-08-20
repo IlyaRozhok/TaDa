@@ -16,9 +16,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Only the production deployment (ta-da.co) may be indexed. Staging and
+// preview deployments stay hidden from crawlers. NEXT_PUBLIC_VERCEL_ENV is
+// set automatically by Vercel and is "production" only for the prod deploy;
+// robots.ts applies the same rule at the robots.txt level.
+const isIndexable = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ta-da.co"),
   title: "TaDa - Rental Platform",
   description: "Connect tenants and property operators in London",
+  robots: isIndexable
+    ? { index: true, follow: true }
+    : {
+        index: false,
+        follow: false,
+        noarchive: true,
+        nosnippet: true,
+        noimageindex: true,
+      },
 };
 
 export const viewport: Viewport = {
@@ -37,10 +53,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta
-          name="robots"
-          content="noindex,nofollow,noarchive,nosnippet,noimageindex"
-        />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta
           httpEquiv="Cache-Control"
