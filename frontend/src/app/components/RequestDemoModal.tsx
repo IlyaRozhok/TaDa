@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import { sendDemoRequest } from "../lib/emailjs";
+import { sendDemoRequest } from "../lib/demoRequest";
 import { useTranslation } from "../hooks/useTranslation";
 import { generalKeys } from "../lib/translationsKeys/generalKeys";
 import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";

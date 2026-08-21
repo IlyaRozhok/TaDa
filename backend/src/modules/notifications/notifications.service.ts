@@ -16,6 +16,7 @@ import {
 } from "./notifications.config";
 import {
   BookingRequestedEvent,
+  DemoRequestedEvent,
   NotificationEvents,
   TenantCvCompletedEvent,
   UserRegisteredEvent,
@@ -61,6 +62,20 @@ export class NotificationsService {
     await this.record(
       NotificationType.TenantCvCompleted,
       `cv_completed:${event.userId}`,
+      event as unknown as Record<string, unknown>,
+    );
+  }
+
+  @OnEvent(NotificationEvents.DemoRequested, { async: true })
+  async handleDemoRequested(event: DemoRequestedEvent): Promise<void> {
+    // One notification per email address per UTC day: a double-click on the
+    // form is swallowed as a duplicate, while a genuine follow-up the next
+    // day still comes through. The date comes from the event, not the row,
+    // so replays keep their original key.
+    const day = event.requestedAt.toISOString().slice(0, 10);
+    await this.record(
+      NotificationType.DemoRequested,
+      `demo_request:${event.email.toLowerCase()}:${day}`,
       event as unknown as Record<string, unknown>,
     );
   }
