@@ -4,11 +4,10 @@ import { TenantCv } from "@/entities/tenant-cv.entity";
 import { UsersModule } from "@/modules/users/users.module";
 import { TenantCvService } from "./tenant-cv.service";
 import { TenantCvController } from "./tenant-cv.controller";
-import { S3Service } from "@/common/services/s3.service";
 
 @Module({
   imports: [TypeOrmModule.forFeature([TenantCv]), UsersModule],
-  providers: [TenantCvService, S3Service],
+  providers: [TenantCvService],
   controllers: [TenantCvController],
   exports: [TenantCvService],
 })

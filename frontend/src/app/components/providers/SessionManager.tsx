@@ -36,7 +36,6 @@ export default function SessionManager() {
 
         if (response.data && response.data.user) {
           dispatch(setUser({ user: response.data.user }));
-          console.log("Session restored for:", response.data.user.email);
 
           // Restoring a session re-binds the analytics identity but is NOT a
           // login: this runs on every page load, and only the OAuth callback

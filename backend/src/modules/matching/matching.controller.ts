@@ -102,9 +102,17 @@ export class MatchingController {
     @Query("prefilters") prefilters?: string
   ) {
     const userId = req.user.id;
+    // Same caps as every other paginated read (normalizeFindParams,
+    // GetMatchScoresDto): this route used to accept ?limit=5000 and hydrate
+    // it all — full entities, joins and a presign per photo — per request.
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
     return this.matchingService.getMatchedPropertiesWithPagination(userId, {
-      page: page ? Number(page) : 1,
-      limit: limit ? Number(limit) : 12,
+      page: Number.isFinite(parsedPage) && parsedPage >= 1 ? Math.floor(parsedPage) : 1,
+      limit:
+        Number.isFinite(parsedLimit) && parsedLimit >= 1
+          ? Math.min(Math.floor(parsedLimit), 100)
+          : 12,
       search,
       prefilters: prefilters !== "false",
     });

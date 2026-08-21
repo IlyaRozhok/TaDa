@@ -216,3 +216,65 @@ describe("BookingRequestService.updateStatus — transition rules", () => {
     expect(bookingRepository.save).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * The resubmit branch of create() writes `status` too, so the lifecycle must
+ * hold there as well — it used to reset ANY booking (including rented) to new.
+ */
+describe("BookingRequestService.create — resubmit lifecycle", () => {
+  const dto = {
+    property_id: "prop-1",
+    email: "tenant@example.com",
+    phone_number: "+44 7000 000000",
+    date_from: "2026-09-01",
+    date_to: "2027-09-01",
+    description: "Updated message",
+  };
+  const property = { id: "prop-1", title: "Flat 2B", address: "1 Test Road" };
+
+  let bookingRepository: any;
+  let service: BookingRequestService;
+
+  const withExisting = (status: BookingRequestStatus) => {
+    bookingRepository.findOne.mockResolvedValue({
+      id: "booking-1",
+      property_id: "prop-1",
+      tenant_id: "tenant-1",
+      status,
+    });
+  };
+
+  beforeEach(() => {
+    bookingRepository = {
+      findOne: jest.fn(),
+      create: jest.fn((values: any) => values),
+      save: jest.fn(async (booking: any) => booking),
+    };
+    service = new BookingRequestService(
+      bookingRepository,
+      { findOne: jest.fn().mockResolvedValue(property) } as any,
+      { emit: jest.fn() } as unknown as EventEmitter2,
+    );
+  });
+
+  it("keeps the current stage on an active booking instead of resetting to new", async () => {
+    withExisting(BookingRequestStatus.Contract);
+    const result = await service.create(dto as any, "tenant-1");
+    expect(result.status).toBe(BookingRequestStatus.Contract);
+    expect(result.description).toBe("Updated message");
+  });
+
+  it("reopens a cancelled booking at the start of the pipeline", async () => {
+    withExisting(BookingRequestStatus.CancelBooking);
+    const result = await service.create(dto as any, "tenant-1");
+    expect(result.status).toBe(BookingRequestStatus.New);
+  });
+
+  it("refuses to reopen a rented booking", async () => {
+    withExisting(BookingRequestStatus.Rented);
+    await expect(service.create(dto as any, "tenant-1")).rejects.toThrow(
+      /already rented/,
+    );
+    expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+});

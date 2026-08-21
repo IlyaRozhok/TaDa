@@ -5,7 +5,6 @@ import { PropertyService } from "./property.service";
 import { PropertyController } from "./property.controller";
 import { Property } from "../../entities/property.entity";
 import { Building } from "../../entities/building.entity";
-import { S3Service } from "../../common/services/s3.service";
 
 @Module({
   imports: [
@@ -22,7 +21,7 @@ import { S3Service } from "../../common/services/s3.service";
     }),
   ],
   controllers: [PropertyController],
-  providers: [PropertyService, S3Service],
+  providers: [PropertyService],
   exports: [PropertyService],
 })
 export class PropertyModule {}

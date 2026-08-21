@@ -6,7 +6,6 @@ import { PropertyMediaController } from "./property-media.controller";
 import { PropertyMediaService } from "./property-media.service";
 import { PropertyMedia } from "../../entities/property-media.entity";
 import { Property } from "../../entities/property.entity";
-import { S3Service } from "../../common/services/s3.service";
 
 @Module({
   imports: [
@@ -24,7 +23,7 @@ import { S3Service } from "../../common/services/s3.service";
     }),
   ],
   controllers: [PropertyMediaController],
-  providers: [PropertyMediaService, S3Service],
+  providers: [PropertyMediaService],
   exports: [PropertyMediaService],
 })
 export class PropertyMediaModule {}

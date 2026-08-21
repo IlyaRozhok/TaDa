@@ -27,9 +27,23 @@ const resolveAge = (dateOfBirth?: Date | string | null): number | null => {
   return calculateAge(asDate);
 };
 
+/** "j•••@example.com" — enough to recognise your own address, useless to harvest. */
+const maskEmail = (email: string): string => {
+  const at = email.indexOf("@");
+  if (at <= 0) return "•••";
+  return `${email[0]}•••${email.slice(at)}`;
+};
+
+/** Keeps the last three digits: "••• ••• •890". */
+const maskPhone = (phone: string): string => {
+  const digits = phone.replace(/\D/g, "");
+  return `••• ••• •${digits.slice(-3) || "•••"}`;
+};
+
 export const buildTenantCvResponse = (
   user: User,
   cv?: TenantCv | null,
+  options: { maskContacts?: boolean } = {},
 ): TenantCvResponseDto => {
   const preferences = user.preferences as Preferences | undefined;
   const tenantProfile = user.tenantProfile;
@@ -49,12 +63,24 @@ export const buildTenantCvResponse = (
       user.full_name ||
       null,
     avatar_url: user.avatar_url || null,
-    email: user.email || null,
-    phone: user.phone || null,
+    // Anonymous share-link viewers get masked contacts and no home address:
+    // the link's purpose survives (an operator can recognise the person and
+    // sign in for the rest), a leaked link no longer leaks a phone number.
+    email: user.email
+      ? options.maskContacts
+        ? maskEmail(user.email)
+        : user.email
+      : null,
+    phone: user.phone
+      ? options.maskContacts
+        ? maskPhone(user.phone)
+        : user.phone
+      : null,
     age_years: ageYears,
     nationality: user.nationality || null,
     occupation: tenantProfile?.occupation || null,
-    address: user.address || null,
+    address: options.maskContacts ? null : user.address || null,
+    contacts_masked: Boolean(options.maskContacts),
   };
 
   const meta = {

@@ -16,10 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 // Only the production deployment (ta-da.co) may be indexed. Staging and
-// preview deployments stay hidden from crawlers. NEXT_PUBLIC_VERCEL_ENV is
-// set automatically by Vercel and is "production" only for the prod deploy;
-// robots.ts applies the same rule at the robots.txt level.
-const isIndexable = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+// preview deployments stay hidden from crawlers; robots.ts applies the same
+// rule at the robots.txt level. The switch lives in lib/siteEnv.ts.
+import { isIndexableSite as isIndexable } from "@/app/lib/siteEnv";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ta-da.co"),
@@ -52,13 +51,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta
-          httpEquiv="Cache-Control"
-          content="no-cache, no-store, must-revalidate"
-        />
-        <meta httpEquiv="Expires" content="0" />
-
         {/* No hand-written image preloads here. They sat in the root layout, so
             every route paid for them, and neither one helped: the hero is
             rendered by <Image priority>, which emits its own preload for the

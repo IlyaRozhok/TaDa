@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
@@ -12,6 +13,8 @@ import { TenantCvService } from "./tenant-cv.service";
 import { UpdateTenantCvDto } from "./dto/update-tenant-cv.dto";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
 import { Public } from "@/common/decorators/public.decorator";
+import { OptionalJwtAuthGuard } from "@/common/guards/optional-jwt-auth.guard";
+import { User } from "@/entities/user.entity";
 import { Roles } from "@/common/decorators/roles.decorator";
 import { UserRole } from "@/entities/user.entity";
 
@@ -67,10 +70,20 @@ export class TenantCvController {
     return this.tenantCvService.ensureShareUuid(user.id);
   }
 
-  /** The share link: anyone holding the uuid can read the CV. */
+  /**
+   * The share link: anyone holding the uuid can read the CV — but direct
+   * contact details (email, phone, address) are masked unless the viewer is
+   * signed in. A leaked link stops being a leaked phone number.
+   */
   @Get(":share_uuid")
   @Public()
-  async getPublicCv(@Param("share_uuid") shareUuid: string) {
-    return this.tenantCvService.getByShareUuid(shareUuid);
+  @UseGuards(OptionalJwtAuthGuard)
+  async getPublicCv(
+    @Param("share_uuid") shareUuid: string,
+    @CurrentUser() viewer?: User,
+  ) {
+    return this.tenantCvService.getByShareUuid(shareUuid, {
+      maskContacts: !viewer,
+    });
   }
 }
