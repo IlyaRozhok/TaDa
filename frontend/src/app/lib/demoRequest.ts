@@ -4,13 +4,12 @@
 // notification. Plain fetch on purpose — the form lives on the public
 // landing, so no auth client is involved.
 
-interface DemoRequestData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  source?: string; // "Operator" | "Tenant" | "Website"
-}
+import type { components } from "@/types/generated/api";
+
+// The wire shape comes from the backend's OpenAPI spec (npm run gen:api) —
+// first consumer of the generated types; a DTO change on the backend breaks
+// this file at compile time instead of at runtime.
+type DemoRequestData = components["schemas"]["CreateDemoRequestDto"];
 
 export async function sendDemoRequest(
   data: DemoRequestData,

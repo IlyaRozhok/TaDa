@@ -1,0 +1,4971 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "AppController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "get": {
+        "operationId": "AuthController_googleAuth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/auth/google/callback": {
+      "get": {
+        "operationId": "AuthController_googleCallback",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/tenant-cv/me": {
+      "get": {
+        "operationId": "TenantCvController_getMyCv",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tenant CV"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tenant-cv/current": {
+      "get": {
+        "operationId": "TenantCvController_getCurrentCv",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tenant CV"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tenant-cv": {
+      "put": {
+        "operationId": "TenantCvController_updateMyCv",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantCvDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tenant CV"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tenant-cv/complete": {
+      "post": {
+        "operationId": "TenantCvController_completeMyCv",
+        "summary": "Mark tenant onboarding as completed (idempotent)",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Completion recorded"
+          }
+        },
+        "tags": [
+          "Tenant CV"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tenant-cv/share": {
+      "post": {
+        "operationId": "TenantCvController_createShareLink",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tenant CV"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/tenant-cv/{share_uuid}": {
+      "get": {
+        "operationId": "TenantCvController_getPublicCv",
+        "parameters": [
+          {
+            "name": "share_uuid",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Tenant CV"
+        ]
+      }
+    },
+    "/api/users/profile": {
+      "get": {
+        "operationId": "UsersController_getProfile",
+        "summary": "Get current user profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "UsersController_updateProfile",
+        "summary": "Update current user profile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      }
+    },
+    "/api/users/avatar": {
+      "post": {
+        "operationId": "UsersController_uploadAvatar",
+        "summary": "Upload avatar for current user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Avatar uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      }
+    },
+    "/api/users/account": {
+      "delete": {
+        "operationId": "UsersController_deleteAccount",
+        "summary": "Delete current user account",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User account deleted successfully"
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "operationId": "UsersController_getAllUsers",
+        "summary": "Get all users (admin only)",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_adminCreateUser",
+        "summary": "Create user (admin only)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      }
+    },
+    "/api/users/{id}": {
+      "put": {
+        "operationId": "UsersController_adminUpdateUser",
+        "summary": "Update user by id (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_adminDeleteUser",
+        "summary": "Delete user by id (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted"
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      }
+    },
+    "/api/users/{id}/role": {
+      "put": {
+        "operationId": "UsersController_updateUserRole",
+        "summary": "Update user role (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User role updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "access-token": []
+          }
+        ]
+      }
+    },
+    "/api/preferences/all": {
+      "get": {
+        "operationId": "PreferencesController_findAll",
+        "summary": "Get all preferences (Admin only)",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All preferences retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Preferences"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/preferences": {
+      "post": {
+        "operationId": "PreferencesController_save",
+        "summary": "Save current user preferences (tenant or admin)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Preferences saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only tenants or admins can set preferences"
+          }
+        },
+        "tags": [
+          "Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "PreferencesController_findMy",
+        "summary": "Get current user preferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Preferences retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Preferences not found"
+          }
+        },
+        "tags": [
+          "Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "PreferencesController_update",
+        "summary": "Update current user preferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preferences updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Preferences not found"
+          }
+        },
+        "tags": [
+          "Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "PreferencesController_delete",
+        "summary": "Delete current user preferences",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Preferences deleted successfully"
+          },
+          "404": {
+            "description": "Preferences not found"
+          }
+        },
+        "tags": [
+          "Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/preferences/admin/{userId}": {
+      "put": {
+        "operationId": "PreferencesController_updateByAdmin",
+        "summary": "Update user preferences (Admin only)",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preferences updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Preferences not found"
+          }
+        },
+        "tags": [
+          "Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "PreferencesController_clearByAdmin",
+        "summary": "Clear user preferences (Admin only)",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preferences cleared successfully"
+          },
+          "404": {
+            "description": "Preferences not found"
+          }
+        },
+        "tags": [
+          "Preferences"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/matching/property/{propertyId}": {
+      "get": {
+        "operationId": "MatchingController_getPropertyMatch",
+        "summary": "Get match details for a specific property",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed match information for the property"
+          }
+        },
+        "tags": [
+          "Matching"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/matching/scores": {
+      "post": {
+        "operationId": "MatchingController_getMatchScores",
+        "summary": "Get match scores for a batch of properties",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetMatchScoresDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Map of property id to match score and category breakdown. Empty when the user has no preferences"
+          }
+        },
+        "tags": [
+          "Matching"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/matching/matched-properties": {
+      "get": {
+        "operationId": "MatchingController_getMatchedPropertiesWithPagination",
+        "summary": "Get matched properties with pagination and search (sorted by match score)",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "prefilters",
+            "required": false,
+            "in": "query",
+            "description": "SQL pre-filtering of properties that fall outside the user's budget, bedroom and property-type preferences before scoring (generous ranges, NULLs kept). Default `true`; pass `false` to rank the whole inventory. Ignored for a user with no preferences, which is what the filters are derived from",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of matched properties sorted by match score. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when nothing was scored (no preferences, or no property matched)"
+          }
+        },
+        "tags": [
+          "Matching"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties/public/all": {
+      "get": {
+        "operationId": "PropertyController_findAllPublic",
+        "summary": "Get all public properties (no auth required)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Public properties retrieved successfully"
+          }
+        },
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/properties/public/{id}": {
+      "get": {
+        "operationId": "PropertyController_findOnePublic",
+        "summary": "Get a public property by ID (no auth required)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property found"
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        },
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/properties/public": {
+      "get": {
+        "operationId": "PropertyController_getPublicProperties",
+        "summary": "Get paginated public properties (no auth required)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Public properties retrieved successfully"
+          }
+        },
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/properties/upload/photos": {
+      "post": {
+        "operationId": "PropertyController_uploadPhotos",
+        "summary": "Upload property photos",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Photos uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "key": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties/upload/video": {
+      "post": {
+        "operationId": "PropertyController_uploadVideo",
+        "summary": "Upload property video",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "video": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Video uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties/upload/documents": {
+      "post": {
+        "operationId": "PropertyController_uploadDocuments",
+        "summary": "Upload property documents",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documents": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Documents uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties": {
+      "post": {
+        "operationId": "PropertyController_create",
+        "summary": "Create a new property",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePropertyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Property created successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Building not found"
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "PropertyController_findAll",
+        "summary": "Get all properties",
+        "parameters": [
+          {
+            "name": "building_id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operator_id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Properties retrieved successfully"
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties/{id}": {
+      "get": {
+        "operationId": "PropertyController_findOne",
+        "summary": "Get a property by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property found"
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "PropertyController_update",
+        "summary": "Update a property",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePropertyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "PropertyController_remove",
+        "summary": "Delete a property",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property deleted successfully"
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        },
+        "tags": [
+          "properties"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties/{propertyId}/media": {
+      "post": {
+        "operationId": "PropertyMediaController_uploadMedia",
+        "summary": "Upload media file for property",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyMedia"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Property Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "PropertyMediaController_getPropertyMedia",
+        "summary": "Get all media for property",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media files retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PropertyMedia"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Property Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties/{propertyId}/media/{mediaId}": {
+      "delete": {
+        "operationId": "PropertyMediaController_deleteMedia",
+        "summary": "Delete media file",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mediaId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media file deleted"
+          }
+        },
+        "tags": [
+          "Property Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/properties/{propertyId}/media/order": {
+      "put": {
+        "operationId": "PropertyMediaController_updateMediaOrder",
+        "summary": "Update media display order",
+        "description": "Update the display order of media files for a property",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mediaOrders": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "order_index": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Media order updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PropertyMedia"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to update media for this property"
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        },
+        "tags": [
+          "Property Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/shortlist/{propertyId}": {
+      "post": {
+        "operationId": "ShortlistController_addToShortlist",
+        "summary": "Add property to shortlist",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Property added to shortlist successfully"
+          },
+          "400": {
+            "description": "Shortlist is available only for tenant or admin roles"
+          },
+          "404": {
+            "description": "Property not found"
+          },
+          "409": {
+            "description": "Property already in shortlist"
+          }
+        },
+        "tags": [
+          "shortlist"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "ShortlistController_removeFromShortlist",
+        "summary": "Remove property from shortlist",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property removed from shortlist successfully"
+          },
+          "400": {
+            "description": "Shortlist is available only for tenant or admin roles"
+          },
+          "404": {
+            "description": "Property not found in shortlist"
+          }
+        },
+        "tags": [
+          "shortlist"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/shortlist": {
+      "get": {
+        "operationId": "ShortlistController_getUserShortlist",
+        "summary": "Get user's shortlisted properties",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Shortlisted properties retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Property"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Shortlist is available only for tenant or admin roles"
+          }
+        },
+        "tags": [
+          "shortlist"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "ShortlistController_clearShortlist",
+        "summary": "Clear entire shortlist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Shortlist cleared successfully"
+          },
+          "400": {
+            "description": "Shortlist is available only for tenant or admin roles"
+          }
+        },
+        "tags": [
+          "shortlist"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/shortlist/count": {
+      "get": {
+        "operationId": "ShortlistController_getShortlistCount",
+        "summary": "Get shortlist count",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Shortlist count retrieved successfully"
+          }
+        },
+        "tags": [
+          "shortlist"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/shortlist/check/{propertyId}": {
+      "get": {
+        "operationId": "ShortlistController_checkShortlistStatus",
+        "summary": "Check if property is shortlisted",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shortlist status retrieved successfully"
+          }
+        },
+        "tags": [
+          "shortlist"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/buildings/public/{id}": {
+      "get": {
+        "operationId": "BuildingController_findOnePublic",
+        "summary": "Get a public building by ID (no auth required)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Building found"
+          },
+          "404": {
+            "description": "Building not found"
+          }
+        },
+        "tags": [
+          "buildings"
+        ]
+      }
+    },
+    "/api/buildings": {
+      "post": {
+        "operationId": "BuildingController_create",
+        "summary": "Create a new building",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBuildingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Building created successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Operator not found"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "BuildingController_findAll",
+        "summary": "Get all buildings",
+        "parameters": [
+          {
+            "name": "operator_id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of buildings"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/buildings/operators": {
+      "get": {
+        "operationId": "BuildingController_getOperators",
+        "summary": "Get all operators",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of operators"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/buildings/{id}": {
+      "get": {
+        "operationId": "BuildingController_findOne",
+        "summary": "Get a building by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Building found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Building not found"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "BuildingController_update",
+        "summary": "Update a building",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBuildingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Building updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Building not found"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "BuildingController_remove",
+        "summary": "Delete a building",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Building deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete building with associated properties"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Building not found"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/buildings/upload/logo": {
+      "post": {
+        "operationId": "BuildingController_uploadLogo",
+        "summary": "Upload building logo",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Logo uploaded successfully"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/buildings/upload/video": {
+      "post": {
+        "operationId": "BuildingController_uploadVideo",
+        "summary": "Upload building video",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Video uploaded successfully"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/buildings/upload/photos": {
+      "post": {
+        "operationId": "BuildingController_uploadPhotos",
+        "summary": "Upload building photos",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Photos uploaded successfully"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/buildings/upload/documents": {
+      "post": {
+        "operationId": "BuildingController_uploadDocuments",
+        "summary": "Upload building documents",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Documents uploaded successfully"
+          }
+        },
+        "tags": [
+          "buildings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/booking-requests": {
+      "post": {
+        "operationId": "BookingRequestController_create",
+        "summary": "Create a booking request (tenant or admin)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking request created"
+          }
+        },
+        "tags": [
+          "booking-requests"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "BookingRequestController_findAll",
+        "summary": "List booking requests (admin)",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking requests retrieved"
+          }
+        },
+        "tags": [
+          "booking-requests"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/booking-requests/me": {
+      "get": {
+        "operationId": "BookingRequestController_findMine",
+        "summary": "List my booking requests (tenant or admin)",
+        "parameters": [
+          {
+            "name": "property_id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking requests retrieved"
+          }
+        },
+        "tags": [
+          "booking-requests"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/booking-requests/{id}/status": {
+      "patch": {
+        "operationId": "BookingRequestController_updateStatus",
+        "summary": "Update booking request status (admin)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBookingStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking status updated"
+          }
+        },
+        "tags": [
+          "booking-requests"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/demo-requests": {
+      "post": {
+        "operationId": "NotificationsController_requestDemo",
+        "summary": "Submit a demo request from the public landing form",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDemoRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Request accepted for delivery"
+          },
+          "400": {
+            "description": "Validation failed"
+          }
+        },
+        "tags": [
+          "notifications"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "TaDa Rental Platform API",
+    "description": "API for connecting tenants and property operators",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "access-token": {
+        "scheme": "Bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Bearer. Пример: 'Bearer 12345abcdef'",
+        "name": "Authorization",
+        "type": "http",
+        "in": "Header"
+      }
+    },
+    "schemas": {
+      "RentHistoryEntryDto": {
+        "type": "object",
+        "properties": {
+          "property_name": {
+            "type": "string",
+            "description": "Property name",
+            "example": "Kings Cross Apartments"
+          },
+          "address": {
+            "type": "string",
+            "description": "Property address line",
+            "example": "37 Swinton Street"
+          },
+          "city": {
+            "type": "string",
+            "description": "City or area",
+            "example": "London"
+          },
+          "price_per_month": {
+            "type": "number",
+            "description": "Monthly rent price",
+            "example": 1712
+          },
+          "bedrooms": {
+            "type": "number",
+            "description": "Bedrooms count",
+            "example": 1
+          },
+          "bathrooms": {
+            "type": "number",
+            "description": "Bathrooms count",
+            "example": 1
+          },
+          "size_sqft": {
+            "type": "number",
+            "description": "Size in sqft",
+            "example": 497
+          },
+          "property_type": {
+            "type": "string",
+            "description": "Property type",
+            "example": "apartment"
+          },
+          "furnishing": {
+            "type": "string",
+            "description": "Furnishing description",
+            "example": "furnished"
+          },
+          "match_score": {
+            "type": "number",
+            "description": "Matching score percent",
+            "example": 90
+          },
+          "review": {
+            "type": "string",
+            "description": "Landlord or concierge review",
+            "example": "Excellent tenant"
+          },
+          "landlord": {
+            "type": "string",
+            "description": "Landlord/author name",
+            "example": "King Cross Apartments"
+          },
+          "period_from": {
+            "type": "string",
+            "description": "Start date ISO",
+            "example": "2021-06-01"
+          },
+          "period_to": {
+            "type": "object",
+            "description": "End date ISO or null",
+            "example": "2024-03-01"
+          },
+          "media_url": {
+            "type": "string",
+            "description": "Optional media preview URL",
+            "example": "https://..."
+          }
+        }
+      },
+      "UpdateTenantCvDto": {
+        "type": "object",
+        "properties": {
+          "headline": {
+            "type": "string",
+            "description": "Custom headline for CV (e.g., Ready to move - Long term 6+ m)"
+          },
+          "about_me": {
+            "type": "string",
+            "description": "About me text to show on the CV"
+          },
+          "hobbies": {
+            "description": "Custom hobbies list (overrides preferences.hobbies on CV)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rent_history": {
+            "description": "Rent history entries to display on CV",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RentHistoryEntryDto"
+            }
+          },
+          "kyc_status": {
+            "type": "string",
+            "description": "KYC status badge",
+            "example": "in_progress"
+          },
+          "referencing_status": {
+            "type": "string",
+            "description": "Referencing status badge",
+            "example": "pending"
+          },
+          "share_uuid": {
+            "type": "string",
+            "description": "Optional existing share UUID to preserve (ignored on update)"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique user identifier"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "role": {
+            "type": "string",
+            "description": "Primary user role",
+            "example": "tenant",
+            "enum": [
+              "admin",
+              "operator",
+              "tenant"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "User account status",
+            "example": "active",
+            "enum": [
+              "active",
+              "inactive",
+              "suspended"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "description": "Authentication provider",
+            "example": "local",
+            "enum": [
+              "local",
+              "google"
+            ]
+          },
+          "google_id": {
+            "type": "string",
+            "description": "Google ID for OAuth users",
+            "example": "123456789012345678901"
+          },
+          "avatar_url": {
+            "type": "string",
+            "description": "User avatar URL",
+            "example": "https://example.com/avatar.jpg"
+          },
+          "email_verified": {
+            "type": "boolean",
+            "description": "Whether email is verified",
+            "example": true
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "User creation date"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "User last update date"
+          },
+          "full_name": {
+            "type": "string",
+            "description": "User full name",
+            "example": "John Doe"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "First name",
+            "example": "John"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Last name",
+            "example": "Doe"
+          },
+          "address": {
+            "type": "string",
+            "description": "Current address",
+            "example": "123 Main St, London"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number",
+            "example": "+447700900123"
+          },
+          "date_of_birth": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date of birth",
+            "example": "1990-01-15"
+          },
+          "nationality": {
+            "type": "string",
+            "description": "Nationality",
+            "example": "British"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "status",
+          "provider",
+          "google_id",
+          "avatar_url",
+          "email_verified",
+          "created_at",
+          "updated_at",
+          "full_name",
+          "first_name",
+          "last_name",
+          "address",
+          "phone",
+          "date_of_birth",
+          "nationality"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "description": "Full name of the user",
+            "example": "John Doe"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "First name of the user",
+            "example": "John"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Last name of the user",
+            "example": "Doe"
+          },
+          "address": {
+            "type": "string",
+            "description": "Address of the user",
+            "example": "123 Main St, London"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User phone number",
+            "example": "+44 7700 900123"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "User date of birth",
+            "example": "1990-01-15"
+          },
+          "nationality": {
+            "type": "string",
+            "description": "User nationality",
+            "example": "British"
+          },
+          "age_range": {
+            "type": "string",
+            "description": "Age range of the user",
+            "example": "25-34",
+            "enum": [
+              "under-25",
+              "25-34",
+              "35-44",
+              "45-54",
+              "55+"
+            ]
+          },
+          "avatar_url": {
+            "type": "string",
+            "description": "Avatar URL",
+            "example": "https://example.com/avatar.jpg"
+          },
+          "industry": {
+            "type": "string",
+            "description": "Industry the user works in",
+            "example": "Technology"
+          },
+          "work_style": {
+            "type": "string",
+            "description": "Work style preference",
+            "example": "Hybrid",
+            "enum": [
+              "Office",
+              "Remote",
+              "Hybrid",
+              "Freelance"
+            ]
+          },
+          "pets": {
+            "type": "string",
+            "description": "Pet ownership information",
+            "example": "cat",
+            "enum": [
+              "none",
+              "cat",
+              "dog",
+              "other"
+            ]
+          },
+          "smoker": {
+            "type": "boolean",
+            "description": "Whether the user smokes",
+            "example": false
+          },
+          "hobbies": {
+            "description": "User's hobbies and lifestyle preferences",
+            "example": [
+              "gym",
+              "cooking",
+              "socialising"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ideal_living_environment": {
+            "type": "string",
+            "description": "Ideal living environment preference",
+            "example": "social",
+            "enum": [
+              "social",
+              "quiet",
+              "family-friendly",
+              "pet-friendly",
+              "trendy",
+              "green"
+            ]
+          },
+          "additional_info": {
+            "type": "string",
+            "description": "Additional information for landlords",
+            "example": "I'm a quiet professional who loves cooking"
+          },
+          "company_name": {
+            "type": "string",
+            "description": "Company name (for operators)",
+            "example": "Smith Properties Ltd"
+          },
+          "business_address": {
+            "type": "string",
+            "description": "Business address (for operators)",
+            "example": "123 Business St, London"
+          },
+          "business_description": {
+            "type": "string",
+            "description": "Business description (for operators)",
+            "example": "We specialize in luxury residential properties"
+          }
+        }
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AdminUpdateUserDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "Preferences": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique preferences identifier"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "User ID who owns these preferences"
+          },
+          "preferred_address": {
+            "type": "string",
+            "description": "Preferred address/area (free text)",
+            "example": "Central London"
+          },
+          "preferred_areas": {
+            "description": "Preferred areas (London regions)",
+            "example": [
+              "West",
+              "East"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferred_districts": {
+            "description": "Preferred districts/boroughs",
+            "example": [
+              "Camden",
+              "Westminster"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferred_metro_stations": {
+            "description": "Preferred metro stations (labels)",
+            "example": [
+              "Central London",
+              "King's Cross",
+              "Oxford Circus"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "move_in_date": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Preferred move-in date",
+            "example": "2024-03-01"
+          },
+          "move_out_date": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Preferred move-out date",
+            "example": "2024-09-01"
+          },
+          "min_price": {
+            "type": "number",
+            "description": "Minimum rent price per month (matches Property.price)",
+            "example": 1500
+          },
+          "max_price": {
+            "type": "number",
+            "description": "Maximum rent price per month (matches Property.price)",
+            "example": 3000
+          },
+          "flexible_budget": {
+            "type": "boolean",
+            "description": "Whether budget is flexible (tenant open to different price range)",
+            "example": false
+          },
+          "property_types": {
+            "description": "Preferred property types (matches Property.property_type)",
+            "example": [
+              "apartment",
+              "flat",
+              "studio"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bedrooms": {
+            "description": "Preferred number of bedrooms (matches Property.bedrooms)",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "bathrooms": {
+            "description": "Preferred number of bathrooms (matches Property.bathrooms)",
+            "example": [
+              1,
+              2
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "furnishing": {
+            "description": "Preferred furnishing types (matches Property.furnishing)",
+            "example": [
+              "furnished",
+              "part-furnished"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "balcony": {
+            "type": "boolean",
+            "description": "Whether balcony is preferred (matches Property.balcony)",
+            "example": true
+          },
+          "terrace": {
+            "type": "boolean",
+            "description": "Whether terrace is preferred (matches Property.terrace)",
+            "example": true
+          },
+          "min_square_meters": {
+            "type": "number",
+            "description": "Minimum square meters (matches Property.square_meters)",
+            "example": 15
+          },
+          "max_square_meters": {
+            "type": "number",
+            "description": "Maximum square meters (matches Property.square_meters)",
+            "example": 100
+          },
+          "building_types": {
+            "description": "Preferred building types (matches Property.building_type)",
+            "example": [
+              "btr",
+              "co-living"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "let_duration": {
+            "type": "string",
+            "description": "Preferred let duration (matches Property.let_duration)",
+            "example": "long_term"
+          },
+          "bills": {
+            "type": "string",
+            "description": "Bills preference (matches Property.bills)",
+            "example": "included"
+          },
+          "tenant_types": {
+            "description": "Tenant types (matches Property.tenant_types)",
+            "example": [
+              "family",
+              "sharers"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Whether tenant needs pet-friendly property (matches Property.pet_policy)",
+            "example": true
+          },
+          "pets": {
+            "type": "json",
+            "description": "Tenant's pets (matches Property.pets structure)",
+            "example": [
+              {
+                "type": "dog",
+                "size": "small"
+              }
+            ]
+          },
+          "number_of_pets": {
+            "type": "number",
+            "description": "Number of pets",
+            "example": 1
+          },
+          "amenities": {
+            "description": "Preferred amenities (matches Property.amenities)",
+            "example": [
+              "Gym",
+              "Co-working",
+              "Parking"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "property_amenities": {
+            "description": "Preferred apartment-level features (kitchen, bathroom, storage, etc.)",
+            "example": [
+              "Dishwasher",
+              "Rainfall shower",
+              "Fibre broadband"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hobbies": {
+            "description": "User's hobbies and interests",
+            "example": [
+              "Reading",
+              "Cooking",
+              "Fitness"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ideal_living_environment": {
+            "description": "Ideal living environment preferences",
+            "example": [
+              "quiet-professional",
+              "social-friendly"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "smoker": {
+            "type": "string",
+            "description": "Smoking preference",
+            "example": "no",
+            "enum": [
+              "no",
+              "yes",
+              "no-but-okay",
+              "no-prefer-non-smoking",
+              "no-preference"
+            ]
+          },
+          "occupation": {
+            "type": "string",
+            "description": "User occupation/professional status",
+            "example": "young-professional",
+            "enum": [
+              "student",
+              "young-professional",
+              "freelancer-remote-worker",
+              "business-owner",
+              "family-professional",
+              "other"
+            ]
+          },
+          "family_status": {
+            "type": "string",
+            "description": "Family status - who will live in the property",
+            "example": "couple",
+            "enum": [
+              "just-me",
+              "couple",
+              "couple-with-children",
+              "single-parent",
+              "friends-flatmates"
+            ]
+          },
+          "children_count": {
+            "type": "string",
+            "description": "Number of children",
+            "example": "no",
+            "enum": [
+              "no",
+              "yes-1-child",
+              "yes-2-children",
+              "yes-3-plus-children"
+            ]
+          },
+          "additional_info": {
+            "type": "string",
+            "description": "Additional information about the user",
+            "example": "I'm a quiet professional who enjoys cooking and reading."
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Preferences creation date"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Preferences last update date"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CreatePreferencesDto": {
+        "type": "object",
+        "properties": {
+          "occupation": {
+            "type": "string",
+            "description": "User occupation/professional status",
+            "example": "young-professional",
+            "enum": [
+              "student",
+              "young-professional",
+              "freelancer-remote-worker",
+              "business-owner",
+              "family-professional",
+              "other"
+            ]
+          },
+          "family_status": {
+            "type": "string",
+            "description": "Family status - who will live in the property",
+            "example": "couple",
+            "enum": [
+              "just-me",
+              "couple",
+              "couple-with-children",
+              "single-parent",
+              "friends-flatmates"
+            ]
+          },
+          "children_count": {
+            "type": "string",
+            "description": "Number of children",
+            "example": "no",
+            "enum": [
+              "no",
+              "yes-1-child",
+              "yes-2-children",
+              "yes-3-plus-children"
+            ]
+          },
+          "preferred_areas": {
+            "description": "Preferred areas (London regions)",
+            "example": [
+              "West",
+              "East"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferred_districts": {
+            "description": "Preferred districts/boroughs",
+            "example": [
+              "Camden",
+              "Westminster"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferred_address": {
+            "type": "string",
+            "description": "Preferred address/area (free text)",
+            "example": "Central London"
+          },
+          "preferred_metro_stations": {
+            "description": "Preferred metro stations (labels)",
+            "example": [
+              "Central London",
+              "King's Cross",
+              "Oxford Circus"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "move_in_date": {
+            "type": "string",
+            "description": "Preferred move-in date",
+            "example": "2024-03-01"
+          },
+          "move_out_date": {
+            "type": "string",
+            "description": "Preferred move-out date",
+            "example": "2024-09-01"
+          },
+          "min_price": {
+            "type": "number",
+            "description": "Minimum rent price per month",
+            "example": 1500
+          },
+          "max_price": {
+            "type": "number",
+            "description": "Maximum rent price per month",
+            "example": 3000
+          },
+          "flexible_budget": {
+            "type": "boolean",
+            "description": "Whether budget is flexible (tenant open to different price range)",
+            "example": false
+          },
+          "property_types": {
+            "description": "Preferred property types (matches Property.property_type)",
+            "example": [
+              "apartment",
+              "flat",
+              "studio"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bedrooms": {
+            "description": "Preferred number of bedrooms",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "bathrooms": {
+            "description": "Preferred number of bathrooms",
+            "example": [
+              1,
+              2
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "furnishing": {
+            "description": "Preferred furnishing types",
+            "example": [
+              "furnished",
+              "part-furnished"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "balcony": {
+            "type": "boolean",
+            "description": "Whether balcony is preferred",
+            "example": true
+          },
+          "terrace": {
+            "type": "boolean",
+            "description": "Whether terrace is preferred",
+            "example": true
+          },
+          "min_square_meters": {
+            "type": "number",
+            "description": "Minimum square meters",
+            "example": 15
+          },
+          "max_square_meters": {
+            "type": "number",
+            "description": "Maximum square meters",
+            "example": 500
+          },
+          "building_types": {
+            "description": "Preferred building types",
+            "example": [
+              "btr",
+              "co-living"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "let_duration": {
+            "type": "string",
+            "description": "Preferred let duration",
+            "example": "long_term"
+          },
+          "bills": {
+            "type": "string",
+            "description": "Bills preference",
+            "example": "included"
+          },
+          "tenant_types": {
+            "description": "Tenant types",
+            "example": [
+              "family",
+              "sharers"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Whether tenant needs pet-friendly property",
+            "example": true
+          },
+          "pets": {
+            "description": "Tenant's pets (matches Property.pets structure)",
+            "example": [
+              {
+                "type": "dog",
+                "size": "small"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "number_of_pets": {
+            "type": "number",
+            "description": "Number of pets",
+            "example": 1
+          },
+          "amenities": {
+            "description": "Preferred amenities",
+            "example": [
+              "Gym",
+              "Co-working",
+              "Parking"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "property_amenities": {
+            "description": "Preferred apartment-level features (kitchen, bathroom, storage, etc.)",
+            "example": [
+              "Dishwasher",
+              "Rainfall shower",
+              "Fibre broadband"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hobbies": {
+            "description": "User's hobbies and interests",
+            "example": [
+              "Reading",
+              "Cooking",
+              "Fitness"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ideal_living_environment": {
+            "description": "Ideal living environment preferences",
+            "example": [
+              "quiet-professional",
+              "social-friendly"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "smoker": {
+            "type": "string",
+            "description": "Smoking preference",
+            "example": "no",
+            "enum": [
+              "no",
+              "yes",
+              "no-but-okay",
+              "no-prefer-non-smoking",
+              "no-preference"
+            ]
+          },
+          "additional_info": {
+            "type": "string",
+            "description": "Additional information about the user",
+            "example": "I'm a quiet professional who enjoys cooking and reading."
+          },
+          "secondary_location": {
+            "type": "string",
+            "description": "Secondary location (legacy)"
+          },
+          "min_bedrooms": {
+            "type": "number",
+            "description": "Min bedrooms (legacy)"
+          },
+          "max_bedrooms": {
+            "type": "number",
+            "description": "Max bedrooms (legacy)"
+          },
+          "min_bathrooms": {
+            "type": "number",
+            "description": "Min bathrooms (legacy)"
+          },
+          "max_bathrooms": {
+            "type": "number",
+            "description": "Max bathrooms (legacy)"
+          },
+          "designer_furniture": {
+            "type": "boolean",
+            "description": "Designer furniture (legacy)"
+          }
+        }
+      },
+      "UpdatePreferencesDto": {
+        "type": "object",
+        "properties": {
+          "occupation": {
+            "type": "string",
+            "description": "User occupation/professional status",
+            "example": "young-professional",
+            "enum": [
+              "student",
+              "young-professional",
+              "freelancer-remote-worker",
+              "business-owner",
+              "family-professional",
+              "other"
+            ]
+          },
+          "family_status": {
+            "type": "string",
+            "description": "Family status - who will live in the property",
+            "example": "couple",
+            "enum": [
+              "just-me",
+              "couple",
+              "couple-with-children",
+              "single-parent",
+              "friends-flatmates"
+            ]
+          },
+          "children_count": {
+            "type": "string",
+            "description": "Number of children",
+            "example": "no",
+            "enum": [
+              "no",
+              "yes-1-child",
+              "yes-2-children",
+              "yes-3-plus-children"
+            ]
+          },
+          "preferred_areas": {
+            "description": "Preferred areas (London regions)",
+            "example": [
+              "West",
+              "East"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferred_districts": {
+            "description": "Preferred districts/boroughs",
+            "example": [
+              "Camden",
+              "Westminster"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferred_address": {
+            "type": "string",
+            "description": "Preferred address/area (free text)",
+            "example": "Central London"
+          },
+          "preferred_metro_stations": {
+            "description": "Preferred metro stations (labels)",
+            "example": [
+              "Central London",
+              "King's Cross",
+              "Oxford Circus"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "move_in_date": {
+            "type": "string",
+            "description": "Preferred move-in date",
+            "example": "2024-03-01"
+          },
+          "move_out_date": {
+            "type": "string",
+            "description": "Preferred move-out date",
+            "example": "2024-09-01"
+          },
+          "min_price": {
+            "type": "number",
+            "description": "Minimum rent price per month",
+            "example": 1500
+          },
+          "max_price": {
+            "type": "number",
+            "description": "Maximum rent price per month",
+            "example": 3000
+          },
+          "flexible_budget": {
+            "type": "boolean",
+            "description": "Whether budget is flexible (tenant open to different price range)",
+            "example": false
+          },
+          "property_types": {
+            "description": "Preferred property types (matches Property.property_type)",
+            "example": [
+              "apartment",
+              "flat",
+              "studio"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bedrooms": {
+            "description": "Preferred number of bedrooms",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "bathrooms": {
+            "description": "Preferred number of bathrooms",
+            "example": [
+              1,
+              2
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "furnishing": {
+            "description": "Preferred furnishing types",
+            "example": [
+              "furnished",
+              "part-furnished"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "balcony": {
+            "type": "boolean",
+            "description": "Whether balcony is preferred",
+            "example": true
+          },
+          "terrace": {
+            "type": "boolean",
+            "description": "Whether terrace is preferred",
+            "example": true
+          },
+          "min_square_meters": {
+            "type": "number",
+            "description": "Minimum square meters",
+            "example": 15
+          },
+          "max_square_meters": {
+            "type": "number",
+            "description": "Maximum square meters",
+            "example": 500
+          },
+          "building_types": {
+            "description": "Preferred building types",
+            "example": [
+              "btr",
+              "co-living"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "let_duration": {
+            "type": "string",
+            "description": "Preferred let duration",
+            "example": "long_term"
+          },
+          "bills": {
+            "type": "string",
+            "description": "Bills preference",
+            "example": "included"
+          },
+          "tenant_types": {
+            "description": "Tenant types",
+            "example": [
+              "family",
+              "sharers"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Whether tenant needs pet-friendly property",
+            "example": true
+          },
+          "pets": {
+            "description": "Tenant's pets (matches Property.pets structure)",
+            "example": [
+              {
+                "type": "dog",
+                "size": "small"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "number_of_pets": {
+            "type": "number",
+            "description": "Number of pets",
+            "example": 1
+          },
+          "amenities": {
+            "description": "Preferred amenities",
+            "example": [
+              "Gym",
+              "Co-working",
+              "Parking"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "property_amenities": {
+            "description": "Preferred apartment-level features (kitchen, bathroom, storage, etc.)",
+            "example": [
+              "Dishwasher",
+              "Rainfall shower",
+              "Fibre broadband"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hobbies": {
+            "description": "User's hobbies and interests",
+            "example": [
+              "Reading",
+              "Cooking",
+              "Fitness"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ideal_living_environment": {
+            "description": "Ideal living environment preferences",
+            "example": [
+              "quiet-professional",
+              "social-friendly"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "smoker": {
+            "type": "string",
+            "description": "Smoking preference",
+            "example": "no",
+            "enum": [
+              "no",
+              "yes",
+              "no-but-okay",
+              "no-prefer-non-smoking",
+              "no-preference"
+            ]
+          },
+          "additional_info": {
+            "type": "string",
+            "description": "Additional information about the user",
+            "example": "I'm a quiet professional who enjoys cooking and reading."
+          },
+          "secondary_location": {
+            "type": "string",
+            "description": "Secondary location (legacy)"
+          },
+          "min_bedrooms": {
+            "type": "number",
+            "description": "Min bedrooms (legacy)"
+          },
+          "max_bedrooms": {
+            "type": "number",
+            "description": "Max bedrooms (legacy)"
+          },
+          "min_bathrooms": {
+            "type": "number",
+            "description": "Min bathrooms (legacy)"
+          },
+          "max_bathrooms": {
+            "type": "number",
+            "description": "Max bathrooms (legacy)"
+          },
+          "designer_furniture": {
+            "type": "boolean",
+            "description": "Designer furniture (legacy)"
+          }
+        }
+      },
+      "GetMatchScoresDto": {
+        "type": "object",
+        "properties": {
+          "propertyIds": {
+            "description": "Property IDs to score against the current user's preferences",
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "propertyIds"
+        ]
+      },
+      "MetroStationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CommuteTimeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "LocalEssentialDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "PetDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePropertyDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Property title",
+            "example": "Modern 2BR Apartment"
+          },
+          "building_id": {
+            "type": "string",
+            "description": "Building ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "operator_id": {
+            "type": "string",
+            "description": "Operator ID (required for private landlord properties)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "apartment_number": {
+            "type": "string",
+            "description": "Apartment number",
+            "example": "12A"
+          },
+          "descriptions": {
+            "type": "string",
+            "description": "Property descriptions",
+            "example": "Beautiful modern apartment"
+          },
+          "property_type": {
+            "type": "string",
+            "description": "Property type",
+            "example": "apartment",
+            "enum": [
+              "apartment",
+              "house",
+              "studio",
+              "penthouse",
+              "duplex",
+              "maisonette"
+            ]
+          },
+          "furnishing": {
+            "type": "string",
+            "description": "Furnishing level",
+            "example": "furnished",
+            "enum": [
+              "furnished",
+              "unfurnished",
+              "partially_furnished"
+            ]
+          },
+          "bills": {
+            "type": "string",
+            "description": "Bills included",
+            "example": "included",
+            "enum": [
+              "included",
+              "excluded",
+              "some_included"
+            ]
+          },
+          "available_from": {
+            "type": "string",
+            "description": "Available from date",
+            "example": "2024-01-15"
+          },
+          "building_type": {
+            "type": "string",
+            "description": "Building type",
+            "example": "residential",
+            "enum": [
+              "residential",
+              "commercial",
+              "mixed"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "description": "Property address (inherited from building or custom)",
+            "example": "123 Main St, London"
+          },
+          "tenant_types": {
+            "description": "Tenant types for this property (inherited from building or custom)",
+            "example": [
+              "family",
+              "student"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "amenities": {
+            "description": "Property amenities (inherited from building or custom)",
+            "example": [
+              "Parking",
+              "Garden",
+              "Gym"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "property_amenities": {
+            "description": "Apartment-level features (kitchen, bathroom, storage, tech, access)",
+            "example": [
+              "Dishwasher",
+              "Rainfall shower",
+              "Fibre broadband"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "family_status": {
+            "type": "array",
+            "description": "Target family statuses for this property (inherited from building or custom)",
+            "example": [
+              "couple",
+              "couple-with-children"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "just-me",
+                "couple",
+                "couple-with-children",
+                "single-parent",
+                "friends-flatmates"
+              ]
+            }
+          },
+          "occupation": {
+            "type": "array",
+            "description": "Target occupations for this property (inherited from building or custom)",
+            "example": [
+              "student",
+              "young-professional"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "student",
+                "young-professional",
+                "freelancer-remote-worker",
+                "business-owner",
+                "family-professional",
+                "other"
+              ]
+            }
+          },
+          "children": {
+            "type": "array",
+            "description": "Target children statuses for this property (inherited from building or custom)",
+            "example": [
+              "no",
+              "yes-1-child"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "no",
+                "yes-1-child",
+                "yes-2-children",
+                "yes-3-plus-children"
+              ]
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Pet policy (inherited from building or custom)",
+            "example": true
+          },
+          "metro_stations": {
+            "description": "Metro stations with travel times (inherited from building or custom)",
+            "example": [
+              {
+                "label": "Oxford Circus",
+                "destination": 5
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetroStationDto"
+            }
+          },
+          "commute_times": {
+            "description": "Commute times to popular destinations (inherited from building or custom)",
+            "example": [
+              {
+                "label": "City Centre",
+                "destination": 15
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommuteTimeDto"
+            }
+          },
+          "local_essentials": {
+            "description": "Local essentials with distances (inherited from building or custom)",
+            "example": [
+              {
+                "label": "Tesco Express",
+                "destination": 200
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalEssentialDto"
+            }
+          },
+          "pets": {
+            "description": "Allowed pet types and sizes (inherited from building or custom)",
+            "example": [
+              {
+                "type": "dog",
+                "size": "small"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetDto"
+            }
+          },
+          "let_duration": {
+            "type": "string",
+            "description": "Let duration",
+            "example": "12 months"
+          },
+          "floor": {
+            "type": "number",
+            "description": "Floor number",
+            "example": 5
+          },
+          "square_meters": {
+            "type": "number",
+            "description": "Square meters",
+            "example": 75.5
+          },
+          "balcony": {
+            "type": "boolean",
+            "description": "Has balcony",
+            "example": true
+          },
+          "terrace": {
+            "type": "boolean",
+            "description": "Has terrace",
+            "example": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Monthly rent price (PCM)",
+            "example": 2500
+          },
+          "deposit": {
+            "type": "number",
+            "description": "Security deposit",
+            "example": 2500
+          },
+          "bedrooms": {
+            "type": "number",
+            "description": "Number of bedrooms",
+            "example": 2
+          },
+          "bathrooms": {
+            "type": "number",
+            "description": "Number of bathrooms",
+            "example": 2
+          },
+          "photos": {
+            "description": "Property photos URLs",
+            "example": [
+              "https://s3.amazonaws.com/bucket/photo1.jpg"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "video": {
+            "type": "string",
+            "description": "Property video URL",
+            "example": "https://s3.amazonaws.com/bucket/video.mp4"
+          },
+          "documents": {
+            "type": "string",
+            "description": "Property documents URL",
+            "example": "https://s3.amazonaws.com/bucket/document.pdf"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "UpdatePropertyDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Property title",
+            "example": "Modern 2BR Apartment"
+          },
+          "building_id": {
+            "type": "string",
+            "description": "Building ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "operator_id": {
+            "type": "string",
+            "description": "Operator ID (required for private landlord properties)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "apartment_number": {
+            "type": "string",
+            "description": "Apartment number",
+            "example": "12A"
+          },
+          "descriptions": {
+            "type": "string",
+            "description": "Property descriptions",
+            "example": "Beautiful modern apartment"
+          },
+          "property_type": {
+            "type": "string",
+            "description": "Property type",
+            "example": "apartment",
+            "enum": [
+              "apartment",
+              "house",
+              "studio",
+              "penthouse",
+              "duplex",
+              "maisonette"
+            ]
+          },
+          "furnishing": {
+            "type": "string",
+            "description": "Furnishing level",
+            "example": "furnished",
+            "enum": [
+              "furnished",
+              "unfurnished",
+              "partially_furnished"
+            ]
+          },
+          "bills": {
+            "type": "string",
+            "description": "Bills included",
+            "example": "included",
+            "enum": [
+              "included",
+              "excluded",
+              "some_included"
+            ]
+          },
+          "available_from": {
+            "type": "string",
+            "description": "Available from date",
+            "example": "2024-01-15"
+          },
+          "building_type": {
+            "type": "string",
+            "description": "Building type",
+            "example": "residential",
+            "enum": [
+              "residential",
+              "commercial",
+              "mixed"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "description": "Property address (inherited from building or custom)",
+            "example": "123 Main St, London"
+          },
+          "tenant_types": {
+            "description": "Tenant types for this property (inherited from building or custom)",
+            "example": [
+              "family",
+              "student"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "amenities": {
+            "description": "Property amenities (inherited from building or custom)",
+            "example": [
+              "Parking",
+              "Garden",
+              "Gym"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "property_amenities": {
+            "description": "Apartment-level features (kitchen, bathroom, storage, tech, access)",
+            "example": [
+              "Dishwasher",
+              "Rainfall shower",
+              "Fibre broadband"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "family_status": {
+            "type": "array",
+            "description": "Target family statuses for this property (inherited from building or custom)",
+            "example": [
+              "couple",
+              "couple-with-children"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "just-me",
+                "couple",
+                "couple-with-children",
+                "single-parent",
+                "friends-flatmates"
+              ]
+            }
+          },
+          "occupation": {
+            "type": "array",
+            "description": "Target occupations for this property (inherited from building or custom)",
+            "example": [
+              "student",
+              "young-professional"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "student",
+                "young-professional",
+                "freelancer-remote-worker",
+                "business-owner",
+                "family-professional",
+                "other"
+              ]
+            }
+          },
+          "children": {
+            "type": "array",
+            "description": "Target children statuses for this property (inherited from building or custom)",
+            "example": [
+              "no",
+              "yes-1-child"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "no",
+                "yes-1-child",
+                "yes-2-children",
+                "yes-3-plus-children"
+              ]
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Pet policy (inherited from building or custom)",
+            "example": true
+          },
+          "metro_stations": {
+            "description": "Metro stations with travel times (inherited from building or custom)",
+            "example": [
+              {
+                "label": "Oxford Circus",
+                "destination": 5
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetroStationDto"
+            }
+          },
+          "commute_times": {
+            "description": "Commute times to popular destinations (inherited from building or custom)",
+            "example": [
+              {
+                "label": "City Centre",
+                "destination": 15
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommuteTimeDto"
+            }
+          },
+          "local_essentials": {
+            "description": "Local essentials with distances (inherited from building or custom)",
+            "example": [
+              {
+                "label": "Tesco Express",
+                "destination": 200
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalEssentialDto"
+            }
+          },
+          "pets": {
+            "description": "Allowed pet types and sizes (inherited from building or custom)",
+            "example": [
+              {
+                "type": "dog",
+                "size": "small"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetDto"
+            }
+          },
+          "let_duration": {
+            "type": "string",
+            "description": "Let duration",
+            "example": "12 months"
+          },
+          "floor": {
+            "type": "number",
+            "description": "Floor number",
+            "example": 5
+          },
+          "square_meters": {
+            "type": "number",
+            "description": "Square meters",
+            "example": 75.5
+          },
+          "balcony": {
+            "type": "boolean",
+            "description": "Has balcony",
+            "example": true
+          },
+          "terrace": {
+            "type": "boolean",
+            "description": "Has terrace",
+            "example": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Monthly rent price (PCM)",
+            "example": 2500
+          },
+          "deposit": {
+            "type": "number",
+            "description": "Security deposit",
+            "example": 2500
+          },
+          "bedrooms": {
+            "type": "number",
+            "description": "Number of bedrooms",
+            "example": 2
+          },
+          "bathrooms": {
+            "type": "number",
+            "description": "Number of bathrooms",
+            "example": 2
+          },
+          "photos": {
+            "description": "Property photos URLs",
+            "example": [
+              "https://s3.amazonaws.com/bucket/photo1.jpg"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "video": {
+            "type": "string",
+            "description": "Property video URL",
+            "example": "https://s3.amazonaws.com/bucket/video.mp4"
+          },
+          "documents": {
+            "type": "string",
+            "description": "Property documents URL",
+            "example": "https://s3.amazonaws.com/bucket/document.pdf"
+          }
+        }
+      },
+      "PropertyMedia": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique media identifier"
+          },
+          "property_id": {
+            "type": "string",
+            "description": "Property ID this media belongs to"
+          },
+          "url": {
+            "type": "string",
+            "description": "Media file URL (presigned)",
+            "example": "https://your-bucket.s3.amazonaws.com/media/123456789-image.jpg?X-Amz-Algorithm=..."
+          },
+          "s3_key": {
+            "type": "string",
+            "description": "S3 object key for deletion",
+            "example": "media/123456789-image.jpg"
+          },
+          "type": {
+            "type": "string",
+            "description": "Media type",
+            "example": "image",
+            "enum": [
+              "image",
+              "video"
+            ]
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "Media file MIME type",
+            "example": "image/jpeg"
+          },
+          "original_filename": {
+            "type": "string",
+            "description": "Original filename",
+            "example": "apartment-living-room.jpg"
+          },
+          "file_size": {
+            "type": "number",
+            "description": "File size in bytes",
+            "example": 1024000
+          },
+          "order_index": {
+            "type": "number",
+            "description": "Display order index",
+            "example": 0
+          },
+          "thumbnail_url": {
+            "type": "object",
+            "description": "Optional thumbnail-sized URL (optimized for cards)"
+          },
+          "medium_url": {
+            "type": "object",
+            "description": "Optional medium-sized URL (optimized for galleries)"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Media creation date"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Media last update date"
+          }
+        },
+        "required": [
+          "id",
+          "property_id",
+          "url",
+          "s3_key",
+          "type",
+          "mime_type",
+          "original_filename",
+          "file_size",
+          "order_index",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "Property": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique property identifier"
+          },
+          "apartment_number": {
+            "type": "string",
+            "description": "Apartment number",
+            "example": "12A"
+          },
+          "building_id": {
+            "type": "string",
+            "description": "Building ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "Property title",
+            "example": "Modern 2BR Apartment"
+          },
+          "descriptions": {
+            "type": "string",
+            "description": "Property descriptions",
+            "example": "Beautiful modern apartment"
+          },
+          "property_type": {
+            "type": "string",
+            "description": "Property type",
+            "example": "apartment",
+            "enum": [
+              "apartment",
+              "house",
+              "studio",
+              "penthouse",
+              "maisonette",
+              "en-suite room",
+              "room"
+            ]
+          },
+          "furnishing": {
+            "type": "string",
+            "description": "Furnishing level",
+            "example": "furnished",
+            "enum": [
+              "furnished",
+              "unfurnished",
+              "part_furnished"
+            ]
+          },
+          "bills": {
+            "type": "string",
+            "description": "Bills included",
+            "example": "included",
+            "enum": [
+              "included",
+              "excluded"
+            ]
+          },
+          "available_from": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Available from date",
+            "example": "2024-01-15"
+          },
+          "building_type": {
+            "type": "string",
+            "description": "Building type",
+            "example": "residential",
+            "enum": [
+              "btr",
+              "co_living",
+              "professional_management",
+              "private_landlord"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "description": "Property address (inherited from building or custom)",
+            "example": "123 Main St, London"
+          },
+          "tenant_types": {
+            "description": "Tenant types for this property (inherited from building or custom)",
+            "example": [
+              "family",
+              "student"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "amenities": {
+            "description": "Property amenities (inherited from building or custom)",
+            "example": [
+              "Parking",
+              "Garden",
+              "Gym"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "property_amenities": {
+            "description": "Apartment-level features (kitchen, bathroom, storage, tech, access)",
+            "example": [
+              "Dishwasher",
+              "Rainfall shower",
+              "Fibre broadband"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Pet policy (inherited from building or custom)",
+            "example": true
+          },
+          "metro_stations": {
+            "type": "json",
+            "description": "Metro stations with travel times (inherited from building or custom)",
+            "example": [
+              {
+                "label": "Oxford Circus",
+                "destination": 5
+              }
+            ]
+          },
+          "commute_times": {
+            "type": "json",
+            "description": "Commute times to popular destinations (inherited from building or custom)",
+            "example": [
+              {
+                "label": "City Centre",
+                "destination": 15
+              }
+            ]
+          },
+          "local_essentials": {
+            "type": "json",
+            "description": "Local essentials with distances (inherited from building or custom)",
+            "example": [
+              {
+                "label": "Tesco Express",
+                "destination": 200
+              }
+            ]
+          },
+          "family_status": {
+            "description": "Target family statuses for this property (inherited from building or custom)",
+            "example": [
+              "couple",
+              "couple-with-children"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "occupation": {
+            "description": "Target occupations for this property (inherited from building or custom)",
+            "example": [
+              "student",
+              "young-professional"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "children": {
+            "description": "Target children statuses for this property (inherited from building or custom)",
+            "example": [
+              "no",
+              "yes-1-child"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pets": {
+            "type": "json",
+            "description": "Allowed pet types and sizes (inherited from building or custom)",
+            "example": [
+              {
+                "type": "dog",
+                "size": "small"
+              }
+            ]
+          },
+          "let_duration": {
+            "type": "string",
+            "description": "Let duration",
+            "example": "12 months"
+          },
+          "floor": {
+            "type": "number",
+            "description": "Floor number",
+            "example": 5
+          },
+          "square_meters": {
+            "type": "number",
+            "description": "Square meters",
+            "example": 75.5
+          },
+          "balcony": {
+            "type": "boolean",
+            "description": "Has balcony",
+            "example": true
+          },
+          "terrace": {
+            "type": "boolean",
+            "description": "Has terrace",
+            "example": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Monthly rent price (PCM)",
+            "example": 2500
+          },
+          "deposit": {
+            "type": "number",
+            "description": "Security deposit",
+            "example": 2500
+          },
+          "bedrooms": {
+            "type": "number",
+            "description": "Number of bedrooms",
+            "example": 2
+          },
+          "bathrooms": {
+            "type": "number",
+            "description": "Number of bathrooms",
+            "example": 2
+          },
+          "photos": {
+            "description": "Property photos URLs",
+            "example": [
+              "https://s3.amazonaws.com/bucket/photo1.jpg"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "video": {
+            "type": "string",
+            "description": "Property video URL",
+            "example": "https://s3.amazonaws.com/bucket/video.mp4"
+          },
+          "documents": {
+            "type": "string",
+            "description": "Property documents URL",
+            "example": "https://s3.amazonaws.com/bucket/document.pdf"
+          },
+          "operator_id": {
+            "type": "string",
+            "description": "Operator ID (from building or direct assignment)"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Property creation date"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Property last update date"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "operator_id",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CreateBuildingDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the building",
+            "example": "Sunset Gardens"
+          },
+          "operator_id": {
+            "type": "object",
+            "description": "Operator ID who manages this building",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "description": "Address of the building",
+            "example": "123 Sunset Boulevard, London, SW1A 1AA"
+          },
+          "description": {
+            "type": "string",
+            "description": "Building description text",
+            "example": "A modern residential complex in central London"
+          },
+          "number_of_units": {
+            "type": "number",
+            "description": "Total number of units in the building",
+            "example": 150
+          },
+          "type_of_unit": {
+            "type": "array",
+            "description": "Types of units in the building",
+            "example": [
+              "2-bed",
+              "3-bed"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "studio",
+                "1-bed",
+                "2-bed",
+                "3-bed",
+                "Duplex",
+                "penthouse",
+                "maisonette"
+              ]
+            }
+          },
+          "logo": {
+            "type": "string",
+            "description": "Logo URL (S3)",
+            "example": "https://s3.amazonaws.com/bucket/logo.jpg"
+          },
+          "video": {
+            "type": "string",
+            "description": "Video URL (S3)",
+            "example": "https://s3.amazonaws.com/bucket/video.mp4"
+          },
+          "photos": {
+            "description": "Array of photo URLs",
+            "example": [
+              "https://s3.amazonaws.com/bucket/photo1.jpg",
+              "https://s3.amazonaws.com/bucket/photo2.jpg",
+              "https://s3.amazonaws.com/bucket/photo3.jpg"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "documents": {
+            "type": "string",
+            "description": "Document URL (PDF, S3)",
+            "example": "https://s3.amazonaws.com/bucket/document.pdf"
+          },
+          "metro_stations": {
+            "description": "Metro stations with travel times",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetroStationDto"
+            }
+          },
+          "areas": {
+            "description": "Areas the building belongs to",
+            "example": [
+              "West",
+              "Center"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "districts": {
+            "description": "Districts/boroughs for the building",
+            "example": [
+              "Camden",
+              "Westminster"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "amenities": {
+            "description": "Building amenities",
+            "example": [
+              "Co-working",
+              "Parking",
+              "Garden"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Pet policy - are pets allowed",
+            "example": false
+          },
+          "pets": {
+            "description": "Allowed pet types and sizes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetDto"
+            }
+          },
+          "tenant_type": {
+            "type": "array",
+            "description": "Types of tenants the building is designed for",
+            "example": [
+              "family",
+              "student"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "corporateLets",
+                "sharers",
+                "student",
+                "family",
+                "elder"
+              ]
+            }
+          },
+          "family_status": {
+            "type": "array",
+            "description": "Target family statuses (matches preferences family status dropdown)",
+            "example": [
+              "couple",
+              "couple-with-children"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "just-me",
+                "couple",
+                "couple-with-children",
+                "single-parent",
+                "friends-flatmates"
+              ]
+            }
+          },
+          "occupation": {
+            "type": "array",
+            "description": "Target occupations (matches preferences occupation dropdown)",
+            "example": [
+              "student",
+              "young-professional"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "student",
+                "young-professional",
+                "freelancer-remote-worker",
+                "business-owner",
+                "family-professional",
+                "other"
+              ]
+            }
+          },
+          "children": {
+            "type": "array",
+            "description": "Target children statuses (matches preferences children dropdown)",
+            "example": [
+              "no",
+              "yes-1-child"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "no",
+                "yes-1-child",
+                "yes-2-children",
+                "yes-3-plus-children"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateBuildingDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the building",
+            "example": "Sunset Gardens"
+          },
+          "operator_id": {
+            "type": "object",
+            "description": "Operator ID who manages this building",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "description": "Address of the building",
+            "example": "123 Sunset Boulevard, London, SW1A 1AA"
+          },
+          "description": {
+            "type": "string",
+            "description": "Building description text",
+            "example": "A modern residential complex in central London"
+          },
+          "number_of_units": {
+            "type": "number",
+            "description": "Total number of units in the building",
+            "example": 150
+          },
+          "type_of_unit": {
+            "type": "array",
+            "description": "Types of units in the building",
+            "example": [
+              "2-bed",
+              "3-bed"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "studio",
+                "1-bed",
+                "2-bed",
+                "3-bed",
+                "Duplex",
+                "penthouse",
+                "maisonette"
+              ]
+            }
+          },
+          "logo": {
+            "type": "string",
+            "description": "Logo URL (S3)",
+            "example": "https://s3.amazonaws.com/bucket/logo.jpg"
+          },
+          "video": {
+            "type": "string",
+            "description": "Video URL (S3)",
+            "example": "https://s3.amazonaws.com/bucket/video.mp4"
+          },
+          "photos": {
+            "description": "Array of photo URLs",
+            "example": [
+              "https://s3.amazonaws.com/bucket/photo1.jpg",
+              "https://s3.amazonaws.com/bucket/photo2.jpg",
+              "https://s3.amazonaws.com/bucket/photo3.jpg"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "documents": {
+            "type": "string",
+            "description": "Document URL (PDF, S3)",
+            "example": "https://s3.amazonaws.com/bucket/document.pdf"
+          },
+          "metro_stations": {
+            "description": "Metro stations with travel times",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetroStationDto"
+            }
+          },
+          "areas": {
+            "description": "Areas the building belongs to",
+            "example": [
+              "West",
+              "Center"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "districts": {
+            "description": "Districts/boroughs for the building",
+            "example": [
+              "Camden",
+              "Westminster"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "amenities": {
+            "description": "Building amenities",
+            "example": [
+              "Co-working",
+              "Parking",
+              "Garden"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pet_policy": {
+            "type": "boolean",
+            "description": "Pet policy - are pets allowed",
+            "example": false
+          },
+          "pets": {
+            "description": "Allowed pet types and sizes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PetDto"
+            }
+          },
+          "tenant_type": {
+            "type": "array",
+            "description": "Types of tenants the building is designed for",
+            "example": [
+              "family",
+              "student"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "corporateLets",
+                "sharers",
+                "student",
+                "family",
+                "elder"
+              ]
+            }
+          },
+          "family_status": {
+            "type": "array",
+            "description": "Target family statuses (matches preferences family status dropdown)",
+            "example": [
+              "couple",
+              "couple-with-children"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "just-me",
+                "couple",
+                "couple-with-children",
+                "single-parent",
+                "friends-flatmates"
+              ]
+            }
+          },
+          "occupation": {
+            "type": "array",
+            "description": "Target occupations (matches preferences occupation dropdown)",
+            "example": [
+              "student",
+              "young-professional"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "student",
+                "young-professional",
+                "freelancer-remote-worker",
+                "business-owner",
+                "family-professional",
+                "other"
+              ]
+            }
+          },
+          "children": {
+            "type": "array",
+            "description": "Target children statuses (matches preferences children dropdown)",
+            "example": [
+              "no",
+              "yes-1-child"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "no",
+                "yes-1-child",
+                "yes-2-children",
+                "yes-3-plus-children"
+              ]
+            }
+          }
+        }
+      },
+      "CreateBookingRequestDto": {
+        "type": "object",
+        "properties": {
+          "property_id": {
+            "type": "string",
+            "description": "Property ID being requested"
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email from the form"
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "Contact phone from the form"
+          },
+          "date_from": {
+            "type": "string",
+            "description": "Preferred date from (YYYY-MM-DD)"
+          },
+          "date_to": {
+            "type": "string",
+            "description": "Preferred date to (YYYY-MM-DD)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Additional booking description"
+          }
+        },
+        "required": [
+          "property_id"
+        ]
+      },
+      "UpdateBookingStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "New status for the booking request",
+            "enum": [
+              "new",
+              "contacting",
+              "kyc_referencing",
+              "approved_viewing",
+              "viewing",
+              "contract",
+              "deposit",
+              "full_payment",
+              "move_in",
+              "rented",
+              "cancel_booking"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CreateDemoRequestDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "example": "Jane"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "email": {
+            "type": "string",
+            "example": "jane@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+44 20 7946 0000"
+          },
+          "source": {
+            "type": "string",
+            "description": "Which surface sent the form, e.g. \"Tenant\", \"Operator Request Demo\", \"Operator Spotlight Series\". Free text (capped) because the landing keeps growing new entry points; the value is only ever printed into the internal email.",
+            "example": "Tenant"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "phone"
+        ]
+      }
+    }
+  }
+}

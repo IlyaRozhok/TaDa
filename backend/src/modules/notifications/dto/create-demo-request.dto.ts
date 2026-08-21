@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEmail, IsIn, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsEmail, IsOptional, IsString, MaxLength } from "class-validator";
 
 /**
  * Body of the public demo-request endpoint. Every field is untrusted input
@@ -27,8 +27,13 @@ export class CreateDemoRequestDto {
   @MaxLength(32)
   phone: string;
 
-  @ApiPropertyOptional({ enum: ["Operator", "Tenant", "Website"] })
+  @ApiPropertyOptional({
+    description:
+      'Which surface sent the form, e.g. "Tenant", "Operator Request Demo", "Operator Spotlight Series". Free text (capped) because the landing keeps growing new entry points; the value is only ever printed into the internal email.',
+    example: "Tenant",
+  })
   @IsOptional()
-  @IsIn(["Operator", "Tenant", "Website"])
+  @IsString()
+  @MaxLength(64)
   source?: string;
 }
