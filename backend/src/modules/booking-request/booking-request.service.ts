@@ -73,7 +73,25 @@ export class BookingRequestService {
     });
 
     if (existing) {
-      existing.status = BookingRequestStatus.New;
+      // The resubmit branch used to reset ANY booking to `new`, silently
+      // undoing the whole pipeline — including a signed tenancy — and
+      // bypassing the state machine updateStatus enforces. The lifecycle now
+      // applies here too:
+      // - `rented`: the deal is closed — a new enquiry cannot reopen it;
+      // - `cancel_booking`: a returning tenant legitimately re-applies, the
+      //   booking reopens at the start of the pipeline;
+      // - any active stage: progress is KEPT — the tenant is updating their
+      //   contact details or dates, not restarting the operator's work.
+      if (existing.status === BookingRequestStatus.Rented) {
+        throw new BadRequestException(
+          "This property is already rented through your booking — the request cannot be re-opened",
+        );
+      }
+
+      if (existing.status === BookingRequestStatus.CancelBooking) {
+        existing.status = BookingRequestStatus.New;
+      }
+
       existing.email = email;
       existing.phone_number = phone;
       existing.date_from = dateFrom;

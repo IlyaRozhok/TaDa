@@ -39,7 +39,10 @@ export class Property {
   @ApiProperty({ description: "Building ID", required: false })
   @Index("idx_properties_building_id")
   @Column("uuid", { nullable: true })
-  building_id?: string;
+  // `| null` so an update can actually CLEAR the link: TypeORM's update()
+  // silently skips `undefined` values, which is how "convert to private
+  // landlord" used to leave the property joined to its old building.
+  building_id?: string | null;
 
   // BASIC FIELDS
   @ApiProperty({

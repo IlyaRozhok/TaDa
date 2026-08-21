@@ -6,7 +6,6 @@ import { BuildingController } from "./building.controller";
 import { Building } from "../../entities/building.entity";
 import { Property } from "../../entities/property.entity";
 import { User } from "../../entities/user.entity";
-import { S3Service } from "../../common/services/s3.service";
 
 @Module({
   imports: [
@@ -23,7 +22,7 @@ import { S3Service } from "../../common/services/s3.service";
     }),
   ],
   controllers: [BuildingController],
-  providers: [BuildingService, S3Service],
+  providers: [BuildingService],
   exports: [BuildingService],
 })
 export class BuildingModule {}

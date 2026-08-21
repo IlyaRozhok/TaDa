@@ -134,7 +134,9 @@ export class PropertyService {
       if (updatePropertyDto.building_type === "private_landlord") {
         // Unlink from building and link directly to operator.
         // Only admins may reassign the property to another operator.
-        updateData.building_id = undefined;
+        // MUST be null, not undefined: TypeORM's update() skips undefined
+        // values entirely, so undefined left the old building linked.
+        updateData.building_id = null;
         if (updatePropertyDto.operator_id && userRole === UserRole.Admin) {
           updateData.operator_id = updatePropertyDto.operator_id;
         }
