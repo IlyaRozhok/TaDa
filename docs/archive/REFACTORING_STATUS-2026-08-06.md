@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-08-21.** Point-in-time stakeholder snapshot written
+> 2026-08-06; already contradicted the tracker within days. Do not use for
+> current state — see `docs/STATUS.md`.
+
 # TaDa Platform — Refactoring Program Status
 
 **Prepared:** 2026-08-06

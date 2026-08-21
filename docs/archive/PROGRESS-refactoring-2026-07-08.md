@@ -1,3 +1,10 @@
+> **ARCHIVED 2026-08-21.** This was the live tracker and decision log of the
+> July–August 2026 refactoring campaign (phases 0–7). The campaign is over and
+> the file is frozen — statuses, PR columns and the header were already
+> inconsistent by the end. Current state lives in `docs/STATUS.md`; the value
+> here is the per-step decision log, which remains the record of WHY things
+> are the way they are.
+
 # PROGRESS — living refactoring tracker
 
 **Out-of-band batch 4 in flight (2026-08-21)** — review items 12–14 plus the owner-requested

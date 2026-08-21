@@ -1,3 +1,9 @@
+> **SNAPSHOT of 2026-07-28 (last edited 2026-08-08) — historical.** Describes the codebase as the audit
+> found it; much of it has been fixed since (CI, notifications module,
+> shortlist table, booking lifecycle, SEO, and more). The code and
+> `docs/STATUS.md` are the current truth; the campaign's decision log is
+> `docs/archive/PROGRESS-refactoring-2026-07-08.md`.
+
 # 05 — Приоритизированный план рефакторинга
 
 > Принцип: **работающий функционал священен**. Каждая фаза либо не меняет поведение,

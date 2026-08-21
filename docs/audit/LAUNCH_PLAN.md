@@ -147,7 +147,7 @@ against the already-running container. That is exactly the 500-on-`/api/auth/me`
 mode from #2, live, on ta-da.co, with no alarm.
 
 #### 5. Make `GET /api/health` touch the database
-**OWNER:** code · **Effort:** 30m
+**OWNER:** code · **Effort:** 30m · **Status: ✅ done 2026-08-20 (#139)** — `/api/health` runs `SELECT 1` and answers 503 when the DB is unreachable.
 
 `app.controller.ts:13–19` returns a static `{status, timestamp}`. Add a
 `SELECT 1` (and, ideally, a check that there are no pending migrations).
@@ -264,8 +264,7 @@ bootstrap, not on the features under test).
 
 **Why:** 193 commits go to prod in one shot. The e2e suite is the only automated proof
 that auth, onboarding, matching, shortlist and admin all still work end to end — and it
-already exists, so using it costs one command. (Wiring it into CI is *nice-to-have*, §3;
-running it is not.)
+already exists, so using it costs one command. (Update 2026-08-21: the smoke subset — auth, session-refresh, role-escalation, property-browsing, robots — now runs in CI and gates both deploys; the full suite against stage remains the manual step this item asks for.)
 
 ---
 
