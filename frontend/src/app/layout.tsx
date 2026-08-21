@@ -5,7 +5,6 @@ import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
 import PageViewTracker from "./components/providers/PageViewTracker";
-import EmailJSInitializer from "./components/EmailJSInitializer";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { I18nProvider } from "./contexts/I18nContext";
 import AppToaster from "./components/AppToaster";
@@ -66,12 +65,6 @@ export default function RootLayout({
             optimised URL, so preloading the raw PNG only fetched a second copy
             the page never used. */}
 
-        {/* EmailJS Script */}
-        <script
-          type="text/javascript"
-          src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
-          async
-        ></script>
       </head>
       <body
         className={`${geistMono.variable} antialiased`}
@@ -89,7 +82,6 @@ export default function RootLayout({
                 <Suspense fallback={null}>
                   <PageViewTracker />
                 </Suspense>
-                <EmailJSInitializer />
                 {children}
                 <CookieConsentBanner />
                 <AppToaster />

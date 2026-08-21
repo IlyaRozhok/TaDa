@@ -10,6 +10,7 @@ export const NotificationEvents = {
   UserRegistered: "user.registered",
   TenantCvCompleted: "tenant-cv.completed",
   BookingRequested: "booking-request.created",
+  DemoRequested: "demo.requested",
 } as const;
 
 /** How the account came into existence. Both paths notify support. */
@@ -64,4 +65,21 @@ export interface BookingRequestedEvent {
   dateFrom: string | null;
   dateTo: string | null;
   message: string | null;
+}
+
+/**
+ * A demo request from the public landing form. Unauthenticated by nature —
+ * the sender is whoever filled in the form, so every field is untrusted input
+ * that the DTO has already length-capped and validated. The recipient is the
+ * internal inbox, never anything from this payload (invariant 2 of
+ * NotificationsService).
+ */
+export interface DemoRequestedEvent {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  /** Which flavour of the landing sent it: "Operator", "Tenant" or "Website". */
+  source: string;
+  requestedAt: Date;
 }
