@@ -1,6 +1,14 @@
 # PROGRESS — living refactoring tracker
 
-**Out-of-band batch 3 in flight (2026-08-21)** — review items 10–11: the matching read
+**Out-of-band batch 4 in flight (2026-08-21)** — review items 12–14 plus the owner-requested
+EmailJS→SES migration, four commits in one PR: demo requests through the backend SES outbox
+(EmailJS deleted entirely); an OpenAPI type-generation pipeline with its first consumer;
+a booking-status lifecycle and the shortlist moved onto its table (with backfill migration);
+and the frontend dead-code sweep (unreachable landing branch, deprecated card shims,
+7 unused dependencies, dead tsconfig aliases, the `api.ts` baseURL fallback bug).
+See «2026-08-21 batch 4» under «Bugfixes outside the phase numbering».
+
+**Out-of-band batch 3 merged (2026-08-21, #141)** — review items 10–11: the matching read
 path stops scoring the whole table per request (prefilters on by default + 60s ranking
 cache keyed by preferences version + a 5,000-candidate ceiling), and the public pages
 get real SEO (server wrappers with `generateMetadata` + JSON-LD around the untouched
@@ -534,6 +542,7 @@ wait for one; each still gets its own branch and PR.
 
 | Date | What | Risk | Status | PR | Stage | Note |
 |---|---|---|---|---|---|---|
+| 2026-08-21 | **Batch 4 (external review, items 12–14 + EmailJS→SES): demo form on the SES outbox, OpenAPI codegen pipeline, booking lifecycle + shortlist table, frontend dead-code sweep** | 🟡 | 🟡 | — | ⬜ | Four commits, one PR at the owner's request — see «2026-08-21 batch 4» below |
 | 2026-08-21 | **Batch 3 (external review, items 10–11): matching stops scoring the whole table per request; SEO for public pages (generateMetadata + JSON-LD + static privacy)** | 🟡 | 🟡 | — | ⬜ | Two commits, one PR at the owner's request — see «2026-08-21 batch 3» below |
 | 2026-08-21 | **Hardening batch 2 (external review, items 7–9): lint gates in CI for both apps, e2e smoke in CI, deploy concurrency, multer limits, operator PII stripped from tenant reads, CLAUDE.md/README re-sync, setup script + web session hook** | 🟡 | 🟡 | — | ⬜ | Bundled at the owner's explicit request — see «2026-08-21 hardening batch 2» below |
 | 2026-08-20 | **Security-hardening batch (external review, week-1 items): property IDOR, self-service status change, noindex on prod, hardcoded EmailJS keys, hollow health check** | 🟡 | ✅ | #139 merged | ⬜ | Five fixes in one PR at the owner's explicit request — see «2026-08-20 security batch» below |
@@ -613,6 +622,44 @@ deliberately departing from one-step-one-PR. What it does:
 
 **Not included, still open from week 1:** installing the backup toolchain and rehearsing a
 restore (host actions — the deploy-order fix stays parked behind them).
+
+### 2026-08-21 batch 4
+
+Items 12–14 plus the owner-requested EmailJS→SES migration. Four commits, one PR.
+
+1. **Demo requests through the SES outbox; EmailJS is gone.** New public
+   `POST /api/demo-requests` (202, throttled like auth): validates a capped DTO,
+   emits `demo.requested`, and the existing notifications pipeline records and
+   delivers it (dedupe: one per email per UTC day). Deleted from the frontend:
+   EmailJSInitializer, the CDN script in the root layout, `/api/emailjs-config`,
+   `lib/emailjs.ts`, the empty `/api/send-demo-request`, the `EMAILJS_*` env
+   section. **Host action becomes simpler:** delete the EmailJS keys in the
+   dashboard and any `EMAILJS_*` Vercel vars — nothing reads them.
+2. **OpenAPI codegen pipeline, step 1** (item 12). Backend `npm run openapi:dump`
+   snapshots `/api/docs-json` into a committed `backend/openapi.json`; frontend
+   `npm run gen:api` generates `src/types/generated/api.d.ts`; first consumer is
+   `lib/demoRequest.ts` — and the loop caught a real mismatch on day one.
+   Follow-ups recorded here: annotate response shapes with `@ApiResponse({type})`
+   (plain TS interfaces like `PublicPropertyResponse` never reach the spec),
+   then migrate the hand-written `app/types` one domain at a time.
+3. **Booking lifecycle + shortlist table** (item 13, details in the commit):
+   terminal `rented`/`cancel_booking`, forward-any, one-step-back; shortlist on
+   its real table with `ON CONFLICT` adds and a rehearsed, idempotent backfill
+   migration (1787310000000). Dropping the frozen
+   `tenant_profiles.shortlisted_properties` column is a later migration once the
+   table is verified in production.
+4. **Frontend sweep** (item 14): the unreachable authenticated branch of
+   `page.tsx` (351→77 lines, fabricated match scores gone); the two DEPRECATED
+   card shims replaced by the real `PropertyCard` at all call sites; the
+   `AddPropertyModal.tsx`/directory shadow pair resolved; 7 unused dependencies
+   uninstalled (`@googlemaps/js-api-loader`, `@react-google-maps/api`,
+   `@types/google.maps`, `zod`, `@hookform/resolvers`, `libphonenumber-js`,
+   `react-hot-toast`); three tsconfig aliases pointing at directories that do
+   not exist removed; the dead Google-Maps `.env.example` entry removed; and
+   the `api.ts` baseURL `"undefined"` fallback bug (noticed 2026-08-21) fixed
+   here after it broke a second build. NOT done, deliberately: folding
+   `entities/features/shared/widgets` back into app-native folders — that is
+   pure churn wanting its own decision and PR.
 
 ### 2026-08-21 batch 3
 
@@ -714,7 +761,7 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 
 | Date | Where | What we noticed | Where it belongs |
 |---|---|---|---|
-| 2026-08-21 | `frontend/src/app/lib/api.ts:7` | **`baseURL` falls back to the literal string `"undefined"`, never to localhost.** The template literal `` `${process.env.NEXT_PUBLIC_API_URL}` `` stringifies an unset env var to `"undefined"`, which is truthy, so the `\|\| "http://localhost:5001/api"` fallback is dead — any build without the var ships a broken axios client. `store/api/baseApi.ts:13` next to it does it correctly. One-line fix, but it is the axios client every upload flow uses, so it wants its own tiny PR, not a drive-by | frontend, own micro-PR |
+| 2026-08-21 | `frontend/src/app/lib/api.ts:7` | **`baseURL` falls back to the literal string `"undefined"`, never to localhost.** The template literal `` `${process.env.NEXT_PUBLIC_API_URL}` `` stringifies an unset env var to `"undefined"`, which is truthy, so the `\|\| "http://localhost:5001/api"` fallback is dead — any build without the var ships a broken axios client. `store/api/baseApi.ts:13` next to it does it correctly. One-line fix, but it is the axios client every upload flow uses, so it wants its own tiny PR, not a drive-by. **Fixed in batch 4** after it broke a second local build | ✅ fixed in batch 4 |
 | 2026-08-18 | `backend/src/database/migrations/` | **The migration chain cannot be replayed from an empty database.** `MoveOccupationToPreferences1767461425272` alters `booking_requests`, but that table is created later, by `CreateBookingRequests1769000000001` — a lower timestamp on the dependent migration than on the one it depends on. Found while validating the notifications migrations: `migration:run` against a fresh database dies at 1767…, and only a schema clone with the earlier migrations pre-marked as applied gets past it. **Does not affect prod or stage**, which already carry the whole chain and only ever run the pending tail; it affects anyone provisioning a new environment or restoring one from migrations rather than from a dump. Fixing it means renumbering or merging historical migrations, which rewrites rows in the `migrations` table on both hosts — a deliberate operation, not a side errand | infrastructure / new-environment provisioning |
 | 2026-08-18 | `frontend/src/app/api/emailjs-config/route.ts` | **EmailJS service id, template id and public key are hardcoded in the route handler**, with a comment claiming they come from Vercel environment variables. They are client-side-public credentials by EmailJS's design, so this is not a secret leak, but the route exists solely to serve them from configuration and does the opposite — and rotating any of the three currently needs a code change and a deploy. Inventoried for the notifications PR2 (migrating the demo form onto the backend notification service), which removes this route along with the rest of the EmailJS path | notifications PR2 |
 | 2026-08-10 | `backend`, `src/entities/` | **Deferred on purpose, so §6.7's literal wording is accounted for rather than silently dropped.** The plan's long-term («долгосрочно») ask is to relocate the ten entity files into their owner modules and reach them from outside only through a service. 6.7 fixed the ownership *semantics* — owning/inverse sides, cascades, `forFeature` placement — and left the files where they are. The move is **71 files / 154 import lines**, fixes **none** of the 8 madge entity cycles, changes no runtime behaviour, and needs `data-source.ts`'s explicit entity list moved in lockstep or the migration CLI breaks. It is pure import-rewrite risk with no behavioural payoff, so it wants its own decision and its own PR, not the tail of a step | 6.x, if the owner judges the layout worth the churn |

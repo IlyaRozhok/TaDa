@@ -12,7 +12,7 @@ import { Button } from "@/shared/ui/Button/Button";
 import { Share, ChevronLeft, ChevronRight, Home, Train } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
-import EnhancedPropertyCard from "../../../components/EnhancedPropertyCard";
+import PropertyCard from "@/entities/property/ui/PropertyCard";
 import { DetailsCard } from "@/shared/ui/DetailsCard";
 import { notify } from "@/shared/lib/notify";
 import Footer from "../../../components/Footer";
@@ -569,7 +569,8 @@ export default function BuildingPublicPage() {
                   {properties.slice(0, 3).map((property) => {
                     const match = matchByPropertyId[property.id];
                     return (
-                      <EnhancedPropertyCard
+                      <PropertyCard
+            variant="enhanced"
                         key={property.id}
                         property={property}
                         matchScore={match?.matchScore}

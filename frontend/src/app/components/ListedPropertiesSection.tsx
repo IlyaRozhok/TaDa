@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Property } from "../types";
 import type { PreferencesRow } from "@/store/api/preferences.api";
-import EnhancedPropertyCard from "./EnhancedPropertyCard";
+import PropertyCard from "@/entities/property/ui/PropertyCard";
 import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
@@ -289,7 +289,8 @@ export default function ListedPropertiesSection({
             {sortedProperties
               .filter((item) => item && item.property && item.property.id)
               .map(({ property, matchScore, categories }) => (
-                <EnhancedPropertyCard
+                <PropertyCard
+            variant="enhanced"
                   key={property.id}
                   property={property}
                   matchScore={matchScore || 0}

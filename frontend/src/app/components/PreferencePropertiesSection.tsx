@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useGetPublicPropertiesAllQuery } from "@/store/api/properties.api";
-import EnhancedPropertyCard from "./EnhancedPropertyCard";
+import PropertyCard from "@/entities/property/ui/PropertyCard";
 import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
 import { useTranslation } from "../hooks/useTranslation";
@@ -72,7 +72,8 @@ const PreferencePropertiesSection: React.FC<
         {properties.map((property) => {
           const match = matchByPropertyId[property.id];
           return (
-            <EnhancedPropertyCard
+            <PropertyCard
+            variant="enhanced"
               key={property.id}
               property={property}
               matchScore={match?.matchScore}
