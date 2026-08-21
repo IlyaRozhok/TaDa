@@ -70,7 +70,7 @@ export function getRedirectPath(user: any): string {
 export async function redirectAfterLogin(user: any, router: any) {
   // Check if navigation is blocked
   if (isNavigationBlocked()) {
-    console.log(`⛔ Redirect blocked for ${user?.email}`);
+    console.log(`⛔ Redirect blocked (role: ${user?.role})`);
     return;
   }
 
@@ -100,9 +100,8 @@ export async function redirectAfterLogin(user: any, router: any) {
   }
 
   const path = getRedirectPath(user);
-  console.log(`🔄 Simple redirect: ${user?.email} (${user?.role}) → ${path}`);
+  console.log(`🔄 Simple redirect: role ${user?.role} → ${path}`);
   console.log(`🔍 User details:`, {
-    email: user?.email,
     role: user?.role,
     id: user?.id,
     provider: user?.provider,

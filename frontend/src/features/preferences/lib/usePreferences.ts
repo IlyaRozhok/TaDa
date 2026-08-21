@@ -256,7 +256,6 @@ export default function usePreferences(currentStepOffset: number = 0) {
     hasCheckedAuthRef.current = true;
 
     // Load existing preferences for tenant
-    console.log("📄 Loading preferences for tenant:", user.email);
     loadExistingPreferences();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionInitialized, isAuthenticated, user?.id]); // Include sessionInitialized in dependencies

@@ -202,7 +202,7 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_URL: http://localhost:5001/api
-        run: npx playwright test e2e/auth.spec.ts e2e/session-refresh.spec.ts e2e/role-escalation.spec.ts e2e/property-browsing.spec.ts
+        run: npx playwright test e2e/auth.spec.ts e2e/session-refresh.spec.ts e2e/role-escalation.spec.ts e2e/property-browsing.spec.ts e2e/robots.spec.ts
 
       - name: Upload traces on failure
         if: failure()
