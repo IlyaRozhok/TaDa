@@ -6,10 +6,17 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Superseded PR pushes cancel their in-flight runs (a full e2e stack per push
+# adds up); pushes to main/develop never cancel — those runs end in deploys.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   backend:
     name: Backend — test & build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +55,7 @@ jobs:
   frontend:
     name: Frontend — typecheck, test & build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +84,20 @@ jobs:
       - name: Lint
         working-directory: frontend
         run: npm run lint
+
+      # The generated API types are committed; this fails the build when they
+      # no longer match the committed backend/openapi.json, so the two
+      # artifacts cannot drift apart silently. (openapi.json itself is a
+      # manually refreshed snapshot — `npm run openapi:dump` against the
+      # running dev backend — because producing it needs the app context.)
+      - name: Generated API types are in sync
+        working-directory: frontend
+        run: |
+          npm run gen:api
+          git diff --exit-code -- src/types/generated/api.d.ts || {
+            echo "::error::src/types/generated/api.d.ts is stale. Run 'npm run gen:api' in frontend/ and commit the result."
+            exit 1
+          }
 
       - name: Build
         working-directory: frontend
@@ -218,6 +240,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [backend, frontend, e2e-smoke]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     # Two quick pushes to develop must not race each other over the same host.
@@ -254,6 +277,7 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [backend, frontend, e2e-smoke]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     # Serialize production deploys: concurrent pushes to main would race over
