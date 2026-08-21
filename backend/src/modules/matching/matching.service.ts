@@ -71,8 +71,45 @@ export function averageMatchPercentage(
   return Math.round((total / results.length) * 10) / 10;
 }
 
+/**
+ * Hard ceiling on how many rows the ranking pass will load and score in one
+ * request. Sub-PR B of 6.2 measured p50 84 ms at 5,000 properties, so this is
+ * a protective bound far above the current inventory, not a product decision:
+ * if the table ever outgrows it, the NEWEST `RANKING_CANDIDATE_CEILING` rows
+ * are ranked (the ranking query orders by `created_at DESC`) and older stock
+ * silently leaves the "Best Match" feed — revisit the read path before then.
+ */
+const RANKING_CANDIDATE_CEILING = 5000;
+
+/**
+ * One cached outcome of the ranking pass — the sorted id list and the
+ * set-level numbers, NOT the page payload. Categories and photo URLs are
+ * per-page work and stay uncached.
+ */
+interface RankingCacheEntry {
+  rankedIds: string[];
+  total: number;
+  avgMatchScore: number | null;
+  expiresAt: number;
+}
+
 @Injectable()
 export class MatchingService {
+  /**
+   * Ranking cache: keyed by user + preferences version + search + prefilters,
+   * so editing preferences misses the cache by construction (the key embeds
+   * `preferences.updated_at`). The one staleness this admits: a property
+   * created, deleted or re-priced inside the TTL is missing from / misplaced
+   * in the ranking for up to RANKING_CACHE_TTL_MS. Deleted rows still never
+   * reach the client — hydration drops ids that no longer exist.
+   *
+   * In-memory on purpose: the backend is a single container (docker-compose,
+   * one replica), so there is no second instance to disagree with.
+   */
+  private readonly rankingCache = new Map<string, RankingCacheEntry>();
+  private static readonly RANKING_CACHE_TTL_MS = 60_000;
+  private static readonly RANKING_CACHE_MAX_ENTRIES = 100;
+
   constructor(
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
@@ -81,6 +118,30 @@ export class MatchingService {
     private readonly calculationService: MatchingCalculationService,
     private readonly s3Service: S3Service
   ) {}
+
+  private getCachedRanking(key: string): RankingCacheEntry | undefined {
+    const entry = this.rankingCache.get(key);
+    if (!entry) return undefined;
+    if (entry.expiresAt <= Date.now()) {
+      this.rankingCache.delete(key);
+      return undefined;
+    }
+    return entry;
+  }
+
+  private setCachedRanking(key: string, entry: RankingCacheEntry): void {
+    for (const [existingKey, existing] of this.rankingCache) {
+      if (existing.expiresAt <= Date.now()) {
+        this.rankingCache.delete(existingKey);
+      }
+    }
+    if (this.rankingCache.size >= MatchingService.RANKING_CACHE_MAX_ENTRIES) {
+      // Map iterates in insertion order — the first key is the oldest entry.
+      const oldest = this.rankingCache.keys().next().value;
+      if (oldest !== undefined) this.rankingCache.delete(oldest);
+    }
+    this.rankingCache.set(key, entry);
+  }
 
   private async updatePhotosUrls(property: Property): Promise<Property> {
     return this.s3Service.refreshMediaUrls(property, {
@@ -322,75 +383,105 @@ export class MatchingService {
       };
     }
 
-    // Phase 1 — rank.
+    // SQL pre-filters are ON by default since the 2026-08-21 hardening batch:
+    // the generous ranges in `applyPreFilters` only drop rows that could never
+    // rank, and narrowing in SQL is half of what keeps this path from scoring
+    // the whole table per request. `?prefilters=false` restores the old
+    // rank-everything behaviour.
+    const usePrefilters = options.prefilters ?? true;
+
+    // Phase 1 — rank, through the cache.
     //
-    // By default no SQL pre-filters: we score ALL properties so the "Best Match"
-    // sort shows every property ranked by compatibility, not a filtered subset.
-    // That is the reason this cannot paginate in SQL, and the reason it selects
-    // only the scoring columns: the ranking pass reads the whole table, so it
-    // must not also hydrate two joined relations and every unused column for
-    // rows that will never be returned.
-    const rankingQb = this.propertyRepository
-      .createQueryBuilder("property")
-      .select(SCORING_COLUMNS.map((column) => `property.${column}`))
-      // The sort below is stable, so this decides the order of equal scores.
-      // The previous single query had no ORDER BY on this path at all, leaving
-      // ties to whatever order the scan happened to produce.
-      .orderBy("property.created_at", "DESC");
+    // The ranking pass still reads only the scoring columns (no relations, no
+    // unused columns), but its outcome — the sorted id list and the set-level
+    // numbers — is now cached per (user, preferences version, search,
+    // prefilters) for RANKING_CACHE_TTL_MS. Paging through results costs one
+    // ranking pass, not one per page.
+    const cacheKey = [
+      userId,
+      preferences.updated_at?.getTime() ?? 0,
+      search ?? "",
+      usePrefilters ? 1 : 0,
+    ].join("|");
 
-    if (options.prefilters) {
-      this.applyPreFilters(rankingQb, preferences);
+    let ranking = this.getCachedRanking(cacheKey);
+
+    if (!ranking) {
+      const rankingQb = this.propertyRepository
+        .createQueryBuilder("property")
+        .select(SCORING_COLUMNS.map((column) => `property.${column}`))
+        // The sort below is stable, so this decides the order of equal scores
+        // — and, at the ceiling, which rows are considered at all.
+        .orderBy("property.created_at", "DESC")
+        .take(RANKING_CANDIDATE_CEILING);
+
+      if (usePrefilters) {
+        this.applyPreFilters(rankingQb, preferences);
+      }
+
+      if (search) {
+        // A join, not a joinAndSelect: the search predicate reads
+        // `building.name` but the ranking pass has no use for its columns.
+        rankingQb
+          .leftJoin("property.building", "building")
+          .andWhere(searchPredicate, searchParameters);
+      }
+
+      const candidates = await rankingQb.getMany();
+
+      const matchResults: PropertyMatchResult[] = candidates.map((property) =>
+        this.calculationService.calculateMatch(
+          property,
+          preferences,
+          DEFAULT_WEIGHTS
+        )
+      );
+
+      // Sort by match percentage (descending)
+      matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
+
+      ranking = {
+        rankedIds: matchResults.map((result) => result.property.id),
+        total: matchResults.length,
+        // Taken over the whole scored set: the page is a window on this
+        // population, not the population itself.
+        avgMatchScore: averageMatchPercentage(matchResults),
+        expiresAt: Date.now() + MatchingService.RANKING_CACHE_TTL_MS,
+      };
+      this.setCachedRanking(cacheKey, ranking);
     }
 
-    if (search) {
-      // A join, not a joinAndSelect: the search predicate reads `building.name`
-      // but the ranking pass has no use for the building's columns.
-      rankingQb
-        .leftJoin("property.building", "building")
-        .andWhere(searchPredicate, searchParameters);
-    }
-
-    const candidates = await rankingQb.getMany();
-
-    // Score remaining candidates in JS
-    const matchResults: PropertyMatchResult[] = candidates.map((property) =>
-      this.calculationService.calculateMatch(
-        property,
-        preferences,
-        DEFAULT_WEIGHTS
-      )
-    );
-
-    // Sort by match percentage (descending)
-    matchResults.sort((a, b) => b.matchPercentage - a.matchPercentage);
-
-    // Taken over the whole scored set, before the slice below: the page is a
-    // window on this population, not the population itself.
-    const avgMatchScore = averageMatchPercentage(matchResults);
-
-    const total = matchResults.length;
+    const total = ranking.total;
     const skip = (page - 1) * limit;
-    const paginatedResults = matchResults.slice(skip, skip + limit);
+    const pageIds = ranking.rankedIds.slice(skip, skip + limit);
 
     // Phase 2 — hydrate only the page. The relations and the presigned photo
-    // URLs are paid for by the rows that are actually returned.
-    const pageIds = paginatedResults.map((result) => result.property.id);
+    // URLs are paid for by the rows that are actually returned. Scores and
+    // categories for the page are recomputed from the hydrated entities:
+    // `calculateMatch` is pure and 6.2 proved the projection ranking identical
+    // to full-entity scoring, so on unchanged data this reproduces the cached
+    // ranking exactly, and on data edited inside the TTL the page shows the
+    // property's CURRENT score rather than a stale one.
     const hydratedById = await this.hydratePropertiesById(pageIds);
 
     const data = await Promise.all(
-      paginatedResults
-        // A property deleted between the two queries drops out rather than
-        // being served in its ranking-only form, with no relations or photos.
-        .filter((result) => hydratedById.has(result.property.id))
-        .map(async (result) => ({
-          property: stripOperatorPii(
-            await this.updatePhotosUrls(
-              hydratedById.get(result.property.id)!,
-            ),
-          ),
-          matchScore: result.matchPercentage,
-          categories: result.categories,
-        }))
+      pageIds
+        // A property deleted since the ranking pass drops out rather than
+        // being served in a ranking-only form, with no relations or photos.
+        .filter((id) => hydratedById.has(id))
+        .map(async (id) => {
+          const property = hydratedById.get(id)!;
+          const result = this.calculationService.calculateMatch(
+            property,
+            preferences,
+            DEFAULT_WEIGHTS
+          );
+          return {
+            property: stripOperatorPii(await this.updatePhotosUrls(property)),
+            matchScore: result.matchPercentage,
+            categories: result.categories,
+          };
+        })
     );
 
     return {
@@ -398,7 +489,7 @@ export class MatchingService {
       total,
       page,
       totalPages: Math.ceil(total / limit),
-      avgMatchScore,
+      avgMatchScore: ranking.avgMatchScore,
     };
   }
 

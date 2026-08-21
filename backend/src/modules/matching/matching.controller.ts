@@ -66,11 +66,12 @@ export class MatchingController {
    * The single read path for matched properties: the whole inventory ranked by
    * match score, paginated and searchable.
    *
-   * `prefilters` is the opt-in successor of the deleted `/matches` route. That
-   * route narrowed the candidate set in SQL before scoring, which is why the
-   * same property could be visible here and hidden there. Off by default, so
-   * the default answer is the full inventory ranked — the behaviour this route
-   * has always had.
+   * `prefilters` narrows the candidate set in SQL before the scoring pass
+   * (budget, bedrooms, property type — generous ranges, NULLs kept). ON by
+   * default since the 2026-08-21 hardening batch: it only drops rows that
+   * could never rank, and it is half of what keeps this route from scoring
+   * the whole table per request (the other half is the ranking cache).
+   * `?prefilters=false` restores the old rank-everything behaviour.
    */
   @Get("matched-properties")
   @ApiBearerAuth()
@@ -86,7 +87,7 @@ export class MatchingController {
     required: false,
     type: Boolean,
     description:
-      "Pass `true` to drop properties that fall outside the user's budget, bedroom and property-type preferences before scoring. Default `false` — the whole inventory is ranked. Ignored for a user with no preferences, which is what the filters are derived from",
+      "SQL pre-filtering of properties that fall outside the user's budget, bedroom and property-type preferences before scoring (generous ranges, NULLs kept). Default `true`; pass `false` to rank the whole inventory. Ignored for a user with no preferences, which is what the filters are derived from",
   })
   @ApiResponse({
     status: 200,
@@ -105,7 +106,7 @@ export class MatchingController {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 12,
       search,
-      prefilters: prefilters === "true",
+      prefilters: prefilters !== "false",
     });
   }
 }
