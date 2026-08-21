@@ -1,9 +1,12 @@
 # PROGRESS — living refactoring tracker
 
-**Out-of-band hardening batch 2 in flight (2026-08-21)** — review items 7–9 (CI gates:
-lint + e2e smoke + deploy concurrency; multer limits; operator PII; docs re-sync,
-bootstrap script) in one PR at the owner's request. **Batch 1 merged as #139
-(2026-08-20).** See «Bugfixes outside the phase numbering».
+**Out-of-band batch 3 in flight (2026-08-21)** — review items 10–11: the matching read
+path stops scoring the whole table per request (prefilters on by default + 60s ranking
+cache keyed by preferences version + a 5,000-candidate ceiling), and the public pages
+get real SEO (server wrappers with `generateMetadata` + JSON-LD around the untouched
+client pages for `properties/[id]` and `buildings/[id]`; `privacy` converted to a
+static server component). **Batches 1 and 2 merged as #139 and #140.**
+See «Bugfixes outside the phase numbering».
 
 **Current step: 6.7 done (2026-08-10) — entity ownership is fixed and PHASE 6 IS CLOSED,
 on `phase/6.7-entity-ownership`, PR pending.** The step deliberately did **not** do what
@@ -531,6 +534,7 @@ wait for one; each still gets its own branch and PR.
 
 | Date | What | Risk | Status | PR | Stage | Note |
 |---|---|---|---|---|---|---|
+| 2026-08-21 | **Batch 3 (external review, items 10–11): matching stops scoring the whole table per request; SEO for public pages (generateMetadata + JSON-LD + static privacy)** | 🟡 | 🟡 | — | ⬜ | Two commits, one PR at the owner's request — see «2026-08-21 batch 3» below |
 | 2026-08-21 | **Hardening batch 2 (external review, items 7–9): lint gates in CI for both apps, e2e smoke in CI, deploy concurrency, multer limits, operator PII stripped from tenant reads, CLAUDE.md/README re-sync, setup script + web session hook** | 🟡 | 🟡 | — | ⬜ | Bundled at the owner's explicit request — see «2026-08-21 hardening batch 2» below |
 | 2026-08-20 | **Security-hardening batch (external review, week-1 items): property IDOR, self-service status change, noindex on prod, hardcoded EmailJS keys, hollow health check** | 🟡 | ✅ | #139 merged | ⬜ | Five fixes in one PR at the owner's explicit request — see «2026-08-20 security batch» below |
 | 2026-08-06 | **Users signed out a few hours into a session instead of staying in for the refresh window** | 🟡 | 🟡 | — | ⬜ | See below |
@@ -609,6 +613,51 @@ deliberately departing from one-step-one-PR. What it does:
 
 **Not included, still open from week 1:** installing the backup toolchain and rehearsing a
 restore (host actions — the deploy-order fix stays parked behind them).
+
+### 2026-08-21 batch 3
+
+Items 10–11 of the external review's priority list. Two commits, one PR.
+
+**Item 10 — matching read path** (`perf(matching)` commit). Three changes to
+`getMatchedPropertiesWithPagination`, none touching the scoring engine itself:
+
+- **SQL prefilters default to ON** (`?prefilters=false` opts out). The generous
+  budget/bedrooms/property-type ranges from 6.2 only drop rows that could never
+  rank. This is a product-visible change the owner approved: properties far
+  outside a tenant's stated ranges no longer appear at the bottom of "Best
+  Match" — they don't appear at all.
+- **60-second ranking cache.** The ranking pass outcome (sorted id list, total,
+  avgMatchScore) is cached per (user, `preferences.updated_at`, search,
+  prefilters) — editing preferences misses the cache by construction. Paging
+  costs one ranking pass, not one per page. Page scores/categories are
+  recomputed from the hydrated page entities (`calculateMatch` is pure; 6.2
+  proved projection ranking identical), so a property edited inside the TTL
+  shows its current score. In-memory by design: single-container backend.
+  Known staleness: a property created/deleted/re-priced is missing from or
+  misplaced in the ranking for up to 60s; deleted rows still never reach the
+  client (hydration drops missing ids).
+- **5,000-candidate ceiling** on the ranking query (newest first) — protective
+  bound far above current inventory, measured at p50 84 ms in 6.2 sub-PR B.
+
+**Item 11 — SEO for public pages** (`feat(seo)` commit). The pattern is a thin
+server wrapper around the untouched client page, not a rewrite:
+
+- `properties/[id]`: client page moved verbatim to `PropertyDetailClient.tsx`;
+  the new server `page.tsx` fetches the same public endpoint server-side
+  (ISR 300s, never throws — `app/lib/serverApi.ts`) and emits
+  `generateMetadata` (title, description, canonical, OG image) plus a
+  schema.org `Apartment` JSON-LD block (GBP hardcoded — London-only platform,
+  currency-in-the-model is a separate audit item). Verified live: the served
+  HTML carries the real `<title>` and JSON-LD.
+- `buildings/[id]`: same wrapper with `generateMetadata`.
+- `privacy`: was `"use client"` with zero hooks — now a server component with a
+  `metadata` export; builds as static (○). `terms` NOT converted: it calls
+  `useTranslation`, so it needs the i18n layer rethought first (recorded here
+  rather than done as a drive-by).
+- Verified: e2e smoke 5/5 against the full local stack on both commits;
+  `matching-badge.spec.ts`'s second test fails on this seeded-empty database
+  **identically on clean `develop`** — data-dependent, not a regression (it is
+  not in the CI smoke set).
 
 ### 2026-08-21 hardening batch 2
 
