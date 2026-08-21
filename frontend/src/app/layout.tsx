@@ -51,13 +51,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta
-          httpEquiv="Cache-Control"
-          content="no-cache, no-store, must-revalidate"
-        />
-        <meta httpEquiv="Expires" content="0" />
-
         {/* No hand-written image preloads here. They sat in the root layout, so
             every route paid for them, and neither one helped: the hero is
             rendered by <Image priority>, which emits its own preload for the

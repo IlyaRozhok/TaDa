@@ -38,6 +38,43 @@ export async function generateMetadata({
   };
 }
 
-export default function BuildingPage() {
-  return <BuildingDetailClient />;
+export default async function BuildingPage({ params }: PageProps) {
+  const { id } = await params;
+  // Deduplicated with the generateMetadata fetch by Next's request memoization.
+  const building = await fetchPublicBuilding(id);
+
+  const canonicalUrl = building
+    ? `https://ta-da.co/app/buildings/${building.id}`
+    : null;
+
+  const jsonLd = building?.name
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ApartmentComplex",
+        "@id": canonicalUrl,
+        url: canonicalUrl,
+        name: building.name,
+        description: building.descriptions || undefined,
+        address: building.address
+          ? {
+              "@type": "PostalAddress",
+              streetAddress: building.address,
+              addressLocality: "London",
+              addressCountry: "GB",
+            }
+          : undefined,
+      }
+    : null;
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <BuildingDetailClient />
+    </>
+  );
 }

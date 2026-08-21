@@ -43,7 +43,12 @@ export async function generateMetadata({
       title: property.title,
       description,
       type: "website",
-      images: property.photos?.length ? [property.photos[0]] : undefined,
+      // The stable proxy, NOT the photo URL itself: photos are 24-hour
+      // presigned S3 URLs, and an unfurler rendering the preview later than
+      // that would get a 403. Relative — resolved against metadataBase.
+      images: property.photos?.length
+        ? [`/api/og/property/${property.id}`]
+        : undefined,
     },
   };
 }
@@ -54,10 +59,20 @@ export default async function PropertyPage({ params }: PageProps) {
 
   // The platform is London-only, so the offer currency is a constant until
   // the data model grows one (flagged in the audit).
+  const canonicalUrl = property
+    ? `https://ta-da.co/app/properties/${property.id}`
+    : null;
+
   const jsonLd = property
     ? {
         "@context": "https://schema.org",
-        "@type": "Apartment",
+        // Multi-typed on purpose: Apartment carries the accommodation
+        // semantics, Product legitimises `offers` — schema.org's Apartment
+        // (a Place) has no offers property, and Google's Rich Results
+        // silently drops pricing attached to it.
+        "@type": ["Apartment", "Product"],
+        "@id": canonicalUrl,
+        url: canonicalUrl,
         name: property.title,
         description: property.descriptions || undefined,
         numberOfBedrooms: property.bedrooms ?? undefined,
@@ -77,7 +92,10 @@ export default async function PropertyPage({ params }: PageProps) {
               addressCountry: "GB",
             }
           : undefined,
-        image: property.photos?.length ? property.photos : undefined,
+        // The stable proxy for the same 24-hour-presign reason as OpenGraph.
+        image: property.photos?.length
+          ? [`https://ta-da.co/api/og/property/${property.id}`]
+          : undefined,
         ...(property.price != null
           ? {
               offers: {
