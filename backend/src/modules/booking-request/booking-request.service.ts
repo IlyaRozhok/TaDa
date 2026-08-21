@@ -194,7 +194,70 @@ export class BookingRequestService {
       throw new BadRequestException("Invalid status");
     }
 
+    // Same status: idempotent no-op, so a double-click in the admin panel
+    // neither errors nor rewrites updated_at.
+    if (request.status === status) {
+      return request;
+    }
+
+    this.assertStatusTransition(request.status, status);
+
     request.status = status;
     return this.bookingRequestRepository.save(request);
+  }
+
+  /**
+   * Booking pipeline in order. `cancel_booking` sits outside it — reachable
+   * from any active stage, like `rented` a terminal one.
+   */
+  private static readonly PIPELINE: BookingRequestStatus[] = [
+    BookingRequestStatus.New,
+    BookingRequestStatus.Contacting,
+    BookingRequestStatus.KycReferencing,
+    BookingRequestStatus.ApprovedViewing,
+    BookingRequestStatus.Viewing,
+    BookingRequestStatus.Contract,
+    BookingRequestStatus.Deposit,
+    BookingRequestStatus.FullPayment,
+    BookingRequestStatus.MoveIn,
+    BookingRequestStatus.Rented,
+  ];
+
+  /**
+   * The lifecycle this enforces (there was none before — `rented → new` was
+   * legal):
+   *
+   * - `rented` and `cancel_booking` are terminal: nothing leaves them.
+   *   Reopening a closed deal is a deliberate data fix, not a dropdown click.
+   * - any active stage may move FORWARD any number of steps (real deals skip
+   *   stages), or to `cancel_booking`;
+   * - exactly ONE step backward is allowed, so an admin can undo a misclick
+   *   without cancelling the deal — but `contract → new` style resets are out.
+   */
+  private assertStatusTransition(
+    from: BookingRequestStatus,
+    to: BookingRequestStatus
+  ): void {
+    if (
+      from === BookingRequestStatus.Rented ||
+      from === BookingRequestStatus.CancelBooking
+    ) {
+      throw new BadRequestException(
+        `Status "${from}" is terminal — a closed booking cannot move to "${to}"`
+      );
+    }
+
+    if (to === BookingRequestStatus.CancelBooking) {
+      return;
+    }
+
+    const fromIndex = BookingRequestService.PIPELINE.indexOf(from);
+    const toIndex = BookingRequestService.PIPELINE.indexOf(to);
+
+    if (toIndex < fromIndex - 1) {
+      throw new BadRequestException(
+        `Cannot move a booking from "${from}" back to "${to}" — only one step back is allowed`
+      );
+    }
   }
 }

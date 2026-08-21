@@ -4,7 +4,10 @@ import { refreshSession } from "./sessionRefresh";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL}` || "http://localhost:5001/api",
+  // NOT a template literal: `${undefined}` is the truthy string "undefined",
+  // which silently disabled this fallback and shipped a broken axios client
+  // in any build without the env var (bit us twice before being fixed).
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api",
   headers: {
     "Content-Type": "application/json",
   },

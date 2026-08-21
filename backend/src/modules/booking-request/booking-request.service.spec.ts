@@ -144,3 +144,75 @@ describe("BookingRequestService.create — notification event", () => {
     expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * updateStatus enforces a lifecycle over the 11-status pipeline. Before this
+ * there was none: any status could move to any other, including rented → new.
+ */
+describe("BookingRequestService.updateStatus — transition rules", () => {
+  let bookingRepository: any;
+  let service: BookingRequestService;
+
+  const requestIn = (status: BookingRequestStatus) => ({
+    id: "booking-1",
+    status,
+  });
+
+  beforeEach(() => {
+    bookingRepository = {
+      findOne: jest.fn(),
+      save: jest.fn(async (booking: any) => booking),
+    };
+    service = new BookingRequestService(
+      bookingRepository,
+      { findOne: jest.fn() } as any,
+      { emit: jest.fn() } as unknown as EventEmitter2,
+    );
+  });
+
+  const attempt = (from: BookingRequestStatus, to: BookingRequestStatus) => {
+    bookingRepository.findOne.mockResolvedValue(requestIn(from));
+    return service.updateStatus("booking-1", to);
+  };
+
+  it("allows moving forward, including skipped stages", async () => {
+    await expect(
+      attempt(BookingRequestStatus.New, BookingRequestStatus.ApprovedViewing),
+    ).resolves.toMatchObject({ status: BookingRequestStatus.ApprovedViewing });
+  });
+
+  it("allows cancelling from any active stage", async () => {
+    await expect(
+      attempt(BookingRequestStatus.Deposit, BookingRequestStatus.CancelBooking),
+    ).resolves.toMatchObject({ status: BookingRequestStatus.CancelBooking });
+  });
+
+  it("allows exactly one step back (misclick recovery)", async () => {
+    await expect(
+      attempt(BookingRequestStatus.Viewing, BookingRequestStatus.ApprovedViewing),
+    ).resolves.toMatchObject({ status: BookingRequestStatus.ApprovedViewing });
+  });
+
+  it("rejects multi-step resets", async () => {
+    await expect(
+      attempt(BookingRequestStatus.Contract, BookingRequestStatus.New),
+    ).rejects.toThrow(/only one step back/);
+    expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+
+  it("treats rented and cancel_booking as terminal", async () => {
+    await expect(
+      attempt(BookingRequestStatus.Rented, BookingRequestStatus.New),
+    ).rejects.toThrow(/terminal/);
+    await expect(
+      attempt(BookingRequestStatus.CancelBooking, BookingRequestStatus.Contacting),
+    ).rejects.toThrow(/terminal/);
+  });
+
+  it("is an idempotent no-op on the same status — no save, no error", async () => {
+    await expect(
+      attempt(BookingRequestStatus.Viewing, BookingRequestStatus.Viewing),
+    ).resolves.toMatchObject({ status: BookingRequestStatus.Viewing });
+    expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+});

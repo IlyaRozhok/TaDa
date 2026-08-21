@@ -5,32 +5,36 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In } from "typeorm";
-import { Property } from "../../entities/property.entity";
-import { TenantProfile } from "../../entities/tenant-profile.entity";
+import { Property } from "@/entities/property.entity";
+import { Shortlist } from "@/entities/shortlist.entity";
 import { User, UserRole } from "@/entities/user.entity";
 import { S3Service } from "@/common/services/s3.service";
 import { stripOperatorPii } from "@/common/mappers/public-operator.mapper";
 
+/**
+ * Shortlist reads and writes go through the `shortlist` table — one row per
+ * (user, property) under the `unique_user_property` constraint. The table
+ * existed since InitialSchema but was dead code: the service used to
+ * read-modify-write a jsonb array on `tenant_profiles`, which lost concurrent
+ * updates and enforced no FK. Migration 1787310000000 backfilled the table
+ * from that array; the array column is frozen and slated for removal once the
+ * table is verified in production.
+ */
 @Injectable()
 export class ShortlistService {
   constructor(
     @InjectRepository(Property)
     private propertyRepository: Repository<Property>,
-    @InjectRepository(TenantProfile)
-    private tenantProfileRepository: Repository<TenantProfile>,
+    @InjectRepository(Shortlist)
+    private shortlistRepository: Repository<Shortlist>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private readonly s3Service: S3Service
   ) {}
 
-  /**
-   * Get tenant profile for a user (tenant or admin). Admins are allowed to use shortlist; profile is created on first use if missing.
-   */
-  private async getTenantProfile(userId: string): Promise<TenantProfile> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ["tenantProfile"],
-    });
+  /** Shortlists belong to tenants; admins may use one too (unchanged rule). */
+  private async assertShortlistUser(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException("User not found");
@@ -39,25 +43,12 @@ export class ShortlistService {
     if (user.role !== UserRole.Tenant && user.role !== UserRole.Admin) {
       throw new BadRequestException("Only tenants can have shortlists");
     }
-
-    if (user.tenantProfile) {
-      return user.tenantProfile;
-    }
-
-    // Admin (or tenant without profile): create minimal tenant profile for shortlist storage
-    const tenantProfile = this.tenantProfileRepository.create({
-      userId: user.id,
-      shortlisted_properties: [],
-    });
-    await this.tenantProfileRepository.save(tenantProfile);
-    return tenantProfile;
   }
 
   async addToShortlist(
     userId: string,
     propertyId: string
   ): Promise<{ success: boolean; message: string }> {
-    // Check if property exists
     const property = await this.propertyRepository.findOne({
       where: { id: propertyId },
     });
@@ -66,29 +57,25 @@ export class ShortlistService {
       throw new NotFoundException("Property not found");
     }
 
-    // Get tenant profile
-    const tenantProfile = await this.getTenantProfile(userId);
+    await this.assertShortlistUser(userId);
 
-    // Initialize shortlisted_properties if null
-    const currentShortlist = tenantProfile.shortlisted_properties || [];
+    // `ON CONFLICT DO NOTHING` instead of check-then-insert: two tabs adding
+    // the same property race to one row, and the constraint settles it. The
+    // old array implementation lost one of the two writes entirely.
+    const result = await this.shortlistRepository
+      .createQueryBuilder()
+      .insert()
+      .into(Shortlist)
+      .values({ userId, propertyId })
+      .orIgnore()
+      .execute();
 
-    // Check if already shortlisted - if yes, just return success (idempotent operation)
-    if (currentShortlist.includes(propertyId)) {
-      return {
-        success: true,
-        message: "Property already in shortlist",
-      };
-    }
-
-    // Add to shortlist
-    const updatedShortlist = [...currentShortlist, propertyId];
-    tenantProfile.shortlisted_properties = updatedShortlist;
-
-    await this.tenantProfileRepository.save(tenantProfile);
-
+    const inserted = (result.identifiers ?? []).filter(Boolean).length > 0;
     return {
       success: true,
-      message: "Property added to shortlist successfully",
+      message: inserted
+        ? "Property added to shortlist successfully"
+        : "Property already in shortlist",
     };
   }
 
@@ -96,29 +83,19 @@ export class ShortlistService {
     userId: string,
     propertyId: string
   ): Promise<{ success: boolean; message: string }> {
-    // Get tenant profile
-    const tenantProfile = await this.getTenantProfile(userId);
+    await this.assertShortlistUser(userId);
 
-    // Initialize shortlisted_properties if null
-    const currentShortlist = tenantProfile.shortlisted_properties || [];
-
-    // Check if property is in shortlist - if not, just return success (idempotent operation)
-    if (!currentShortlist.includes(propertyId)) {
-      return {
-        success: true,
-        message: "Property not in shortlist (already removed)",
-      };
-    }
-
-    // Remove from shortlist
-    const updatedShortlist = currentShortlist.filter((id) => id !== propertyId);
-    tenantProfile.shortlisted_properties = updatedShortlist;
-
-    await this.tenantProfileRepository.save(tenantProfile);
+    const result = await this.shortlistRepository.delete({
+      userId,
+      propertyId,
+    });
 
     return {
       success: true,
-      message: "Property removed from shortlist successfully",
+      message:
+        (result.affected ?? 0) > 0
+          ? "Property removed from shortlist successfully"
+          : "Property not in shortlist (already removed)",
     };
   }
 
@@ -129,27 +106,33 @@ export class ShortlistService {
   }
 
   async getUserShortlist(userId: string): Promise<Property[]> {
-    // Get tenant profile
-    const tenantProfile = await this.getTenantProfile(userId);
+    await this.assertShortlistUser(userId);
 
-    // Get shortlisted property IDs
-    const shortlistedPropertyIds = tenantProfile.shortlisted_properties || [];
+    // Most recently shortlisted first — the table has the timestamp the
+    // array never carried (the old code could only sort by property age).
+    const entries = await this.shortlistRepository.find({
+      where: { userId },
+      order: { created_at: "DESC" },
+      select: ["propertyId"],
+    });
 
-    if (shortlistedPropertyIds.length === 0) {
+    if (entries.length === 0) {
       return [];
     }
 
-    // Fetch properties with building and operator relations
+    const orderedIds = entries.map((entry) => entry.propertyId);
     const properties = await this.propertyRepository.find({
-      where: { id: In(shortlistedPropertyIds) },
+      where: { id: In(orderedIds) },
       relations: ["building", "building.operator", "operator"],
-      order: { created_at: "DESC" },
     });
+    const byId = new Map(properties.map((p) => [p.id, p]));
 
     // Refresh presigned URLs for photos so images load in the frontend,
     // and strip operator PII — this response goes to tenants.
     return Promise.all(
-      properties.map((p) => this.updatePhotosUrls(p).then(stripOperatorPii)),
+      orderedIds
+        .filter((id) => byId.has(id))
+        .map((id) => this.updatePhotosUrls(byId.get(id)!).then(stripOperatorPii)),
     );
   }
 
@@ -158,28 +141,23 @@ export class ShortlistService {
     propertyId: string
   ): Promise<boolean> {
     try {
-      // Get tenant profile
-      const tenantProfile = await this.getTenantProfile(userId);
-
-      // Check if property is in shortlist
-      const shortlistedPropertyIds = tenantProfile.shortlisted_properties || [];
-      return shortlistedPropertyIds.includes(propertyId);
-    } catch (error) {
-      // If user is not a tenant or profile doesn't exist, return false
+      await this.assertShortlistUser(userId);
+      const count = await this.shortlistRepository.countBy({
+        userId,
+        propertyId,
+      });
+      return count > 0;
+    } catch {
+      // Not a tenant / no such user — same "false" the old code answered.
       return false;
     }
   }
 
   async getShortlistCount(userId: string): Promise<number> {
     try {
-      // Get tenant profile
-      const tenantProfile = await this.getTenantProfile(userId);
-
-      // Return count of shortlisted properties
-      const shortlistedPropertyIds = tenantProfile.shortlisted_properties || [];
-      return shortlistedPropertyIds.length;
-    } catch (error) {
-      // If user is not a tenant or profile doesn't exist, return 0
+      await this.assertShortlistUser(userId);
+      return await this.shortlistRepository.countBy({ userId });
+    } catch {
       return 0;
     }
   }
@@ -187,13 +165,9 @@ export class ShortlistService {
   async clearShortlist(
     userId: string
   ): Promise<{ success: boolean; message: string }> {
-    // Get tenant profile
-    const tenantProfile = await this.getTenantProfile(userId);
+    await this.assertShortlistUser(userId);
 
-    // Clear shortlist
-    tenantProfile.shortlisted_properties = [];
-
-    await this.tenantProfileRepository.save(tenantProfile);
+    await this.shortlistRepository.delete({ userId });
 
     return {
       success: true,
