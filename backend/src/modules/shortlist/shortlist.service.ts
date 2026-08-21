@@ -7,8 +7,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In } from "typeorm";
 import { Property } from "../../entities/property.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
-import { User, UserRole } from "../../entities/user.entity";
-import { S3Service } from "../../common/services/s3.service";
+import { User, UserRole } from "@/entities/user.entity";
+import { S3Service } from "@/common/services/s3.service";
+import { stripOperatorPii } from "@/common/mappers/public-operator.mapper";
 
 @Injectable()
 export class ShortlistService {
@@ -145,8 +146,11 @@ export class ShortlistService {
       order: { created_at: "DESC" },
     });
 
-    // Refresh presigned URLs for photos so images load in the frontend
-    return Promise.all(properties.map((p) => this.updatePhotosUrls(p)));
+    // Refresh presigned URLs for photos so images load in the frontend,
+    // and strip operator PII — this response goes to tenants.
+    return Promise.all(
+      properties.map((p) => this.updatePhotosUrls(p).then(stripOperatorPii)),
+    );
   }
 
   async isPropertyShortlisted(

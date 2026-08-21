@@ -5,6 +5,7 @@ import { Property } from "@/entities";
 import { Preferences } from "@/entities";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { S3Service } from "@/common/services/s3.service";
+import { stripOperatorPii } from "@/common/mappers/public-operator.mapper";
 import {
   PropertyMatchResult,
   MatchScoresResponse,
@@ -297,7 +298,7 @@ export class MatchingService {
 
       const data = await Promise.all(
         properties.map(async (property) => ({
-          property: await this.updatePhotosUrls(property),
+          property: stripOperatorPii(await this.updatePhotosUrls(property)),
           matchScore: 0,
           categories: [] as Array<{
             category: string;
@@ -382,8 +383,10 @@ export class MatchingService {
         // being served in its ranking-only form, with no relations or photos.
         .filter((result) => hydratedById.has(result.property.id))
         .map(async (result) => ({
-          property: await this.updatePhotosUrls(
-            hydratedById.get(result.property.id)!,
+          property: stripOperatorPii(
+            await this.updatePhotosUrls(
+              hydratedById.get(result.property.id)!,
+            ),
           ),
           matchScore: result.matchPercentage,
           categories: result.categories,

@@ -559,8 +559,14 @@ secrets/
 # Worktrees
 .worktrees/
 
-# Claude
-.claude/
+# Claude — personal state stays ignored, but the shared project config
+# (SessionStart hook, launch config, checked-in settings) is versioned so
+# web sessions bootstrap themselves.
+.claude/*
+!.claude/settings.json
+!.claude/launch.json
+!.claude/hooks/
+.claude/settings.local.json
 # Specific to this project
 backend/database/init/
 backend/session_test_cookies.txt

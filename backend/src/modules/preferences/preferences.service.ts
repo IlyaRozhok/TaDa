@@ -40,7 +40,7 @@ export class PreferencesService {
       throw new ForbiddenException("Only tenants can set preferences");
     }
 
-    let existingPreferences = await this.preferencesRepository.findOne({
+    const existingPreferences = await this.preferencesRepository.findOne({
       where: { user: { id: userId } },
     });
 
@@ -144,10 +144,10 @@ export class PreferencesService {
     const updateData = toPreferencesEntityPartial(updatePreferencesDto);
 
     // Preserve existing dates if not provided in update
-    if (!updatePreferencesDto.hasOwnProperty("move_in_date")) {
+    if (!Object.prototype.hasOwnProperty.call(updatePreferencesDto, "move_in_date")) {
       updateData.move_in_date = preferences.move_in_date;
     }
-    if (!updatePreferencesDto.hasOwnProperty("move_out_date")) {
+    if (!Object.prototype.hasOwnProperty.call(updatePreferencesDto, "move_out_date")) {
       updateData.move_out_date = preferences.move_out_date;
     }
 

@@ -1,7 +1,9 @@
 # PROGRESS — living refactoring tracker
 
-**Out-of-band security batch in flight (2026-08-20)** — five week-1 fixes from an external
-review in one PR at the owner's request; see «Bugfixes outside the phase numbering».
+**Out-of-band hardening batch 2 in flight (2026-08-21)** — review items 7–9 (CI gates:
+lint + e2e smoke + deploy concurrency; multer limits; operator PII; docs re-sync,
+bootstrap script) in one PR at the owner's request. **Batch 1 merged as #139
+(2026-08-20).** See «Bugfixes outside the phase numbering».
 
 **Current step: 6.7 done (2026-08-10) — entity ownership is fixed and PHASE 6 IS CLOSED,
 on `phase/6.7-entity-ownership`, PR pending.** The step deliberately did **not** do what
@@ -529,7 +531,8 @@ wait for one; each still gets its own branch and PR.
 
 | Date | What | Risk | Status | PR | Stage | Note |
 |---|---|---|---|---|---|---|
-| 2026-08-20 | **Security-hardening batch (external review, week-1 items): property IDOR, self-service status change, noindex on prod, hardcoded EmailJS keys, hollow health check** | 🟡 | 🟡 | — | ⬜ | Five fixes in one PR at the owner's explicit request — see «2026-08-20 security batch» below |
+| 2026-08-21 | **Hardening batch 2 (external review, items 7–9): lint gates in CI for both apps, e2e smoke in CI, deploy concurrency, multer limits, operator PII stripped from tenant reads, CLAUDE.md/README re-sync, setup script + web session hook** | 🟡 | 🟡 | — | ⬜ | Bundled at the owner's explicit request — see «2026-08-21 hardening batch 2» below |
+| 2026-08-20 | **Security-hardening batch (external review, week-1 items): property IDOR, self-service status change, noindex on prod, hardcoded EmailJS keys, hollow health check** | 🟡 | ✅ | #139 merged | ⬜ | Five fixes in one PR at the owner's explicit request — see «2026-08-20 security batch» below |
 | 2026-08-06 | **Users signed out a few hours into a session instead of staying in for the refresh window** | 🟡 | 🟡 | — | ⬜ | See below |
 
 **Root cause.** The frontend never called `POST /auth/refresh` — the string did not
@@ -607,6 +610,52 @@ deliberately departing from one-step-one-PR. What it does:
 **Not included, still open from week 1:** installing the backup toolchain and rehearsing a
 restore (host actions — the deploy-order fix stays parked behind them).
 
+### 2026-08-21 hardening batch 2
+
+Items 7–9 of the external review's priority list, bundled in one PR at the owner's request.
+
+1. **Backend has ESLint now** — flat config (`backend/eslint.config.mjs`), ESLint 9 +
+   typescript-eslint. `no-unused-vars` is an **error** (the machine check for the
+   "no orphaned imports" rule); `no-explicit-any` and `no-console` are warnings
+   (38 and ~71 pre-existing hits — backlog, not a gate); migrations may log.
+   Getting to 0 errors fixed 19 real findings: dead imports in 5 files, a dead
+   `IsHttpsUrl` validator and `ConciergeHoursDto` class, `require()` calls in
+   `main.ts`/`s3.service.ts` shadowed by existing top-level imports, two
+   `prefer-const`, two unsafe `hasOwnProperty` calls.
+2. **CI gates on lint for both apps** — the stale "frontend lint is broken" comment
+   in `deploy.yml` is gone (step 4.3 repaired it weeks ago); frontend lints clean at
+   0 errors / 359 warnings.
+3. **E2E smoke job in CI** — new `e2e-smoke` job boots Postgres 16 + backend +
+   `next start`, seeds one operator + one property (idempotent SQL, fixed UUIDs),
+   and runs 5 tests across 4 specs: auth ×2, session-refresh, role-escalation,
+   property-browsing. Both deploy jobs now `need` it. Schema comes from
+   `TYPEORM_SYNCHRONIZE=true`, not `migration:run` — the chain does not replay from
+   empty (see «Noticed along the way» 2026-08-18); when repaired, the job should
+   switch to migrations. Rehearsed end-to-end before committing: 5/5 green against
+   the exact stack recipe in the workflow. Two traps found while rehearsing are
+   documented inline: the API URL must be `localhost` (not `127.0.0.1`) or the
+   auth cookie is never sent, and `playwright.config.ts` now honors
+   `PLAYWRIGHT_CHROMIUM_PATH` for sandboxes with a preinstalled browser.
+4. **Deploy jobs are serialized** — `concurrency` groups on staging and production
+   deploys; two quick pushes no longer race over the same SSH host.
+5. **Multer limits are real** — 1 GB per file ("практически без ограничений") became
+   50 MB per file + 100 files per request in all three modules, matching nginx's
+   `client_max_body_size 50M`. Uploads buffer in RAM, so both caps matter.
+6. **Operator PII no longer leaks to tenants** — matching and shortlist reads
+   returned the operator's full `User` row (email, phone, address, date_of_birth,
+   google_id). New `stripOperatorPii` mapper (`common/mappers/public-operator.mapper.ts`)
+   projects `{id, full_name}` — the two fields the frontend renders — applied at all
+   three return sites (`matching.service.ts` ×2, `shortlist.service.ts` ×1).
+7. **Docs re-synced** — CLAUDE.md: closed questions marked closed (the 3002 "open
+   question" was sending readers at a bug fixed on 2026-08-06), lint paragraph
+   rewritten, dead `backend/database/` warning replaced with the real migration
+   caveat, docs index now lists all 9 audit docs + the backup runbook with a
+   precedence rule (PROGRESS wins over the 01–05 snapshots), out-of-band work
+   track documented. README: checks table matches CI, stale lint paragraph gone.
+8. **Fresh checkouts bootstrap themselves** — `scripts/setup.sh` installs both
+   apps' dependencies; `.claude/hooks/session-start.sh` + `.claude/settings.json`
+   run it automatically in Claude Code on the web sessions.
+
 ---
 
 ## Noticed along the way
@@ -616,6 +665,7 @@ each one goes into the phase that owns the file, and only after Phase 1 (see CLA
 
 | Date | Where | What we noticed | Where it belongs |
 |---|---|---|---|
+| 2026-08-21 | `frontend/src/app/lib/api.ts:7` | **`baseURL` falls back to the literal string `"undefined"`, never to localhost.** The template literal `` `${process.env.NEXT_PUBLIC_API_URL}` `` stringifies an unset env var to `"undefined"`, which is truthy, so the `\|\| "http://localhost:5001/api"` fallback is dead — any build without the var ships a broken axios client. `store/api/baseApi.ts:13` next to it does it correctly. One-line fix, but it is the axios client every upload flow uses, so it wants its own tiny PR, not a drive-by | frontend, own micro-PR |
 | 2026-08-18 | `backend/src/database/migrations/` | **The migration chain cannot be replayed from an empty database.** `MoveOccupationToPreferences1767461425272` alters `booking_requests`, but that table is created later, by `CreateBookingRequests1769000000001` — a lower timestamp on the dependent migration than on the one it depends on. Found while validating the notifications migrations: `migration:run` against a fresh database dies at 1767…, and only a schema clone with the earlier migrations pre-marked as applied gets past it. **Does not affect prod or stage**, which already carry the whole chain and only ever run the pending tail; it affects anyone provisioning a new environment or restoring one from migrations rather than from a dump. Fixing it means renumbering or merging historical migrations, which rewrites rows in the `migrations` table on both hosts — a deliberate operation, not a side errand | infrastructure / new-environment provisioning |
 | 2026-08-18 | `frontend/src/app/api/emailjs-config/route.ts` | **EmailJS service id, template id and public key are hardcoded in the route handler**, with a comment claiming they come from Vercel environment variables. They are client-side-public credentials by EmailJS's design, so this is not a secret leak, but the route exists solely to serve them from configuration and does the opposite — and rotating any of the three currently needs a code change and a deploy. Inventoried for the notifications PR2 (migrating the demo form onto the backend notification service), which removes this route along with the rest of the EmailJS path | notifications PR2 |
 | 2026-08-10 | `backend`, `src/entities/` | **Deferred on purpose, so §6.7's literal wording is accounted for rather than silently dropped.** The plan's long-term («долгосрочно») ask is to relocate the ten entity files into their owner modules and reach them from outside only through a service. 6.7 fixed the ownership *semantics* — owning/inverse sides, cascades, `forFeature` placement — and left the files where they are. The move is **71 files / 154 import lines**, fixes **none** of the 8 madge entity cycles, changes no runtime behaviour, and needs `data-source.ts`'s explicit entity list moved in lockstep or the migration CLI breaks. It is pure import-rewrite risk with no behavioural payoff, so it wants its own decision and its own PR, not the tail of a step | 6.x, if the owner judges the layout worth the churn |
