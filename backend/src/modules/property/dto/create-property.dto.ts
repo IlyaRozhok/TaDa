@@ -37,13 +37,6 @@ class LocalEssentialDto {
   destination: number;
 }
 
-class ConciergeHoursDto {
-  @IsNumber()
-  from: number;
-  @IsNumber()
-  to: number;
-}
-
 class PetDto {
   @IsString()
   type: "dog" | "cat" | "other";

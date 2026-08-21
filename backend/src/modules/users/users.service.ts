@@ -9,7 +9,6 @@ import { UserAdminService } from "./services/user-admin.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { S3Service } from "../../common/services/s3.service";
-import { toUserResponse } from "./user.mapper";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 
 @Injectable()

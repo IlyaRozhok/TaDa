@@ -69,9 +69,11 @@ develop (stage)  →  main (prod)
 удали и его импорт. То же касается неиспользуемых зависимостей в конструкторе
 Nest-сервиса и мёртвых параметров метода.
 
-Линтер это **не поймает**: у бэкенда ESLint не настроен вообще, а на фронте активен
-только flat-конфиг с базовым набором Next (правило `no-unused-vars` из `.eslintrc.json`
-не применяется — см. `docs/audit/03-frontend-map.md` §6). Проверять глазами.
+The linter now catches this and CI gates on it: both apps have ESLint flat
+configs (`backend/eslint.config.mjs`, `frontend/eslint.config.mjs`) with
+`no-unused-vars` as an **error**, and `deploy.yml` runs `npm run lint` for both.
+Unused constructor dependencies in Nest services are the one case ESLint still
+misses (parameter properties count as "used") — check those by eye.
 
 ### 2. Импортировать через path-алиас, а не относительным путём
 
@@ -121,17 +123,23 @@ Nest-сервиса и мёртвых параметров метода.
 
 ## Как ориентироваться
 
-**`docs/audit/` — единственный источник истины.** Шесть документов:
+**`docs/audit/` is the single source of truth — with one precedence rule:
+the maps `01`–`05` are a snapshot of 2026-07-28 and only `PROGRESS.md` corrects
+them.** Where a map and PROGRESS.md disagree, PROGRESS.md wins. Nine documents,
+plus the ops runbook:
 
-| Файл | О чём |
+| File | What it is |
 |---|---|
-| `00-revision-note.md` | Ревизия аудита против `develop`, принятые решения владельца, инвентаризация `.md` |
-| `01-overview.md` | Топология репозитория, инфраструктура, CI/CD, что готово к проду, а что нет |
-| `02-backend-map.md` | Карта модулей и их циклов, энтити и связи, состояние БД и миграций, дыры в безопасности |
-| `03-frontend-map.md` | Три архитектуры фронта, мёртвый код, дубли, слой данных, дрейф контракта с бэком |
-| `04-docs-diff.md` | Расхождения «документация vs реальность» |
-| `05-refactoring-plan.md` | **Главный документ.** Реестр рисков, фазы 0–7, оценка риска каждого шага |
-| `PROGRESS.md` | Живой трекер: где мы сейчас, что сделано, что следующее |
+| `00-revision-note.md` | Audit revision against `develop`, owner decisions, `.md` inventory |
+| `01-overview.md` | Repo topology, infrastructure, CI/CD (snapshot — see PROGRESS for fixes since) |
+| `02-backend-map.md` | Backend modules and cycles, entities, DB/migrations state (snapshot; the `notifications` module postdates it) |
+| `03-frontend-map.md` | Frontend architectures, dead code, data layer (snapshot) |
+| `04-docs-diff.md` | "Documentation vs reality" discrepancies |
+| `05-refactoring-plan.md` | **The main plan.** Risk register, phases 0–7, per-step risk |
+| `PROGRESS.md` | **Live tracker and decision log — read this first.** Includes «Bugfixes outside the phase numbering» for work outside the phases |
+| `LAUNCH_PLAN.md` | The launch bar: what blocks going live (backup, deploy order, prod lag) |
+| `REFACTORING_STATUS.md` | Point-in-time stakeholder snapshot (2026-08-06) — do **not** use for current state |
+| `../ops/BACKUP_RUNBOOK.md` | DB backup/restore: design, install, verify, restore drill |
 
 **`docs/archive/` — исторические файлы. Игнорировать.** Там лежат отменённые планы
 и README, описывающий несуществующую архитектуру. Не выполнять, не цитировать,
@@ -143,6 +151,8 @@ Nest-сервиса и мёртвых параметров метода.
 ## Порядок работы агента
 
 ```
+0. Fresh checkout? Run scripts/setup.sh (installs deps for both apps).
+   Claude Code on the web does this automatically via .claude/hooks/session-start.sh.
 1. Прочитать CLAUDE.md (этот файл)
 2. Прочитать docs/audit/PROGRESS.md → определить текущий шаг
 3. Прочитать соответствующий раздел docs/audit/05-refactoring-plan.md
@@ -154,22 +164,29 @@ Nest-сервиса и мёртвых параметров метода.
 Один шаг = один PR. Это не бюрократия: половина находок аудита — следствие того,
 что предыдущие рефакторинги делались крупными кусками и бросались на середине.
 
-## Открытые вопросы (блокируют конкретные шаги)
+Work that is not a plan step — a production bug, a security fix, a feature the
+owner asked for directly — does not force itself into the phase numbering:
+record it in PROGRESS.md under «Bugfixes outside the phase numbering» instead,
+still one branch and one PR per item unless the owner explicitly bundles them.
 
-| # | Вопрос | Блокирует |
-|---|---|---|
-| **В2** | Нужен ли фирменный шрифт **SF Pro**? Сейчас `font-sf-pro` используется в 20 местах, но Tailwind-конфиг игнорируется и класс не даёт CSS. Если шрифт не нужен — дешевле удалить класс вместе с конфигом, чем оживлять | Фаза 4.1 |
-| **В3** | Совпадает ли схема БД на stage и prod с локальной? Локально `schema:log` чист, прод не проверялся | Фаза 0.3 → всё, что трогает схему |
-| **В4** | Что реально крутится на боевых хостах — какой compose и nginx-конфиг? В репозитории `nginx/prod.conf` смотрит на порт 3002, а compose открывает 3001 | Фаза 3.1 → 3.2 и правки деплоя |
+## Открытые вопросы
 
-В3 и В4 не требуют решения владельца — это работа на снятие информации с хостов,
-запланирована в шагах 0.3 и 3.1. **В2 требует ответа продукта/дизайна.**
+**None — all three former blockers are closed** (details in PROGRESS.md):
+
+- **Q2 closed 2026-07-28**: SF Pro stays; Tailwind fixed via CSS-first `@theme` tokens (step 4.1).
+- **Q3 closed 2026-07-29** (step 0.3): migrations reconciled on both hosts, `pending = 0`.
+- **Q4 closed 2026-08-06** (step 3.1): compose on both hosts is byte-identical to the
+  repo; nginx is host-managed (Certbot) and proxies to **3001** — port 3002 never
+  existed anywhere but in a dead repo file. `nginx/*.conf` are reference mirrors.
 
 ## Чего делать нельзя
 
 - Коммитить в `main` напрямую.
 - Править `frontend/src/translations/*` — ими управляет Localazy, правки затрутся.
-- Класть миграции в `backend/database/` — это устаревшая папка, её содержимое
-  не применяется. Настоящие миграции: `backend/src/database/migrations/`.
 - Начинать 🔴-шаг без зелёных e2e.
 - Чинить что-то «заодно», вне текущего шага.
+
+Migrations live in `backend/src/database/migrations/` — nowhere else. Note:
+the chain does not replay from an empty database (see PROGRESS.md «Noticed
+along the way» 2026-08-18); fresh environments use `TYPEORM_SYNCHRONIZE=true`
+until that is repaired.

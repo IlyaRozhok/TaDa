@@ -67,17 +67,17 @@ Swagger: `http://localhost:5001/api/docs` (basic auth in production).
 CI runs these same commands, so it is worth running them locally before opening
 a PR.
 
-| What | Backend | Frontend |
-|---|---|---|
-| Types | `npx tsc -p tsconfig.json --noEmit` | `npm run type-check` |
-| Unit tests | `npm test` (jest) | `npm test` (vitest) |
-| Build | `npm run build` | `npm run build` |
-| E2E | — | `npm run e2e` (Playwright) |
+| What | Backend | Frontend | In CI |
+|---|---|---|---|
+| Types | `npx tsc -p tsconfig.json --noEmit` | `npm run type-check` | yes |
+| Lint | `npm run lint` | `npm run lint` | yes (errors gate; warnings are backlog) |
+| Unit tests | `npm test` (jest) | `npm test` (vitest) | yes |
+| Build | `npm run build` | `npm run build` | yes |
+| E2E | — | `npm run e2e` (Playwright) | smoke subset (auth, session-refresh, role-escalation, property-browsing) against a seeded stack |
 
-**Frontend linting is currently broken** — `next lint` was removed from the CLI
-in Next 16, and running `eslint` directly fails on `FlatCompat`. That makes
-`npm run lint` and `npm run quality` unusable, which is why CI deliberately has
-no lint step. It is repaired in step 4.3 of the refactoring plan.
+Bootstrap a fresh checkout with `scripts/setup.sh` (installs dependencies for
+both apps). Claude Code on the web runs it automatically via the SessionStart
+hook in `.claude/`.
 
 ### E2E
 

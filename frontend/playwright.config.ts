@@ -11,6 +11,12 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     ...devices["Desktop Chrome"],
+    // Sandboxes with a preinstalled Chromium (a different revision than this
+    // @playwright/test expects) can point at it instead of downloading one.
+    // Unset everywhere else, including CI, which installs its own browser.
+    ...(process.env.PLAYWRIGHT_CHROMIUM_PATH
+      ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
+      : {}),
   },
 
   projects: [

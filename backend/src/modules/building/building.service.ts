@@ -29,7 +29,7 @@ export class BuildingService {
     createBuildingDto: CreateBuildingDto,
   ): Promise<BuildingResponse> {
     // If operator_id provided, verify that the operator exists and has operator role
-    let operatorId: string | null = createBuildingDto.operator_id ?? null;
+    const operatorId: string | null = createBuildingDto.operator_id ?? null;
     if (operatorId) {
       const operator = await this.userRepository.findOne({
         where: { id: operatorId },
