@@ -22,6 +22,8 @@ export interface TenantCvProfile {
   last_name?: string | null;
   avatar_url?: string | null;
   email?: string | null;
+  /** Anonymous share-link view: email/phone masked, address withheld. */
+  contacts_masked?: boolean;
   phone?: string | null;
   age_years?: number | null;
   nationality?: string | null;

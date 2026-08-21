@@ -12,6 +12,13 @@ class TenantCvProfileDto {
   @ApiProperty({ required: false })
   email?: string | null;
 
+  @ApiProperty({
+    required: false,
+    description:
+      "True when the viewer is anonymous and email/phone are masked, address withheld. Sign in to see full contact details.",
+  })
+  contacts_masked?: boolean;
+
   @ApiProperty({ required: false })
   phone?: string | null;
 
