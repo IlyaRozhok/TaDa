@@ -6,6 +6,7 @@ import {
   Post,
   Put,
   UseGuards,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
@@ -79,7 +80,7 @@ export class TenantCvController {
   @Public()
   @UseGuards(OptionalJwtAuthGuard)
   async getPublicCv(
-    @Param("share_uuid") shareUuid: string,
+    @Param("share_uuid", ParseUUIDPipe) shareUuid: string,
     @CurrentUser() viewer?: User,
   ) {
     return this.tenantCvService.getByShareUuid(shareUuid, {

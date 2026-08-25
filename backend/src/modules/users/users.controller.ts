@@ -12,6 +12,7 @@ import {
   Param,
   UploadedFile,
   BadRequestException,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import { Request } from "express";
 import {
@@ -146,7 +147,7 @@ export class UsersController {
   @ApiOperation({ summary: "Update user by id (admin only)" })
   @ApiResponse({ status: 200, description: "User updated", type: User })
   async adminUpdateUser(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: AdminUpdateUserDto
   ): Promise<User> {
     const user = await this.usersService.adminUpdateUser(id, dto);
@@ -158,7 +159,7 @@ export class UsersController {
   @ApiBearerAuth("access-token")
   @ApiOperation({ summary: "Delete user by id (admin only)" })
   @ApiResponse({ status: 200, description: "User deleted" })
-  async adminDeleteUser(@Param("id") id: string): Promise<{ message: string }> {
+  async adminDeleteUser(@Param("id", ParseUUIDPipe) id: string): Promise<{ message: string }> {
     await this.usersService.adminDeleteUser(id);
     return { message: "User deleted" };
   }
@@ -169,7 +170,7 @@ export class UsersController {
   @ApiOperation({ summary: "Update user role (admin only)" })
   @ApiResponse({ status: 200, description: "User role updated", type: User })
   async updateUserRole(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() updateData: { role: string }
   ): Promise<{ user: User; access_token?: string }> {
     const user = await this.usersService.updateUserRole(id, updateData.role);

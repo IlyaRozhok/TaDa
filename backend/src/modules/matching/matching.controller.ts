@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Request,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -36,7 +37,7 @@ export class MatchingController {
   })
   async getPropertyMatch(
     @Request() req: any,
-    @Param("propertyId") propertyId: string
+    @Param("propertyId", ParseUUIDPipe) propertyId: string
   ) {
     const userId = req.user.id;
     return this.matchingService.getPropertyMatch(propertyId, userId);
