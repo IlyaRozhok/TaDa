@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Get, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Controller, Post, UseGuards, Get, Req, Res, UnauthorizedException, Logger } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
 import { Request, Response } from "express";
@@ -28,6 +28,8 @@ const refreshCookieOptions = () => ({
 
 @Controller("auth")
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private authService: AuthService) {}
 
   @Get("me")
@@ -107,7 +109,14 @@ export class AuthController {
       const isNewParam = isNew ? "&is_new=1" : "";
 
       return res.redirect(`${frontendUrl}/app/auth/callback?success=true${isNewParam}`);
-    } catch {
+    } catch (error) {
+      // The user is redirected to a generic error page, so this log line is
+      // the ONLY server-side trace of a failed sign-in — before it existed,
+      // OAuth failures were completely invisible.
+      this.logger.error(
+        "Google OAuth callback failed",
+        error instanceof Error ? error.stack : String(error),
+      );
       return res.redirect(`${frontendUrl}/app/auth/callback?error=auth_failed`);
     }
   }
