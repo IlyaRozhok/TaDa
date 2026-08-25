@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { Repository } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
 import { User, UserRole, UserStatus } from "@/entities/user.entity";
 import { TenantProfile } from "@/entities/tenant-profile.entity";
@@ -31,7 +31,7 @@ export class UserAdminService {
   ) {}
 
   /**
-   * Создать пользователя администратором
+   * Create a user as an admin.
    */
   async createUser(dto: CreateUserDto): Promise<User> {
     const {
@@ -42,7 +42,6 @@ export class UserAdminService {
       is_private_landlord = false,
     } = dto;
 
-    // Проверить, что email уникален
     const existingUser = await this.userRepository.findOne({
       where: { email: email.toLowerCase() },
     });
@@ -51,30 +50,34 @@ export class UserAdminService {
       throw new BadRequestException("User with this email already exists");
     }
 
-    // Захешировать пароль
     const hashedPassword = await bcrypt.hash(
       password,
       USER_CONSTANTS.PASSWORD_SALT_ROUNDS
     );
 
-    // Создать пользователя
-    const user = this.userRepository.create({
-      email: email.toLowerCase(),
-      full_name: full_name || undefined,
-      password: hashedPassword,
-      role: role as UserRole,
-      status: UserStatus.Active,
-    });
+    // User and role profile land or roll back together — a failure between
+    // the two writes used to leave a profileless account behind.
+    const savedUser = await this.userRepository.manager.transaction(
+      async (em) => {
+        const user = em.create(User, {
+          email: email.toLowerCase(),
+          full_name: full_name || undefined,
+          password: hashedPassword,
+          role: role as UserRole,
+          status: UserStatus.Active,
+        });
 
-    const saved = await this.userRepository.save(user);
-    const savedUser = Array.isArray(saved) ? saved[0] : saved;
+        const saved = await em.save(user);
 
-    // Создать профиль в зависимости от роли
-    if (role === UserRole.Tenant) {
-      await this.createTenantProfile(savedUser);
-    } else if (role === UserRole.Operator) {
-      await this.createOperatorProfile(savedUser, is_private_landlord);
-    }
+        if (role === UserRole.Tenant) {
+          await this.createTenantProfile(saved, em);
+        } else if (role === UserRole.Operator) {
+          await this.createOperatorProfile(saved, is_private_landlord, em);
+        }
+
+        return saved;
+      }
+    );
 
     // An admin-created account is still a registration as far as support is
     // concerned, so it goes through the same event as the Google path.
@@ -91,7 +94,7 @@ export class UserAdminService {
   }
 
   /**
-   * Обновить пользователя администратором
+   * Update a user as an admin.
    */
   async updateUser(id: string, dto: AdminUpdateUserDto): Promise<User> {
     const user = await this.userRepository.findOne({
@@ -103,13 +106,11 @@ export class UserAdminService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    // Обновить базовую информацию
     if (dto.full_name !== undefined) user.full_name = dto.full_name;
     if (dto.email) user.email = dto.email.toLowerCase();
     if (dto.status) user.status = dto.status;
     if (dto.role) user.role = dto.role;
 
-    // Обновить пароль если предоставлен
     if (dto.password) {
       user.password = await bcrypt.hash(
         dto.password,
@@ -117,19 +118,30 @@ export class UserAdminService {
       );
     }
 
-    // Обновить признак частного лендлорда для оператора
-    if (dto.is_private_landlord !== undefined) {
-      if (user.role === UserRole.Operator) {
-        if (!user.operatorProfile) {
-          await this.createOperatorProfile(user, dto.is_private_landlord);
-        } else {
-          user.operatorProfile.is_private_landlord = dto.is_private_landlord;
-          await this.operatorProfileRepository.save(user.operatorProfile);
-        }
+    // User row and profile writes land or roll back together.
+    return this.userRepository.manager.transaction(async (em) => {
+      // A role change must bring the matching profile with it. This method
+      // used to flip `role` alone — the third role-change path in the
+      // codebase, and the only one that left e.g. a fresh operator without
+      // an OperatorProfile.
+      if (user.role === UserRole.Tenant && !user.tenantProfile) {
+        await this.createTenantProfile(user, em);
+      } else if (user.role === UserRole.Operator && !user.operatorProfile) {
+        await this.createOperatorProfile(
+          user,
+          dto.is_private_landlord ?? false,
+          em
+        );
+      } else if (
+        dto.is_private_landlord !== undefined &&
+        user.role === UserRole.Operator
+      ) {
+        user.operatorProfile.is_private_landlord = dto.is_private_landlord;
+        await em.save(user.operatorProfile);
       }
-    }
 
-    return this.userRepository.save(user);
+      return em.save(user);
+    });
   }
 
   /**
@@ -150,7 +162,7 @@ export class UserAdminService {
   }
 
   /**
-   * Изменить роль пользователя
+   * Change a user's role.
    */
   async changeUserRole(
     userId: string,
@@ -168,23 +180,30 @@ export class UserAdminService {
     const oldRole = user.role;
     user.role = newRole as UserRole;
 
-    // Если роль изменилась, обновить профили
-    if (oldRole !== newRole) {
-      if (newRole === UserRole.Tenant && !user.tenantProfile) {
-        await this.createTenantProfile(user);
-      } else if (newRole === UserRole.Operator && !user.operatorProfile) {
-        await this.createOperatorProfile(user);
+    return this.userRepository.manager.transaction(async (em) => {
+      if (oldRole !== newRole) {
+        if (newRole === UserRole.Tenant && !user.tenantProfile) {
+          await this.createTenantProfile(user, em);
+        } else if (newRole === UserRole.Operator && !user.operatorProfile) {
+          await this.createOperatorProfile(user, false, em);
+        }
       }
-    }
 
-    return this.userRepository.save(user);
+      return em.save(user);
+    });
   }
 
   /**
-   * Создать профиль арендатора
+   * Create a tenant profile.
    */
-  private async createTenantProfile(user: User): Promise<void> {
-    const tenantProfile = this.tenantProfileRepository.create({
+  private async createTenantProfile(
+    user: User,
+    em?: EntityManager
+  ): Promise<void> {
+    const repository = em
+      ? em.getRepository(TenantProfile)
+      : this.tenantProfileRepository;
+    const tenantProfile = repository.create({
       userId: user.id,
       occupation: "",
       industry: "",
@@ -194,17 +213,21 @@ export class UserAdminService {
       shortlisted_properties: [],
     });
 
-    await this.tenantProfileRepository.save(tenantProfile);
+    await repository.save(tenantProfile);
   }
 
   /**
-   * Создать профиль оператора
+   * Create an operator profile.
    */
   private async createOperatorProfile(
     user: User,
-    isPrivateLandlord: boolean = false
+    isPrivateLandlord: boolean = false,
+    em?: EntityManager
   ): Promise<void> {
-    const operatorProfile = this.operatorProfileRepository.create({
+    const repository = em
+      ? em.getRepository(OperatorProfile)
+      : this.operatorProfileRepository;
+    const operatorProfile = repository.create({
       userId: user.id,
       company_name: "",
       business_address: "",
@@ -218,6 +241,6 @@ export class UserAdminService {
       is_private_landlord: isPrivateLandlord,
     });
 
-    await this.operatorProfileRepository.save(operatorProfile);
+    await repository.save(operatorProfile);
   }
 }
