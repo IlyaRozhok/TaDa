@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -115,7 +116,20 @@ export class BookingRequestService {
       description,
     });
 
-    const saved = await this.bookingRequestRepository.save(request);
+    let saved: BookingRequest;
+    try {
+      saved = await this.bookingRequestRepository.save(request);
+    } catch (error) {
+      // Unique (tenant_id, property_id) violation: a concurrent duplicate
+      // submit lost the race. Surfaced as a raw QueryFailedError it became a
+      // 500 and a Sentry page; it is a client-resolvable conflict.
+      if ((error as { code?: string })?.code === "23505") {
+        throw new ConflictException(
+          "A booking request for this property already exists — reload and resubmit"
+        );
+      }
+      throw error;
+    }
 
     const created = await this.bookingRequestRepository.findOneOrFail({
       where: { id: saved.id },
@@ -220,8 +234,23 @@ export class BookingRequestService {
 
     this.assertStatusTransition(request.status, status);
 
+    // Compare-and-swap: the UPDATE only lands if the status is still the one
+    // this request validated against. A plain save() wrote unconditionally,
+    // so two admins racing could overwrite a terminal `rented` with a stale
+    // transition that had passed validation against an old snapshot.
+    const result = await this.bookingRequestRepository.update(
+      { id, status: request.status },
+      { status }
+    );
+
+    if (!result.affected) {
+      throw new ConflictException(
+        "Booking status was changed by someone else — reload and retry"
+      );
+    }
+
     request.status = status;
-    return this.bookingRequestRepository.save(request);
+    return request;
   }
 
   /**
