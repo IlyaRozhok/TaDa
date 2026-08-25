@@ -2,6 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   OneToOne,
   CreateDateColumn,
   UpdateDateColumn,
@@ -73,6 +74,10 @@ export class Preferences {
   id: string;
 
   @ApiProperty({ description: "User ID who owns these preferences" })
+  // UNIQUE: exactly one preferences row per user. Without the constraint two
+  // concurrent first saves created two rows, and every findOne({ user_id })
+  // consumer — matching included — nondeterministically picked one of them.
+  @Index("uq_preferences_user_id", { unique: true })
   @Column("uuid")
   user_id: string;
 
@@ -83,8 +88,12 @@ export class Preferences {
     example: "Central London",
     required: false,
   })
-  @Column({ nullable: true })
-  preferred_address?: string;
+  // Nullable scalar columns are typed `| null` so writes can actually CLEAR
+  // them: TypeORM's save()/update() silently skip `undefined` values, which is
+  // how "clear preferences" used to leave budget and dates in place (same trap
+  // already documented on `property.building_id`).
+  @Column({ type: "varchar", nullable: true })
+  preferred_address?: string | null;
 
   @ApiProperty({
     description: "Preferred areas (London regions)",
@@ -121,7 +130,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "date", nullable: true })
-  move_in_date?: Date;
+  move_in_date?: Date | null;
 
   @ApiProperty({
     description: "Preferred move-out date",
@@ -129,7 +138,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "date", nullable: true })
-  move_out_date?: Date;
+  move_out_date?: Date | null;
 
   @ApiProperty({
     description: "Minimum rent price per month (matches Property.price)",
@@ -137,7 +146,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "int", nullable: true })
-  min_price?: number;
+  min_price?: number | null;
 
   @ApiProperty({
     description: "Maximum rent price per month (matches Property.price)",
@@ -145,7 +154,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "int", nullable: true })
-  max_price?: number;
+  max_price?: number | null;
 
   @ApiProperty({
     description:
@@ -200,7 +209,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "boolean", nullable: true })
-  balcony?: boolean;
+  balcony?: boolean | null;
 
   @ApiProperty({
     description: "Whether terrace is preferred (matches Property.terrace)",
@@ -208,7 +217,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "boolean", nullable: true })
-  terrace?: boolean;
+  terrace?: boolean | null;
 
   @ApiProperty({
     description: "Minimum square meters (matches Property.square_meters)",
@@ -216,7 +225,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "int", nullable: true })
-  min_square_meters?: number;
+  min_square_meters?: number | null;
 
   @ApiProperty({
     description: "Maximum square meters (matches Property.square_meters)",
@@ -224,7 +233,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "int", nullable: true })
-  max_square_meters?: number;
+  max_square_meters?: number | null;
 
   // ==================== STEP 4: BUILDING & DURATION ====================
 
@@ -242,16 +251,16 @@ export class Preferences {
     example: "long_term",
     required: false,
   })
-  @Column({ nullable: true })
-  let_duration?: string;
+  @Column({ type: "varchar", nullable: true })
+  let_duration?: string | null;
 
   @ApiProperty({
     description: "Bills preference (matches Property.bills)",
     example: "included",
     required: false,
   })
-  @Column({ nullable: true })
-  bills?: string;
+  @Column({ type: "varchar", nullable: true })
+  bills?: string | null;
 
   // ==================== STEP 5: TENANT TYPE ====================
 
@@ -273,7 +282,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "boolean", nullable: true })
-  pet_policy?: boolean;
+  pet_policy?: boolean | null;
 
   @ApiProperty({
     description: "Tenant's pets (matches Property.pets structure)",
@@ -282,7 +291,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "jsonb", nullable: true })
-  pets?: Pet[];
+  pets?: Pet[] | null;
 
   @ApiProperty({
     description: "Number of pets",
@@ -290,7 +299,7 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "int", nullable: true })
-  number_of_pets?: number;
+  number_of_pets?: number | null;
 
   // ==================== STEP 7: AMENITIES ====================
 
@@ -348,8 +357,8 @@ export class Preferences {
     ],
     required: false,
   })
-  @Column({ nullable: true })
-  smoker?: string;
+  @Column({ type: "varchar", nullable: true })
+  smoker?: string | null;
 
   // ==================== LIFESTYLE PREFERENCES (NEW STEP BEFORE LOCATION) ====================
 
@@ -366,8 +375,8 @@ export class Preferences {
     ],
     required: false,
   })
-  @Column({ nullable: true })
-  occupation?: string;
+  @Column({ type: "varchar", nullable: true })
+  occupation?: string | null;
 
   @ApiProperty({
     description: "Family status - who will live in the property",
@@ -381,8 +390,8 @@ export class Preferences {
     ],
     required: false,
   })
-  @Column({ nullable: true })
-  family_status?: string;
+  @Column({ type: "varchar", nullable: true })
+  family_status?: string | null;
 
   @ApiProperty({
     description: "Number of children",
@@ -390,8 +399,8 @@ export class Preferences {
     enum: ["no", "yes-1-child", "yes-2-children", "yes-3-plus-children"],
     required: false,
   })
-  @Column({ nullable: true })
-  children_count?: string;
+  @Column({ type: "varchar", nullable: true })
+  children_count?: string | null;
 
   // ==================== STEP 10: ABOUT YOU ====================
 
@@ -401,26 +410,26 @@ export class Preferences {
     required: false,
   })
   @Column({ type: "text", nullable: true })
-  additional_info?: string;
+  additional_info?: string | null;
 
 
-  @Column({ nullable: true })
-  secondary_location?: string;
-
-  @Column({ type: "int", nullable: true })
-  min_bedrooms?: number;
+  @Column({ type: "varchar", nullable: true })
+  secondary_location?: string | null;
 
   @Column({ type: "int", nullable: true })
-  max_bedrooms?: number;
+  min_bedrooms?: number | null;
 
   @Column({ type: "int", nullable: true })
-  min_bathrooms?: number;
+  max_bedrooms?: number | null;
 
   @Column({ type: "int", nullable: true })
-  max_bathrooms?: number;
+  min_bathrooms?: number | null;
+
+  @Column({ type: "int", nullable: true })
+  max_bathrooms?: number | null;
 
   @Column({ type: "boolean", nullable: true })
-  designer_furniture?: boolean;
+  designer_furniture?: boolean | null;
 
   // ==================== TIMESTAMPS ====================
 
