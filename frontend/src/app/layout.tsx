@@ -4,6 +4,7 @@ import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
+import PostHogProvider from "./components/providers/PostHogProvider";
 import PageViewTracker from "./components/providers/PageViewTracker";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { I18nProvider } from "./contexts/I18nContext";
@@ -67,6 +68,10 @@ export default function RootLayout({
             <ReduxProvider>
                 <SessionManager />
                 <AnalyticsProvider />
+                {/* Alongside AnalyticsProvider, not inside it: replay answers
+                    to a stricter chain than GA4 (accepted consent, tenants
+                    only). See src/lib/analytics/posthog.ts. */}
+                <PostHogProvider />
                 {/* Its own boundary: the tracker reads useSearchParams(),
                     and without one the whole app tree it sits in loses static
                     rendering — the landing page's prerendered HTML collapses
