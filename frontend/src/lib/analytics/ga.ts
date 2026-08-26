@@ -30,8 +30,13 @@ import type { AnalyticsEvent, PageViewParams } from "./events";
 /** Hosts the production GA4 property is allowed to receive traffic from. */
 export const PROD_HOSTNAMES: readonly string[] = ["ta-da.co", "www.ta-da.co"];
 
-/** Only tenants move through the tracked funnel; admins and operators do not. */
-const TRACKED_ROLE = "tenant";
+/**
+ * Only tenants move through the tracked funnel; admins and operators do not.
+ *
+ * Exported because `posthog.ts` gates session replay on the same role, and one
+ * shared constant is what keeps the two from drifting apart.
+ */
+export const TRACKED_ROLE = "tenant";
 
 /** The three inputs the guard chain reads, passed in so it can be tested. */
 export interface AnalyticsEnvironment {
