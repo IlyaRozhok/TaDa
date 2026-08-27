@@ -1225,7 +1225,7 @@ export interface components {
              * @description Preferred address/area (free text)
              * @example Central London
              */
-            preferred_address?: string;
+            preferred_address?: Record<string, never>;
             /**
              * @description Preferred areas (London regions)
              * @example [
@@ -1252,27 +1252,25 @@ export interface components {
              */
             preferred_metro_stations?: string[];
             /**
-             * Format: date-time
              * @description Preferred move-in date
              * @example 2024-03-01
              */
-            move_in_date?: string;
+            move_in_date?: Record<string, never>;
             /**
-             * Format: date-time
              * @description Preferred move-out date
              * @example 2024-09-01
              */
-            move_out_date?: string;
+            move_out_date?: Record<string, never>;
             /**
              * @description Minimum rent price per month (matches Property.price)
              * @example 1500
              */
-            min_price?: number;
+            min_price?: Record<string, never>;
             /**
              * @description Maximum rent price per month (matches Property.price)
              * @example 3000
              */
-            max_price?: number;
+            max_price?: Record<string, never>;
             /**
              * @description Whether budget is flexible (tenant open to different price range)
              * @example false
@@ -1316,22 +1314,22 @@ export interface components {
              * @description Whether balcony is preferred (matches Property.balcony)
              * @example true
              */
-            balcony?: boolean;
+            balcony?: Record<string, never>;
             /**
              * @description Whether terrace is preferred (matches Property.terrace)
              * @example true
              */
-            terrace?: boolean;
+            terrace?: Record<string, never>;
             /**
              * @description Minimum square meters (matches Property.square_meters)
              * @example 15
              */
-            min_square_meters?: number;
+            min_square_meters?: Record<string, never>;
             /**
              * @description Maximum square meters (matches Property.square_meters)
              * @example 100
              */
-            max_square_meters?: number;
+            max_square_meters?: Record<string, never>;
             /**
              * @description Preferred building types (matches Property.building_type)
              * @example [
@@ -1344,12 +1342,12 @@ export interface components {
              * @description Preferred let duration (matches Property.let_duration)
              * @example long_term
              */
-            let_duration?: string;
+            let_duration?: Record<string, never>;
             /**
              * @description Bills preference (matches Property.bills)
              * @example included
              */
-            bills?: string;
+            bills?: Record<string, never>;
             /**
              * @description Tenant types (matches Property.tenant_types)
              * @example [
@@ -1362,7 +1360,7 @@ export interface components {
              * @description Whether tenant needs pet-friendly property (matches Property.pet_policy)
              * @example true
              */
-            pet_policy?: boolean;
+            pet_policy?: Record<string, never>;
             /**
              * @description Tenant's pets (matches Property.pets structure)
              * @example [
@@ -1377,7 +1375,7 @@ export interface components {
              * @description Number of pets
              * @example 1
              */
-            number_of_pets?: number;
+            number_of_pets?: Record<string, never>;
             /**
              * @description Preferred amenities (matches Property.amenities)
              * @example [
@@ -1441,7 +1439,7 @@ export interface components {
              * @description Additional information about the user
              * @example I'm a quiet professional who enjoys cooking and reading.
              */
-            additional_info?: string;
+            additional_info?: Record<string, never>;
             /**
              * Format: date-time
              * @description Preferences creation date
@@ -2149,6 +2147,12 @@ export interface components {
              * @example false
              */
             is_landing_listing?: boolean;
+            /**
+             * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
+             * @example listed
+             * @enum {string}
+             */
+            status?: "draft" | "listed" | "under_offer" | "let" | "archived";
         };
         UpdatePropertyDto: {
             /**
@@ -2372,6 +2376,12 @@ export interface components {
              * @example false
              */
             is_landing_listing?: boolean;
+            /**
+             * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
+             * @example listed
+             * @enum {string}
+             */
+            status?: "draft" | "listed" | "under_offer" | "let" | "archived";
         };
         PropertyMedia: {
             /** @description Unique media identifier */
@@ -2433,12 +2443,18 @@ export interface components {
             /** @description Unique property identifier */
             id: string;
             /**
+             * @description Listing lifecycle status
+             * @example listed
+             * @enum {string}
+             */
+            status: "draft" | "listed" | "under_offer" | "let" | "archived";
+            /**
              * @description Apartment number
              * @example 12A
              */
             apartment_number?: string;
             /** @description Building ID */
-            building_id?: string;
+            building_id?: Record<string, never>;
             /**
              * @description Property title
              * @example Modern 2BR Apartment
