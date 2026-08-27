@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UserRole } from "@/entities/user.entity";
-import { Property } from "../../entities/property.entity";
+import { Property, PropertyStatus } from "../../entities/property.entity";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { Building } from "../../entities/building.entity";
@@ -254,6 +254,11 @@ export class PropertyService {
       .addSelect("property.bedrooms")
       .addSelect("property.bathrooms")
       .addSelect("property.square_meters")
+      // The public catalogue is live inventory only. Everything else — drafts,
+      // deals in progress, let and archived stock — is invisible here.
+      .where("property.status = :listedStatus", {
+        listedStatus: PropertyStatus.Listed,
+      })
       .orderBy("property.created_at", "DESC");
 
     if (params?.building_id) {
@@ -299,6 +304,9 @@ export class PropertyService {
       .createQueryBuilder("property")
       .leftJoinAndSelect("property.building", "building")
       .where("property.is_landing_listing = :flagged", { flagged: true })
+      .andWhere("property.status = :listedStatus", {
+        listedStatus: PropertyStatus.Listed,
+      })
       .orderBy("property.created_at", "DESC")
       .take(LANDING_LISTINGS_LIMIT)
       .getMany();
@@ -329,7 +337,14 @@ export class PropertyService {
       relations: ["building", "operator"],
     });
 
-    if (!property) {
+    // Drafts and archived stock are invisible to the public; `under_offer`
+    // and `let` still resolve so shared links keep working — the response
+    // carries `status` for the client to badge.
+    if (
+      !property ||
+      property.status === PropertyStatus.Draft ||
+      property.status === PropertyStatus.Archived
+    ) {
       throw new NotFoundException("Property not found");
     }
 

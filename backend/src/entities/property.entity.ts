@@ -21,11 +21,50 @@ import {
   BuildingChildrenCount,
 } from "./building.entity";
 
+/**
+ * Listing lifecycle. What the market sees is decided here, not by deletion:
+ *
+ * - `draft`     — being prepared; invisible everywhere public.
+ * - `listed`    — live: in the catalogue, in matching, bookable.
+ * - `under_offer` — a booking reached the contract stage; hidden from the
+ *   catalogue and matching, but the detail page still resolves (shared links
+ *   keep working) and other tenants' existing bookings continue.
+ * - `let`       — a booking closed as `rented`; not bookable, hidden from
+ *   lists, detail page still resolves.
+ * - `archived`  — retired by the operator; invisible everywhere public.
+ *
+ * `rented`/contract-stage transitions in the booking pipeline drive
+ * `listed → under_offer → let` automatically; operators/admins can set any
+ * value by hand (e.g. re-list after a tenancy ends).
+ *
+ * NOTE: not exported from the `@/entities` barrel — import from this file
+ * (the barrel re-exports classes only, not enums).
+ */
+export enum PropertyStatus {
+  Draft = "draft",
+  Listed = "listed",
+  UnderOffer = "under_offer",
+  Let = "let",
+  Archived = "archived",
+}
+
 @Entity("properties")
 export class Property {
   @ApiProperty({ description: "Unique property identifier" })
   @PrimaryGeneratedColumn("uuid")
   id: string;
+
+  @ApiProperty({
+    description: "Listing lifecycle status",
+    enum: PropertyStatus,
+    example: PropertyStatus.Listed,
+  })
+  @Column({
+    type: "enum",
+    enum: PropertyStatus,
+    default: PropertyStatus.Listed,
+  })
+  status: PropertyStatus;
 
   // REQUIRED FIELDS
   @ApiProperty({

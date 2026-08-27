@@ -1,8 +1,14 @@
-import { Property } from "../../entities/property.entity";
+import { Property, PropertyStatus } from "../../entities/property.entity";
 
 // Minimal public-facing projection; adjust if more fields should be exposed
 export type PublicPropertyResponse = {
   id: string;
+  /**
+   * Listing lifecycle. Lists only ever contain `listed` rows; the detail
+   * endpoint also resolves `under_offer` and `let` so shared links keep
+   * working — clients badge those instead of hiding them.
+   */
+  status: PropertyStatus;
   /** Present so clients can filter by landlord without loading full operator relation */
   operator_id: string | null;
   title: string | null;
@@ -69,6 +75,7 @@ export const toPublicProperty = (
 
   return {
     id: property.id,
+    status: property.status ?? PropertyStatus.Listed,
     operator_id: property.operator_id ?? null,
     title: property.title || null,
     descriptions: property.descriptions ?? null,
