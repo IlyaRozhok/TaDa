@@ -18,11 +18,8 @@ import {
  * `matching-calculation.service.ts` rather than guessed: those are the only
  * fields the ranking pass needs, so it selects these and nothing else.
  *
- * `address` and `metro_stations` are read by `matchLocation`, which is
- * currently unreachable — `calculateMatch` pushes seventeen categories and
- * location is not one of them. They are kept in the projection anyway, so that
- * wiring location back in (6.3) does not silently score every property as
- * having no location data.
+ * `address`, `borough` and `metro_stations` are read by `matchLocation`
+ * (category 18, wired in since package B2).
  *
  * `id` is the join back to the hydration query, `created_at` is the tie-break
  * order. Neither is read by the scoring engine.
@@ -37,6 +34,7 @@ const SCORING_COLUMNS = [
   "bathrooms",
   "bedrooms",
   "bills",
+  "borough",
   "building_type",
   "children",
   "furnishing",
@@ -331,9 +329,11 @@ export class MatchingService {
     });
 
     // One predicate, used by both read paths below. It reads `building.name`,
-    // so any query applying it has to join the building.
+    // so any query applying it has to join the building. Address, postcode
+    // and borough joined the predicate in B2 — "Camden" or "NW1" must find
+    // listings, not just title substrings.
     const searchPredicate =
-      "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)";
+      "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR property.address ILIKE :search OR property.postcode ILIKE :search OR property.borough ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)";
     const searchParameters = { search: `%${search ?? ""}%` };
 
     if (!preferences) {

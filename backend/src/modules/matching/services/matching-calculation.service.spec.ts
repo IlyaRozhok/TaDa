@@ -56,9 +56,9 @@ describe("MatchingCalculationService", () => {
   });
 
   describe("result envelope", () => {
-    it("always returns exactly 17 categories, location not among them", () => {
+    it("always returns exactly 18 categories, location wired in last (B2)", () => {
       const result = match({}, {});
-      expect(result.categories).toHaveLength(17);
+      expect(result.categories).toHaveLength(18);
       expect(result.categories.map((c) => c.category)).toEqual([
         "budget",
         "bedrooms",
@@ -77,6 +77,7 @@ describe("MatchingCalculationService", () => {
         "pets",
         "bills",
         "propertyAmenities",
+        "location",
       ]);
     });
 
@@ -90,7 +91,7 @@ describe("MatchingCalculationService", () => {
         matched: 0,
         partial: 0,
         notMatched: 0,
-        skipped: 17,
+        skipped: 18,
       });
     });
 
@@ -111,7 +112,7 @@ describe("MatchingCalculationService", () => {
         matched: 2,
         partial: 0,
         notMatched: 0,
-        skipped: 15,
+        skipped: 16,
       });
     });
 
@@ -128,7 +129,7 @@ describe("MatchingCalculationService", () => {
         matched: 0,
         partial: 1,
         notMatched: 1,
-        skipped: 15,
+        skipped: 16,
       });
     });
 
@@ -137,7 +138,7 @@ describe("MatchingCalculationService", () => {
       const result = match({ bills: "included" }, { bills: "included" });
       expect(result.matchPercentage).toBe(100);
       expect(result.isPerfectMatch).toBe(true);
-      expect(result.summary.skipped).toBe(16);
+      expect(result.summary.skipped).toBe(17);
     });
   });
 
@@ -885,6 +886,68 @@ describe("MatchingCalculationService", () => {
         { property_amenities: ["lift", "storage"] },
       );
       expect(c).toMatchObject({ match: false, score: 0 });
+    });
+  });
+
+  describe("location (weight 15, wired in B2)", () => {
+    it("is skipped — and leaves the denominator alone — without a location preference", () => {
+      const withLocationData = match(
+        { borough: "Camden", price: 1500 },
+        { max_price: 2000 },
+      );
+      const c = category(withLocationData, "location");
+      expect(c).toMatchObject({ hasPreference: false, score: 0, maxScore: 0 });
+      // The tenant's percentage is untouched by property-side location data.
+      expect(withLocationData.matchPercentage).toBe(100);
+    });
+
+    it("matches a preferred district against the geocoded borough", () => {
+      const c = one(
+        "location",
+        { borough: "Camden", address: "12 Some Street, London" },
+        { preferred_districts: ["Camden"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15, maxScore: 15 });
+    });
+
+    it("falls back to the address substring when the row is not geocoded", () => {
+      const c = one(
+        "location",
+        { address: "12 Parkway, Camden, London" },
+        { preferred_districts: ["camden"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15 });
+    });
+
+    it("matches a preferred metro station exactly", () => {
+      const c = one(
+        "location",
+        { metro_stations: [{ label: "Camden Town", destination: 4 }] },
+        { preferred_metro_stations: ["Camden Town"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15, maxScore: 15 });
+    });
+
+    it("scores a half-matched preference partially", () => {
+      // District matches, metro does not: ratio 1/2 → Math.round(15 * 0.5) = 8.
+      const c = one(
+        "location",
+        { borough: "Hackney" },
+        {
+          preferred_districts: ["Hackney"],
+          preferred_metro_stations: ["Angel"],
+        },
+      );
+      expect(c).toMatchObject({ match: false, score: 8, maxScore: 15 });
+    });
+
+    it("gives zero when the property is somewhere else entirely", () => {
+      const c = one(
+        "location",
+        { borough: "Croydon", address: "1 High Street, Croydon" },
+        { preferred_districts: ["Camden"], preferred_areas: ["North"] },
+      );
+      expect(c).toMatchObject({ match: false, score: 0, maxScore: 15 });
     });
   });
 });
