@@ -52,9 +52,13 @@ decisions) is recorded HERE, briefly, with a date.
     preferences sides), stored data normalized by migration (rehearsed on
     dirty seeds). The geocoding backfill script also ships here
     (`npm run geo:backfill` in backend/ — host action #5 below).
-  - **B4 (next)**: single unknown-data policy — blank listings must stop
-    outranking honest ones; wire or drop `family_status`/`occupation`
-    targeting; fix the constant in the smoking scorer.
+  - ~~single unknown-data policy~~ — **done (B4, current PR — closes
+    package B)**: missing property-side data scores a fixed 30% partial
+    with `match: false` in every scorer (`scoring/unknown-data.ts`) —
+    blank listings no longer outrank honest ones; the
+    `family_status`/`occupation` targeting columns are read as the
+    authoritative signal (tenant-type heuristics remain the fallback);
+    the smoking scorer no longer invents `propertySmoking = false`.
 - **C — the funnel stops being silent**: transactional emails to tenant and
   operator on booking events (outbox already built — new templates plus
   recipients); `proposed_viewing_at` + confirmation on the viewing step;

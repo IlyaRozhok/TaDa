@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
  * Availability matching: move_in_date vs property.available_from
@@ -28,17 +29,14 @@ export function matchAvailability(
     };
   }
 
-  // Property has no availability date
+  // Property has no availability date — unknown-data policy (this was 50%
+  // with match: true, which counted a blank field as a half-confirmed match).
   if (!availableFrom) {
-    return {
-      category: "availability",
-      match: true,
-      score: Math.round(maxScore * 0.5),
+    return unknownPropertyData(
+      "availability",
       maxScore,
-      reason: "Availability not specified",
-      details: "Contact property for availability",
-      hasPreference: true,
-    };
+      "Contact property for availability",
+    );
   }
 
   const moveIn = new Date(moveInDate);

@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
  * Bills matching
@@ -24,6 +25,13 @@ export function matchBills(
       details: `Bills: ${propertyBills || "Not specified"}`,
       hasPreference: false,
     };
+  }
+
+  // Unknown-data policy: no bills value on the listing (the column default
+  // is "excluded", so this is rare — but a genuine null must not read as a
+  // hard mismatch).
+  if (!propertyBills) {
+    return unknownPropertyData("bills", maxScore, "Bills not specified");
   }
 
   // Exact match

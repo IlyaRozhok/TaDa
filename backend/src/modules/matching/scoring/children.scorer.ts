@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
  * Helper to parse children count strings into numbers
@@ -54,42 +55,41 @@ export function matchChildren(
     };
   }
 
-  // Property accepts all types
-  if (!propertyTenantTypes.length) {
-    return {
-      category: "children",
-      match: true,
-      score: maxScore,
-      maxScore,
-      reason: "Property accepts families with children",
-      details: "No family restrictions",
-      hasPreference: true,
-    };
-  }
-
-  // Check if property is family-friendly
-  const normalizedTenantTypes = propertyTenantTypes.map((t) => t.toLowerCase());
-  const isFamilyFriendly = normalizedTenantTypes.some((t) =>
-    ["family", "elder"].includes(t),
-  );
-
-  if (!isFamilyFriendly) {
-    return {
-      category: "children",
-      match: false,
-      score: 0,
-      maxScore,
-      reason: "Property not suitable for children",
-      details: `Property types (${propertyTenantTypes.join(", ")}) don't typically accept children`,
-      hasPreference: true,
-    };
-  }
-
-  // Enhanced children matching based on property's children acceptance
+  // The explicit children policy is authoritative when present — it works
+  // even when tenant types are blank (B4: signal order, then heuristics).
   const userChildrenNum = parseChildrenCount(childrenCount);
 
-  // Check if property explicitly accepts children
   if (propertyChildren.length === 0) {
+    // No explicit children policy: fall back to the tenant-type heuristic,
+    // or the unknown-data policy when there is no targeting data at all
+    // (this used to be a free 100% — blank targeting beat honest listings).
+    if (!propertyTenantTypes.length) {
+      return unknownPropertyData(
+        "children",
+        maxScore,
+        "No children policy on the property",
+      );
+    }
+
+    const normalizedTenantTypes = propertyTenantTypes.map((t) =>
+      t.toLowerCase(),
+    );
+    const isFamilyFriendly = normalizedTenantTypes.some((t) =>
+      ["family", "elder"].includes(t),
+    );
+
+    if (!isFamilyFriendly) {
+      return {
+        category: "children",
+        match: false,
+        score: 0,
+        maxScore,
+        reason: "Property not suitable for children",
+        details: `Property types (${propertyTenantTypes.join(", ")}) don't typically accept children`,
+        hasPreference: true,
+      };
+    }
+
     // Family-friendly but no specific children policy - assume acceptable
     return {
       category: "children",
