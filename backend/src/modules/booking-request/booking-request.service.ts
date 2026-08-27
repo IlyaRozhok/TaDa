@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -15,7 +16,10 @@ import { Property, PropertyStatus } from "../../entities/property.entity";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import {
   BookingRequestedEvent,
+  BookingStatusChangedEvent,
   NotificationEvents,
+  ViewingConfirmedEvent,
+  ViewingProposedEvent,
 } from "@/modules/notifications/events/notification.events";
 
 @Injectable()
@@ -262,7 +266,115 @@ export class BookingRequestService {
       await this.applyPropertyLifecycle(em, request, status);
     });
 
+    const from = request.status;
     request.status = status;
+
+    // Announce AFTER the transaction committed: an email about a transition
+    // that rolled back would be a lie. Fire-and-forget like every other
+    // notification event.
+    this.eventEmitter.emit(NotificationEvents.BookingStatusChanged, {
+      bookingId: request.id,
+      propertyId: request.property_id,
+      tenantId: request.tenant_id,
+      from,
+      to: status,
+      property: {
+        title: request.property?.title ?? null,
+        address: request.property?.address ?? null,
+      },
+    } satisfies BookingStatusChangedEvent);
+
+    return request;
+  }
+
+  /**
+   * Stages at which a viewing appointment makes sense: approved for one, or
+   * already at the viewing step.
+   */
+  private static readonly VIEWING_STAGES: BookingRequestStatus[] = [
+    BookingRequestStatus.ApprovedViewing,
+    BookingRequestStatus.Viewing,
+  ];
+
+  /**
+   * Admin proposes a viewing slot. Re-proposing a new time clears any earlier
+   * confirmation — the tenant confirmed a slot that no longer stands.
+   */
+  async proposeViewing(id: string, proposedAt: Date): Promise<BookingRequest> {
+    const request = await this.bookingRequestRepository.findOne({
+      where: { id },
+      relations: ["property"],
+    });
+
+    if (!request) {
+      throw new NotFoundException("Booking request not found");
+    }
+
+    if (!BookingRequestService.VIEWING_STAGES.includes(request.status)) {
+      throw new BadRequestException(
+        `A viewing can be proposed at the "${BookingRequestService.VIEWING_STAGES.join('" or "')}" stages — this booking is at "${request.status}"`,
+      );
+    }
+
+    if (proposedAt.getTime() <= Date.now()) {
+      throw new BadRequestException("The proposed viewing time must be in the future");
+    }
+
+    request.proposed_viewing_at = proposedAt;
+    request.viewing_confirmed_at = null;
+    const saved = await this.bookingRequestRepository.save(request);
+
+    this.eventEmitter.emit(NotificationEvents.ViewingProposed, {
+      bookingId: saved.id,
+      propertyId: saved.property_id,
+      tenantId: saved.tenant_id,
+      proposedAt: proposedAt.toISOString(),
+      property: {
+        title: request.property?.title ?? null,
+        address: request.property?.address ?? null,
+      },
+    } satisfies ViewingProposedEvent);
+
+    return saved;
+  }
+
+  /** Tenant confirms the proposed slot on their own booking. */
+  async confirmViewing(id: string, tenantId: string): Promise<BookingRequest> {
+    const request = await this.bookingRequestRepository.findOne({
+      where: { id },
+      relations: ["property"],
+    });
+
+    if (!request) {
+      throw new NotFoundException("Booking request not found");
+    }
+
+    if (request.tenant_id !== tenantId) {
+      throw new ForbiddenException("You can only confirm your own viewing");
+    }
+
+    if (!request.proposed_viewing_at) {
+      throw new BadRequestException("No viewing has been proposed yet");
+    }
+
+    // Idempotent: confirming twice keeps the first confirmation timestamp.
+    if (!request.viewing_confirmed_at) {
+      request.viewing_confirmed_at = new Date();
+      await this.bookingRequestRepository.save(request);
+
+      this.eventEmitter.emit(NotificationEvents.ViewingConfirmed, {
+        bookingId: request.id,
+        propertyId: request.property_id,
+        tenantId: request.tenant_id,
+        proposedAt: new Date(request.proposed_viewing_at).toISOString(),
+        confirmedAt: request.viewing_confirmed_at.toISOString(),
+        property: {
+          title: request.property?.title ?? null,
+          address: request.property?.address ?? null,
+        },
+      } satisfies ViewingConfirmedEvent);
+    }
+
     return request;
   }
 

@@ -51,6 +51,21 @@ export class BookingRequest {
   @Column({ type: "date", nullable: true })
   date_to: Date | null;
 
+  // VIEWING — a viewing is an appointment, not just a pipeline status.
+  @ApiProperty({
+    description: "Viewing slot proposed by the operator/admin",
+    required: false,
+  })
+  @Column({ type: "timestamp", nullable: true })
+  proposed_viewing_at: Date | null;
+
+  @ApiProperty({
+    description: "When the tenant confirmed the proposed viewing slot",
+    required: false,
+  })
+  @Column({ type: "timestamp", nullable: true })
+  viewing_confirmed_at: Date | null;
+
   @ApiProperty({ description: "Contact email from the booking form", required: false })
   @Column({ type: "varchar", nullable: true })
   email: string | null;

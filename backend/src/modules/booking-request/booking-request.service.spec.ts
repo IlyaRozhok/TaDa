@@ -419,3 +419,170 @@ describe("BookingRequestService.create — resubmit lifecycle", () => {
     expect(result.status).toBe(BookingRequestStatus.Contract);
   });
 });
+
+/**
+ * C1 — the pipeline announces itself, and a viewing is an appointment.
+ */
+describe("BookingRequestService — status events and viewings", () => {
+  let bookingRepository: any;
+  let eventEmitter: { emit: jest.Mock };
+  let service: BookingRequestService;
+
+  const booking = (overrides: Record<string, unknown> = {}) => ({
+    id: "booking-1",
+    property_id: "prop-1",
+    tenant_id: "tenant-1",
+    status: BookingRequestStatus.ApprovedViewing,
+    proposed_viewing_at: null,
+    viewing_confirmed_at: null,
+    property: { title: "Flat 2B", address: "1 Test Road" },
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    const txBookingRepository = {
+      update: jest.fn(async () => ({ affected: 1 })),
+      count: jest.fn(async () => 0),
+    };
+    const txPropertyRepository = { update: jest.fn(async () => ({ affected: 1 })) };
+    const entityManager = {
+      getRepository: jest.fn((entity: any) =>
+        entity === Property ? txPropertyRepository : txBookingRepository,
+      ),
+    };
+    bookingRepository = {
+      findOne: jest.fn(),
+      save: jest.fn(async (row: any) => row),
+      manager: { transaction: jest.fn(async (cb: any) => cb(entityManager)) },
+    };
+    eventEmitter = { emit: jest.fn() };
+    service = new BookingRequestService(
+      bookingRepository,
+      { findOne: jest.fn() } as any,
+      eventEmitter as unknown as EventEmitter2,
+    );
+  });
+
+  it("announces a committed status transition with from and to", async () => {
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ status: BookingRequestStatus.Contacting }),
+    );
+
+    await service.updateStatus("booking-1", BookingRequestStatus.KycReferencing);
+
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      NotificationEvents.BookingStatusChanged,
+      expect.objectContaining({
+        bookingId: "booking-1",
+        tenantId: "tenant-1",
+        from: BookingRequestStatus.Contacting,
+        to: BookingRequestStatus.KycReferencing,
+      }),
+    );
+  });
+
+  it("announces nothing when the transition is refused", async () => {
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ status: BookingRequestStatus.Rented }),
+    );
+
+    await expect(
+      service.updateStatus("booking-1", BookingRequestStatus.New),
+    ).rejects.toThrow(/terminal/);
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  describe("proposeViewing", () => {
+    const future = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    it("stores the slot, clears an earlier confirmation, and announces it", async () => {
+      bookingRepository.findOne.mockResolvedValue(
+        booking({ viewing_confirmed_at: new Date("2026-08-01") }),
+      );
+
+      const result = await service.proposeViewing("booking-1", future);
+
+      expect(result.proposed_viewing_at).toBe(future);
+      expect(result.viewing_confirmed_at).toBeNull();
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NotificationEvents.ViewingProposed,
+        expect.objectContaining({
+          bookingId: "booking-1",
+          proposedAt: future.toISOString(),
+        }),
+      );
+    });
+
+    it("refuses a stage where a viewing makes no sense", async () => {
+      bookingRepository.findOne.mockResolvedValue(
+        booking({ status: BookingRequestStatus.New }),
+      );
+
+      await expect(
+        service.proposeViewing("booking-1", future),
+      ).rejects.toThrow(/stages/);
+      expect(bookingRepository.save).not.toHaveBeenCalled();
+    });
+
+    it("refuses a slot in the past", async () => {
+      bookingRepository.findOne.mockResolvedValue(booking());
+
+      await expect(
+        service.proposeViewing("booking-1", new Date("2020-01-01")),
+      ).rejects.toThrow(/future/);
+    });
+  });
+
+  describe("confirmViewing", () => {
+    it("confirms the tenant's own booking and announces it", async () => {
+      bookingRepository.findOne.mockResolvedValue(
+        booking({ proposed_viewing_at: new Date("2026-09-05T14:30:00.000Z") }),
+      );
+
+      const result = await service.confirmViewing("booking-1", "tenant-1");
+
+      expect(result.viewing_confirmed_at).toBeInstanceOf(Date);
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NotificationEvents.ViewingConfirmed,
+        expect.objectContaining({
+          bookingId: "booking-1",
+          proposedAt: "2026-09-05T14:30:00.000Z",
+        }),
+      );
+    });
+
+    it("refuses to confirm someone else's booking", async () => {
+      bookingRepository.findOne.mockResolvedValue(
+        booking({ proposed_viewing_at: new Date() }),
+      );
+
+      await expect(
+        service.confirmViewing("booking-1", "someone-else"),
+      ).rejects.toThrow(/own/);
+    });
+
+    it("refuses when no viewing has been proposed", async () => {
+      bookingRepository.findOne.mockResolvedValue(booking());
+
+      await expect(
+        service.confirmViewing("booking-1", "tenant-1"),
+      ).rejects.toThrow(/proposed/);
+    });
+
+    it("is idempotent — a second confirm keeps the first timestamp", async () => {
+      const confirmedAt = new Date("2026-09-01T10:00:00.000Z");
+      bookingRepository.findOne.mockResolvedValue(
+        booking({
+          proposed_viewing_at: new Date("2026-09-05T14:30:00.000Z"),
+          viewing_confirmed_at: confirmedAt,
+        }),
+      );
+
+      const result = await service.confirmViewing("booking-1", "tenant-1");
+
+      expect(result.viewing_confirmed_at).toBe(confirmedAt);
+      expect(bookingRepository.save).not.toHaveBeenCalled();
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+  });
+});

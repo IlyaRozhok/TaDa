@@ -6,6 +6,8 @@ import { Repository } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 
 import { Notification, NotificationStatus } from "@/entities/notification.entity";
+import { User } from "@/entities/user.entity";
+import { Property } from "@/entities/property.entity";
 import {
   NOTIFICATION_CHANNELS,
   NotificationChannel,
@@ -16,10 +18,13 @@ import {
 } from "./notifications.config";
 import {
   BookingRequestedEvent,
+  BookingStatusChangedEvent,
   DemoRequestedEvent,
   NotificationEvents,
   TenantCvCompletedEvent,
   UserRegisteredEvent,
+  ViewingConfirmedEvent,
+  ViewingProposedEvent,
 } from "./events/notification.events";
 import { buildMessage, NotificationType } from "./notification.templates";
 
@@ -33,8 +38,11 @@ import { buildMessage, NotificationType } from "./notification.templates";
  *    page on any exception, so a throw from here would turn a broken mailbox
  *    into a broken sign-in. A dropped notification is an inconvenience; a
  *    dropped login is an outage.
- * 2. **The recipient is never an argument.** It comes from the channel, which
- *    reads it from config. No event payload can redirect an email.
+ * 2. **No event payload can redirect an email.** A recipient is either the
+ *    internal ops inbox from config (via the channel), or an address this
+ *    service resolves from the DATABASE by user/property id taken from the
+ *    event. Payload strings — including the contact email a tenant typed
+ *    into a form — are never used as a delivery address.
  */
 @Injectable()
 export class NotificationsService {
@@ -43,10 +51,51 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Property)
+    private readonly propertyRepository: Repository<Property>,
     @Inject(NOTIFICATION_CHANNELS)
     private readonly channels: NotificationChannel[],
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * The tenant's ACCOUNT email (Google-verified), by id — deliberately not
+   * the contact email typed into a booking form (invariant 2).
+   */
+  private async resolveUserEmail(userId: string): Promise<string | null> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        select: { id: true, email: true },
+      });
+      return user?.email ?? null;
+    } catch (error) {
+      this.logger.error(
+        `Could not resolve email for user ${userId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      return null;
+    }
+  }
+
+  /** The owning operator's account email for a property, by property id. */
+  private async resolveOperatorEmail(propertyId: string): Promise<string | null> {
+    try {
+      const property = await this.propertyRepository.findOne({
+        where: { id: propertyId },
+        relations: ["operator"],
+      });
+      return property?.operator?.email ?? null;
+    } catch (error) {
+      this.logger.error(
+        `Could not resolve operator email for property ${propertyId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      return null;
+    }
+  }
 
   @OnEvent(NotificationEvents.UserRegistered, { async: true })
   async handleUserRegistered(event: UserRegisteredEvent): Promise<void> {
@@ -97,25 +146,106 @@ export class NotificationsService {
     // A resubmit is a distinct fact from the original request, so it gets its
     // own key. Reusing the first key would make every resubmit look like a
     // duplicate of a notification that was already sent months earlier.
-    const dedupeKey = event.isFirstRequest
-      ? `booking_requested:${event.bookingId}`
-      : `booking_requested:${event.bookingId}:${event.revision}`;
+    const revisionSuffix = event.isFirstRequest ? "" : `:${event.revision}`;
+    const payload = event as unknown as Record<string, unknown>;
 
     await this.record(
       NotificationType.BookingRequested,
-      dedupeKey,
-      event as unknown as Record<string, unknown>,
+      `booking_requested:${event.bookingId}${revisionSuffix}`,
+      payload,
     );
+
+    // The user-facing pair (C1): a receipt to the tenant's account email and
+    // an alert to the property's operator — both addresses resolved from the
+    // database, never from the payload.
+    const tenantEmail = await this.resolveUserEmail(event.tenant.id);
+    if (tenantEmail) {
+      await this.record(
+        NotificationType.BookingReceivedTenant,
+        `booking_received_tenant:${event.bookingId}${revisionSuffix}`,
+        payload,
+        tenantEmail,
+      );
+    }
+
+    const operatorEmail = await this.resolveOperatorEmail(event.property.id);
+    if (operatorEmail) {
+      await this.record(
+        NotificationType.BookingRequestedOperator,
+        `booking_requested_operator:${event.bookingId}${revisionSuffix}`,
+        payload,
+        operatorEmail,
+      );
+    }
+  }
+
+  @OnEvent(NotificationEvents.BookingStatusChanged, { async: true })
+  async handleBookingStatusChanged(
+    event: BookingStatusChangedEvent,
+  ): Promise<void> {
+    const tenantEmail = await this.resolveUserEmail(event.tenantId);
+    if (!tenantEmail) return;
+
+    // Keyed by (booking, target status): a redo after the one-step-back undo
+    // reuses the same key and is deliberately swallowed — the tenant already
+    // read that email once.
+    await this.record(
+      NotificationType.BookingStatusChangedTenant,
+      `booking_status:${event.bookingId}:${event.to}`,
+      event as unknown as Record<string, unknown>,
+      tenantEmail,
+    );
+  }
+
+  @OnEvent(NotificationEvents.ViewingProposed, { async: true })
+  async handleViewingProposed(event: ViewingProposedEvent): Promise<void> {
+    const tenantEmail = await this.resolveUserEmail(event.tenantId);
+    if (!tenantEmail) return;
+
+    // Keyed by the slot itself: proposing a NEW time emails again, repeating
+    // the same time does not.
+    await this.record(
+      NotificationType.ViewingProposedTenant,
+      `viewing_proposed:${event.bookingId}:${event.proposedAt}`,
+      event as unknown as Record<string, unknown>,
+      tenantEmail,
+    );
+  }
+
+  @OnEvent(NotificationEvents.ViewingConfirmed, { async: true })
+  async handleViewingConfirmed(event: ViewingConfirmedEvent): Promise<void> {
+    const payload = event as unknown as Record<string, unknown>;
+
+    await this.record(
+      NotificationType.ViewingConfirmedInternal,
+      `viewing_confirmed:${event.bookingId}:${event.proposedAt}`,
+      payload,
+    );
+
+    const operatorEmail = await this.resolveOperatorEmail(event.propertyId);
+    if (operatorEmail) {
+      await this.record(
+        NotificationType.ViewingConfirmedOperator,
+        `viewing_confirmed_operator:${event.bookingId}:${event.proposedAt}`,
+        payload,
+        operatorEmail,
+      );
+    }
   }
 
   /**
    * Persist one row per enabled channel, then try to deliver it immediately.
    * Anything that fails past this point is left for the retry worker.
+   *
+   * `recipient`, when given, is a database-resolved user address (invariant
+   * 2) and confines the notification to the email channel — a user-facing
+   * receipt has no business fanning out to an internal Slack hook.
    */
   private async record(
     type: NotificationType,
     baseDedupeKey: string,
     payload: Record<string, unknown>,
+    recipient?: string,
   ): Promise<void> {
     try {
       const { enabled } = readNotificationsConfig(this.configService);
@@ -130,6 +260,7 @@ export class NotificationsService {
 
       for (const channel of this.channels) {
         if (!channel.isEnabled()) continue;
+        if (recipient && channel.name !== "email") continue;
 
         const notification = await this.insertIfNew(
           type,
@@ -137,6 +268,7 @@ export class NotificationsService {
           channel,
           message.subject,
           payload,
+          recipient,
         );
 
         // Null means the unique index rejected the insert: the same business
@@ -174,6 +306,7 @@ export class NotificationsService {
     channel: NotificationChannel,
     subject: string,
     payload: Record<string, unknown>,
+    recipient?: string,
   ): Promise<Notification | null> {
     const result = await this.notificationRepository
       .createQueryBuilder()
@@ -183,7 +316,7 @@ export class NotificationsService {
         type,
         dedupe_key: dedupeKey,
         channel: channel.name,
-        recipient: channel.resolveRecipient(),
+        recipient: recipient ?? channel.resolveRecipient(),
         subject,
         payload,
         status: NotificationStatus.Pending,
