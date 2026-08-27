@@ -67,6 +67,14 @@ export const listingPropertyKeys = {
   gallery: {
     viewFullscreen: "listing.property.gallery.viewFullscreen",
   },
+  disclaimer: {
+    /**
+     * Legal notice on the property detail page: listing data comes from the
+     * operator and is not verified by Ta-Da. Not synced from Localazy yet —
+     * render it through `translateWithFallback`.
+     */
+    operatorContent: "listing.disclaimer.operator.content",
+  },
   pricing: {
     bookRequested: "listing.property.pricing.bookRequested",
     rent: "listing.property.pricing.rent",
