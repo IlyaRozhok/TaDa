@@ -3900,6 +3900,11 @@
             "description": "Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.",
             "example": false
           },
+          "postcode": {
+            "type": "string",
+            "description": "UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.",
+            "example": "NW1 8XY"
+          },
           "status": {
             "type": "string",
             "description": "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
@@ -4214,6 +4219,11 @@
             "description": "Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.",
             "example": false
           },
+          "postcode": {
+            "type": "string",
+            "description": "UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.",
+            "example": "NW1 8XY"
+          },
           "status": {
             "type": "string",
             "description": "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
@@ -4403,6 +4413,24 @@
             "type": "string",
             "description": "Property address (inherited from building or custom)",
             "example": "123 Main St, London"
+          },
+          "postcode": {
+            "type": "object",
+            "description": "Normalized UK postcode",
+            "example": "NW1 8XY"
+          },
+          "latitude": {
+            "type": "object",
+            "description": "Latitude (WGS84)"
+          },
+          "longitude": {
+            "type": "object",
+            "description": "Longitude (WGS84)"
+          },
+          "borough": {
+            "type": "object",
+            "description": "London borough (postcodes.io admin_district)",
+            "example": "Camden"
           },
           "tenant_types": {
             "description": "Tenant types for this property (inherited from building or custom)",

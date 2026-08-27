@@ -19,6 +19,7 @@ import {
 } from "./property.mapper";
 import { PublicPropertyResponse, toPublicProperty } from "./property.response";
 import { S3Service } from "../../common/services/s3.service";
+import { GeocodingService } from "@/common/services/geocoding.service";
 
 /** How many flagged properties the landing section shows at most. */
 export const LANDING_LISTINGS_LIMIT = 6;
@@ -44,7 +45,29 @@ export class PropertyService {
     @InjectRepository(Building)
     private readonly buildingRepository: Repository<Building>,
     private readonly s3Service: S3Service,
+    private readonly geocodingService: GeocodingService,
   ) {}
+
+  /**
+   * Resolve postcode/coordinates/borough for a property's location. Returns
+   * the four geocoding columns ready to assign. On lookup failure the
+   * coordinates are explicitly `null` (never left stale): the address just
+   * changed, so whatever was stored no longer describes it.
+   */
+  private async geocodeColumns(
+    address: string | null | undefined,
+    explicitPostcode: string | null | undefined,
+  ): Promise<Pick<Property, "postcode" | "latitude" | "longitude" | "borough">> {
+    const geo = await this.geocodingService.geocode(address, explicitPostcode);
+    return {
+      postcode:
+        geo?.postcode ??
+        this.geocodingService.extractPostcode(explicitPostcode || address),
+      latitude: geo?.latitude ?? null,
+      longitude: geo?.longitude ?? null,
+      borough: geo?.borough ?? null,
+    };
+  }
 
   async create(
     createPropertyDto: CreatePropertyDto,
@@ -130,6 +153,11 @@ export class PropertyService {
     assignPropertyOptionals(
       propertyData,
       this.stripAdminOnlyFields(createPropertyDto, userRole),
+    );
+
+    Object.assign(
+      propertyData,
+      await this.geocodeColumns(propertyData.address, createPropertyDto.postcode),
     );
 
     const property = this.propertyRepository.create(propertyData);
@@ -238,6 +266,22 @@ export class PropertyService {
       this.stripAdminOnlyFields(updatePropertyDto, userRole),
     );
 
+    // Any change to where the property IS re-resolves where it is on the map:
+    // an explicit postcode, a new address, or an address re-inherited from a
+    // building (updateData.address is set on those branches above).
+    if (
+      updatePropertyDto.postcode !== undefined ||
+      updateData.address !== undefined
+    ) {
+      Object.assign(
+        updateData,
+        await this.geocodeColumns(
+          updateData.address ?? property.address,
+          updatePropertyDto.postcode,
+        ),
+      );
+    }
+
     await this.propertyRepository.update(id, updateData);
     return this.findOne(id);
   }
@@ -286,7 +330,7 @@ export class PropertyService {
     if (search) {
       const like = `%${search}%`;
       queryBuilder.andWhere(
-        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)",
+        "(property.apartment_number ILIKE :search OR property.title ILIKE :search OR property.address ILIKE :search OR property.postcode ILIKE :search OR property.borough ILIKE :search OR building.name ILIKE :search OR property.id::text ILIKE :search)",
         { search: like },
       );
     }

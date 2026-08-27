@@ -14,6 +14,10 @@ export type PublicPropertyResponse = {
   title: string | null;
   descriptions: string | null;
   address: string | null;
+  /** Normalized UK postcode, geocoded on save (null when unresolvable). */
+  postcode: string | null;
+  /** London borough from the postcode (postcodes.io admin_district). */
+  borough: string | null;
   price: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
@@ -80,6 +84,8 @@ export const toPublicProperty = (
     title: property.title || null,
     descriptions: property.descriptions ?? null,
     address: property.address || null,
+    postcode: property.postcode ?? null,
+    borough: property.borough ?? null,
     price,
     bedrooms: property.bedrooms ?? null,
     bathrooms: property.bathrooms ?? null,

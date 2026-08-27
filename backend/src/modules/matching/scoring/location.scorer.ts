@@ -3,15 +3,18 @@ import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
 
 /**
- * Location matching (areas, districts, metro stations) - IMPROVED
- * Checks multiple location criteria with weighted scoring
+ * Location matching (areas, districts, metro stations).
  *
- * UNREACHABLE by design, preserved as-is: `calculateMatch` pushes seventeen
- * categories and location is not one of them, exactly as before the 6.3
- * split. Wiring it in changes every score and is a product decision, not a
- * refactoring step. `CategoryWeights.location` and the `address` /
- * `metro_stations` columns in the ranking projection exist for the day it
- * is wired in.
+ * WIRED IN as category 18 (package B2) — in London, location IS the search:
+ * it carries the second-highest weight (15) and was collected in onboarding
+ * but discarded until now. Only tenants who set a location preference are
+ * affected (no preference → excluded from their denominator, scores
+ * unchanged).
+ *
+ * The district check reads `property.borough` first — the canonical borough
+ * geocoded from the postcode via postcodes.io — and falls back to substring
+ * matches on the address and metro labels for rows that have not been
+ * geocoded yet.
  */
 export function matchLocation(
   property: Property,
@@ -22,6 +25,7 @@ export function matchLocation(
   const prefDistricts = preferences.preferred_districts || [];
   const prefMetro = preferences.preferred_metro_stations || [];
   const propertyAddress = property.address?.toLowerCase() || "";
+  const propertyBorough = property.borough?.toLowerCase() || "";
   const propertyMetro = property.metro_stations || [];
 
   const hasAnyPreference =
@@ -64,12 +68,15 @@ export function matchLocation(
     }
   }
 
-  // Check district/borough matches (e.g., "Camden", "Westminster")
+  // Check district/borough matches (e.g., "Camden", "Westminster") — the
+  // geocoded borough is authoritative; address/metro substrings are the
+  // fallback for un-geocoded rows.
   if (prefDistricts.length > 0) {
     totalCriteria++;
     const normalizedPrefDistricts = prefDistricts.map((d) => d.toLowerCase());
     const districtMatch = normalizedPrefDistricts.some(
       (district) =>
+        (propertyBorough && propertyBorough === district) ||
         propertyAddress.includes(district) ||
         propertyMetro.some((m) => m.label?.toLowerCase().includes(district)),
     );
