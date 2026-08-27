@@ -7,10 +7,22 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
+  Matches,
   ValidateNested,
   IsNotEmpty,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Type, Transform } from "class-transformer";
+import {
+  BUILDING_TYPE_VALUES,
+  FURNISHING_VALUES,
+  LET_DURATION_LIST_PATTERN,
+  LET_DURATION_VALUES,
+  PROPERTY_BILLS_VALUES,
+  PROPERTY_TYPE_VALUES,
+  normalizeDurationList,
+  normalizeVocabularyValue,
+} from "@/common/constants/vocabulary";
 import {
   BuildingChildrenCount,
   BuildingFamilyStatus,
@@ -101,31 +113,40 @@ export class CreatePropertyDto {
   @ApiProperty({
     description: "Property type",
     example: "apartment",
-    enum: ["apartment", "house", "studio", "penthouse", "duplex", "maisonette"],
+    enum: PROPERTY_TYPE_VALUES,
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeVocabularyValue(value) : value,
+  )
+  @IsIn(PROPERTY_TYPE_VALUES)
   property_type?: string;
 
   @ApiProperty({
     description: "Furnishing level",
     example: "furnished",
-    enum: ["furnished", "unfurnished", "partially_furnished"],
+    enum: FURNISHING_VALUES,
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeVocabularyValue(value) : value,
+  )
+  @IsIn(FURNISHING_VALUES)
   furnishing?: string;
 
   @ApiProperty({
     description: "Bills included",
     example: "included",
-    enum: ["included", "excluded", "some_included"],
+    enum: PROPERTY_BILLS_VALUES,
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeVocabularyValue(value) : value,
+  )
+  @IsIn(PROPERTY_BILLS_VALUES)
   bills?: string;
 
   @ApiProperty({
@@ -139,12 +160,15 @@ export class CreatePropertyDto {
 
   @ApiProperty({
     description: "Building type",
-    example: "residential",
-    enum: ["residential", "commercial", "mixed"],
+    example: "btr",
+    enum: BUILDING_TYPE_VALUES,
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeVocabularyValue(value) : value,
+  )
+  @IsIn(BUILDING_TYPE_VALUES)
   building_type?: string;
 
   // Inherited fields from building
@@ -305,12 +329,18 @@ export class CreatePropertyDto {
   pets?: PetDto[];
 
   @ApiProperty({
-    description: "Let duration",
-    example: "12 months",
+    description:
+      "Let duration — comma-separated multiselect of canonical tokens",
+    example: "12_months,long_term",
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeDurationList(value) : value,
+  )
+  @Matches(LET_DURATION_LIST_PATTERN, {
+    message: `let_duration must be a comma-separated list of: ${LET_DURATION_VALUES.join(", ")}`,
+  })
   let_duration?: string;
 
   @ApiProperty({
