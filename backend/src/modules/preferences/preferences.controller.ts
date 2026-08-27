@@ -9,6 +9,7 @@ import {
   HttpStatus,
   Query,
   Param,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -152,7 +153,7 @@ export class PreferencesController {
     description: "Preferences not found",
   })
   async updateByAdmin(
-    @Param("userId") userId: string,
+    @Param("userId", ParseUUIDPipe) userId: string,
     @Body() updatePreferencesDto: UpdatePreferencesDto,
   ): Promise<Preferences> {
     return this.preferencesService.update(userId, updatePreferencesDto);
@@ -170,7 +171,7 @@ export class PreferencesController {
     status: 404,
     description: "Preferences not found",
   })
-  async clearByAdmin(@Param("userId") userId: string): Promise<void> {
+  async clearByAdmin(@Param("userId", ParseUUIDPipe) userId: string): Promise<void> {
     return this.preferencesService.clear(userId);
   }
 }

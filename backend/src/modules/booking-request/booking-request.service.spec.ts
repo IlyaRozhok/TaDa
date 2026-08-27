@@ -162,6 +162,7 @@ describe("BookingRequestService.updateStatus — transition rules", () => {
     bookingRepository = {
       findOne: jest.fn(),
       save: jest.fn(async (booking: any) => booking),
+      update: jest.fn(async () => ({ affected: 1 })),
     };
     service = new BookingRequestService(
       bookingRepository,
@@ -214,6 +215,22 @@ describe("BookingRequestService.updateStatus — transition rules", () => {
       attempt(BookingRequestStatus.Viewing, BookingRequestStatus.Viewing),
     ).resolves.toMatchObject({ status: BookingRequestStatus.Viewing });
     expect(bookingRepository.save).not.toHaveBeenCalled();
+    expect(bookingRepository.update).not.toHaveBeenCalled();
+  });
+
+  it("writes with a compare-and-swap on the validated status", async () => {
+    await attempt(BookingRequestStatus.New, BookingRequestStatus.Contacting);
+    expect(bookingRepository.update).toHaveBeenCalledWith(
+      { id: "booking-1", status: BookingRequestStatus.New },
+      { status: BookingRequestStatus.Contacting },
+    );
+  });
+
+  it("returns 409 when the status changed concurrently instead of overwriting it", async () => {
+    bookingRepository.update.mockResolvedValue({ affected: 0 });
+    await expect(
+      attempt(BookingRequestStatus.New, BookingRequestStatus.Contacting),
+    ).rejects.toThrow(/changed by someone else/);
   });
 });
 

@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { JwtService } from "@nestjs/jwt";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { Repository } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
 import { createHash } from "crypto";
 import { User, UserRole, UserStatus } from "../../entities/user.entity";
 import { TenantProfile } from "../../entities/tenant-profile.entity";
@@ -31,7 +31,7 @@ export class AuthService {
     return createHash("sha256").update(token).digest("hex");
   }
 
-  async generateTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
+  private async signTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         { sub: user.id, email: user.email, role: user.role, status: user.status },
@@ -43,12 +43,18 @@ export class AuthService {
       ),
     ]);
 
+    return { accessToken, refreshToken };
+  }
+
+  async generateTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
+    const tokens = await this.signTokens(user);
+
     await this.userRepository.update(
       { id: user.id },
-      { refresh_token_hash: this.hashToken(refreshToken) },
+      { refresh_token_hash: this.hashToken(tokens.refreshToken) },
     );
 
-    return { accessToken, refreshToken };
+    return tokens;
   }
 
   async refreshTokens(rawRefreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
@@ -76,7 +82,24 @@ export class AuthService {
       throw new UnauthorizedException("Refresh token reuse or invalidation detected");
     }
 
-    return this.generateTokens(user);
+    // Atomic rotation: the UPDATE only lands if the stored hash is still the
+    // one this request presented. Without the compare-and-swap, two parallel
+    // refreshes (two tabs waking up) both passed the check above, both
+    // rotated, and whichever cookie the browser kept last pointed at a hash
+    // the other rotation had already overwritten — a random logout of a
+    // single user. The loser now gets a clean 401 while the winner's cookie
+    // stays valid.
+    const tokens = await this.signTokens(user);
+    const rotation = await this.userRepository.update(
+      { id: user.id, refresh_token_hash: user.refresh_token_hash },
+      { refresh_token_hash: this.hashToken(tokens.refreshToken) },
+    );
+
+    if (!rotation.affected) {
+      throw new UnauthorizedException("Refresh token reuse or invalidation detected");
+    }
+
+    return tokens;
   }
 
   async clearRefreshToken(rawRefreshToken: string): Promise<void> {
@@ -111,19 +134,26 @@ export class AuthService {
     const isNew = !user;
 
     if (!user) {
-      user = this.userRepository.create({
-        email: googleUser.email.toLowerCase(),
-        google_id: googleUser.google_id,
-        full_name: googleUser.full_name,
-        avatar_url: googleUser.avatar_url,
-        email_verified: googleUser.email_verified,
-        provider: "google",
-        role: UserRole.Tenant,
-        status: UserStatus.Active,
+      // One transaction: a user row without its tenant profile is a broken
+      // account, so the two writes land or roll back together. The CV share
+      // uuid stays outside — it is created lazily on first use and losing it
+      // here breaks nothing.
+      user = await this.userRepository.manager.transaction(async (em) => {
+        const created = await em.save(
+          em.create(User, {
+            email: googleUser.email.toLowerCase(),
+            google_id: googleUser.google_id,
+            full_name: googleUser.full_name,
+            avatar_url: googleUser.avatar_url,
+            email_verified: googleUser.email_verified,
+            provider: "google",
+            role: UserRole.Tenant,
+            status: UserStatus.Active,
+          }),
+        );
+        await this.createTenantProfile(created, em);
+        return created;
       });
-
-      user = await this.userRepository.save(user);
-      await this.createTenantProfile(user);
       await this.tenantCvService.ensureShareUuid(user.id);
 
       // Emitted only on the branch that created the account. `emit` dispatches
@@ -143,7 +173,11 @@ export class AuthService {
         throw new UnauthorizedException("Account is suspended or inactive");
       }
 
-      user.full_name = googleUser.full_name;
+      // Google's name only seeds an EMPTY profile. Overwriting on every
+      // sign-in silently reverted names the user had edited in the app.
+      if (!user.full_name) {
+        user.full_name = googleUser.full_name;
+      }
       user.email_verified = googleUser.email_verified;
 
       const hasCustomAvatar =
@@ -161,8 +195,11 @@ export class AuthService {
     return { user, isNew };
   }
 
-  private async createTenantProfile(user: User): Promise<void> {
-    const tenantProfile = this.tenantProfileRepository.create({
+  private async createTenantProfile(user: User, em?: EntityManager): Promise<void> {
+    const repository = em
+      ? em.getRepository(TenantProfile)
+      : this.tenantProfileRepository;
+    const tenantProfile = repository.create({
       userId: user.id,
       occupation: "",
       industry: "",
@@ -171,6 +208,6 @@ export class AuthService {
       additional_info: "",
       shortlisted_properties: [],
     });
-    await this.tenantProfileRepository.save(tenantProfile);
+    await repository.save(tenantProfile);
   }
 }

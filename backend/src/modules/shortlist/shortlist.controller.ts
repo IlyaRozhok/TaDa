@@ -6,6 +6,7 @@ import {
   Param,
   Request,
   HttpStatus,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -42,7 +43,7 @@ export class ShortlistController {
   })
   async addToShortlist(
     @Request() req,
-    @Param("propertyId") propertyId: string
+    @Param("propertyId", ParseUUIDPipe) propertyId: string
   ) {
     const result = await this.shortlistService.addToShortlist(
       req.user.id,
@@ -68,7 +69,7 @@ export class ShortlistController {
   })
   async removeFromShortlist(
     @Request() req,
-    @Param("propertyId") propertyId: string
+    @Param("propertyId", ParseUUIDPipe) propertyId: string
   ) {
     const result = await this.shortlistService.removeFromShortlist(
       req.user.id,
@@ -114,7 +115,7 @@ export class ShortlistController {
   })
   async checkShortlistStatus(
     @Request() req,
-    @Param("propertyId") propertyId: string
+    @Param("propertyId", ParseUUIDPipe) propertyId: string
   ) {
     const isShortlisted = await this.shortlistService.isPropertyShortlisted(
       req.user.id,

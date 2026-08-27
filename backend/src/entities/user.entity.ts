@@ -2,6 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   OneToOne,
   OneToMany,
   CreateDateColumn,
@@ -84,6 +85,11 @@ export class User {
     description: "Google ID for OAuth users",
     example: "123456789012345678901",
   })
+  // The hottest auth-path lookup: every Google sign-in resolves the account
+  // by this column. The index existed once and was dropped by the
+  // auto-generated 1764203300507 migration; without it each login is a
+  // sequential scan over `users`.
+  @Index("idx_users_google_id")
   @Column({ nullable: true })
   google_id: string;
 

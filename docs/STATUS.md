@@ -7,20 +7,57 @@ preserved at `docs/archive/PROGRESS-refactoring-2026-07-08.md`. New work is
 tracked by PRs; anything that must outlive a PR (follow-ups, host actions,
 decisions) is recorded HERE, briefly, with a date.
 
-## Where things stand (2026-08-21)
+## Where things stand (2026-08-25)
 
 - Refactoring phases 0–6 are closed; Phase 7 (scale) never formally started.
   History: the archived PROGRESS file.
-- External review batches 1–5 merged as #139, #140, #141, #142 and the current
-  PR: security hardening, CI gates (lint both apps + e2e smoke + deploy
-  concurrency), matching performance (prefilters + ranking cache + ceiling),
-  SEO (metadata, JSON-LD, robots/sitemap, stable OG images), EmailJS → SES,
-  OpenAPI codegen pipeline, booking lifecycle, shortlist on its table,
-  dead-code sweeps, CV contact masking.
+- External review batches 1–5 merged as #139–#143: security hardening, CI
+  gates, matching performance, SEO, EmailJS → SES, OpenAPI codegen pipeline,
+  booking lifecycle, shortlist on its table, CV contact masking.
+- Review round 3 (2026-08-25, deep pass) produced a package roadmap A–F (see
+  «Review roadmap» below). Package A — silent data-integrity bugs — is the
+  current PR: null-vs-undefined clears, atomic refresh rotation,
+  compare-and-swap booking transitions, transactions on multi-step writes,
+  `users.google_id` index restored, `preferences.user_id` UNIQUE (with
+  dedupe), building deletion detaches units instead of cascading into
+  booking history, upload errors as 4xx, `ParseUUIDPipe` on uuid params.
+  All three migrations rehearsed against a live local Postgres.
 - CI gates every deploy: typecheck, lint (0 errors; warnings are backlog),
   unit tests, build, generated-API-types freshness, e2e smoke (5 specs
   against a real stack). Fresh checkouts bootstrap with `scripts/setup.sh`
   (Claude Code web sessions run it via the SessionStart hook).
+
+## Review roadmap (agreed 2026-08-25, work top to bottom)
+
+- **B — the matching engine tells the truth**: property lifecycle status
+  (`draft/listed/under_offer/let/archived`) filtered in every read path and
+  driven from the booking pipeline; location wired in (postcode + lat/lng,
+  geocode via postcodes.io, enable the already-written location scorer,
+  search by address); one governed vocabulary for categorical fields
+  (`@IsIn` on DTOs, normalizing migration, single unknown-data policy —
+  blank listings must stop outranking honest ones; wire or drop
+  `family_status`/`occupation` targeting; fix the constant in the smoking
+  scorer).
+- **C — the funnel stops being silent**: transactional emails to tenant and
+  operator on booking events (outbox already built — new templates plus
+  recipients); `proposed_viewing_at` + confirmation on the viewing step;
+  KYC/referencing badges become admin-set only; `epc_rating` field (legally
+  required on listings) and a Tenant Fees Act deposit-cap warning.
+- **D — operator dashboard**: own listings, booking requests on own
+  properties (scope the existing admin view by `operator_id`), rights over
+  early statuses, email on a new request.
+- **E — frontend unwinding**: server-fetched data passed into detail clients
+  and public pages ungated from session init; server-side
+  `onboarding_completed` in `/auth/me` (kills the three competing sources of
+  truth and the redirect races incl. `navigationGuard.ts`); one session
+  guard in segment layouts instead of ten inline copies; dissolve
+  `useTenantDashboard` into RTK Query hooks (it leaks every cache
+  subscription it opens).
+- **F — operations (fold into other PRs as touched)**: DB pool size +
+  `statement_timeout`; container `mem_limit`; Joi env validation
+  (`FRONTEND_URL` unset currently redirects prod OAuth to localhost);
+  per-route throttle + sane file-count limit on uploads (100+ × 50 MB
+  buffers in RAM today), or presigned-PUT uploads.
 
 ## Host actions (blocking, in order)
 
@@ -78,7 +115,14 @@ decisions) is recorded HERE, briefly, with a date.
   `warn` because of one violation in `admin/panel/page.tsx:624` — fix it and
   promote the rule to error.
 - **Single-session auth model**: one `refresh_token_hash` per user — second
-  device silently logs out the first. Wants a sessions table.
+  device silently logs out the first. Wants a sessions table. (Rotation is
+  atomic since package A, so the same-device two-tab race no longer corrupts
+  the stored hash — the loser gets a clean 401.)
+- **Building→property inheritance has no owner** (round-3 finding): create
+  copies nine fields, update propagates four, and matching scores the
+  property-side copies — a building edit half-propagates. Wants one
+  `propagateInheritedFields` owned by the property module, or reading
+  through the relation.
 - **Terraform under `infrastructure/`** does not describe the real host —
   either adopt it properly or archive it.
 - **Rollback runbook** does not exist (LAUNCH_PLAN item 3); the sketched

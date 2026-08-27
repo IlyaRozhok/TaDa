@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   Request,
   BadRequestException,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
@@ -40,7 +41,7 @@ export class PropertyMediaController {
   })
   @UseInterceptors(FileInterceptor("file"))
   async uploadMedia(
-    @Param("propertyId") propertyId: string,
+    @Param("propertyId", ParseUUIDPipe) propertyId: string,
     @UploadedFile() file: Express.Multer.File,
     @Request() req: any
   ): Promise<PropertyMedia> {
@@ -65,7 +66,7 @@ export class PropertyMediaController {
     type: [PropertyMedia],
   })
   async getPropertyMedia(
-    @Param("propertyId") propertyId: string
+    @Param("propertyId", ParseUUIDPipe) propertyId: string
   ): Promise<PropertyMedia[]> {
     return await this.propertyMediaService.getAllPropertyMedia(propertyId);
   }
@@ -74,8 +75,8 @@ export class PropertyMediaController {
   @ApiOperation({ summary: "Delete media file" })
   @ApiResponse({ status: 200, description: "Media file deleted" })
   async deleteMedia(
-    @Param("propertyId") propertyId: string,
-    @Param("mediaId") mediaId: string,
+    @Param("propertyId", ParseUUIDPipe) propertyId: string,
+    @Param("mediaId", ParseUUIDPipe) mediaId: string,
     @Request() req: any
   ): Promise<void> {
     return await this.propertyMediaService.deleteMedia(
@@ -122,7 +123,7 @@ export class PropertyMediaController {
     description: "Property not found",
   })
   async updateMediaOrder(
-    @Param("propertyId") propertyId: string,
+    @Param("propertyId", ParseUUIDPipe) propertyId: string,
     @CurrentUser() user: User,
     @Body("mediaOrders") mediaOrders: { id: string; order_index: number }[]
   ): Promise<PropertyMedia[]> {

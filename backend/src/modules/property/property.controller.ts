@@ -5,12 +5,15 @@ import {
   Body,
   Patch,
   Param,
+  ParseUUIDPipe,
   Delete,
   Query,
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
   Logger,
+  BadRequestException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import {
@@ -79,7 +82,7 @@ export class PropertyController {
   @ApiOperation({ summary: "Get a public property by ID (no auth required)" })
   @ApiResponse({ status: 200, description: "Property found" })
   @ApiResponse({ status: 404, description: "Property not found" })
-  async findOnePublic(@Param("id") id: string) {
+  async findOnePublic(@Param("id", ParseUUIDPipe) id: string) {
     return this.propertyService.findOnePublic(id);
   }
 
@@ -136,48 +139,45 @@ export class PropertyController {
       },
     },
   })
+  // Client mistakes (no file, wrong type) are 400s. As bare `Error` they came
+  // back as 500s and paged Sentry for every wrong-file-type upload.
   async uploadPhotos(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
-      throw new Error("No files provided");
+      throw new BadRequestException("No files provided");
     }
 
-    const uploadPromises = files.map(async (file) => {
-      try {
-        if (!file.mimetype.startsWith("image/")) {
-          throw new Error(
-            `Invalid file type for ${file.originalname}. Only images are allowed.`,
-          );
-        }
-
-        const fileKey = this.s3Service.generateFileKey(
-          file.originalname,
-          "property-photo",
-        );
-        const uploadResult = await this.s3Service.uploadFile(
-          file.buffer,
-          fileKey,
-          file.mimetype,
-          file.originalname,
-        );
-
-        return {
-          url: uploadResult.url,
-          key: uploadResult.key,
-        };
-      } catch (error) {
-        this.logger.error(`Error uploading photo ${file.originalname}`, error?.stack ?? String(error));
-        throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`,
-        );
-      }
-    });
+    // Validated before any upload starts, so one bad file in a batch does not
+    // leave the good ones already orphaned in S3.
+    const invalid = files.find((file) => !file.mimetype.startsWith("image/"));
+    if (invalid) {
+      throw new BadRequestException(
+        `Invalid file type for ${invalid.originalname}. Only images are allowed.`,
+      );
+    }
 
     try {
-      const results = await Promise.all(uploadPromises);
-      return results;
+      return await Promise.all(
+        files.map(async (file) => {
+          const fileKey = this.s3Service.generateFileKey(
+            file.originalname,
+            "property-photo",
+          );
+          const uploadResult = await this.s3Service.uploadFile(
+            file.buffer,
+            fileKey,
+            file.mimetype,
+            file.originalname,
+          );
+
+          return {
+            url: uploadResult.url,
+            key: uploadResult.key,
+          };
+        }),
+      );
     } catch (error) {
       this.logger.error("Photo upload failed", error?.stack ?? String(error));
-      throw error;
+      throw new InternalServerErrorException("Failed to upload photos");
     }
   }
 
@@ -211,14 +211,13 @@ export class PropertyController {
   })
   async uploadVideo(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new Error("No file provided");
+      throw new BadRequestException("No file provided");
+    }
+    if (!file.mimetype.startsWith("video/")) {
+      throw new BadRequestException("Invalid file type. Only videos are allowed.");
     }
 
     try {
-      if (!file.mimetype.startsWith("video/")) {
-        throw new Error("Invalid file type. Only videos are allowed.");
-      }
-
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
         "property-video",
@@ -236,7 +235,7 @@ export class PropertyController {
       };
     } catch (error) {
       this.logger.error(`Error uploading video ${file.originalname}`, error?.stack ?? String(error));
-      throw new Error(`Failed to upload video: ${error.message}`);
+      throw new InternalServerErrorException("Failed to upload video");
     }
   }
 
@@ -270,14 +269,13 @@ export class PropertyController {
   })
   async uploadDocuments(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new Error("No file provided");
+      throw new BadRequestException("No file provided");
+    }
+    if (file.mimetype !== "application/pdf") {
+      throw new BadRequestException("Invalid file type. Only PDF files are allowed.");
     }
 
     try {
-      if (file.mimetype !== "application/pdf") {
-        throw new Error(`Invalid file type. Only PDF files are allowed.`);
-      }
-
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
         "property-documents",
@@ -295,7 +293,7 @@ export class PropertyController {
       };
     } catch (error) {
       this.logger.error(`Error uploading document ${file.originalname}`, error?.stack ?? String(error));
-      throw new Error(`Failed to upload document: ${error.message}`);
+      throw new InternalServerErrorException("Failed to upload document");
     }
   }
 
@@ -343,7 +341,7 @@ export class PropertyController {
   @ApiOperation({ summary: "Get a property by ID" })
   @ApiResponse({ status: 200, description: "Property found" })
   @ApiResponse({ status: 404, description: "Property not found" })
-  async findOne(@Param("id") id: string, @CurrentUser() user: User) {
+  async findOne(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return await this.propertyService.findOneWithFreshUrls(
       id,
       user.id,
@@ -359,7 +357,7 @@ export class PropertyController {
   @ApiResponse({ status: 400, description: "Bad request" })
   @ApiResponse({ status: 404, description: "Property not found" })
   update(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() updatePropertyDto: UpdatePropertyDto,
     @CurrentUser() user: User,
   ) {
@@ -377,7 +375,7 @@ export class PropertyController {
   @ApiOperation({ summary: "Delete a property" })
   @ApiResponse({ status: 200, description: "Property deleted successfully" })
   @ApiResponse({ status: 404, description: "Property not found" })
-  remove(@Param("id") id: string, @CurrentUser() user: User) {
+  remove(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.propertyService.remove(id, user.id, user.role);
   }
 }

@@ -359,8 +359,12 @@ export class Property {
   @JoinColumn({ name: "operator_id" })
   operator: User;
 
+  // SET NULL, not CASCADE: deleting a building must detach its units, never
+  // destroy them — a property carries booking history (including `rented`
+  // rows) that a cascade would silently erase. "Convert to private landlord"
+  // already clears this link the same way.
   @ManyToOne(() => Building, (building) => building.properties, {
-    onDelete: "CASCADE",
+    onDelete: "SET NULL",
   })
   @JoinColumn({ name: "building_id" })
   building: Building;

@@ -189,24 +189,10 @@ export class BuildingService {
       updateData.description = updateBuildingDto.description;
 
     if (operatorId !== undefined) {
-      updateData.operator_id = operatorId ?? undefined;
-    }
-
-    const updateQueryBuilder = this.buildingRepository
-      .createQueryBuilder()
-      .update(Building)
-      .set(updateData)
-      .where("id = :id", { id: building.id });
-
-    await updateQueryBuilder.execute();
-
-    if (operatorId !== undefined) {
-      await this.propertyRepository
-        .createQueryBuilder()
-        .update(Property)
-        .set({ operator_id: operatorId ?? undefined })
-        .where("building_id = :buildingId", { buildingId: building.id })
-        .execute();
+      // `null` must stay `null`: mapping it to `undefined` made TypeORM drop
+      // the column from the UPDATE, so unassigning an operator silently kept
+      // the old one.
+      updateData.operator_id = operatorId;
     }
 
     const inheritedFieldsUpdates: Partial<Property> = {};
@@ -220,14 +206,38 @@ export class BuildingService {
     if (updateBuildingDto.pet_policy !== undefined)
       inheritedFieldsUpdates.pet_policy = updateBuildingDto.pet_policy;
 
-    if (Object.keys(inheritedFieldsUpdates).length > 0) {
-      await this.propertyRepository
+    // One transaction: the building row and the propagation into its units
+    // are a single logical write. A failure between the statements used to
+    // leave the units half-inherited with no trace.
+    await this.buildingRepository.manager.transaction(async (em) => {
+      await em
         .createQueryBuilder()
-        .update(Property)
-        .set(inheritedFieldsUpdates)
-        .where("building_id = :buildingId", { buildingId: building.id })
+        .update(Building)
+        .set(updateData)
+        .where("id = :id", { id: building.id })
         .execute();
-    }
+
+      // Reassignment propagates to the building's units; unassignment does
+      // not: properties.operator_id is NOT NULL, so the units keep their
+      // previous operator until a new one is assigned.
+      if (operatorId !== undefined && operatorId !== null) {
+        await em
+          .createQueryBuilder()
+          .update(Property)
+          .set({ operator_id: operatorId })
+          .where("building_id = :buildingId", { buildingId: building.id })
+          .execute();
+      }
+
+      if (Object.keys(inheritedFieldsUpdates).length > 0) {
+        await em
+          .createQueryBuilder()
+          .update(Property)
+          .set(inheritedFieldsUpdates)
+          .where("building_id = :buildingId", { buildingId: building.id })
+          .execute();
+      }
+    });
 
     const reloadedBuilding = await this.buildingRepository.findOne({
       where: { id: building.id },

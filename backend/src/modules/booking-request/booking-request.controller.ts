@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   Request,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -72,7 +73,7 @@ export class BookingRequestController {
   @ApiOperation({ summary: "Update booking request status (admin)" })
   @ApiResponse({ status: 200, description: "Booking status updated" })
   async updateStatus(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateBookingStatusDto
   ): Promise<BookingRequest> {
     return this.bookingRequestService.updateStatus(id, dto.status);
