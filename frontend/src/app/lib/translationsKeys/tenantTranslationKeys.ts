@@ -108,6 +108,13 @@ export const tenantKeys = {
     gradientTextTop: "landing.operators.web.sm.text1",
     gradientTextBottom: "landing.tenant.web.sm.text2",
   },
+  // Landing listings section. Not synced from Localazy yet — the component
+  // renders an English fallback until the keys land.
+  listings: {
+    title: "landing.tenant.web.listings.title",
+    subtitle: "landing.tenant.web.listings.subtitle",
+    seeAll: "landing.tenant.web.listings.seeAll",
+  },
   partners: {
     title: "landing.tenant.web.header.block6",
     stripe: "landing.tenant.web.partner1",

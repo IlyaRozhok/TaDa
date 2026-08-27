@@ -17,6 +17,9 @@ import {
 import { PublicPropertyResponse, toPublicProperty } from "./property.response";
 import { S3Service } from "../../common/services/s3.service";
 
+/** How many flagged properties the landing section shows at most. */
+export const LANDING_LISTINGS_LIMIT = 6;
+
 @Injectable()
 export class PropertyService {
   constructor(
@@ -108,7 +111,10 @@ export class PropertyService {
       propertyData.pets = createPropertyDto.pets || undefined;
     }
 
-    assignPropertyOptionals(propertyData, createPropertyDto);
+    assignPropertyOptionals(
+      propertyData,
+      this.stripAdminOnlyFields(createPropertyDto, userRole),
+    );
 
     const property = this.propertyRepository.create(propertyData);
     const saved = await this.propertyRepository.save(property);
@@ -211,7 +217,10 @@ export class PropertyService {
       updateData.pets = building.pets || null;
     }
 
-    assignPropertyOptionals(updateData, updatePropertyDto);
+    assignPropertyOptionals(
+      updateData,
+      this.stripAdminOnlyFields(updatePropertyDto, userRole),
+    );
 
     await this.propertyRepository.update(id, updateData);
     return this.findOne(id);
@@ -279,6 +288,28 @@ export class PropertyService {
     };
   }
 
+  /**
+   * The landing pages' listings section: the newest flagged properties, a bare
+   * array, no auth. One set serves both landings — audience and manual order
+   * are deliberately not modelled, so "newest first, capped at six" is the
+   * whole ordering story.
+   */
+  async findLandingListings(): Promise<PublicPropertyResponse[]> {
+    const properties = await this.propertyRepository
+      .createQueryBuilder("property")
+      .leftJoinAndSelect("property.building", "building")
+      .where("property.is_landing_listing = :flagged", { flagged: true })
+      .orderBy("property.created_at", "DESC")
+      .take(LANDING_LISTINGS_LIMIT)
+      .getMany();
+
+    const propertiesWithFreshUrls = await Promise.all(
+      properties.map((property) => this.updatePhotosUrls(property)),
+    );
+
+    return propertiesWithFreshUrls.map(toPublicProperty);
+  }
+
   async findOne(id: string): Promise<Property> {
     const property = await this.propertyRepository.findOne({
       where: { id },
@@ -336,6 +367,25 @@ export class PropertyService {
     const property = await this.findOne(id);
     this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
     await this.propertyRepository.remove(property);
+  }
+
+  /**
+   * `is_landing_listing` decides what a signed-out visitor sees on the
+   * marketing landings, so only an admin may set it. For every other role the
+   * field is dropped from the payload rather than rejected: an operator whose
+   * client echoes a whole property back on save must not start getting 400s
+   * for a flag they never touched.
+   */
+  private stripAdminOnlyFields<T extends CreatePropertyDto | UpdatePropertyDto>(
+    dto: T,
+    userRole: string,
+  ): T {
+    if (userRole === UserRole.Admin || dto.is_landing_listing === undefined) {
+      return dto;
+    }
+
+    const { is_landing_listing: _adminOnly, ...rest } = dto;
+    return rest as T;
   }
 
   private ensureOwnerOrAdmin(

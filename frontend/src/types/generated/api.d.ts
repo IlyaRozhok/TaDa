@@ -441,6 +441,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/properties/public/landing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the landing pages' featured listings (no auth required) */
+        get: operations["PropertyController_findLandingListings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/properties/public/{id}": {
         parameters: {
             query?: never;
@@ -2127,6 +2144,11 @@ export interface components {
              * @example https://s3.amazonaws.com/bucket/document.pdf
              */
             documents?: string;
+            /**
+             * @description Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.
+             * @example false
+             */
+            is_landing_listing?: boolean;
         };
         UpdatePropertyDto: {
             /**
@@ -2345,6 +2367,11 @@ export interface components {
              * @example https://s3.amazonaws.com/bucket/document.pdf
              */
             documents?: string;
+            /**
+             * @description Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.
+             * @example false
+             */
+            is_landing_listing?: boolean;
         };
         PropertyMedia: {
             /** @description Unique media identifier */
@@ -2616,6 +2643,11 @@ export interface components {
             documents?: string;
             /** @description Operator ID (from building or direct assignment) */
             operator_id: string;
+            /**
+             * @description Whether the property is featured in the landing pages' listings section. Admin-only flag.
+             * @example false
+             */
+            is_landing_listing: boolean;
             /**
              * Format: date-time
              * @description Property creation date
@@ -3625,6 +3657,24 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Public properties retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PropertyController_findLandingListings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Featured listings retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;

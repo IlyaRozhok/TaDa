@@ -27,6 +27,7 @@ const PUBLIC_ENDPOINTS = new Set([
   "getPublicProperties",
   "getPublicPropertiesAll",
   "getPublicProperty",
+  "getLandingListings",
 ]);
 
 /**

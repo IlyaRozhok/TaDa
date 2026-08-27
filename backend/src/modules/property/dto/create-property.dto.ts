@@ -411,4 +411,14 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsString()
   documents?: string;
+
+  @ApiProperty({
+    description:
+      "Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.",
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  is_landing_listing?: boolean;
 }

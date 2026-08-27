@@ -117,6 +117,17 @@ export const propertiesApi = baseApi.injectEndpoints({
       providesTags: listTags,
     }),
 
+    /**
+     * `GET /properties/public/landing` — the listings the landings feature to
+     * signed-out visitors. A bare array, newest first, capped at six by the
+     * backend.
+     */
+    getLandingListings: builder.query<Property[], void>({
+      query: () => "/properties/public/landing",
+      transformResponse: (raw: WireProperty[]) => raw.map(normalizeProperty),
+      providesTags: [{ type: "Property", id: "LANDING_LIST" }],
+    }),
+
     /** One public property, `GET /properties/public/:id` — a bare object. */
     getPublicProperty: builder.query<Property, string>({
       query: (id) => `/properties/public/${id}`,
@@ -144,6 +155,7 @@ export const propertiesApi = baseApi.injectEndpoints({
         { type: "Property", id: "LIST" },
         { type: "Property", id: "PUBLIC_LIST" },
         { type: "Property", id: "MATCHED_LIST" },
+        { type: "Property", id: "LANDING_LIST" },
       ],
     }),
 
@@ -163,6 +175,7 @@ export const propertiesApi = baseApi.injectEndpoints({
         { type: "Property", id: "LIST" },
         { type: "Property", id: "PUBLIC_LIST" },
         { type: "Property", id: "MATCHED_LIST" },
+        { type: "Property", id: "LANDING_LIST" },
       ],
     }),
 
@@ -172,6 +185,7 @@ export const propertiesApi = baseApi.injectEndpoints({
         { type: "Property", id: "LIST" },
         { type: "Property", id: "PUBLIC_LIST" },
         { type: "Property", id: "MATCHED_LIST" },
+        { type: "Property", id: "LANDING_LIST" },
       ],
     }),
   }),
@@ -181,6 +195,7 @@ export const {
   useGetPublicPropertiesQuery,
   useGetPublicPropertiesAllQuery,
   useGetPublicPropertyQuery,
+  useGetLandingListingsQuery,
   useGetPropertiesQuery,
   useCreatePropertyMutation,
   useUpdatePropertyMutation,

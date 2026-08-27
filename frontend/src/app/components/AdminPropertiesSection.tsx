@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
   Home,
   Plus,
@@ -24,6 +24,8 @@ interface AdminPropertiesSectionProps {
   onDelete: (property: Property) => void;
   onAdd: () => void;
   onCopyId?: (id: string, type: "property" | "building") => void;
+  /** Flags/unflags the property for the landings' listings section. */
+  onToggleLanding: (property: Property, next: boolean) => void;
 }
 
 const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
@@ -38,7 +40,19 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
   onDelete,
   onAdd,
   onCopyId,
+  onToggleLanding,
 }) => {
+  // Client-side: the admin list is already fully loaded, so narrowing it to the
+  // flagged properties needs no round trip.
+  const [landingOnly, setLandingOnly] = useState(false);
+  const visibleProperties = useMemo(
+    () =>
+      landingOnly
+        ? properties.filter((property) => property.is_landing_listing)
+        : properties,
+    [properties, landingOnly],
+  );
+
   const SortButton = ({ field, label }: { field: string; label: string }) => {
     const isActive = sort.field === field;
     const isAsc = isActive && sort.direction === "asc";
@@ -87,13 +101,29 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
           </h3>
           <p className="text-black">Manage apartment listings</p>
         </div>
-        <button
-          onClick={onAdd}
-          data-testid="admin-add-property"
-          className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium flex items-center justify-center space-x-2"
-        >
-          <span>Add Property</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            onClick={() => setLandingOnly((current) => !current)}
+            aria-pressed={landingOnly}
+            data-testid="admin-landing-filter"
+            className={`px-4 py-2 cursor-pointer rounded-lg border transition-all duration-200 font-medium text-sm ${
+              landingOnly
+                ? "bg-gray-900 text-white border-gray-900"
+                : "bg-white text-black border-gray-300 hover:bg-gray-50"
+            }`}
+            title="Show only properties featured on the landing pages"
+          >
+            Landing Listing
+          </button>
+          <button
+            onClick={onAdd}
+            data-testid="admin-add-property"
+            className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium flex items-center justify-center space-x-2"
+          >
+            <span>Add Property</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -126,27 +156,32 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                   Image
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Landing
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {properties.length === 0 ? (
+              {visibleProperties.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={10} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Home className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
                         No properties found
                       </h3>
                       <p className="text-black">
-                        No properties have been registered yet
+                        {landingOnly
+                          ? "No properties are featured on the landing pages yet"
+                          : "No properties have been registered yet"}
                       </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                properties.map((property) => (
+                visibleProperties.map((property) => (
                   <tr
                     key={property.id}
                     data-testid="admin-property-row"
@@ -247,6 +282,25 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                           </div>
                         );
                       })()}
+                    </td>
+                    {/* The row opens the view modal on click, so the checkbox
+                        keeps its own click to itself. */}
+                    <td
+                      className="px-6 py-4"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!property.is_landing_listing}
+                        onChange={(e) =>
+                          onToggleLanding(property, e.target.checked)
+                        }
+                        data-testid="admin-landing-toggle"
+                        aria-label={`Feature "${
+                          property.title || property.id
+                        }" on the landing pages`}
+                        className="w-4 h-4 cursor-pointer accent-gray-900"
+                      />
                     </td>
                     <td
                       className="px-6 py-4"

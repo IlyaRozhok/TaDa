@@ -25,6 +25,7 @@ import { useDispatch } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { headerKeys } from "@/app/lib/translationsKeys/headerTranslationKeys";
+import { onboardingKeys } from "@/app/lib/translationsKeys/onboardingTranslationKeys";
 
 interface TenantUniversalHeaderProps {
   preferencesCount?: number;
@@ -68,6 +69,10 @@ export default function TenantUniversalHeader({
     pathname === "/app/profile" ||
     pathname.startsWith("/app/properties/") ||
     pathname.startsWith("/app/buildings/");
+  // The property pages are public, so this header also has to serve a visitor
+  // with no session: everything account-shaped goes away and a single CTA into
+  // the sign-in flow takes its place.
+  const isSignedOut = !user;
   const shouldShowPreferencesButton =
     user?.role === "tenant" || user?.role === "admin";
   const shouldShowFavouritesButton =
@@ -242,104 +247,119 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Mobile Menu - visible only on mobile */}
-          <div className="relative md:hidden" ref={mobileMenuRef}>
+          {/* Signed out: one CTA into the auth flow, no account menus */}
+          {isSignedOut && (
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 cursor-pointer flex justify-center items-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Menu"
+              onClick={() => router.push("/app/auth")}
+              data-testid="header-get-started"
+              className="bg-black text-white px-4 sm:px-6 py-2 rounded-full font-semibold text-sm hover:bg-gray-800 transition-colors cursor-pointer whitespace-nowrap"
             >
-              {isSameHeaderPage ? (
-                <Menu className="w-5 h-5" />
-              ) : (
-                <MoreHorizontal className="w-5 h-5" />
-              )}
+              {t(onboardingKeys.headerCtaGetStarted)}
             </button>
+          )}
 
-            {/* Mobile Menu Dropdown */}
-            {isMobileMenuOpen && (
-              <div
-                className="fixed left-4 right-4 z-50 rounded-xl backdrop-blur-[3px]"
-                style={{
-                  top: "61px", // header height + small gap
-                  background:
-                    "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
-                  boxShadow:
-                    "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2)",
-                }}
+          {/* Mobile Menu - visible only on mobile */}
+          {!isSignedOut && (
+            <div className="relative md:hidden" ref={mobileMenuRef}>
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 cursor-pointer flex justify-center items-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Menu"
               >
-                <div className="overflow-y-auto rounded-xl" style={{ maxHeight: "calc(100vh - 70px)" }}>
-                  <button
-                    onClick={() => handleMobileMenuClick("/app/profile")}
-                    className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
-                  >
-                    <User className="w-4 h-4 mr-3 flex-shrink-0" />
-                    {t(profileKeys.dropProfileSettings)}
-                  </button>
+                {isSameHeaderPage ? (
+                  <Menu className="w-5 h-5" />
+                ) : (
+                  <MoreHorizontal className="w-5 h-5" />
+                )}
+              </button>
 
-                  {shouldShowPreferencesButton && (
+              {/* Mobile Menu Dropdown */}
+              {isMobileMenuOpen && (
+                <div
+                  className="fixed left-4 right-4 z-50 rounded-xl backdrop-blur-[3px]"
+                  style={{
+                    top: "61px", // header height + small gap
+                    background:
+                      "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
+                    boxShadow:
+                      "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2)",
+                  }}
+                >
+                  <div className="overflow-y-auto rounded-xl" style={{ maxHeight: "calc(100vh - 70px)" }}>
                     <button
-                      onClick={() => handleMobileMenuClick("/app/preferences")}
+                      onClick={() => handleMobileMenuClick("/app/profile")}
                       className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                     >
-                      <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
-                      {t(profileKeys.dropChangePreferences)}
+                      <User className="w-4 h-4 mr-3 flex-shrink-0" />
+                      {t(profileKeys.dropProfileSettings)}
                     </button>
-                  )}
 
-                  <button
-                    onClick={() => handleMobileMenuClick("/app/tenant-cv")}
-                    className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
-                  >
-                    <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
-                    {t(tenantCvKeys.tenantCvButton)}
-                  </button>
+                    {shouldShowPreferencesButton && (
+                      <button
+                        onClick={() => handleMobileMenuClick("/app/preferences")}
+                        className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
+                      >
+                        <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
+                        {t(profileKeys.dropChangePreferences)}
+                      </button>
+                    )}
 
-                  {user?.role === "admin" && isSameHeaderPage && (
                     <button
-                      onClick={() => handleMobileMenuClick("/app/admin/panel")}
+                      onClick={() => handleMobileMenuClick("/app/tenant-cv")}
                       className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                     >
-                      <Shield className="w-4 h-4 mr-3 flex-shrink-0" />
-                      Admin Panel
+                      <FileText className="w-4 h-4 mr-3 flex-shrink-0" />
+                      {t(tenantCvKeys.tenantCvButton)}
                     </button>
-                  )}
 
-                  {shouldShowFavouritesButton && (
+                    {user?.role === "admin" && isSameHeaderPage && (
+                      <button
+                        onClick={() => handleMobileMenuClick("/app/admin/panel")}
+                        className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
+                      >
+                        <Shield className="w-4 h-4 mr-3 flex-shrink-0" />
+                        Admin Panel
+                      </button>
+                    )}
+
+                    {shouldShowFavouritesButton && (
+                      <button
+                        onClick={() => handleMobileMenuClick("/app/shortlist")}
+                        className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
+                      >
+                        <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
+                        {t(favoritesKeys.title)}
+                      </button>
+                    )}
+
+                    <div className="mx-4 border-t border-white/20 my-1" />
+
                     <button
-                      onClick={() => handleMobileMenuClick("/app/shortlist")}
-                      className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        dispatch(logout());
+                        router.push("/");
+                      }}
+                      className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-red-400 hover:bg-white/12"
                     >
-                      <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
-                      {t(favoritesKeys.title)}
+                      <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
+                      Sign Out
                     </button>
-                  )}
-
-                  <div className="mx-4 border-t border-white/20 my-1" />
-
-                  <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      dispatch(logout());
-                      router.push("/");
-                    }}
-                    className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-red-400 hover:bg-white/12"
-                  >
-                    <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
-                    Sign Out
-                  </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* User Dropdown - visible only on desktop; hide Preferences & Tenant CV when shown in header */}
-          <div className="hidden md:block">
-            <UserDropdown
-              hidePreferences={shouldShowPreferencesButton}
-              hideTenantCv={!showTenantCvLink}
-            />
-          </div>
+          {!isSignedOut && (
+            <div className="hidden md:block">
+              <UserDropdown
+                hidePreferences={shouldShowPreferencesButton}
+                hideTenantCv={!showTenantCvLink}
+              />
+            </div>
+          )}
         </div>
       </div>
     </nav>

@@ -928,6 +928,21 @@
         ]
       }
     },
+    "/api/properties/public/landing": {
+      "get": {
+        "operationId": "PropertyController_findLandingListings",
+        "summary": "Get the landing pages' featured listings (no auth required)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Featured listings retrieved successfully"
+          }
+        },
+        "tags": [
+          "properties"
+        ]
+      }
+    },
     "/api/properties/public/{id}": {
       "get": {
         "operationId": "PropertyController_findOnePublic",
@@ -3803,6 +3818,11 @@
             "type": "string",
             "description": "Property documents URL",
             "example": "https://s3.amazonaws.com/bucket/document.pdf"
+          },
+          "is_landing_listing": {
+            "type": "boolean",
+            "description": "Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.",
+            "example": false
           }
         },
         "required": [
@@ -4100,6 +4120,11 @@
             "type": "string",
             "description": "Property documents URL",
             "example": "https://s3.amazonaws.com/bucket/document.pdf"
+          },
+          "is_landing_listing": {
+            "type": "boolean",
+            "description": "Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.",
+            "example": false
           }
         }
       },
@@ -4449,6 +4474,11 @@
             "type": "string",
             "description": "Operator ID (from building or direct assignment)"
           },
+          "is_landing_listing": {
+            "type": "boolean",
+            "description": "Whether the property is featured in the landing pages' listings section. Admin-only flag.",
+            "example": false
+          },
           "created_at": {
             "format": "date-time",
             "type": "string",
@@ -4464,6 +4494,7 @@
           "id",
           "title",
           "operator_id",
+          "is_landing_listing",
           "created_at",
           "updated_at"
         ]

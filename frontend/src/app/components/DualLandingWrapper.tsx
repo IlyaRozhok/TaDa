@@ -13,6 +13,7 @@ import ResponsiveCardsDisplay from "./ResponsiveCardsDisplay";
 // Import existing components for operators landing
 import HeroWrapper from "./HeroWrapper";
 import CardsSection from "./CardsSection";
+import LandingListingsSection from "./LandingListingsSection";
 import TenantsWrapper from "./TenantsWrapper";
 import SpotlightSection from "./SpotlightSection";
 import SocialMediaSection from "./SocialMediaSection";
@@ -692,6 +693,7 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
     <>
       <HeroWrapper />
       <CardsSection />
+      <LandingListingsSection landingType="operators" />
       <PartnersSection landingType="operators" />
       <TenantsWrapper />
       <SpotlightSection onBookClick={() => setIsRequestDemoOpen(true)} />
@@ -705,6 +707,7 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
     <>
       <TenantsHeroSection onContactClick={() => setIsRequestDemoOpen(true)} />
       <TenantsCardsSection onContactClick={() => setIsRequestDemoOpen(true)} />
+      <LandingListingsSection landingType="tenants" />
       <GenerationRentSection
         onContactClick={() => setIsRequestDemoOpen(true)}
       />

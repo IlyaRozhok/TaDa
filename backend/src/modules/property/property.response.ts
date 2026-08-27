@@ -18,6 +18,8 @@ export type PublicPropertyResponse = {
   furnishing: Property["furnishing"] | null;
   available_from: Date | null;
   created_at: Date;
+  /** Featured in the landing pages' listings section. */
+  is_landing_listing: boolean;
   building?: {
     id: string;
     name: string;
@@ -81,6 +83,7 @@ export const toPublicProperty = (
     furnishing: property.furnishing || null,
     available_from: property.available_from || null,
     created_at: property.created_at,
+    is_landing_listing: property.is_landing_listing ?? false,
     building: property.building
       ? {
           id: property.building.id,
