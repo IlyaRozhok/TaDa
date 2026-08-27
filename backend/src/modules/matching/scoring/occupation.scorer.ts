@@ -1,10 +1,19 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
- * Occupation compatibility matching (ENHANCED)
- * Matches user's occupation with property tenant types
+ * Occupation compatibility matching.
+ *
+ * Signal order (B4): the property's own `occupation` targeting column is
+ * authoritative — operators fill it with the SAME value set the preference
+ * uses, so it compares exactly. Until B4 the column was never read: the
+ * scorer ran a hard-coded lifestyle heuristic over `tenant_types` instead,
+ * so targeting a building at an occupation had zero effect on scores. The
+ * heuristic remains only as the fallback for rows with tenant types but no
+ * occupation targeting; a row with neither gets the unknown-data policy
+ * (it used to score a free 100%).
  */
 export function matchOccupation(
   property: Property,
@@ -29,17 +38,38 @@ export function matchOccupation(
     };
   }
 
-  // Property accepts all types
-  if (!propertyTenantTypes.length) {
+  // Direct targeting beats every heuristic.
+  const propertyOccupations = (property.occupation || []).map(String);
+  if (propertyOccupations.length > 0) {
+    if (propertyOccupations.includes(occupation)) {
+      return {
+        category: "occupation",
+        match: true,
+        score: maxScore,
+        maxScore,
+        reason: "Property targets your occupation",
+        details: `${occupation} is among the property's target occupations`,
+        hasPreference: true,
+      };
+    }
     return {
       category: "occupation",
-      match: true,
-      score: maxScore,
+      match: false,
+      score: 0,
       maxScore,
-      reason: "Property accepts all occupations",
-      details: "No tenant type restrictions",
+      reason: "Property targets other occupations",
+      details: `Targets: ${propertyOccupations.join(", ")}`,
       hasPreference: true,
     };
+  }
+
+  // No targeting data of any kind — unknown-data policy.
+  if (!propertyTenantTypes.length) {
+    return unknownPropertyData(
+      "occupation",
+      maxScore,
+      "No tenant targeting on the property",
+    );
   }
 
   // Enhanced occupation mapping with more nuanced scoring

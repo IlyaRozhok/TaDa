@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
  * Furnishing matching
@@ -26,10 +27,19 @@ export function matchFurnishing(
     };
   }
 
+  // Unknown-data policy: a listing without a furnishing level is not a
+  // hard mismatch.
+  if (!propertyFurnishing) {
+    return unknownPropertyData(
+      "furnishing",
+      maxScore,
+      "Furnishing not specified",
+    );
+  }
+
   // Check match
   const normalizedPref = prefFurnishing.map((f) => f.toLowerCase());
-  const matches =
-    propertyFurnishing && normalizedPref.includes(propertyFurnishing);
+  const matches = normalizedPref.includes(propertyFurnishing);
 
   if (matches) {
     return {
@@ -43,8 +53,11 @@ export function matchFurnishing(
     };
   }
 
-  // Partial match: part-furnished can be acceptable for either preference
+  // Partial match: part-furnished can be acceptable for either preference.
+  // "part_furnished" is the canonical value since the B3 vocabulary; the
+  // legacy spellings stay for any rows written before the normalization.
   if (
+    propertyFurnishing === "part_furnished" ||
     propertyFurnishing === "partially_furnished" ||
     propertyFurnishing === "part-furnished"
   ) {

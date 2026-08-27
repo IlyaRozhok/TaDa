@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
  * Property type matching
@@ -26,9 +27,18 @@ export function matchPropertyType(
     };
   }
 
+  // Unknown-data policy: a listing without a type is not a hard mismatch.
+  if (!propertyType) {
+    return unknownPropertyData(
+      "propertyType",
+      maxScore,
+      "Property type not specified",
+    );
+  }
+
   // Check if property type matches any preference
   const normalizedPrefTypes = prefTypes.map((t) => t.toLowerCase());
-  const matches = propertyType && normalizedPrefTypes.includes(propertyType);
+  const matches = normalizedPrefTypes.includes(propertyType);
 
   if (matches) {
     return {

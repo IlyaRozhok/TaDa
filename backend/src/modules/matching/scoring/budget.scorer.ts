@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
  * Budget matching: min_price/max_price vs property.price
@@ -25,6 +26,13 @@ export function matchBudget(
       details: `Property price: £${price}/month`,
       hasPreference: false,
     };
+  }
+
+  // No price on the listing. This used to score as £0 — a FULL budget match
+  // whenever only max_price was set, so an unpriced listing beat one 5% over
+  // budget. Unknown-data policy applies instead.
+  if (price <= 0) {
+    return unknownPropertyData("budget", maxScore, "Price not specified");
   }
 
   // Check if within range
