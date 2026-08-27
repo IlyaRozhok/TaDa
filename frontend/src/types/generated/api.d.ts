@@ -896,6 +896,40 @@ export interface paths {
         patch: operations["BookingRequestController_updateStatus"];
         trace?: never;
     };
+    "/api/booking-requests/{id}/viewing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Propose a viewing slot (admin). Re-proposing clears the tenant's earlier confirmation. */
+        patch: operations["BookingRequestController_proposeViewing"];
+        trace?: never;
+    };
+    "/api/booking-requests/{id}/viewing/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm the proposed viewing slot (tenant, own booking) */
+        post: operations["BookingRequestController_confirmViewing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/demo-requests": {
         parameters: {
             query?: never;
@@ -2972,6 +3006,13 @@ export interface components {
              */
             status: "new" | "contacting" | "kyc_referencing" | "approved_viewing" | "viewing" | "contract" | "deposit" | "full_payment" | "move_in" | "rented" | "cancel_booking";
         };
+        ProposeViewingDto: {
+            /**
+             * @description Proposed viewing slot (ISO 8601, must be in the future)
+             * @example 2026-09-05T14:30:00.000Z
+             */
+            proposed_viewing_at: string;
+        };
         CreateDemoRequestDto: {
             /** @example Jane */
             firstName: string;
@@ -4678,6 +4719,64 @@ export interface operations {
         responses: {
             /** @description Booking status updated */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BookingRequestController_proposeViewing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposeViewingDto"];
+            };
+        };
+        responses: {
+            /** @description Viewing proposed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking not at a viewing stage, or the time is in the past */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BookingRequestController_confirmViewing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Viewing confirmed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No viewing has been proposed yet */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

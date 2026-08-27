@@ -2192,6 +2192,80 @@
         ]
       }
     },
+    "/api/booking-requests/{id}/viewing": {
+      "patch": {
+        "operationId": "BookingRequestController_proposeViewing",
+        "summary": "Propose a viewing slot (admin). Re-proposing clears the tenant's earlier confirmation.",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeViewingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Viewing proposed"
+          },
+          "400": {
+            "description": "Booking not at a viewing stage, or the time is in the past"
+          }
+        },
+        "tags": [
+          "booking-requests"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/booking-requests/{id}/viewing/confirm": {
+      "post": {
+        "operationId": "BookingRequestController_confirmViewing",
+        "summary": "Confirm the proposed viewing slot (tenant, own booking)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Viewing confirmed"
+          },
+          "400": {
+            "description": "No viewing has been proposed yet"
+          }
+        },
+        "tags": [
+          "booking-requests"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/demo-requests": {
       "post": {
         "operationId": "NotificationsController_requestDemo",
@@ -5160,6 +5234,19 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "ProposeViewingDto": {
+        "type": "object",
+        "properties": {
+          "proposed_viewing_at": {
+            "type": "string",
+            "description": "Proposed viewing slot (ISO 8601, must be in the future)",
+            "example": "2026-09-05T14:30:00.000Z"
+          }
+        },
+        "required": [
+          "proposed_viewing_at"
         ]
       },
       "CreateDemoRequestDto": {
