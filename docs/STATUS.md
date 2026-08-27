@@ -29,15 +29,21 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Review roadmap (agreed 2026-08-25, work top to bottom)
 
-- **B — the matching engine tells the truth**: property lifecycle status
-  (`draft/listed/under_offer/let/archived`) filtered in every read path and
-  driven from the booking pipeline; location wired in (postcode + lat/lng,
-  geocode via postcodes.io, enable the already-written location scorer,
-  search by address); one governed vocabulary for categorical fields
-  (`@IsIn` on DTOs, normalizing migration, single unknown-data policy —
-  blank listings must stop outranking honest ones; wire or drop
-  `family_status`/`occupation` targeting; fix the constant in the smoking
-  scorer).
+- **B — the matching engine tells the truth**:
+  - ~~property lifecycle status filtered in every read path and driven from
+    the booking pipeline~~ — **done (B1, current PR)**:
+    `draft/listed/under_offer/let/archived`, public catalogue/landing/
+    matching serve `listed` only, the detail endpoint still resolves
+    `under_offer`/`let` (shared links badge instead of 404), the booking
+    pipeline drives `listed → under_offer → let` and reverts on cancel.
+    Frontend follow-ups: badge `under_offer`/`let` on the detail page,
+    status control in the admin property form (API accepts `status` already).
+  - location wired in (postcode + lat/lng, geocode via postcodes.io, enable
+    the already-written location scorer, search by address);
+  - one governed vocabulary for categorical fields (`@IsIn` on DTOs,
+    normalizing migration, single unknown-data policy — blank listings must
+    stop outranking honest ones; wire or drop `family_status`/`occupation`
+    targeting; fix the constant in the smoking scorer).
 - **C — the funnel stops being silent**: transactional emails to tenant and
   operator on booking events (outbox already built — new templates plus
   recipients); `proposed_viewing_at` + confirmation on the viewing step;

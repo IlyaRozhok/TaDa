@@ -2566,7 +2566,7 @@
             "description": "User ID who owns these preferences"
           },
           "preferred_address": {
-            "type": "string",
+            "type": "object",
             "description": "Preferred address/area (free text)",
             "example": "Central London"
           },
@@ -2605,24 +2605,22 @@
             }
           },
           "move_in_date": {
-            "format": "date-time",
-            "type": "string",
+            "type": "object",
             "description": "Preferred move-in date",
             "example": "2024-03-01"
           },
           "move_out_date": {
-            "format": "date-time",
-            "type": "string",
+            "type": "object",
             "description": "Preferred move-out date",
             "example": "2024-09-01"
           },
           "min_price": {
-            "type": "number",
+            "type": "object",
             "description": "Minimum rent price per month (matches Property.price)",
             "example": 1500
           },
           "max_price": {
-            "type": "number",
+            "type": "object",
             "description": "Maximum rent price per month (matches Property.price)",
             "example": 3000
           },
@@ -2678,22 +2676,22 @@
             }
           },
           "balcony": {
-            "type": "boolean",
+            "type": "object",
             "description": "Whether balcony is preferred (matches Property.balcony)",
             "example": true
           },
           "terrace": {
-            "type": "boolean",
+            "type": "object",
             "description": "Whether terrace is preferred (matches Property.terrace)",
             "example": true
           },
           "min_square_meters": {
-            "type": "number",
+            "type": "object",
             "description": "Minimum square meters (matches Property.square_meters)",
             "example": 15
           },
           "max_square_meters": {
-            "type": "number",
+            "type": "object",
             "description": "Maximum square meters (matches Property.square_meters)",
             "example": 100
           },
@@ -2709,12 +2707,12 @@
             }
           },
           "let_duration": {
-            "type": "string",
+            "type": "object",
             "description": "Preferred let duration (matches Property.let_duration)",
             "example": "long_term"
           },
           "bills": {
-            "type": "string",
+            "type": "object",
             "description": "Bills preference (matches Property.bills)",
             "example": "included"
           },
@@ -2730,7 +2728,7 @@
             }
           },
           "pet_policy": {
-            "type": "boolean",
+            "type": "object",
             "description": "Whether tenant needs pet-friendly property (matches Property.pet_policy)",
             "example": true
           },
@@ -2745,7 +2743,7 @@
             ]
           },
           "number_of_pets": {
-            "type": "number",
+            "type": "object",
             "description": "Number of pets",
             "example": 1
           },
@@ -2845,7 +2843,7 @@
             ]
           },
           "additional_info": {
-            "type": "string",
+            "type": "object",
             "description": "Additional information about the user",
             "example": "I'm a quiet professional who enjoys cooking and reading."
           },
@@ -3823,6 +3821,18 @@
             "type": "boolean",
             "description": "Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.",
             "example": false
+          },
+          "status": {
+            "type": "string",
+            "description": "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
+            "enum": [
+              "draft",
+              "listed",
+              "under_offer",
+              "let",
+              "archived"
+            ],
+            "example": "listed"
           }
         },
         "required": [
@@ -4125,6 +4135,18 @@
             "type": "boolean",
             "description": "Feature the property in the landing pages' listings section. Admin-only: the service drops this field for any other role.",
             "example": false
+          },
+          "status": {
+            "type": "string",
+            "description": "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
+            "enum": [
+              "draft",
+              "listed",
+              "under_offer",
+              "let",
+              "archived"
+            ],
+            "example": "listed"
           }
         }
       },
@@ -4218,13 +4240,25 @@
             "type": "string",
             "description": "Unique property identifier"
           },
+          "status": {
+            "type": "string",
+            "description": "Listing lifecycle status",
+            "enum": [
+              "draft",
+              "listed",
+              "under_offer",
+              "let",
+              "archived"
+            ],
+            "example": "listed"
+          },
           "apartment_number": {
             "type": "string",
             "description": "Apartment number",
             "example": "12A"
           },
           "building_id": {
-            "type": "string",
+            "type": "object",
             "description": "Building ID"
           },
           "title": {
@@ -4492,6 +4526,7 @@
         },
         "required": [
           "id",
+          "status",
           "title",
           "operator_id",
           "is_landing_listing",

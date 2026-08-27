@@ -6,12 +6,12 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { Repository } from "typeorm";
+import { EntityManager, In, Repository } from "typeorm";
 import {
   BookingRequest,
   BookingRequestStatus,
 } from "../../entities/booking-request.entity";
-import { Property } from "../../entities/property.entity";
+import { Property, PropertyStatus } from "../../entities/property.entity";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import {
   BookingRequestedEvent,
@@ -90,6 +90,10 @@ export class BookingRequestService {
       }
 
       if (existing.status === BookingRequestStatus.CancelBooking) {
+        // Re-opening a cancelled booking is a NEW enquiry — it needs the
+        // property to still be on the market. Updating contact details on an
+        // in-flight deal (the branch below) does not.
+        this.assertPropertyBookable(property);
         existing.status = BookingRequestStatus.New;
       }
 
@@ -104,6 +108,8 @@ export class BookingRequestService {
 
       return resubmitted;
     }
+
+    this.assertPropertyBookable(property);
 
     const request = this.bookingRequestRepository.create({
       property_id: dto.property_id,
@@ -234,23 +240,113 @@ export class BookingRequestService {
 
     this.assertStatusTransition(request.status, status);
 
-    // Compare-and-swap: the UPDATE only lands if the status is still the one
-    // this request validated against. A plain save() wrote unconditionally,
-    // so two admins racing could overwrite a terminal `rented` with a stale
-    // transition that had passed validation against an old snapshot.
-    const result = await this.bookingRequestRepository.update(
-      { id, status: request.status },
-      { status }
-    );
-
-    if (!result.affected) {
-      throw new ConflictException(
-        "Booking status was changed by someone else — reload and retry"
+    // One transaction: the booking transition and the property-lifecycle
+    // side-effect land or roll back together.
+    await this.bookingRequestRepository.manager.transaction(async (em) => {
+      // Compare-and-swap: the UPDATE only lands if the status is still the
+      // one this request validated against. A plain save() wrote
+      // unconditionally, so two admins racing could overwrite a terminal
+      // `rented` with a stale transition that had passed validation against
+      // an old snapshot.
+      const result = await em.getRepository(BookingRequest).update(
+        { id, status: request.status },
+        { status }
       );
-    }
+
+      if (!result.affected) {
+        throw new ConflictException(
+          "Booking status was changed by someone else — reload and retry"
+        );
+      }
+
+      await this.applyPropertyLifecycle(em, request, status);
+    });
 
     request.status = status;
     return request;
+  }
+
+  /**
+   * Booking stages from `contract` onward: money or signatures are in play,
+   * so the market treats the property as taken (`under_offer`).
+   */
+  private static readonly UNDER_OFFER_STAGES: BookingRequestStatus[] = [
+    BookingRequestStatus.Contract,
+    BookingRequestStatus.Deposit,
+    BookingRequestStatus.FullPayment,
+    BookingRequestStatus.MoveIn,
+  ];
+
+  /**
+   * The booking pipeline drives the property's listing lifecycle:
+   *
+   * - `rented` closes the deal → the property is `let`. Unconditional: a
+   *   closed tenancy trumps whatever the listing said.
+   * - reaching a contract-or-later stage lifts a `listed` property to
+   *   `under_offer` (only from `listed` — a hand-set draft/archived is an
+   *   operator decision this hook must not override);
+   * - LEAVING the contract stages (cancel, or the one-step-back undo) drops
+   *   `under_offer` back to `listed`, but only when no other booking on the
+   *   property is still at a contract-or-later stage. This booking's own row
+   *   is already updated inside this transaction, so a plain count sees the
+   *   post-transition world.
+   *
+   * Runs inside the caller's transaction; before this hook existed nothing
+   * ever unlisted a rented flat — it kept ranking in Best Match forever.
+   */
+  private async applyPropertyLifecycle(
+    em: EntityManager,
+    request: BookingRequest,
+    newStatus: BookingRequestStatus
+  ): Promise<void> {
+    const properties = em.getRepository(Property);
+    const stages = BookingRequestService.UNDER_OFFER_STAGES;
+
+    if (newStatus === BookingRequestStatus.Rented) {
+      await properties.update(
+        { id: request.property_id },
+        { status: PropertyStatus.Let }
+      );
+      return;
+    }
+
+    if (stages.includes(newStatus)) {
+      await properties.update(
+        { id: request.property_id, status: PropertyStatus.Listed },
+        { status: PropertyStatus.UnderOffer }
+      );
+      return;
+    }
+
+    if (stages.includes(request.status)) {
+      const stillUnderOffer = await em.getRepository(BookingRequest).count({
+        where: { property_id: request.property_id, status: In(stages) },
+      });
+      if (stillUnderOffer === 0) {
+        await properties.update(
+          { id: request.property_id, status: PropertyStatus.UnderOffer },
+          { status: PropertyStatus.Listed }
+        );
+      }
+    }
+  }
+
+  /**
+   * A new enquiry needs the property on the market. `under_offer` still
+   * accepts enquiries on purpose — deals fall through, and operators want
+   * backup applicants; `let`, `draft` and `archived` do not.
+   */
+  private assertPropertyBookable(property: Property): void {
+    const status = property.status ?? PropertyStatus.Listed;
+    if (
+      status === PropertyStatus.Listed ||
+      status === PropertyStatus.UnderOffer
+    ) {
+      return;
+    }
+    throw new BadRequestException(
+      "This property is not available for booking"
+    );
   }
 
   /**

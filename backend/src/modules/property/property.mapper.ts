@@ -136,6 +136,10 @@ export const assignPropertyOptionals = (
   if (dto.is_landing_listing !== undefined) {
     target.is_landing_listing = dto.is_landing_listing;
   }
+
+  if (dto.status !== undefined) {
+    target.status = dto.status;
+  }
 };
 
 export const normalizeFindParams = (dto?: FindPropertiesDto) => {

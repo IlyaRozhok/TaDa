@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsArray,
   IsBoolean,
+  IsEnum,
   ValidateNested,
   IsNotEmpty,
 } from "class-validator";
@@ -15,6 +16,7 @@ import {
   BuildingFamilyStatus,
   BuildingOccupation,
 } from "../../../entities/building.entity";
+import { PropertyStatus } from "@/entities/property.entity";
 
 class MetroStationDto {
   @IsString()
@@ -421,4 +423,15 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsBoolean()
   is_landing_listing?: boolean;
+
+  @ApiProperty({
+    description:
+      "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
+    enum: PropertyStatus,
+    example: PropertyStatus.Listed,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(PropertyStatus)
+  status?: PropertyStatus;
 }

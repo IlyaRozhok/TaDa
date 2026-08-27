@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "@/entities";
 import { Preferences } from "@/entities";
+import { PropertyStatus } from "@/entities/property.entity";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { S3Service } from "@/common/services/s3.service";
 import { stripOperatorPii } from "@/common/mappers/public-operator.mapper";
@@ -342,7 +343,12 @@ export class MatchingService {
       const qb = this.propertyRepository
         .createQueryBuilder("property")
         .leftJoinAndSelect("property.building", "building")
-        .leftJoinAndSelect("property.operator", "operator");
+        .leftJoinAndSelect("property.operator", "operator")
+        // Matching feeds serve live inventory only — same rule as the public
+        // catalogue.
+        .where("property.status = :listedStatus", {
+          listedStatus: PropertyStatus.Listed,
+        });
 
       if (search) {
         qb.andWhere(searchPredicate, searchParameters);
@@ -410,6 +416,11 @@ export class MatchingService {
       const rankingQb = this.propertyRepository
         .createQueryBuilder("property")
         .select(SCORING_COLUMNS.map((column) => `property.${column}`))
+        // Only live inventory is ranked: an under-offer or let flat must not
+        // keep collecting "Best Match" impressions.
+        .where("property.status = :listedStatus", {
+          listedStatus: PropertyStatus.Listed,
+        })
         // The sort below is stable, so this decides the order of equal scores
         // — and, at the ceiling, which rows are considered at all.
         .orderBy("property.created_at", "DESC")
