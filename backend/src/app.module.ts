@@ -18,6 +18,7 @@ import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { BuildingModule } from "./modules/building/building.module";
 import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
+import { CallRequestModule } from "./modules/call-request/call-request.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { S3Module } from "./common/services/s3.module";
 import { GeocodingModule } from "./common/services/geocoding.module";
@@ -76,6 +77,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     BuildingModule,
     TenantCvModule,
     BookingRequestModule,
+    CallRequestModule,
     NotificationsModule,
   ],
   controllers: [AppController],

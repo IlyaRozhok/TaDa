@@ -115,6 +115,18 @@ export const tenantKeys = {
     subtitle: "landing.tenant.web.listings.subtitle",
     seeAll: "landing.tenant.web.listings.seeAll",
   },
+  // "Book a call" reason options offered on the tenant landing. Not synced
+  // from Localazy yet — the modal renders an English fallback until the keys
+  // land. The slug sent to the backend is the object key, not the label.
+  bookACall: {
+    reason: {
+      help_find_home: "landing.tenant.web.bookacall.reason.help_find_home",
+      finish_rental_cv: "landing.tenant.web.bookacall.reason.finish_rental_cv",
+      question_about_property:
+        "landing.tenant.web.bookacall.reason.question_about_property",
+      something_else: "landing.tenant.web.bookacall.reason.something_else",
+    },
+  },
   partners: {
     title: "landing.tenant.web.header.block6",
     stripe: "landing.tenant.web.partner1",

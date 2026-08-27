@@ -1,6 +1,6 @@
 import {
   BookingRequestedEvent,
-  DemoRequestedEvent,
+  CallRequestedEvent,
   TenantCvCompletedEvent,
   UserRegisteredEvent,
 } from "./events/notification.events";
@@ -11,7 +11,7 @@ export enum NotificationType {
   UserRegistered = "user_registered",
   TenantCvCompleted = "cv_completed",
   BookingRequested = "booking_requested",
-  DemoRequested = "demo_requested",
+  CallRequested = "call_requested",
 }
 
 const line = (label: string, value: unknown): string =>
@@ -49,14 +49,20 @@ export function buildMessage(
       ]);
     }
 
-    case NotificationType.DemoRequested: {
-      const p = payload as unknown as DemoRequestedEvent;
-      return render(type, `Demo request — ${p.email}`, [
-        "Someone asked for a demo through the landing form.",
+    case NotificationType.CallRequested: {
+      const p = payload as unknown as CallRequestedEvent;
+      return render(type, `Call request (${p.source}) — ${p.name}`, [
+        "Someone asked to book a call through the landing form.",
         "",
-        line("Name", `${p.firstName} ${p.lastName}`.trim()),
+        line("Reason", p.reasonLabel),
+        line("Name", p.name),
         line("Email", p.email),
-        line("Phone", p.phone),
+        line("Phone", `${p.phone?.countryCode ?? ""} ${p.phone?.number ?? ""}`.trim()),
+        line("Preferred time", p.preferredTimes?.length ? p.preferredTimes.join(", ") : null),
+        "",
+        "Notes:",
+        p.notes?.trim() || "—",
+        "",
         line("Source", p.source),
         line("Requested at", p.requestedAt),
       ]);

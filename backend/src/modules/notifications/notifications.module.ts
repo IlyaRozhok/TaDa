@@ -5,7 +5,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Notification } from "@/entities/notification.entity";
 import { EmailModule } from "@/common/services/email.module";
 import { notificationChannelProviders } from "./channels";
-import { NotificationsController } from "./notifications.controller";
 import { NotificationsRetryWorker } from "./notifications.retry.worker";
 import { NotificationsService } from "./notifications.service";
 
@@ -22,7 +21,6 @@ import { NotificationsService } from "./notifications.service";
     EmailModule,
     TypeOrmModule.forFeature([Notification]),
   ],
-  controllers: [NotificationsController],
   providers: [
     ...notificationChannelProviders,
     NotificationsService,

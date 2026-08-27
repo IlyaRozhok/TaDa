@@ -134,6 +134,44 @@ decisions) is recorded HERE, briefly, with a date.
   property detail page renders the English fallback via `translateWithFallback`
   for `listing.disclaimer.operator.content`. Add the key and its six
   translations in Localazy and re-sync; no code change needed once they land.
+- **"Book a call" copy is not in Localazy yet** (added 2026-08-27). The modal
+  and the header pill render English fallbacks via `translateWithFallback`.
+  Add these keys in Localazy and re-sync; no code change needed once they land.
+  Chrome and shared options (`frontend/src/app/lib/translationsKeys/generalKeys.ts`,
+  under `bookACall`):
+  `landing.common.web.bookacall.` +
+  `header.btn` · `title` · `subtitle` ·
+  `reason.title` · `reason.placeholder` ·
+  `name.title` · `name.placeholder` ·
+  `email.title` · `email.placeholder` ·
+  `phone.title` · `phone.placeholder` ·
+  `time.title` · `time.placeholder` ·
+  `time.morning` · `time.afternoon` · `time.evening` · `time.asap` ·
+  `notes.title` · `notes.placeholder` ·
+  `submit.btn` · `submit.pending` · `success` · `error` ·
+  `validation.required` · `validation.email` · `validation.phone`.
+  Tenant reason options (`tenantTranslationKeys.ts`, under `bookACall.reason`):
+  `landing.tenant.web.bookacall.reason.` +
+  `help_find_home` · `finish_rental_cv` · `question_about_property` ·
+  `something_else`.
+  Operator reason options (`operatorTranslationKeys.ts`, under `bookACall.reason`):
+  `landing.operators.web.bookacall.reason.` +
+  `units_to_fill` · `see_demo` · `pricing_and_terms` · `landlord_to_let` ·
+  `agent_partner` · `connect_feed` · `looking_for_home` · `something_else`.
+  The **slug** (the object key) is what the backend stores — the label is
+  display-only and must never be sent.
+- **`frontend/src/types/generated/api.d.ts` is stale after the demo-request
+  removal** (added 2026-08-27). It still carries `/api/demo-requests` and
+  `CreateDemoRequestDto`, and does not yet carry `/api/call-requests`. Nothing
+  imports either — `frontend/src/app/lib/callRequest.ts` hand-writes its
+  request type with a comment saying so. Re-run `npm run gen:api` (it needs the
+  backend's `openapi:dump`, which hangs in some sandboxes) and swap the local
+  type for `components["schemas"]["CreateCallRequestDto"]`.
+- **Call requests have no admin pagination** (added 2026-08-27).
+  `GET /call-requests` returns the whole table, mirroring `GET /booking-requests`,
+  which does the same. Both want the paginated shape the properties listing
+  already uses; doing it for one and not the other would split the convention,
+  so it is one follow-up covering both.
 - **Migration chain does not replay from an empty database** (noted
   2026-08-18) and carries a duplicate timestamp `1767000000000` (two files).
   Repairing either means renumbering applied migrations plus a host-side
