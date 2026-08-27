@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
-import { ChevronDown, ChevronLeft } from "lucide-react";
 import {
   selectUser,
   selectIsAuthenticated,

@@ -26,7 +26,6 @@ export default function PreferencesPageRoute() {
     <div className="min-h-screen bg-white">
       <TenantUniversalHeader
         preferencesCount={0}
-        showBackButton={false}
         showPreferencesButton={false}
         showSaveButton={false}
         showTenantCvLink={true}
