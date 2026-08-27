@@ -49,7 +49,10 @@ import {
 } from "@/shared/lib/countries";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
-import { useTranslation } from "../../../hooks/useTranslation";
+import {
+  useTranslation,
+  translateWithFallback,
+} from "@/app/hooks/useTranslation";
 import { useGoBack } from "../../../hooks/useGoBack";
 import { getRedirectPath } from "@/app/utils/simpleRedirect";
 import {
@@ -69,6 +72,14 @@ import {
 import { getPropertyAmenityLabelKey } from "@/constants/property-amenities";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
+
+/**
+ * English copy for `listing.disclaimer.operator.content` until Localazy carries
+ * the translations. The page is public, so this has to read correctly for a
+ * signed-out visitor too.
+ */
+const DISCLAIMER_FALLBACK =
+  "Listing details and images are provided by the operator and have not been independently verified by Ta-Da. Images may not show the exact apartment. Match scores are estimates based on your stated preferences, not a guarantee of suitability, availability or price. Please confirm all details with the operator before entering into a tenancy.";
 
 type PropertyWithMedia = Property & {
   photos?: string[];
@@ -1612,6 +1623,17 @@ export default function PropertyPublicPage() {
       </div>
 
       {/* Accommodation Terms */}
+
+      {/* Legal disclaimer — operator-supplied data, shown to every visitor */}
+      <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 py-4 sm:py-6">
+        <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+          {translateWithFallback(
+            t,
+            listingPropertyKeys.disclaimer.operatorContent,
+            DISCLAIMER_FALLBACK,
+          )}
+        </p>
+      </div>
 
       {/* See more apartments from this building */}
       {property.building && (
