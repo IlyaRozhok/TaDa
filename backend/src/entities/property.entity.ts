@@ -160,6 +160,33 @@ export class Property {
   @Column({ nullable: true })
   address?: string;
 
+  // GEOCODING — derived from the postcode via postcodes.io on create/update
+  // (see GeocodingService). All nullable: a listing without a resolvable
+  // postcode still saves; it just cannot be location-matched or mapped.
+  @ApiProperty({
+    description: "Normalized UK postcode",
+    example: "NW1 8XY",
+    required: false,
+  })
+  @Column({ type: "varchar", length: 10, nullable: true })
+  postcode?: string | null;
+
+  @ApiProperty({ description: "Latitude (WGS84)", required: false })
+  @Column("decimal", { precision: 9, scale: 6, nullable: true })
+  latitude?: number | null;
+
+  @ApiProperty({ description: "Longitude (WGS84)", required: false })
+  @Column("decimal", { precision: 9, scale: 6, nullable: true })
+  longitude?: number | null;
+
+  @ApiProperty({
+    description: "London borough (postcodes.io admin_district)",
+    example: "Camden",
+    required: false,
+  })
+  @Column({ type: "varchar", nullable: true })
+  borough?: string | null;
+
   @ApiProperty({
     description:
       "Tenant types for this property (inherited from building or custom)",

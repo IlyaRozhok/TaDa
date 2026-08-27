@@ -426,6 +426,16 @@ export class CreatePropertyDto {
 
   @ApiProperty({
     description:
+      "UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.",
+    example: "NW1 8XY",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  postcode?: string;
+
+  @ApiProperty({
+    description:
       "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
     enum: PropertyStatus,
     example: PropertyStatus.Listed,

@@ -12,6 +12,7 @@ import { CreateBuildingDto } from "./dto/create-building.dto";
 import { UpdateBuildingDto } from "./dto/update-building.dto";
 import { BuildingResponse, toBuildingResponse } from "./building.mapper";
 import { S3Service } from "../../common/services/s3.service";
+import { GeocodingService } from "@/common/services/geocoding.service";
 
 @Injectable()
 export class BuildingService {
@@ -23,6 +24,7 @@ export class BuildingService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private readonly s3Service: S3Service,
+    private readonly geocodingService: GeocodingService,
   ) {}
 
   async create(
@@ -197,8 +199,20 @@ export class BuildingService {
 
     const inheritedFieldsUpdates: Partial<Property> = {};
 
-    if (updateBuildingDto.address !== undefined)
+    if (updateBuildingDto.address !== undefined) {
       inheritedFieldsUpdates.address = updateBuildingDto.address;
+      // A new address re-geocodes the units it propagates to — one lookup for
+      // the whole building, resolved BEFORE the transaction below so the
+      // external call never holds a DB connection. Null coordinates on
+      // lookup failure, never stale ones.
+      const geo = await this.geocodingService.geocode(updateBuildingDto.address);
+      inheritedFieldsUpdates.postcode =
+        geo?.postcode ??
+        this.geocodingService.extractPostcode(updateBuildingDto.address);
+      inheritedFieldsUpdates.latitude = geo?.latitude ?? null;
+      inheritedFieldsUpdates.longitude = geo?.longitude ?? null;
+      inheritedFieldsUpdates.borough = geo?.borough ?? null;
+    }
     if (updateBuildingDto.tenant_type !== undefined)
       inheritedFieldsUpdates.tenant_types = updateBuildingDto.tenant_type;
     if (updateBuildingDto.amenities !== undefined)
