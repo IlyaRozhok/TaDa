@@ -12,6 +12,7 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import Header from "../../components/Header";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useGoBack } from "../../hooks/useGoBack";
 import { loginKeys } from "../../lib/translationsKeys/loginTranslationKeys";
 
 export default function AuthPage() {
@@ -22,6 +23,11 @@ export default function AuthPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  // Closing sign-in should return the guest to whatever sent them here — most
+  // often a property they were reading and wanted to shortlist. The landing
+  // page is only the fallback for someone who opened /app/auth directly.
+  const goBack = useGoBack("/");
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -109,7 +115,7 @@ export default function AuthPage() {
           <div className="bg-black/50 backdrop-blur-[10px] rounded-3xl shadow-2xl border border-white/10 p-8">
             {/* Close Button */}
             <button
-              onClick={() => router.push("/")}
+              onClick={goBack}
               className="absolute top-4 cursor-pointer right-4 text-white/80 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
               aria-label="Close"
             >

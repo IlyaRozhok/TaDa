@@ -50,6 +50,8 @@ import {
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
 import { useTranslation } from "../../../hooks/useTranslation";
+import { useGoBack } from "../../../hooks/useGoBack";
+import { getRedirectPath } from "@/app/utils/simpleRedirect";
 import {
   listingPropertyKeys,
   listingNotificationKeys,
@@ -112,6 +114,11 @@ export default function PropertyPublicPage() {
   const { t } = useTranslation();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  // Where "back" lands for someone who arrived here on a shared link and has no
+  // in-app history to return to: the listing for a signed-in tenant, operator or
+  // admin, the landing page for a guest.
+  const backFallbackPath = getRedirectPath(user);
+  const goBack = useGoBack(backFallbackPath);
   const { data: shortlistProperties } = useShortlistProperties();
   const [addToShortlist, { isLoading: addingToShortlist }] =
     useAddToShortlistMutation();
@@ -380,15 +387,18 @@ export default function PropertyPublicPage() {
       (user.role !== "tenant" && user.role !== "admin"),
   });
 
-  // Redirect to properties list when rate-limited (429), after showing toast
+  // Leave the property when rate-limited (429), after showing the toast. This
+  // one always replaces rather than going back: the visitor did not ask to
+  // leave, so the entry they are being pushed off should not stay in the
+  // history for them to walk straight back into another 429.
   useEffect(() => {
     if (!redirecting429) return;
     const t = setTimeout(() => {
-      router.push("/app/units", { scroll: true });
+      router.replace(backFallbackPath, { scroll: true });
       setRedirecting429(false);
     }, 100);
     return () => clearTimeout(t);
-  }, [redirecting429, router]);
+  }, [redirecting429, router, backFallbackPath]);
 
   // Whether this tenant already asked to view this property. The query owns
   // it now, so creating a request refreshes the answer by tag invalidation
@@ -837,7 +847,7 @@ export default function PropertyPublicPage() {
             </h3>
             <p className="text-red-600 mb-8">{error}</p>
             <button
-              onClick={() => router.push("/app/units", { scroll: true })}
+              onClick={goBack}
               className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
             >
               Back to Properties
@@ -870,7 +880,7 @@ export default function PropertyPublicPage() {
               The requested property could not be found.
             </p>
             <button
-              onClick={() => router.push("/app/units", { scroll: true })}
+              onClick={goBack}
               className="bg-yellow-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors"
             >
               Back to Properties

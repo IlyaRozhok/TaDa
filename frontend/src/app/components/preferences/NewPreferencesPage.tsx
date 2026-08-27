@@ -200,11 +200,6 @@ export default function NewPreferencesPage({
     );
   }
 
-  const handleGoBack = () => {
-    const path = getRedirectPath(user);
-    router.replace(path);
-  };
-
   const handleFinish = async () => {
     try {
       await savePreferences();

@@ -34,7 +34,6 @@ interface TenantUniversalHeaderProps {
   showPreferencesButton?: boolean;
   showTenantCvLink?: boolean;
   showFavouritesButton?: boolean;
-  showBackButton?: boolean;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
 }
@@ -46,7 +45,6 @@ export default function TenantUniversalHeader({
   showPreferencesButton = true,
   showTenantCvLink = true,
   showFavouritesButton = true,
-  showBackButton = false,
   searchTerm = "",
   onSearchChange,
 }: TenantUniversalHeaderProps) {

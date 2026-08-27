@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-// import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/slices/authSlice";
 import { Property } from "../../../types";
 import { waitForSessionManager } from "../../../components/providers/SessionManager";
 
@@ -22,6 +23,8 @@ import { useGetPreferencesQuery } from "@/store/api/preferences.api";
 import { useGetPublicBuildingQuery } from "@/store/api/buildings.api";
 import { hasPreferencesLocationFilled } from "@/entities/preferences/model/preferences";
 import { useTranslation } from "../../../hooks/useTranslation";
+import { useGoBack } from "../../../hooks/useGoBack";
+import { getRedirectPath } from "@/app/utils/simpleRedirect";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { generalKeys } from "@/app/lib/translationsKeys/generalKeys";
@@ -50,6 +53,10 @@ export default function BuildingPublicPage() {
   const params = useParams();
   const id = params && typeof params.id === "string" ? params.id : null;
   const router = useRouter();
+  const user = useSelector(selectUser);
+  // A deep-linked 404 has nothing behind it, so a bare `router.back()` dead-ends
+  // on the entry the visitor arrived on. Fall back to wherever this role belongs.
+  const goBack = useGoBack(getRedirectPath(user));
   const [error, setError] = useState<string | null>(null);
   const [showAllOffers, setShowAllOffers] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -345,7 +352,7 @@ export default function BuildingPublicPage() {
             <p className="text-gray-600 mb-4">
               {error || "The building you're looking for doesn't exist."}
             </p>
-            <Button onClick={() => router.back()} variant="outline">
+            <Button onClick={goBack} variant="outline">
               Go Back
             </Button>
           </div>

@@ -6,6 +6,7 @@ import SessionManager from "./components/providers/SessionManager";
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
 import PostHogProvider from "./components/providers/PostHogProvider";
 import PageViewTracker from "./components/providers/PageViewTracker";
+import NavigationDepthProvider from "./components/providers/NavigationDepthProvider";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { I18nProvider } from "./contexts/I18nContext";
 import AppToaster from "./components/AppToaster";
@@ -78,6 +79,13 @@ export default function RootLayout({
                     to the fallback and is client-rendered instead. */}
                 <Suspense fallback={null}>
                   <PageViewTracker />
+                </Suspense>
+                {/* Its own boundary too, and for the same reason — it reads
+                    useSearchParams() as well. Sharing one boundary with the
+                    tracker would work, but separate ones keep the reason
+                    attached to the component that owns it. */}
+                <Suspense fallback={null}>
+                  <NavigationDepthProvider />
                 </Suspense>
                 {children}
                 <CookieConsentBanner />

@@ -83,6 +83,21 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **`/app/auth` pushes the post-login redirect instead of replacing it**
+  (added 2026-08-27, out of scope of the back-navigation PR). The
+  already-authenticated guard at `frontend/src/app/app/auth/page.tsx:29` does
+  `router.push("/app/units")`, so the sign-in screen stays in the history
+  behind the listing and the browser's own back button walks straight into it
+  — where the same guard fires again. It should `replace`. Left alone because
+  changing it touches the authenticated-redirect path, not the back
+  affordance, and deserves its own verification pass.
+- **Admin panel keeps `activeSection` in component state, not the URL**
+  (added 2026-08-27, out of scope of the back-navigation PR). Switching admin
+  sections pushes no history entry and the section is not addressable, so
+  back from an admin section leaves the panel entirely and a reload or a
+  shared link always lands on the default section. The fix is to drive
+  `activeSection` from a search param — a state-management change to the
+  admin shell, not a navigation one.
 - **No indexes behind the admin properties search/filters** (added
   2026-08-27). `GET /properties` now filters server-side on
   `title`/`descriptions` (ILIKE), `property_type`, `bathrooms` and
