@@ -23,11 +23,13 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiBody,
+  ApiQuery,
 } from "@nestjs/swagger";
 import { PropertyService } from "./property.service";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { FindPropertiesDto } from "./dto/find-properties.dto";
+import { FindAdminPropertiesDto } from "./dto/find-admin-properties.dto";
 import { Roles } from "@/common/decorators/roles.decorator";
 import { UserRole } from "@/entities/user.entity";
 import { Public } from "@/common/decorators/public.decorator";
@@ -315,22 +317,56 @@ export class PropertyController {
   @ApiBearerAuth()
   @Get()
   @Roles(UserRole.Admin, UserRole.Operator)
-  @ApiOperation({ summary: "Get all properties" })
+  @ApiOperation({ summary: "Get a page of properties" })
+  @ApiQuery({ name: "page", required: false, schema: { type: "string" } })
+  @ApiQuery({ name: "limit", required: false, schema: { type: "string" } })
+  @ApiQuery({ name: "search", required: false, schema: { type: "string" } })
+  @ApiQuery({
+    name: "building_id",
+    required: false,
+    schema: { type: "string", format: "uuid" },
+  })
+  @ApiQuery({
+    name: "operator_id",
+    required: false,
+    schema: { type: "string", format: "uuid" },
+  })
+  @ApiQuery({
+    name: "is_landing_listing",
+    required: false,
+    schema: { type: "string", enum: ["true", "false"] },
+  })
+  @ApiQuery({
+    name: "property_type",
+    required: false,
+    schema: { type: "string" },
+  })
+  @ApiQuery({ name: "bedrooms", required: false, schema: { type: "string" } })
+  @ApiQuery({
+    name: "bedrooms_min",
+    required: false,
+    schema: { type: "string" },
+  })
+  @ApiQuery({ name: "bathrooms", required: false, schema: { type: "string" } })
+  @ApiQuery({
+    name: "bathrooms_min",
+    required: false,
+    schema: { type: "string" },
+  })
   @ApiResponse({
     status: 200,
     description: "Properties retrieved successfully",
   })
   async findAll(
     @CurrentUser() user: User,
-    @Query("building_id") building_id?: string,
-    @Query("operator_id") operator_id?: string,
+    @Query() query: FindAdminPropertiesDto,
   ) {
     // Operators are always scoped to their own properties;
     // only admins may list everything or filter by an arbitrary operator.
     const operatorFilter =
-      user.role === UserRole.Admin ? operator_id : user.id;
+      user.role === UserRole.Admin ? query.operator_id : user.id;
     return await this.propertyService.findAllWithFreshUrls({
-      building_id,
+      ...query,
       operator_id: operatorFilter,
     });
   }

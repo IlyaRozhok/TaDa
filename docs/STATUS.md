@@ -83,6 +83,15 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **No indexes behind the admin properties search/filters** (added
+  2026-08-27). `GET /properties` now filters server-side on
+  `title`/`descriptions` (ILIKE), `property_type`, `bathrooms` and
+  `is_landing_listing`; only `bedrooms`, `building_id` and `created_at` are
+  indexed today. At the current row count a sequential scan is fine. When it
+  stops being fine the fix is a trigram index (`pg_trgm`) for the text search
+  plus btree indexes on the filter columns — which needs `CREATE INDEX
+  CONCURRENTLY` outside a transaction, so it is a deliberate migration with
+  its own PR, not a drive-by.
 - **Landing listings copy is not in Localazy yet** (added 2026-08-27). The
   section renders English fallbacks via `translateWithFallback` for six keys
   — `landing.{operators,tenant}.web.listings.{title,subtitle,seeAll}`. Add
