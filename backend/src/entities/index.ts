@@ -8,4 +8,5 @@ export { Shortlist } from "./shortlist.entity";
 export { Building } from "./building.entity";
 export { TenantCv } from "./tenant-cv.entity";
 export { BookingRequest } from "./booking-request.entity";
+export { CallRequest } from "./call-request.entity";
 export { Notification } from "./notification.entity";

@@ -16,7 +16,7 @@ import {
 } from "./notifications.config";
 import {
   BookingRequestedEvent,
-  DemoRequestedEvent,
+  CallRequestedEvent,
   NotificationEvents,
   TenantCvCompletedEvent,
   UserRegisteredEvent,
@@ -66,16 +66,20 @@ export class NotificationsService {
     );
   }
 
-  @OnEvent(NotificationEvents.DemoRequested, { async: true })
-  async handleDemoRequested(event: DemoRequestedEvent): Promise<void> {
+  @OnEvent(NotificationEvents.CallRequested, { async: true })
+  async handleCallRequested(event: CallRequestedEvent): Promise<void> {
     // One notification per email address per UTC day: a double-click on the
     // form is swallowed as a duplicate, while a genuine follow-up the next
     // day still comes through. The date comes from the event, not the row,
     // so replays keep their original key.
-    const day = event.requestedAt.toISOString().slice(0, 10);
+    //
+    // Note this dedupes the EMAIL, not the submission: every submit is its own
+    // row in `call_requests`, so the admin panel still shows both halves of a
+    // double-click even when only one email went out.
+    const day = new Date(event.requestedAt).toISOString().slice(0, 10);
     await this.record(
-      NotificationType.DemoRequested,
-      `demo_request:${event.email.toLowerCase()}:${day}`,
+      NotificationType.CallRequested,
+      `call_request:${event.email.toLowerCase()}:${day}`,
       event as unknown as Record<string, unknown>,
     );
   }

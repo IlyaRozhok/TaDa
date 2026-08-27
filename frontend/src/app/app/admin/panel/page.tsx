@@ -19,6 +19,7 @@ import AdminPropertiesSection, {
   propertyFiltersToQuery,
 } from "../../../components/AdminPropertiesSection";
 import AdminRequestsSection from "../../../components/AdminRequestsSection";
+import AdminCallRequestsSection from "../../../components/AdminCallRequestsSection";
 import AddUserModal from "../../../components/AddUserModal";
 import AddBuildingModal from "../../../components/AddBuildingModal";
 import AddPropertyModal from "../../../components/AddPropertyModal";
@@ -37,6 +38,7 @@ import {
   Building2,
   Home,
   Calendar,
+  PhoneCall,
   FileText,
   SlidersHorizontal,
   LayoutGrid,
@@ -52,6 +54,7 @@ import {
   useGetBookingRequestsQuery,
   useUpdateBookingRequestStatusMutation,
 } from "@/store/api/bookingRequests.api";
+import { useGetCallRequestsQuery } from "@/store/api/callRequests.api";
 import {
   useCreateUserMutation,
   useDeleteUserMutation,
@@ -66,7 +69,12 @@ import {
   type Building as ApiBuilding,
 } from "@/store/api/buildings.api";
 
-type AdminSection = "users" | "buildings" | "properties" | "requests";
+type AdminSection =
+  | "users"
+  | "buildings"
+  | "properties"
+  | "requests"
+  | "call-requests";
 
 interface SortState {
   field: string;
@@ -214,6 +222,16 @@ function AdminPanelContent() {
 
   // The query is the list; transformResponse already unwrapped it.
   const requests = bookingQueryData ?? [];
+
+  // Call requests, same shape: fetched only while its section is open.
+  const {
+    data: callRequestsData,
+    isLoading: isCallRequestsQueryLoading,
+  } = useGetCallRequestsQuery(undefined, {
+    skip: activeSection !== "call-requests",
+  });
+
+  const callRequests = callRequestsData ?? [];
 
   // Notification management
   const addNotification = (
@@ -585,6 +603,18 @@ function AdminPanelContent() {
           <Calendar className="w-5 h-5" />
           <span className="font-medium">Requests</span>
         </button>
+        <button
+          onClick={() => setActiveSection("call-requests")}
+          data-testid="admin-tab-call-requests"
+          className={`w-full flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all duration-200 ${
+            activeSection === "call-requests"
+              ? "bg-gray-100 text-black"
+              : "text-black hover:bg-gray-50"
+          }`}
+        >
+          <PhoneCall className="w-5 h-5" />
+          <span className="font-medium">Call requests</span>
+        </button>
       </nav>
     </div>
   );
@@ -673,6 +703,13 @@ function AdminPanelContent() {
             isLoading={isRequestsQueryLoading && !requests.length}
             updatingId={updatingRequestId}
             onUpdateStatus={handleUpdateBookingStatus}
+          />
+        );
+      case "call-requests":
+        return (
+          <AdminCallRequestsSection
+            requests={callRequests}
+            isLoading={isCallRequestsQueryLoading && !callRequests.length}
           />
         );
       default:
