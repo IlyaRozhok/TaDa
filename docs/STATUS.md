@@ -38,8 +38,14 @@ decisions) is recorded HERE, briefly, with a date.
     pipeline drives `listed → under_offer → let` and reverts on cancel.
     Frontend follow-ups: badge `under_offer`/`let` on the detail page,
     status control in the admin property form (API accepts `status` already).
-  - location wired in (postcode + lat/lng, geocode via postcodes.io, enable
-    the already-written location scorer, search by address);
+  - ~~location wired in~~ — **done (B2, current PR)**: postcode/lat/lng/
+    borough geocoded via postcodes.io on property and building-address
+    writes (failure-tolerant — a lookup outage never blocks a save);
+    location scorer enabled as category 18 (weight 15; only tenants with a
+    location preference are affected); search matches address, postcode and
+    borough. Follow-up: backfill geocoding for pre-existing rows (they stay
+    null until their address is next edited) — a one-off script over
+    properties with an address and no postcode.
   - one governed vocabulary for categorical fields (`@IsIn` on DTOs,
     normalizing migration, single unknown-data policy — blank listings must
     stop outranking honest ones; wire or drop `family_status`/`occupation`

@@ -2148,6 +2148,11 @@ export interface components {
              */
             is_landing_listing?: boolean;
             /**
+             * @description UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.
+             * @example NW1 8XY
+             */
+            postcode?: string;
+            /**
              * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
              * @example listed
              * @enum {string}
@@ -2377,6 +2382,11 @@ export interface components {
              */
             is_landing_listing?: boolean;
             /**
+             * @description UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.
+             * @example NW1 8XY
+             */
+            postcode?: string;
+            /**
              * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
              * @example listed
              * @enum {string}
@@ -2500,6 +2510,20 @@ export interface components {
              * @example 123 Main St, London
              */
             address?: string;
+            /**
+             * @description Normalized UK postcode
+             * @example NW1 8XY
+             */
+            postcode?: Record<string, never>;
+            /** @description Latitude (WGS84) */
+            latitude?: Record<string, never>;
+            /** @description Longitude (WGS84) */
+            longitude?: Record<string, never>;
+            /**
+             * @description London borough (postcodes.io admin_district)
+             * @example Camden
+             */
+            borough?: Record<string, never>;
             /**
              * @description Tenant types for this property (inherited from building or custom)
              * @example [
