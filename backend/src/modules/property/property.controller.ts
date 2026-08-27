@@ -59,6 +59,21 @@ export class PropertyController {
     });
   }
 
+  // Before `public/:id`: Nest matches routes in declaration order, and
+  // "landing" would otherwise be read as an id.
+  @Get("public/landing")
+  @Public()
+  @ApiOperation({
+    summary: "Get the landing pages' featured listings (no auth required)",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Featured listings retrieved successfully",
+  })
+  async findLandingListings() {
+    return this.propertyService.findLandingListings();
+  }
+
   @Get("public/:id")
   @Public()
   @ApiOperation({ summary: "Get a public property by ID (no auth required)" })

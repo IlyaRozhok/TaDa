@@ -333,6 +333,14 @@ export class Property {
   @Column("uuid")
   operator_id: string;
 
+  @ApiProperty({
+    description:
+      "Whether the property is featured in the landing pages' listings section. Admin-only flag.",
+    example: false,
+  })
+  @Column({ type: "boolean", default: false })
+  is_landing_listing: boolean;
+
   @ApiProperty({ description: "Property creation date" })
   @Index("idx_properties_created_at")
   @CreateDateColumn()

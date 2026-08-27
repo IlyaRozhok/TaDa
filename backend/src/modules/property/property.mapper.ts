@@ -130,6 +130,12 @@ export const assignPropertyOptionals = (
   if (dto.pets !== undefined) {
     target.pets = dto.pets;
   }
+
+  // Admin-only. The service strips the field from the payload before it gets
+  // here for every other role, so the guard is a plain "was it sent?" check.
+  if (dto.is_landing_listing !== undefined) {
+    target.is_landing_listing = dto.is_landing_listing;
+  }
 };
 
 export const normalizeFindParams = (dto?: FindPropertiesDto) => {

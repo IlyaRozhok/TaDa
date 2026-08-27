@@ -463,6 +463,36 @@ function AdminPanelContent() {
     }
   };
 
+  /**
+   * Flag/unflag a property for the landings' listings section. A one-field
+   * PATCH on purpose: the edit-modal path rebuilds the whole property, which
+   * is far more than this toggle should risk.
+   */
+  const handleToggleLanding = async (property: Property, next: boolean) => {
+    try {
+      await updateProperty({
+        id: property.id,
+        data: { is_landing_listing: next },
+      }).unwrap();
+
+      addNotification(
+        "success",
+        `"${property.title || property.id}" ${
+          next ? "added to" : "removed from"
+        } the landing listings`,
+      );
+    } catch (error: unknown) {
+      console.error("❌ Failed to toggle landing listing:", error);
+      addNotification(
+        "error",
+        `Failed to update landing listing: ${apiErrorMessage(
+          error,
+          "Unknown error",
+        )}`,
+      );
+    }
+  };
+
   const handleUpdateBookingStatus = async (
     id: string,
     status: BookingRequestStatus,
@@ -595,6 +625,7 @@ function AdminPanelContent() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
+            onToggleLanding={handleToggleLanding}
             onCopyId={(id, _type) => {
               addNotification(
                 "success",

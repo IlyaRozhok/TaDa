@@ -40,6 +40,10 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **Landing listings copy is not in Localazy yet** (added 2026-08-27). The
+  section renders English fallbacks via `translateWithFallback` for six keys
+  — `landing.{operators,tenant}.web.listings.{title,subtitle,seeAll}`. Add
+  them in Localazy and re-sync; no code change needed once they land.
 - **Migration chain does not replay from an empty database** (noted
   2026-08-18) and carries a duplicate timestamp `1767000000000` (two files).
   Repairing either means renumbering applied migrations plus a host-side

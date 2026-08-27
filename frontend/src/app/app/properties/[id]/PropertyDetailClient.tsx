@@ -184,8 +184,11 @@ export default function PropertyPublicPage() {
     };
   }, []);
 
+  // `/preferences` needs a session. A signed-out visitor arriving from the
+  // landing would otherwise fire it, take a 401, and get logged out of a
+  // session they never had.
   const { data: preferencesQueryData } = useGetPreferencesQuery(undefined, {
-    skip: !sessionReady,
+    skip: !sessionReady || !isAuthenticated,
   });
 
   const preferencesFilledCount = useMemo(() => {

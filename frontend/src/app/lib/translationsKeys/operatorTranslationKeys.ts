@@ -89,6 +89,13 @@ export const operatorKeys = {
       description: "landing.operators.web.about.label3.description",
     },
   },
+  // Landing listings section. Not synced from Localazy yet — the component
+  // renders an English fallback until the keys land.
+  listings: {
+    title: "landing.operators.web.listings.title",
+    subtitle: "landing.operators.web.listings.subtitle",
+    seeAll: "landing.operators.web.listings.seeAll",
+  },
   partners: {
     title: "landing.operators.web.partners.title",
     stripe: "landing.operators.web.partner1",
