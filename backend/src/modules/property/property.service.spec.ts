@@ -3,6 +3,7 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { Property } from "@/entities/property.entity";
 import { Building } from "@/entities/building.entity";
 import { S3Service } from "@/common/services/s3.service";
+import { GeocodingService } from "@/common/services/geocoding.service";
 import { PropertyService } from "./property.service";
 import { FindAdminPropertiesDto } from "./dto/find-admin-properties.dto";
 
@@ -57,6 +58,13 @@ describe("PropertyService admin list", () => {
           useValue: {
             refreshMediaUrls: jest.fn().mockResolvedValue(undefined),
             refreshUrl: jest.fn(async (url: string) => url),
+          },
+        },
+        {
+          provide: GeocodingService,
+          useValue: {
+            geocode: jest.fn().mockResolvedValue(null),
+            extractPostcode: jest.fn().mockReturnValue(null),
           },
         },
       ],
