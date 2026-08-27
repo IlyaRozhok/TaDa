@@ -19,7 +19,8 @@ import { waitForSessionManager } from "../../components/providers/SessionManager
 import {
   useOnboarding,
   TOTAL_ONBOARDING_STEPS,
-  PROFILE_STEP,
+  INTRO_PHASE_TOTAL_STEPS,
+  PREFERENCES_PHASE_TOTAL_STEPS,
   PREFERENCES_START_STEP,
 } from "../../hooks/useOnboarding";
 import usePreferences from "@/features/preferences/lib/usePreferences";
@@ -329,7 +330,7 @@ export default function OnboardingPage() {
             <div
               className="bg-black h-px transition-all duration-300"
               style={{
-                width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%`,
+                width: `${(state.currentStep / INTRO_PHASE_TOTAL_STEPS) * 100}%`,
               }}
             />
           </div>
@@ -356,7 +357,7 @@ export default function OnboardingPage() {
 
               <div className="text-sm text-gray-500">
                 {t(onboardingKeys.bottom.stepText)} {state.currentStep}{" "}
-                {t(onboardingKeys.bottom.ofText)} {TOTAL_ONBOARDING_STEPS}
+                {t(onboardingKeys.bottom.ofText)} {INTRO_PHASE_TOTAL_STEPS}
               </div>
 
               {/* Next Button */}
@@ -423,7 +424,11 @@ export default function OnboardingPage() {
           <div
             className="bg-black h-px transition-all duration-300"
             style={{
-              width: `${(state.currentStep / TOTAL_ONBOARDING_STEPS) * 100}%`,
+              width: `${
+                (state.currentPhase === "profile"
+                  ? state.currentStep / INTRO_PHASE_TOTAL_STEPS
+                  : preferencesHook.step / PREFERENCES_PHASE_TOTAL_STEPS) * 100
+              }%`,
             }}
           />
         </div>
@@ -455,7 +460,14 @@ export default function OnboardingPage() {
             </button>
 
             <div className="text-sm text-gray-500">
-              {t(onboardingKeys.bottom.stepText)} {state.currentStep} {t(onboardingKeys.bottom.ofText)} {TOTAL_ONBOARDING_STEPS}
+              {t(onboardingKeys.bottom.stepText)}{" "}
+              {state.currentPhase === "profile"
+                ? state.currentStep
+                : preferencesHook.step}{" "}
+              {t(onboardingKeys.bottom.ofText)}{" "}
+              {state.currentPhase === "profile"
+                ? INTRO_PHASE_TOTAL_STEPS
+                : PREFERENCES_PHASE_TOTAL_STEPS}
             </div>
 
             {/* Next Button */}
