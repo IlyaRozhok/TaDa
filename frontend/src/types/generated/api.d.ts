@@ -1533,7 +1533,7 @@ export interface components {
              *       "studio"
              *     ]
              */
-            property_types?: string[];
+            property_types?: ("apartment" | "flat" | "studio" | "penthouse" | "room" | "house" | "maisonette" | "duplex")[];
             /**
              * @description Preferred number of bedrooms
              * @example [
@@ -1555,10 +1555,10 @@ export interface components {
              * @description Preferred furnishing types
              * @example [
              *       "furnished",
-             *       "part-furnished"
+             *       "part_furnished"
              *     ]
              */
-            furnishing?: string[];
+            furnishing?: ("furnished" | "unfurnished" | "part_furnished")[];
             /**
              * @description Whether balcony is preferred
              * @example true
@@ -1583,20 +1583,21 @@ export interface components {
              * @description Preferred building types
              * @example [
              *       "btr",
-             *       "co-living"
+             *       "co_living"
              *     ]
              */
-            building_types?: string[];
+            building_types?: ("btr" | "co_living" | "professional_management" | "private_landlord")[];
             /**
-             * @description Preferred let duration
-             * @example long_term
+             * @description Preferred let duration - comma-separated multiselect of canonical tokens
+             * @example long_term,12_months
              */
             let_duration?: string;
             /**
              * @description Bills preference
              * @example included
+             * @enum {string}
              */
-            bills?: string;
+            bills?: "included" | "excluded" | "some_included";
             /**
              * @description Tenant types
              * @example [
@@ -1766,7 +1767,7 @@ export interface components {
              *       "studio"
              *     ]
              */
-            property_types?: string[];
+            property_types?: ("apartment" | "flat" | "studio" | "penthouse" | "room" | "house" | "maisonette" | "duplex")[];
             /**
              * @description Preferred number of bedrooms
              * @example [
@@ -1788,10 +1789,10 @@ export interface components {
              * @description Preferred furnishing types
              * @example [
              *       "furnished",
-             *       "part-furnished"
+             *       "part_furnished"
              *     ]
              */
-            furnishing?: string[];
+            furnishing?: ("furnished" | "unfurnished" | "part_furnished")[];
             /**
              * @description Whether balcony is preferred
              * @example true
@@ -1816,20 +1817,21 @@ export interface components {
              * @description Preferred building types
              * @example [
              *       "btr",
-             *       "co-living"
+             *       "co_living"
              *     ]
              */
-            building_types?: string[];
+            building_types?: ("btr" | "co_living" | "professional_management" | "private_landlord")[];
             /**
-             * @description Preferred let duration
-             * @example long_term
+             * @description Preferred let duration - comma-separated multiselect of canonical tokens
+             * @example long_term,12_months
              */
             let_duration?: string;
             /**
              * @description Bills preference
              * @example included
+             * @enum {string}
              */
-            bills?: string;
+            bills?: "included" | "excluded" | "some_included";
             /**
              * @description Tenant types
              * @example [
@@ -1956,19 +1958,19 @@ export interface components {
              * @example apartment
              * @enum {string}
              */
-            property_type?: "apartment" | "house" | "studio" | "penthouse" | "duplex" | "maisonette";
+            property_type?: "apartment" | "flat" | "studio" | "penthouse" | "room" | "house" | "maisonette" | "duplex";
             /**
              * @description Furnishing level
              * @example furnished
              * @enum {string}
              */
-            furnishing?: "furnished" | "unfurnished" | "partially_furnished";
+            furnishing?: "furnished" | "unfurnished" | "part_furnished";
             /**
              * @description Bills included
              * @example included
              * @enum {string}
              */
-            bills?: "included" | "excluded" | "some_included";
+            bills?: "included" | "excluded";
             /**
              * @description Available from date
              * @example 2024-01-15
@@ -1976,10 +1978,10 @@ export interface components {
             available_from?: string;
             /**
              * @description Building type
-             * @example residential
+             * @example btr
              * @enum {string}
              */
-            building_type?: "residential" | "commercial" | "mixed";
+            building_type?: "btr" | "co_living" | "professional_management" | "private_landlord";
             /**
              * @description Property address (inherited from building or custom)
              * @example 123 Main St, London
@@ -2081,8 +2083,8 @@ export interface components {
              */
             pets?: components["schemas"]["PetDto"][];
             /**
-             * @description Let duration
-             * @example 12 months
+             * @description Let duration — comma-separated multiselect of canonical tokens
+             * @example 12_months,long_term
              */
             let_duration?: string;
             /**
@@ -2190,19 +2192,19 @@ export interface components {
              * @example apartment
              * @enum {string}
              */
-            property_type?: "apartment" | "house" | "studio" | "penthouse" | "duplex" | "maisonette";
+            property_type?: "apartment" | "flat" | "studio" | "penthouse" | "room" | "house" | "maisonette" | "duplex";
             /**
              * @description Furnishing level
              * @example furnished
              * @enum {string}
              */
-            furnishing?: "furnished" | "unfurnished" | "partially_furnished";
+            furnishing?: "furnished" | "unfurnished" | "part_furnished";
             /**
              * @description Bills included
              * @example included
              * @enum {string}
              */
-            bills?: "included" | "excluded" | "some_included";
+            bills?: "included" | "excluded";
             /**
              * @description Available from date
              * @example 2024-01-15
@@ -2210,10 +2212,10 @@ export interface components {
             available_from?: string;
             /**
              * @description Building type
-             * @example residential
+             * @example btr
              * @enum {string}
              */
-            building_type?: "residential" | "commercial" | "mixed";
+            building_type?: "btr" | "co_living" | "professional_management" | "private_landlord";
             /**
              * @description Property address (inherited from building or custom)
              * @example 123 Main St, London
@@ -2315,8 +2317,8 @@ export interface components {
              */
             pets?: components["schemas"]["PetDto"][];
             /**
-             * @description Let duration
-             * @example 12 months
+             * @description Let duration — comma-separated multiselect of canonical tokens
+             * @example 12_months,long_term
              */
             let_duration?: string;
             /**

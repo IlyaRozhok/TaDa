@@ -3047,15 +3047,25 @@
             "example": false
           },
           "property_types": {
+            "type": "array",
             "description": "Preferred property types (matches Property.property_type)",
             "example": [
               "apartment",
               "flat",
               "studio"
             ],
-            "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "apartment",
+                "flat",
+                "studio",
+                "penthouse",
+                "room",
+                "house",
+                "maisonette",
+                "duplex"
+              ]
             }
           },
           "bedrooms": {
@@ -3082,14 +3092,19 @@
             }
           },
           "furnishing": {
+            "type": "array",
             "description": "Preferred furnishing types",
             "example": [
               "furnished",
-              "part-furnished"
+              "part_furnished"
             ],
-            "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "furnished",
+                "unfurnished",
+                "part_furnished"
+              ]
             }
           },
           "balcony": {
@@ -3113,25 +3128,36 @@
             "example": 500
           },
           "building_types": {
+            "type": "array",
             "description": "Preferred building types",
             "example": [
               "btr",
-              "co-living"
+              "co_living"
             ],
-            "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "btr",
+                "co_living",
+                "professional_management",
+                "private_landlord"
+              ]
             }
           },
           "let_duration": {
             "type": "string",
-            "description": "Preferred let duration",
-            "example": "long_term"
+            "description": "Preferred let duration - comma-separated multiselect of canonical tokens",
+            "example": "long_term,12_months"
           },
           "bills": {
             "type": "string",
             "description": "Bills preference",
-            "example": "included"
+            "example": "included",
+            "enum": [
+              "included",
+              "excluded",
+              "some_included"
+            ]
           },
           "tenant_types": {
             "description": "Tenant types",
@@ -3361,15 +3387,25 @@
             "example": false
           },
           "property_types": {
+            "type": "array",
             "description": "Preferred property types (matches Property.property_type)",
             "example": [
               "apartment",
               "flat",
               "studio"
             ],
-            "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "apartment",
+                "flat",
+                "studio",
+                "penthouse",
+                "room",
+                "house",
+                "maisonette",
+                "duplex"
+              ]
             }
           },
           "bedrooms": {
@@ -3396,14 +3432,19 @@
             }
           },
           "furnishing": {
+            "type": "array",
             "description": "Preferred furnishing types",
             "example": [
               "furnished",
-              "part-furnished"
+              "part_furnished"
             ],
-            "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "furnished",
+                "unfurnished",
+                "part_furnished"
+              ]
             }
           },
           "balcony": {
@@ -3427,25 +3468,36 @@
             "example": 500
           },
           "building_types": {
+            "type": "array",
             "description": "Preferred building types",
             "example": [
               "btr",
-              "co-living"
+              "co_living"
             ],
-            "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "btr",
+                "co_living",
+                "professional_management",
+                "private_landlord"
+              ]
             }
           },
           "let_duration": {
             "type": "string",
-            "description": "Preferred let duration",
-            "example": "long_term"
+            "description": "Preferred let duration - comma-separated multiselect of canonical tokens",
+            "example": "long_term,12_months"
           },
           "bills": {
             "type": "string",
             "description": "Bills preference",
-            "example": "included"
+            "example": "included",
+            "enum": [
+              "included",
+              "excluded",
+              "some_included"
+            ]
           },
           "tenant_types": {
             "description": "Tenant types",
@@ -3637,11 +3689,13 @@
             "example": "apartment",
             "enum": [
               "apartment",
-              "house",
+              "flat",
               "studio",
               "penthouse",
-              "duplex",
-              "maisonette"
+              "room",
+              "house",
+              "maisonette",
+              "duplex"
             ]
           },
           "furnishing": {
@@ -3651,7 +3705,7 @@
             "enum": [
               "furnished",
               "unfurnished",
-              "partially_furnished"
+              "part_furnished"
             ]
           },
           "bills": {
@@ -3660,8 +3714,7 @@
             "example": "included",
             "enum": [
               "included",
-              "excluded",
-              "some_included"
+              "excluded"
             ]
           },
           "available_from": {
@@ -3672,11 +3725,12 @@
           "building_type": {
             "type": "string",
             "description": "Building type",
-            "example": "residential",
+            "example": "btr",
             "enum": [
-              "residential",
-              "commercial",
-              "mixed"
+              "btr",
+              "co_living",
+              "professional_management",
+              "private_landlord"
             ]
           },
           "address": {
@@ -3832,8 +3886,8 @@
           },
           "let_duration": {
             "type": "string",
-            "description": "Let duration",
-            "example": "12 months"
+            "description": "Let duration — comma-separated multiselect of canonical tokens",
+            "example": "12_months,long_term"
           },
           "floor": {
             "type": "number",
@@ -3956,11 +4010,13 @@
             "example": "apartment",
             "enum": [
               "apartment",
-              "house",
+              "flat",
               "studio",
               "penthouse",
-              "duplex",
-              "maisonette"
+              "room",
+              "house",
+              "maisonette",
+              "duplex"
             ]
           },
           "furnishing": {
@@ -3970,7 +4026,7 @@
             "enum": [
               "furnished",
               "unfurnished",
-              "partially_furnished"
+              "part_furnished"
             ]
           },
           "bills": {
@@ -3979,8 +4035,7 @@
             "example": "included",
             "enum": [
               "included",
-              "excluded",
-              "some_included"
+              "excluded"
             ]
           },
           "available_from": {
@@ -3991,11 +4046,12 @@
           "building_type": {
             "type": "string",
             "description": "Building type",
-            "example": "residential",
+            "example": "btr",
             "enum": [
-              "residential",
-              "commercial",
-              "mixed"
+              "btr",
+              "co_living",
+              "professional_management",
+              "private_landlord"
             ]
           },
           "address": {
@@ -4151,8 +4207,8 @@
           },
           "let_duration": {
             "type": "string",
-            "description": "Let duration",
-            "example": "12 months"
+            "description": "Let duration — comma-separated multiselect of canonical tokens",
+            "example": "12_months,long_term"
           },
           "floor": {
             "type": "number",

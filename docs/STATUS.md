@@ -46,10 +46,15 @@ decisions) is recorded HERE, briefly, with a date.
     borough. Follow-up: backfill geocoding for pre-existing rows (they stay
     null until their address is next edited) — a one-off script over
     properties with an address and no postcode.
-  - one governed vocabulary for categorical fields (`@IsIn` on DTOs,
-    normalizing migration, single unknown-data policy — blank listings must
-    stop outranking honest ones; wire or drop `family_status`/`occupation`
-    targeting; fix the constant in the smoking scorer).
+  - ~~one governed vocabulary for categorical fields~~ — **done (B3,
+    current PR)**: canonical sets in `common/constants/vocabulary.ts`,
+    DTOs normalize known aliases and reject the rest (property and
+    preferences sides), stored data normalized by migration (rehearsed on
+    dirty seeds). The geocoding backfill script also ships here
+    (`npm run geo:backfill` in backend/ — host action #5 below).
+  - **B4 (next)**: single unknown-data policy — blank listings must stop
+    outranking honest ones; wire or drop `family_status`/`occupation`
+    targeting; fix the constant in the smoking scorer.
 - **C — the funnel stops being silent**: transactional emails to tenant and
   operator on booking events (outbox already built — new templates plus
   recipients); `proposed_viewing_at` + confirmation on the viewing step;
@@ -86,6 +91,10 @@ decisions) is recorded HERE, briefly, with a date.
 4. **Host `.env` files:** remove the stale `CORS_ORIGIN=http://localhost:3000`
    value — the env union still honours it, which re-adds localhost to the
    production CORS allowlist.
+5. **Geocoding backfill** (after the B2/B3 migrations are deployed): run
+   `npm run geo:backfill` once in `backend/` on each host (stage, then
+   prod) with the real `.env`. Idempotent and resumable; rows whose address
+   has no full UK postcode are reported and skipped.
 
 ## Open follow-ups (recorded, not scheduled)
 
