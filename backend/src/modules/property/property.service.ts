@@ -10,8 +10,11 @@ import { Property } from "../../entities/property.entity";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { Building } from "../../entities/building.entity";
+import { FindAdminPropertiesDto } from "./dto/find-admin-properties.dto";
 import {
+  AdminFindParams,
   assignPropertyOptionals,
+  normalizeAdminFindParams,
   normalizeFindParams,
 } from "./property.mapper";
 import { PublicPropertyResponse, toPublicProperty } from "./property.response";
@@ -19,6 +22,19 @@ import { S3Service } from "../../common/services/s3.service";
 
 /** How many flagged properties the landing section shows at most. */
 export const LANDING_LISTINGS_LIMIT = 6;
+
+/**
+ * Envelope of the admin properties list. Same shape as the public list's,
+ * plus the page size the server actually applied — the admin table renders a
+ * numbered control off it and cannot assume its own default was honoured.
+ */
+export interface AdminPropertiesPage {
+  data: Property[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 @Injectable()
 export class PropertyService {
@@ -338,29 +354,74 @@ export class PropertyService {
     return toPublicProperty(propertyWithFreshUrls);
   }
 
-  async findAll(params?: {
-    building_id?: string;
-    operator_id?: string;
-  }): Promise<Property[]> {
+  /**
+   * The admin list, one page at a time. Search and every filter are applied in
+   * SQL so the table never has to hold the whole catalogue to narrow it.
+   * Returns the page and the count of everything that matched.
+   */
+  async findAll(params: AdminFindParams): Promise<[Property[], number]> {
     const queryBuilder = this.propertyRepository
       .createQueryBuilder("property")
       .leftJoinAndSelect("property.building", "building")
       .leftJoinAndSelect("building.operator", "operator")
-      .orderBy("property.created_at", "DESC");
+      .orderBy("property.created_at", "DESC")
+      .skip((params.page - 1) * params.limit)
+      .take(params.limit);
 
-    if (params?.building_id) {
+    if (params.building_id) {
       queryBuilder.andWhere("property.building_id = :building_id", {
         building_id: params.building_id,
       });
     }
 
-    if (params?.operator_id) {
+    if (params.operator_id) {
       queryBuilder.andWhere("property.operator_id = :operator_id", {
         operator_id: params.operator_id,
       });
     }
 
-    return queryBuilder.getMany();
+    if (params.is_landing_listing !== undefined) {
+      queryBuilder.andWhere("property.is_landing_listing = :flagged", {
+        flagged: params.is_landing_listing,
+      });
+    }
+
+    if (params.property_type) {
+      queryBuilder.andWhere("property.property_type = :property_type", {
+        property_type: params.property_type,
+      });
+    }
+
+    // Exact count for the closed buckets, lower bound for the open-ended one.
+    if (params.bedrooms !== undefined) {
+      queryBuilder.andWhere("property.bedrooms = :bedrooms", {
+        bedrooms: params.bedrooms,
+      });
+    }
+    if (params.bedrooms_min !== undefined) {
+      queryBuilder.andWhere("property.bedrooms >= :bedrooms_min", {
+        bedrooms_min: params.bedrooms_min,
+      });
+    }
+    if (params.bathrooms !== undefined) {
+      queryBuilder.andWhere("property.bathrooms = :bathrooms", {
+        bathrooms: params.bathrooms,
+      });
+    }
+    if (params.bathrooms_min !== undefined) {
+      queryBuilder.andWhere("property.bathrooms >= :bathrooms_min", {
+        bathrooms_min: params.bathrooms_min,
+      });
+    }
+
+    if (params.search) {
+      queryBuilder.andWhere(
+        "(property.title ILIKE :search OR property.descriptions ILIKE :search)",
+        { search: `%${params.search}%` },
+      );
+    }
+
+    return queryBuilder.getManyAndCount();
   }
 
   async remove(id: string, userId: string, userRole: string): Promise<void> {
@@ -427,15 +488,25 @@ export class PropertyService {
   }
 
   /**
-   * Find all properties with updated photo URLs
+   * One page of the admin list, with fresh photo URLs. Only the page's rows
+   * get their S3 URLs re-signed, not the whole catalogue.
    */
-  async findAllWithFreshUrls(params?: {
-    building_id?: string;
-    operator_id?: string;
-  }): Promise<Property[]> {
-    const properties = await this.findAll(params);
-    return await Promise.all(
+  async findAllWithFreshUrls(
+    query?: FindAdminPropertiesDto,
+  ): Promise<AdminPropertiesPage> {
+    const params = normalizeAdminFindParams(query);
+    const [properties, total] = await this.findAll(params);
+
+    const data = await Promise.all(
       properties.map((property) => this.updatePhotosUrls(property)),
     );
+
+    return {
+      data,
+      total,
+      page: params.page,
+      limit: params.limit,
+      totalPages: Math.ceil(total / params.limit),
+    };
   }
 }

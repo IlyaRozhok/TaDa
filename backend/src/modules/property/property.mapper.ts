@@ -2,6 +2,7 @@ import { Property } from "../../entities/property.entity";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { FindPropertiesDto } from "./dto/find-properties.dto";
+import { FindAdminPropertiesDto } from "./dto/find-admin-properties.dto";
 
 type PropertyDto = CreatePropertyDto | UpdatePropertyDto;
 
@@ -147,4 +148,59 @@ export const normalizeFindParams = (dto?: FindPropertiesDto) => {
   const search = dto?.search?.trim();
 
   return { page: safePage, limit: safeLimit, search: search || undefined };
+};
+
+/** The admin table shows 20 rows a page; the cap mirrors the public list's. */
+const ADMIN_DEFAULT_LIMIT = 20;
+const ADMIN_MAX_LIMIT = 100;
+
+/** The admin list query, once the wire strings have been typed. */
+export interface AdminFindParams {
+  page: number;
+  limit: number;
+  search?: string;
+  building_id?: string;
+  operator_id?: string;
+  is_landing_listing?: boolean;
+  property_type?: string;
+  bedrooms?: number;
+  bedrooms_min?: number;
+  bathrooms?: number;
+  bathrooms_min?: number;
+}
+
+/** A room count: a non-negative integer, or nothing at all. */
+const toRoomCount = (raw?: string): number | undefined => {
+  if (raw === undefined || raw.trim() === "") return undefined;
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+};
+
+export const normalizeAdminFindParams = (
+  dto?: FindAdminPropertiesDto,
+): AdminFindParams => {
+  const page = dto?.page ? parseInt(dto.page, 10) : 1;
+  const limit = dto?.limit ? parseInt(dto.limit, 10) : ADMIN_DEFAULT_LIMIT;
+  const search = dto?.search?.trim();
+  const propertyType = dto?.property_type?.trim();
+
+  return {
+    page: Number.isFinite(page) && page > 0 ? page : 1,
+    limit:
+      Number.isFinite(limit) && limit > 0 && limit <= ADMIN_MAX_LIMIT
+        ? limit
+        : ADMIN_DEFAULT_LIMIT,
+    search: search || undefined,
+    building_id: dto?.building_id,
+    operator_id: dto?.operator_id,
+    is_landing_listing:
+      dto?.is_landing_listing === undefined
+        ? undefined
+        : dto.is_landing_listing === "true",
+    property_type: propertyType || undefined,
+    bedrooms: toRoomCount(dto?.bedrooms),
+    bedrooms_min: toRoomCount(dto?.bedrooms_min),
+    bathrooms: toRoomCount(dto?.bathrooms),
+    bathrooms_min: toRoomCount(dto?.bathrooms_min),
+  };
 };

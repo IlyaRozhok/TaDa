@@ -550,7 +550,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get all properties */
+        /** Get a page of properties */
         get: operations["PropertyController_findAll"];
         put?: never;
         /** Create a new property */
@@ -3819,9 +3819,18 @@ export interface operations {
     };
     PropertyController_findAll: {
         parameters: {
-            query: {
-                building_id: string;
-                operator_id: string;
+            query?: {
+                bathrooms_min?: string;
+                bathrooms?: string;
+                bedrooms_min?: string;
+                bedrooms?: string;
+                property_type?: string;
+                is_landing_listing?: "true" | "false";
+                operator_id?: string;
+                building_id?: string;
+                search?: string;
+                limit?: string;
+                page?: string;
             };
             header?: never;
             path?: never;

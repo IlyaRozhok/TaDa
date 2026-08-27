@@ -13,7 +13,11 @@ import { useDebounce } from "../../../hooks/useDebounce";
 import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
-import AdminPropertiesSection from "../../../components/AdminPropertiesSection";
+import AdminPropertiesSection, {
+  EMPTY_PROPERTY_FILTERS,
+  PropertyFilters,
+  propertyFiltersToQuery,
+} from "../../../components/AdminPropertiesSection";
 import AdminRequestsSection from "../../../components/AdminRequestsSection";
 import AddUserModal from "../../../components/AddUserModal";
 import AddBuildingModal from "../../../components/AddBuildingModal";
@@ -38,6 +42,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import {
+  ADMIN_PAGE_SIZE,
   useGetPropertiesQuery,
   useCreatePropertyMutation,
   useUpdatePropertyMutation,
@@ -120,6 +125,15 @@ function AdminPanelContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(searchTerm, 400);
+  // The properties tab keeps its own search/filter/page state: its query is
+  // server-side on all three, and sharing them with the users tab would send
+  // one tab's term to the other's endpoint.
+  const [propertyPage, setPropertyPage] = useState(1);
+  const [propertySearch, setPropertySearch] = useState("");
+  const debouncedPropertySearch = useDebounce(propertySearch, 300);
+  const [propertyFilters, setPropertyFilters] = useState<PropertyFilters>(
+    EMPTY_PROPERTY_FILTERS,
+  );
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
     direction: "desc",
@@ -168,13 +182,19 @@ function AdminPanelContent() {
   const [deleteBuilding] = useDeleteBuildingMutation();
 
   // Admin properties list, fetched only while its tab is open, like the
-  // other tabs. The endpoint is typed, so no envelope sniffing and no local
-  // mirror — the section renders straight off the cache.
-  const { data: propertiesData, isLoading: isPropsQueryLoading } =
-    useGetPropertiesQuery(undefined, {
-      skip: activeSection !== "properties",
-    });
-  const properties = propertiesData ?? [];
+  // other tabs. Search, filters and paging are all resolved server-side, so
+  // the section renders one page straight off the cache.
+  const { data: propertiesData, isFetching: isPropsQueryFetching } =
+    useGetPropertiesQuery(
+      {
+        page: propertyPage,
+        limit: ADMIN_PAGE_SIZE,
+        ...(debouncedPropertySearch ? { search: debouncedPropertySearch } : {}),
+        ...propertyFiltersToQuery(propertyFilters),
+      },
+      { skip: activeSection !== "properties" },
+    );
+  const properties = propertiesData?.data ?? [];
 
   const [createProperty] = useCreatePropertyMutation();
   const [updateProperty] = useUpdatePropertyMutation();
@@ -616,11 +636,23 @@ function AdminPanelContent() {
         return (
           <AdminPropertiesSection
             properties={properties}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            searchLoading={isPropsQueryLoading && !properties.length}
-            sort={sort}
-            setSort={setSort}
+            total={propertiesData?.total ?? 0}
+            page={propertiesData?.page ?? propertyPage}
+            totalPages={propertiesData?.totalPages ?? 1}
+            onPageChange={setPropertyPage}
+            searchTerm={propertySearch}
+            onSearchChange={(value) => {
+              // A new term re-ranks the whole list; page 3 of the old one is
+              // meaningless against it.
+              setPropertySearch(value);
+              setPropertyPage(1);
+            }}
+            searchLoading={isPropsQueryFetching}
+            filters={propertyFilters}
+            onFiltersChange={(next) => {
+              setPropertyFilters(next);
+              setPropertyPage(1);
+            }}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
