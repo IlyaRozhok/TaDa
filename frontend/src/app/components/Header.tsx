@@ -29,7 +29,7 @@ const Header = ({
 
   const bookACallLabel = translateWithFallback(
     t,
-    generalKeys.bookACall.headerCta,
+    generalKeys.bookACall.title,
     "Book a call",
   );
 

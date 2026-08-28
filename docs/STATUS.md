@@ -168,12 +168,14 @@ decisions) is recorded HERE, briefly, with a date.
   and in the backend's `call-request.vocabulary.ts`.
   **field4 has no options**: preferred time is a plain text input, so whatever
   the visitor types is stored and mailed verbatim.
-  Two keys are deliberately outside the `book.call.` set:
-  - **field3 is the phone**, and it reuses the profile settings key
-    `wizard.profile.phone` ("Phone Number"), which is already translated — the
-    same field must not read differently on the landing and in the account form.
-  - The **header pill** keeps `landing.common.web.bookacall.header.btn`; it is
-    not a modal field.
+  One key is deliberately outside the `book.call.` set: **field3 is the phone**,
+  and it reuses the profile settings key `wizard.profile.phone` ("Phone
+  Number"), which is already translated — the same field must not read
+  differently on the landing and in the account form.
+  The **header pill** reads `book.call.title`, the same key as the modal
+  heading (changed 2026-08-28); the landing-scoped
+  `landing.common.web.bookacall.header.btn` is no longer referenced by the code
+  and can be retired in Localazy.
 - **`frontend/src/types/generated/api.d.ts` is stale after the demo-request
   removal** (added 2026-08-27). It still carries `/api/demo-requests` and
   `CreateDemoRequestDto`, and does not yet carry `/api/call-requests`. Nothing

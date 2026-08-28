@@ -46,11 +46,8 @@ export const generalKeys = {
    * correctly until the owner adds them. See docs/STATUS.md.
    */
   bookACall: {
-    /**
-     * The header pill that opens the modal. Not a modal field, so it keeps the
-     * landing-scoped key it shipped with while the fields move to `book.call.`.
-     */
-    headerCta: "landing.common.web.bookacall.header.btn",
+    // The header pill that opens the modal reads `title` too — the pill and the
+    // modal heading must never say different things.
     title: "book.call.title",
     subtitle: "book.call.subtitle",
     // The fields are numbered rather than named because that is the owner's
