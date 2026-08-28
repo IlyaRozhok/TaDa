@@ -187,6 +187,18 @@ export class Property {
   @Column({ type: "varchar", nullable: true })
   borough?: string | null;
 
+  // Displaying the EPC band on an advertisement is a legal requirement in
+  // England and Wales (and MEES bans letting below E) — nullable only
+  // because pre-existing listings have no value yet.
+  @ApiProperty({
+    description: "EPC band (A-G)",
+    example: "C",
+    enum: ["A", "B", "C", "D", "E", "F", "G"],
+    required: false,
+  })
+  @Column({ type: "varchar", length: 2, nullable: true })
+  epc_rating?: string | null;
+
   @ApiProperty({
     description:
       "Tenant types for this property (inherited from building or custom)",
