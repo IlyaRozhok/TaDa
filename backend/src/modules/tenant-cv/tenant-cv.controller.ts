@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   UseGuards,
@@ -12,6 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagg
 import { Throttle } from "@nestjs/throttler";
 import { TenantCvService } from "./tenant-cv.service";
 import { UpdateTenantCvDto } from "./dto/update-tenant-cv.dto";
+import { SetVerificationDto } from "./dto/set-verification.dto";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
 import { Public } from "@/common/decorators/public.decorator";
 import { OptionalJwtAuthGuard } from "@/common/guards/optional-jwt-auth.guard";
@@ -69,6 +71,24 @@ export class TenantCvController {
   @ApiBearerAuth()
   async createShareLink(@CurrentUser() user: any) {
     return this.tenantCvService.ensureShareUuid(user.id);
+  }
+
+  /**
+   * Trust badges are admin-set only: "referenced" has a precise meaning in
+   * the UK market, and a self-attested badge is worse than none. During the
+   * concierge phase an admin verifies by hand; later this is where a
+   * referencing-provider integration writes its result.
+   */
+  @Patch(":userId/verification")
+  @Roles(UserRole.Admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Set KYC/referencing badges on a tenant CV (admin)" })
+  @ApiResponse({ status: 200, description: "Verification badges updated" })
+  async setVerification(
+    @Param("userId", ParseUUIDPipe) userId: string,
+    @Body() dto: SetVerificationDto,
+  ) {
+    return this.tenantCvService.setVerification(userId, dto);
   }
 
   /**

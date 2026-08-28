@@ -49,6 +49,25 @@ export const PREFERENCE_BILLS_VALUES = [
 ] as const;
 
 /**
+ * Verification badge states on the tenant CV. In the UK market "referenced"
+ * has a precise meaning (credit check, income multiple, previous-landlord
+ * reference, Right to Rent) — which is exactly why only an ADMIN may set
+ * these values after actually verifying something.
+ */
+export const VERIFICATION_STATUS_VALUES = [
+  "not_started",
+  "in_progress",
+  "passed",
+  "failed",
+] as const;
+
+/**
+ * EPC bands. Displaying the rating on an advertisement is a legal
+ * requirement in England and Wales, and MEES bans letting below E.
+ */
+export const EPC_RATING_VALUES = ["A", "B", "C", "D", "E", "F", "G"] as const;
+
+/**
  * `let_duration` is a comma-separated multiselect on BOTH sides (see
  * duration.scorer); these are the tokens.
  */

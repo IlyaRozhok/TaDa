@@ -59,6 +59,26 @@ export class TenantCvService {
     cv.headline = payload.headline ?? cv.headline;
     cv.hobbies = payload.hobbies ?? cv.hobbies;
     cv.rent_history = payload.rent_history ?? cv.rent_history;
+    // kyc_status / referencing_status are deliberately NOT written here:
+    // trust badges are admin-set only (setVerification below).
+
+    await this.tenantCvRepository.save(cv);
+
+    return this.withRefreshedAvatarUrl(buildTenantCvResponse(user, cv));
+  }
+
+  /**
+   * Admin-only write path for the verification badges. Kept separate from
+   * the tenant's own update so the two can never be conflated by a DTO
+   * change again.
+   */
+  async setVerification(
+    userId: string,
+    payload: { kyc_status?: string; referencing_status?: string }
+  ): Promise<TenantCvResponseDto> {
+    const user = await this.userQueryService.findOneWithProfiles(userId);
+    const cv = await this.getOrCreateCv(userId);
+
     cv.kyc_status = payload.kyc_status ?? cv.kyc_status;
     cv.referencing_status = payload.referencing_status ?? cv.referencing_status;
 

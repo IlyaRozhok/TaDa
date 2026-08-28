@@ -143,21 +143,11 @@ export class UpdateTenantCvDto {
   @Type(() => RentHistoryEntryDto)
   rent_history?: RentHistoryEntryDto[];
 
-  @ApiPropertyOptional({
-    description: "KYC status badge",
-    example: "in_progress",
-  })
-  @IsOptional()
-  @IsString()
-  kyc_status?: string;
-
-  @ApiPropertyOptional({
-    description: "Referencing status badge",
-    example: "pending",
-  })
-  @IsOptional()
-  @IsString()
-  referencing_status?: string;
+  // kyc_status / referencing_status deliberately absent (package C2): a
+  // tenant could type `"passed"` into their own trust badges through this
+  // DTO, which is worse than having no badge — the first operator who
+  // noticed would treat every TaDa signal as noise. Verification is set by
+  // admins only, via SetVerificationDto.
 
   @ApiPropertyOptional({
     description: "Optional existing share UUID to preserve (ignored on update)",
