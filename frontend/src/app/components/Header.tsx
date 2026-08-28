@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import RequestDemoModal from "./RequestDemoModal";
+import BookACallModal from "./BookACallModal";
 import LanguageDropdown from "./LanguageDropdown";
-import { useTranslation } from "../hooks/useTranslation";
+import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
+import { generalKeys } from "../lib/translationsKeys/generalKeys";
 import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
 import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
 import { onboardingKeys } from "../lib/translationsKeys/onboardingTranslationKeys";
@@ -22,15 +23,15 @@ const Header = ({
   disabled = false,
 }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isRequestDemoOpen, setIsRequestDemoOpen] = useState(false);
-  const [modalSource, setModalSource] = useState<
-    | "tenant-contact"
-    | "operator-request-demo"
-    | "operator-spotlight"
-    | undefined
-  >(undefined);
+  const [isBookACallOpen, setIsBookACallOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
+
+  const bookACallLabel = translateWithFallback(
+    t,
+    generalKeys.bookACall.headerCta,
+    "Book a call",
+  );
 
 
   // Close mobile menu when landing type changes
@@ -155,6 +156,18 @@ const Header = ({
                   disabled={disabled}
                 />
 
+                {/* Book a call - opens the landing's call-request modal */}
+                <button
+                  onClick={() => {
+                    if (disabled) return;
+                    setIsBookACallOpen(true);
+                  }}
+                  disabled={disabled}
+                  className="border border-white cursor-pointer text-white px-3 sm:px-4 md:px-6 py-2 md:py-3 rounded-full hover:bg-white hover:text-black transition-colors font-medium text-xs sm:text-sm flex-shrink-0 hidden lg:inline disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-white"
+                >
+                  {bookACallLabel}
+                </button>
+
                 {/* Get Started CTA - navigates to auth */}
                 <button
                   onClick={() => {
@@ -216,7 +229,7 @@ const Header = ({
           {/* Menu Panel */}
           <div className="absolute top-24 left-4 right-4 bg-black/50 backdrop-blur-[3px] rounded-3xl p-6 shadow-2xl animate-in slide-in-from-top duration-300">
             {/* Get Started CTA - navigates to auth */}
-            <div className="mb-6 border-gray-200/30">
+            <div className="mb-3 border-gray-200/30">
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -225,6 +238,19 @@ const Header = ({
                 className="w-full bg-black text-white px-6 py-4 rounded-full font-semibold hover:bg-black/50 hover:text-white transition-colors text-base cursor-pointer"
               >
                 {t(onboardingKeys.headerCtaGetStarted)}
+              </button>
+            </div>
+
+            {/* Book a call - the desktop pill's mobile counterpart */}
+            <div className="mb-6 border-gray-200/30">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsBookACallOpen(true);
+                }}
+                className="w-full border border-white text-white px-6 py-4 rounded-full font-semibold hover:bg-white hover:text-black transition-colors text-base cursor-pointer"
+              >
+                {bookACallLabel}
               </button>
             </div>
 
@@ -247,16 +273,12 @@ const Header = ({
         </div>
       )}
 
-      {/* Request Demo Modal */}
+      {/* Book a Call Modal */}
       {!disabled && (
-        <RequestDemoModal
-          isOpen={isRequestDemoOpen}
-          onClose={() => {
-            setIsRequestDemoOpen(false);
-            setModalSource(undefined);
-          }}
-          landingType={landingType}
-          modalSource={modalSource}
+        <BookACallModal
+          isOpen={isBookACallOpen}
+          onClose={() => setIsBookACallOpen(false)}
+          audience={landingType === "tenants" ? "tenant" : "operator"}
         />
       )}
     </>

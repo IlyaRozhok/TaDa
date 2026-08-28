@@ -6,6 +6,7 @@ import { NotificationsService } from "./notifications.service";
 import { NotificationChannel } from "./channels/notification-channel.interface";
 import {
   BookingRequestedEvent,
+  CallRequestedEvent,
   TenantCvCompletedEvent,
   UserRegisteredEvent,
 } from "./events/notification.events";
@@ -97,6 +98,23 @@ function bookingEvent(
     dateFrom: "2026-09-01",
     dateTo: null,
     message: null,
+    ...overrides,
+  };
+}
+
+function callEvent(
+  overrides: Partial<CallRequestedEvent> = {},
+): CallRequestedEvent {
+  return {
+    reason: "help_find_home",
+    reasonLabel: "Help me find a home",
+    name: "Jane Doe",
+    email: "Jane@Example.com",
+    phone: { countryCode: "GB", number: "20 7946 0000" },
+    preferredTimes: ["Morning", "Evening"],
+    notes: null,
+    source: "tenant",
+    requestedAt: new Date("2026-08-18T10:00:00.000Z"),
     ...overrides,
   };
 }
@@ -237,6 +255,79 @@ describe("NotificationsService", () => {
         "booking_requested:booking-1",
         "booking_requested:booking-1:rev-2",
       ]);
+    });
+  });
+
+  describe("call requests", () => {
+    it("swallows a channel failure rather than throwing at the producer", async () => {
+      channel.send.mockRejectedValue(new Error("SES is down"));
+
+      await expect(
+        build().handleCallRequested(callEvent()),
+      ).resolves.toBeUndefined();
+    });
+
+    it("keys one email per address per UTC day, case-insensitively", async () => {
+      const service = build();
+
+      await service.handleCallRequested(callEvent());
+      await service.handleCallRequested(
+        callEvent({ email: "jane@example.com" }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "call_request:jane@example.com:2026-08-18",
+        "call_request:jane@example.com:2026-08-18",
+      ]);
+    });
+
+    it("lets a follow-up the next day through", async () => {
+      const service = build();
+
+      await service.handleCallRequested(callEvent());
+      await service.handleCallRequested(
+        callEvent({ requestedAt: new Date("2026-08-19T09:00:00.000Z") }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "call_request:jane@example.com:2026-08-18",
+        "call_request:jane@example.com:2026-08-19",
+      ]);
+    });
+
+    it("sends to the channel's address, never to the visitor's", async () => {
+      await build().handleCallRequested(
+        callEvent({ email: "attacker@evil.test" }),
+      );
+
+      expect(repo.insertedValues[0].recipient).toBe("support@ta-da.co");
+      expect(channel.send).toHaveBeenCalledWith(
+        "support@ta-da.co",
+        expect.anything(),
+      );
+    });
+
+    it("renders the subject from the source and the visitor's name", async () => {
+      await build().handleCallRequested(callEvent({ source: "operator" }));
+
+      expect(repo.insertedValues[0].subject).toBe(
+        "Call request (operator) — Jane Doe",
+      );
+    });
+
+    // The payload is stored so the retry worker can rebuild the body without
+    // reaching back into call_requests.
+    it("survives a replayed payload that lost its Date type through jsonb", async () => {
+      const replayed = JSON.parse(
+        JSON.stringify(callEvent()),
+      ) as CallRequestedEvent;
+
+      await expect(
+        build().handleCallRequested(replayed),
+      ).resolves.toBeUndefined();
+      expect(repo.insertedValues[0].dedupe_key).toBe(
+        "call_request:jane@example.com:2026-08-18",
+      );
     });
   });
 

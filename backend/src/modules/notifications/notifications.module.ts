@@ -7,7 +7,6 @@ import { User } from "@/entities/user.entity";
 import { Property } from "@/entities/property.entity";
 import { EmailModule } from "@/common/services/email.module";
 import { notificationChannelProviders } from "./channels";
-import { NotificationsController } from "./notifications.controller";
 import { NotificationsRetryWorker } from "./notifications.retry.worker";
 import { NotificationsService } from "./notifications.service";
 
@@ -27,7 +26,6 @@ import { NotificationsService } from "./notifications.service";
     // a delivery address).
     TypeOrmModule.forFeature([Notification, User, Property]),
   ],
-  controllers: [NotificationsController],
   providers: [
     ...notificationChannelProviders,
     NotificationsService,

@@ -25,7 +25,11 @@ export interface PhoneMaskInputProps {
 }
 
 export default function PhoneMaskInput({
-  countryCode: initialCountryCode = "US",
+  // GB, not US: this is a UK rental platform, and the only callers that relied
+  // on the default were opening a form for a London flat. Every existing
+  // caller passes `countryCode` explicitly, so this moves nothing but the
+  // fallback.
+  countryCode: initialCountryCode = "GB",
   value,
   onChange,
   label,

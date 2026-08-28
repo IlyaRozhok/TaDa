@@ -96,6 +96,22 @@ export const operatorKeys = {
     subtitle: "landing.operators.web.listings.subtitle",
     seeAll: "landing.operators.web.listings.seeAll",
   },
+  // "Book a call" reason options offered on the operator landing. Not synced
+  // from Localazy yet — the modal renders an English fallback until the keys
+  // land. The slug sent to the backend is the object key, not the label.
+  bookACall: {
+    reason: {
+      units_to_fill: "landing.operators.web.bookacall.reason.units_to_fill",
+      see_demo: "landing.operators.web.bookacall.reason.see_demo",
+      pricing_and_terms:
+        "landing.operators.web.bookacall.reason.pricing_and_terms",
+      landlord_to_let: "landing.operators.web.bookacall.reason.landlord_to_let",
+      agent_partner: "landing.operators.web.bookacall.reason.agent_partner",
+      connect_feed: "landing.operators.web.bookacall.reason.connect_feed",
+      looking_for_home: "landing.operators.web.bookacall.reason.looking_for_home",
+      something_else: "landing.operators.web.bookacall.reason.something_else",
+    },
+  },
   partners: {
     title: "landing.operators.web.partners.title",
     stripe: "landing.operators.web.partner1",

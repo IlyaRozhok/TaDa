@@ -13,7 +13,7 @@ export const NotificationEvents = {
   BookingStatusChanged: "booking-request.status-changed",
   ViewingProposed: "booking-request.viewing-proposed",
   ViewingConfirmed: "booking-request.viewing-confirmed",
-  DemoRequested: "demo.requested",
+  CallRequested: "call.requested",
 } as const;
 
 /** How the account came into existence. Both paths notify support. */
@@ -115,18 +115,31 @@ export interface ViewingConfirmedEvent {
 }
 
 /**
- * A demo request from the public landing form. Unauthenticated by nature —
- * the sender is whoever filled in the form, so every field is untrusted input
- * that the DTO has already length-capped and validated. The recipient is the
- * internal inbox, never anything from this payload (invariant 2 of
- * NotificationsService).
+ * A "Book a call" request from a public landing form. Unauthenticated by
+ * nature — the sender is whoever filled in the form, so every field is
+ * untrusted input that the DTO has already length-capped and constrained to a
+ * closed vocabulary. The recipient is the internal inbox, never anything from
+ * this payload (invariant 2 of NotificationsService).
+ *
+ * The producer resolves labels before emitting: the slug is what the row
+ * stores, the label is what the support inbox needs to read, and the template
+ * should not have to own the form's vocabulary to render one line of text.
  */
-export interface DemoRequestedEvent {
-  firstName: string;
-  lastName: string;
+export interface CallRequestedEvent {
+  /** Stable slug, e.g. `help_find_home`. */
+  reason: string;
+  /** English label for that slug, resolved by the producer. */
+  reasonLabel: string;
+  name: string;
   email: string;
-  phone: string;
-  /** Which flavour of the landing sent it: "Operator", "Tenant" or "Website". */
+  phone: {
+    countryCode: string;
+    number: string;
+  };
+  /** Labels, not slugs. Null when the visitor skipped the optional field. */
+  preferredTimes: string[] | null;
+  notes: string | null;
+  /** Which landing sent it: "tenant" or "operator". */
   source: string;
   requestedAt: Date;
 }

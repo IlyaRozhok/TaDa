@@ -930,17 +930,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/demo-requests": {
+    "/api/call-requests": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List call requests (admin) */
+        get: operations["CallRequestController_findAll"];
         put?: never;
-        /** Submit a demo request from the public landing form */
-        post: operations["NotificationsController_requestDemo"];
+        /** Submit a call request from a public landing form */
+        post: operations["CallRequestController_requestCall"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3013,20 +3014,41 @@ export interface components {
              */
             proposed_viewing_at: string;
         };
-        CreateDemoRequestDto: {
-            /** @example Jane */
-            firstName: string;
-            /** @example Doe */
-            lastName: string;
+        CallRequestPhoneDto: {
+            /**
+             * @description ISO 3166-1 alpha-2 country code
+             * @example GB
+             */
+            countryCode: string;
+            /** @example 20 7946 0000 */
+            number: string;
+        };
+        CreateCallRequestDto: {
+            /**
+             * @example help_find_home
+             * @enum {string}
+             */
+            reason: "help_find_home" | "finish_rental_cv" | "question_about_property" | "something_else" | "units_to_fill" | "see_demo" | "pricing_and_terms" | "landlord_to_let" | "agent_partner" | "connect_feed" | "looking_for_home";
+            /** @example Jane Doe */
+            name: string;
             /** @example jane@example.com */
             email: string;
-            /** @example +44 20 7946 0000 */
-            phone: string;
+            phone: components["schemas"]["CallRequestPhoneDto"];
             /**
-             * @description Which surface sent the form, e.g. "Tenant", "Operator Request Demo", "Operator Spotlight Series". Free text (capped) because the landing keeps growing new entry points; the value is only ever printed into the internal email.
-             * @example Tenant
+             * @description When the visitor would like to be called. "asap" is exclusive of the others in the UI; the backend stores whatever arrives.
+             * @example [
+             *       "morning",
+             *       "evening"
+             *     ]
              */
-            source?: string;
+            preferredTimes?: ("morning" | "afternoon" | "evening" | "asap")[];
+            /** @example Evenings after 6pm work best. */
+            notes?: string;
+            /**
+             * @example tenant
+             * @enum {string}
+             */
+            source: "tenant" | "operator";
         };
     };
     responses: never;
@@ -4784,7 +4806,27 @@ export interface operations {
             };
         };
     };
-    NotificationsController_requestDemo: {
+    CallRequestController_findAll: {
+        parameters: {
+            query?: {
+                source?: "tenant" | "operator";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Call requests retrieved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CallRequestController_requestCall: {
         parameters: {
             query?: never;
             header?: never;
@@ -4793,11 +4835,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDemoRequestDto"];
+                "application/json": components["schemas"]["CreateCallRequestDto"];
             };
         };
         responses: {
-            /** @description Request accepted for delivery */
+            /** @description Request stored and accepted for delivery */
             202: {
                 headers: {
                     [name: string]: unknown;
