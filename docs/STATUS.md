@@ -60,7 +60,7 @@ decisions) is recorded HERE, briefly, with a date.
     DTOs normalize known aliases and reject the rest (property and
     preferences sides), stored data normalized by migration (rehearsed on
     dirty seeds). The geocoding backfill script also ships here
-    (`npm run geo:backfill` in backend/ — host action #5 below).
+    (`geo:backfill` / `geo:backfill:prod` — host action #5 below).
   - ~~single unknown-data policy~~ — **done (B4, current PR — closes
     package B)**: missing property-side data scores a fixed 30% partial
     with `match: false` in every scorer (`scoring/unknown-data.ts`) —
@@ -121,10 +121,21 @@ decisions) is recorded HERE, briefly, with a date.
 4. **Host `.env` files:** remove the stale `CORS_ORIGIN=http://localhost:3000`
    value — the env union still honours it, which re-adds localhost to the
    production CORS allowlist.
-5. **Geocoding backfill** (after the B2/B3 migrations are deployed): run
-   `npm run geo:backfill` once in `backend/` on each host (stage, then
-   prod) with the real `.env`. Idempotent and resumable; rows whose address
-   has no full UK postcode are reported and skipped.
+5. **Geocoding backfill** (after the B2/B3 migrations are deployed): run it
+   once on each host (stage, then prod), from `/opt/tada`:
+
+   ```
+   docker compose exec -T backend npm run geo:backfill:prod
+   ```
+
+   The script lives at `backend/src/scripts/backfill-geocoding.ts` and is
+   compiled into the image as `dist/scripts/backfill-geocoding.js`, so it
+   runs inside the container the same way migrations do — no host `npm ci`,
+   no copying `.env` around, no `DB_HOST` override: the container already has
+   the credentials via `env_file` and resolves `host.docker.internal`.
+   Locally the dev variant `npm run geo:backfill` (ts-node, real `.env` in
+   `backend/`) still works unchanged. Idempotent and resumable; rows whose
+   address has no full UK postcode are reported and skipped.
 
 ## Open follow-ups (recorded, not scheduled)
 
