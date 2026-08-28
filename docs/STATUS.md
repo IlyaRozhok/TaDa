@@ -59,11 +59,20 @@ decisions) is recorded HERE, briefly, with a date.
     `family_status`/`occupation` targeting columns are read as the
     authoritative signal (tenant-type heuristics remain the fallback);
     the smoking scorer no longer invents `propertySmoking = false`.
-- **C — the funnel stops being silent**: transactional emails to tenant and
-  operator on booking events (outbox already built — new templates plus
-  recipients); `proposed_viewing_at` + confirmation on the viewing step;
-  KYC/referencing badges become admin-set only; `epc_rating` field (legally
-  required on listings) and a Tenant Fees Act deposit-cap warning.
+- **C — the funnel stops being silent**:
+  - ~~transactional emails + viewing appointment~~ — **done (C1, current
+    PR)**: tenant receipt + operator alert on every booking (re)submit,
+    tenant email on every status transition (with a plain-language
+    explanation per stage), viewing proposal/confirmation emails.
+    Recipients are resolved from the database by user/property id — never
+    from event payloads (invariant 2 extended). `proposed_viewing_at` +
+    `viewing_confirmed_at` on bookings; admin `PATCH
+    /booking-requests/:id/viewing`, tenant `POST .../viewing/confirm`.
+    Frontend follow-ups: show/confirm the viewing slot in the tenant UI,
+    set it from the admin requests table (API is ready).
+  - **C2 (next)**: KYC/referencing badges become admin-set only;
+    `epc_rating` field (legally required on listings); Tenant Fees Act
+    deposit-cap warning.
 - **D — operator dashboard**: own listings, booking requests on own
   properties (scope the existing admin view by `operator_id`), rights over
   early statuses, email on a new request.

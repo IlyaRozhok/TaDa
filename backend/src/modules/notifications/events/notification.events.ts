@@ -10,6 +10,9 @@ export const NotificationEvents = {
   UserRegistered: "user.registered",
   TenantCvCompleted: "tenant-cv.completed",
   BookingRequested: "booking-request.created",
+  BookingStatusChanged: "booking-request.status-changed",
+  ViewingProposed: "booking-request.viewing-proposed",
+  ViewingConfirmed: "booking-request.viewing-confirmed",
   CallRequested: "call.requested",
 } as const;
 
@@ -65,6 +68,50 @@ export interface BookingRequestedEvent {
   dateFrom: string | null;
   dateTo: string | null;
   message: string | null;
+}
+
+/**
+ * A booking moved through the pipeline. Carries IDs and display fields only:
+ * recipient addresses are resolved from the database by the notification
+ * service (invariant 2 — no event payload can redirect an email).
+ */
+export interface BookingStatusChangedEvent {
+  bookingId: string;
+  propertyId: string;
+  tenantId: string;
+  from: string;
+  to: string;
+  property: {
+    title: string | null;
+    address: string | null;
+  };
+}
+
+/** An admin proposed a viewing slot to the tenant. */
+export interface ViewingProposedEvent {
+  bookingId: string;
+  propertyId: string;
+  tenantId: string;
+  /** ISO datetime of the proposed viewing. */
+  proposedAt: string;
+  property: {
+    title: string | null;
+    address: string | null;
+  };
+}
+
+/** The tenant confirmed the proposed viewing slot. */
+export interface ViewingConfirmedEvent {
+  bookingId: string;
+  propertyId: string;
+  tenantId: string;
+  /** ISO datetime of the confirmed viewing. */
+  proposedAt: string;
+  confirmedAt: string;
+  property: {
+    title: string | null;
+    address: string | null;
+  };
 }
 
 /**
