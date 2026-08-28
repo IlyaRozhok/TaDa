@@ -8,8 +8,8 @@ import { MigrationInterface, QueryRunner } from "typeorm";
  * no field for it at all. Nullable: pre-existing listings carry no value
  * until their operator supplies one; the DTO constrains new writes to A-G.
  */
-export class AddPropertyEpcRating1788100000000 implements MigrationInterface {
-  name = "AddPropertyEpcRating1788100000000";
+export class AddPropertyEpcRating1788200000000 implements MigrationInterface {
+  name = "AddPropertyEpcRating1788200000000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
