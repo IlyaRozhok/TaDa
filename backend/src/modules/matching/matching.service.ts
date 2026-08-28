@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "@/entities";
@@ -7,6 +7,10 @@ import { PropertyStatus } from "@/entities/property.entity";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { S3Service } from "@/common/services/s3.service";
 import { stripOperatorPii } from "@/common/mappers/public-operator.mapper";
+import {
+  DEFAULT_MATCHED_PROPERTIES_SORT,
+  MatchedPropertiesSort,
+} from "./dto/get-matched-properties.dto";
 import {
   PropertyMatchResult,
   MatchScoresResponse,
@@ -83,6 +87,62 @@ export function averageMatchPercentage(
 const RANKING_CANDIDATE_CEILING = 5000;
 
 /**
+ * The SQL ordering behind every sort that is not `best_match`, mapped to the
+ * real `Property` columns.
+ *
+ * `NULLS LAST` in both directions on purpose: `price` and `deposit` are
+ * nullable, and Postgres would otherwise float every unpriced listing to the
+ * top of "highest price" (DESC defaults to NULLS FIRST). A listing with no
+ * price is not the most expensive one — it sinks under either direction.
+ */
+const SORT_ORDER_BY: Readonly<
+  Record<
+    Exclude<MatchedPropertiesSort, "best_match">,
+    { column: string; direction: "ASC" | "DESC" }
+  >
+> = {
+  low_price: { column: "property.price", direction: "ASC" },
+  high_price: { column: "property.price", direction: "DESC" },
+  low_deposit: { column: "property.deposit", direction: "ASC" },
+  high_deposit: { column: "property.deposit", direction: "DESC" },
+  date_added: { column: "property.created_at", direction: "DESC" },
+};
+
+/**
+ * The tie-break, and the whole ordering of `best_match` on the paths that do
+ * not score (a user with no preferences). It is also what decides which rows
+ * survive `RANKING_CANDIDATE_CEILING`.
+ */
+const TIE_BREAK_COLUMN = "property.created_at";
+
+/**
+ * Order a property query by one of the feed's sorts.
+ *
+ * `best_match` has no SQL ordering of its own — the ranking happens in
+ * TypeScript — so it falls back to the tie-break alone, which is exactly what
+ * the no-preferences path wants.
+ */
+function applyPropertySort(
+  qb: SelectQueryBuilder<Property>,
+  sort: MatchedPropertiesSort,
+): SelectQueryBuilder<Property> {
+  if (sort === "best_match") {
+    return qb.orderBy(TIE_BREAK_COLUMN, "DESC");
+  }
+
+  const { column, direction } = SORT_ORDER_BY[sort];
+  qb.orderBy(column, direction, "NULLS LAST");
+
+  // A second ORDER BY on the same column would be dead weight; `date_added`
+  // already IS the tie-break.
+  if (column !== TIE_BREAK_COLUMN) {
+    qb.addOrderBy(TIE_BREAK_COLUMN, "DESC");
+  }
+
+  return qb;
+}
+
+/**
  * One cached outcome of the ranking pass — the sorted id list and the
  * set-level numbers, NOT the page payload. Categories and photo URLs are
  * per-page work and stay uncached.
@@ -96,6 +156,8 @@ interface RankingCacheEntry {
 
 @Injectable()
 export class MatchingService {
+  private readonly logger = new Logger(MatchingService.name);
+
   /**
    * Ranking cache: keyed by user + preferences version + search + prefilters,
    * so editing preferences misses the cache by construction (the key embeds
@@ -281,13 +343,25 @@ export class MatchingService {
   }
 
   /**
-   * The single read path for matched properties: the whole inventory ranked by
-   * match score, paginated and searchable. Every screen that shows matched
-   * listings reads it from here.
+   * The single read path for the results feed: the FULL listed inventory,
+   * paginated, searchable and ordered by `options.sort`. Every screen that
+   * shows matched listings reads it from here, under every sort.
    *
-   * `options.prefilters` narrows the candidate set in SQL first — see
-   * `applyPreFilters`. Off by default; it exists so the behaviour of the
-   * deleted `/matches` route stays reachable rather than being dropped.
+   * The population is `status = 'listed'` (plus the search), and nothing else.
+   * A property that scores badly is not hidden — it is scored honestly, given
+   * its real low percentage and sunk to the bottom of `best_match`. `total` is
+   * therefore the full listed count, the same number the public catalogue
+   * reports, and paging never runs out of stock the user can see elsewhere.
+   *
+   * `options.prefilters` narrows the candidate set in SQL before scoring — see
+   * `applyPreFilters`. **Off by default**: it is an opt-in debug flag
+   * (`?prefilters=true`), kept so the behaviour of the deleted `/matches`
+   * route stays reachable rather than being dropped. Turning it on trades the
+   * full inventory for a smaller scoring pass and makes `total` a subset.
+   *
+   * `options.sort` other than `best_match` skips the TypeScript scoring pass
+   * altogether and orders in SQL (see `applyPropertySort`); the returned page
+   * is still scored afterwards, so every card keeps its real match badge.
    */
   async getMatchedPropertiesWithPagination(
     userId: string,
@@ -296,6 +370,7 @@ export class MatchingService {
       limit?: number;
       search?: string;
       prefilters?: boolean;
+      sort?: MatchedPropertiesSort;
     } = {}
   ): Promise<{
     data: Array<{
@@ -316,15 +391,21 @@ export class MatchingService {
     totalPages: number;
     /**
      * Mean match score over the ENTIRE matched set — the same population
-     * `total` counts, not the page in `data`. Sort- and page-independent: it is
-     * a property of this tenant and these filters, so every consumer of the
-     * feed can report it beside `total` and describe one population with both.
+     * `total` counts, not the page in `data`. Page-independent: it is a
+     * property of this tenant and these filters, so every consumer of the feed
+     * can report it beside `total` and describe one population with both.
+     *
+     * `null` when that mean is not knowable: nothing was scored (a user with
+     * no preferences), or the feed was ordered in SQL under a non-`best_match`
+     * sort, which deliberately scores only the returned page. Never a
+     * fabricated 0 — the client falls back to the page it was given.
      */
     avgMatchScore: number | null;
   }> {
     const page = options.page || 1;
     const limit = options.limit || 12;
     const search = options.search?.trim();
+    const sort = options.sort ?? DEFAULT_MATCHED_PROPERTIES_SORT;
 
     const preferences = await this.preferencesRepository.findOne({
       where: { user_id: userId },
@@ -359,8 +440,11 @@ export class MatchingService {
       const total = await qb.getCount();
       const skip = (page - 1) * limit;
 
-      const properties = await qb
-        .orderBy("property.created_at", "DESC")
+      // The sort is honoured here too: a user with no preferences has no
+      // ranking to ask for, but "cheapest first" is still a plain question
+      // about the inventory. `best_match` falls back to newest-first, which
+      // is what this branch has always returned.
+      const properties = await applyPropertySort(qb, sort)
         .skip(skip)
         .take(limit)
         .getMany();
@@ -391,12 +475,67 @@ export class MatchingService {
       };
     }
 
-    // SQL pre-filters are ON by default since the 2026-08-21 hardening batch:
-    // the generous ranges in `applyPreFilters` only drop rows that could never
-    // rank, and narrowing in SQL is half of what keeps this path from scoring
-    // the whole table per request. `?prefilters=false` restores the old
-    // rank-everything behaviour.
-    const usePrefilters = options.prefilters ?? true;
+    if (sort !== "best_match") {
+      // A sort the database can answer. There is no reason to score the whole
+      // inventory to order it by price, so this path does not: it orders and
+      // paginates in SQL over the same `status = 'listed'` (+ search)
+      // population, then scores only the twelve rows it is about to return so
+      // their badges still show the real percentage.
+      //
+      // The ids come from a projection rather than a hydrating query so the
+      // ordering never has to fight TypeORM's join pagination; the ORDER BY
+      // columns are selected explicitly for the same reason.
+      const idQb = this.propertyRepository
+        .createQueryBuilder("property")
+        .select([
+          "property.id",
+          "property.price",
+          "property.deposit",
+          "property.created_at",
+        ])
+        .where("property.status = :listedStatus", {
+          listedStatus: PropertyStatus.Listed,
+        });
+
+      if (search) {
+        // A join, not a joinAndSelect: the predicate reads `building.name`
+        // but this pass has no use for the building's columns.
+        idQb
+          .leftJoin("property.building", "building")
+          .andWhere(searchPredicate, searchParameters);
+      }
+
+      const total = await idQb.getCount();
+      const skip = (page - 1) * limit;
+
+      const pageRows = await applyPropertySort(idQb, sort)
+        .skip(skip)
+        .take(limit)
+        .getMany();
+
+      return {
+        data: await this.scorePage(
+          pageRows.map((row) => row.id),
+          preferences
+        ),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        // The set-level mean is a property of the scored set, and this path
+        // scored a page, not a set. Reporting the page's mean as the set's
+        // would be a different number wearing the same name.
+        avgMatchScore: null,
+      };
+    }
+
+    // SQL pre-filters are OFF by default: the feed's job is to rank the FULL
+    // listed inventory, and a property that falls outside the user's budget or
+    // bedroom range still belongs in it — at its real, low percentage, below
+    // everything that fits. Pre-filtering deleted those rows from the feed
+    // entirely, which is what made `total` disagree with the public catalogue.
+    // `?prefilters=true` opts back in: a debug escape hatch that keeps the
+    // behaviour of the deleted `/matches` route reachable.
+    const usePrefilters = options.prefilters ?? false;
 
     // Phase 1 — rank, through the cache.
     //
@@ -442,6 +581,18 @@ export class MatchingService {
 
       const candidates = await rankingQb.getMany();
 
+      if (candidates.length === RANKING_CANDIDATE_CEILING) {
+        // At the ceiling the query stops being "the whole inventory" and
+        // becomes "the newest 5,000 rows of it" — the oldest stock leaves the
+        // feed with no other symptom. Say so before a tenant notices instead.
+        this.logger.warn(
+          `Ranking pass hit the ${RANKING_CANDIDATE_CEILING}-candidate ceiling` +
+            ` (user=${userId}, search=${JSON.stringify(search ?? "")},` +
+            ` prefilters=${usePrefilters}). Older listed properties are being` +
+            ` dropped from the Best Match feed — revisit the read path.`
+        );
+      }
+
       const matchResults: PropertyMatchResult[] = candidates.map((property) =>
         this.calculationService.calculateMatch(
           property,
@@ -468,19 +619,49 @@ export class MatchingService {
     const skip = (page - 1) * limit;
     const pageIds = ranking.rankedIds.slice(skip, skip + limit);
 
-    // Phase 2 — hydrate only the page. The relations and the presigned photo
-    // URLs are paid for by the rows that are actually returned. Scores and
-    // categories for the page are recomputed from the hydrated entities:
-    // `calculateMatch` is pure and 6.2 proved the projection ranking identical
-    // to full-entity scoring, so on unchanged data this reproduces the cached
-    // ranking exactly, and on data edited inside the TTL the page shows the
-    // property's CURRENT score rather than a stale one.
+    // Phase 2 — hydrate and score only the page. The relations and the
+    // presigned photo URLs are paid for by the rows that are actually
+    // returned. Scores and categories are recomputed from the hydrated
+    // entities: `calculateMatch` is pure and 6.2 proved the projection ranking
+    // identical to full-entity scoring, so on unchanged data this reproduces
+    // the cached ranking exactly, and on data edited inside the TTL the page
+    // shows the property's CURRENT score rather than a stale one.
+    const data = await this.scorePage(pageIds, preferences);
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      avgMatchScore: ranking.avgMatchScore,
+    };
+  }
+
+  /**
+   * Hydrate one page of ids and score each row against the user's preferences,
+   * preserving the caller's order.
+   *
+   * This is the single place a returned card gets its badge, whichever path
+   * chose the ids — the ranked one or a SQL sort. It uses the same
+   * `calculateMatch` + `DEFAULT_WEIGHTS` as `getMatchScores`, so the number on
+   * a card is the same number under every sort.
+   */
+  private async scorePage(
+    pageIds: string[],
+    preferences: Preferences
+  ): Promise<
+    Array<{
+      property: Property;
+      matchScore: number;
+      categories: PropertyMatchResult["categories"];
+    }>
+  > {
     const hydratedById = await this.hydratePropertiesById(pageIds);
 
-    const data = await Promise.all(
+    return Promise.all(
       pageIds
-        // A property deleted since the ranking pass drops out rather than
-        // being served in a ranking-only form, with no relations or photos.
+        // A property deleted since the ids were chosen drops out rather than
+        // being served in a projection-only form, with no relations or photos.
         .filter((id) => hydratedById.has(id))
         .map(async (id) => {
           const property = hydratedById.get(id)!;
@@ -496,14 +677,6 @@ export class MatchingService {
           };
         })
     );
-
-    return {
-      data,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-      avgMatchScore: ranking.avgMatchScore,
-    };
   }
 
   /**
