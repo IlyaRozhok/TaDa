@@ -21,11 +21,50 @@ import {
   BuildingChildrenCount,
 } from "./building.entity";
 
+/**
+ * Listing lifecycle. What the market sees is decided here, not by deletion:
+ *
+ * - `draft`     — being prepared; invisible everywhere public.
+ * - `listed`    — live: in the catalogue, in matching, bookable.
+ * - `under_offer` — a booking reached the contract stage; hidden from the
+ *   catalogue and matching, but the detail page still resolves (shared links
+ *   keep working) and other tenants' existing bookings continue.
+ * - `let`       — a booking closed as `rented`; not bookable, hidden from
+ *   lists, detail page still resolves.
+ * - `archived`  — retired by the operator; invisible everywhere public.
+ *
+ * `rented`/contract-stage transitions in the booking pipeline drive
+ * `listed → under_offer → let` automatically; operators/admins can set any
+ * value by hand (e.g. re-list after a tenancy ends).
+ *
+ * NOTE: not exported from the `@/entities` barrel — import from this file
+ * (the barrel re-exports classes only, not enums).
+ */
+export enum PropertyStatus {
+  Draft = "draft",
+  Listed = "listed",
+  UnderOffer = "under_offer",
+  Let = "let",
+  Archived = "archived",
+}
+
 @Entity("properties")
 export class Property {
   @ApiProperty({ description: "Unique property identifier" })
   @PrimaryGeneratedColumn("uuid")
   id: string;
+
+  @ApiProperty({
+    description: "Listing lifecycle status",
+    enum: PropertyStatus,
+    example: PropertyStatus.Listed,
+  })
+  @Column({
+    type: "enum",
+    enum: PropertyStatus,
+    default: PropertyStatus.Listed,
+  })
+  status: PropertyStatus;
 
   // REQUIRED FIELDS
   @ApiProperty({
@@ -39,7 +78,10 @@ export class Property {
   @ApiProperty({ description: "Building ID", required: false })
   @Index("idx_properties_building_id")
   @Column("uuid", { nullable: true })
-  building_id?: string;
+  // `| null` so an update can actually CLEAR the link: TypeORM's update()
+  // silently skips `undefined` values, which is how "convert to private
+  // landlord" used to leave the property joined to its old building.
+  building_id?: string | null;
 
   // BASIC FIELDS
   @ApiProperty({
@@ -117,6 +159,33 @@ export class Property {
   })
   @Column({ nullable: true })
   address?: string;
+
+  // GEOCODING — derived from the postcode via postcodes.io on create/update
+  // (see GeocodingService). All nullable: a listing without a resolvable
+  // postcode still saves; it just cannot be location-matched or mapped.
+  @ApiProperty({
+    description: "Normalized UK postcode",
+    example: "NW1 8XY",
+    required: false,
+  })
+  @Column({ type: "varchar", length: 10, nullable: true })
+  postcode?: string | null;
+
+  @ApiProperty({ description: "Latitude (WGS84)", required: false })
+  @Column("decimal", { precision: 9, scale: 6, nullable: true })
+  latitude?: number | null;
+
+  @ApiProperty({ description: "Longitude (WGS84)", required: false })
+  @Column("decimal", { precision: 9, scale: 6, nullable: true })
+  longitude?: number | null;
+
+  @ApiProperty({
+    description: "London borough (postcodes.io admin_district)",
+    example: "Camden",
+    required: false,
+  })
+  @Column({ type: "varchar", nullable: true })
+  borough?: string | null;
 
   @ApiProperty({
     description:
@@ -330,6 +399,14 @@ export class Property {
   @Column("uuid")
   operator_id: string;
 
+  @ApiProperty({
+    description:
+      "Whether the property is featured in the landing pages' listings section. Admin-only flag.",
+    example: false,
+  })
+  @Column({ type: "boolean", default: false })
+  is_landing_listing: boolean;
+
   @ApiProperty({ description: "Property creation date" })
   @Index("idx_properties_created_at")
   @CreateDateColumn()
@@ -348,8 +425,12 @@ export class Property {
   @JoinColumn({ name: "operator_id" })
   operator: User;
 
+  // SET NULL, not CASCADE: deleting a building must detach its units, never
+  // destroy them — a property carries booking history (including `rented`
+  // rows) that a cascade would silently erase. "Convert to private landlord"
+  // already clears this link the same way.
   @ManyToOne(() => Building, (building) => building.properties, {
-    onDelete: "CASCADE",
+    onDelete: "SET NULL",
   })
   @JoinColumn({ name: "building_id" })
   building: Building;

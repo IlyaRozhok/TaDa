@@ -13,8 +13,13 @@ import { useDebounce } from "../../../hooks/useDebounce";
 import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
-import AdminPropertiesSection from "../../../components/AdminPropertiesSection";
+import AdminPropertiesSection, {
+  EMPTY_PROPERTY_FILTERS,
+  PropertyFilters,
+  propertyFiltersToQuery,
+} from "../../../components/AdminPropertiesSection";
 import AdminRequestsSection from "../../../components/AdminRequestsSection";
+import AdminCallRequestsSection from "../../../components/AdminCallRequestsSection";
 import AddUserModal from "../../../components/AddUserModal";
 import AddBuildingModal from "../../../components/AddBuildingModal";
 import AddPropertyModal from "../../../components/AddPropertyModal";
@@ -33,11 +38,13 @@ import {
   Building2,
   Home,
   Calendar,
+  PhoneCall,
   FileText,
   SlidersHorizontal,
   LayoutGrid,
 } from "lucide-react";
 import {
+  ADMIN_PAGE_SIZE,
   useGetPropertiesQuery,
   useCreatePropertyMutation,
   useUpdatePropertyMutation,
@@ -47,6 +54,7 @@ import {
   useGetBookingRequestsQuery,
   useUpdateBookingRequestStatusMutation,
 } from "@/store/api/bookingRequests.api";
+import { useGetCallRequestsQuery } from "@/store/api/callRequests.api";
 import {
   useCreateUserMutation,
   useDeleteUserMutation,
@@ -61,7 +69,12 @@ import {
   type Building as ApiBuilding,
 } from "@/store/api/buildings.api";
 
-type AdminSection = "users" | "buildings" | "properties" | "requests";
+type AdminSection =
+  | "users"
+  | "buildings"
+  | "properties"
+  | "requests"
+  | "call-requests";
 
 interface SortState {
   field: string;
@@ -120,6 +133,15 @@ function AdminPanelContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(searchTerm, 400);
+  // The properties tab keeps its own search/filter/page state: its query is
+  // server-side on all three, and sharing them with the users tab would send
+  // one tab's term to the other's endpoint.
+  const [propertyPage, setPropertyPage] = useState(1);
+  const [propertySearch, setPropertySearch] = useState("");
+  const debouncedPropertySearch = useDebounce(propertySearch, 300);
+  const [propertyFilters, setPropertyFilters] = useState<PropertyFilters>(
+    EMPTY_PROPERTY_FILTERS,
+  );
   const [sort, setSort] = useState<SortState>({
     field: "created_at",
     direction: "desc",
@@ -168,13 +190,19 @@ function AdminPanelContent() {
   const [deleteBuilding] = useDeleteBuildingMutation();
 
   // Admin properties list, fetched only while its tab is open, like the
-  // other tabs. The endpoint is typed, so no envelope sniffing and no local
-  // mirror — the section renders straight off the cache.
-  const { data: propertiesData, isLoading: isPropsQueryLoading } =
-    useGetPropertiesQuery(undefined, {
-      skip: activeSection !== "properties",
-    });
-  const properties = propertiesData ?? [];
+  // other tabs. Search, filters and paging are all resolved server-side, so
+  // the section renders one page straight off the cache.
+  const { data: propertiesData, isFetching: isPropsQueryFetching } =
+    useGetPropertiesQuery(
+      {
+        page: propertyPage,
+        limit: ADMIN_PAGE_SIZE,
+        ...(debouncedPropertySearch ? { search: debouncedPropertySearch } : {}),
+        ...propertyFiltersToQuery(propertyFilters),
+      },
+      { skip: activeSection !== "properties" },
+    );
+  const properties = propertiesData?.data ?? [];
 
   const [createProperty] = useCreatePropertyMutation();
   const [updateProperty] = useUpdatePropertyMutation();
@@ -194,6 +222,16 @@ function AdminPanelContent() {
 
   // The query is the list; transformResponse already unwrapped it.
   const requests = bookingQueryData ?? [];
+
+  // Call requests, same shape: fetched only while its section is open.
+  const {
+    data: callRequestsData,
+    isLoading: isCallRequestsQueryLoading,
+  } = useGetCallRequestsQuery(undefined, {
+    skip: activeSection !== "call-requests",
+  });
+
+  const callRequests = callRequestsData ?? [];
 
   // Notification management
   const addNotification = (
@@ -463,6 +501,36 @@ function AdminPanelContent() {
     }
   };
 
+  /**
+   * Flag/unflag a property for the landings' listings section. A one-field
+   * PATCH on purpose: the edit-modal path rebuilds the whole property, which
+   * is far more than this toggle should risk.
+   */
+  const handleToggleLanding = async (property: Property, next: boolean) => {
+    try {
+      await updateProperty({
+        id: property.id,
+        data: { is_landing_listing: next },
+      }).unwrap();
+
+      addNotification(
+        "success",
+        `"${property.title || property.id}" ${
+          next ? "added to" : "removed from"
+        } the landing listings`,
+      );
+    } catch (error: unknown) {
+      console.error("❌ Failed to toggle landing listing:", error);
+      addNotification(
+        "error",
+        `Failed to update landing listing: ${apiErrorMessage(
+          error,
+          "Unknown error",
+        )}`,
+      );
+    }
+  };
+
   const handleUpdateBookingStatus = async (
     id: string,
     status: BookingRequestStatus,
@@ -535,6 +603,18 @@ function AdminPanelContent() {
           <Calendar className="w-5 h-5" />
           <span className="font-medium">Requests</span>
         </button>
+        <button
+          onClick={() => setActiveSection("call-requests")}
+          data-testid="admin-tab-call-requests"
+          className={`w-full flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all duration-200 ${
+            activeSection === "call-requests"
+              ? "bg-gray-100 text-black"
+              : "text-black hover:bg-gray-50"
+          }`}
+        >
+          <PhoneCall className="w-5 h-5" />
+          <span className="font-medium">Call requests</span>
+        </button>
       </nav>
     </div>
   );
@@ -586,15 +666,28 @@ function AdminPanelContent() {
         return (
           <AdminPropertiesSection
             properties={properties}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            searchLoading={isPropsQueryLoading && !properties.length}
-            sort={sort}
-            setSort={setSort}
+            total={propertiesData?.total ?? 0}
+            page={propertiesData?.page ?? propertyPage}
+            totalPages={propertiesData?.totalPages ?? 1}
+            onPageChange={setPropertyPage}
+            searchTerm={propertySearch}
+            onSearchChange={(value) => {
+              // A new term re-ranks the whole list; page 3 of the old one is
+              // meaningless against it.
+              setPropertySearch(value);
+              setPropertyPage(1);
+            }}
+            searchLoading={isPropsQueryFetching}
+            filters={propertyFilters}
+            onFiltersChange={(next) => {
+              setPropertyFilters(next);
+              setPropertyPage(1);
+            }}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
+            onToggleLanding={handleToggleLanding}
             onCopyId={(id, _type) => {
               addNotification(
                 "success",
@@ -610,6 +703,13 @@ function AdminPanelContent() {
             isLoading={isRequestsQueryLoading && !requests.length}
             updatingId={updatingRequestId}
             onUpdateStatus={handleUpdateBookingStatus}
+          />
+        );
+      case "call-requests":
+        return (
+          <AdminCallRequestsSection
+            requests={callRequests}
+            isLoading={isCallRequestsQueryLoading && !callRequests.length}
           />
         );
       default:

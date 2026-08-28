@@ -105,6 +105,8 @@ export interface Property {
   available_from: string | null;
   created_at: string;
   operator_id: string | null;
+  /** Featured in the landings' listings section. Only an admin may set it. */
+  is_landing_listing?: boolean;
   amenities?: string[];
   property_amenities?: string[];
   deposit?: number | null;

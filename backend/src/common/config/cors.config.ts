@@ -1,13 +1,18 @@
 /**
- * Origins the API answers to when CORS_ORIGIN says nothing. This is the list
- * that used to be hardcoded in main.ts.
+ * Origins the API always answers to. The localhost pair is DEV-ONLY: with
+ * `credentials: true`, a production allowlist containing `http://localhost:*`
+ * lets any page a victim happens to run locally (a dev server, an Electron
+ * app) read authenticated API responses with the victim's cookies.
  */
-const DEFAULT_CORS_ORIGINS = [
-  "http://localhost:3000",
-  "http://localhost:3001",
+const PROD_CORS_ORIGINS = [
   "https://ta-da.co",
   "https://www.ta-da.co",
   "https://stage.ta-da.co",
+];
+
+const DEV_CORS_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:3001",
 ];
 
 /**
@@ -20,8 +25,10 @@ const DEFAULT_CORS_ORIGINS = [
  * https://ta-da.co from the allowed origins the moment this ships, and the
  * production frontend would stop being able to call the API at all.
  *
- * Once step 3.1 has established what the hosts really carry and CORS_ORIGIN is
- * corrected there, this can become a plain replacement.
+ * Once CORS_ORIGIN is corrected on the hosts, this can become a plain
+ * replacement. Note the union means a stale `http://localhost:3000` in the
+ * hosts' env re-adds localhost even in production — removing that value from
+ * the host `.env` files is the recorded host action that completes this fix.
  */
 export function resolveCorsOrigins(raw: string | undefined): string[] {
   const fromEnv = (raw ?? "")
@@ -29,5 +36,10 @@ export function resolveCorsOrigins(raw: string | undefined): string[] {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return [...new Set([...DEFAULT_CORS_ORIGINS, ...fromEnv])];
+  const defaults =
+    process.env.NODE_ENV === "production"
+      ? PROD_CORS_ORIGINS
+      : [...PROD_CORS_ORIGINS, ...DEV_CORS_ORIGINS];
+
+  return [...new Set([...defaults, ...fromEnv])];
 }

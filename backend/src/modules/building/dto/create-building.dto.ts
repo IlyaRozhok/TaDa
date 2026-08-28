@@ -9,37 +9,18 @@ import {
   IsUUID,
   ValidateIf,
   ValidateNested,
-  ArrayMinSize,
-  IsObject,
   Min,
   Max,
-  Matches,
-  Validate,
   IsNotEmpty,
 } from "class-validator";
 import { Type } from "class-transformer";
 import {
   UnitType,
   TenantType,
-  Pet,
   BuildingFamilyStatus,
   BuildingOccupation,
   BuildingChildrenCount,
 } from "../../../entities/building.entity";
-
-// Custom validator for HTTPS URLs
-function IsHttpsUrl(validationOptions?: any) {
-  return Validate(
-    (value: string) => {
-      if (!value) return true; // Allow empty values
-      return /^https:\/\/.+/.test(value);
-    },
-    {
-      message: "URL must be a valid HTTPS URL",
-      ...validationOptions,
-    }
-  );
-}
 
 export class MetroStationDto {
   @ApiProperty({ description: "Metro station name", example: "Oxford Circus" })

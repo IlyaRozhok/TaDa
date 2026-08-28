@@ -10,12 +10,24 @@ import {
   IsArray,
   IsBoolean,
   IsNumber,
+  Matches,
   ValidateNested,
   registerDecorator,
   ValidationArguments,
   ValidationOptions,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Type, Transform } from "class-transformer";
+import {
+  BUILDING_TYPE_VALUES,
+  FURNISHING_VALUES,
+  LET_DURATION_LIST_PATTERN,
+  LET_DURATION_VALUES,
+  PREFERENCE_BILLS_VALUES,
+  PROPERTY_TYPE_VALUES,
+  normalizeDurationList,
+  normalizeVocabularyList,
+  normalizeVocabularyValue,
+} from "@/common/constants/vocabulary";
 import { Pet, PetType, PetSize } from "../../../entities/building.entity";
 
 // Pet DTO matching Property.pets structure
@@ -225,11 +237,15 @@ export class CreatePreferencesDto {
   @ApiPropertyOptional({
     description: "Preferred property types (matches Property.property_type)",
     example: ["apartment", "flat", "studio"],
+    enum: PROPERTY_TYPE_VALUES,
     type: [String],
   })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @Transform(({ value }) =>
+    Array.isArray(value) ? normalizeVocabularyList(value) : value,
+  )
+  @IsIn(PROPERTY_TYPE_VALUES, { each: true })
   property_types?: string[];
 
   @ApiPropertyOptional({
@@ -254,12 +270,16 @@ export class CreatePreferencesDto {
 
   @ApiPropertyOptional({
     description: "Preferred furnishing types",
-    example: ["furnished", "part-furnished"],
+    example: ["furnished", "part_furnished"],
+    enum: FURNISHING_VALUES,
     type: [String],
   })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @Transform(({ value }) =>
+    Array.isArray(value) ? normalizeVocabularyList(value) : value,
+  )
+  @IsIn(FURNISHING_VALUES, { each: true })
   furnishing?: string[];
 
   @ApiPropertyOptional({
@@ -302,28 +322,42 @@ export class CreatePreferencesDto {
 
   @ApiPropertyOptional({
     description: "Preferred building types",
-    example: ["btr", "co-living"],
+    example: ["btr", "co_living"],
+    enum: BUILDING_TYPE_VALUES,
     type: [String],
   })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @Transform(({ value }) =>
+    Array.isArray(value) ? normalizeVocabularyList(value) : value,
+  )
+  @IsIn(BUILDING_TYPE_VALUES, { each: true })
   building_types?: string[];
 
   @ApiPropertyOptional({
-    description: "Preferred let duration",
-    example: "long_term",
+    description:
+      "Preferred let duration - comma-separated multiselect of canonical tokens",
+    example: "long_term,12_months",
   })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeDurationList(value) : value,
+  )
+  @Matches(LET_DURATION_LIST_PATTERN, {
+    message: `let_duration must be a comma-separated list of: ${LET_DURATION_VALUES.join(", ")}`,
+  })
   let_duration?: string;
 
   @ApiPropertyOptional({
     description: "Bills preference",
     example: "included",
+    enum: PREFERENCE_BILLS_VALUES,
   })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeVocabularyValue(value) : value,
+  )
+  @IsIn(PREFERENCE_BILLS_VALUES)
   bills?: string;
 
   // ==================== STEP 5: TENANT TYPE ====================

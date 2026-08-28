@@ -4,8 +4,9 @@ import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
 import SessionManager from "./components/providers/SessionManager";
 import AnalyticsProvider from "./components/providers/AnalyticsProvider";
+import PostHogProvider from "./components/providers/PostHogProvider";
 import PageViewTracker from "./components/providers/PageViewTracker";
-import EmailJSInitializer from "./components/EmailJSInitializer";
+import NavigationDepthProvider from "./components/providers/NavigationDepthProvider";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { I18nProvider } from "./contexts/I18nContext";
 import AppToaster from "./components/AppToaster";
@@ -16,9 +17,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Only the production deployment (ta-da.co) may be indexed. Staging and
+// preview deployments stay hidden from crawlers; robots.ts applies the same
+// rule at the robots.txt level. The switch lives in lib/siteEnv.ts.
+import { isIndexableSite as isIndexable } from "@/app/lib/siteEnv";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ta-da.co"),
   title: "TaDa - Rental Platform",
   description: "Connect tenants and property operators in London",
+  robots: isIndexable
+    ? { index: true, follow: true }
+    : {
+        index: false,
+        follow: false,
+        noarchive: true,
+        nosnippet: true,
+        noimageindex: true,
+      },
 };
 
 export const viewport: Viewport = {
@@ -37,29 +53,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta
-          name="robots"
-          content="noindex,nofollow,noarchive,nosnippet,noimageindex"
-        />
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta
-          httpEquiv="Cache-Control"
-          content="no-cache, no-store, must-revalidate"
-        />
-        <meta httpEquiv="Expires" content="0" />
-
         {/* No hand-written image preloads here. They sat in the root layout, so
             every route paid for them, and neither one helped: the hero is
             rendered by <Image priority>, which emits its own preload for the
             optimised URL, so preloading the raw PNG only fetched a second copy
             the page never used. */}
 
-        {/* EmailJS Script */}
-        <script
-          type="text/javascript"
-          src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
-          async
-        ></script>
       </head>
       <body
         className={`${geistMono.variable} antialiased`}
@@ -70,6 +69,10 @@ export default function RootLayout({
             <ReduxProvider>
                 <SessionManager />
                 <AnalyticsProvider />
+                {/* Alongside AnalyticsProvider, not inside it: replay answers
+                    to a stricter chain than GA4 (accepted consent, tenants
+                    only). See src/lib/analytics/posthog.ts. */}
+                <PostHogProvider />
                 {/* Its own boundary: the tracker reads useSearchParams(),
                     and without one the whole app tree it sits in loses static
                     rendering — the landing page's prerendered HTML collapses
@@ -77,7 +80,13 @@ export default function RootLayout({
                 <Suspense fallback={null}>
                   <PageViewTracker />
                 </Suspense>
-                <EmailJSInitializer />
+                {/* Its own boundary too, and for the same reason — it reads
+                    useSearchParams() as well. Sharing one boundary with the
+                    tracker would work, but separate ones keep the reason
+                    attached to the component that owns it. */}
+                <Suspense fallback={null}>
+                  <NavigationDepthProvider />
+                </Suspense>
                 {children}
                 <CookieConsentBanner />
                 <AppToaster />

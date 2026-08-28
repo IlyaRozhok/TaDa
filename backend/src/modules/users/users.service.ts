@@ -9,7 +9,6 @@ import { UserAdminService } from "./services/user-admin.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { S3Service } from "../../common/services/s3.service";
-import { toUserResponse } from "./user.mapper";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 
 @Injectable()
@@ -72,7 +71,6 @@ export class UsersService {
 
     if (updateUserDto.email)                    updates.email      = updateUserDto.email.toLowerCase();
     if (updateUserDto.avatar_url !== undefined)  updates.avatar_url = updateUserDto.avatar_url;
-    if (updateUserDto.status)                   updates.status     = updateUserDto.status;
     if (firstName !== undefined)                updates.first_name = firstName;
     if (lastName  !== undefined)                updates.last_name  = lastName;
     if (updateUserDto.address !== undefined)    updates.address    = updateUserDto.address;

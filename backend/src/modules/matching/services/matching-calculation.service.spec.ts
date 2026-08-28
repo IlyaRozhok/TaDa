@@ -17,6 +17,11 @@ import {
  * scoring full marks when none of the user's pets are allowed). The suite
  * exists to freeze behavior, not to bless it.
  *
+ * One deliberate exception since B4: the unknown-data policy
+ * (`scoring/unknown-data.ts`) IS a spec — missing property-side data scores
+ * a fixed 30% partial with `match: false`, never a full score. The tests
+ * that assert it were updated intentionally, not to chase the code.
+ *
  * All categories are exercised through the public `calculateMatch` so the
  * tests survive any internal restructuring unchanged.
  */
@@ -56,9 +61,9 @@ describe("MatchingCalculationService", () => {
   });
 
   describe("result envelope", () => {
-    it("always returns exactly 17 categories, location not among them", () => {
+    it("always returns exactly 18 categories, location wired in last (B2)", () => {
       const result = match({}, {});
-      expect(result.categories).toHaveLength(17);
+      expect(result.categories).toHaveLength(18);
       expect(result.categories.map((c) => c.category)).toEqual([
         "budget",
         "bedrooms",
@@ -77,6 +82,7 @@ describe("MatchingCalculationService", () => {
         "pets",
         "bills",
         "propertyAmenities",
+        "location",
       ]);
     });
 
@@ -90,7 +96,7 @@ describe("MatchingCalculationService", () => {
         matched: 0,
         partial: 0,
         notMatched: 0,
-        skipped: 17,
+        skipped: 18,
       });
     });
 
@@ -111,7 +117,7 @@ describe("MatchingCalculationService", () => {
         matched: 2,
         partial: 0,
         notMatched: 0,
-        skipped: 15,
+        skipped: 16,
       });
     });
 
@@ -128,7 +134,7 @@ describe("MatchingCalculationService", () => {
         matched: 0,
         partial: 1,
         notMatched: 1,
-        skipped: 15,
+        skipped: 16,
       });
     });
 
@@ -137,7 +143,7 @@ describe("MatchingCalculationService", () => {
       const result = match({ bills: "included" }, { bills: "included" });
       expect(result.matchPercentage).toBe(100);
       expect(result.isPerfectMatch).toBe(true);
-      expect(result.summary.skipped).toBe(16);
+      expect(result.summary.skipped).toBe(17);
     });
   });
 
@@ -181,9 +187,15 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ match: false, score: 0 });
     });
 
-    it("treats a missing price as 0 against the range", () => {
+    it("applies the unknown-data policy to a missing price", () => {
+      // Math.round(18 * 0.3) = 5. A missing price used to read as £0 — a
+      // FULL match when only max_price was set.
       const c = one("budget", {}, { min_price: 1000 });
-      expect(c).toMatchObject({ match: false, score: 0, hasPreference: true });
+      expect(c).toMatchObject({ match: false, score: 5, hasPreference: true });
+      expect(one("budget", {}, { max_price: 2000 })).toMatchObject({
+        match: false,
+        score: 5,
+      });
     });
   });
 
@@ -238,7 +250,7 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ match: true, score: 10 });
     });
 
-    it("gives zero on mismatch and on unknown property type", () => {
+    it("gives zero on mismatch, partial credit on unknown property type", () => {
       expect(
         one(
           "propertyType",
@@ -246,9 +258,10 @@ describe("MatchingCalculationService", () => {
           { property_types: ["studio"] },
         ),
       ).toMatchObject({ match: false, score: 0 });
+      // Unknown type: Math.round(10 * 0.3) = 3, not a hard mismatch.
       expect(
         one("propertyType", {}, { property_types: ["studio"] }),
-      ).toMatchObject({ match: false, score: 0, hasPreference: true });
+      ).toMatchObject({ match: false, score: 3, hasPreference: true });
     });
   });
 
@@ -258,9 +271,10 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ hasPreference: false, maxScore: 0 });
     });
 
-    it("gives half score, counted as match, when the property has no date", () => {
+    it("applies the unknown-data policy when the property has no date", () => {
+      // Math.round(8 * 0.3) = 2 — was 50% counted as a match.
       const c = one("availability", {}, { move_in_date: new Date("2026-09-01") });
-      expect(c).toMatchObject({ match: true, score: 4, maxScore: 8 });
+      expect(c).toMatchObject({ match: false, score: 2, maxScore: 8 });
     });
 
     it("scores full when available on or before move-in", () => {
@@ -421,9 +435,28 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ hasPreference: false, maxScore: 0 });
     });
 
-    it("scores full when the property has no tenant type restrictions", () => {
+    it("applies the unknown-data policy with no targeting data at all", () => {
+      // Math.round(6 * 0.3) = 2 — blank targeting used to score a free 100%.
       const c = one("occupation", {}, { occupation: "student" });
-      expect(c).toMatchObject({ match: true, score: 6 });
+      expect(c).toMatchObject({ match: false, score: 2 });
+    });
+
+    it("the occupation targeting column is authoritative when present", () => {
+      expect(
+        one(
+          "occupation",
+          { occupation: ["student", "young-professional"] },
+          { occupation: "student" },
+        ),
+      ).toMatchObject({ match: true, score: 6 });
+      // Targeted at someone else beats the tenant-type heuristic entirely.
+      expect(
+        one(
+          "occupation",
+          { occupation: ["business-owner"], tenant_types: ["student"] },
+          { occupation: "student" },
+        ),
+      ).toMatchObject({ match: false, score: 0 });
     });
 
     it("scores full on a primary tenant-type match", () => {
@@ -469,9 +502,27 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ hasPreference: false, maxScore: 0 });
     });
 
-    it("scores full when the property has no restrictions", () => {
+    it("applies the unknown-data policy with no targeting data at all", () => {
+      // Math.round(5 * 0.3) = 2.
       const c = one("familyStatus", {}, { family_status: "couple" });
-      expect(c).toMatchObject({ match: true, score: 5 });
+      expect(c).toMatchObject({ match: false, score: 2 });
+    });
+
+    it("the family_status targeting column is authoritative when present", () => {
+      expect(
+        one(
+          "familyStatus",
+          { family_status: ["couple", "just-me"] },
+          { family_status: "couple" },
+        ),
+      ).toMatchObject({ match: true, score: 5 });
+      expect(
+        one(
+          "familyStatus",
+          { family_status: ["single-parent"], tenant_types: ["sharers"] },
+          { family_status: "couple" },
+        ),
+      ).toMatchObject({ match: false, score: 0 });
     });
 
     it("scores full on a primary match", () => {
@@ -525,9 +576,23 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ match: true, score: 4 });
     });
 
-    it("scores full when the property has no tenant type restrictions", () => {
+    it("applies the unknown-data policy with no targeting data at all", () => {
+      // Math.round(4 * 0.3) = 1.
       const c = one("children", {}, { children_count: "yes-1-child" });
-      expect(c).toMatchObject({ match: true, score: 4 });
+      expect(c).toMatchObject({ match: false, score: 1 });
+    });
+
+    it("reads the explicit children policy even when tenant types are blank", () => {
+      expect(
+        one(
+          "children",
+          { children: ["yes-1-child"] },
+          { children_count: "yes-1-child" },
+        ),
+      ).toMatchObject({ match: true, score: 4 });
+      expect(
+        one("children", { children: ["no"] }, { children_count: "yes-1-child" }),
+      ).toMatchObject({ match: false, score: 0 });
     });
 
     it("gives zero when the property is not family-friendly", () => {
@@ -613,9 +678,10 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ hasPreference: false, maxScore: 0 });
     });
 
-    it("scores full when the property duration is missing or flexible", () => {
+    it("keeps the full match for explicit flexible, partial for missing", () => {
+      // Missing is NOT flexible: Math.round(3 * 0.3) = 1.
       expect(one("duration", {}, { let_duration: "short_term" })).toMatchObject(
-        { match: true, score: 3 },
+        { match: false, score: 1 },
       );
       expect(
         one("duration", { let_duration: "Flexible" }, { let_duration: "short_term" }),
@@ -745,18 +811,27 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ match: false, score: 0, maxScore: 1 });
     });
 
-    it("scores full for every non-smoking flavor", () => {
-      for (const smoker of ["no", "no-prefer-non-smoking", "no-but-okay"]) {
+    it("gives no free full score without smoking data on the property", () => {
+      // The schema has no smoking column; the old scorer invented
+      // propertySmoking = false, gifting non-smokers a full point and
+      // smokers a structural zero. Firm preferences now get the
+      // unknown-data policy (Math.round(1 * 0.3) = 0).
+      for (const smoker of ["no", "no-prefer-non-smoking"]) {
         expect(one("smoking", {}, { smoker })).toMatchObject({
-          match: true,
-          score: 1,
+          match: false,
+          score: 0,
         });
       }
+      // Indifferent-either-way is truthfully satisfied regardless of data.
+      expect(one("smoking", {}, { smoker: "no-but-okay" })).toMatchObject({
+        match: true,
+        score: 1,
+      });
     });
 
-    it("scores full for an unrecognized value", () => {
+    it("treats an unrecognized value as a firm preference (unknown data)", () => {
       const c = one("smoking", {}, { smoker: "sometimes" });
-      expect(c).toMatchObject({ match: true, score: 1 });
+      expect(c).toMatchObject({ match: false, score: 0 });
     });
   });
 
@@ -885,6 +960,68 @@ describe("MatchingCalculationService", () => {
         { property_amenities: ["lift", "storage"] },
       );
       expect(c).toMatchObject({ match: false, score: 0 });
+    });
+  });
+
+  describe("location (weight 15, wired in B2)", () => {
+    it("is skipped — and leaves the denominator alone — without a location preference", () => {
+      const withLocationData = match(
+        { borough: "Camden", price: 1500 },
+        { max_price: 2000 },
+      );
+      const c = category(withLocationData, "location");
+      expect(c).toMatchObject({ hasPreference: false, score: 0, maxScore: 0 });
+      // The tenant's percentage is untouched by property-side location data.
+      expect(withLocationData.matchPercentage).toBe(100);
+    });
+
+    it("matches a preferred district against the geocoded borough", () => {
+      const c = one(
+        "location",
+        { borough: "Camden", address: "12 Some Street, London" },
+        { preferred_districts: ["Camden"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15, maxScore: 15 });
+    });
+
+    it("falls back to the address substring when the row is not geocoded", () => {
+      const c = one(
+        "location",
+        { address: "12 Parkway, Camden, London" },
+        { preferred_districts: ["camden"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15 });
+    });
+
+    it("matches a preferred metro station exactly", () => {
+      const c = one(
+        "location",
+        { metro_stations: [{ label: "Camden Town", destination: 4 }] },
+        { preferred_metro_stations: ["Camden Town"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15, maxScore: 15 });
+    });
+
+    it("scores a half-matched preference partially", () => {
+      // District matches, metro does not: ratio 1/2 → Math.round(15 * 0.5) = 8.
+      const c = one(
+        "location",
+        { borough: "Hackney" },
+        {
+          preferred_districts: ["Hackney"],
+          preferred_metro_stations: ["Angel"],
+        },
+      );
+      expect(c).toMatchObject({ match: false, score: 8, maxScore: 15 });
+    });
+
+    it("gives zero when the property is somewhere else entirely", () => {
+      const c = one(
+        "location",
+        { borough: "Croydon", address: "1 High Street, Croydon" },
+        { preferred_districts: ["Camden"], preferred_areas: ["North"] },
+      );
+      expect(c).toMatchObject({ match: false, score: 0, maxScore: 15 });
     });
   });
 });

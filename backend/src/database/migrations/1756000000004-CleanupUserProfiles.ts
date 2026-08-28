@@ -193,7 +193,7 @@ export class CleanupUserProfiles1756000000004 implements MigrationInterface {
     }
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(_queryRunner: QueryRunner): Promise<void> {
     console.log("⚠️ Cannot reverse user profile cleanup migration");
     console.log(
       "This migration cleaned up data inconsistencies and cannot be safely reversed"

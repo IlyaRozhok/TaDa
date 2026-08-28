@@ -33,14 +33,19 @@ token rotation. There is no password login.
 You need Node 20, Docker (or any Postgres) and `psql` on your `PATH` — the last
 one is used by the e2e seeding.
 
-**1. Database.** Postgres on `localhost:5432`. The schema is applied by migrations:
+**1. Database.** Postgres on `localhost:5432`. On a FRESH database do **not**
+run migrations — the chain does not replay from empty (a known ordering defect,
+see `docs/STATUS.md`). Let TypeORM create the schema from the entities instead:
 
 ```bash
 cd backend
 cp .env.example .env      # fill in DB_*, JWT_SECRET, GOOGLE_*
+                          # and set NODE_ENV=development, TYPEORM_SYNCHRONIZE=true
 npm ci
-npm run mig:run           # apply migrations
 ```
+
+(`npm run mig:run` is only for a database that already carries the migration
+history — i.e. a dump of stage/prod.)
 
 **2. Backend** — `http://localhost:5001`, API under the `/api` prefix:
 
@@ -67,17 +72,17 @@ Swagger: `http://localhost:5001/api/docs` (basic auth in production).
 CI runs these same commands, so it is worth running them locally before opening
 a PR.
 
-| What | Backend | Frontend |
-|---|---|---|
-| Types | `npx tsc -p tsconfig.json --noEmit` | `npm run type-check` |
-| Unit tests | `npm test` (jest) | `npm test` (vitest) |
-| Build | `npm run build` | `npm run build` |
-| E2E | — | `npm run e2e` (Playwright) |
+| What | Backend | Frontend | In CI |
+|---|---|---|---|
+| Types | `npx tsc -p tsconfig.json --noEmit` | `npm run type-check` | yes |
+| Lint | `npm run lint` | `npm run lint` | yes (errors gate; warnings are backlog) |
+| Unit tests | `npm test` (jest) | `npm test` (vitest) | yes |
+| Build | `npm run build` | `npm run build` | yes |
+| E2E | — | `npm run e2e` (Playwright) | smoke subset (auth, session-refresh, role-escalation, property-browsing) against a seeded stack |
 
-**Frontend linting is currently broken** — `next lint` was removed from the CLI
-in Next 16, and running `eslint` directly fails on `FlatCompat`. That makes
-`npm run lint` and `npm run quality` unusable, which is why CI deliberately has
-no lint step. It is repaired in step 4.3 of the refactoring plan.
+Bootstrap a fresh checkout with `scripts/setup.sh` (installs dependencies for
+both apps). Claude Code on the web runs it automatically via the SessionStart
+hook in `.claude/`.
 
 ### E2E
 
@@ -114,8 +119,11 @@ release to `main`**.
 
 `.github/workflows/deploy.yml`:
 
-1. **Checks** — two jobs, `backend` and `frontend`: types, tests, build. Both
-   deploy jobs depend on both, so a failure in either blocks the release.
+1. **Checks** — three jobs: `backend` (types, lint, tests, build), `frontend`
+   (types, tests, lint, generated-API-types freshness, build) and `e2e-smoke`
+   (a real stack — Postgres service + backend + `next start` — running the
+   smoke subset of the Playwright suite). Both deploy jobs depend on all
+   three, so a failure in any blocks the release.
 2. **`develop` → staging**, **`main` → production**: SSH to the VPS, `git pull`,
    `docker compose build/up`, then `npm run mig:run:prod`.
 
@@ -129,17 +137,16 @@ The frontend deploys to Vercel and is not part of this workflow.
 
 ## Where to look next
 
-**`docs/audit/` is the source of truth for the state of the project.**
+**`docs/STATUS.md` is the live document**: current state, open follow-ups and
+pending host actions on one screen.
 
-| File | About |
+| Where | About |
 |---|---|
-| `00-revision-note.md` | Audit revision, decisions made by the owner |
-| `01-overview.md` | Layout, infrastructure, CI/CD, production readiness |
-| `02-backend-map.md` | Modules and their cycles, entities, DB and migration state |
-| `03-frontend-map.md` | Frontend structure, dead code, duplication, data layer |
-| `04-docs-diff.md` | Where the documentation disagreed with reality |
-| `05-refactoring-plan.md` | The refactoring plan: risk register, phases 0–7 |
-| `PROGRESS.md` | Live tracker: what is done, in progress and next |
+| `docs/STATUS.md` | The live doc — read this first |
+| `docs/audit/00`–`05` | Historical audit snapshots (2026-07-28), each with a staleness banner |
+| `docs/audit/LAUNCH_PLAN.md` | The launch bar: backup, deploy order, prod lag |
+| `docs/ops/BACKUP_RUNBOOK.md` | DB backup/restore runbook |
+| `docs/archive/` | Frozen history, incl. the refactoring PROGRESS log |
 
 `CLAUDE.md` in the root is the entry point for the agent: rules, step boundaries,
 code style.
@@ -152,6 +159,3 @@ architecture that does not exist.
 - Commit directly to `main`.
 - Edit `frontend/src/translations/*` — Localazy owns those files and overwrites
   local edits.
-- Put migrations in `backend/database/` — that folder is obsolete and its
-  contents are never applied. Real migrations live in
-  `backend/src/database/migrations/`.

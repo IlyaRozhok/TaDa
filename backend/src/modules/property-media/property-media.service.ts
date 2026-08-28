@@ -8,6 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { PropertyMedia } from "../../entities/property-media.entity";
 import { Property } from "../../entities/property.entity";
+import { UserRole } from "@/entities/user.entity";
 import { S3Service } from "../../common/services/s3.service";
 
 @Injectable()
@@ -199,7 +200,7 @@ export class PropertyMediaService {
     userId: string,
     userRole?: string
   ) {
-    if (userRole === "admin") return;
+    if (userRole === UserRole.Admin) return;
     if (operatorId !== userId) {
       throw new ForbiddenException(
         "You can only manage media for your own properties"

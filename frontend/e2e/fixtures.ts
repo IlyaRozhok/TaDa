@@ -11,6 +11,8 @@ type E2EFixtures = {
   adminPartialProfilePage: Page;
   /** Operator — the role whose own dashboard is being removed. */
   operatorPage: Page;
+  /** No storage state at all — a visitor who has never signed in. */
+  guestPage: Page;
 };
 
 export const test = base.extend<E2EFixtures>({
@@ -44,6 +46,13 @@ export const test = base.extend<E2EFixtures>({
 
   operatorPage: async ({ browser }, use) => {
     const ctx = await browser.newContext({ storageState: path.join(AUTH_DIR, "operator.json") });
+    const page = await ctx.newPage();
+    await use(page);
+    await ctx.close();
+  },
+
+  guestPage: async ({ browser }, use) => {
+    const ctx = await browser.newContext();
     const page = await ctx.newPage();
     await use(page);
     await ctx.close();

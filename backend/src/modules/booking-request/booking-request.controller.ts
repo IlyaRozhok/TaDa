@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   Request,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -18,6 +19,7 @@ import { Throttle } from "@nestjs/throttler";
 import { BookingRequestService } from "./booking-request.service";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import { UpdateBookingStatusDto } from "./dto/update-booking-status.dto";
+import { ProposeViewingDto } from "./dto/propose-viewing.dto";
 import { Roles } from "@/common/decorators/roles.decorator";
 import { UserRole } from "@/entities/user.entity";
 import {
@@ -72,9 +74,42 @@ export class BookingRequestController {
   @ApiOperation({ summary: "Update booking request status (admin)" })
   @ApiResponse({ status: 200, description: "Booking status updated" })
   async updateStatus(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateBookingStatusDto
   ): Promise<BookingRequest> {
     return this.bookingRequestService.updateStatus(id, dto.status);
+  }
+
+  @Patch(":id/viewing")
+  @Roles(UserRole.Admin)
+  @ApiOperation({
+    summary:
+      "Propose a viewing slot (admin). Re-proposing clears the tenant's earlier confirmation.",
+  })
+  @ApiResponse({ status: 200, description: "Viewing proposed" })
+  @ApiResponse({
+    status: 400,
+    description: "Booking not at a viewing stage, or the time is in the past",
+  })
+  async proposeViewing(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: ProposeViewingDto
+  ): Promise<BookingRequest> {
+    return this.bookingRequestService.proposeViewing(
+      id,
+      new Date(dto.proposed_viewing_at)
+    );
+  }
+
+  @Post(":id/viewing/confirm")
+  @Roles(UserRole.Tenant, UserRole.Admin)
+  @ApiOperation({ summary: "Confirm the proposed viewing slot (tenant, own booking)" })
+  @ApiResponse({ status: 201, description: "Viewing confirmed" })
+  @ApiResponse({ status: 400, description: "No viewing has been proposed yet" })
+  async confirmViewing(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Request() req
+  ): Promise<BookingRequest> {
+    return this.bookingRequestService.confirmViewing(id, req.user.id);
   }
 }

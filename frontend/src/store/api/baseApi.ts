@@ -27,6 +27,7 @@ const PUBLIC_ENDPOINTS = new Set([
   "getPublicProperties",
   "getPublicPropertiesAll",
   "getPublicProperty",
+  "getLandingListings",
 ]);
 
 /**
@@ -83,6 +84,7 @@ export const baseApi = createApi({
     "Shortlist",
     "TenantCv",
     "BookingRequests",
+    "CallRequests",
   ],
   // Left off deliberately: switching these on globally would refetch every
   // domain on every focus. Endpoints opt in individually where it earns its way.

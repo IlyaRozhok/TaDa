@@ -12,6 +12,7 @@ import { CreateBuildingDto } from "./dto/create-building.dto";
 import { UpdateBuildingDto } from "./dto/update-building.dto";
 import { BuildingResponse, toBuildingResponse } from "./building.mapper";
 import { S3Service } from "../../common/services/s3.service";
+import { GeocodingService } from "@/common/services/geocoding.service";
 
 @Injectable()
 export class BuildingService {
@@ -23,13 +24,14 @@ export class BuildingService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private readonly s3Service: S3Service,
+    private readonly geocodingService: GeocodingService,
   ) {}
 
   async create(
     createBuildingDto: CreateBuildingDto,
   ): Promise<BuildingResponse> {
     // If operator_id provided, verify that the operator exists and has operator role
-    let operatorId: string | null = createBuildingDto.operator_id ?? null;
+    const operatorId: string | null = createBuildingDto.operator_id ?? null;
     if (operatorId) {
       const operator = await this.userRepository.findOne({
         where: { id: operatorId },
@@ -189,30 +191,28 @@ export class BuildingService {
       updateData.description = updateBuildingDto.description;
 
     if (operatorId !== undefined) {
-      updateData.operator_id = operatorId ?? undefined;
-    }
-
-    const updateQueryBuilder = this.buildingRepository
-      .createQueryBuilder()
-      .update(Building)
-      .set(updateData)
-      .where("id = :id", { id: building.id });
-
-    await updateQueryBuilder.execute();
-
-    if (operatorId !== undefined) {
-      await this.propertyRepository
-        .createQueryBuilder()
-        .update(Property)
-        .set({ operator_id: operatorId ?? undefined })
-        .where("building_id = :buildingId", { buildingId: building.id })
-        .execute();
+      // `null` must stay `null`: mapping it to `undefined` made TypeORM drop
+      // the column from the UPDATE, so unassigning an operator silently kept
+      // the old one.
+      updateData.operator_id = operatorId;
     }
 
     const inheritedFieldsUpdates: Partial<Property> = {};
 
-    if (updateBuildingDto.address !== undefined)
+    if (updateBuildingDto.address !== undefined) {
       inheritedFieldsUpdates.address = updateBuildingDto.address;
+      // A new address re-geocodes the units it propagates to — one lookup for
+      // the whole building, resolved BEFORE the transaction below so the
+      // external call never holds a DB connection. Null coordinates on
+      // lookup failure, never stale ones.
+      const geo = await this.geocodingService.geocode(updateBuildingDto.address);
+      inheritedFieldsUpdates.postcode =
+        geo?.postcode ??
+        this.geocodingService.extractPostcode(updateBuildingDto.address);
+      inheritedFieldsUpdates.latitude = geo?.latitude ?? null;
+      inheritedFieldsUpdates.longitude = geo?.longitude ?? null;
+      inheritedFieldsUpdates.borough = geo?.borough ?? null;
+    }
     if (updateBuildingDto.tenant_type !== undefined)
       inheritedFieldsUpdates.tenant_types = updateBuildingDto.tenant_type;
     if (updateBuildingDto.amenities !== undefined)
@@ -220,14 +220,38 @@ export class BuildingService {
     if (updateBuildingDto.pet_policy !== undefined)
       inheritedFieldsUpdates.pet_policy = updateBuildingDto.pet_policy;
 
-    if (Object.keys(inheritedFieldsUpdates).length > 0) {
-      await this.propertyRepository
+    // One transaction: the building row and the propagation into its units
+    // are a single logical write. A failure between the statements used to
+    // leave the units half-inherited with no trace.
+    await this.buildingRepository.manager.transaction(async (em) => {
+      await em
         .createQueryBuilder()
-        .update(Property)
-        .set(inheritedFieldsUpdates)
-        .where("building_id = :buildingId", { buildingId: building.id })
+        .update(Building)
+        .set(updateData)
+        .where("id = :id", { id: building.id })
         .execute();
-    }
+
+      // Reassignment propagates to the building's units; unassignment does
+      // not: properties.operator_id is NOT NULL, so the units keep their
+      // previous operator until a new one is assigned.
+      if (operatorId !== undefined && operatorId !== null) {
+        await em
+          .createQueryBuilder()
+          .update(Property)
+          .set({ operator_id: operatorId })
+          .where("building_id = :buildingId", { buildingId: building.id })
+          .execute();
+      }
+
+      if (Object.keys(inheritedFieldsUpdates).length > 0) {
+        await em
+          .createQueryBuilder()
+          .update(Property)
+          .set(inheritedFieldsUpdates)
+          .where("building_id = :buildingId", { buildingId: building.id })
+          .execute();
+      }
+    });
 
     const reloadedBuilding = await this.buildingRepository.findOne({
       where: { id: building.id },

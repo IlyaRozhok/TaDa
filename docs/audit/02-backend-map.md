@@ -1,3 +1,9 @@
+> **SNAPSHOT of 2026-07-28 — historical.** Describes the codebase as the audit
+> found it; much of it has been fixed since (CI, notifications module,
+> shortlist table, booking lifecycle, SEO, and more). The code and
+> `docs/STATUS.md` are the current truth; the campaign's decision log is
+> `docs/archive/PROGRESS-refactoring-2026-07-08.md`.
+
 # 02 — Backend: карта модулей, энтити, состояние БД
 
 > NestJS 10, TypeORM 0.3, PostgreSQL. 144 файла, ~15 800 строк.

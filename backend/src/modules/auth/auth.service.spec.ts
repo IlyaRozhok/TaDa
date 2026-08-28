@@ -25,6 +25,21 @@ describe("AuthService — registration event", () => {
   let service: AuthService;
 
   beforeEach(() => {
+    tenantProfileRepository = {
+      create: jest.fn((values: any) => values),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    // The signup path runs inside manager.transaction(); the mock hands the
+    // callback an EntityManager whose repositories are the ones above.
+    const entityManager = {
+      create: jest.fn((_entity: any, values: any) => ({ ...values })),
+      save: jest.fn(async (user: any) => ({
+        id: "user-1",
+        created_at: new Date("2026-08-18T10:00:00.000Z"),
+        ...user,
+      })),
+      getRepository: jest.fn(() => tenantProfileRepository),
+    };
     userRepository = {
       findOne: jest.fn(),
       create: jest.fn((values: any) => ({ ...values })),
@@ -34,10 +49,9 @@ describe("AuthService — registration event", () => {
         ...user,
       })),
       update: jest.fn(),
-    };
-    tenantProfileRepository = {
-      create: jest.fn((values: any) => values),
-      save: jest.fn().mockResolvedValue(undefined),
+      manager: {
+        transaction: jest.fn(async (cb: any) => cb(entityManager)),
+      },
     };
     tenantCvService = {
       ensureShareUuid: jest.fn().mockResolvedValue({ share_uuid: "uuid" }),

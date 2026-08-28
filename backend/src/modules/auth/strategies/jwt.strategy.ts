@@ -5,6 +5,7 @@ import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { User } from "@/entities";
+import { UserStatus } from "@/entities/user.entity";
 import { Request } from "express";
 
 @Injectable()
@@ -39,6 +40,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.userRepository.findOne({ where: { id: payload.sub } });
     if (!user) {
       throw new UnauthorizedException();
+    }
+    // Mirror the refresh-path check (auth.service.ts): a suspended or
+    // deactivated account must lose access immediately, not when the
+    // access token expires.
+    if (user.status !== UserStatus.Active) {
+      throw new UnauthorizedException("Account is not active");
     }
     return user;
   }

@@ -51,12 +51,13 @@ develop (stage)  →  main (prod)
 
 1. **Работающий функционал священен.** Ничего не должно сломаться. Если изменение
    может затронуть поведение — сначала скажи об этом, потом делай.
-2. **Идём строго по фазам плана.** Фазу не начинаем, пока не закрыта предыдущая.
-   Порядок и жёсткие зависимости — в `docs/audit/05-refactoring-plan.md`.
-3. **🔴-шаги не начинаем без зелёных e2e.** Легенда риска: 🟢 безопасно ·
-   🟡 нужна проверка на stage · 🔴 требует сетки тестов заранее.
-4. **Не меняем код и доки за пределами текущего согласованного шага.**
-   Заметил проблему вне scope — запиши в план или в заметку шага, не чини походя.
+2. **Schema changes ride on green e2e and a rehearsed backup.** Risky DB work
+   (migrations touching data, constraint changes on live tables) needs the CI
+   e2e suite green and, for production, the backup installed and a restore
+   rehearsed (`docs/ops/BACKUP_RUNBOOK.md`).
+3. **Не меняем код и доки за пределами текущей согласованной задачи.**
+   Заметил проблему вне scope — запиши в `docs/STATUS.md` («Open follow-ups»),
+   не чини походя.
 
 ## Код-стиль: обязательная гигиена каждого шага
 
@@ -69,9 +70,13 @@ develop (stage)  →  main (prod)
 удали и его импорт. То же касается неиспользуемых зависимостей в конструкторе
 Nest-сервиса и мёртвых параметров метода.
 
-Линтер это **не поймает**: у бэкенда ESLint не настроен вообще, а на фронте активен
-только flat-конфиг с базовым набором Next (правило `no-unused-vars` из `.eslintrc.json`
-не применяется — см. `docs/audit/03-frontend-map.md` §6). Проверять глазами.
+The linter helps but does not fully gate this: CI runs `npm run lint` for both
+apps and errors fail the build. On the **backend** `no-unused-vars` is an
+**error**; on the **frontend** it is a `warn` (≈120 pre-existing hits form the
+backlog), so there the orphaned-import rule is still enforced by review, not
+by the machine. Unused constructor dependencies in Nest services are the case
+ESLint misses everywhere (parameter properties count as "used") — check those
+by eye.
 
 ### 2. Импортировать через path-алиас, а не относительным путём
 
@@ -100,7 +105,11 @@ Nest-сервиса и мёртвых параметров метода.
 | Алиас | Куда ведёт | Пример |
 |---|---|---|
 | `@/*` | `./src/*` | `@/app/types`, `@/app/lib/api` |
-| `@/components/*` · `@/lib/*` · `@/types/*` · `@/hooks/*` · `@/utils/*` · `@/store/*` · `@/constants/*` | одноимённые папки в `./src/` | `@/store/slices/authSlice` |
+| `@/lib/*` · `@/types/*` · `@/store/*` · `@/constants/*` | одноимённые папки в `./src/` | `@/store/slices/authSlice` |
+
+(`@/components`, `@/hooks`, `@/utils` были удалены 2026-08-21 — их целевые
+папки не существуют; компоненты живут в `src/app/components` и доступны
+через `@/app/components/...`.)
 
 **Что остаётся относительным:** импорты из той же директории (`./user.mapper`,
 `./dto/update-user.dto`) — их не трогаем, `./` читается нормально.
@@ -114,24 +123,27 @@ Nest-сервиса и мёртвых параметров метода.
 **Гигиену на строках, которые и так трогаешь, делаем сразу:** мёртвые импорты,
 алиасы, явно мёртвый код рядом.
 **Улучшение реализации методов, реструктуризацию, дедупликацию — не делаем
-оппортунистически:** это откладывается в фазу, которая владеет файлом, и только
-после поднятой тестовой сетки (Фаза 1).
-Заметил кандидата — пиши строку в `docs/audit/PROGRESS.md`, секция
-«Замечено по ходу», а не переписывай заодно.
+оппортунистически:** это отдельная задача со своим PR.
+Заметил кандидата — пиши строку в `docs/STATUS.md` («Open follow-ups»),
+а не переписывай заодно.
 
 ## Как ориентироваться
 
-**`docs/audit/` — единственный источник истины.** Шесть документов:
+**`docs/STATUS.md` is the live document — read it first.** One screen: current
+state, open follow-ups, host actions. It replaced `PROGRESS.md` (owner
+decision 2026-08-21); the campaign's full decision log is preserved at
+`docs/archive/PROGRESS-refactoring-2026-07-08.md`.
 
-| Файл | О чём |
+The rest of the docs tree:
+
+| File | What it is |
 |---|---|
-| `00-revision-note.md` | Ревизия аудита против `develop`, принятые решения владельца, инвентаризация `.md` |
-| `01-overview.md` | Топология репозитория, инфраструктура, CI/CD, что готово к проду, а что нет |
-| `02-backend-map.md` | Карта модулей и их циклов, энтити и связи, состояние БД и миграций, дыры в безопасности |
-| `03-frontend-map.md` | Три архитектуры фронта, мёртвый код, дубли, слой данных, дрейф контракта с бэком |
-| `04-docs-diff.md` | Расхождения «документация vs реальность» |
-| `05-refactoring-plan.md` | **Главный документ.** Реестр рисков, фазы 0–7, оценка риска каждого шага |
-| `PROGRESS.md` | Живой трекер: где мы сейчас, что сделано, что следующее |
+| `docs/STATUS.md` | **The live doc.** State, follow-ups, host actions |
+| `docs/audit/00`–`05` | Historical audit snapshots of 2026-07-28 (each carries a staleness banner). Useful as maps of the terrain, wrong about current state |
+| `docs/audit/LAUNCH_PLAN.md` | The launch bar (backup, deploy order, prod lag). Item numbers are referenced from code comments (`deploy.yml`, `app.controller.ts`) |
+| `docs/ops/BACKUP_RUNBOOK.md` | DB backup/restore: design, install, verify, restore drill |
+| `docs/archive/` | Frozen history, including the refactoring PROGRESS log. Never a source of current truth |
+| `.cursor/rules/tada-frontend.mdc` | Cursor rules — explicitly subordinate to this file |
 
 **`docs/archive/` — исторические файлы. Игнорировать.** Там лежат отменённые планы
 и README, описывающий несуществующую архитектуру. Не выполнять, не цитировать,
@@ -143,33 +155,39 @@ Nest-сервиса и мёртвых параметров метода.
 ## Порядок работы агента
 
 ```
+0. Fresh checkout? Run scripts/setup.sh (installs deps for both apps).
+   Claude Code on the web does this automatically via .claude/hooks/session-start.sh.
 1. Прочитать CLAUDE.md (этот файл)
-2. Прочитать docs/audit/PROGRESS.md → определить текущий шаг
-3. Прочитать соответствующий раздел docs/audit/05-refactoring-plan.md
-4. Сделать ОДИН шаг — не больше
-5. Обновить PROGRESS.md (статус, PR, дата, заметка)
-6. Открыть PR в develop
+2. Прочитать docs/STATUS.md — текущее состояние, follow-ups, host actions
+3. Сделать ОДНУ связную задачу
+4. Если после PR остаётся follow-up, решение или host action — записать
+   в docs/STATUS.md
+5. Открыть PR в develop
 ```
 
-Один шаг = один PR. Это не бюрократия: половина находок аудита — следствие того,
-что предыдущие рефакторинги делались крупными кусками и бросались на середине.
+Одна задача = один PR, если владелец явно не связал несколько в пакет.
+Это не бюрократия: половина находок аудита 2026 года — следствие того, что
+рефакторинги делались крупными кусками и бросались на середине.
 
-## Открытые вопросы (блокируют конкретные шаги)
+## Открытые вопросы
 
-| # | Вопрос | Блокирует |
-|---|---|---|
-| **В2** | Нужен ли фирменный шрифт **SF Pro**? Сейчас `font-sf-pro` используется в 20 местах, но Tailwind-конфиг игнорируется и класс не даёт CSS. Если шрифт не нужен — дешевле удалить класс вместе с конфигом, чем оживлять | Фаза 4.1 |
-| **В3** | Совпадает ли схема БД на stage и prod с локальной? Локально `schema:log` чист, прод не проверялся | Фаза 0.3 → всё, что трогает схему |
-| **В4** | Что реально крутится на боевых хостах — какой compose и nginx-конфиг? В репозитории `nginx/prod.conf` смотрит на порт 3002, а compose открывает 3001 | Фаза 3.1 → 3.2 и правки деплоя |
+**None — all three former blockers are closed** (details in the archived
+PROGRESS log, `docs/archive/PROGRESS-refactoring-2026-07-08.md`):
 
-В3 и В4 не требуют решения владельца — это работа на снятие информации с хостов,
-запланирована в шагах 0.3 и 3.1. **В2 требует ответа продукта/дизайна.**
+- **Q2 closed 2026-07-28**: SF Pro stays; Tailwind fixed via CSS-first `@theme` tokens (step 4.1).
+- **Q3 closed 2026-07-29** (step 0.3): migrations reconciled on both hosts, `pending = 0`.
+- **Q4 closed 2026-08-06** (step 3.1): compose on both hosts is byte-identical to the
+  repo; nginx is host-managed (Certbot) and proxies to **3001** — port 3002 never
+  existed anywhere but in a dead repo file. `nginx/*.conf` are reference mirrors.
 
 ## Чего делать нельзя
 
 - Коммитить в `main` напрямую.
 - Править `frontend/src/translations/*` — ими управляет Localazy, правки затрутся.
-- Класть миграции в `backend/database/` — это устаревшая папка, её содержимое
-  не применяется. Настоящие миграции: `backend/src/database/migrations/`.
 - Начинать 🔴-шаг без зелёных e2e.
 - Чинить что-то «заодно», вне текущего шага.
+
+Migrations live in `backend/src/database/migrations/` — nowhere else. Note:
+the chain does not replay from an empty database and carries a duplicate
+timestamp (see `docs/STATUS.md`, «Open follow-ups»); fresh environments use
+`TYPEORM_SYNCHRONIZE=true` until that is repaired.

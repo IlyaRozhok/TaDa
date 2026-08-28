@@ -10,6 +10,10 @@ export const NotificationEvents = {
   UserRegistered: "user.registered",
   TenantCvCompleted: "tenant-cv.completed",
   BookingRequested: "booking-request.created",
+  BookingStatusChanged: "booking-request.status-changed",
+  ViewingProposed: "booking-request.viewing-proposed",
+  ViewingConfirmed: "booking-request.viewing-confirmed",
+  CallRequested: "call.requested",
 } as const;
 
 /** How the account came into existence. Both paths notify support. */
@@ -64,4 +68,78 @@ export interface BookingRequestedEvent {
   dateFrom: string | null;
   dateTo: string | null;
   message: string | null;
+}
+
+/**
+ * A booking moved through the pipeline. Carries IDs and display fields only:
+ * recipient addresses are resolved from the database by the notification
+ * service (invariant 2 — no event payload can redirect an email).
+ */
+export interface BookingStatusChangedEvent {
+  bookingId: string;
+  propertyId: string;
+  tenantId: string;
+  from: string;
+  to: string;
+  property: {
+    title: string | null;
+    address: string | null;
+  };
+}
+
+/** An admin proposed a viewing slot to the tenant. */
+export interface ViewingProposedEvent {
+  bookingId: string;
+  propertyId: string;
+  tenantId: string;
+  /** ISO datetime of the proposed viewing. */
+  proposedAt: string;
+  property: {
+    title: string | null;
+    address: string | null;
+  };
+}
+
+/** The tenant confirmed the proposed viewing slot. */
+export interface ViewingConfirmedEvent {
+  bookingId: string;
+  propertyId: string;
+  tenantId: string;
+  /** ISO datetime of the confirmed viewing. */
+  proposedAt: string;
+  confirmedAt: string;
+  property: {
+    title: string | null;
+    address: string | null;
+  };
+}
+
+/**
+ * A "Book a call" request from a public landing form. Unauthenticated by
+ * nature — the sender is whoever filled in the form, so every field is
+ * untrusted input that the DTO has already length-capped and constrained to a
+ * closed vocabulary. The recipient is the internal inbox, never anything from
+ * this payload (invariant 2 of NotificationsService).
+ *
+ * The producer resolves labels before emitting: the slug is what the row
+ * stores, the label is what the support inbox needs to read, and the template
+ * should not have to own the form's vocabulary to render one line of text.
+ */
+export interface CallRequestedEvent {
+  /** Stable slug, e.g. `looking_for_home`. */
+  reason: string;
+  /** English label for that slug, resolved by the producer. */
+  reasonLabel: string;
+  name: string;
+  /** The only way back to the visitor: the form asks for no email. */
+  phone: {
+    countryCode: string;
+    number: string;
+  };
+  /** Free text as the visitor typed it. Null when they skipped the field. */
+  preferredTime: string | null;
+  notes: string | null;
+  /** Which landing sent it: "tenant" or "operator". */
+  source: string;
+  requestedAt: Date;
 }

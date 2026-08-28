@@ -191,8 +191,6 @@ export class S3Service {
   async deleteFile(key: string): Promise<void> {
     // Check if in dev mode - delete local file
     if (this.isDevMode) {
-      const fs = require('fs');
-      const path = require('path');
       const uploadsDir = path.join(process.cwd(), 'uploads');
       const filePath = path.join(uploadsDir, key);
       if (fs.existsSync(filePath)) {

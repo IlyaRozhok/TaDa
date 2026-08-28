@@ -65,6 +65,66 @@ export interface GetPublicPropertiesAllArgs {
   building_id?: string;
 }
 
+/** Rows per page in the admin properties table. */
+export const ADMIN_PAGE_SIZE = 20;
+
+/**
+ * Envelope of the admin list, `GET /properties`. Same shape as the public
+ * one plus `limit` — the page size the server actually applied, which the
+ * table's numbered control renders off.
+ */
+export interface AdminPropertiesPage extends PublicPropertiesPage {
+  limit: number;
+}
+
+/**
+ * Query of the admin list. Search and every filter are applied server-side,
+ * and they combine: sending a search term and a filter narrows to both.
+ *
+ * Bed and bath counts come in two flavours, matching the table's buckets:
+ * `bedrooms` is the closed bucket (Studio / 1 / 2 / 3), `bedrooms_min` the
+ * open-ended one (4+).
+ */
+export interface GetPropertiesArgs {
+  page?: number;
+  limit?: number;
+  search?: string;
+  building_id?: string;
+  operator_id?: string;
+  is_landing_listing?: boolean;
+  property_type?: string;
+  bedrooms?: number;
+  bedrooms_min?: number;
+  bathrooms?: number;
+  bathrooms_min?: number;
+}
+
+/** Drops the keys the caller left unset so they never reach the query string. */
+const adminListParams = (args?: GetPropertiesArgs): Record<string, string> => {
+  const params: Record<string, string> = {
+    page: String(args?.page ?? 1),
+    limit: String(args?.limit ?? ADMIN_PAGE_SIZE),
+  };
+
+  if (args?.search) params.search = args.search;
+  if (args?.building_id) params.building_id = args.building_id;
+  if (args?.operator_id) params.operator_id = args.operator_id;
+  if (args?.is_landing_listing !== undefined) {
+    params.is_landing_listing = String(args.is_landing_listing);
+  }
+  if (args?.property_type) params.property_type = args.property_type;
+  if (args?.bedrooms !== undefined) params.bedrooms = String(args.bedrooms);
+  if (args?.bedrooms_min !== undefined) {
+    params.bedrooms_min = String(args.bedrooms_min);
+  }
+  if (args?.bathrooms !== undefined) params.bathrooms = String(args.bathrooms);
+  if (args?.bathrooms_min !== undefined) {
+    params.bathrooms_min = String(args.bathrooms_min);
+  }
+
+  return params;
+};
+
 const listTags = (result: PublicPropertiesPage | undefined) =>
   result
     ? [
@@ -117,6 +177,17 @@ export const propertiesApi = baseApi.injectEndpoints({
       providesTags: listTags,
     }),
 
+    /**
+     * `GET /properties/public/landing` — the listings the landings feature to
+     * signed-out visitors. A bare array, newest first, capped at six by the
+     * backend.
+     */
+    getLandingListings: builder.query<Property[], void>({
+      query: () => "/properties/public/landing",
+      transformResponse: (raw: WireProperty[]) => raw.map(normalizeProperty),
+      providesTags: [{ type: "Property", id: "LANDING_LIST" }],
+    }),
+
     /** One public property, `GET /properties/public/:id` — a bare object. */
     getPublicProperty: builder.query<Property, string>({
       query: (id) => `/properties/public/${id}`,
@@ -124,14 +195,28 @@ export const propertiesApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Property", id }],
     }),
 
-    /** Admin list, `GET /properties` — the API answers with a bare array. */
-    getProperties: builder.query<Property[], void>({
-      query: () => "/properties",
-      transformResponse: (raw: WireProperty[]) => raw.map(normalizeProperty),
+    /**
+     * Admin list, `GET /properties` — one page at a time, with search and
+     * filters resolved server-side. Answers with the pagination envelope.
+     */
+    getProperties: builder.query<AdminPropertiesPage, GetPropertiesArgs | void>({
+      query: (args) => ({
+        url: "/properties",
+        params: adminListParams(args ?? undefined),
+      }),
+      transformResponse: (
+        page: WirePropertiesPage & { limit: number },
+      ): AdminPropertiesPage => ({
+        ...page,
+        data: page.data.map(normalizeProperty),
+      }),
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Property" as const, id })),
+              ...result.data.map(({ id }) => ({
+                type: "Property" as const,
+                id,
+              })),
               { type: "Property" as const, id: "LIST" },
             ]
           : [{ type: "Property" as const, id: "LIST" }],
@@ -144,6 +229,7 @@ export const propertiesApi = baseApi.injectEndpoints({
         { type: "Property", id: "LIST" },
         { type: "Property", id: "PUBLIC_LIST" },
         { type: "Property", id: "MATCHED_LIST" },
+        { type: "Property", id: "LANDING_LIST" },
       ],
     }),
 
@@ -163,6 +249,7 @@ export const propertiesApi = baseApi.injectEndpoints({
         { type: "Property", id: "LIST" },
         { type: "Property", id: "PUBLIC_LIST" },
         { type: "Property", id: "MATCHED_LIST" },
+        { type: "Property", id: "LANDING_LIST" },
       ],
     }),
 
@@ -172,6 +259,7 @@ export const propertiesApi = baseApi.injectEndpoints({
         { type: "Property", id: "LIST" },
         { type: "Property", id: "PUBLIC_LIST" },
         { type: "Property", id: "MATCHED_LIST" },
+        { type: "Property", id: "LANDING_LIST" },
       ],
     }),
   }),
@@ -181,6 +269,7 @@ export const {
   useGetPublicPropertiesQuery,
   useGetPublicPropertiesAllQuery,
   useGetPublicPropertyQuery,
+  useGetLandingListingsQuery,
   useGetPropertiesQuery,
   useCreatePropertyMutation,
   useUpdatePropertyMutation,

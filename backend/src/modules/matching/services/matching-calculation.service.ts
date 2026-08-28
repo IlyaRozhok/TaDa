@@ -24,15 +24,17 @@ import { matchAmenities } from "@/modules/matching/scoring/amenities.scorer";
 import { matchFurnishing } from "@/modules/matching/scoring/furnishing.scorer";
 import { matchPets } from "@/modules/matching/scoring/pets.scorer";
 import { matchPropertyAmenities } from "@/modules/matching/scoring/property-amenities.scorer";
+import { matchLocation } from "@/modules/matching/scoring/location.scorer";
 
 /**
  * Orchestrator of the scoring engine. Each category scorer is a pure
  * function in `../scoring/`; this service owns the category list, its
  * order, and the aggregation into a `PropertyMatchResult`.
  *
- * `scoring/location.scorer.ts` is deliberately NOT called here — location
- * was not among the seventeen categories before the 6.3 split, and wiring
- * it in would change every score.
+ * Location (category 18) is wired in since package B2. Only tenants who set
+ * a location preference are affected: for everyone else the category has
+ * `hasPreference: false` and drops out of the denominator, leaving their
+ * scores exactly as before.
  */
 @Injectable()
 export class MatchingCalculationService {
@@ -116,6 +118,9 @@ export class MatchingCalculationService {
         weights.propertyAmenities,
       ),
     );
+
+    // 18. Location matching (areas, boroughs, metro stations)
+    categories.push(matchLocation(property, preferences, weights.location));
 
     // Calculate totals - ONLY include categories where user has set a preference
     // Categories without preferences are excluded from the calculation

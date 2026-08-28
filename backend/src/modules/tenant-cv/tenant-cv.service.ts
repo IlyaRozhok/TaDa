@@ -30,7 +30,10 @@ export class TenantCvService {
     return this.withRefreshedAvatarUrl(buildTenantCvResponse(user, cv));
   }
 
-  async getByShareUuid(shareUuid: string): Promise<TenantCvResponseDto> {
+  async getByShareUuid(
+    shareUuid: string,
+    options: { maskContacts?: boolean } = {},
+  ): Promise<TenantCvResponseDto> {
     const cv = await this.tenantCvRepository.findOne({
       where: { share_uuid: shareUuid },
     });
@@ -40,7 +43,9 @@ export class TenantCvService {
     }
 
     const user = await this.userQueryService.findOneWithProfiles(cv.user_id);
-    return this.withRefreshedAvatarUrl(buildTenantCvResponse(user, cv));
+    return this.withRefreshedAvatarUrl(
+      buildTenantCvResponse(user, cv, { maskContacts: options.maskContacts }),
+    );
   }
 
   async updateForUser(

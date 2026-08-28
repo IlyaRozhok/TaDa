@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import LandingSwitcher, { LandingType } from "./LandingSwitcher";
-import RequestDemoModal from "./RequestDemoModal";
+import BookACallModal, { BookACallAudience } from "./BookACallModal";
 
 import CardsSlider from "./CardsSlider";
 import DesktopCardsSlider from "./DesktopCardsSlider";
@@ -13,6 +13,7 @@ import ResponsiveCardsDisplay from "./ResponsiveCardsDisplay";
 // Import existing components for operators landing
 import HeroWrapper from "./HeroWrapper";
 import CardsSection from "./CardsSection";
+import LandingListingsSection from "./LandingListingsSection";
 import TenantsWrapper from "./TenantsWrapper";
 import SpotlightSection from "./SpotlightSection";
 import SocialMediaSection from "./SocialMediaSection";
@@ -26,7 +27,7 @@ import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
 import { onboardingKeys } from "../lib/translationsKeys/onboardingTranslationKeys";
 
 // Tenant-focused hero section with background image
-const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void }) => {
+const TenantsHeroSection = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -120,7 +121,7 @@ const TenantsHeroSection = ({ onContactClick }: { onContactClick?: () => void })
   );
 };
 
-const TenantsCardsSection = ({ onContactClick }: { onContactClick?: () => void }) => {
+const TenantsCardsSection = () => {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -679,7 +680,11 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
   onSignIn,
 }) => {
   const [currentType, setCurrentType] = useState<LandingType>("tenants");
-  const [isRequestDemoOpen, setIsRequestDemoOpen] = useState(false);
+  // The modal's audience is per-CTA, not per-landing: the operator landing's
+  // spotlight books an operator call, the tenant sections book a tenant one.
+  // Keeping it in state is what lets one mounted modal serve both.
+  const [bookACallAudience, setBookACallAudience] =
+    useState<BookACallAudience | null>(null);
 
   const handleSwitch = (newType: LandingType) => {
     if (newType === currentType) return;
@@ -692,9 +697,10 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
     <>
       <HeroWrapper />
       <CardsSection />
+      <LandingListingsSection landingType="operators" />
       <PartnersSection landingType="operators" />
       <TenantsWrapper />
-      <SpotlightSection onBookClick={() => setIsRequestDemoOpen(true)} />
+      <SpotlightSection onBookClick={() => setBookACallAudience("operator")} />
       <SocialMediaSection />
       <AboutUsSection />
       <Footer />
@@ -703,10 +709,11 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
 
   const renderTenantsLanding = () => (
     <>
-      <TenantsHeroSection onContactClick={() => setIsRequestDemoOpen(true)} />
-      <TenantsCardsSection onContactClick={() => setIsRequestDemoOpen(true)} />
+      <TenantsHeroSection />
+      <TenantsCardsSection />
+      <LandingListingsSection landingType="tenants" />
       <GenerationRentSection
-        onContactClick={() => setIsRequestDemoOpen(true)}
+        onContactClick={() => setBookACallAudience("tenant")}
       />
       <TenantsFeaturesSection />
       <TenantsSocialMediaSection />
@@ -734,11 +741,11 @@ const DualLandingWrapper: React.FC<DualLandingWrapperProps> = ({
         ? renderOperatorsLanding()
         : renderTenantsLanding()}
 
-      {/* Request Demo Modal */}
-      <RequestDemoModal
-        isOpen={isRequestDemoOpen}
-        onClose={() => setIsRequestDemoOpen(false)}
-        landingType={currentType}
+      {/* Book a Call Modal */}
+      <BookACallModal
+        isOpen={bookACallAudience !== null}
+        onClose={() => setBookACallAudience(null)}
+        audience={bookACallAudience ?? "tenant"}
       />
     </>
   );

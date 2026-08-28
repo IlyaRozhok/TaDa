@@ -58,7 +58,10 @@ const config = [
       "no-var": "error",
 
       // Logging is how this codebase is debugged; the backend side is step 3.3.
-      "no-console": "off",
+      // Backlog, not a gate: ~100 console.log calls predate the rule. What it
+      // must catch going forward is new PII-carrying debug logging — user
+      // emails were being printed on every page load until 2026-08-21.
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
 

@@ -7,6 +7,14 @@ export const INTRO_STEPS = 3;
 export const PROFILE_STEP = 4; // After intro steps
 export const PREFERENCES_START_STEP = 5; // After profile step
 
+// Display-only totals: the visible counter restarts at 1 in each phase
+// (intro/profile = "Step X of 4", preferences = "Step X of 12").
+// `currentStep` itself stays absolute 1..16 — analytics `step_number`
+// and the persisted state depend on it.
+export const INTRO_PHASE_TOTAL_STEPS = PREFERENCES_START_STEP - 1; // 4
+export const PREFERENCES_PHASE_TOTAL_STEPS =
+  TOTAL_ONBOARDING_STEPS - INTRO_PHASE_TOTAL_STEPS; // 12
+
 const ONBOARDING_STORAGE_KEY = "onboardingState";
 
 type OnboardingPhase = "intro" | "profile" | "preferences";

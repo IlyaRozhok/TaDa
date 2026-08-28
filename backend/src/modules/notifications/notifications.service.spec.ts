@@ -6,6 +6,7 @@ import { NotificationsService } from "./notifications.service";
 import { NotificationChannel } from "./channels/notification-channel.interface";
 import {
   BookingRequestedEvent,
+  CallRequestedEvent,
   TenantCvCompletedEvent,
   UserRegisteredEvent,
 } from "./events/notification.events";
@@ -101,14 +102,43 @@ function bookingEvent(
   };
 }
 
+function callEvent(
+  overrides: Partial<CallRequestedEvent> = {},
+): CallRequestedEvent {
+  return {
+    reason: "looking_for_home",
+    reasonLabel: "I'm looking for a home",
+    name: "Jane Doe",
+    phone: { countryCode: "GB", number: "20 7946 0000" },
+    preferredTime: "Weekday evenings",
+    notes: null,
+    source: "tenant",
+    requestedAt: new Date("2026-08-18T10:00:00.000Z"),
+    ...overrides,
+  };
+}
+
 describe("NotificationsService", () => {
   let repo: ReturnType<typeof createRepositoryDouble>;
   let channel: jest.Mocked<NotificationChannel>;
+  // Default to UNRESOLVABLE: user-facing copies are only recorded when the
+  // service can resolve an account address from the database, so the legacy
+  // tests keep seeing exactly the internal ops rows they always asserted on.
+  let userRepo: { findOne: jest.Mock };
+  let propertyRepo: { findOne: jest.Mock };
 
   const build = (config: ConfigService = createConfigDouble()) =>
-    new NotificationsService(repo.repository as any, [channel], config);
+    new NotificationsService(
+      repo.repository as any,
+      userRepo as any,
+      propertyRepo as any,
+      [channel],
+      config,
+    );
 
   beforeEach(() => {
+    userRepo = { findOne: jest.fn().mockResolvedValue(null) };
+    propertyRepo = { findOne: jest.fn().mockResolvedValue(null) };
     repo = createRepositoryDouble();
     repo.setInsertResult([
       {
@@ -227,6 +257,93 @@ describe("NotificationsService", () => {
     });
   });
 
+  describe("call requests", () => {
+    it("swallows a channel failure rather than throwing at the producer", async () => {
+      channel.send.mockRejectedValue(new Error("SES is down"));
+
+      await expect(
+        build().handleCallRequested(callEvent()),
+      ).resolves.toBeUndefined();
+    });
+
+    // The mask the client applies is cosmetic, so the same visitor's second
+    // submit can carry different spacing for the same number.
+    it("keys one email per phone number per UTC day, ignoring the mask", async () => {
+      const service = build();
+
+      await service.handleCallRequested(callEvent());
+      await service.handleCallRequested(
+        callEvent({ phone: { countryCode: "GB", number: "2079460000" } }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "call_request:GB2079460000:2026-08-18",
+        "call_request:GB2079460000:2026-08-18",
+      ]);
+    });
+
+    it("keys the same digits in two countries apart", async () => {
+      const service = build();
+
+      await service.handleCallRequested(callEvent());
+      await service.handleCallRequested(
+        callEvent({ phone: { countryCode: "PL", number: "20 7946 0000" } }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "call_request:GB2079460000:2026-08-18",
+        "call_request:PL2079460000:2026-08-18",
+      ]);
+    });
+
+    it("lets a follow-up the next day through", async () => {
+      const service = build();
+
+      await service.handleCallRequested(callEvent());
+      await service.handleCallRequested(
+        callEvent({ requestedAt: new Date("2026-08-19T09:00:00.000Z") }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "call_request:GB2079460000:2026-08-18",
+        "call_request:GB2079460000:2026-08-19",
+      ]);
+    });
+
+    it("sends to the channel's address, which no payload can influence", async () => {
+      await build().handleCallRequested(callEvent());
+
+      expect(repo.insertedValues[0].recipient).toBe("support@ta-da.co");
+      expect(channel.send).toHaveBeenCalledWith(
+        "support@ta-da.co",
+        expect.anything(),
+      );
+    });
+
+    it("renders the subject from the source and the visitor's name", async () => {
+      await build().handleCallRequested(callEvent({ source: "operator" }));
+
+      expect(repo.insertedValues[0].subject).toBe(
+        "Call request (operator) — Jane Doe",
+      );
+    });
+
+    // The payload is stored so the retry worker can rebuild the body without
+    // reaching back into call_requests.
+    it("survives a replayed payload that lost its Date type through jsonb", async () => {
+      const replayed = JSON.parse(
+        JSON.stringify(callEvent()),
+      ) as CallRequestedEvent;
+
+      await expect(
+        build().handleCallRequested(replayed),
+      ).resolves.toBeUndefined();
+      expect(repo.insertedValues[0].dedupe_key).toBe(
+        "call_request:GB2079460000:2026-08-18",
+      );
+    });
+  });
+
   describe("recipient", () => {
     it("always takes the address from the channel, never from the payload", async () => {
       await build().handleBookingRequested(
@@ -245,6 +362,131 @@ describe("NotificationsService", () => {
         "support@ta-da.co",
         expect.anything(),
       );
+      // The payload address must never appear as a recipient anywhere.
+      expect(
+        repo.insertedValues.map((v) => v.recipient),
+      ).not.toContain("attacker@evil.test");
+    });
+
+    it("resolves user-facing recipients from the DATABASE, not the payload", async () => {
+      userRepo.findOne.mockResolvedValue({
+        id: "user-1",
+        email: "account@example.com",
+      });
+      propertyRepo.findOne.mockResolvedValue({
+        id: "prop-1",
+        operator: { email: "operator@example.com" },
+      });
+
+      await build().handleBookingRequested(
+        bookingEvent({
+          tenant: {
+            id: "user-1",
+            name: "New User",
+            email: "typed-into-form@example.com",
+            phone: null,
+          },
+        }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "booking_requested:booking-1",
+        "booking_received_tenant:booking-1",
+        "booking_requested_operator:booking-1",
+      ]);
+      expect(repo.insertedValues.map((v) => v.recipient)).toEqual([
+        "support@ta-da.co",
+        "account@example.com",
+        "operator@example.com",
+      ]);
+    });
+
+    it("skips the user-facing copies entirely when no account can be resolved", async () => {
+      await build().handleBookingRequested(bookingEvent());
+
+      expect(repo.insertedValues).toHaveLength(1);
+      expect(repo.insertedValues[0].dedupe_key).toBe(
+        "booking_requested:booking-1",
+      );
+    });
+
+    it("confines an addressed notification to the email channel", async () => {
+      channel = createChannelDouble({ name: "slack" } as any);
+      userRepo.findOne.mockResolvedValue({
+        id: "t",
+        email: "account@example.com",
+      });
+
+      await build().handleBookingStatusChanged({
+        bookingId: "booking-1",
+        propertyId: "prop-1",
+        tenantId: "t",
+        from: "contacting",
+        to: "viewing",
+        property: { title: "Flat 2B", address: "1 Test Road" },
+      });
+
+      expect(repo.insertedValues).toHaveLength(0);
+      expect(channel.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("booking lifecycle emails (C1)", () => {
+    beforeEach(() => {
+      userRepo.findOne.mockResolvedValue({
+        id: "t",
+        email: "account@example.com",
+      });
+      propertyRepo.findOne.mockResolvedValue({
+        id: "prop-1",
+        operator: { email: "operator@example.com" },
+      });
+    });
+
+    it("keys the status email by (booking, target status)", async () => {
+      await build().handleBookingStatusChanged({
+        bookingId: "booking-1",
+        propertyId: "prop-1",
+        tenantId: "t",
+        from: "contacting",
+        to: "viewing",
+        property: { title: "Flat 2B", address: "1 Test Road" },
+      });
+
+      expect(repo.insertedValues[0].dedupe_key).toBe(
+        "booking_status:booking-1:viewing",
+      );
+      expect(repo.insertedValues[0].recipient).toBe("account@example.com");
+    });
+
+    it("keys the viewing proposal by the slot, so a NEW time emails again", async () => {
+      await build().handleViewingProposed({
+        bookingId: "booking-1",
+        propertyId: "prop-1",
+        tenantId: "t",
+        proposedAt: "2026-09-05T14:30:00.000Z",
+        property: { title: "Flat 2B", address: "1 Test Road" },
+      });
+
+      expect(repo.insertedValues[0].dedupe_key).toBe(
+        "viewing_proposed:booking-1:2026-09-05T14:30:00.000Z",
+      );
+    });
+
+    it("notifies the ops inbox and the operator on a confirmation", async () => {
+      await build().handleViewingConfirmed({
+        bookingId: "booking-1",
+        propertyId: "prop-1",
+        tenantId: "t",
+        proposedAt: "2026-09-05T14:30:00.000Z",
+        confirmedAt: "2026-09-01T10:00:00.000Z",
+        property: { title: "Flat 2B", address: "1 Test Road" },
+      });
+
+      expect(repo.insertedValues.map((v) => v.recipient)).toEqual([
+        "support@ta-da.co",
+        "operator@example.com",
+      ]);
     });
   });
 

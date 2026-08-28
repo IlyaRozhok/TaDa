@@ -5,12 +5,15 @@ import {
   Body,
   Patch,
   Param,
+  ParseUUIDPipe,
   Delete,
   Query,
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
   Logger,
+  BadRequestException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -44,7 +47,7 @@ export class BuildingController {
   @ApiOperation({ summary: "Get a public building by ID (no auth required)" })
   @ApiResponse({ status: 200, description: "Building found" })
   @ApiResponse({ status: 404, description: "Building not found" })
-  async findOnePublic(@Param("id") id: string) {
+  async findOnePublic(@Param("id", ParseUUIDPipe) id: string) {
     return this.buildingService.findOnePublic(id);
   }
 
@@ -92,7 +95,7 @@ export class BuildingController {
   @ApiResponse({ status: 200, description: "Building found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
-  async findOne(@Param("id") id: string) {
+  async findOne(@Param("id", ParseUUIDPipe) id: string) {
     return await this.buildingService.findOneWithFreshUrls(id);
   }
 
@@ -105,7 +108,7 @@ export class BuildingController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
   update(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() updateBuildingDto: UpdateBuildingDto,
   ) {
     return this.buildingService.update(id, updateBuildingDto);
@@ -122,7 +125,7 @@ export class BuildingController {
     status: 400,
     description: "Cannot delete building with associated properties",
   })
-  async remove(@Param("id") id: string) {
+  async remove(@Param("id", ParseUUIDPipe) id: string) {
     return await this.buildingService.remove(id);
   }
 
@@ -133,16 +136,17 @@ export class BuildingController {
   @ApiConsumes("multipart/form-data")
   @ApiOperation({ summary: "Upload building logo" })
   @ApiResponse({ status: 201, description: "Logo uploaded successfully" })
+  // Client mistakes (no file, wrong type) are 400s. As bare `Error` they came
+  // back as 500s and paged Sentry for every wrong-file-type upload.
   async uploadLogo(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new Error("No file provided");
+      throw new BadRequestException("No file provided");
+    }
+    if (!file.mimetype.startsWith("image/")) {
+      throw new BadRequestException("Invalid file type. Only images are allowed.");
     }
 
     try {
-      if (!file.mimetype.startsWith("image/")) {
-        throw new Error("Invalid file type. Only images are allowed.");
-      }
-
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
         "building-logo",
@@ -160,7 +164,7 @@ export class BuildingController {
       };
     } catch (error) {
       this.logger.error(`Error uploading logo ${file.originalname}`, error?.stack ?? String(error));
-      throw new Error(`Failed to upload logo: ${error.message}`);
+      throw new InternalServerErrorException("Failed to upload logo");
     }
   }
 
@@ -173,14 +177,13 @@ export class BuildingController {
   @ApiResponse({ status: 201, description: "Video uploaded successfully" })
   async uploadVideo(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new Error("No file provided");
+      throw new BadRequestException("No file provided");
+    }
+    if (!file.mimetype.startsWith("video/")) {
+      throw new BadRequestException("Invalid file type. Only videos are allowed.");
     }
 
     try {
-      if (!file.mimetype.startsWith("video/")) {
-        throw new Error("Invalid file type. Only videos are allowed.");
-      }
-
       const fileKey = this.s3Service.generateFileKey(
         file.originalname,
         "building-video",
@@ -198,7 +201,7 @@ export class BuildingController {
       };
     } catch (error) {
       this.logger.error(`Error uploading video ${file.originalname}`, error?.stack ?? String(error));
-      throw new Error(`Failed to upload video: ${error.message}`);
+      throw new InternalServerErrorException("Failed to upload video");
     }
   }
 
@@ -211,46 +214,43 @@ export class BuildingController {
   @ApiResponse({ status: 201, description: "Photos uploaded successfully" })
   async uploadPhotos(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
-      throw new Error("No files provided");
+      throw new BadRequestException("No files provided");
     }
 
-    const uploadPromises = files.map(async (file) => {
-      try {
-        if (!file.mimetype.startsWith("image/")) {
-          throw new Error(
-            `Invalid file type for ${file.originalname}. Only images are allowed.`,
-          );
-        }
-
-        const fileKey = this.s3Service.generateFileKey(
-          file.originalname,
-          "building-photo",
-        );
-        const uploadResult = await this.s3Service.uploadFile(
-          file.buffer,
-          fileKey,
-          file.mimetype,
-          file.originalname,
-        );
-
-        return {
-          url: uploadResult.url,
-          key: uploadResult.key,
-        };
-      } catch (error) {
-        this.logger.error(`Error uploading photo ${file.originalname}`, error?.stack ?? String(error));
-        throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`,
-        );
-      }
-    });
+    // Validated before any upload starts, so one bad file in a batch does not
+    // leave the good ones already orphaned in S3.
+    const invalidPhoto = files.find(
+      (file) => !file.mimetype.startsWith("image/"),
+    );
+    if (invalidPhoto) {
+      throw new BadRequestException(
+        `Invalid file type for ${invalidPhoto.originalname}. Only images are allowed.`,
+      );
+    }
 
     try {
-      const results = await Promise.all(uploadPromises);
-      return results;
+      return await Promise.all(
+        files.map(async (file) => {
+          const fileKey = this.s3Service.generateFileKey(
+            file.originalname,
+            "building-photo",
+          );
+          const uploadResult = await this.s3Service.uploadFile(
+            file.buffer,
+            fileKey,
+            file.mimetype,
+            file.originalname,
+          );
+
+          return {
+            url: uploadResult.url,
+            key: uploadResult.key,
+          };
+        }),
+      );
     } catch (error) {
       this.logger.error("Photo upload failed", error?.stack ?? String(error));
-      throw error;
+      throw new InternalServerErrorException("Failed to upload photos");
     }
   }
 
@@ -263,46 +263,41 @@ export class BuildingController {
   @ApiResponse({ status: 201, description: "Documents uploaded successfully" })
   async uploadDocuments(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
-      throw new Error("No files provided");
+      throw new BadRequestException("No files provided");
     }
 
-    const uploadPromises = files.map(async (file) => {
-      try {
-        if (file.mimetype !== "application/pdf") {
-          throw new Error(
-            `Invalid file type for ${file.originalname}. Only PDF files are allowed.`,
-          );
-        }
-
-        const fileKey = this.s3Service.generateFileKey(
-          file.originalname,
-          "building-document",
-        );
-        const uploadResult = await this.s3Service.uploadFile(
-          file.buffer,
-          fileKey,
-          file.mimetype,
-          file.originalname,
-        );
-
-        return {
-          url: uploadResult.url,
-          key: uploadResult.key,
-        };
-      } catch (error) {
-        this.logger.error(`Error uploading document ${file.originalname}`, error?.stack ?? String(error));
-        throw new Error(
-          `Failed to upload ${file.originalname}: ${error.message}`,
-        );
-      }
-    });
+    const invalidDocument = files.find(
+      (file) => file.mimetype !== "application/pdf",
+    );
+    if (invalidDocument) {
+      throw new BadRequestException(
+        `Invalid file type for ${invalidDocument.originalname}. Only PDF files are allowed.`,
+      );
+    }
 
     try {
-      const results = await Promise.all(uploadPromises);
-      return results;
+      return await Promise.all(
+        files.map(async (file) => {
+          const fileKey = this.s3Service.generateFileKey(
+            file.originalname,
+            "building-document",
+          );
+          const uploadResult = await this.s3Service.uploadFile(
+            file.buffer,
+            fileKey,
+            file.mimetype,
+            file.originalname,
+          );
+
+          return {
+            url: uploadResult.url,
+            key: uploadResult.key,
+          };
+        }),
+      );
     } catch (error) {
       this.logger.error("Document upload failed", error?.stack ?? String(error));
-      throw error;
+      throw new InternalServerErrorException("Failed to upload documents");
     }
   }
 }

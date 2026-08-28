@@ -18,8 +18,10 @@ import { ShortlistModule } from "./modules/shortlist/shortlist.module";
 import { BuildingModule } from "./modules/building/building.module";
 import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
+import { CallRequestModule } from "./modules/call-request/call-request.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { S3Module } from "./common/services/s3.module";
+import { GeocodingModule } from "./common/services/geocoding.module";
 import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { RolesGuard } from "@/common/guards/roles.guard";
 import { typeOrmConfig } from "./database/typeorm.config";
@@ -63,6 +65,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     // Drives the notification retry sweep. Nothing else schedules work today.
     ScheduleModule.forRoot(),
     S3Module,
+    GeocodingModule,
 
     AuthModule,
     UsersModule,
@@ -74,6 +77,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     BuildingModule,
     TenantCvModule,
     BookingRequestModule,
+    CallRequestModule,
     NotificationsModule,
   ],
   controllers: [AppController],

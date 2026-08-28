@@ -163,6 +163,87 @@ describe("buildMessage", () => {
     });
   });
 
+  describe("user-facing templates (C1)", () => {
+    const statusPayload = {
+      bookingId: "booking-1",
+      propertyId: "prop-1",
+      tenantId: "t",
+      from: "contacting",
+      to: "kyc_referencing",
+      property: { title: "Flat 2B", address: "1 Test Road" },
+    } as unknown as Record<string, unknown>;
+
+    it("explains the status in tenant language, not enum values alone", () => {
+      const message = buildMessage(
+        NotificationType.BookingStatusChangedTenant,
+        statusPayload,
+      );
+      expect(message.subject).toBe("Booking update — Flat 2B");
+      expect(message.text).toContain("referencing checks are in progress");
+    });
+
+    it("has an explanation for every pipeline status", () => {
+      for (const status of [
+        "new",
+        "contacting",
+        "kyc_referencing",
+        "approved_viewing",
+        "viewing",
+        "contract",
+        "deposit",
+        "full_payment",
+        "move_in",
+        "rented",
+        "cancel_booking",
+      ]) {
+        const message = buildMessage(NotificationType.BookingStatusChangedTenant, {
+          ...statusPayload,
+          to: status,
+        });
+        // The generic echo fallback would contain the raw enum in quotes.
+        expect(message.text).not.toContain(`"${status}"`);
+      }
+    });
+
+    it("renders the tenant receipt and the operator alert from one event", () => {
+      const payload = {
+        bookingId: "booking-1",
+        isFirstRequest: true,
+        revision: "r1",
+        property: { id: "prop-1", title: "Flat 2B", address: "1 Test Road" },
+        tenant: {
+          id: "t",
+          name: "New User",
+          email: "contact@example.com",
+          phone: "+44 7700 900123",
+        },
+        dateFrom: "2026-09-01",
+        dateTo: null,
+        message: "Hello",
+      } as unknown as Record<string, unknown>;
+
+      const receipt = buildMessage(NotificationType.BookingReceivedTenant, payload);
+      expect(receipt.subject).toBe("We received your request — Flat 2B");
+      expect(receipt.text).toContain("Hi New User");
+
+      const alert = buildMessage(NotificationType.BookingRequestedOperator, payload);
+      expect(alert.subject).toContain("New booking request for your property");
+      expect(alert.text).toContain("Contact phone: +44 7700 900123");
+    });
+
+    it("renders the viewing proposal with the slot", () => {
+      const message = buildMessage(NotificationType.ViewingProposedTenant, {
+        bookingId: "booking-1",
+        propertyId: "prop-1",
+        tenantId: "t",
+        proposedAt: "2026-09-05T14:30:00.000Z",
+        property: { title: "Flat 2B", address: "1 Test Road" },
+      } as unknown as Record<string, unknown>);
+      expect(message.subject).toBe("Viewing proposed — Flat 2B");
+      expect(message.text).toContain("2026-09-05T14:30:00.000Z");
+    });
+  });
+
   it("throws for a stored type this build no longer knows", () => {
     expect(() =>
       buildMessage("not_a_real_type" as NotificationType, {}),

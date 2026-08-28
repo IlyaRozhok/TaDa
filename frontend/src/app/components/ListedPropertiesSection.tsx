@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Property } from "../types";
 import type { PreferencesRow } from "@/store/api/preferences.api";
-import EnhancedPropertyCard from "./EnhancedPropertyCard";
+import PropertyCard from "@/entities/property/ui/PropertyCard";
 import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 import { formatListingResultsCountLabel } from "../lib/formatListingResultsCount";
+import type { SortOption } from "../lib/listingSort";
 
 interface ListedPropertiesSectionProps {
   properties: Array<{
@@ -49,19 +50,18 @@ interface ListedPropertiesSectionProps {
   showShortlistForAllRoles?: boolean;
   /** When true, image-level skeletons are disabled (useful when hydrating from cache on back nav). */
   disableImageSkeleton?: boolean;
-  /** Controlled sort value. When provided, parent manages sort selection and data source. */
+  /**
+   * Controlled sort value. When provided, the parent owns the sort AND the
+   * ordering: every sort is served by `GET /matching/matched-properties`,
+   * already ordered across the whole listed inventory, so this component
+   * renders the rows in the order it was handed them.
+   */
   sortBy?: SortOption;
-  /** Called when user picks a new sort. When provided, bestMatch data is assumed globally sorted by server. */
+  /** Called when user picks a new sort. */
   onSortChange?: (sort: SortOption) => void;
 }
 
-export type SortOption =
-  | "bestMatch"
-  | "lowPrice"
-  | "highPrice"
-  | "lowDeposit"
-  | "highDeposit"
-  | "dateAdded";
+export type { SortOption };
 
 const SORT_OPTION_ORDER: SortOption[] = [
   "bestMatch",
@@ -202,21 +202,31 @@ export default function ListedPropertiesSection({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Sort properties
+  /**
+   * The rows to render, in the order they will be rendered.
+   *
+   * Controlled (`/app/units`): the server ordered the WHOLE listed inventory
+   * before paginating it, so re-sorting here would only reorder the twelve
+   * rows this page happens to hold — which is precisely the bug that made
+   * "lowest price" mean "the cheapest of this page". The order arrives with
+   * the data and is left alone.
+   *
+   * Uncontrolled (grids that pass no `sortBy`): the dropdown is local and
+   * there is no paginated server sort behind it, so the visible set is sorted
+   * in place, as it always was.
+   */
   const sortedProperties = useMemo(() => {
     // Filter out any invalid properties (where property is undefined or null)
     const validProperties = properties.filter(
       (item) => item && item.property && item.property.id,
     );
 
-    if (validProperties.length === 0) {
-      return [];
+    if (isControlled || validProperties.length === 0) {
+      return validProperties;
     }
 
     switch (activeSortBy) {
       case "bestMatch":
-        // Controlled: data comes from the matching endpoint, already globally sorted — skip re-sort
-        if (isControlled) return validProperties;
         return validProperties.sort(
           (a, b) => (b.matchScore || 0) - (a.matchScore || 0),
         );
@@ -289,7 +299,8 @@ export default function ListedPropertiesSection({
             {sortedProperties
               .filter((item) => item && item.property && item.property.id)
               .map(({ property, matchScore, categories }) => (
-                <EnhancedPropertyCard
+                <PropertyCard
+            variant="enhanced"
                   key={property.id}
                   property={property}
                   matchScore={matchScore || 0}

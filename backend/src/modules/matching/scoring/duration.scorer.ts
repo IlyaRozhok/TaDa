@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { unknownPropertyData } from "./unknown-data";
 
 /**
  * Duration matching
@@ -31,8 +32,18 @@ export function matchDuration(
     };
   }
 
-  // Property has no duration or is flexible
-  if (!propertyDuration || propertyDuration === "flexible") {
+  // A missing duration is NOT the same as "flexible": flexible is data the
+  // operator entered and keeps its full match below; a blank field gets the
+  // unknown-data policy (it used to score 100% — blank beat honest).
+  if (!propertyDuration) {
+    return unknownPropertyData(
+      "duration",
+      maxScore,
+      "Let duration not specified",
+    );
+  }
+
+  if (propertyDuration === "flexible") {
     return {
       category: "duration",
       match: true,

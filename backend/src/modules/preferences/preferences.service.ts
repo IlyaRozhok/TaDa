@@ -40,7 +40,7 @@ export class PreferencesService {
       throw new ForbiddenException("Only tenants can set preferences");
     }
 
-    let existingPreferences = await this.preferencesRepository.findOne({
+    const existingPreferences = await this.preferencesRepository.findOne({
       where: { user: { id: userId } },
     });
 
@@ -57,9 +57,25 @@ export class PreferencesService {
         user,
       });
 
-      const savedPreferences = await this.preferencesRepository.save(
-        preferences
-      );
+      let savedPreferences: Preferences;
+      try {
+        savedPreferences = await this.preferencesRepository.save(preferences);
+      } catch (error) {
+        // uq_preferences_user_id violation: a concurrent first save won the
+        // check-then-insert race. Fall through to updating the row it created
+        // instead of surfacing a 500.
+        if ((error as { code?: string })?.code !== "23505") {
+          throw error;
+        }
+        const winner = await this.preferencesRepository.findOne({
+          where: { user: { id: userId } },
+        });
+        if (!winner) {
+          throw error;
+        }
+        Object.assign(winner, preferencesData);
+        savedPreferences = await this.preferencesRepository.save(winner);
+      }
 
       user.preferences = savedPreferences;
       await this.userRepository.save(user);
@@ -144,10 +160,10 @@ export class PreferencesService {
     const updateData = toPreferencesEntityPartial(updatePreferencesDto);
 
     // Preserve existing dates if not provided in update
-    if (!updatePreferencesDto.hasOwnProperty("move_in_date")) {
+    if (!Object.prototype.hasOwnProperty.call(updatePreferencesDto, "move_in_date")) {
       updateData.move_in_date = preferences.move_in_date;
     }
-    if (!updatePreferencesDto.hasOwnProperty("move_out_date")) {
+    if (!Object.prototype.hasOwnProperty.call(updatePreferencesDto, "move_out_date")) {
       updateData.move_out_date = preferences.move_out_date;
     }
 
@@ -175,43 +191,51 @@ export class PreferencesService {
       throw new NotFoundException("Preferences not found");
     }
 
+    // `null`, never `undefined`: TypeORM's save() silently DROPS undefined
+    // values from the UPDATE, so the old version of this method kept budget,
+    // dates, smoker and every other scalar while claiming to have cleared them.
     const clearedPreferences: Partial<Preferences> = {
       // New fields
-      preferred_address: undefined,
+      preferred_address: null,
       preferred_areas: [],
       preferred_districts: [],
       preferred_metro_stations: [],
-      move_in_date: undefined,
-      move_out_date: undefined,
-      min_price: undefined,
-      max_price: undefined,
+      move_in_date: null,
+      move_out_date: null,
+      min_price: null,
+      max_price: null,
+      flexible_budget: false,
       property_types: [],
       bedrooms: [],
       bathrooms: [],
       furnishing: [],
-      balcony: undefined,
-      terrace: undefined,
-      min_square_meters: undefined,
-      max_square_meters: undefined,
+      balcony: null,
+      terrace: null,
+      min_square_meters: null,
+      max_square_meters: null,
       building_types: [],
-      let_duration: undefined,
-      bills: undefined,
+      let_duration: null,
+      bills: null,
       tenant_types: [],
-      pet_policy: undefined,
-      pets: undefined,
-      number_of_pets: undefined,
+      pet_policy: null,
+      pets: null,
+      number_of_pets: null,
       amenities: [],
+      property_amenities: [],
       hobbies: [],
       ideal_living_environment: [],
-      smoker: undefined,
-      additional_info: undefined,
+      smoker: null,
+      occupation: null,
+      family_status: null,
+      children_count: null,
+      additional_info: null,
       // Legacy fields
-      secondary_location: undefined,
-      min_bedrooms: undefined,
-      max_bedrooms: undefined,
-      min_bathrooms: undefined,
-      max_bathrooms: undefined,
-      designer_furniture: undefined,
+      secondary_location: null,
+      min_bedrooms: null,
+      max_bedrooms: null,
+      min_bathrooms: null,
+      max_bathrooms: null,
+      designer_furniture: null,
     };
 
     Object.assign(preferences, clearedPreferences);

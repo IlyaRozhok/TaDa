@@ -7,7 +7,7 @@ import helmet from "helmet";
 import * as cookieParser from "cookie-parser";
 import { Logger, PinoLogger } from "nestjs-pino";
 import { AppModule } from "@/app.module";
-import * as path from "path";
+import * as express from "express";
 import { SentryGlobalFilter } from "@/common/filters/sentry-exception.filter";
 import { resolveCorsOrigins } from "@/common/config/cors.config";
 
@@ -32,8 +32,8 @@ async function bootstrap() {
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(cookieParser());
 
-  app.use(require("express").json({ limit: "10mb" }));
-  app.use(require("express").urlencoded({ limit: "10mb", extended: true }));
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ limit: "10mb", extended: true }));
   app.enableCors({
     origin: resolveCorsOrigins(process.env.CORS_ORIGIN),
     // Authentication is a JWT in an httpOnly cookie — without this the browser

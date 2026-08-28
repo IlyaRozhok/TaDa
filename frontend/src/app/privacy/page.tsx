@@ -1,9 +1,18 @@
-"use client";
-
+// Static legal text — a server component on purpose: it renders (and gets
+// indexed) without shipping the page as JS. The interactive pieces (Footer,
+// CookieSettingsButton) are client components and hydrate on their own.
+import type { Metadata } from "next";
 import React from "react";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import CookieSettingsButton from "../components/CookieSettingsButton";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | TaDa",
+  description:
+    "How TaDa collects, uses and protects your personal data on the rental platform.",
+  alternates: { canonical: "/privacy" },
+};
 
 const PrivacyPolicyPage = () => {
   return (
