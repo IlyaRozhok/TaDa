@@ -4,16 +4,21 @@
  * geocoded on save, rows from before stay null until edited — or until this
  * script runs).
  *
- *   npm run geo:backfill      # in backend/, with the real .env in place
+ *   npm run geo:backfill        # locally in backend/, with the real .env
+ *   npm run geo:backfill:prod   # on a host, inside the backend container
+ *
+ * It lives under src/ so `tsc` compiles it into dist/scripts/ — the prod
+ * image ships dist/ and prod deps only (no ts-node), so the deployed
+ * container can run the backfill the same way it runs migrations.
  *
  * Idempotent and resumable: it only touches rows with a NULL postcode, so a
  * re-run picks up where it stopped. Rows whose address contains no full UK
  * postcode are counted and left as they are — they cannot be geocoded.
  * Throttled to ~8 req/s to stay polite to postcodes.io.
  */
-import dataSource from "../src/database/data-source";
-import { GeocodingService } from "../src/common/services/geocoding.service";
-import { Property } from "../src/entities/property.entity";
+import dataSource from "../database/data-source";
+import { GeocodingService } from "../common/services/geocoding.service";
+import { Property } from "../entities/property.entity";
 
 const THROTTLE_MS = 120;
 
