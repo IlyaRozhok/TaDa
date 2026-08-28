@@ -16,7 +16,7 @@ export interface CallRequestPayload {
   /** Stable slug from the audience's reason list — never the localized label. */
   reason: string;
   name: string;
-  email: string;
+  /** The only contact channel on the form — there is no email field. */
   phone: {
     /** ISO 3166-1 alpha-2, e.g. "GB". */
     countryCode: string;
@@ -28,12 +28,18 @@ export interface CallRequestPayload {
   source: CallRequestSource;
 }
 
+/**
+ * Resolves to `{ success: false }` for every failure — a missing API URL, a
+ * throttled 429, a validation 400, a dead network. The caller shows one toast
+ * for all of them, so a per-case message would be built and thrown away; the
+ * distinction the visitor can act on ("try again") is the same either way.
+ */
 export async function sendCallRequest(
   data: CallRequestPayload,
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean }> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
-    return { success: false, message: "API is not configured" };
+    return { success: false };
   }
 
   try {
@@ -43,29 +49,8 @@ export async function sendCallRequest(
       body: JSON.stringify(data),
     });
 
-    if (res.status === 429) {
-      return {
-        success: false,
-        message: "Too many requests — please try again in a minute.",
-      };
-    }
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      const message = Array.isArray(body?.message)
-        ? body.message.join(", ")
-        : body?.message;
-      return {
-        success: false,
-        message: message || "Failed to send your request",
-      };
-    }
-
-    return { success: true, message: "Request sent successfully!" };
+    return { success: res.ok };
   } catch {
-    return {
-      success: false,
-      message: "Network error — please check your connection and try again.",
-    };
+    return { success: false };
   }
 }

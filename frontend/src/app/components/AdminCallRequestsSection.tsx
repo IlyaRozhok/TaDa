@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Mail, Phone, PhoneCall, User } from "lucide-react";
+import { Clock, Phone, PhoneCall, User } from "lucide-react";
 import {
   CALL_REASON_LABELS,
   CallRequest,
@@ -126,10 +126,6 @@ export const AdminCallRequestsSection: React.FC<
                           <div className="font-medium text-black flex items-center gap-2">
                             <User className="w-4 h-4 text-gray-600 shrink-0" />
                             {request.name}
-                          </div>
-                          <div className="text-xs text-gray-600 flex items-start gap-2">
-                            <Mail className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0" />
-                            <span className="break-all">{request.email}</span>
                           </div>
                           <div className="text-xs text-gray-600 flex items-center gap-2">
                             <Phone className="w-3.5 h-3.5 text-gray-500 shrink-0" />

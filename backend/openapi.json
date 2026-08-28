@@ -5420,10 +5420,6 @@
             "type": "string",
             "example": "Jane Doe"
           },
-          "email": {
-            "type": "string",
-            "example": "jane@example.com"
-          },
           "phone": {
             "$ref": "#/components/schemas/CallRequestPhoneDto"
           },
@@ -5460,7 +5456,6 @@
         "required": [
           "reason",
           "name",
-          "email",
           "phone",
           "source"
         ]

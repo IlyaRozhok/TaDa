@@ -6,7 +6,6 @@ export interface CallRequest {
   /** Stable slug; the label is looked up client-side for display. */
   reason: string;
   name: string;
-  email: string;
   phone_country_code: string;
   phone_number: string;
   preferred_times?: string[] | null;

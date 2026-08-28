@@ -46,35 +46,40 @@ export const generalKeys = {
    * correctly until the owner adds them. See docs/STATUS.md.
    */
   bookACall: {
+    /**
+     * The header pill that opens the modal. Not a modal field, so it keeps the
+     * landing-scoped key it shipped with while the fields move to `book.call.`.
+     */
     headerCta: "landing.common.web.bookacall.header.btn",
-    title: "landing.common.web.bookacall.title",
-    subtitle: "landing.common.web.bookacall.subtitle",
-    reasonLabel: "landing.common.web.bookacall.reason.title",
-    reasonPlaceholder: "landing.common.web.bookacall.reason.placeholder",
-    nameLabel: "landing.common.web.bookacall.name.title",
-    namePlaceholder: "landing.common.web.bookacall.name.placeholder",
-    emailLabel: "landing.common.web.bookacall.email.title",
-    emailPlaceholder: "landing.common.web.bookacall.email.placeholder",
-    phoneLabel: "landing.common.web.bookacall.phone.title",
-    phonePlaceholder: "landing.common.web.bookacall.phone.placeholder",
-    preferredTimeLabel: "landing.common.web.bookacall.time.title",
-    preferredTimePlaceholder: "landing.common.web.bookacall.time.placeholder",
-    notesLabel: "landing.common.web.bookacall.notes.title",
-    notesPlaceholder: "landing.common.web.bookacall.notes.placeholder",
-    submit: "landing.common.web.bookacall.submit.btn",
-    submitting: "landing.common.web.bookacall.submit.pending",
-    success: "landing.common.web.bookacall.success",
-    error: "landing.common.web.bookacall.error",
+    title: "book.call.title",
+    subtitle: "book.call.subtitle",
+    // The fields are numbered rather than named because that is the owner's
+    // scheme; `title` is the label and `subtitle` the placeholder. field3 is
+    // the phone, which reuses the profile settings keys — see BookACallModal.
+    reasonLabel: "book.call.field1.title",
+    reasonPlaceholder: "book.call.field1.subtitle",
+    nameLabel: "book.call.field2.title",
+    namePlaceholder: "book.call.field2.subtitle",
+    preferredTimeLabel: "book.call.field4.title",
+    preferredTimePlaceholder: "book.call.field4.subtitle",
+    notesLabel: "book.call.field5.title",
+    notesPlaceholder: "book.call.field5.subtitle",
+    submit: "book.call.btn",
+    submitting: "book.call.btn.pending",
     time: {
-      morning: "landing.common.web.bookacall.time.morning",
-      afternoon: "landing.common.web.bookacall.time.afternoon",
-      evening: "landing.common.web.bookacall.time.evening",
-      asap: "landing.common.web.bookacall.time.asap",
+      morning: "book.call.field4.option1",
+      afternoon: "book.call.field4.option2",
+      evening: "book.call.field4.option3",
+      asap: "book.call.field4.option4",
+    },
+    /** Toast copy. Both outcomes use the shared `notify` toaster. */
+    notification: {
+      complete: "book.call.notification.complete",
+      error: "book.call.notification.error",
     },
     validation: {
-      required: "landing.common.web.bookacall.validation.required",
-      invalidEmail: "landing.common.web.bookacall.validation.email",
-      phoneTooShort: "landing.common.web.bookacall.validation.phone",
+      required: "book.call.validation.required",
+      phoneTooShort: "book.call.validation.phone",
     },
   },
   toast: {

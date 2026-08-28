@@ -119,12 +119,16 @@ export const tenantKeys = {
   // from Localazy yet — the modal renders an English fallback until the keys
   // land. The slug sent to the backend is the object key, not the label.
   bookACall: {
+    /**
+     * The option keys are positional (`option1`…`option4`) because that is the
+     * owner's scheme; the object key stays the stable slug, which is what the
+     * backend stores. Reordering the list means renumbering the keys.
+     */
     reason: {
-      help_find_home: "landing.tenant.web.bookacall.reason.help_find_home",
-      finish_rental_cv: "landing.tenant.web.bookacall.reason.finish_rental_cv",
-      question_about_property:
-        "landing.tenant.web.bookacall.reason.question_about_property",
-      something_else: "landing.tenant.web.bookacall.reason.something_else",
+      help_find_home: "book.call.field1.tenant.option1",
+      finish_rental_cv: "book.call.field1.tenant.option2",
+      question_about_property: "book.call.field1.tenant.option3",
+      something_else: "book.call.field1.tenant.option4",
     },
   },
   partners: {

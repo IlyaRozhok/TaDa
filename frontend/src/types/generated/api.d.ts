@@ -3070,8 +3070,6 @@ export interface components {
             reason: "help_find_home" | "finish_rental_cv" | "question_about_property" | "something_else" | "units_to_fill" | "see_demo" | "pricing_and_terms" | "landlord_to_let" | "agent_partner" | "connect_feed" | "looking_for_home";
             /** @example Jane Doe */
             name: string;
-            /** @example jane@example.com */
-            email: string;
             phone: components["schemas"]["CallRequestPhoneDto"];
             /**
              * @description When the visitor would like to be called. "asap" is exclusive of the others in the UI; the backend stores whatever arrives.
