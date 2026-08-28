@@ -184,6 +184,45 @@
         ]
       }
     },
+    "/api/tenant-cv/{userId}/verification": {
+      "patch": {
+        "operationId": "TenantCvController_setVerification",
+        "summary": "Set KYC/referencing badges on a tenant CV (admin)",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification badges updated"
+          }
+        },
+        "tags": [
+          "Tenant CV"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/tenant-cv/{share_uuid}": {
       "get": {
         "operationId": "TenantCvController_getPublicCv",
@@ -2451,19 +2490,36 @@
               "$ref": "#/components/schemas/RentHistoryEntryDto"
             }
           },
-          "kyc_status": {
-            "type": "string",
-            "description": "KYC status badge",
-            "example": "in_progress"
-          },
-          "referencing_status": {
-            "type": "string",
-            "description": "Referencing status badge",
-            "example": "pending"
-          },
           "share_uuid": {
             "type": "string",
             "description": "Optional existing share UUID to preserve (ignored on update)"
+          }
+        }
+      },
+      "SetVerificationDto": {
+        "type": "object",
+        "properties": {
+          "kyc_status": {
+            "type": "string",
+            "description": "KYC (identity) verification state",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "passed",
+              "failed"
+            ],
+            "example": "passed"
+          },
+          "referencing_status": {
+            "type": "string",
+            "description": "Referencing verification state",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "passed",
+              "failed"
+            ],
+            "example": "in_progress"
           }
         }
       },
@@ -4064,6 +4120,20 @@
             "description": "UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.",
             "example": "NW1 8XY"
           },
+          "epc_rating": {
+            "type": "string",
+            "description": "EPC band (A-G). Legally required on listing advertisements in England and Wales.",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G"
+            ],
+            "example": "C"
+          },
           "status": {
             "type": "string",
             "description": "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
@@ -4385,6 +4455,20 @@
             "description": "UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.",
             "example": "NW1 8XY"
           },
+          "epc_rating": {
+            "type": "string",
+            "description": "EPC band (A-G). Legally required on listing advertisements in England and Wales.",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G"
+            ],
+            "example": "C"
+          },
           "status": {
             "type": "string",
             "description": "Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.",
@@ -4592,6 +4676,20 @@
             "type": "object",
             "description": "London borough (postcodes.io admin_district)",
             "example": "Camden"
+          },
+          "epc_rating": {
+            "type": "string",
+            "description": "EPC band (A-G)",
+            "example": "C",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G"
+            ]
           },
           "tenant_types": {
             "description": "Tenant types for this property (inherited from building or custom)",

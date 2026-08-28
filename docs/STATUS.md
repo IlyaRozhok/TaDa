@@ -70,10 +70,18 @@ decisions) is recorded HERE, briefly, with a date.
     /booking-requests/:id/viewing`, tenant `POST .../viewing/confirm`.
     Frontend follow-ups: show/confirm the viewing slot in the tenant UI,
     set it from the admin requests table (API is ready).
-  - **C2 (next)**: KYC/referencing badges become admin-set only;
-    `epc_rating` field (legally required on listings); Tenant Fees Act
-    deposit-cap warning.
-- **D — operator dashboard**: own listings, booking requests on own
+  - ~~honest trust signals~~ — **done (C2, current PR — closes
+    package C)**: KYC/referencing badges are admin-set only — the tenant CV
+    update DTO no longer accepts them (a tenant could previously type
+    `"passed"` into their own trust badges); admins set them via
+    `PATCH /tenant-cv/:userId/verification`. `epc_rating` (A–G) added to
+    properties (legally required on listing advertisements; MEES bans
+    letting below E). Public property responses carry
+    `deposit_exceeds_cap` — Tenant Fees Act 2019 five/six-week cap computed
+    from price and deposit. Frontend follow-ups (API ready): EPC input +
+    deposit-cap warning in the admin property form, EPC badge on the
+    listing detail page, verification controls in the admin users/CV view.
+- **D (next) — operator dashboard**: own listings, booking requests on own
   properties (scope the existing admin view by `operator_id`), rights over
   early statuses, email on a new request.
 - **E — frontend unwinding**: server-fetched data passed into detail clients
@@ -169,13 +177,11 @@ decisions) is recorded HERE, briefly, with a date.
   `agent_partner` · `connect_feed` · `looking_for_home` · `something_else`.
   The **slug** (the object key) is what the backend stores — the label is
   display-only and must never be sent.
-- **`frontend/src/types/generated/api.d.ts` is stale after the demo-request
-  removal** (added 2026-08-27). It still carries `/api/demo-requests` and
-  `CreateDemoRequestDto`, and does not yet carry `/api/call-requests`. Nothing
-  imports either — `frontend/src/app/lib/callRequest.ts` hand-writes its
-  request type with a comment saying so. Re-run `npm run gen:api` (it needs the
-  backend's `openapi:dump`, which hangs in some sandboxes) and swap the local
-  type for `components["schemas"]["CreateCallRequestDto"]`.
+- **`callRequest.ts` hand-writes its request type** (added 2026-08-27,
+  narrowed 2026-08-28: the generated types were regenerated in the C2 PR and
+  now carry `/api/call-requests`). Swap the local type in
+  `frontend/src/app/lib/callRequest.ts` for
+  `components["schemas"]["CreateCallRequestDto"]`.
 - **Call requests have no admin pagination** (added 2026-08-27).
   `GET /call-requests` returns the whole table, mirroring `GET /booking-requests`,
   which does the same. Both want the paginated shape the properties listing

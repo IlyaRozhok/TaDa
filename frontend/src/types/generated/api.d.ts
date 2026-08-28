@@ -197,6 +197,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tenant-cv/{userId}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set KYC/referencing badges on a tenant CV (admin) */
+        patch: operations["TenantCvController_setVerification"];
+        trace?: never;
+    };
     "/api/tenant-cv/{share_uuid}": {
         parameters: {
             query?: never;
@@ -1038,18 +1055,22 @@ export interface components {
             hobbies?: string[];
             /** @description Rent history entries to display on CV */
             rent_history?: components["schemas"]["RentHistoryEntryDto"][];
-            /**
-             * @description KYC status badge
-             * @example in_progress
-             */
-            kyc_status?: string;
-            /**
-             * @description Referencing status badge
-             * @example pending
-             */
-            referencing_status?: string;
             /** @description Optional existing share UUID to preserve (ignored on update) */
             share_uuid?: string;
+        };
+        SetVerificationDto: {
+            /**
+             * @description KYC (identity) verification state
+             * @example passed
+             * @enum {string}
+             */
+            kyc_status?: "not_started" | "in_progress" | "passed" | "failed";
+            /**
+             * @description Referencing verification state
+             * @example in_progress
+             * @enum {string}
+             */
+            referencing_status?: "not_started" | "in_progress" | "passed" | "failed";
         };
         User: {
             /** @description Unique user identifier */
@@ -2190,6 +2211,12 @@ export interface components {
              */
             postcode?: string;
             /**
+             * @description EPC band (A-G). Legally required on listing advertisements in England and Wales.
+             * @example C
+             * @enum {string}
+             */
+            epc_rating?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
+            /**
              * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
              * @example listed
              * @enum {string}
@@ -2424,6 +2451,12 @@ export interface components {
              */
             postcode?: string;
             /**
+             * @description EPC band (A-G). Legally required on listing advertisements in England and Wales.
+             * @example C
+             * @enum {string}
+             */
+            epc_rating?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
+            /**
              * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
              * @example listed
              * @enum {string}
@@ -2561,6 +2594,12 @@ export interface components {
              * @example Camden
              */
             borough?: Record<string, never>;
+            /**
+             * @description EPC band (A-G)
+             * @example C
+             * @enum {string}
+             */
+            epc_rating?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
             /**
              * @description Tenant types for this property (inherited from building or custom)
              * @example [
@@ -3261,6 +3300,30 @@ export interface operations {
         requestBody?: never;
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantCvController_setVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetVerificationDto"];
+            };
+        };
+        responses: {
+            /** @description Verification badges updated */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
