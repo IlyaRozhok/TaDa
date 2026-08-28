@@ -109,7 +109,6 @@ function callEvent(
     reason: "help_find_home",
     reasonLabel: "Help me find a home",
     name: "Jane Doe",
-    email: "Jane@Example.com",
     phone: { countryCode: "GB", number: "20 7946 0000" },
     preferredTimes: ["Morning", "Evening"],
     notes: null,
@@ -267,17 +266,33 @@ describe("NotificationsService", () => {
       ).resolves.toBeUndefined();
     });
 
-    it("keys one email per address per UTC day, case-insensitively", async () => {
+    // The mask the client applies is cosmetic, so the same visitor's second
+    // submit can carry different spacing for the same number.
+    it("keys one email per phone number per UTC day, ignoring the mask", async () => {
       const service = build();
 
       await service.handleCallRequested(callEvent());
       await service.handleCallRequested(
-        callEvent({ email: "jane@example.com" }),
+        callEvent({ phone: { countryCode: "GB", number: "2079460000" } }),
       );
 
       expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
-        "call_request:jane@example.com:2026-08-18",
-        "call_request:jane@example.com:2026-08-18",
+        "call_request:GB2079460000:2026-08-18",
+        "call_request:GB2079460000:2026-08-18",
+      ]);
+    });
+
+    it("keys the same digits in two countries apart", async () => {
+      const service = build();
+
+      await service.handleCallRequested(callEvent());
+      await service.handleCallRequested(
+        callEvent({ phone: { countryCode: "PL", number: "20 7946 0000" } }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "call_request:GB2079460000:2026-08-18",
+        "call_request:PL2079460000:2026-08-18",
       ]);
     });
 
@@ -290,15 +305,13 @@ describe("NotificationsService", () => {
       );
 
       expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
-        "call_request:jane@example.com:2026-08-18",
-        "call_request:jane@example.com:2026-08-19",
+        "call_request:GB2079460000:2026-08-18",
+        "call_request:GB2079460000:2026-08-19",
       ]);
     });
 
-    it("sends to the channel's address, never to the visitor's", async () => {
-      await build().handleCallRequested(
-        callEvent({ email: "attacker@evil.test" }),
-      );
+    it("sends to the channel's address, which no payload can influence", async () => {
+      await build().handleCallRequested(callEvent());
 
       expect(repo.insertedValues[0].recipient).toBe("support@ta-da.co");
       expect(channel.send).toHaveBeenCalledWith(
@@ -326,7 +339,7 @@ describe("NotificationsService", () => {
         build().handleCallRequested(replayed),
       ).resolves.toBeUndefined();
       expect(repo.insertedValues[0].dedupe_key).toBe(
-        "call_request:jane@example.com:2026-08-18",
+        "call_request:GB2079460000:2026-08-18",
       );
     });
   });

@@ -39,14 +39,11 @@ export class CallRequest {
   @Column({ type: "varchar", length: 200 })
   name: string;
 
-  @ApiProperty({ description: "Contact email from the form" })
-  @Column({ type: "varchar", length: 254 })
-  email: string;
-
   @ApiProperty({ description: "ISO 3166-1 alpha-2 code of the phone's country", example: "GB" })
   @Column({ type: "varchar", length: 2 })
   phone_country_code: string;
 
+  /** The only contact channel on the form — the visitor is never asked for an email. */
   @ApiProperty({ description: "Phone number as typed, masked by the client" })
   @Column({ type: "varchar", length: 32 })
   phone_number: string;

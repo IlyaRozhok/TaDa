@@ -143,32 +143,35 @@ decisions) is recorded HERE, briefly, with a date.
   property detail page renders the English fallback via `translateWithFallback`
   for `listing.disclaimer.operator.content`. Add the key and its six
   translations in Localazy and re-sync; no code change needed once they land.
-- **"Book a call" copy is not in Localazy yet** (added 2026-08-27). The modal
-  and the header pill render English fallbacks via `translateWithFallback`.
-  Add these keys in Localazy and re-sync; no code change needed once they land.
-  Chrome and shared options (`frontend/src/app/lib/translationsKeys/generalKeys.ts`,
-  under `bookACall`):
-  `landing.common.web.bookacall.` +
-  `header.btn` · `title` · `subtitle` ·
-  `reason.title` · `reason.placeholder` ·
-  `name.title` · `name.placeholder` ·
-  `email.title` · `email.placeholder` ·
-  `phone.title` · `phone.placeholder` ·
-  `time.title` · `time.placeholder` ·
-  `time.morning` · `time.afternoon` · `time.evening` · `time.asap` ·
-  `notes.title` · `notes.placeholder` ·
-  `submit.btn` · `submit.pending` · `success` · `error` ·
-  `validation.required` · `validation.email` · `validation.phone`.
+- **"Book a call" copy is not in Localazy yet** (added 2026-08-27, keys
+  renamed to the owner's scheme 2026-08-28). The modal and the header pill
+  render English fallbacks via `translateWithFallback`. Add these keys in
+  Localazy and re-sync; no code change needed once they land.
+  Modal chrome and shared options
+  (`frontend/src/app/lib/translationsKeys/generalKeys.ts`, under `bookACall`):
+  `book.call.` +
+  `title` · `subtitle` ·
+  `field1.title` · `field1.subtitle` ·
+  `field2.title` · `field2.subtitle` ·
+  `field4.title` · `field4.subtitle` ·
+  `field4.option1` · `field4.option2` · `field4.option3` · `field4.option4` ·
+  `field5.title` · `field5.subtitle` ·
+  `btn` · `btn.pending` ·
+  `notification.complete` · `notification.error` ·
+  `validation.required` · `validation.phone`.
   Tenant reason options (`tenantTranslationKeys.ts`, under `bookACall.reason`):
-  `landing.tenant.web.bookacall.reason.` +
-  `help_find_home` · `finish_rental_cv` · `question_about_property` ·
-  `something_else`.
+  `book.call.field1.tenant.` + `option1`…`option4`.
   Operator reason options (`operatorTranslationKeys.ts`, under `bookACall.reason`):
-  `landing.operators.web.bookacall.reason.` +
-  `units_to_fill` · `see_demo` · `pricing_and_terms` · `landlord_to_let` ·
-  `agent_partner` · `connect_feed` · `looking_for_home` · `something_else`.
-  The **slug** (the object key) is what the backend stores — the label is
-  display-only and must never be sent.
+  `book.call.field1.operator.` + `option1`…`option8`.
+  The reason options are **positional**: the object key is the stable slug the
+  backend stores, and the `optionN` number is its place in the list. Reordering
+  either list means renumbering its keys.
+  Two keys are deliberately outside the `book.call.` set:
+  - **field3 is the phone**, and it reuses the profile settings key
+    `wizard.profile.phone` ("Phone Number"), which is already translated — the
+    same field must not read differently on the landing and in the account form.
+  - The **header pill** keeps `landing.common.web.bookacall.header.btn`; it is
+    not a modal field.
 - **`frontend/src/types/generated/api.d.ts` is stale after the demo-request
   removal** (added 2026-08-27). It still carries `/api/demo-requests` and
   `CreateDemoRequestDto`, and does not yet carry `/api/call-requests`. Nothing
