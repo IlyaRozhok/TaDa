@@ -431,7 +431,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get matched properties with pagination and search (sorted by match score) */
+        /** Get the full listed inventory with pagination, search and server-side sorting (match score by default) */
         get: operations["MatchingController_getMatchedPropertiesWithPagination"];
         put?: never;
         post?: never;
@@ -3789,10 +3789,12 @@ export interface operations {
     MatchingController_getMatchedPropertiesWithPagination: {
         parameters: {
             query?: {
+                /** @description Ordering of the whole listed inventory. Default `best_match` (scores every candidate, ranks by percentage). The others order in SQL over the same population, with `created_at DESC` as the tie-break and NULL prices/deposits last; the returned page is still scored, so cards keep their match badge */
+                sort?: "best_match" | "low_price" | "high_price" | "low_deposit" | "high_deposit" | "date_added";
                 page?: number;
                 limit?: number;
                 search?: string;
-                /** @description SQL pre-filtering of properties that fall outside the user's budget, bedroom and property-type preferences before scoring (generous ranges, NULLs kept). Default `true`; pass `false` to rank the whole inventory. Ignored for a user with no preferences, which is what the filters are derived from */
+                /** @description Opt-in debug flag. SQL pre-filtering of properties that fall outside the user's budget, bedroom and property-type preferences before scoring (generous ranges, NULLs kept). Default `false` — the feed ranks the full listed inventory; pass `true` to narrow it. Ignored for a user with no preferences, which is what the filters are derived from */
                 prefilters?: boolean;
             };
             header?: never;
@@ -3801,7 +3803,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Paginated list of matched properties sorted by match score. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when nothing was scored (no preferences, or no property matched) */
+            /** @description Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page) */
             200: {
                 headers: {
                     [name: string]: unknown;
