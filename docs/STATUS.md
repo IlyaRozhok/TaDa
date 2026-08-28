@@ -22,6 +22,15 @@ decisions) is recorded HERE, briefly, with a date.
   dedupe), building deletion detaches units instead of cascading into
   booking history, upload errors as 4xx, `ParseUUIDPipe` on uuid params.
   All three migrations rehearsed against a live local Postgres.
+- **The results feed shows the full listed inventory** (owner decision,
+  2026-08-28). `GET /matching/matched-properties` is the single read path for
+  `/app/units` under every sort: matching pre-filters are **opt-in**
+  (`?prefilters=true`) instead of on by default, so nothing is hidden for
+  scoring badly — a poor match gets its real low percentage and sinks — and
+  `total` is the full listed count. The route also takes `sort`
+  (`best_match | low_price | high_price | low_deposit | high_deposit |
+  date_added`), which fixed non-best-match sorts ordering only the visible 12
+  rows. Cards show the real match % whatever the sort.
 - CI gates every deploy: typecheck, lint (0 errors; warnings are backlog),
   unit tests, build, generated-API-types freshness, e2e smoke (5 specs
   against a real stack). Fresh checkouts bootstrap with `scripts/setup.sh`
@@ -111,6 +120,34 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **The 5,000-row ranking ceiling now warns, and that warning needs a home**
+  (added 2026-08-28, with the full-inventory feed PR).
+  `MatchingService` logs `WARN` when the ranking pass comes back with exactly
+  `RANKING_CANDIDATE_CEILING` (5,000) candidates — at that point the feed is
+  "the newest 5,000 listed properties", not the inventory, and the oldest stock
+  leaves it with no other symptom. Nothing alerts on it yet: it goes to the
+  container log like any other warning. When the log line starts appearing,
+  the fix is not a bigger ceiling but moving the ranking into SQL (a scoring
+  expression, or a materialised score per (tenant, property)) — the TypeScript
+  pass is what the ceiling protects.
+- **The now-dead half of `useTenantDashboard`** (added 2026-08-28, with the
+  full-inventory feed PR). `/app/units` was the only caller passing
+  `useMatchedProperties: false`; it now passes `true`, so the hook's
+  `getPublicProperties` branch, its `useFullCountForHeader` full-count
+  round-trip and its no-session public fallback are reachable by nobody on
+  this page. The hook also still fetches a page of its own that the feed no
+  longer reads — the units page takes only preferences, the search term and
+  the session gate from it. Both are cleanup for the "dissolve
+  `useTenantDashboard` into RTK Query hooks" item under review roadmap E,
+  which is where this properly belongs; doing it inside the feed PR would
+  have touched every other grid that shares the hook.
+- **`getPublicPropertiesAll` cannot page** (added 2026-08-28).
+  `frontend/src/store/api/properties.api.ts:166` calls
+  `GET /properties/public/all` with `building_id` and nothing else, so the
+  backend's `normalizeFindParams` defaults apply and the caller silently gets
+  the newest 12 — a building with more units cannot show them, and there is no
+  `page`/`limit` in the query args to ask with. The endpoint is paginated; only
+  the client's argument type is not.
 - **`/app/auth` pushes the post-login redirect instead of replacing it**
   (added 2026-08-27, out of scope of the back-navigation PR). The
   already-authenticated guard at `frontend/src/app/app/auth/page.tsx:29` does
