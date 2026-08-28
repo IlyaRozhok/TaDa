@@ -9,13 +9,14 @@ import {
   selectOnboardingCompleted,
 } from "@/store/slices/authSlice";
 import { useTenantDashboard } from "../../hooks/useTenantDashboard";
-import { usePropertyMatches } from "../../hooks/usePropertyMatches";
 import TenantUniversalHeader from "../../components/TenantUniversalHeader";
-import ListedPropertiesSection, {
-  type SortOption,
-} from "../../components/ListedPropertiesSection";
+import ListedPropertiesSection from "../../components/ListedPropertiesSection";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import { useGetMatchedPropertiesQuery } from "@/store/api/matching.api";
+import {
+  MATCHED_SORT_BY_SORT_OPTION,
+  type SortOption,
+} from "@/app/lib/listingSort";
 import { useDebounce } from "../../hooks/useDebounce";
 import {
   resolveAvgMatchScore,
@@ -27,16 +28,18 @@ import Footer from "../../components/Footer";
 
 function TenantDashboardContent() {
   const user = useSelector(selectUser);
-  const { state, loadProperties, clearError, setSearchTerm } =
-    useTenantDashboard({
-      // Full catalog — matching endpoint applies preference SQL filters and hides many listings.
-      useMatchedProperties: false,
-      useFullCountForHeader: false,
-      persistenceKey: "units-dashboard-filters",
-    });
+  const { state, clearError, setSearchTerm } = useTenantDashboard({
+    // The matching endpoint IS the full catalogue now: it ranks every listed
+    // property, pre-filtering is opt-in, and `total` is the full listed count.
+    // The hook is only here for preferences, the search term and the session
+    // gate — the feed below owns the data.
+    useMatchedProperties: true,
+    useFullCountForHeader: false,
+    persistenceKey: "units-dashboard-filters",
+  });
 
   const [sortBy, setSortBy] = useState<SortOption>("bestMatch");
-  const [bestMatchPage, setBestMatchPage] = useState(1);
+  const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(state.searchTerm, 300);
 
   // True once the user has typed in the search box. The search box is the only
@@ -52,74 +55,43 @@ function TenantDashboardContent() {
     [setSearchTerm],
   );
 
-  const propertyIdsForMatches = useMemo(
-    () =>
-      state.matchedProperties
-        .map((m) => m.property?.id)
-        .filter((id): id is string => Boolean(id)),
-    [state.matchedProperties],
-  );
-
-  // Only the other sorts need scores fetched: the best-match dataset already
-  // carries them, so the default view costs no extra request at all.
-  const { matchByPropertyId, loading: matchScoresLoading } = usePropertyMatches(
-    propertyIdsForMatches,
-    {
-      enabled: sortBy !== "bestMatch",
-    },
-  );
-
-  const propertiesWithMatchScores = useMemo(() => {
-    return state.matchedProperties.map((m) => {
-      const id = m.property?.id;
-      if (!id) return m;
-      const extra = matchByPropertyId[id];
-      if (!extra) return m;
-      return {
-        ...m,
-        matchScore: extra.matchScore ?? m.matchScore ?? 0,
-        categories: extra.matchCategories ?? m.categories,
-      };
-    });
-  }, [state.matchedProperties, matchByPropertyId]);
-
-  // The best-match dataset. Search and page are query arguments, so typing or
-  // paging refetches through the cache instead of an imperative loader.
-  //
-  // It is subscribed under every sort, not only its own, because its envelope
-  // carries `avgMatchScore` — the mean over the whole matched set, which
-  // `results_viewed` reports whatever the feed is sorted by. Under another sort
-  // only that number is read, and the arguments are pinned to page 1: the
-  // aggregate is page-independent, so the entry the default view already
-  // populated is reused rather than a second one being fetched per page turn.
+  // The whole feed, under every sort. Search, page and sort are query
+  // arguments, so typing, paging or re-sorting refetches through the cache
+  // instead of an imperative loader — and the server does the ordering across
+  // the full listed inventory rather than the page reordering its own twelve
+  // rows. The envelope carries each item's real match score and category
+  // breakdown, so the badges need no second request.
   const {
-    data: bestMatchData,
-    isFetching: bestMatchLoading,
-    error: bestMatchError,
+    data: feedData,
+    isFetching: feedFetching,
+    error: feedError,
   } = useGetMatchedPropertiesQuery(
-      {
-        page: sortBy === "bestMatch" ? bestMatchPage : 1,
-        limit: 12,
-        search: debouncedSearch || undefined,
-      },
-      { skip: state.sessionLoading },
-    );
+    {
+      page,
+      limit: 12,
+      search: debouncedSearch || undefined,
+      sort: MATCHED_SORT_BY_SORT_OPTION[sortBy],
+    },
+    { skip: state.sessionLoading },
+  );
 
-  // A new search starts from the first page, as the old loader did.
+  // A new search starts from the first page, as the old loader did. Re-sorting
+  // does too, but that one is reset in `handleSortChange`: it has a user event
+  // to hang off, and page 4 of "best match" is not page 4 of "lowest price".
   useEffect(() => {
-    setBestMatchPage(1);
+    setPage(1);
   }, [debouncedSearch]);
 
-  const bestMatchProperties = useMemo(
+  const feedProperties = useMemo(
     () =>
-      (bestMatchData?.data ?? [])
+      (feedData?.data ?? [])
         .map((item) => ({
           property: item.property,
           matchScore: item.matchScore ?? 0,
           categories: item.categories ?? [],
         }))
         .filter((item) => item.property?.id),
-    [bestMatchData],
+    [feedData],
   );
 
   // One results_viewed per distinct feed load — a new sort, page or search is a
@@ -133,86 +105,46 @@ function TenantDashboardContent() {
    * `null` means "not resolved yet" and holds the event back. The distinction
    * has to be made here because 0 is a valid score: an item defaulted to 0 by
    * the mappings above is indistinguishable from a genuine zero match once
-   * averaged. So this reads the payloads — the best-match response and the
-   * score map — rather than `bestMatchProperties` / `propertiesWithMatchScores`,
-   * both of which substitute 0 for a missing score so the cards can render.
+   * averaged. So this reads the response payload rather than `feedProperties`,
+   * which substitutes 0 for a missing score so the cards can render.
    *
-   * This is the fallback population, not the reported one: the server now sends
-   * `avgMatchScore` over the whole matched set, and that is what the event
-   * carries. These page-level scores are what `resolveAvgMatchScore` falls back
-   * to when the aggregate is missing — an older payload, or a set with nothing
-   * to average. They still gate the event: an unresolved page means the feed
+   * This is the fallback population, not the reported one: under `best_match`
+   * the server sends `avgMatchScore` over the whole scored set, and that is
+   * what the event carries. These page-level scores are what
+   * `resolveAvgMatchScore` falls back to when the aggregate is missing — an
+   * older payload, or a sort the server ordered in SQL without scoring the
+   * whole set. They still gate the event: an unresolved page means the feed
    * itself has not settled, whatever the aggregate says.
    */
   const feedMatchScores = useMemo<number[] | null>(() => {
-    if (sortBy === "bestMatch") {
-      if (!bestMatchData) {
-        // A failed load renders an empty grid — a real, empty feed rather than
-        // an unresolved one. Anything else is still in flight.
-        return bestMatchError ? [] : null;
-      }
-
-      return bestMatchData.data
-        .filter((item) => item.property?.id)
-        .map((item) => item.matchScore)
-        .filter((score): score is number => typeof score === "number");
+    if (!feedData) {
+      // A failed load renders an empty grid — a real, empty feed rather than
+      // an unresolved one. Anything else is still in flight.
+      return feedError ? [] : null;
     }
 
-    // Every other sort scores the page through `usePropertyMatches`, so a score
-    // counts as resolved only once its id is in that map.
-    if (propertyIdsForMatches.length === 0) {
-      return [];
-    }
-
-    if (matchScoresLoading) {
-      return null;
-    }
-
-    const resolved = propertyIdsForMatches
-      .map((id) => matchByPropertyId[id]?.matchScore)
+    return feedData.data
+      .filter((item) => item.property?.id)
+      .map((item) => item.matchScore)
       .filter((score): score is number => typeof score === "number");
+  }, [feedData, feedError]);
 
-    // An empty map is what a user with no preferences gets back. The 0 that
-    // would follow is fabricated, not measured, so the event waits instead.
-    return resolved.length ? resolved : null;
-  }, [
-    sortBy,
-    bestMatchData,
-    bestMatchError,
-    propertyIdsForMatches,
-    matchByPropertyId,
-    matchScoresLoading,
-  ]);
-
-  // The best-match payload carries its own scores; every other sort fetches
-  // them separately, so the event waits for that request rather than reporting
-  // an average of zeros. Under those sorts it also waits for the matched-set
-  // envelope, which is where the aggregate comes from — settling on an error
-  // rather than hanging, since the fallback below covers a failed load.
-  const matchedSetSettled =
-    !bestMatchLoading && Boolean(bestMatchData || bestMatchError);
-
-  const feedLoading =
-    sortBy === "bestMatch"
-      ? bestMatchLoading || (!bestMatchData && !bestMatchError)
-      : state.loading || matchScoresLoading || !matchedSetSettled;
+  const feedLoading = feedFetching || (!feedData && !feedError);
 
   // The aggregate over the whole matched set, as the server computed it. It is
-  // a property of the tenant and the search, not of the sort, so the same
-  // number describes every sort of the same feed.
-  const feedAvgMatchScore = bestMatchData?.avgMatchScore;
+  // `null` under a SQL-ordered sort, where only the returned page was scored —
+  // `resolveAvgMatchScore` then reports that page instead of a number the
+  // server never measured.
+  const feedAvgMatchScore = feedData?.avgMatchScore;
 
-  const feedCount =
-    sortBy === "bestMatch" ? (bestMatchData?.total ?? 0) : state.totalCount;
-
-  const feedPage = sortBy === "bestMatch" ? bestMatchPage : state.currentPage;
+  const feedCount = feedData?.total ?? 0;
 
   useEffect(() => {
     if (feedLoading || feedMatchScores === null) {
       return;
     }
 
-    const feedKey = `${sortBy}|${feedPage}|${debouncedSearch}`;
+    const feedKey = `${sortBy}|${page}|${debouncedSearch}`;
 
     if (trackedFeedRef.current === feedKey) {
       return;
@@ -237,7 +169,7 @@ function TenantDashboardContent() {
     feedMatchScores,
     feedAvgMatchScore,
     feedCount,
-    feedPage,
+    page,
     sortBy,
     debouncedSearch,
   ]);
@@ -271,24 +203,20 @@ function TenantDashboardContent() {
       name: "results_sorted",
       params: { sort_type: SORT_TYPE_BY_SORT_OPTION[newSort] },
     });
+    // The query argument changes with it, so the server re-orders the whole
+    // inventory — no second endpoint, no imperative reload.
     setSortBy(newSort);
-    if (newSort !== "bestMatch") {
-      void loadProperties(state.searchTerm, 1);
-    }
+    setPage(1);
   };
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = (nextPage: number) => {
     // When switching pages we always move the user back to the top.
     // Pagination doesn't trigger navigation, so the browser keeps the previous scroll position.
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }
 
-    if (sortBy === "bestMatch") {
-      setBestMatchPage(page);
-    } else {
-      void loadProperties(state.searchTerm, page);
-    }
+    setPage(nextPage);
   };
 
   // Loading state: показываем скелетоны ТОЛЬКО когда нет кэша
@@ -359,20 +287,10 @@ function TenantDashboardContent() {
     );
   }
 
-  const displayProperties =
-    sortBy === "bestMatch" ? bestMatchProperties : propertiesWithMatchScores;
-  // Loading until the first page arrives; a failed load shows the empty grid,
-  // which is what the old imperative loader did.
-  const displayLoading =
-    sortBy === "bestMatch"
-      ? bestMatchLoading || (!bestMatchData && !bestMatchError)
-      : state.loading;
-  const displayTotalCount =
-    sortBy === "bestMatch" ? (bestMatchData?.total ?? 0) : state.totalCount;
-  const displayCurrentPage =
-    sortBy === "bestMatch" ? bestMatchPage : state.currentPage;
-  const displayTotalPages =
-    sortBy === "bestMatch" ? (bestMatchData?.totalPages ?? 1) : state.totalPages;
+  // One source for the grid under every sort. `feedLoading` already means
+  // "loading until the first page arrives"; a failed load shows the empty
+  // grid, which is what the old imperative loader did.
+  const displayTotalPages = feedData?.totalPages ?? 1;
 
   return (
     <div className="min-h-screen bg-white">
@@ -386,12 +304,12 @@ function TenantDashboardContent() {
       <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16">
         {/* Listed Properties Section */}
         <ListedPropertiesSection
-          properties={displayProperties}
-          matchedProperties={displayProperties}
-          loading={displayLoading}
+          properties={feedProperties}
+          matchedProperties={feedProperties}
+          loading={feedLoading}
           userPreferences={state.userPreferences}
-          totalCount={displayTotalCount}
-          currentPage={displayCurrentPage}
+          totalCount={feedCount}
+          currentPage={page}
           totalPages={displayTotalPages}
           onPageChange={handlePageChange}
           showShortlistForAllRoles={true}
