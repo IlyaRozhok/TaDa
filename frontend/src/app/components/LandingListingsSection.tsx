@@ -111,7 +111,10 @@ const LandingListingsSection: React.FC<LandingListingsSectionProps> = ({
       <div className="flex justify-center mt-10 md:mt-12">
         <button
           type="button"
-          onClick={() => router.push("/app/units")}
+          // Same sign-in entry point as the landing's "Get started" CTAs
+          // (Header, tenant hero, tenant cards) — the full catalogue is behind
+          // auth, so "See all" sends the visitor to sign in, not to /app/units.
+          onClick={() => router.push("/app/auth")}
           className="bg-black cursor-pointer text-white px-10 py-4 rounded-full font-semibold hover:bg-gray-800 transition-colors"
         >
           {seeAll}
