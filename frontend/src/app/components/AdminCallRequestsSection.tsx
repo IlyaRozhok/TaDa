@@ -1,10 +1,6 @@
 import React from "react";
 import { Clock, Phone, PhoneCall, User } from "lucide-react";
-import {
-  CALL_REASON_LABELS,
-  CallRequest,
-  PREFERRED_TIME_LABELS,
-} from "../types/callRequest";
+import { CALL_REASON_LABELS, CallRequest } from "../types/callRequest";
 
 function formatSubmitted(value: string): string {
   const d = new Date(value);
@@ -104,7 +100,7 @@ export const AdminCallRequestsSection: React.FC<
                 </tr>
               ) : (
                 requests.map((request) => {
-                  const times = request.preferred_times ?? [];
+                  const preferredTime = request.preferred_time?.trim();
 
                   return (
                     <tr key={request.id} className="hover:bg-gray-50 transition">
@@ -139,18 +135,11 @@ export const AdminCallRequestsSection: React.FC<
                         {CALL_REASON_LABELS[request.reason] ?? request.reason}
                       </td>
                       <td className="px-6 py-4 align-top text-sm text-gray-800">
-                        {times.length ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {times.map((slug) => (
-                              <span
-                                key={slug}
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
-                              >
-                                <Clock className="w-3 h-3" />
-                                {PREFERRED_TIME_LABELS[slug] ?? slug}
-                              </span>
-                            ))}
-                          </div>
+                        {preferredTime ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                            <Clock className="w-3 h-3 shrink-0" />
+                            <span className="break-words">{preferredTime}</span>
+                          </span>
                         ) : (
                           <span className="text-xs text-gray-400">
                             Not specified

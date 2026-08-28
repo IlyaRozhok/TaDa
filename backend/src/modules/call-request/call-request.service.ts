@@ -9,10 +9,7 @@ import {
   NotificationEvents,
 } from "@/modules/notifications/events/notification.events";
 import { CreateCallRequestDto } from "./dto/create-call-request.dto";
-import {
-  labelForPreferredTime,
-  labelForReason,
-} from "./call-request.vocabulary";
+import { labelForReason } from "./call-request.vocabulary";
 
 @Injectable()
 export class CallRequestService {
@@ -31,9 +28,7 @@ export class CallRequestService {
    * that is allowed to fail loudly, because the visitor can retry it.
    */
   async create(dto: CreateCallRequestDto): Promise<CallRequest> {
-    const preferredTimes = dto.preferredTimes?.length
-      ? dto.preferredTimes
-      : null;
+    const preferredTime = dto.preferredTime?.trim() || null;
     const notes = dto.notes?.trim() || null;
 
     const saved = await this.callRequestRepository.save(
@@ -42,7 +37,7 @@ export class CallRequestService {
         name: dto.name.trim(),
         phone_country_code: dto.phone.countryCode,
         phone_number: dto.phone.number.trim(),
-        preferred_times: preferredTimes,
+        preferred_time: preferredTime,
         notes,
         source: dto.source,
       }),
@@ -71,8 +66,7 @@ export class CallRequestService {
         countryCode: request.phone_country_code,
         number: request.phone_number,
       },
-      preferredTimes:
-        request.preferred_times?.map(labelForPreferredTime) ?? null,
+      preferredTime: request.preferred_time,
       notes: request.notes,
       source: request.source,
       requestedAt: request.created_at ?? new Date(),

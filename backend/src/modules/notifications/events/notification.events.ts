@@ -126,7 +126,7 @@ export interface ViewingConfirmedEvent {
  * should not have to own the form's vocabulary to render one line of text.
  */
 export interface CallRequestedEvent {
-  /** Stable slug, e.g. `help_find_home`. */
+  /** Stable slug, e.g. `looking_for_home`. */
   reason: string;
   /** English label for that slug, resolved by the producer. */
   reasonLabel: string;
@@ -136,8 +136,8 @@ export interface CallRequestedEvent {
     countryCode: string;
     number: string;
   };
-  /** Labels, not slugs. Null when the visitor skipped the optional field. */
-  preferredTimes: string[] | null;
+  /** Free text as the visitor typed it. Null when they skipped the field. */
+  preferredTime: string | null;
   notes: string | null;
   /** Which landing sent it: "tenant" or "operator". */
   source: string;

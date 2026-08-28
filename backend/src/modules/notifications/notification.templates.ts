@@ -90,7 +90,7 @@ export function buildMessage(
         line("Reason", p.reasonLabel),
         line("Name", p.name),
         line("Phone", `${p.phone?.countryCode ?? ""} ${p.phone?.number ?? ""}`.trim()),
-        line("Preferred time", p.preferredTimes?.length ? p.preferredTimes.join(", ") : null),
+        line("Preferred time", p.preferredTime?.trim() || null),
         "",
         "Notes:",
         p.notes?.trim() || "—",

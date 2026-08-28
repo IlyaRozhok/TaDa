@@ -32,10 +32,10 @@ function createRepositoryDouble() {
 
 function dto(overrides: Partial<CreateCallRequestDto> = {}): CreateCallRequestDto {
   return {
-    reason: "help_find_home",
+    reason: "looking_for_home",
     name: "  Jane Doe  ",
     phone: { countryCode: "GB", number: " 20 7946 0000 " },
-    preferredTimes: ["morning", "evening"],
+    preferredTime: "  Weekday evenings  ",
     notes: "  Evenings work best  ",
     source: "tenant",
     ...overrides,
@@ -75,29 +75,27 @@ describe("CallRequestService", () => {
       await build().create(dto());
 
       expect(repo.saved[0]).toMatchObject({
-        reason: "help_find_home",
+        reason: "looking_for_home",
         name: "Jane Doe",
         phone_country_code: "GB",
         phone_number: "20 7946 0000",
-        preferred_times: ["morning", "evening"],
+        preferred_time: "Weekday evenings",
         notes: "Evenings work best",
         source: "tenant",
       });
     });
 
-    it("stores null rather than an empty array when no time was picked", async () => {
-      await build().create(dto({ preferredTimes: [], notes: "   " }));
+    it("stores null rather than whitespace when no time was typed", async () => {
+      await build().create(dto({ preferredTime: "   ", notes: "   " }));
 
-      expect(repo.saved[0].preferred_times).toBeNull();
+      expect(repo.saved[0].preferred_time).toBeNull();
       expect(repo.saved[0].notes).toBeNull();
     });
 
     it("stores null when the optional fields are absent altogether", async () => {
-      await build().create(
-        dto({ preferredTimes: undefined, notes: undefined }),
-      );
+      await build().create(dto({ preferredTime: undefined, notes: undefined }));
 
-      expect(repo.saved[0].preferred_times).toBeNull();
+      expect(repo.saved[0].preferred_time).toBeNull();
       expect(repo.saved[0].notes).toBeNull();
     });
 
@@ -109,17 +107,17 @@ describe("CallRequestService", () => {
   });
 
   describe("notification event", () => {
-    it("emits labels for the inbox alongside the stored slug", async () => {
+    it("emits the reason label for the inbox alongside the stored slug", async () => {
       await build().create(dto());
 
       expect(emitter.emit).toHaveBeenCalledWith(
         NotificationEvents.CallRequested,
         expect.objectContaining({
-          reason: "help_find_home",
-          reasonLabel: "Help me find a home",
+          reason: "looking_for_home",
+          reasonLabel: "I'm looking for a home",
           name: "Jane Doe",
           phone: { countryCode: "GB", number: "20 7946 0000" },
-          preferredTimes: ["Morning", "Evening"],
+          preferredTime: "Weekday evenings",
           notes: "Evenings work best",
           source: "tenant",
         }),
@@ -135,10 +133,8 @@ describe("CallRequestService", () => {
       expect(Object.keys(event)).not.toContain("email");
     });
 
-    it("renders an operator-only reason from the operator vocabulary", async () => {
-      await build().create(
-        dto({ reason: "connect_feed", source: "operator" }),
-      );
+    it("renders the same shared vocabulary for the operator landing", async () => {
+      await build().create(dto({ reason: "connect_feed", source: "operator" }));
 
       expect(emitter.emit).toHaveBeenCalledWith(
         NotificationEvents.CallRequested,

@@ -106,11 +106,11 @@ function callEvent(
   overrides: Partial<CallRequestedEvent> = {},
 ): CallRequestedEvent {
   return {
-    reason: "help_find_home",
-    reasonLabel: "Help me find a home",
+    reason: "looking_for_home",
+    reasonLabel: "I'm looking for a home",
     name: "Jane Doe",
     phone: { countryCode: "GB", number: "20 7946 0000" },
-    preferredTimes: ["Morning", "Evening"],
+    preferredTime: "Weekday evenings",
     notes: null,
     source: "tenant",
     requestedAt: new Date("2026-08-18T10:00:00.000Z"),

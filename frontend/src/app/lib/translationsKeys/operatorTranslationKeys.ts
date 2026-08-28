@@ -99,23 +99,6 @@ export const operatorKeys = {
   // "Book a call" reason options offered on the operator landing. Not synced
   // from Localazy yet — the modal renders an English fallback until the keys
   // land. The slug sent to the backend is the object key, not the label.
-  bookACall: {
-    /**
-     * The option keys are positional (`option1`…`option8`) because that is the
-     * owner's scheme; the object key stays the stable slug, which is what the
-     * backend stores. Reordering the list means renumbering the keys.
-     */
-    reason: {
-      units_to_fill: "book.call.field1.operator.option1",
-      see_demo: "book.call.field1.operator.option2",
-      pricing_and_terms: "book.call.field1.operator.option3",
-      landlord_to_let: "book.call.field1.operator.option4",
-      agent_partner: "book.call.field1.operator.option5",
-      connect_feed: "book.call.field1.operator.option6",
-      looking_for_home: "book.call.field1.operator.option7",
-      something_else: "book.call.field1.operator.option8",
-    },
-  },
   partners: {
     title: "landing.operators.web.partners.title",
     stripe: "landing.operators.web.partner1",

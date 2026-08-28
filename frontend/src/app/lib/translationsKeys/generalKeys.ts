@@ -37,9 +37,9 @@ export const generalKeys = {
     tenantCtaButton: "landing.tenant.web.hero.btn",
   },
   /**
-   * "Book a call" modal chrome — everything that reads the same on both
-   * landings. The audience-specific half (the reason list) lives in
-   * `tenantKeys.bookACall` / `operatorKeys.bookACall`.
+   * "Book a call" modal copy. The whole modal reads the same on both landings,
+   * the reason list included — the landing is recorded as the request's
+   * `source`, not as a separate vocabulary.
    *
    * None of these are in Localazy yet; every consumer reads them through
    * `translateWithFallback` with an English fallback, so the modal renders
@@ -66,11 +66,23 @@ export const generalKeys = {
     notesPlaceholder: "book.call.field5.subtitle",
     submit: "book.call.btn",
     submitting: "book.call.btn.pending",
-    time: {
-      morning: "book.call.field4.option1",
-      afternoon: "book.call.field4.option2",
-      evening: "book.call.field4.option3",
-      asap: "book.call.field4.option4",
+    /**
+     * The reason options, one flat list for both landings. The keys are
+     * positional (`option1`…`option10`) because that is the owner's scheme;
+     * the object key stays the stable slug, which is what the backend stores.
+     * Reordering the list means renumbering the keys.
+     */
+    reason: {
+      units_to_fill: "book.call.field1.option1",
+      see_demo: "book.call.field1.option2",
+      pricing_and_terms: "book.call.field1.option3",
+      landlord_to_let: "book.call.field1.option4",
+      agent_partner: "book.call.field1.option5",
+      connect_feed: "book.call.field1.option6",
+      looking_for_home: "book.call.field1.option7",
+      finish_rental_cv: "book.call.field1.option8",
+      question_about_property: "book.call.field1.option9",
+      something_else: "book.call.field1.option10",
     },
     /** Toast copy. Both outcomes use the shared `notify` toaster. */
     notification: {
