@@ -4,11 +4,13 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
+import { notify } from "@/shared/lib/notify";
 import { sendCallRequest } from "../lib/callRequest";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
 import { generalKeys } from "../lib/translationsKeys/generalKeys";
 import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
 import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
+import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 export type BookACallAudience = "tenant" | "operator";
 
@@ -61,8 +63,6 @@ const ASAP = "asap";
 const FIELD_CLASSES =
   "w-full px-6 pt-6 pb-3 text-black text-base rounded-full border focus:ring-1 outline-none transition-all placeholder:text-gray-400";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export default function BookACallModal({
   isOpen,
   onClose,
@@ -73,7 +73,6 @@ export default function BookACallModal({
 
   const [reason, setReason] = useState("");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [phoneCountry, setPhoneCountry] = useState("GB");
   const [phone, setPhone] = useState("");
   const [preferredTimes, setPreferredTimes] = useState<string[]>([]);
@@ -82,23 +81,17 @@ export default function BookACallModal({
   const [touched, setTouched] = useState({
     reason: false,
     name: false,
-    email: false,
     phone: false,
   });
   const [errors, setErrors] = useState({
     reason: "",
     name: "",
-    email: "",
     phone: "",
   });
 
   const [isReasonOpen, setIsReasonOpen] = useState(false);
   const [isTimeOpen, setIsTimeOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">(
-    "idle",
-  );
-  const [errorMessage, setErrorMessage] = useState("");
 
   const tr = (key: string, fallback: string) =>
     translateWithFallback(t, key, fallback);
@@ -124,17 +117,14 @@ export default function BookACallModal({
   const resetFormState = () => {
     setReason("");
     setName("");
-    setEmail("");
     setPhoneCountry("GB");
     setPhone("");
     setPreferredTimes([]);
     setNotes("");
-    setTouched({ reason: false, name: false, email: false, phone: false });
-    setErrors({ reason: "", name: "", email: "", phone: "" });
+    setTouched({ reason: false, name: false, phone: false });
+    setErrors({ reason: "", name: "", phone: "" });
     setIsReasonOpen(false);
     setIsTimeOpen(false);
-    setSubmitStatus("idle");
-    setErrorMessage("");
     setIsLoading(false);
   };
 
@@ -184,14 +174,6 @@ export default function BookACallModal({
     if (field === "reason" || field === "name") {
       if (!value.trim()) message = requiredMessage();
     }
-    if (field === "email") {
-      if (!value.trim()) message = requiredMessage();
-      else if (!EMAIL_REGEX.test(value.trim()))
-        message = tr(
-          generalKeys.bookACall.validation.invalidEmail,
-          "Invalid email",
-        );
-    }
     if (field === "phone") {
       const digits = value.replace(/\D/g, "");
       if (!digits) message = requiredMessage();
@@ -204,12 +186,11 @@ export default function BookACallModal({
   };
 
   const validateAll = () => {
-    setTouched({ reason: true, name: true, email: true, phone: true });
+    setTouched({ reason: true, name: true, phone: true });
     const e1 = validateField("reason", reason);
     const e2 = validateField("name", name);
-    const e3 = validateField("email", email);
-    const e4 = validateField("phone", phone);
-    return !(e1 || e2 || e3 || e4);
+    const e3 = validateField("phone", phone);
+    return !(e1 || e2 || e3);
   };
 
   /**
@@ -224,35 +205,46 @@ export default function BookACallModal({
     });
   };
 
+  /**
+   * Feedback goes through the app-wide toaster, exactly as the booking-request
+   * submit does (`PropertyDetailClient`: close the modal, then `notify.success`).
+   *
+   * Success closes the modal — `resetFormState` runs off `isOpen`, so the next
+   * visitor gets a blank form. Failure deliberately does not: the values stay
+   * on screen so a retry is one click, not a re-type.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
 
     setIsLoading(true);
-    setSubmitStatus("idle");
-    setErrorMessage("");
 
     try {
-      const result = await sendCallRequest({
+      const { success } = await sendCallRequest({
         reason,
         name: name.trim(),
-        email: email.trim(),
         phone: { countryCode: phoneCountry, number: phone.trim() },
         ...(preferredTimes.length ? { preferredTimes } : {}),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
         source: audience,
       });
 
-      if (!result.success) throw new Error(result.message);
+      if (!success) {
+        notify.error(
+          tr(
+            generalKeys.bookACall.notification.error,
+            "Something went wrong. Please try again.",
+          ),
+        );
+        return;
+      }
 
-      // Left standing until the visitor closes the modal: the previous form
-      // hid its confirmation on a timer, so anyone who looked away never
-      // learned whether the request went through.
-      setSubmitStatus("success");
-    } catch (error) {
-      setSubmitStatus("error");
-      setErrorMessage(
-        error instanceof Error ? error.message : "An error occurred",
+      onClose();
+      notify.success(
+        tr(
+          generalKeys.bookACall.notification.complete,
+          "Thanks — we'll be in touch shortly.",
+        ),
       );
     } finally {
       setIsLoading(false);
@@ -392,7 +384,7 @@ export default function BookACallModal({
                 name="name"
                 placeholder={tr(
                   generalKeys.bookACall.namePlaceholder,
-                  "Your full name",
+                  "Full name",
                 )}
                 value={name}
                 onChange={(e) => {
@@ -412,37 +404,9 @@ export default function BookACallModal({
               )}
             </div>
 
-            {/* Email */}
-            <div className="relative">
-              <label className="absolute left-6 top-2 text-xs font-medium text-gray-700">
-                {tr(generalKeys.bookACall.emailLabel, "Email")}
-              </label>
-              <input
-                type="email"
-                name="email"
-                placeholder={tr(
-                  generalKeys.bookACall.emailPlaceholder,
-                  "you@example.com",
-                )}
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (touched.email) validateField("email", e.target.value);
-                }}
-                onBlur={(e) => {
-                  setTouched((prev) => ({ ...prev, email: true }));
-                  validateField("email", e.target.value);
-                }}
-                required
-                aria-invalid={!!errors.email && touched.email}
-                className={`${FIELD_CLASSES} ${borderFor("email")}`}
-              />
-              {errors.email && touched.email && (
-                <p className="mt-1 ml-4 text-xs text-red-600">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Phone — country selector plus mask, defaulting to GB. */}
+            {/* Phone — country selector plus mask, defaulting to GB. Labelled
+                from the profile settings keys, so the same field reads the
+                same way here and in the account form. */}
             <div
               className={`rounded-4xl border transition-all ${
                 errors.phone && touched.phone
@@ -453,8 +417,7 @@ export default function BookACallModal({
               <PhoneMaskInput
                 countryCode={phoneCountry}
                 value={phone}
-                label={tr(generalKeys.bookACall.phoneLabel, "Phone Number")}
-                placeholder={tr(generalKeys.bookACall.phonePlaceholder, "")}
+                label={tr(wizardKeys.profile.phone, "Phone Number")}
                 required
                 onCountryChange={(code) => {
                   setPhoneCountry(code);
@@ -553,7 +516,7 @@ export default function BookACallModal({
                 maxLength={2000}
                 placeholder={tr(
                   generalKeys.bookACall.notesPlaceholder,
-                  "Anything else we should know?",
+                  "Add any details or questions about your call",
                 )}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -562,28 +525,9 @@ export default function BookACallModal({
             </div>
           </div>
 
-          {submitStatus === "success" && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-900 text-sm">
-              {tr(
-                generalKeys.bookACall.success,
-                "Your request was sent successfully! We'll contact you soon.",
-              )}
-            </div>
-          )}
-
-          {submitStatus === "error" && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-              {errorMessage ||
-                tr(
-                  generalKeys.bookACall.error,
-                  "Something went wrong — please try again.",
-                )}
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={isLoading || submitStatus === "success"}
+            disabled={isLoading}
             className="w-full mt-8 bg-black text-white px-6 py-4 rounded-full text-base font-semibold hover:bg-black/30 hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg cursor-pointer"
           >
             {isLoading

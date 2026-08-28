@@ -40,7 +40,6 @@ export class CallRequestService {
       this.callRequestRepository.create({
         reason: dto.reason,
         name: dto.name.trim(),
-        email: dto.email.trim(),
         phone_country_code: dto.phone.countryCode,
         phone_number: dto.phone.number.trim(),
         preferred_times: preferredTimes,
@@ -68,7 +67,6 @@ export class CallRequestService {
       reason: request.reason,
       reasonLabel: labelForReason(request.reason),
       name: request.name,
-      email: request.email,
       phone: {
         countryCode: request.phone_country_code,
         number: request.phone_number,

@@ -84,7 +84,7 @@ export interface CallRequestedEvent {
   /** English label for that slug, resolved by the producer. */
   reasonLabel: string;
   name: string;
-  email: string;
+  /** The only way back to the visitor: the form asks for no email. */
   phone: {
     countryCode: string;
     number: string;

@@ -19,7 +19,6 @@ export class CreateCallRequestsTable1788000000000 implements MigrationInterface 
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "reason" character varying(64) NOT NULL,
         "name" character varying(200) NOT NULL,
-        "email" character varying(254) NOT NULL,
         "phone_country_code" character varying(2) NOT NULL,
         "phone_number" character varying(32) NOT NULL,
         "preferred_times" jsonb,

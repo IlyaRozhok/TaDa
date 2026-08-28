@@ -34,7 +34,6 @@ function dto(overrides: Partial<CreateCallRequestDto> = {}): CreateCallRequestDt
   return {
     reason: "help_find_home",
     name: "  Jane Doe  ",
-    email: " jane@example.com ",
     phone: { countryCode: "GB", number: " 20 7946 0000 " },
     preferredTimes: ["morning", "evening"],
     notes: "  Evenings work best  ",
@@ -78,7 +77,6 @@ describe("CallRequestService", () => {
       expect(repo.saved[0]).toMatchObject({
         reason: "help_find_home",
         name: "Jane Doe",
-        email: "jane@example.com",
         phone_country_code: "GB",
         phone_number: "20 7946 0000",
         preferred_times: ["morning", "evening"],
@@ -102,6 +100,12 @@ describe("CallRequestService", () => {
       expect(repo.saved[0].preferred_times).toBeNull();
       expect(repo.saved[0].notes).toBeNull();
     });
+
+    it("stores no email — the form asks for a phone number only", async () => {
+      await build().create(dto());
+
+      expect(repo.saved[0]).not.toHaveProperty("email");
+    });
   });
 
   describe("notification event", () => {
@@ -114,7 +118,6 @@ describe("CallRequestService", () => {
           reason: "help_find_home",
           reasonLabel: "Help me find a home",
           name: "Jane Doe",
-          email: "jane@example.com",
           phone: { countryCode: "GB", number: "20 7946 0000" },
           preferredTimes: ["Morning", "Evening"],
           notes: "Evenings work best",
@@ -129,6 +132,7 @@ describe("CallRequestService", () => {
       const [, event] = emitter.emit.mock.calls[0];
       expect(Object.keys(event)).not.toContain("recipient");
       expect(Object.keys(event)).not.toContain("to");
+      expect(Object.keys(event)).not.toContain("email");
     });
 
     it("renders an operator-only reason from the operator vocabulary", async () => {

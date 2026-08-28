@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   IsArray,
-  IsEmail,
   IsIn,
   IsNotEmpty,
   IsOptional,
@@ -52,11 +51,6 @@ export class CreateCallRequestDto {
   @IsNotEmpty()
   @MaxLength(200)
   name: string;
-
-  @ApiProperty({ example: "jane@example.com" })
-  @IsEmail()
-  @MaxLength(254)
-  email: string;
 
   @ApiProperty({ type: CallRequestPhoneDto })
   @ValidateNested()
