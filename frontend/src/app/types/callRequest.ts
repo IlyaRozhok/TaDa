@@ -8,7 +8,7 @@ export interface CallRequest {
   name: string;
   phone_country_code: string;
   phone_number: string;
-  preferred_times?: string[] | null;
+  preferred_time?: string | null;
   notes?: string | null;
   source: CallRequestSource;
   created_at: string;
@@ -21,9 +21,6 @@ export interface CallRequest {
  * renders as itself rather than as a blank cell.
  */
 export const CALL_REASON_LABELS: Record<string, string> = {
-  help_find_home: "Help me find a home",
-  finish_rental_cv: "Help me finish my Rental CV",
-  question_about_property: "I have a question about a property",
   units_to_fill: "I have units to fill",
   see_demo: "I want to see a demo",
   pricing_and_terms: "I want to discuss pricing and terms",
@@ -31,12 +28,7 @@ export const CALL_REASON_LABELS: Record<string, string> = {
   agent_partner: "I'm a letting agent looking to partner",
   connect_feed: "I want to connect a property feed",
   looking_for_home: "I'm looking for a home",
+  finish_rental_cv: "Help me finish my Rental CV",
+  question_about_property: "I have a question about a property",
   something_else: "Something else",
-};
-
-export const PREFERRED_TIME_LABELS: Record<string, string> = {
-  morning: "Morning",
-  afternoon: "Afternoon",
-  evening: "Evening",
-  asap: "ASAP",
 };

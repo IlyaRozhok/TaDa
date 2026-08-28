@@ -3064,21 +3064,18 @@ export interface components {
         };
         CreateCallRequestDto: {
             /**
-             * @example help_find_home
+             * @example looking_for_home
              * @enum {string}
              */
-            reason: "help_find_home" | "finish_rental_cv" | "question_about_property" | "something_else" | "units_to_fill" | "see_demo" | "pricing_and_terms" | "landlord_to_let" | "agent_partner" | "connect_feed" | "looking_for_home";
+            reason: "units_to_fill" | "see_demo" | "pricing_and_terms" | "landlord_to_let" | "agent_partner" | "connect_feed" | "looking_for_home" | "finish_rental_cv" | "question_about_property" | "something_else";
             /** @example Jane Doe */
             name: string;
             phone: components["schemas"]["CallRequestPhoneDto"];
             /**
-             * @description When the visitor would like to be called. "asap" is exclusive of the others in the UI; the backend stores whatever arrives.
-             * @example [
-             *       "morning",
-             *       "evening"
-             *     ]
+             * @description Free text: when the visitor would like to be called, in their own words.
+             * @example Weekday evenings after 6pm
              */
-            preferredTimes?: ("morning" | "afternoon" | "evening" | "asap")[];
+            preferredTime?: string;
             /** @example Evenings after 6pm work best. */
             notes?: string;
             /**

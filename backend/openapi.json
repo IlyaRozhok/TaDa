@@ -5402,19 +5402,18 @@
           "reason": {
             "type": "string",
             "enum": [
-              "help_find_home",
-              "finish_rental_cv",
-              "question_about_property",
-              "something_else",
               "units_to_fill",
               "see_demo",
               "pricing_and_terms",
               "landlord_to_let",
               "agent_partner",
               "connect_feed",
-              "looking_for_home"
+              "looking_for_home",
+              "finish_rental_cv",
+              "question_about_property",
+              "something_else"
             ],
-            "example": "help_find_home"
+            "example": "looking_for_home"
           },
           "name": {
             "type": "string",
@@ -5423,22 +5422,10 @@
           "phone": {
             "$ref": "#/components/schemas/CallRequestPhoneDto"
           },
-          "preferredTimes": {
-            "type": "array",
-            "example": [
-              "morning",
-              "evening"
-            ],
-            "description": "When the visitor would like to be called. \"asap\" is exclusive of the others in the UI; the backend stores whatever arrives.",
-            "items": {
-              "type": "string",
-              "enum": [
-                "morning",
-                "afternoon",
-                "evening",
-                "asap"
-              ]
-            }
+          "preferredTime": {
+            "type": "string",
+            "example": "Weekday evenings after 6pm",
+            "description": "Free text: when the visitor would like to be called, in their own words."
           },
           "notes": {
             "type": "string",

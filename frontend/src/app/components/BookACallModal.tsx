@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
 import { notify } from "@/shared/lib/notify";
 import { sendCallRequest } from "../lib/callRequest";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
 import { generalKeys } from "../lib/translationsKeys/generalKeys";
-import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
-import { operatorKeys } from "../lib/translationsKeys/operatorTranslationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 
 export type BookACallAudience = "tenant" | "operator";
@@ -21,21 +19,15 @@ interface BookACallModalProps {
 }
 
 /**
- * The reason lists differ per landing, so the slug/fallback pairs live next to
- * the key that translates them. The SLUG is what reaches the backend — the
- * label is whatever Localazy has for that language, and must never be sent.
+ * One reason list, rendered identically on both landings — which landing the
+ * visitor came from is recorded as the request's `source`, not by offering a
+ * different set of options. The SLUG is what reaches the backend; the label is
+ * whatever Localazy has for that language, and must never be sent.
+ *
+ * The order matches the positional `book.call.field1.optionN` keys, so
+ * reordering here means renumbering there (and in the backend vocabulary).
  */
-const TENANT_REASONS = [
-  { slug: "help_find_home", fallback: "Help me find a home" },
-  { slug: "finish_rental_cv", fallback: "Help me finish my Rental CV" },
-  {
-    slug: "question_about_property",
-    fallback: "I have a question about a property",
-  },
-  { slug: "something_else", fallback: "Something else" },
-] as const;
-
-const OPERATOR_REASONS = [
+const REASONS = [
   { slug: "units_to_fill", fallback: "I have units to fill" },
   { slug: "see_demo", fallback: "I want to see a demo" },
   { slug: "pricing_and_terms", fallback: "I want to discuss pricing and terms" },
@@ -43,22 +35,13 @@ const OPERATOR_REASONS = [
   { slug: "agent_partner", fallback: "I'm a letting agent looking to partner" },
   { slug: "connect_feed", fallback: "I want to connect a property feed" },
   { slug: "looking_for_home", fallback: "I'm looking for a home" },
+  { slug: "finish_rental_cv", fallback: "Help me finish my Rental CV" },
+  {
+    slug: "question_about_property",
+    fallback: "I have a question about a property",
+  },
   { slug: "something_else", fallback: "Something else" },
 ] as const;
-
-const PREFERRED_TIMES = [
-  { slug: "morning", key: generalKeys.bookACall.time.morning, fallback: "Morning" },
-  {
-    slug: "afternoon",
-    key: generalKeys.bookACall.time.afternoon,
-    fallback: "Afternoon",
-  },
-  { slug: "evening", key: generalKeys.bookACall.time.evening, fallback: "Evening" },
-  { slug: "asap", key: generalKeys.bookACall.time.asap, fallback: "ASAP" },
-] as const;
-
-/** "asap" means "call me now" — pairing it with a time of day is incoherent. */
-const ASAP = "asap";
 
 const FIELD_CLASSES =
   "w-full px-6 pt-6 pb-3 text-black text-base rounded-full border focus:ring-1 outline-none transition-all placeholder:text-gray-400";
@@ -75,7 +58,7 @@ export default function BookACallModal({
   const [name, setName] = useState("");
   const [phoneCountry, setPhoneCountry] = useState("GB");
   const [phone, setPhone] = useState("");
-  const [preferredTimes, setPreferredTimes] = useState<string[]>([]);
+  const [preferredTime, setPreferredTime] = useState("");
   const [notes, setNotes] = useState("");
 
   const [touched, setTouched] = useState({
@@ -90,41 +73,36 @@ export default function BookACallModal({
   });
 
   const [isReasonOpen, setIsReasonOpen] = useState(false);
-  const [isTimeOpen, setIsTimeOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const tr = (key: string, fallback: string) =>
     translateWithFallback(t, key, fallback);
 
-  // Same audience switch the landing sections use, so the modal never has to
-  // be told which key set to read — only which landing opened it.
-  const reasonOptions = useMemo(() => {
-    const source =
-      audience === "tenant"
-        ? { list: TENANT_REASONS, keys: tenantKeys.bookACall.reason }
-        : { list: OPERATOR_REASONS, keys: operatorKeys.bookACall.reason };
-
-    return source.list.map((option) => ({
-      slug: option.slug,
-      label: tr(
-        (source.keys as Record<string, string>)[option.slug],
-        option.fallback,
-      ),
-    }));
+  const reasonOptions = useMemo(
+    () =>
+      REASONS.map((option) => ({
+        slug: option.slug,
+        label: tr(
+          generalKeys.bookACall.reason[
+            option.slug as keyof typeof generalKeys.bookACall.reason
+          ],
+          option.fallback,
+        ),
+      })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audience, t]);
+    [t],
+  );
 
   const resetFormState = () => {
     setReason("");
     setName("");
     setPhoneCountry("GB");
     setPhone("");
-    setPreferredTimes([]);
+    setPreferredTime("");
     setNotes("");
     setTouched({ reason: false, name: false, phone: false });
     setErrors({ reason: "", name: "", phone: "" });
     setIsReasonOpen(false);
-    setIsTimeOpen(false);
     setIsLoading(false);
   };
 
@@ -194,18 +172,6 @@ export default function BookACallModal({
   };
 
   /**
-   * ASAP is mutually exclusive with the three times of day, in both
-   * directions: picking it clears them, and picking any of them clears it.
-   */
-  const togglePreferredTime = (slug: string) => {
-    setPreferredTimes((prev) => {
-      if (prev.includes(slug)) return prev.filter((s) => s !== slug);
-      if (slug === ASAP) return [ASAP];
-      return [...prev.filter((s) => s !== ASAP), slug];
-    });
-  };
-
-  /**
    * Feedback goes through the app-wide toaster, exactly as the booking-request
    * submit does (`PropertyDetailClient`: close the modal, then `notify.success`).
    *
@@ -224,7 +190,7 @@ export default function BookACallModal({
         reason,
         name: name.trim(),
         phone: { countryCode: phoneCountry, number: phone.trim() },
-        ...(preferredTimes.length ? { preferredTimes } : {}),
+        ...(preferredTime.trim() ? { preferredTime: preferredTime.trim() } : {}),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
         source: audience,
       });
@@ -256,10 +222,6 @@ export default function BookACallModal({
   const selectedReasonLabel = reasonOptions.find(
     (option) => option.slug === reason,
   )?.label;
-
-  const selectedTimeLabels = PREFERRED_TIMES.filter((option) =>
-    preferredTimes.includes(option.slug),
-  ).map((option) => tr(option.key, option.fallback));
 
   const borderFor = (field: keyof typeof errors) =>
     errors[field] && touched[field]
@@ -313,7 +275,6 @@ export default function BookACallModal({
                 type="button"
                 onClick={() => {
                   setIsReasonOpen((open) => !open);
-                  setIsTimeOpen(false);
                   setTouched((prev) => ({ ...prev, reason: true }));
                 }}
                 aria-haspopup="listbox"
@@ -436,73 +397,25 @@ export default function BookACallModal({
               <p className="-mt-2 ml-4 text-xs text-red-600">{errors.phone}</p>
             )}
 
-            {/* Preferred time — optional multiselect. */}
+            {/* Preferred time — optional free text. Whatever the visitor types
+                reaches the support inbox verbatim; there is no vocabulary to
+                match, so nothing here is validated beyond a length cap. */}
             <div className="relative">
-              <label className="absolute left-6 top-2 text-xs font-medium text-gray-700 z-10">
+              <label className="absolute left-6 top-2 text-xs font-medium text-gray-700">
                 {tr(generalKeys.bookACall.preferredTimeLabel, "Preferred time")}
               </label>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsTimeOpen((open) => !open);
-                  setIsReasonOpen(false);
-                }}
-                aria-haspopup="listbox"
-                aria-expanded={isTimeOpen}
-                className={`${FIELD_CLASSES} border-gray-300 focus:ring-black flex items-center justify-between gap-3 text-left cursor-pointer bg-white`}
-              >
-                <span
-                  className={
-                    selectedTimeLabels.length ? "text-black" : "text-gray-400"
-                  }
-                >
-                  {selectedTimeLabels.length
-                    ? selectedTimeLabels.join(", ")
-                    : tr(
-                        generalKeys.bookACall.preferredTimePlaceholder,
-                        "Select a time",
-                      )}
-                </span>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isTimeOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {isTimeOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-20"
-                    onClick={() => setIsTimeOpen(false)}
-                  />
-                  <ul
-                    role="listbox"
-                    aria-multiselectable
-                    className="absolute top-full left-0 right-0 z-30 mt-2 rounded-3xl border border-gray-200 bg-white shadow-xl py-2"
-                  >
-                    {PREFERRED_TIMES.map((option) => {
-                      const selected = preferredTimes.includes(option.slug);
-                      return (
-                        <li key={option.slug}>
-                          <button
-                            type="button"
-                            role="option"
-                            aria-selected={selected}
-                            onClick={() => togglePreferredTime(option.slug)}
-                            className={`w-full flex items-center justify-between px-6 py-3 text-sm transition-colors cursor-pointer ${
-                              selected
-                                ? "bg-gray-100 text-black font-medium"
-                                : "text-gray-800 hover:bg-gray-50"
-                            }`}
-                          >
-                            <span>{tr(option.key, option.fallback)}</span>
-                            {selected && <Check className="w-4 h-4" />}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </>
-              )}
+              <input
+                type="text"
+                name="preferredTime"
+                maxLength={120}
+                placeholder={tr(
+                  generalKeys.bookACall.preferredTimePlaceholder,
+                  "Select a time",
+                )}
+                value={preferredTime}
+                onChange={(e) => setPreferredTime(e.target.value)}
+                className={`${FIELD_CLASSES} border-gray-300 focus:ring-black`}
+              />
             </div>
 
             {/* Notes */}

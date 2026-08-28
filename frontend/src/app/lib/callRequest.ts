@@ -13,7 +13,7 @@
 export type CallRequestSource = "tenant" | "operator";
 
 export interface CallRequestPayload {
-  /** Stable slug from the audience's reason list — never the localized label. */
+  /** Stable slug from the shared reason list — never the localized label. */
   reason: string;
   name: string;
   /** The only contact channel on the form — there is no email field. */
@@ -22,8 +22,8 @@ export interface CallRequestPayload {
     countryCode: string;
     number: string;
   };
-  /** Slugs: "morning" | "afternoon" | "evening" | "asap". Omitted when empty. */
-  preferredTimes?: string[];
+  /** Free text, as the visitor typed it. Omitted when the field is blank. */
+  preferredTime?: string;
   notes?: string;
   source: CallRequestSource;
 }

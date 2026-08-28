@@ -8,7 +8,7 @@ import {
 } from "typeorm";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
-/** Which landing sent the form. Decides the reason vocabulary the client offered. */
+/** Which landing sent the form. Both offer the same reason list. */
 export type CallRequestSource = "tenant" | "operator";
 
 /**
@@ -31,7 +31,7 @@ export class CallRequest {
    * translated through Localazy; storing the label would make the same reason
    * a different value per language.
    */
-  @ApiProperty({ description: "Reason slug for the call", example: "help_find_home" })
+  @ApiProperty({ description: "Reason slug for the call", example: "looking_for_home" })
   @Column({ type: "varchar", length: 64 })
   reason: string;
 
@@ -49,11 +49,12 @@ export class CallRequest {
   phone_number: string;
 
   @ApiPropertyOptional({
-    description: "Preferred time-of-day slugs, or null when the visitor skipped the field",
-    example: ["morning", "evening"],
+    description:
+      "Preferred time as the visitor typed it, or null when they skipped the field",
+    example: "Weekday evenings after 6pm",
   })
-  @Column({ type: "jsonb", nullable: true })
-  preferred_times: string[] | null;
+  @Column({ type: "varchar", length: 120, nullable: true })
+  preferred_time: string | null;
 
   @ApiPropertyOptional({ description: "Free-text notes from the form" })
   @Column({ type: "text", nullable: true })
