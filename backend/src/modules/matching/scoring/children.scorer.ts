@@ -2,6 +2,7 @@ import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
 import { unknownPropertyData } from "./unknown-data";
+import { splitPreferenceList } from "./preference-list";
 
 /**
  * Helper to parse children count strings into numbers
@@ -23,7 +24,12 @@ export function matchChildren(
   preferences: Preferences,
   maxScore: number,
 ): CategoryMatchResult {
-  const childrenCount = preferences.children_count;
+  // Multi-select stored as a comma-joined string. The scoring below works on
+  // the LARGEST selected children count (the binding constraint), so
+  // "no,yes-1-child" behaves as one child, not as the unparseable joined
+  // string it used to be.
+  const childrenSelections = splitPreferenceList(preferences.children_count);
+  const childrenCount = childrenSelections[0];
   const propertyTenantTypes = property.tenant_types || [];
   const propertyChildren = property.children || [];
 
@@ -42,8 +48,14 @@ export function matchChildren(
     };
   }
 
+  // The binding constraint across the selection: the most children any
+  // selected answer implies.
+  const userChildrenNum = Math.max(
+    ...childrenSelections.map((entry) => parseChildrenCount(entry)),
+  );
+
   // User has no children
-  if (childrenCount === "no") {
+  if (userChildrenNum === 0) {
     return {
       category: "children",
       match: true,
@@ -57,8 +69,6 @@ export function matchChildren(
 
   // The explicit children policy is authoritative when present — it works
   // even when tenant types are blank (B4: signal order, then heuristics).
-  const userChildrenNum = parseChildrenCount(childrenCount);
-
   if (propertyChildren.length === 0) {
     // No explicit children policy: fall back to the tenant-type heuristic,
     // or the unknown-data policy when there is no targeting data at all
@@ -121,14 +131,17 @@ export function matchChildren(
   );
 
   // Perfect match - property specifically accommodates this number of children
-  if (propertyChildren.includes(childrenCount as any)) {
+  const exactMatch = childrenSelections.find((entry) =>
+    propertyChildren.includes(entry as any),
+  );
+  if (exactMatch) {
     return {
       category: "children",
       match: true,
       score: maxScore,
       maxScore,
       reason: "Perfect children count match",
-      details: `Property specifically accepts ${childrenCount.replace("yes-", "").replace("-", " ")}`,
+      details: `Property specifically accepts ${exactMatch.replace("yes-", "").replace("-", " ")}`,
       hasPreference: true,
     };
   }
@@ -141,7 +154,7 @@ export function matchChildren(
       score: Math.round(maxScore * 0.9),
       maxScore,
       reason: "Children count compatible",
-      details: `Property can accommodate ${childrenCount.replace("yes-", "").replace("-", " ")}`,
+      details: `Property can accommodate ${userChildrenNum} child${userChildrenNum === 1 ? "" : "ren"}`,
       hasPreference: true,
     };
   }
