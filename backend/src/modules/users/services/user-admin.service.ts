@@ -2,14 +2,22 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { EntityManager, Repository } from "typeorm";
+import { EntityManager, In, Repository } from "typeorm";
 import * as bcrypt from "bcryptjs";
 import { User, UserRole, UserStatus } from "@/entities/user.entity";
 import { TenantProfile } from "@/entities/tenant-profile.entity";
 import { OperatorProfile } from "@/entities/operator-profile.entity";
+import { Property, PropertyStatus } from "@/entities/property.entity";
+import { Building } from "@/entities/building.entity";
+import {
+  BOOKING_UNDER_OFFER_STAGES,
+  BookingRequest,
+  BookingRequestStatus,
+} from "@/entities/booking-request.entity";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
 import { USER_CONSTANTS } from "@/common/constants/user.constants";
@@ -50,10 +58,12 @@ export class UserAdminService {
       throw new BadRequestException("User with this email already exists");
     }
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      USER_CONSTANTS.PASSWORD_SALT_ROUNDS
-    );
+    // Auth is Google-only: the account becomes reachable when its owner first
+    // signs in with this email (googleAuth links by verified email). A
+    // password is stored only if explicitly supplied — nothing reads it today.
+    const hashedPassword = password
+      ? await bcrypt.hash(password, USER_CONSTANTS.PASSWORD_SALT_ROUNDS)
+      : undefined;
 
     // User and role profile land or roll back together — a failure between
     // the two writes used to leave a profileless account behind.
@@ -145,11 +155,7 @@ export class UserAdminService {
   }
 
   /**
-   * Delete a user as an admin. Children are not removed by hand: every table
-   * that references `users.id` does so with ON DELETE CASCADE, so dropping the
-   * user row takes the profiles, CV, shortlist entries, buildings, properties
-   * and booking requests with it. This is the same mechanism the self-service
-   * path in `UsersService.deleteAccount` relies on.
+   * Delete a user as an admin.
    */
   async deleteUser(id: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });
@@ -158,7 +164,86 @@ export class UserAdminService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    await this.userRepository.remove(user);
+    await this.removeUserSafely(user);
+  }
+
+  /**
+   * The one deletion path for a user row, shared with the self-service
+   * `UsersService.deleteAccount`. Profiles, CV, shortlist entries and
+   * booking requests still go with the row via ON DELETE CASCADE, but two
+   * things are refused and one is compensated:
+   *
+   * - An account that OWNS properties or buildings is not deletable: the
+   *   operator FKs used to cascade, so one admin click on "delete user"
+   *   irreversibly wiped the operator's whole catalogue and every tenant's
+   *   booking history on it. The DB now RESTRICTs those FKs; this guard
+   *   turns the constraint violation into an actionable 409.
+   * - A tenant with a `rented` booking is a live tenancy record; deleting
+   *   the account would erase it. Close or cancel the tenancy first.
+   * - A tenant mid-deal (contract..move_in) may leave, but their booking
+   *   rows vanish with them — so the property lifecycle is reverted in the
+   *   same transaction, exactly as a cancel transition would have done.
+   *   Without this the property stayed `under_offer` forever, invisible on
+   *   the market with zero symptom.
+   */
+  async removeUserSafely(user: User): Promise<void> {
+    const manager = this.userRepository.manager;
+
+    const [ownedProperties, ownedBuildings] = await Promise.all([
+      manager.count(Property, { where: { operator_id: user.id } }),
+      manager.count(Building, { where: { operator_id: user.id } }),
+    ]);
+    if (ownedProperties > 0 || ownedBuildings > 0) {
+      throw new ConflictException(
+        `This account owns ${ownedProperties} propert${ownedProperties === 1 ? "y" : "ies"} ` +
+          `and ${ownedBuildings} building${ownedBuildings === 1 ? "" : "s"}. ` +
+          "Reassign or delete them first — deleting the account would destroy " +
+          "the listings and their booking history.",
+      );
+    }
+
+    const liveTenancies = await manager.count(BookingRequest, {
+      where: { tenant_id: user.id, status: BookingRequestStatus.Rented },
+    });
+    if (liveTenancies > 0) {
+      throw new ConflictException(
+        "This account has an active tenancy (a booking in the rented state). " +
+          "Close or cancel the tenancy first — deleting the account would erase " +
+          "the tenancy record.",
+      );
+    }
+
+    await manager.transaction(async (em) => {
+      const activeDeals = await em.find(BookingRequest, {
+        where: {
+          tenant_id: user.id,
+          status: In(BOOKING_UNDER_OFFER_STAGES),
+        },
+        select: ["property_id"],
+      });
+
+      // DB-level cascades take the bookings with the row.
+      await em.delete(User, user.id);
+
+      const affectedProperties = [
+        ...new Set(activeDeals.map((deal) => deal.property_id)),
+      ];
+      for (const propertyId of affectedProperties) {
+        const stillUnderOffer = await em.count(BookingRequest, {
+          where: {
+            property_id: propertyId,
+            status: In(BOOKING_UNDER_OFFER_STAGES),
+          },
+        });
+        if (stillUnderOffer === 0) {
+          await em.update(
+            Property,
+            { id: propertyId, status: PropertyStatus.UnderOffer },
+            { status: PropertyStatus.Listed },
+          );
+        }
+      }
+    });
   }
 
   /**

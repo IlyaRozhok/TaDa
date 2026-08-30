@@ -112,4 +112,60 @@ describe("AuthService — registration event", () => {
     await expect(service.googleAuth(googleUser)).rejects.toThrow();
     expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
+
+  // G1: accounts that exist without a google_id (admin-created) are linked by
+  // their Google-verified email. Before this, Google-only auth made such
+  // accounts permanently unreachable: the google_id lookup missed and the
+  // create path hit the unique-email constraint.
+  describe("linking by verified email", () => {
+    it("links an admin-created account on its owner's first sign-in", async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce(null) // google_id lookup misses
+        .mockResolvedValueOnce({
+          id: "admin-made-1",
+          email: "new@example.com",
+          google_id: null,
+          role: UserRole.Operator,
+          status: UserStatus.Active,
+          full_name: "Pre-created Operator",
+          avatar_url: null,
+        });
+
+      const { user, isNew } = await service.googleAuth(googleUser);
+
+      expect(isNew).toBe(false);
+      expect(user.google_id).toBe("google-123");
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "admin-made-1", google_id: "google-123" }),
+      );
+      // Not a registration — the admin-created event already fired.
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it("does NOT link on an unverified Google email", async () => {
+      userRepository.findOne.mockResolvedValueOnce(null);
+
+      const { isNew } = await service.googleAuth({
+        ...googleUser,
+        email_verified: false,
+      });
+
+      // Falls through to the create path (mocked transaction) instead.
+      expect(isNew).toBe(true);
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
+    });
+
+    it("refuses to link a suspended account", async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({
+          id: "admin-made-1",
+          email: "new@example.com",
+          status: UserStatus.Suspended,
+        });
+
+      await expect(service.googleAuth(googleUser)).rejects.toThrow();
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+  });
 });
