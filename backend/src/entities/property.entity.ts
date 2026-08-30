@@ -431,8 +431,12 @@ export class Property {
   // Relations
   // Unidirectional: `User` has no `properties` collection, so there is no
   // inverse side to name here.
+  // RESTRICT, not CASCADE: deleting an operator account must never take the
+  // catalogue and its booking history with it — the same principle as the
+  // building FK below. The user-deletion service turns the constraint into
+  // an actionable 409 ("reassign or delete their listings first").
   @ManyToOne(() => User, {
-    onDelete: "CASCADE",
+    onDelete: "RESTRICT",
   })
   @JoinColumn({ name: "operator_id" })
   operator: User;
