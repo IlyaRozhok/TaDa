@@ -2158,9 +2158,23 @@
         "parameters": [
           {
             "name": "status",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Filter by pipeline status",
             "schema": {
+              "enum": [
+                "new",
+                "contacting",
+                "kyc_referencing",
+                "approved_viewing",
+                "viewing",
+                "contract",
+                "deposit",
+                "full_payment",
+                "move_in",
+                "rented",
+                "cancel_booking"
+              ],
               "type": "string"
             }
           }
@@ -2187,8 +2201,9 @@
         "parameters": [
           {
             "name": "property_id",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Filter by property id",
             "schema": {
               "type": "string"
             }
@@ -2685,11 +2700,6 @@
             "type": "string",
             "description": "Address of the user",
             "example": "123 Main St, London"
-          },
-          "email": {
-            "type": "string",
-            "description": "User email address",
-            "example": "user@example.com"
           },
           "phone": {
             "type": "string",

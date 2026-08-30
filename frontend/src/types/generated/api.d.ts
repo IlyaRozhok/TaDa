@@ -1182,11 +1182,6 @@ export interface components {
              */
             address?: string;
             /**
-             * @description User email address
-             * @example user@example.com
-             */
-            email?: string;
-            /**
              * @description User phone number
              * @example +44 7700 900123
              */
@@ -4724,8 +4719,9 @@ export interface operations {
     };
     BookingRequestController_findAll: {
         parameters: {
-            query: {
-                status: string;
+            query?: {
+                /** @description Filter by pipeline status */
+                status?: "new" | "contacting" | "kyc_referencing" | "approved_viewing" | "viewing" | "contract" | "deposit" | "full_payment" | "move_in" | "rented" | "cancel_booking";
             };
             header?: never;
             path?: never;
@@ -4766,8 +4762,9 @@ export interface operations {
     };
     BookingRequestController_findMine: {
         parameters: {
-            query: {
-                property_id: string;
+            query?: {
+                /** @description Filter by property id */
+                property_id?: string;
             };
             header?: never;
             path?: never;
