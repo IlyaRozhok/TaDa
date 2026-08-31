@@ -17,13 +17,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Only the production deployment (ta-da.co) may be indexed. Staging and
+// Only the production deployment (www.ta-da.co) may be indexed. Staging and
 // preview deployments stay hidden from crawlers; robots.ts applies the same
 // rule at the robots.txt level. The switch lives in lib/siteEnv.ts.
 import { isIndexableSite as isIndexable } from "@/app/lib/siteEnv";
+import { SITE_URL } from "@/app/lib/siteUrl";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ta-da.co"),
+  // Every relative `alternates.canonical` and OpenGraph image below resolves
+  // against this, so it must be the www host the site actually serves from.
+  metadataBase: new URL(SITE_URL),
   title: "TaDa - Rental Platform",
   description: "Connect tenants and property operators in London",
   robots: isIndexable

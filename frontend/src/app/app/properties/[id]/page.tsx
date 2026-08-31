@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { fetchPublicProperty } from "@/app/lib/serverApi";
+import { SITE_URL } from "@/app/lib/siteUrl";
 import PropertyDetailClient from "./PropertyDetailClient";
 
 /**
@@ -60,7 +61,7 @@ export default async function PropertyPage({ params }: PageProps) {
   // The platform is London-only, so the offer currency is a constant until
   // the data model grows one (flagged in the audit).
   const canonicalUrl = property
-    ? `https://ta-da.co/app/properties/${property.id}`
+    ? `${SITE_URL}/app/properties/${property.id}`
     : null;
 
   const jsonLd = property
@@ -94,7 +95,7 @@ export default async function PropertyPage({ params }: PageProps) {
           : undefined,
         // The stable proxy for the same 24-hour-presign reason as OpenGraph.
         image: property.photos?.length
-          ? [`https://ta-da.co/api/og/property/${property.id}`]
+          ? [`${SITE_URL}/api/og/property/${property.id}`]
           : undefined,
         ...(property.price != null
           ? {

@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 import { isIndexableSite } from "@/app/lib/siteEnv";
+import { SITE_URL } from "@/app/lib/siteUrl";
 
 // Mirrors the robots metadata rule in layout.tsx: only the production
-// deployment (ta-da.co) is crawlable; staging and previews are fully blocked.
+// deployment (www.ta-da.co) is crawlable; staging and previews are fully
+// blocked.
 export default function robots(): MetadataRoute.Robots {
   if (!isIndexableSite) {
     return {
@@ -29,6 +31,6 @@ export default function robots(): MetadataRoute.Robots {
         "/app/auth/",
       ],
     },
-    sitemap: "https://ta-da.co/sitemap.xml",
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
