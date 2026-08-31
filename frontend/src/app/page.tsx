@@ -1,78 +1,54 @@
-"use client";
+import type { Metadata } from "next";
+import { SITE_URL } from "@/app/lib/siteUrl";
+import HomePageClient from "./HomePageClient";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
-import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
-import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
-import AuthModal from "./components/AuthModal";
-import DualLandingWrapper from "./components/DualLandingWrapper";
+/**
+ * Server wrapper around the (client) landing page — same pattern as
+ * app/properties/[id]. The interactive page moved to HomePageClient untouched;
+ * this layer only adds what a client component cannot export: the
+ * self-referencing canonical and the site-wide Organization/WebSite JSON-LD.
+ */
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+// The site-level identity graph. It belongs on the homepage only — the
+// per-page Apartment/ApartmentComplex blocks on the detail routes describe
+// individual listings and are unrelated to this.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "TA-DA",
+      legalName: "TA-DA.ME LTD",
+      url: SITE_URL,
+      logo: `${SITE_URL}/landing-logo.svg`,
+      sameAs: ["https://www.instagram.com/tada.london"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "TaDa",
+      url: SITE_URL,
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      // No potentialAction/SearchAction: the catalogue at /app/units has no
+      // public query parameter to point one at, and a wrong target is worse
+      // than none.
+    },
+  ],
+};
 
 export default function HomePage() {
-  const user = useSelector(selectUser);
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const router = useRouter();
-
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-
-  // Auto-redirect authenticated users to their dashboard
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      router.replace(`/app/units/`);
-    }
-  }, [isAuthenticated, user, router]);
-
-  const handleSignIn = () => {
-    setAuthModalOpen(true);
-  };
-
-
-  // Show loading state while redirecting authenticated users
-  if (isAuthenticated && user) {
-    return (
-      <div className="min-h-screen bg-white">
-        {/* Header Skeleton */}
-        <div className="border-b border-gray-200 bg-white">
-          <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex justify-between items-center">
-              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-              <div className="flex-1 max-w-md mx-8 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
-              <div className="flex gap-4">
-                <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Skeleton */}
-        <div className="max-w-[92%] mx-auto px-4 py-12">
-          <div className="mb-8">
-            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-            <div className="h-4 w-96 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <PropertyCardSkeleton key={`skeleton-${index}`} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // The authenticated branch that used to follow was unreachable — signed-in
-  // users are redirected above and get the skeleton below — and it carried a
-  // fabricated match-score generator. The landing is the page.
   return (
-    <div className="min-h-screen bg-white">
-      <DualLandingWrapper onSignIn={handleSignIn} />
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-    </div>
+      <HomePageClient />
+    </>
   );
 }
