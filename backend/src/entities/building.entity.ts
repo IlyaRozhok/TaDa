@@ -295,8 +295,11 @@ export class Building {
   updated_at: Date;
 
   // Relations
+  // RESTRICT, not CASCADE: buildings own units which own booking history —
+  // deleting an operator account must not erase any of it. See the matching
+  // note on Property.operator.
   @ManyToOne(() => User, (user) => user.buildings, {
-    onDelete: "CASCADE",
+    onDelete: "RESTRICT",
   })
   @JoinColumn({ name: "operator_id" })
   operator: User;

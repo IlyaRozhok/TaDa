@@ -31,6 +31,14 @@ decisions) is recorded HERE, briefly, with a date.
   (`best_match | low_price | high_price | low_deposit | high_deposit |
   date_added`), which fixed non-best-match sorts ordering only the visible 12
   rows. Cards show the real match % whatever the sort.
+- **Review round 4 (2026-08-30, post-release prod-readiness + UX pass)** —
+  four parallel deep reviews (backend prod-readiness, tenant journey,
+  operator/admin journey, frontend prod quality). Full findings with
+  file:line evidence: `docs/audit/06-prod-readiness-review-2026-08-30.md`.
+  Two systemic themes: the product is silent when it fails, and admin
+  tooling could destroy data in one click. Result: hotfix packages G1
+  (backend, current PR) and G2 (frontend), plus package H (admin
+  visibility), inserted before D in the roadmap below.
 - CI gates every deploy: typecheck, lint (0 errors; warnings are backlog),
   unit tests, build, generated-API-types freshness, e2e smoke (5 specs
   against a real stack). Fresh checkouts bootstrap with `scripts/setup.sh`
@@ -79,12 +87,55 @@ decisions) is recorded HERE, briefly, with a date.
     /booking-requests/:id/viewing`, tenant `POST .../viewing/confirm`.
     Frontend follow-ups: show/confirm the viewing slot in the tenant UI,
     set it from the admin requests table (API is ready).
-  - **C2 (next)**: KYC/referencing badges become admin-set only;
-    `epc_rating` field (legally required on listings); Tenant Fees Act
-    deposit-cap warning.
+  - ~~honest trust signals~~ — **done (C2, current PR — closes
+    package C)**: KYC/referencing badges are admin-set only — the tenant CV
+    update DTO no longer accepts them (a tenant could previously type
+    `"passed"` into their own trust badges); admins set them via
+    `PATCH /tenant-cv/:userId/verification`. `epc_rating` (A–G) added to
+    properties (legally required on listing advertisements; MEES bans
+    letting below E). Public property responses carry
+    `deposit_exceeds_cap` — Tenant Fees Act 2019 five/six-week cap computed
+    from price and deposit. Frontend follow-ups (API ready): EPC input +
+    deposit-cap warning in the admin property form, EPC badge on the
+    listing detail page, verification controls in the admin users/CV view.
+- ~~**G1 — prod-critical backend hotfixes**~~ — **done (current PR)**, from
+  review round 4 (audit 06): operator-owned FKs `CASCADE → RESTRICT` +
+  guarded deletion (409 instead of catalogue wipe; live tenancy blocks
+  deletion; abandoned deals revert the property lifecycle in-transaction;
+  property deletion refuses when contract+/rented bookings exist — archive
+  instead); Google sign-in links admin-created accounts by verified email
+  (they could never log in before, and the email was bricked); `email`
+  removed from the self-service profile DTO (squatting attack); SES/S3
+  client timeouts (a hung connection silently stopped all email delivery);
+  matching scorers compare multi-select preferences any-of (a thorough
+  tenant scored 0 on occupation/family/children); viewing email asks for a
+  reply instead of pointing at a screen that does not exist; booking list
+  query params validated.
+- **G2 (next) — frontend hotfixes** (audit 06 items): mobile Sign Out that
+  actually logs out; English OAuth error screen without debug UI; root +
+  `/app` error boundaries; feed error state instead of "No results found";
+  preferences Finish surfaces failures + per-field autosave queue; RTK
+  error-shape reads (booking submit, admin status handler,
+  `apiErrorMessage` array join); re-apply after a cancelled booking;
+  preferences mutations invalidate match caches; i18n first paint = en
+  (hydration mismatch); non-401 `/auth/me` failure retries instead of
+  booting to landing; shortlist heart hidden for operators + error toast;
+  availability date display ("Available now" / "Contact for availability").
+- **H — the admin panel can see (and the tenant can act)**: property status
+  badge + filter + form control (incl. `epc_rating`, deposit-cap warning,
+  verification controls — C2 API is ready); hand-set status validated
+  against active bookings; tenant "my requests" view with status
+  explanations + viewing slot confirm (then restore the "confirm in your
+  account" email copy); booking modal gating matches the backend contract
+  (email OR phone); 0%-match badge → "Set preferences"; viewing columns +
+  status filter in the admin requests table; call-request handled state +
+  `tel:` link; CV unmasking by relationship (booking at `contacting`+), not
+  by login; zero-values (floor 0/studio) and `available_from` clearing;
+  admin modals hoisted out of render (rules-of-hooks fix).
 - **D — operator dashboard**: own listings, booking requests on own
   properties (scope the existing admin view by `operator_id`), rights over
-  early statuses, email on a new request.
+  early statuses, email on a new request (add the CV share link + property
+  URL to it), operator access to their own buildings.
 - **E — frontend unwinding**: server-fetched data passed into detail clients
   and public pages ungated from session init; server-side
   `onboarding_completed` in `/auth/me` (kills the three competing sources of
@@ -224,13 +275,11 @@ decisions) is recorded HERE, briefly, with a date.
   heading (changed 2026-08-28); the landing-scoped
   `landing.common.web.bookacall.header.btn` is no longer referenced by the code
   and can be retired in Localazy.
-- **`frontend/src/types/generated/api.d.ts` is stale after the demo-request
-  removal** (added 2026-08-27). It still carries `/api/demo-requests` and
-  `CreateDemoRequestDto`, and does not yet carry `/api/call-requests`. Nothing
-  imports either — `frontend/src/app/lib/callRequest.ts` hand-writes its
-  request type with a comment saying so. Re-run `npm run gen:api` (it needs the
-  backend's `openapi:dump`, which hangs in some sandboxes) and swap the local
-  type for `components["schemas"]["CreateCallRequestDto"]`.
+- **`callRequest.ts` hand-writes its request type** (added 2026-08-27,
+  narrowed 2026-08-28: the generated types were regenerated in the C2 PR and
+  now carry `/api/call-requests`). Swap the local type in
+  `frontend/src/app/lib/callRequest.ts` for
+  `components["schemas"]["CreateCallRequestDto"]`.
 - **Call requests have no admin pagination** (added 2026-08-27).
   `GET /call-requests` returns the whole table, mirroring `GET /booking-requests`,
   which does the same. Both want the paginated shape the properties listing

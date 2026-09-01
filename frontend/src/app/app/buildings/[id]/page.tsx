@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { fetchPublicBuilding } from "@/app/lib/serverApi";
+import { SITE_URL } from "@/app/lib/siteUrl";
 import BuildingDetailClient from "./BuildingDetailClient";
 
 /**
@@ -44,7 +45,7 @@ export default async function BuildingPage({ params }: PageProps) {
   const building = await fetchPublicBuilding(id);
 
   const canonicalUrl = building
-    ? `https://ta-da.co/app/buildings/${building.id}`
+    ? `${SITE_URL}/app/buildings/${building.id}`
     : null;
 
   const jsonLd = building?.name

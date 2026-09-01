@@ -15,6 +15,7 @@ import {
 import { Type, Transform } from "class-transformer";
 import {
   BUILDING_TYPE_VALUES,
+  EPC_RATING_VALUES,
   FURNISHING_VALUES,
   LET_DURATION_LIST_PATTERN,
   LET_DURATION_VALUES,
@@ -463,6 +464,20 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsString()
   postcode?: string;
+
+  @ApiProperty({
+    description:
+      "EPC band (A-G). Legally required on listing advertisements in England and Wales.",
+    enum: EPC_RATING_VALUES,
+    example: "C",
+    required: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.trim().toUpperCase() : value,
+  )
+  @IsIn(EPC_RATING_VALUES)
+  epc_rating?: string;
 
   @ApiProperty({
     description:

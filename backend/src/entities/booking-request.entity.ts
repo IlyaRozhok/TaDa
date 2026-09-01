@@ -27,6 +27,20 @@ export enum BookingRequestStatus {
   CancelBooking = "cancel_booking",
 }
 
+/**
+ * Booking stages from `contract` onward: money or signatures are in play, so
+ * the market treats the property as taken (`under_offer`). Shared between the
+ * booking pipeline (which drives the property lifecycle on transitions) and
+ * user deletion (which must revert the lifecycle when these rows cascade
+ * away with a deleted tenant).
+ */
+export const BOOKING_UNDER_OFFER_STAGES: BookingRequestStatus[] = [
+  BookingRequestStatus.Contract,
+  BookingRequestStatus.Deposit,
+  BookingRequestStatus.FullPayment,
+  BookingRequestStatus.MoveIn,
+];
+
 @Entity("booking_requests")
 @Unique(["tenant_id", "property_id"])
 export class BookingRequest {

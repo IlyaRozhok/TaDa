@@ -69,7 +69,7 @@ export class UsersService {
     // All profile fields now live directly in the users table
     const updates: Partial<User> = {};
 
-    if (updateUserDto.email)                    updates.email      = updateUserDto.email.toLowerCase();
+    // `email` is not writable here — see the note in UpdateUserDto.
     if (updateUserDto.avatar_url !== undefined)  updates.avatar_url = updateUserDto.avatar_url;
     if (firstName !== undefined)                updates.first_name = firstName;
     if (lastName  !== undefined)                updates.last_name  = lastName;
@@ -161,10 +161,10 @@ export class UsersService {
       }
     }
 
-    // Deleting the user row is enough: preferences, tenant/operator profiles,
-    // the tenant CV, shortlist entries, buildings, properties and booking
-    // requests all hang off `users.id` with ON DELETE CASCADE.
-    await this.userRepository.remove(user);
+    // One deletion path for admin and self-service alike: refuses accounts
+    // that own listings or hold a live tenancy, and reverts the property
+    // lifecycle for deals the cascading booking rows abandon.
+    await this.userAdminService.removeUserSafely(user);
   }
 
   /**

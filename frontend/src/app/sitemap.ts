@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/app/lib/siteUrl";
 
-const SITE_URL = "https://ta-da.co";
 const PAGE_SIZE = 100;
 const MAX_PAGES = 10;
 

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
 
 export interface OutboundEmail {
   to: string;
@@ -59,12 +60,21 @@ export class EmailService {
       return;
     }
 
+    // Explicit timeouts: the SDK default request timeout is infinite, and the
+    // retry worker awaits deliveries sequentially under a `running` flag — one
+    // hung SES connection silently stopped ALL notification delivery until a
+    // container restart. A timeout turns the hang into a recorded, retryable
+    // failure instead.
     this.client = new SESv2Client({
       region,
       credentials: {
         accessKeyId: accessKeyId as string,
         secretAccessKey: secretAccessKey as string,
       },
+      requestHandler: new NodeHttpHandler({
+        connectionTimeout: 3000,
+        requestTimeout: 10000,
+      }),
     });
   }
 

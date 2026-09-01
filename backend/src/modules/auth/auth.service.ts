@@ -131,6 +131,26 @@ export class AuthService {
    */
   async googleAuth(googleUser: any): Promise<{ user: User; isNew: boolean }> {
     let user = await this.userRepository.findOne({ where: { google_id: googleUser.google_id } });
+
+    // Accounts that exist but have never signed in with Google (admin-created
+    // rows have no google_id) are linked by their Google-verified email instead
+    // of tripping the unique-email insert below. Without this branch an
+    // admin-created operator could NEVER sign in: auth is Google-only, the
+    // google_id lookup missed, and the create path 23505'd on their own email
+    // — permanently bricking the address for self-registration too.
+    if (!user && googleUser.email_verified) {
+      user = await this.userRepository.findOne({
+        where: { email: googleUser.email.toLowerCase() },
+      });
+      if (user) {
+        if (user.status !== UserStatus.Active) {
+          throw new UnauthorizedException("Account is suspended or inactive");
+        }
+        user.google_id = googleUser.google_id;
+        user.provider = "google";
+      }
+    }
+
     const isNew = !user;
 
     if (!user) {

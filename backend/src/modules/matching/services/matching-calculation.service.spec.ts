@@ -494,6 +494,40 @@ describe("MatchingCalculationService", () => {
       );
       expect(c).toMatchObject({ match: false, score: 0 });
     });
+
+    // G1: the wizard stores multi-selects as a comma-joined string. Treating
+    // it as one value scored 0 with "Unknown occupation type" for exactly the
+    // tenants who answered most thoroughly.
+    describe("multi-select preference (comma-joined string)", () => {
+      it("matches direct targeting when ANY selected occupation is targeted", () => {
+        const c = one(
+          "occupation",
+          { occupation: ["young-professional"] },
+          { occupation: "student,young-professional" },
+        );
+        expect(c).toMatchObject({ match: true, score: 6 });
+      });
+
+      it("takes the best heuristic tier across the selection", () => {
+        // student -> secondary on sharers (70%), young-professional -> primary
+        // on sharers (100%): the tenant gets the primary.
+        const c = one(
+          "occupation",
+          { tenant_types: ["sharers"] },
+          { occupation: "student,young-professional" },
+        );
+        expect(c).toMatchObject({ match: true, score: 6 });
+      });
+
+      it("skips unknown values instead of sinking the category", () => {
+        const c = one(
+          "occupation",
+          { tenant_types: ["Student"] },
+          { occupation: "astronaut,student" },
+        );
+        expect(c).toMatchObject({ match: true, score: 6 });
+      });
+    });
   });
 
   describe("familyStatus (weight 5)", () => {
@@ -558,6 +592,26 @@ describe("MatchingCalculationService", () => {
           { family_status: "single-parent" },
         ),
       ).toMatchObject({ match: false, score: 0 });
+    });
+
+    // G1: multi-select stored as a comma-joined string — any-of semantics.
+    it("matches when ANY selected status is targeted or heuristically fits", () => {
+      expect(
+        one(
+          "familyStatus",
+          { family_status: ["couple"] },
+          { family_status: "just-me,couple" },
+        ),
+      ).toMatchObject({ match: true, score: 5 });
+      // couple -> secondary(60%) on family, couple-with-children -> primary:
+      // the best tier across the selection wins.
+      expect(
+        one(
+          "familyStatus",
+          { tenant_types: ["family"] },
+          { family_status: "couple,couple-with-children" },
+        ),
+      ).toMatchObject({ match: true, score: 5 });
     });
   });
 
@@ -669,6 +723,28 @@ describe("MatchingCalculationService", () => {
         { children_count: "yes-1-child" },
       );
       expect(c).toMatchObject({ match: true, score: 3, maxScore: 4 });
+    });
+
+    // G1: multi-select — the binding constraint is the LARGEST selected count.
+    it("scores a comma-joined selection by its largest children count", () => {
+      expect(
+        one(
+          "children",
+          {
+            tenant_types: ["family"],
+            children: ["yes-2-children"] as Property["children"],
+          },
+          { children_count: "yes-1-child,yes-2-children" },
+        ),
+      ).toMatchObject({ match: true, score: 4 });
+      // "no" mixed into the selection does not read as childless.
+      expect(
+        one(
+          "children",
+          { children: ["no"] as Property["children"] },
+          { children_count: "no,yes-1-child" },
+        ),
+      ).toMatchObject({ match: false, score: 0 });
     });
   });
 

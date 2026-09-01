@@ -2,6 +2,7 @@ import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
 import { unknownPropertyData } from "./unknown-data";
+import { splitPreferenceList } from "./preference-list";
 
 /**
  * Family status compatibility matching.
@@ -17,7 +18,10 @@ export function matchFamilyStatus(
   preferences: Preferences,
   maxScore: number,
 ): CategoryMatchResult {
-  const familyStatus = preferences.family_status;
+  // Multi-select stored as a comma-joined string — compare any-of, never the
+  // joined string (see occupation.scorer for the full story).
+  const familyStatuses = splitPreferenceList(preferences.family_status);
+  const familyStatus = familyStatuses[0];
   const propertyTenantTypes = property.tenant_types || [];
 
   // No preference set - exclude from calculation
@@ -38,14 +42,17 @@ export function matchFamilyStatus(
   // Direct targeting beats every heuristic.
   const propertyFamilyStatuses = (property.family_status || []).map(String);
   if (propertyFamilyStatuses.length > 0) {
-    if (propertyFamilyStatuses.includes(familyStatus)) {
+    const targeted = familyStatuses.find((entry) =>
+      propertyFamilyStatuses.includes(entry),
+    );
+    if (targeted) {
       return {
         category: "familyStatus",
         match: true,
         score: maxScore,
         maxScore,
         reason: "Property targets your family situation",
-        details: `${familyStatus.replace("-", " ")} is among the property's target family statuses`,
+        details: `${targeted.replace("-", " ")} is among the property's target family statuses`,
         hasPreference: true,
       };
     }
@@ -94,53 +101,58 @@ export function matchFamilyStatus(
     },
   };
 
-  const familyConfig = familyMap[familyStatus];
-  if (!familyConfig) {
+  // Any-of over the selected statuses; unknown values are skipped, an
+  // all-unknown selection reports as before.
+  const knownConfigs = familyStatuses
+    .map((entry) => ({ entry, config: familyMap[entry] }))
+    .filter((item) => item.config);
+
+  if (knownConfigs.length === 0) {
     return {
       category: "familyStatus",
       match: false,
       score: 0,
       maxScore,
       reason: "Unknown family status",
-      details: `Family status: ${familyStatus}`,
+      details: `Family status: ${familyStatuses.join(", ")}`,
       hasPreference: true,
     };
   }
 
   // Check primary matches (ideal compatibility)
-  const primaryMatch = familyConfig.primary.some((type) =>
-    normalizedTenantTypes.includes(type.toLowerCase()),
+  const primaryHit = knownConfigs.find(({ config }) =>
+    config.primary.some((type) => normalizedTenantTypes.includes(type.toLowerCase())),
   );
 
-  if (primaryMatch) {
+  if (primaryHit) {
     return {
       category: "familyStatus",
       match: true,
       score: maxScore,
       maxScore,
       reason: "Perfect family status match",
-      details: `Property is ideal for ${familyStatus.replace("-", " ")}`,
+      details: `Property is ideal for ${primaryHit.entry.replace("-", " ")}`,
       hasPreference: true,
     };
   }
 
   // Check secondary matches (acceptable compatibility)
-  if (familyConfig.secondary && familyConfig.secondary.length > 0) {
-    const secondaryMatch = familyConfig.secondary.some((type) =>
+  const secondaryHit = knownConfigs.find(({ config }) =>
+    (config.secondary ?? []).some((type) =>
       normalizedTenantTypes.includes(type.toLowerCase()),
-    );
+    ),
+  );
 
-    if (secondaryMatch) {
-      return {
-        category: "familyStatus",
-        match: true,
-        score: Math.round(maxScore * 0.6),
-        maxScore,
-        reason: "Acceptable family compatibility",
-        details: `Property can accommodate ${familyStatus.replace("-", " ")}`,
-        hasPreference: true,
-      };
-    }
+  if (secondaryHit) {
+    return {
+      category: "familyStatus",
+      match: true,
+      score: Math.round(maxScore * 0.6),
+      maxScore,
+      reason: "Acceptable family compatibility",
+      details: `Property can accommodate ${secondaryHit.entry.replace("-", " ")}`,
+      hasPreference: true,
+    };
   }
 
   return {
@@ -149,7 +161,7 @@ export function matchFamilyStatus(
     score: 0,
     maxScore,
     reason: "Family status not compatible",
-    details: `${familyStatus.replace("-", " ")} doesn't match property types: ${propertyTenantTypes.join(", ")}`,
+    details: `${familyStatuses.map((s) => s.replace("-", " ")).join(", ")} doesn't match property types: ${propertyTenantTypes.join(", ")}`,
     hasPreference: true,
   };
 }

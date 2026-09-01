@@ -7,6 +7,7 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -78,7 +79,11 @@ export class S3Service {
       }
     }
 
-    // Production mode: use real S3
+    // Production mode: use real S3.
+    // Explicit timeouts — the SDK default request timeout is infinite, so a
+    // hung connection pinned the request (and its up-to-50MB buffer) forever.
+    // The request ceiling is sized for the largest allowed upload, not for
+    // the typical GET.
     this.s3Client = new S3Client({
       region: region,
       credentials: {
@@ -86,6 +91,10 @@ export class S3Service {
         secretAccessKey: secretAccessKey!,
       },
       forcePathStyle: false,
+      requestHandler: new NodeHttpHandler({
+        connectionTimeout: 3000,
+        requestTimeout: 60000,
+      }),
     });
 
     this.bucketName = bucketName;

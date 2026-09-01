@@ -9,9 +9,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { EntityManager, In, Repository } from "typeorm";
 import {
+  BOOKING_UNDER_OFFER_STAGES,
   BookingRequest,
   BookingRequestStatus,
-} from "../../entities/booking-request.entity";
+} from "@/entities/booking-request.entity";
 import { Property, PropertyStatus } from "../../entities/property.entity";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import {
@@ -378,16 +379,8 @@ export class BookingRequestService {
     return request;
   }
 
-  /**
-   * Booking stages from `contract` onward: money or signatures are in play,
-   * so the market treats the property as taken (`under_offer`).
-   */
-  private static readonly UNDER_OFFER_STAGES: BookingRequestStatus[] = [
-    BookingRequestStatus.Contract,
-    BookingRequestStatus.Deposit,
-    BookingRequestStatus.FullPayment,
-    BookingRequestStatus.MoveIn,
-  ];
+  /** See BOOKING_UNDER_OFFER_STAGES — shared with the user-deletion path. */
+  private static readonly UNDER_OFFER_STAGES = BOOKING_UNDER_OFFER_STAGES;
 
   /**
    * The booking pipeline drives the property's listing lifecycle:

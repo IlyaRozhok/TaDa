@@ -141,6 +141,10 @@ export const assignPropertyOptionals = (
   if (dto.status !== undefined) {
     target.status = dto.status;
   }
+
+  if (dto.epc_rating !== undefined) {
+    target.epc_rating = dto.epc_rating;
+  }
 };
 
 export const normalizeFindParams = (dto?: FindPropertiesDto) => {
