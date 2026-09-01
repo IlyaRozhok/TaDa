@@ -426,8 +426,17 @@ export default function PropertyPublicPage() {
     { skip: !canHaveBookingRequest },
   );
 
+  // A cancelled booking must NOT hold the button disabled: the cancel email
+  // promises "you can apply again" and the backend deliberately reopens a
+  // cancelled request on resubmit — counting every row regardless of status
+  // made that one supported path unreachable from the UI.
   const hasBookingRequest =
-    canHaveBookingRequest && (myBookingRequests?.length ?? 0) > 0;
+    canHaveBookingRequest &&
+    Boolean(
+      myBookingRequests?.some(
+        (request) => request.status !== "cancel_booking",
+      ),
+    );
 
   // Load match score for authenticated users (cached via RTK Query)
   useEffect(() => {
@@ -780,8 +789,13 @@ export default function PropertyPublicPage() {
       setIsBookingModalOpen(false);
       notify.success(t(listingNotificationKeys.viewingRequestSentMessage));
     } catch (err: any) {
+      // RTK Query rejections carry `{ status, data }` — the axios-shape read
+      // here used to hide the backend's actionable messages ("not available
+      // for booking", "already exists — reload and resubmit") behind the
+      // generic fallback. ValidationPipe messages arrive as string[].
+      const rawMessage = err?.data?.message ?? err?.response?.data?.message;
       const message =
-        err?.response?.data?.message ||
+        (Array.isArray(rawMessage) ? rawMessage.join("; ") : rawMessage) ||
         err?.message ||
         "Failed to send booking request";
       setBookingSubmitError(message);
@@ -1301,16 +1315,24 @@ export default function PropertyPublicPage() {
                   {t(listingPropertyKeys.availability.availableFrom)}
                 </p>
                 <p className="text-base text-black">
-                  {property.available_from
-                    ? new Date(property.available_from).toLocaleDateString(
-                        "en-GB",
-                        {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        },
-                      )
-                    : ""}
+                  {(() => {
+                    // Same policy as the cards: a past date IS "now", a
+                    // missing date is unknown — not blank.
+                    if (!property.available_from) {
+                      return "Contact for availability";
+                    }
+                    const availableFrom = new Date(property.available_from);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (availableFrom <= today) {
+                      return "Now";
+                    }
+                    return availableFrom.toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    });
+                  })()}
                 </p>
               </div>
 

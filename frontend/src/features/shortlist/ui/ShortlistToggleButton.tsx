@@ -2,21 +2,27 @@
 
 import React from "react";
 import { useSelector } from "react-redux";
-import { useShortlist } from "@/features/shortlist/lib/useShortlist";
+import {
+  canUseShortlist,
+  useShortlist,
+} from "@/features/shortlist/lib/useShortlist";
 import { selectUser } from "@/store/slices/authSlice";
 import { Property } from "@/app/types";
 
 interface ShortlistToggleButtonProps {
   property: Property;
   showShortlist?: boolean;
-  /** When true, show heart for any authenticated user (e.g. admin on units page). Default: only tenant. */
+  /**
+   * @deprecated No longer widens the audience. The heart renders only for
+   * roles the backend accepts (tenant/admin) — `showForAllRoles` used to
+   * show operators a heart whose every tap was silently rejected.
+   */
   showForAllRoles?: boolean;
 }
 
 export default function ShortlistToggleButton({
   property,
   showShortlist = true,
-  showForAllRoles = false,
 }: ShortlistToggleButtonProps) {
   const user = useSelector(selectUser);
 
@@ -28,11 +34,7 @@ export default function ShortlistToggleButton({
 
   return (
     <>
-      {showShortlist &&
-        user &&
-        (showForAllRoles ||
-          user.role === "tenant" ||
-          user.role === "admin") && (
+      {showShortlist && user && canUseShortlist(user.role) && (
           <button
             type="button"
             data-testid="shortlist-toggle"
