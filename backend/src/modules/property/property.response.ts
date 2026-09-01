@@ -18,6 +18,15 @@ export type PublicPropertyResponse = {
   postcode: string | null;
   /** London borough from the postcode (postcodes.io admin_district). */
   borough: string | null;
+  /** EPC band (A-G) — legally required on listing advertisements. */
+  epc_rating: string | null;
+  /**
+   * Tenant Fees Act 2019: the deposit may not exceed 5 weeks' rent (6 when
+   * the annual rent is £50,000 or more). True when the listed deposit breaks
+   * that cap — the client should surface it to the operator; null when price
+   * or deposit is missing.
+   */
+  deposit_exceeds_cap: boolean | null;
   price: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
@@ -77,10 +86,24 @@ export const toPublicProperty = (
     }
   }
 
+  // Tenant Fees Act cap: 5 weeks' rent below £50k annual rent, 6 weeks at or
+  // above. Rounded to pence so a 1p float artifact cannot flag a compliant
+  // deposit.
+  let deposit_exceeds_cap: boolean | null = null;
+  if (price !== null && price > 0 && deposit !== null) {
+    const annualRent = price * 12;
+    const weeklyRent = annualRent / 52;
+    const capWeeks = annualRent >= 50000 ? 6 : 5;
+    const cap = Math.round(weeklyRent * capWeeks * 100) / 100;
+    deposit_exceeds_cap = deposit > cap;
+  }
+
   return {
     id: property.id,
     status: property.status ?? PropertyStatus.Listed,
     operator_id: property.operator_id ?? null,
+    epc_rating: property.epc_rating ?? null,
+    deposit_exceeds_cap,
     title: property.title || null,
     descriptions: property.descriptions ?? null,
     address: property.address || null,

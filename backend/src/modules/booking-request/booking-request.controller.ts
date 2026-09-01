@@ -20,12 +20,13 @@ import { BookingRequestService } from "./booking-request.service";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import { UpdateBookingStatusDto } from "./dto/update-booking-status.dto";
 import { ProposeViewingDto } from "./dto/propose-viewing.dto";
+import {
+  FindBookingRequestsDto,
+  FindMyBookingRequestsDto,
+} from "./dto/find-booking-requests.dto";
 import { Roles } from "@/common/decorators/roles.decorator";
 import { UserRole } from "@/entities/user.entity";
-import {
-  BookingRequest,
-  BookingRequestStatus,
-} from "@/entities/booking-request.entity";
+import { BookingRequest } from "@/entities/booking-request.entity";
 
 @ApiTags("booking-requests")
 @Controller("booking-requests")
@@ -52,10 +53,8 @@ export class BookingRequestController {
   @Roles(UserRole.Admin)
   @ApiOperation({ summary: "List booking requests (admin)" })
   @ApiResponse({ status: 200, description: "Booking requests retrieved" })
-  async findAll(
-    @Query("status") status?: BookingRequestStatus
-  ): Promise<BookingRequest[]> {
-    return this.bookingRequestService.findAll(status);
+  async findAll(@Query() query: FindBookingRequestsDto): Promise<BookingRequest[]> {
+    return this.bookingRequestService.findAll(query.status);
   }
 
   @Get("me")
@@ -64,9 +63,9 @@ export class BookingRequestController {
   @ApiResponse({ status: 200, description: "Booking requests retrieved" })
   async findMine(
     @Request() req,
-    @Query("property_id") propertyId?: string
+    @Query() query: FindMyBookingRequestsDto
   ): Promise<BookingRequest[]> {
-    return this.bookingRequestService.findForTenant(req.user.id, propertyId);
+    return this.bookingRequestService.findForTenant(req.user.id, query.property_id);
   }
 
   @Patch(":id/status")

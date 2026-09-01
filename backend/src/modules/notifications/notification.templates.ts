@@ -214,8 +214,12 @@ export function buildMessage(
         line("Address", p.property.address),
         line("Proposed time", p.proposedAt),
         "",
-        "Please confirm the time in your TaDa account, or reply if it does",
-        "not work for you and we will find another slot.",
+        // Reply-based on purpose: the web app has no viewing-confirmation
+        // screen yet, and an email must never point at a feature that does
+        // not exist. Update this copy when the tenant UI ships the confirm
+        // action (STATUS.md follow-up).
+        "Reply to this email to confirm the time, or suggest another slot",
+        "if it does not work for you.",
         "",
         "— The TaDa team",
       ]);

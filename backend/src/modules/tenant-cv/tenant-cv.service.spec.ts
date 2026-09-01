@@ -89,3 +89,63 @@ describe("TenantCvService.markCompleted", () => {
     expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * C2 — trust badges are admin-set only. The tenant's own update path must not
+ * be able to touch them, whatever the payload carries.
+ */
+describe("TenantCvService — verification badges", () => {
+  let tenantCvRepository: any;
+  let userQueryService: any;
+  let service: TenantCvService;
+
+  beforeEach(() => {
+    tenantCvRepository = {
+      findOne: jest.fn().mockResolvedValue({
+        id: "cv-1",
+        user_id: "user-1",
+        kyc_status: "not_started",
+        referencing_status: "not_started",
+      }),
+      create: jest.fn((values: any) => ({ ...values })),
+      save: jest.fn(async (cv: any) => cv),
+    };
+    userQueryService = {
+      findOneWithProfiles: jest.fn().mockResolvedValue({
+        id: "user-1",
+        email: "tenant@example.com",
+        full_name: "Tenant One",
+        created_at: new Date("2026-01-01"),
+      }),
+    };
+
+    service = new TenantCvService(
+      tenantCvRepository,
+      userQueryService,
+      { refreshAvatarUrl: jest.fn() } as any,
+      { emit: jest.fn() } as unknown as EventEmitter2,
+    );
+  });
+
+  it("ignores kyc/referencing smuggled into the tenant's own update", async () => {
+    await service.updateForUser("user-1", {
+      about_me: "hello",
+      kyc_status: "passed",
+      referencing_status: "passed",
+    } as any);
+
+    const saved = tenantCvRepository.save.mock.calls[0][0];
+    expect(saved.about_me).toBe("hello");
+    // The self-certification hole: these MUST keep their stored values.
+    expect(saved.kyc_status).toBe("not_started");
+    expect(saved.referencing_status).toBe("not_started");
+  });
+
+  it("setVerification writes the badges and keeps unspecified ones", async () => {
+    await service.setVerification("user-1", { kyc_status: "passed" });
+
+    const saved = tenantCvRepository.save.mock.calls[0][0];
+    expect(saved.kyc_status).toBe("passed");
+    expect(saved.referencing_status).toBe("not_started");
+  });
+});

@@ -2,6 +2,7 @@ import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
 import { unknownPropertyData } from "./unknown-data";
+import { splitPreferenceList } from "./preference-list";
 
 /**
  * Occupation compatibility matching.
@@ -20,7 +21,13 @@ export function matchOccupation(
   preferences: Preferences,
   maxScore: number,
 ): CategoryMatchResult {
-  const occupation = preferences.occupation;
+  // The wizard collects occupation as a MULTI-select and stores it as a
+  // comma-joined string ("student,young-professional"). Every comparison
+  // below is any-of over the selected values — treating the joined string as
+  // one value scored 0 with "Unknown occupation type" for exactly the
+  // tenants who answered most thoroughly.
+  const occupations = splitPreferenceList(preferences.occupation);
+  const occupation = occupations[0];
   const propertyTenantTypes = property.tenant_types || [];
 
   // No preference set - exclude from calculation
@@ -41,14 +48,17 @@ export function matchOccupation(
   // Direct targeting beats every heuristic.
   const propertyOccupations = (property.occupation || []).map(String);
   if (propertyOccupations.length > 0) {
-    if (propertyOccupations.includes(occupation)) {
+    const targeted = occupations.find((entry) =>
+      propertyOccupations.includes(entry),
+    );
+    if (targeted) {
       return {
         category: "occupation",
         match: true,
         score: maxScore,
         maxScore,
         reason: "Property targets your occupation",
-        details: `${occupation} is among the property's target occupations`,
+        details: `${targeted} is among the property's target occupations`,
         hasPreference: true,
       };
     }
@@ -107,53 +117,60 @@ export function matchOccupation(
     },
   };
 
-  const occupationConfig = occupationMap[occupation];
-  if (!occupationConfig) {
+  // Any-of over the selected occupations: the best tier any of them reaches
+  // is the tenant's score. A value the map does not know is skipped rather
+  // than sinking the whole category; only an all-unknown selection reports
+  // "Unknown occupation type".
+  const knownConfigs = occupations
+    .map((entry) => ({ entry, config: occupationMap[entry] }))
+    .filter((item) => item.config);
+
+  if (knownConfigs.length === 0) {
     return {
       category: "occupation",
       match: false,
       score: 0,
       maxScore,
       reason: "Unknown occupation type",
-      details: `Occupation: ${occupation}`,
+      details: `Occupation: ${occupations.join(", ")}`,
       hasPreference: true,
     };
   }
 
   // Check primary matches (perfect compatibility)
-  const primaryMatch = occupationConfig.primary.some((type) =>
-    normalizedTenantTypes.includes(type.toLowerCase()),
+  const primaryHit = knownConfigs.find(({ config }) =>
+    config.primary.some((type) => normalizedTenantTypes.includes(type.toLowerCase())),
   );
 
-  if (primaryMatch) {
+  if (primaryHit) {
     return {
       category: "occupation",
       match: true,
       score: maxScore,
       maxScore,
       reason: "Perfect occupation match",
-      details: `${occupation} is ideal for this property type`,
+      details: `${primaryHit.entry} is ideal for this property type`,
       hasPreference: true,
     };
   }
 
   // Check secondary matches (good compatibility)
-  if (occupationConfig.secondary) {
-    const secondaryMatch = occupationConfig.secondary.some((type) =>
+  const secondaryHit = knownConfigs.find(({ config }) =>
+    (config.secondary ?? []).some((type) =>
       normalizedTenantTypes.includes(type.toLowerCase()),
-    );
+    ),
+  );
 
-    if (secondaryMatch) {
-      return {
-        category: "occupation",
-        match: true,
-        score: Math.round(maxScore * 0.7),
-        maxScore,
-        reason: "Good occupation compatibility",
-        details: `${occupation} can work well with this property`,
-        hasPreference: true,
-      };
-    }
+  if (secondaryHit) {
+    return {
+      category: "occupation",
+      match: true,
+      score: Math.round(maxScore * 0.7),
+      maxScore,
+      reason: "Good occupation compatibility",
+      details: `${secondaryHit.entry} can work well with this property`,
+      hasPreference: true,
+    };
   }
 
   return {
@@ -162,7 +179,7 @@ export function matchOccupation(
     score: 0,
     maxScore,
     reason: "Occupation not compatible",
-    details: `${occupation} doesn't match property tenant types: ${propertyTenantTypes.join(", ")}`,
+    details: `${occupations.join(", ")} doesn't match property tenant types: ${propertyTenantTypes.join(", ")}`,
     hasPreference: true,
   };
 }

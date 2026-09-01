@@ -1,10 +1,16 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
+import {
+  BOOKING_UNDER_OFFER_STAGES,
+  BookingRequest,
+  BookingRequestStatus,
+} from "@/entities/booking-request.entity";
 import { UserRole } from "@/entities/user.entity";
 import { Property, PropertyStatus } from "../../entities/property.entity";
 import { CreatePropertyDto } from "./dto/create-property.dto";
@@ -486,6 +492,32 @@ export class PropertyService {
   async remove(id: string, userId: string, userRole: string): Promise<void> {
     const property = await this.findOne(id);
     this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
+
+    // A property whose bookings reached the money/signature stages — or that
+    // was actually let — carries deal history the booking FK would silently
+    // cascade away. Deleting it mid-deal is almost certainly a mistake;
+    // `status: archived` hides it from the market while keeping the record.
+    // Early enquiries (new..viewing, cancelled) are just enquiries and do
+    // not block deletion.
+    const dealHistory = await this.propertyRepository.manager.count(
+      BookingRequest,
+      {
+        where: {
+          property_id: id,
+          status: In([
+            ...BOOKING_UNDER_OFFER_STAGES,
+            BookingRequestStatus.Rented,
+          ]),
+        },
+      },
+    );
+    if (dealHistory > 0) {
+      throw new ConflictException(
+        "This property has bookings at the contract stage or later. " +
+          "Archive it instead of deleting — deletion would erase the deal history.",
+      );
+    }
+
     await this.propertyRepository.remove(property);
   }
 

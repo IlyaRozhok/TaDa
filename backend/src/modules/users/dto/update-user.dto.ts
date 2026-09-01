@@ -5,7 +5,6 @@ import {
   IsIn,
   IsArray,
   IsBoolean,
-  IsEmail,
   IsDateString,
 } from "class-validator";
 
@@ -42,13 +41,12 @@ export class UpdateUserDto {
   @IsString()
   address?: string;
 
-  @ApiPropertyOptional({
-    description: "User email address",
-    example: "user@example.com",
-  })
-  @IsOptional()
-  @IsEmail()
-  email?: string;
+  // `email` is deliberately NOT accepted here. Auth is Google-only, so the
+  // email IS the account's identity: letting a user type an arbitrary address
+  // into their own row both redirected their notification emails to an
+  // unverified inbox and let anyone squat a stranger's address — the unique
+  // constraint then blocked that person's first Google sign-in forever.
+  // Admin corrections go through AdminUpdateUserDto.
 
   @ApiPropertyOptional({
     description: "User phone number",

@@ -197,6 +197,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tenant-cv/{userId}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set KYC/referencing badges on a tenant CV (admin) */
+        patch: operations["TenantCvController_setVerification"];
+        trace?: never;
+    };
     "/api/tenant-cv/{share_uuid}": {
         parameters: {
             query?: never;
@@ -414,7 +431,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get matched properties with pagination and search (sorted by match score) */
+        /** Get the full listed inventory with pagination, search and server-side sorting (match score by default) */
         get: operations["MatchingController_getMatchedPropertiesWithPagination"];
         put?: never;
         post?: never;
@@ -1038,18 +1055,22 @@ export interface components {
             hobbies?: string[];
             /** @description Rent history entries to display on CV */
             rent_history?: components["schemas"]["RentHistoryEntryDto"][];
-            /**
-             * @description KYC status badge
-             * @example in_progress
-             */
-            kyc_status?: string;
-            /**
-             * @description Referencing status badge
-             * @example pending
-             */
-            referencing_status?: string;
             /** @description Optional existing share UUID to preserve (ignored on update) */
             share_uuid?: string;
+        };
+        SetVerificationDto: {
+            /**
+             * @description KYC (identity) verification state
+             * @example passed
+             * @enum {string}
+             */
+            kyc_status?: "not_started" | "in_progress" | "passed" | "failed";
+            /**
+             * @description Referencing verification state
+             * @example in_progress
+             * @enum {string}
+             */
+            referencing_status?: "not_started" | "in_progress" | "passed" | "failed";
         };
         User: {
             /** @description Unique user identifier */
@@ -1160,11 +1181,6 @@ export interface components {
              * @example 123 Main St, London
              */
             address?: string;
-            /**
-             * @description User email address
-             * @example user@example.com
-             */
-            email?: string;
             /**
              * @description User phone number
              * @example +44 7700 900123
@@ -2190,6 +2206,12 @@ export interface components {
              */
             postcode?: string;
             /**
+             * @description EPC band (A-G). Legally required on listing advertisements in England and Wales.
+             * @example C
+             * @enum {string}
+             */
+            epc_rating?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
+            /**
              * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
              * @example listed
              * @enum {string}
@@ -2424,6 +2446,12 @@ export interface components {
              */
             postcode?: string;
             /**
+             * @description EPC band (A-G). Legally required on listing advertisements in England and Wales.
+             * @example C
+             * @enum {string}
+             */
+            epc_rating?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
+            /**
              * @description Listing lifecycle status. The booking pipeline drives listed -> under_offer -> let automatically; set it by hand to draft/archive a listing or re-list after a tenancy ends.
              * @example listed
              * @enum {string}
@@ -2561,6 +2589,12 @@ export interface components {
              * @example Camden
              */
             borough?: Record<string, never>;
+            /**
+             * @description EPC band (A-G)
+             * @example C
+             * @enum {string}
+             */
+            epc_rating?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
             /**
              * @description Tenant types for this property (inherited from building or custom)
              * @example [
@@ -3025,23 +3059,18 @@ export interface components {
         };
         CreateCallRequestDto: {
             /**
-             * @example help_find_home
+             * @example looking_for_home
              * @enum {string}
              */
-            reason: "help_find_home" | "finish_rental_cv" | "question_about_property" | "something_else" | "units_to_fill" | "see_demo" | "pricing_and_terms" | "landlord_to_let" | "agent_partner" | "connect_feed" | "looking_for_home";
+            reason: "units_to_fill" | "see_demo" | "pricing_and_terms" | "landlord_to_let" | "agent_partner" | "connect_feed" | "looking_for_home" | "finish_rental_cv" | "question_about_property" | "something_else";
             /** @example Jane Doe */
             name: string;
-            /** @example jane@example.com */
-            email: string;
             phone: components["schemas"]["CallRequestPhoneDto"];
             /**
-             * @description When the visitor would like to be called. "asap" is exclusive of the others in the UI; the backend stores whatever arrives.
-             * @example [
-             *       "morning",
-             *       "evening"
-             *     ]
+             * @description Free text: when the visitor would like to be called, in their own words.
+             * @example Weekday evenings after 6pm
              */
-            preferredTimes?: ("morning" | "afternoon" | "evening" | "asap")[];
+            preferredTime?: string;
             /** @example Evenings after 6pm work best. */
             notes?: string;
             /**
@@ -3261,6 +3290,30 @@ export interface operations {
         requestBody?: never;
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TenantCvController_setVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetVerificationDto"];
+            };
+        };
+        responses: {
+            /** @description Verification badges updated */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3731,10 +3784,12 @@ export interface operations {
     MatchingController_getMatchedPropertiesWithPagination: {
         parameters: {
             query?: {
+                /** @description Ordering of the whole listed inventory. Default `best_match` (scores every candidate, ranks by percentage). The others order in SQL over the same population, with `created_at DESC` as the tie-break and NULL prices/deposits last; the returned page is still scored, so cards keep their match badge */
+                sort?: "best_match" | "low_price" | "high_price" | "low_deposit" | "high_deposit" | "date_added";
                 page?: number;
                 limit?: number;
                 search?: string;
-                /** @description SQL pre-filtering of properties that fall outside the user's budget, bedroom and property-type preferences before scoring (generous ranges, NULLs kept). Default `true`; pass `false` to rank the whole inventory. Ignored for a user with no preferences, which is what the filters are derived from */
+                /** @description Opt-in debug flag. SQL pre-filtering of properties that fall outside the user's budget, bedroom and property-type preferences before scoring (generous ranges, NULLs kept). Default `false` — the feed ranks the full listed inventory; pass `true` to narrow it. Ignored for a user with no preferences, which is what the filters are derived from */
                 prefilters?: boolean;
             };
             header?: never;
@@ -3743,7 +3798,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Paginated list of matched properties sorted by match score. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when nothing was scored (no preferences, or no property matched) */
+            /** @description Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4664,8 +4719,9 @@ export interface operations {
     };
     BookingRequestController_findAll: {
         parameters: {
-            query: {
-                status: string;
+            query?: {
+                /** @description Filter by pipeline status */
+                status?: "new" | "contacting" | "kyc_referencing" | "approved_viewing" | "viewing" | "contract" | "deposit" | "full_payment" | "move_in" | "rented" | "cancel_booking";
             };
             header?: never;
             path?: never;
@@ -4706,8 +4762,9 @@ export interface operations {
     };
     BookingRequestController_findMine: {
         parameters: {
-            query: {
-                property_id: string;
+            query?: {
+                /** @description Filter by property id */
+                property_id?: string;
             };
             header?: never;
             path?: never;
