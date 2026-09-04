@@ -104,13 +104,6 @@ export default function CookieConsentBanner() {
             {t("cookies.title")}
           </h2>
           <p className="mt-2 text-gray-800">{t("cookies.description")}</p>
-          <p className="mt-2 text-gray-800">
-            {label(
-              "cookies.analytics.notice",
-              "Analytics and advertising cookies help us understand how the platform is used. Nothing is stored on your device until you accept, and you can change your choice at any time in our Privacy Policy.",
-            )}
-          </p>
-
           <div className="mt-6 flex items-center gap-6 flex-wrap">
             <button
               type="button"

@@ -89,7 +89,16 @@ export function buildMessage(
         "",
         line("Reason", p.reasonLabel),
         line("Name", p.name),
-        line("Phone", `${p.phone?.countryCode ?? ""} ${p.phone?.number ?? ""}`.trim()),
+        line("Contact method", p.contactMethodLabel),
+        // One channel or the other, never both: `line` drops a null, so the
+        // body carries exactly the one the visitor gave.
+        line(
+          "Phone",
+          p.phone
+            ? `${p.phone.countryCode ?? ""} ${p.phone.number ?? ""}`.trim()
+            : null,
+        ),
+        line("Email", p.email?.trim() || null),
         line("Preferred time", p.preferredTime?.trim() || null),
         "",
         "Notes:",
