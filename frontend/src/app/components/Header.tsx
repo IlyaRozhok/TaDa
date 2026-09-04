@@ -2,7 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { Menu } from "lucide-react";
+import {
+  FEEDBACK_FISH_SCRIPT_ID,
+  getFeedbackFishProjectId,
+  getFeedbackFishScriptSrc,
+} from "@/lib/feedbackFish";
 import BookACallModal from "./BookACallModal";
 import LanguageDropdown from "./LanguageDropdown";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
@@ -34,6 +40,15 @@ const Header = ({
     t,
     generalKeys.bookACall.title,
     "Book a call",
+  );
+
+  // Feedback Fish: no project id configured means neither the loader nor the
+  // trigger is rendered, so no dead button ships where the widget is off.
+  const feedbackFishProjectId = getFeedbackFishProjectId();
+  const feedbackLabel = translateWithFallback(
+    t,
+    generalKeys.feedback.button,
+    "Feedback",
   );
 
   // Close both menus when landing type changes
@@ -149,6 +164,17 @@ const Header = ({
 
   return (
     <>
+      {/* Feedback Fish loader. Deduped by id, so a second Header on the page
+          cannot inject it twice; it binds itself to the `data-feedback-fish`
+          triggers in the menus below. */}
+      {feedbackFishProjectId && (
+        <Script
+          id={FEEDBACK_FISH_SCRIPT_ID}
+          src={getFeedbackFishScriptSrc(feedbackFishProjectId)}
+          strategy="afterInteractive"
+        />
+      )}
+
       <header
         className={`fixed top-0 left-0 right-0 z-50 py-0.75 sm:py-1 ${
           disabled ? "pointer-events-none" : ""
@@ -227,12 +253,26 @@ const Header = ({
                         <LanguageDropdown variant="dark" menuVariant="units" />
                       </div>
 
-                      {/* 2. Landing toggle (Operators / Tenants) */}
+                      {/* 2. Feedback (Feedback Fish opens on the attribute) */}
+                      {feedbackFishProjectId && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <button
+                            type="button"
+                            data-feedback-fish
+                            onClick={() => setIsDesktopMenuOpen(false)}
+                            className="block w-full text-left text-white hover:bg-white/10 transition-colors py-3 px-3 rounded-xl text-sm font-medium cursor-pointer"
+                          >
+                            {feedbackLabel}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 3. Landing toggle (Operators / Tenants) */}
                       <div className="mt-3 pt-3 border-t border-white/10">
                         {children}
                       </div>
 
-                      {/* 3. Audience link: Partners (tenants) / About Us (operators) */}
+                      {/* 4. Audience link: Partners (tenants) / About Us (operators) */}
                       {audienceItem && (
                         <div className="mt-3 pt-3 border-t border-white/10">
                           <button
@@ -355,6 +395,18 @@ const Header = ({
                   {item.label}
                 </button>
               ))}
+
+              {/* Feedback (Feedback Fish opens on the attribute) */}
+              {feedbackFishProjectId && (
+                <button
+                  type="button"
+                  data-feedback-fish
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full text-left text-white hover:bg-gray-100/30 transition-colors py-4 px-4 rounded-lg text-lg font-medium"
+                >
+                  {feedbackLabel}
+                </button>
+              )}
             </nav>
             {/* Switcher in mobile menu */}
             <div className="mt-6 w-full">
