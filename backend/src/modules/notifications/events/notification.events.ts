@@ -131,11 +131,21 @@ export interface CallRequestedEvent {
   /** English label for that slug, resolved by the producer. */
   reasonLabel: string;
   name: string;
-  /** The only way back to the visitor: the form asks for no email. */
+  /** Stable slug: `voice_call`, `video_call` or `email`. */
+  contactMethod: string;
+  /** English label for that slug, resolved by the producer. */
+  contactMethodLabel: string;
+  /**
+   * The way back to the visitor. Exactly one of `phone` and `email` is set,
+   * decided by `contactMethod` — the form collects one or the other, never
+   * both, so consumers must not assume the phone is always there.
+   */
   phone: {
     countryCode: string;
     number: string;
-  };
+  } | null;
+  /** The visitor's own address, set only for the `email` method. */
+  email: string | null;
   /** Free text as the visitor typed it. Null when they skipped the field. */
   preferredTime: string | null;
   notes: string | null;

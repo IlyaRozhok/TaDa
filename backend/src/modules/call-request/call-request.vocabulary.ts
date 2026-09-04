@@ -33,9 +33,31 @@ export const CALL_REASON_SLUGS = Object.keys(CALL_REASON_LABELS);
 export const CALL_REQUEST_SOURCES = ["tenant", "operator"] as const;
 
 /**
+ * How the visitor wants to be reached. This is the one field that changes the
+ * shape of the rest of the payload: `email` means the form collected an email
+ * address and no phone, the other two mean the reverse. Positional Localazy
+ * keys `book.call.field3.option1`…`option3` follow this order.
+ */
+export const CONTACT_METHOD_LABELS = {
+  voice_call: "Voice call",
+  video_call: "Video call",
+  email: "Email",
+} as const;
+
+export const CONTACT_METHOD_SLUGS = Object.keys(
+  CONTACT_METHOD_LABELS,
+) as (keyof typeof CONTACT_METHOD_LABELS)[];
+
+/** The one method that swaps the phone field for an email address. */
+export const EMAIL_CONTACT_METHOD = "email";
+
+/**
  * Slug → English label for the email body. An unknown slug renders as itself
  * rather than as an empty line: a stored row from a build that knew one more
  * option must still produce a readable email.
  */
 export const labelForReason = (slug: string): string =>
   CALL_REASON_LABELS[slug] ?? slug;
+
+export const labelForContactMethod = (slug: string): string =>
+  CONTACT_METHOD_LABELS[slug as keyof typeof CONTACT_METHOD_LABELS] ?? slug;

@@ -244,9 +244,10 @@ decisions) is recorded HERE, briefly, with a date.
   translations in Localazy and re-sync; no code change needed once they land.
 - **"Book a call" copy is not in Localazy yet** (added 2026-08-27, keys
   renamed to the owner's scheme 2026-08-28, reason list flattened and the
-  preferred-time field turned into free text 2026-08-28). The modal and the
-  header pill render English fallbacks via `translateWithFallback`. Add these
-  keys in Localazy and re-sync; no code change needed once they land.
+  preferred-time field turned into free text 2026-08-28, preferred-contact-method
+  field added 2026-09-04). The modal and the header pill render English
+  fallbacks via `translateWithFallback`. Add these keys in Localazy and
+  re-sync; no code change needed once they land.
   Every key lives in one file now
   (`frontend/src/app/lib/translationsKeys/generalKeys.ts`, under `bookACall`),
   because both landings render the identical modal — the landing is recorded as
@@ -256,21 +257,35 @@ decisions) is recorded HERE, briefly, with a date.
   `field1.title` · `field1.subtitle` ·
   `field1.option1` … `field1.option10` ·
   `field2.title` · `field2.subtitle` ·
+  `field3.title` · `field3.subtitle` ·
+  `field3.option1` · `field3.option2` · `field3.option3` ·
   `field4.title` · `field4.subtitle` ·
   `field5.title` · `field5.subtitle` ·
   `btn` · `btn.pending` ·
   `notification.complete` · `notification.error` ·
-  `validation.required` · `validation.phone`.
-  The reason options are **positional**: the object key is the stable slug the
+  `validation.required` · `validation.phone` · `validation.email`.
+  Both option lists are **positional**: the object key is the stable slug the
   backend stores, and the `optionN` number is its place in the list. Reordering
-  the list means renumbering the keys here, in `BookACallModal`'s `REASONS`,
-  and in the backend's `call-request.vocabulary.ts`.
+  either means renumbering the keys here, in `BookACallModal`'s `REASONS` /
+  `CONTACT_METHODS`, and in the backend's `call-request.vocabulary.ts`.
   **field4 has no options**: preferred time is a plain text input, so whatever
   the visitor types is stored and mailed verbatim.
-  One key is deliberately outside the `book.call.` set: **field3 is the phone**,
-  and it reuses the profile settings key `wizard.profile.phone` ("Phone
-  Number"), which is already translated — the same field must not read
-  differently on the landing and in the account form.
+  **field3 chooses the field under it.** `option1`/`option2` (voice/video call)
+  show the phone, `option3` (email) shows an email input instead — exactly one
+  is ever visible, filled and required, and the backend stores exactly the one
+  the method names. Neither of those two inputs has its own `book.call.` label:
+  the **phone** reuses the profile settings key `wizard.profile.phone` ("Phone
+  Number") so it cannot read differently on the landing and in the account
+  form, and the **email** reuses
+  `landing.operators.web.contact.popup.email.{title,text}` (already translated,
+  via `generalKeys.modalForm`). If the owner would rather the modal own that
+  copy, add `book.call.field3.emailLabel` / `.emailPlaceholder` and point
+  `BookACallModal` at them.
+  Three keys here were **not** in the owner's brief and are the agent's
+  extension of the owner's own scheme, flagged for approval: `field3.subtitle`
+  (the dropdown's empty-state placeholder, matching `field1.subtitle`),
+  `validation.email` (the invalid-address message; `validation.required`
+  covers the blank case), and the `modalForm` email reuse described above.
   The **header pill** reads `book.call.title`, the same key as the modal
   heading (changed 2026-08-28); the landing-scoped
   `landing.common.web.bookacall.header.btn` is no longer referenced by the code

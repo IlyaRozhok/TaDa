@@ -52,11 +52,14 @@ export const generalKeys = {
     subtitle: "book.call.subtitle",
     // The fields are numbered rather than named because that is the owner's
     // scheme; `title` is the label and `subtitle` the placeholder. field3 is
-    // the phone, which reuses the profile settings keys — see BookACallModal.
+    // the contact method, and the contact field it governs (phone or email)
+    // reuses keys that are already translated — see BookACallModal.
     reasonLabel: "book.call.field1.title",
     reasonPlaceholder: "book.call.field1.subtitle",
     nameLabel: "book.call.field2.title",
     namePlaceholder: "book.call.field2.subtitle",
+    contactMethodLabel: "book.call.field3.title",
+    contactMethodPlaceholder: "book.call.field3.subtitle",
     preferredTimeLabel: "book.call.field4.title",
     preferredTimePlaceholder: "book.call.field4.subtitle",
     notesLabel: "book.call.field5.title",
@@ -81,6 +84,16 @@ export const generalKeys = {
       question_about_property: "book.call.field1.option9",
       something_else: "book.call.field1.option10",
     },
+    /**
+     * How the visitor wants to be reached. Positional in the same way the
+     * reason options are, and the choice decides which contact field the form
+     * shows below it: a call wants the phone, `email` wants an address.
+     */
+    contactMethod: {
+      voice_call: "book.call.field3.option1",
+      video_call: "book.call.field3.option2",
+      email: "book.call.field3.option3",
+    },
     /** Toast copy. Both outcomes use the shared `notify` toaster. */
     notification: {
       complete: "book.call.notification.complete",
@@ -89,6 +102,7 @@ export const generalKeys = {
     validation: {
       required: "book.call.validation.required",
       phoneTooShort: "book.call.validation.phone",
+      emailInvalid: "book.call.validation.email",
     },
   },
   toast: {
