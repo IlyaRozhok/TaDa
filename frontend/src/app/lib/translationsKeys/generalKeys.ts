@@ -63,11 +63,11 @@ export const generalKeys = {
     // the contact method, and the contact field it governs (phone or email)
     // reuses keys that are already translated — see BookACallModal.
     reasonLabel: "book.call.field1.title",
-    reasonPlaceholder: "book.call.field1.subtitle",
+    reasonPlaceholder: "book.call.field1.placeholder",
     nameLabel: "book.call.field2.title",
     namePlaceholder: "book.call.field2.subtitle",
     contactMethodLabel: "book.call.field3.title",
-    contactMethodPlaceholder: "book.call.field3.subtitle",
+    contactMethodPlaceholder: "book.call.field2.placeholder",
     preferredTimeLabel: "book.call.field4.title",
     preferredTimePlaceholder: "book.call.field4.subtitle",
     notesLabel: "book.call.field5.title",
