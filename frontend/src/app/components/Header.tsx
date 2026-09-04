@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Menu } from "lucide-react";
 import BookACallModal from "./BookACallModal";
 import LanguageDropdown from "./LanguageDropdown";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
@@ -23,7 +24,9 @@ const Header = ({
   disabled = false,
 }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
   const [isBookACallOpen, setIsBookACallOpen] = useState(false);
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -33,11 +36,36 @@ const Header = ({
     "Book a call",
   );
 
-
-  // Close mobile menu when landing type changes
+  // Close both menus when landing type changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsDesktopMenuOpen(false);
   }, [landingType]);
+
+  // Desktop menu: close on outside click and on Escape.
+  // Same pattern as LanguageDropdown, plus the keyboard escape hatch.
+  useEffect(() => {
+    if (!isDesktopMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        desktopMenuRef.current &&
+        !desktopMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsDesktopMenuOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsDesktopMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isDesktopMenuOpen]);
 
   // Smooth scroll function
   const scrollToSection = (sectionId: string) => {
@@ -49,8 +77,9 @@ const Header = ({
         block: "start",
       });
     }
-    // Close mobile menu after navigation
+    // Close the menus after navigation
     setIsMobileMenuOpen(false);
+    setIsDesktopMenuOpen(false);
   };
 
   const toggleMobileMenu = () => {
@@ -101,6 +130,23 @@ const Header = ({
 
   const navigationItems = getNavigationItems();
 
+  // The audience link lives in the desktop burger menu instead of the inline
+  // nav: "Partners" on the tenants landing, "About Us" on the operators one.
+  // Both keep their existing scroll target and translation key; the mobile
+  // menu still lists every item.
+  const audienceItemId = landingType === "tenants" ? "partners" : "about-us";
+  const audienceItem = navigationItems.find(
+    (item) => item.id === audienceItemId,
+  );
+  const inlineNavigationItems = navigationItems.filter(
+    (item) => item.id !== audienceItemId,
+  );
+
+  const toggleDesktopMenu = () => {
+    if (disabled) return;
+    setIsDesktopMenuOpen(!isDesktopMenuOpen);
+  };
+
   return (
     <>
       <header
@@ -132,7 +178,7 @@ const Header = ({
 
               {/* Desktop Navigation */}
               <nav className="hidden lg:flex items-center space-x-6">
-                {navigationItems.map((item) => (
+                {inlineNavigationItems.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
@@ -146,15 +192,60 @@ const Header = ({
 
               {/* Right side elements */}
               <div className="flex items-center space-x-2 sm:space-x-3">
-                {/* Additional elements (like switcher) - hidden on very small screens */}
-                <div className="hidden sm:block">{children}</div>
+                {/* Additional elements (like switcher) - hidden on very small
+                    screens, and on lg+ it moves into the desktop menu below */}
+                <div className="hidden sm:block lg:hidden">{children}</div>
 
-                {/* Language Dropdown */}
-                <LanguageDropdown
-                  variant="dark"
-                  menuVariant="units"
-                  disabled={disabled}
-                />
+                {/* Language Dropdown - on lg+ it moves into the desktop menu */}
+                <div className="lg:hidden">
+                  <LanguageDropdown
+                    variant="dark"
+                    menuVariant="units"
+                    disabled={disabled}
+                  />
+                </div>
+
+                {/* Desktop menu - declutters the lg+ header by holding the
+                    language switch, the landing toggle and the audience link.
+                    Rendered only at lg+, where the mobile burger is hidden. */}
+                <div className="relative hidden lg:block" ref={desktopMenuRef}>
+                  <button
+                    onClick={toggleDesktopMenu}
+                    disabled={disabled}
+                    aria-label="Menu"
+                    aria-haspopup="menu"
+                    aria-expanded={isDesktopMenuOpen}
+                    className="flex items-center justify-center text-white hover:text-gray-400 transition-colors p-2 rounded-full cursor-pointer disabled:cursor-default disabled:hover:text-white"
+                  >
+                    <Menu className="w-6 h-6" />
+                  </button>
+
+                  {isDesktopMenuOpen && !disabled && (
+                    <div className="absolute right-0 top-full mt-3 w-72 rounded-2xl bg-black/80 backdrop-blur-xl border border-white/10 shadow-2xl p-3 z-50">
+                      {/* 1. Language switch */}
+                      <div className="px-1 py-1">
+                        <LanguageDropdown variant="dark" menuVariant="units" />
+                      </div>
+
+                      {/* 2. Landing toggle (Operators / Tenants) */}
+                      <div className="mt-3 pt-3 border-t border-white/10">
+                        {children}
+                      </div>
+
+                      {/* 3. Audience link: Partners (tenants) / About Us (operators) */}
+                      {audienceItem && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <button
+                            onClick={() => scrollToSection(audienceItem.id)}
+                            className="block w-full text-left text-white hover:bg-white/10 transition-colors py-3 px-3 rounded-xl text-sm font-medium cursor-pointer"
+                          >
+                            {audienceItem.label}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Book a call - opens the landing's call-request modal */}
                 <button
