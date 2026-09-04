@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   // Every relative `alternates.canonical` and OpenGraph image below resolves
   // against this, so it must be the www host the site actually serves from.
   metadataBase: new URL(SITE_URL),
-  title: "TaDa - Rental Platform",
+  title: "TA-DA! - Rental Platform",
   description: "Connect tenants and property operators in London",
   robots: isIndexable
     ? { index: true, follow: true }

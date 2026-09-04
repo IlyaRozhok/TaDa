@@ -111,8 +111,8 @@ export const tenantKeys = {
   // Landing listings section. Not synced from Localazy yet — the component
   // renders an English fallback until the keys land.
   listings: {
-    title: "landing.tenant.web.listings.title",
-    subtitle: "landing.tenant.web.listings.subtitle",
+    title: "landing.listings.preview.title",
+    subtitle: "landing.listings.preview.subtitletitle",
     seeAll: "landing.tenant.web.listings.seeAll",
   },
   // "Book a call" reason options offered on the tenant landing. Not synced

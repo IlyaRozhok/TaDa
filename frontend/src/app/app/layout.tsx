@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "TaDa - Rental Platform",
+  title: "TA-DA! - Rental Platform",
   description: "Connect tenants and property operators in London",
 };
 
