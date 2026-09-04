@@ -22,7 +22,7 @@ import {
 import UserDropdown from "./UserDropdown";
 import { getRedirectPath } from "../utils/simpleRedirect";
 import { useDispatch } from "react-redux";
-import { logout } from "@/store/slices/authSlice";
+import { performLogout } from "@/app/lib/performLogout";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { headerKeys } from "@/app/lib/translationsKeys/headerTranslationKeys";
 import { onboardingKeys } from "@/app/lib/translationsKeys/onboardingTranslationKeys";
@@ -335,8 +335,7 @@ export default function TenantUniversalHeader({
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        dispatch(logout());
-                        router.push("/");
+                        void performLogout(dispatch);
                       }}
                       className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-red-400 hover:bg-white/12"
                     >

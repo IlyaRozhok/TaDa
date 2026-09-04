@@ -101,13 +101,28 @@ const PRELOADED_TRANSLATIONS: Record<LanguageCode, Translations> = {
 };
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  // Lazy init from localStorage on client so header language change is never overwritten by init effect
-  const [language, setLanguageState] =
-    useState<LanguageCode>(getInitialLanguage);
+  // The FIRST render is always "en", matching the statically prerendered
+  // HTML; the saved/browser locale is applied in the effect below. Reading
+  // localStorage inside the useState initializer made server HTML and the
+  // first client render disagree on essentially all text for every
+  // non-English visitor — a React 19 hydration failure and a full client
+  // re-render of the deliberately static landing on every visit.
+  const [language, setLanguageState] = useState<LanguageCode>("en");
   const [translations, setTranslations] = useState<Translations>(
-    () => PRELOADED_TRANSLATIONS[getInitialLanguage()],
+    () => PRELOADED_TRANSLATIONS.en,
   );
   const [isLoading, setIsLoading] = useState(false);
+
+  // After hydration, switch to the saved/browser locale (one visible swap on
+  // the first paint for non-English users — the price of hydrating cleanly).
+  useEffect(() => {
+    const initial = getInitialLanguage();
+    if (initial !== "en") {
+      setLanguageState(initial);
+    }
+    // Run once on mount: later changes come from the header or storage sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Keep translations in sync when language changes (e.g. from header or storage event)
   useEffect(() => {

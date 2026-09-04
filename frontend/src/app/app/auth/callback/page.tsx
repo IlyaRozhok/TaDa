@@ -41,22 +41,20 @@ function AuthCallbackContent() {
         
         if (oauthError) {
           console.error("❌ OAuth error detected:", { oauthError, errorDetails });
-          let errorMessage = "Ошибка авторизации через Google";
-          
-          if (oauthError === "oauth_error") {
-            if (errorDetails === "invalid_client") {
-              errorMessage = "OAuth клиент не найден. Проверьте настройки Google Cloud Console.";
-            } else if (errorDetails === "access_denied") {
-              errorMessage = "Доступ отклонен. Вы отменили авторизацию.";
-            } else {
-              errorMessage = `Ошибка OAuth: ${errorDetails || oauthError}`;
-            }
+          // User-facing copy, so plain English: this screen greets anyone who
+          // taps "Cancel" on Google's consent page.
+          let errorMessage = "We couldn't sign you in with Google.";
+
+          if (oauthError === "oauth_error" && errorDetails === "access_denied") {
+            errorMessage =
+              "The sign-in was cancelled. You can try again whenever you're ready.";
           } else if (oauthError === "no_user_data") {
-            errorMessage = "Не удалось получить данные пользователя от Google.";
+            errorMessage =
+              "Google didn't return your account details. Please try again.";
           } else if (oauthError === "auth_failed") {
-            errorMessage = "Авторизация не удалась. Попробуйте снова.";
+            errorMessage = "Sign-in didn't complete. Please try again.";
           }
-          
+
           setError(errorMessage);
           setLoading(false);
           return;
@@ -85,7 +83,7 @@ function AuthCallbackContent() {
               ? Object.fromEntries(searchParams.entries())
               : {},
           });
-          setError("Неверные параметры авторизации. Попробуйте войти снова.");
+          setError("Something went wrong during sign-in. Please try again.");
           setLoading(false);
           return;
         }
@@ -212,48 +210,21 @@ function AuthCallbackContent() {
             Authentication Error
           </h2>
           <p className="text-gray-600 mb-8">{error}</p>
-          {error?.includes("OAuth клиент не найден") && (
-            <div className="mb-6 p-4 bg-gray-100 border border-gray-400 rounded-lg text-left">
-              <p className="text-sm text-gray-900 font-semibold mb-2">Что нужно проверить:</p>
-              <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
-                <li>Переменная GOOGLE_CLIENT_ID в .env файле правильная</li>
-                <li>GOOGLE_CALLBACK_URL точно совпадает с настройками в Google Cloud Console</li>
-                <li>OAuth 2.0 Client ID существует в Google Cloud Console</li>
-                <li>Authorized redirect URIs включает ваш callback URL</li>
-              </ul>
-              <p className="text-xs text-gray-600 mt-3">
-                Проверьте конфигурацию: <code className="bg-gray-200 px-1 rounded">GET /api/auth/google/config-check</code>
-              </p>
-            </div>
-          )}
+          {/* No debug affordances here: this page greets real visitors on the
+              only sign-in funnel. Configuration problems are diagnosed from
+              the server logs, not from a button shown to users. */}
           <div className="space-y-3">
             <button
               onClick={() => router.push("/app/auth")}
               className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
             >
-              Попробовать снова
+              Try again
             </button>
             <button
-              onClick={() => {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-                window.open(`${apiUrl}/auth/google/config-check`, "_blank");
-              }}
-              className="w-full text-gray-500 px-6 py-2 text-sm hover:text-gray-900 transition-colors border border-gray-300 rounded-lg"
-            >
-              Проверить конфигурацию OAuth
-            </button>
-            <button
-              onClick={() => {
-                console.log("🔍 Current state for debugging:", {
-                  localStorage: "(removed — cookie-based auth)",
-                  searchParams: searchParams ? Object.fromEntries(searchParams.entries()) : {},
-                  currentURL: window.location.href,
-                  apiUrl: process.env.NEXT_PUBLIC_API_URL,
-                });
-              }}
+              onClick={() => router.push("/")}
               className="w-full text-gray-500 px-6 py-2 text-sm hover:text-gray-900 transition-colors"
             >
-              Показать отладочную информацию (в консоли)
+              Back to home
             </button>
           </div>
         </div>

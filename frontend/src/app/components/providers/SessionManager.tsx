@@ -32,7 +32,20 @@ export default function SessionManager() {
   useEffect(() => {
     const initSession = async () => {
       try {
-        const response = await api.get("/auth/me");
+        // One retry on a non-401 failure. A 502 during a backend deploy or a
+        // network blip used to resolve the session gate with no user — every
+        // guarded page then booted a genuinely signed-in visitor to the
+        // landing. 401 is a real "not signed in" and is never retried.
+        let response;
+        try {
+          response = await api.get("/auth/me");
+        } catch (firstError: any) {
+          if (firstError.response?.status === 401) {
+            throw firstError;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          response = await api.get("/auth/me");
+        }
 
         if (response.data && response.data.user) {
           dispatch(setUser({ user: response.data.user }));

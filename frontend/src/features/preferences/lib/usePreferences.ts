@@ -45,10 +45,18 @@ export default function usePreferences(currentStepOffset: number = 0) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const draftSaveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const hasAppliedInitialLoadRef = useRef(false);
-  const pendingFieldRef = useRef<{
-    field: keyof PreferencesFormData;
-    value: unknown;
-  } | null>(null);
+  // One pending slot PER FIELD. A single shared slot meant that editing field
+  // B within the 500ms debounce of field A cleared A's timer and overwrote
+  // the slot — A's autosave never fired (min_price then max_price was the
+  // typical casualty).
+  const pendingFieldsRef = useRef(
+    new Map<keyof PreferencesFormData, unknown>(),
+  );
+  // Mirror of state.existingPreferences that updates synchronously.
+  // saveSingleField used to read the value from its closure: two quick
+  // first-time saves both saw `null` and both POSTed a create — the second
+  // one dying on the user_id UNIQUE constraint, silently.
+  const existingPreferencesRef = useRef<PreferencesState["existingPreferences"]>(null);
 
   const [state, setState] = useState<PreferencesState>(() => {
     let initialStep = 1;
@@ -288,6 +296,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
 
       if (preferences) {
         console.log("✅ API preferences loaded:", preferences);
+        existingPreferencesRef.current = preferences;
         setState((prev) => ({ ...prev, existingPreferences: preferences }));
 
         // Transform API data to form format
@@ -372,6 +381,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
     } catch (error) {
       console.log("❌ Failed to load preferences from API:", error);
       // Check if this is a 404 (no preferences yet) or another error
+      existingPreferencesRef.current = null;
       setState((prev) => ({ ...prev, existingPreferences: null }));
 
       // Restore draft when no API preferences (e.g. first time or 404)
@@ -451,9 +461,13 @@ export default function usePreferences(currentStepOffset: number = 0) {
 
         // If no preferences exist, create new with this field.
         // This is what makes the row appear on the very first filled field —
-        // deliberate onboarding behaviour, see 6.8 in the plan. Unchanged here.
-        if (!state.existingPreferences) {
+        // deliberate onboarding behaviour, see 6.8 in the plan.
+        // Read through the ref, not the closure: the closure lagged a render
+        // behind, so two quick first-time saves both created (the second 409'd
+        // on the UNIQUE constraint, silently).
+        if (!existingPreferencesRef.current) {
           const created = await createPreferences(updateData).unwrap();
+          existingPreferencesRef.current = created;
           setState((prev) => ({
             ...prev,
             existingPreferences: created,
@@ -463,7 +477,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
 
         // Check if any value actually changed
         const existingPreferences =
-          (state.existingPreferences as Record<string, unknown>) || {};
+          (existingPreferencesRef.current as Record<string, unknown>) || {};
         const hasChanged = Object.entries(updateData).some(
           ([key, processedValue]) => {
             const existingValue = existingPreferences[key];
@@ -487,7 +501,11 @@ export default function usePreferences(currentStepOffset: number = 0) {
         // Update preferences
         await updatePreferences(updateData).unwrap();
 
-        // Update existingPreferences in state
+        // Update existingPreferences in state (and its synchronous mirror)
+        existingPreferencesRef.current = {
+          ...(existingPreferencesRef.current as Record<string, unknown>),
+          ...updateData,
+        } as PreferencesState["existingPreferences"];
         setState((prev) => ({
           ...prev,
           existingPreferences: {
@@ -496,35 +514,51 @@ export default function usePreferences(currentStepOffset: number = 0) {
           },
         }));
       } catch (error) {
+        // Deliberately quiet: this is a background population save mid-typing.
+        // The localStorage draft and the explicit Finish submit (which DOES
+        // surface errors) are the safety nets.
         console.error(`Failed to save field ${field as string}:`, error);
-        // Silent fail - don't show toast
       }
     },
-    [state.existingPreferences],
+    // Reads existing preferences through the ref, so no state dependency —
+    // the callback stays stable and flush loops never hold a stale copy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  /**
+   * Debounced autosave, one pending slot per field. Rapid edits across two
+   * fields used to lose the first one entirely (shared slot + shared timer);
+   * now the timer flushes EVERY pending field, sequentially so a first-time
+   * flush creates once and updates after.
+   */
+  const queueFieldSave = useCallback(
+    (field: keyof PreferencesFormData, value: unknown) => {
+      pendingFieldsRef.current.set(field, value);
+
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(() => {
+        const pending = Array.from(pendingFieldsRef.current.entries());
+        pendingFieldsRef.current.clear();
+        void (async () => {
+          for (const [pendingField, pendingValue] of pending) {
+            await saveSingleField(pendingField, pendingValue);
+          }
+        })();
+      }, 500); // 500ms debounce
+    },
+    [saveSingleField],
   );
 
   const updateField = useCallback(
     (field: keyof PreferencesFormData, value: PreferencesFieldValue) => {
       setValue(field, value, { shouldValidate: false, shouldDirty: true });
-
-      // Auto-save the field after debounce
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      pendingFieldRef.current = { field, value };
-
-      saveTimeoutRef.current = setTimeout(() => {
-        if (pendingFieldRef.current) {
-          saveSingleField(
-            pendingFieldRef.current.field,
-            pendingFieldRef.current.value,
-          );
-          pendingFieldRef.current = null;
-        }
-      }, 500); // 500ms debounce
+      queueFieldSave(field, value);
     },
-    [setValue, saveSingleField],
+    [setValue, queueFieldSave],
   );
 
   const toggleFeature = useCallback(
@@ -537,23 +571,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
         : [...current, feature];
 
       setValue(category, updated, { shouldValidate: false, shouldDirty: true });
-
-      // Auto-save the field after debounce
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      pendingFieldRef.current = { field: category, value: updated };
-
-      saveTimeoutRef.current = setTimeout(() => {
-        if (pendingFieldRef.current) {
-          saveSingleField(
-            pendingFieldRef.current.field,
-            pendingFieldRef.current.value,
-          );
-          pendingFieldRef.current = null;
-        }
-      }, 500); // 500ms debounce
+      queueFieldSave(category, updated);
 
       // Restore scroll position
       const restoreScroll = () => {
@@ -564,7 +582,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       requestAnimationFrame(restoreScroll);
       setTimeout(restoreScroll, 0);
     },
-    [watchedData, setValue, saveSingleField],
+    [watchedData, setValue, queueFieldSave],
   );
 
   const prevStep = useCallback(() => {
@@ -658,6 +676,7 @@ export default function usePreferences(currentStepOffset: number = 0) {
       // Block navigation for 3 seconds after successful save
       blockNavigation(3000);
 
+      existingPreferencesRef.current = saved;
       setState((prev) => ({
         ...prev,
         existingPreferences: saved,
@@ -685,6 +704,10 @@ export default function usePreferences(currentStepOffset: number = 0) {
         error;
 
       handleSubmitError(errorData);
+      // Rethrow so callers know the save FAILED. Swallowing it here made
+      // "Finish" proceed to the redirect with a success face while matching
+      // ran on stale or absent preferences.
+      throw error;
     } finally {
       setState((prev) => ({ ...prev, loading: false }));
     }
@@ -733,13 +756,13 @@ export default function usePreferences(currentStepOffset: number = 0) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      if (pendingFieldRef.current) {
-        saveSingleField(
-          pendingFieldRef.current.field,
-          pendingFieldRef.current.value,
-        );
-        pendingFieldRef.current = null;
-      }
+      const pending = Array.from(pendingFieldsRef.current.entries());
+      pendingFieldsRef.current.clear();
+      void (async () => {
+        for (const [pendingField, pendingValue] of pending) {
+          await saveSingleField(pendingField, pendingValue);
+        }
+      })();
 
       setState((prev) => ({ ...prev, step: prev.step + 1 }));
     }
