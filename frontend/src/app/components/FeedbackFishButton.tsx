@@ -14,8 +14,6 @@ interface FeedbackFishButtonProps {
   className?: string;
   /** Classes for the icon — headers size their icons differently. */
   iconClassName?: string;
-  /** Menu rows show the label; compact icon bars do not. */
-  showLabel?: boolean;
   /** Close the menu the trigger sits in, if any. */
   onClick?: () => void;
 }
@@ -32,11 +30,15 @@ interface FeedbackFishButtonProps {
  * project id the loader is not rendered either, and a button that cannot open
  * anything must not ship. Nothing about the visitor is passed — the bare
  * attribute, never `data-feedback-fish-userid`, so feedback stays anonymous.
+ *
+ * The label is always visible, in every header: an unlabelled speech bubble
+ * does not read as "give us feedback" to anyone who has not been told. Callers
+ * lay the icon and the text out themselves (`flex items-center gap-…`); the
+ * text never wraps, so a tight bar shrinks its flexible neighbour instead.
  */
 export default function FeedbackFishButton({
   className = "",
   iconClassName = "w-5 h-5",
-  showLabel = false,
   onClick,
 }: FeedbackFishButtonProps) {
   const { t } = useTranslation();
@@ -61,7 +63,7 @@ export default function FeedbackFishButton({
       title={label}
     >
       <MessageSquare className={iconClassName} aria-hidden="true" />
-      {showLabel && <span>{label}</span>}
+      <span className="whitespace-nowrap">{label}</span>
     </button>
   );
 }

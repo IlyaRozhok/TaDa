@@ -232,10 +232,12 @@ export default function TenantUniversalHeader({
               </button>
             )}
 
-            {/* Feedback - desktop; the mobile menu below carries its own row */}
+            {/* Feedback - desktop; the mobile menu below carries its own row.
+                Labelled like the Tenant CV link next to it; the search field is
+                the flexible neighbour that gives up the width */}
             <FeedbackFishButton
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-              iconClassName="w-5 h-5"
+              className="flex items-center gap-2 px-2 py-2 text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+              iconClassName="w-4 h-4 flex-shrink-0"
             />
           </div>
 
@@ -256,8 +258,8 @@ export default function TenantUniversalHeader({
               no mobile menu in that state, so the mobile trigger goes here */}
           {isSignedOut && (
             <FeedbackFishButton
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-              iconClassName="w-5 h-5"
+              className="md:hidden flex items-center gap-1 px-1.5 py-2 text-xs font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+              iconClassName="w-4 h-4 flex-shrink-0"
             />
           )}
 
@@ -349,7 +351,6 @@ export default function TenantUniversalHeader({
                     <FeedbackFishButton
                       className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
                       iconClassName="w-4 h-4 mr-3 flex-shrink-0"
-                      showLabel
                       onClick={() => setIsMobileMenuOpen(false)}
                     />
 
