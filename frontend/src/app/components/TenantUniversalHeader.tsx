@@ -20,6 +20,7 @@ import {
   LogOut,
 } from "lucide-react";
 import UserDropdown from "./UserDropdown";
+import FeedbackFishButton from "./FeedbackFishButton";
 import { getRedirectPath } from "../utils/simpleRedirect";
 import { useDispatch } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
@@ -230,6 +231,12 @@ export default function TenantUniversalHeader({
                 <Heart className="w-5 h-5" />
               </button>
             )}
+
+            {/* Feedback - desktop; the mobile menu below carries its own row */}
+            <FeedbackFishButton
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              iconClassName="w-5 h-5"
+            />
           </div>
 
           {/* Language Dropdown */}
@@ -245,7 +252,15 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Signed out: one CTA into the auth flow, no account menus */}
+          {/* Signed out: one CTA into the auth flow, no account menus. There is
+              no mobile menu in that state, so the mobile trigger goes here */}
+          {isSignedOut && (
+            <FeedbackFishButton
+              className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              iconClassName="w-5 h-5"
+            />
+          )}
+
           {isSignedOut && (
             <button
               onClick={() => router.push("/app/auth")}
@@ -329,6 +344,14 @@ export default function TenantUniversalHeader({
                         {t(favoritesKeys.title)}
                       </button>
                     )}
+
+                    {/* Feedback - mobile */}
+                    <FeedbackFishButton
+                      className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
+                      iconClassName="w-4 h-4 mr-3 flex-shrink-0"
+                      showLabel
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    />
 
                     <div className="mx-4 border-t border-white/20 my-1" />
 

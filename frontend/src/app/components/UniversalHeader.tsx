@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { Heart, Bell } from "lucide-react";
 import UserDropdown from "./UserDropdown";
+import FeedbackFishButton from "./FeedbackFishButton";
 import styles from "./ui/DropdownStyles.module.scss";
 import { selectUser } from "@/store/slices/authSlice";
 import { getRedirectPath } from "../utils/simpleRedirect";
@@ -56,6 +57,13 @@ export default function UniversalHeader() {
             >
               <Bell className="h-1.25 w-1.25" />
             </button>
+
+            {/* Feedback - one control for both viewports; this header has no
+                separate mobile layout */}
+            <FeedbackFishButton
+              className="text-gray-600 hover:text-gray-900 transition-colors p-0.75 rounded-lg hover:bg-gray-100 min-w-[2.25rem] flex items-center justify-center cursor-pointer"
+              iconClassName="h-1.25 w-1.25"
+            />
 
             {/* Language Dropdown */}
             <LanguageDropdown

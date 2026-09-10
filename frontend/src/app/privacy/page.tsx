@@ -6,6 +6,7 @@ import React from "react";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import CookieSettingsButton from "../components/CookieSettingsButton";
+import FeedbackFishButton from "../components/FeedbackFishButton";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | TaDa",
@@ -24,6 +25,12 @@ const PrivacyPolicyPage = () => {
             <Link href="/" className="flex items-center">
               <img src="/black-logo.svg" alt="TADA Logo" className="h-8 sm:h-10" />
             </Link>
+            {/* Feedback - one control at every width; this bar has no mobile
+                variant. A client island, like CookieSettingsButton below */}
+            <FeedbackFishButton
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              iconClassName="w-5 h-5"
+            />
           </div>
         </div>
       </header>
