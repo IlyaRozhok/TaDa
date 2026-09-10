@@ -20,7 +20,7 @@ export async function generateMetadata({
   const building = await fetchPublicBuilding(id);
 
   if (!building?.name) {
-    return { title: "Building | TaDa" };
+    return { title: "Building | TA-DA!" };
   }
 
   const description =
@@ -28,7 +28,7 @@ export async function generateMetadata({
     [building.name, building.address].filter(Boolean).join(" · ");
 
   return {
-    title: `${building.name} | TaDa`,
+    title: `${building.name} | TA-DA!`,
     description,
     alternates: { canonical: `/app/buildings/${building.id}` },
     openGraph: {

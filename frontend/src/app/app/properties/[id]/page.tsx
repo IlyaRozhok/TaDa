@@ -22,7 +22,7 @@ export async function generateMetadata({
   const property = await fetchPublicProperty(id);
 
   if (!property) {
-    return { title: "Property | TaDa" };
+    return { title: "Property | TA-DA!" };
   }
 
   const description =
@@ -34,10 +34,10 @@ export async function generateMetadata({
     ]
       .filter(Boolean)
       .join(" · ") ||
-    "Rental property on TaDa";
+    "Rental property on TA-DA!";
 
   return {
-    title: `${property.title} | TaDa`,
+    title: `${property.title} | TA-DA!`,
     description,
     alternates: { canonical: `/app/properties/${property.id}` },
     openGraph: {

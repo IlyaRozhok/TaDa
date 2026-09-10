@@ -9,9 +9,9 @@ import CookieSettingsButton from "../components/CookieSettingsButton";
 import FeedbackFishButton from "../components/FeedbackFishButton";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | TaDa",
+  title: "Privacy Policy | TA-DA!",
   description:
-    "How TaDa collects, uses and protects your personal data on the rental platform.",
+    "How TA-DA! collects, uses and protects your personal data on the rental platform.",
   alternates: { canonical: "/privacy" },
 };
 
