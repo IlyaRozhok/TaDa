@@ -40,19 +40,24 @@ export const PropertyContent: React.FC<PropertyContentProps> = ({
 
   const areaDisplay = formatAreaDisplay(property.square_meters);
 
+  // A PAST availability date means the property is available now — showing
+  // e.g. "3 Jan" weeks later read as a future date. A missing date is
+  // genuinely unknown (the matching engine scores it as such), so the card
+  // says "contact", not the confident "Available now" it used to claim.
   const availabilityText = property.available_from
     ? (() => {
         const d = new Date(property.available_from);
         const today = new Date();
-        if (d.toDateString() === today.toDateString()) {
-          return "Today";
+        today.setHours(0, 0, 0, 0);
+        if (d <= today) {
+          return "Available now";
         }
         return d.toLocaleDateString("en-GB", {
           day: "numeric",
           month: "short",
         });
       })()
-    : "Available now";
+    : "Contact for availability";
 
   const attributeParts: string[] = [];
   if (property.property_type) {

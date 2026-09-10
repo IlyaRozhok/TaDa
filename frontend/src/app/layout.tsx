@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "./components/providers/ReduxProvider";
@@ -22,12 +23,17 @@ const geistMono = Geist_Mono({
 // rule at the robots.txt level. The switch lives in lib/siteEnv.ts.
 import { isIndexableSite as isIndexable } from "@/app/lib/siteEnv";
 import { SITE_URL } from "@/app/lib/siteUrl";
+import {
+  FEEDBACK_FISH_SCRIPT_ID,
+  getFeedbackFishProjectId,
+  getFeedbackFishScriptSrc,
+} from "@/lib/feedbackFish";
 
 export const metadata: Metadata = {
   // Every relative `alternates.canonical` and OpenGraph image below resolves
   // against this, so it must be the www host the site actually serves from.
   metadataBase: new URL(SITE_URL),
-  title: "TaDa - Rental Platform",
+  title: "TA-DA! - Rental Platform",
   description: "Connect tenants and property operators in London",
   robots: isIndexable
     ? { index: true, follow: true }
@@ -53,6 +59,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Feedback Fish lives here rather than in a header: the trigger sits in every
+  // header in the app, so the loader has to cover every route. Unset project id
+  // means neither the script nor any trigger renders. See lib/feedbackFish.ts.
+  const feedbackFishProjectId = getFeedbackFishProjectId();
+
   return (
     <html lang="en">
       <head>
@@ -96,6 +107,15 @@ export default function RootLayout({
             </ReduxProvider>
           </I18nProvider>
         </Suspense>
+
+        {/* Feedback Fish loader — one per document, so every route has it. */}
+        {feedbackFishProjectId && (
+          <Script
+            id={FEEDBACK_FISH_SCRIPT_ID}
+            src={getFeedbackFishScriptSrc(feedbackFishProjectId)}
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   );

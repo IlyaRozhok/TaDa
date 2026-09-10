@@ -117,24 +117,31 @@ export class NotificationsService {
 
   @OnEvent(NotificationEvents.CallRequested, { async: true })
   async handleCallRequested(event: CallRequestedEvent): Promise<void> {
-    // One notification per phone number per UTC day: a double-click on the
+    // One notification per contact value per UTC day: a double-click on the
     // form is swallowed as a duplicate, while a genuine follow-up the next
     // day still comes through. The date comes from the event, not the row,
     // so replays keep their original key.
     //
-    // The number is reduced to its digits because the client sends it masked
-    // ("20 7946 0000"), and the same visitor's second submit can carry
-    // different spacing. The phone is the key because the form no longer asks
-    // for an email — it is the only identity a submission has.
+    // The contact value is whichever channel the submission carries — the form
+    // collects a phone or an email, never both, so there is exactly one
+    // identity to key on. The method is part of the key: the same person
+    // reaching us two ways in a day is two different asks, and collapsing them
+    // would silently drop one.
+    //
+    // A phone is reduced to its digits because the client sends it masked
+    // ("20 7946 0000") and the same visitor's second submit can carry
+    // different spacing; an email is lower-cased for the same reason.
     //
     // Note this dedupes the EMAIL WE SEND, not the submission: every submit is
     // its own row in `call_requests`, so the admin panel still shows both
     // halves of a double-click even when only one notification went out.
     const day = new Date(event.requestedAt).toISOString().slice(0, 10);
-    const phoneKey = `${event.phone.countryCode}${event.phone.number.replace(/\D/g, "")}`;
+    const contactKey = event.email
+      ? event.email.trim().toLowerCase()
+      : `${event.phone?.countryCode ?? ""}${(event.phone?.number ?? "").replace(/\D/g, "")}`;
     await this.record(
       NotificationType.CallRequested,
-      `call_request:${phoneKey}:${day}`,
+      `call_request:${event.contactMethod}:${contactKey}:${day}`,
       event as unknown as Record<string, unknown>,
     );
   }

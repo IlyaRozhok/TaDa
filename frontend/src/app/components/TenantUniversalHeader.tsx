@@ -20,9 +20,10 @@ import {
   LogOut,
 } from "lucide-react";
 import UserDropdown from "./UserDropdown";
+import FeedbackFishButton from "./FeedbackFishButton";
 import { getRedirectPath } from "../utils/simpleRedirect";
 import { useDispatch } from "react-redux";
-import { logout } from "@/store/slices/authSlice";
+import { performLogout } from "@/app/lib/performLogout";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { headerKeys } from "@/app/lib/translationsKeys/headerTranslationKeys";
 import { onboardingKeys } from "@/app/lib/translationsKeys/onboardingTranslationKeys";
@@ -230,6 +231,14 @@ export default function TenantUniversalHeader({
                 <Heart className="w-5 h-5" />
               </button>
             )}
+
+            {/* Feedback - desktop; the mobile menu below carries its own row.
+                Labelled like the Tenant CV link next to it; the search field is
+                the flexible neighbour that gives up the width */}
+            <FeedbackFishButton
+              className="flex items-center gap-2 px-2 py-2 text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+              iconClassName="w-4 h-4 flex-shrink-0"
+            />
           </div>
 
           {/* Language Dropdown */}
@@ -245,7 +254,15 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
-          {/* Signed out: one CTA into the auth flow, no account menus */}
+          {/* Signed out: one CTA into the auth flow, no account menus. There is
+              no mobile menu in that state, so the mobile trigger goes here */}
+          {isSignedOut && (
+            <FeedbackFishButton
+              className="md:hidden flex items-center gap-1 px-1.5 py-2 text-xs font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+              iconClassName="w-4 h-4 flex-shrink-0"
+            />
+          )}
+
           {isSignedOut && (
             <button
               onClick={() => router.push("/app/auth")}
@@ -330,13 +347,19 @@ export default function TenantUniversalHeader({
                       </button>
                     )}
 
+                    {/* Feedback - mobile */}
+                    <FeedbackFishButton
+                      className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
+                      iconClassName="w-4 h-4 mr-3 flex-shrink-0"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    />
+
                     <div className="mx-4 border-t border-white/20 my-1" />
 
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        dispatch(logout());
-                        router.push("/");
+                        void performLogout(dispatch);
                       }}
                       className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-red-400 hover:bg-white/12"
                     >

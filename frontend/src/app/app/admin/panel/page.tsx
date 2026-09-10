@@ -105,6 +105,17 @@ type Building = ApiBuilding;
  * mixes all three, so the message is pulled out in one place.
  */
 function apiErrorMessage(error: unknown, fallback: string): string {
+  // Nest's ValidationPipe rejects with `message: string[]` — one entry per
+  // failed rule. Dropping arrays reduced every validation reject (bad
+  // vocabulary value, malformed duration list…) to "Unknown error".
+  const asText = (message: unknown): string | undefined => {
+    if (typeof message === "string") return message;
+    if (Array.isArray(message) && message.every((m) => typeof m === "string")) {
+      return message.join("; ");
+    }
+    return undefined;
+  };
+
   if (typeof error === "object" && error !== null) {
     const candidate = error as {
       data?: { message?: unknown };
@@ -112,15 +123,12 @@ function apiErrorMessage(error: unknown, fallback: string): string {
       message?: unknown;
     };
 
-    if (typeof candidate.data?.message === "string") {
-      return candidate.data.message;
-    }
-    if (typeof candidate.response?.data?.message === "string") {
-      return candidate.response.data.message;
-    }
-    if (typeof candidate.message === "string") {
-      return candidate.message;
-    }
+    return (
+      asText(candidate.data?.message) ??
+      asText(candidate.response?.data?.message) ??
+      asText(candidate.message) ??
+      fallback
+    );
   }
 
   return fallback;
@@ -540,12 +548,14 @@ function AdminPanelContent() {
       await updateBookingStatus({ id, status }).unwrap();
       // The list refetches itself — invalidatesTags on the mutation.
       addNotification("success", "Booking status updated");
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to update booking status";
-      addNotification("error", message);
+    } catch (error: unknown) {
+      // apiErrorMessage reads the RTK shape (`error.data.message`) — the old
+      // axios-shape read here hid every actionable backend message ("only one
+      // step back", CAS conflicts) behind a generic failure.
+      addNotification(
+        "error",
+        apiErrorMessage(error, "Failed to update booking status"),
+      );
     } finally {
       setUpdatingRequestId(null);
     }

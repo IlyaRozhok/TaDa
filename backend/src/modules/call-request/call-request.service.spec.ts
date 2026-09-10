@@ -34,12 +34,25 @@ function dto(overrides: Partial<CreateCallRequestDto> = {}): CreateCallRequestDt
   return {
     reason: "looking_for_home",
     name: "  Jane Doe  ",
+    contactMethod: "voice_call",
     phone: { countryCode: "GB", number: " 20 7946 0000 " },
     preferredTime: "  Weekday evenings  ",
     notes: "  Evenings work best  ",
     source: "tenant",
     ...overrides,
   };
+}
+
+/** The email-method counterpart: an address instead of a phone. */
+function emailDto(
+  overrides: Partial<CreateCallRequestDto> = {},
+): CreateCallRequestDto {
+  return dto({
+    contactMethod: "email",
+    phone: undefined,
+    email: "  Jane@Example.com  ",
+    ...overrides,
+  });
 }
 
 describe("CallRequestService", () => {
@@ -77,6 +90,7 @@ describe("CallRequestService", () => {
       expect(repo.saved[0]).toMatchObject({
         reason: "looking_for_home",
         name: "Jane Doe",
+        contact_method: "voice_call",
         phone_country_code: "GB",
         phone_number: "20 7946 0000",
         preferred_time: "Weekday evenings",
@@ -99,10 +113,38 @@ describe("CallRequestService", () => {
       expect(repo.saved[0].notes).toBeNull();
     });
 
-    it("stores no email — the form asks for a phone number only", async () => {
+    it("stores no email when the method is a call", async () => {
       await build().create(dto());
 
-      expect(repo.saved[0]).not.toHaveProperty("email");
+      expect(repo.saved[0].email).toBeNull();
+    });
+
+    it("stores the address and no phone when the method is email", async () => {
+      await build().create(emailDto());
+
+      expect(repo.saved[0]).toMatchObject({
+        contact_method: "email",
+        phone_country_code: null,
+        phone_number: null,
+        email: "Jane@Example.com",
+      });
+    });
+
+    // A client that leaves a stale phone behind when the visitor switches to
+    // email must not have it persisted: the method decides, not the payload.
+    it("ignores a phone that arrives alongside the email method", async () => {
+      await build().create(
+        emailDto({ phone: { countryCode: "GB", number: "20 7946 0000" } }),
+      );
+
+      expect(repo.saved[0].phone_country_code).toBeNull();
+      expect(repo.saved[0].phone_number).toBeNull();
+    });
+
+    it("ignores an address that arrives alongside a call method", async () => {
+      await build().create(dto({ email: "jane@example.com" }));
+
+      expect(repo.saved[0].email).toBeNull();
     });
   });
 
@@ -116,7 +158,10 @@ describe("CallRequestService", () => {
           reason: "looking_for_home",
           reasonLabel: "I'm looking for a home",
           name: "Jane Doe",
+          contactMethod: "voice_call",
+          contactMethodLabel: "Voice call",
           phone: { countryCode: "GB", number: "20 7946 0000" },
+          email: null,
           preferredTime: "Weekday evenings",
           notes: "Evenings work best",
           source: "tenant",
@@ -124,13 +169,28 @@ describe("CallRequestService", () => {
       );
     });
 
+    it("emits the address and a null phone for the email method", async () => {
+      await build().create(emailDto());
+
+      expect(emitter.emit).toHaveBeenCalledWith(
+        NotificationEvents.CallRequested,
+        expect.objectContaining({
+          contactMethod: "email",
+          contactMethodLabel: "Email",
+          phone: null,
+          email: "Jane@Example.com",
+        }),
+      );
+    });
+
+    // `email` on the event is the visitor's own address — something support
+    // reads, never somewhere we send. The recipient is the channel's business.
     it("carries no recipient — the channel resolves that from config", async () => {
-      await build().create(dto());
+      await build().create(emailDto());
 
       const [, event] = emitter.emit.mock.calls[0];
       expect(Object.keys(event)).not.toContain("recipient");
       expect(Object.keys(event)).not.toContain("to");
-      expect(Object.keys(event)).not.toContain("email");
     });
 
     it("renders the same shared vocabulary for the operator landing", async () => {

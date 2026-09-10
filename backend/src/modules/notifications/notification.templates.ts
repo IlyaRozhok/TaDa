@@ -71,7 +71,7 @@ export function buildMessage(
     case NotificationType.UserRegistered: {
       const p = payload as unknown as UserRegisteredEvent;
       return render(type, `New registration — ${p.email}`, [
-        "A new user signed up on TaDa.",
+        "A new user signed up on TA-DA!",
         "",
         line("Email", p.email),
         line("Name", p.name),
@@ -89,7 +89,16 @@ export function buildMessage(
         "",
         line("Reason", p.reasonLabel),
         line("Name", p.name),
-        line("Phone", `${p.phone?.countryCode ?? ""} ${p.phone?.number ?? ""}`.trim()),
+        line("Contact method", p.contactMethodLabel),
+        // One channel or the other, never both: `line` drops a null, so the
+        // body carries exactly the one the visitor gave.
+        line(
+          "Phone",
+          p.phone
+            ? `${p.phone.countryCode ?? ""} ${p.phone.number ?? ""}`.trim()
+            : null,
+        ),
+        line("Email", p.email?.trim() || null),
         line("Preferred time", p.preferredTime?.trim() || null),
         "",
         "Notes:",
@@ -120,7 +129,7 @@ export function buildMessage(
         type,
         `${heading} — ${p.property.title ?? p.property.id}`,
         [
-          `${heading} on TaDa.`,
+          `${heading} on TA-DA!`,
           "",
           line("Property", p.property.title),
           line("Address", p.property.address),
@@ -152,9 +161,9 @@ export function buildMessage(
         line("Address", p.property.address),
         "",
         "The operator will review it and contact you. You can follow the",
-        "status of your request any time in your TaDa account.",
+        "status of your request any time in your TA-DA! account.",
         "",
-        "— The TaDa team",
+        "— The TA-DA! team",
       ]);
     }
 
@@ -165,7 +174,7 @@ export function buildMessage(
         ? "New booking request"
         : "Updated booking request";
       return render(type, `${heading} for your property — ${title}`, [
-        `${heading} on TaDa.`,
+        `${heading} on TA-DA!`,
         "",
         line("Property", p.property.title),
         line("Address", p.property.address),
@@ -181,7 +190,7 @@ export function buildMessage(
         "",
         "Please respond promptly — in London, speed of response decides lets.",
         "",
-        "— The TaDa team",
+        "— The TA-DA! team",
       ]);
     }
 
@@ -198,9 +207,9 @@ export function buildMessage(
         "",
         explanation,
         "",
-        "You can see the full status in your TaDa account.",
+        "You can see the full status in your TA-DA! account.",
         "",
-        "— The TaDa team",
+        "— The TA-DA! team",
       ]);
     }
 
@@ -221,7 +230,7 @@ export function buildMessage(
         "Reply to this email to confirm the time, or suggest another slot",
         "if it does not work for you.",
         "",
-        "— The TaDa team",
+        "— The TA-DA! team",
       ]);
     }
 

@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "../hooks/useTranslation";
 import { selectUser } from "@/store/slices/authSlice";
-import { logout } from "@/store/slices/authSlice";
-import { authAPI } from "../lib/api";
+import { performLogout } from "@/app/lib/performLogout";
 import { profileKeys } from "@/app/lib/translationsKeys/profileTranslationKeys";
 import { tenantCvKeys } from "@/app/lib/translationsKeys/tenantCvTranslationKeys";
 import { favoritesKeys } from "@/app/lib/translationsKeys/favoritesTranslationKeys";
@@ -82,37 +81,8 @@ export default function UserDropdown({
   }, [isOpen]);
 
   const handleLogout = async () => {
-    try {
-      console.log("🔄 Starting logout process...");
-
-      // Закрываем dropdown
-      setIsOpen(false);
-
-      // Вызываем API logout
-      await authAPI.logout();
-      console.log("✅ API logout successful");
-    } catch (error) {
-      console.error("❌ Logout API error:", error);
-      // Продолжаем logout даже если API не ответил
-    } finally {
-      try {
-        // Очищаем Redux состояние
-        dispatch(logout());
-        console.log("✅ Redux state cleared");
-
-        // Очищаем все localStorage данные
-        localStorage.clear();
-        console.log("✅ LocalStorage cleared");
-
-        // Перенаправляем на главную страницу
-        router.push("/");
-        console.log("✅ Redirected to home page");
-      } catch (error) {
-        console.error("❌ Error during logout cleanup:", error);
-        // В крайнем случае просто перезагружаем страницу
-        window.location.href = "/";
-      }
-    }
+    setIsOpen(false);
+    await performLogout(dispatch);
   };
 
   const handleSettings = () => {

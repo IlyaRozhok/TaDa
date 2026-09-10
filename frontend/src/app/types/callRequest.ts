@@ -6,8 +6,12 @@ export interface CallRequest {
   /** Stable slug; the label is looked up client-side for display. */
   reason: string;
   name: string;
-  phone_country_code: string;
-  phone_number: string;
+  /** Stable slug; decides which of the two contact fields below is populated. */
+  contact_method: string;
+  phone_country_code?: string | null;
+  phone_number?: string | null;
+  /** The visitor's own address, set only when `contact_method` is "email". */
+  email?: string | null;
   preferred_time?: string | null;
   notes?: string | null;
   source: CallRequestSource;
@@ -31,4 +35,11 @@ export const CALL_REASON_LABELS: Record<string, string> = {
   finish_rental_cv: "Help me finish my Rental CV",
   question_about_property: "I have a question about a property",
   something_else: "Something else",
+};
+
+/** Slug → English label, mirroring the backend's `CONTACT_METHOD_LABELS`. */
+export const CONTACT_METHOD_LABELS: Record<string, string> = {
+  voice_call: "Voice call",
+  video_call: "Video call",
+  email: "Email",
 };

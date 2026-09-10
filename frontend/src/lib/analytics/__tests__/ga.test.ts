@@ -466,12 +466,12 @@ describe("buildPageViewParams", () => {
         "https://ta-da.co",
         "/",
         "gclid=CjAbC123&utm_source=google",
-        "TaDa - Rental Platform",
+        "TA-DA! - Rental Platform",
       ),
     ).toEqual({
       page_location: "https://ta-da.co/?gclid=CjAbC123&utm_source=google",
       page_path: "/?gclid=CjAbC123&utm_source=google",
-      page_title: "TaDa - Rental Platform",
+      page_title: "TA-DA! - Rental Platform",
     });
   });
 

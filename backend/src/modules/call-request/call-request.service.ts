@@ -9,7 +9,11 @@ import {
   NotificationEvents,
 } from "@/modules/notifications/events/notification.events";
 import { CreateCallRequestDto } from "./dto/create-call-request.dto";
-import { labelForReason } from "./call-request.vocabulary";
+import {
+  EMAIL_CONTACT_METHOD,
+  labelForContactMethod,
+  labelForReason,
+} from "./call-request.vocabulary";
 
 @Injectable()
 export class CallRequestService {
@@ -31,12 +35,19 @@ export class CallRequestService {
     const preferredTime = dto.preferredTime?.trim() || null;
     const notes = dto.notes?.trim() || null;
 
+    // Exactly one contact channel is stored, chosen by the method rather than
+    // by what the payload happens to carry: a client that left a stale phone
+    // behind when the visitor switched to email must not have it persisted.
+    const wantsEmail = dto.contactMethod === EMAIL_CONTACT_METHOD;
+
     const saved = await this.callRequestRepository.save(
       this.callRequestRepository.create({
         reason: dto.reason,
         name: dto.name.trim(),
-        phone_country_code: dto.phone.countryCode,
-        phone_number: dto.phone.number.trim(),
+        contact_method: dto.contactMethod,
+        phone_country_code: wantsEmail ? null : (dto.phone?.countryCode ?? null),
+        phone_number: wantsEmail ? null : (dto.phone?.number.trim() ?? null),
+        email: wantsEmail ? (dto.email?.trim() ?? null) : null,
         preferred_time: preferredTime,
         notes,
         source: dto.source,
@@ -62,10 +73,19 @@ export class CallRequestService {
       reason: request.reason,
       reasonLabel: labelForReason(request.reason),
       name: request.name,
-      phone: {
-        countryCode: request.phone_country_code,
-        number: request.phone_number,
-      },
+      contactMethod: request.contact_method,
+      contactMethodLabel: labelForContactMethod(request.contact_method),
+      // Whichever channel the row actually carries. The template renders one
+      // line or the other; the notification service keys its dedupe off the
+      // same value, so both read the same fact.
+      phone:
+        request.phone_country_code && request.phone_number
+          ? {
+              countryCode: request.phone_country_code,
+              number: request.phone_number,
+            }
+          : null,
+      email: request.email,
       preferredTime: request.preferred_time,
       notes: request.notes,
       source: request.source,

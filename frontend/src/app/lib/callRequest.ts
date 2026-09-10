@@ -16,12 +16,21 @@ export interface CallRequestPayload {
   /** Stable slug from the shared reason list — never the localized label. */
   reason: string;
   name: string;
-  /** The only contact channel on the form — there is no email field. */
-  phone: {
+  /** Stable slug: "voice_call" | "video_call" | "email". */
+  contactMethod: string;
+  /**
+   * Exactly one of `phone` and `email` is sent, decided by `contactMethod`:
+   * the form shows one contact field, and the DTO validates the matching one.
+   * Both are optional here because neither is present in every payload — it is
+   * `contactMethod` that says which one to expect.
+   */
+  phone?: {
     /** ISO 3166-1 alpha-2, e.g. "GB". */
     countryCode: string;
     number: string;
   };
+  /** The visitor's own address, sent only for the "email" method. */
+  email?: string;
   /** Free text, as the visitor typed it. Omitted when the field is blank. */
   preferredTime?: string;
   notes?: string;

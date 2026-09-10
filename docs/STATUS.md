@@ -111,17 +111,25 @@ decisions) is recorded HERE, briefly, with a date.
   tenant scored 0 on occupation/family/children); viewing email asks for a
   reply instead of pointing at a screen that does not exist; booking list
   query params validated.
-- **G2 (next) — frontend hotfixes** (audit 06 items): mobile Sign Out that
-  actually logs out; English OAuth error screen without debug UI; root +
-  `/app` error boundaries; feed error state instead of "No results found";
-  preferences Finish surfaces failures + per-field autosave queue; RTK
-  error-shape reads (booking submit, admin status handler,
-  `apiErrorMessage` array join); re-apply after a cancelled booking;
-  preferences mutations invalidate match caches; i18n first paint = en
-  (hydration mismatch); non-401 `/auth/me` failure retries instead of
-  booting to landing; shortlist heart hidden for operators + error toast;
-  availability date display ("Available now" / "Contact for availability").
-- **H — the admin panel can see (and the tenant can act)**: property status
+- ~~**G2 — frontend hotfixes**~~ — **done (current PR)**, audit 06 items:
+  one shared logout path (`lib/performLogout.ts`) — the mobile Sign Out now
+  revokes the server session and hard-navigates; English OAuth error screen
+  without debug UI; root error boundary + `global-error` + styled 404; feed
+  load failure shows an error-with-retry instead of "No results found";
+  preferences Finish surfaces failures and stays on the wizard (onSubmit
+  rethrows), autosave queues per-field and reads existing prefs through a
+  synchronous ref (no more lost fields / duplicate creates); RTK
+  error-shape reads fixed in the booking submit and the admin status
+  handler, `apiErrorMessage` joins ValidationPipe's `string[]`; a cancelled
+  booking no longer locks "Request" (re-apply works as the email promises);
+  preferences mutations invalidate all Property caches (match scores and
+  feed order refresh); i18n first paint is `en` to match prerendered HTML
+  (locale applied post-hydration — kills the hydration failure for every
+  non-English visitor); `/auth/me` retries once on non-401 failures instead
+  of booting signed-in users to the landing; the shortlist heart renders
+  only for tenant/admin and failures toast; availability display: past
+  date → "Available now", missing date → "Contact for availability".
+- **H (next) — the admin panel can see (and the tenant can act)**: property status
   badge + filter + form control (incl. `epc_rating`, deposit-cap warning,
   verification controls — C2 API is ready); hand-set status validated
   against active bookings; tenant "my requests" view with status
@@ -164,7 +172,14 @@ decisions) is recorded HERE, briefly, with a date.
 4. **Host `.env` files:** remove the stale `CORS_ORIGIN=http://localhost:3000`
    value — the env union still honours it, which re-adds localhost to the
    production CORS allowlist.
-5. **Geocoding backfill** (after the B2/B3 migrations are deployed): run it
+5. **Feedback Fish:** create the project at feedback.fish and set
+   `NEXT_PUBLIC_FEEDBACK_FISH_PROJECT_ID` in the Vercel **Production** scope
+   and in **Preview** (that is what stage.ta-da.co deploys from). Until it is
+   set, no header shows a "Feedback" button and the widget script is never
+   loaded — by design, so no dead control ships. The loader lives in the root
+   layout, so it covers every route. Nothing about the visitor is passed to
+   the widget.
+6. **Geocoding backfill** (after the B2/B3 migrations are deployed): run it
    once on each host (stage, then prod), from `/opt/tada`:
 
    ```
@@ -242,11 +257,19 @@ decisions) is recorded HERE, briefly, with a date.
   property detail page renders the English fallback via `translateWithFallback`
   for `listing.disclaimer.operator.content`. Add the key and its six
   translations in Localazy and re-sync; no code change needed once they land.
+- **`share.feedback.btn` is not in Localazy yet** (added 2026-09-04 as
+  `header.feedback`, renamed 2026-09-10). One key, the label of the
+  "Feedback" button (`generalKeys.feedback.button`), which now sits in every
+  header in the app — the landing header's desktop menu and mobile menu, the
+  tenant and admin app headers, and the privacy/terms bars. It renders the
+  English fallback "Feedback" via `translateWithFallback` until the owner adds
+  it; no code change needed once it lands.
 - **"Book a call" copy is not in Localazy yet** (added 2026-08-27, keys
   renamed to the owner's scheme 2026-08-28, reason list flattened and the
-  preferred-time field turned into free text 2026-08-28). The modal and the
-  header pill render English fallbacks via `translateWithFallback`. Add these
-  keys in Localazy and re-sync; no code change needed once they land.
+  preferred-time field turned into free text 2026-08-28, preferred-contact-method
+  field added 2026-09-04). The modal and the header pill render English
+  fallbacks via `translateWithFallback`. Add these keys in Localazy and
+  re-sync; no code change needed once they land.
   Every key lives in one file now
   (`frontend/src/app/lib/translationsKeys/generalKeys.ts`, under `bookACall`),
   because both landings render the identical modal — the landing is recorded as
@@ -256,21 +279,35 @@ decisions) is recorded HERE, briefly, with a date.
   `field1.title` · `field1.subtitle` ·
   `field1.option1` … `field1.option10` ·
   `field2.title` · `field2.subtitle` ·
+  `field3.title` · `field3.subtitle` ·
+  `field3.option1` · `field3.option2` · `field3.option3` ·
   `field4.title` · `field4.subtitle` ·
   `field5.title` · `field5.subtitle` ·
   `btn` · `btn.pending` ·
   `notification.complete` · `notification.error` ·
-  `validation.required` · `validation.phone`.
-  The reason options are **positional**: the object key is the stable slug the
+  `validation.required` · `validation.phone` · `validation.email`.
+  Both option lists are **positional**: the object key is the stable slug the
   backend stores, and the `optionN` number is its place in the list. Reordering
-  the list means renumbering the keys here, in `BookACallModal`'s `REASONS`,
-  and in the backend's `call-request.vocabulary.ts`.
+  either means renumbering the keys here, in `BookACallModal`'s `REASONS` /
+  `CONTACT_METHODS`, and in the backend's `call-request.vocabulary.ts`.
   **field4 has no options**: preferred time is a plain text input, so whatever
   the visitor types is stored and mailed verbatim.
-  One key is deliberately outside the `book.call.` set: **field3 is the phone**,
-  and it reuses the profile settings key `wizard.profile.phone` ("Phone
-  Number"), which is already translated — the same field must not read
-  differently on the landing and in the account form.
+  **field3 chooses the field under it.** `option1`/`option2` (voice/video call)
+  show the phone, `option3` (email) shows an email input instead — exactly one
+  is ever visible, filled and required, and the backend stores exactly the one
+  the method names. Neither of those two inputs has its own `book.call.` label:
+  the **phone** reuses the profile settings key `wizard.profile.phone` ("Phone
+  Number") so it cannot read differently on the landing and in the account
+  form, and the **email** reuses
+  `landing.operators.web.contact.popup.email.{title,text}` (already translated,
+  via `generalKeys.modalForm`). If the owner would rather the modal own that
+  copy, add `book.call.field3.emailLabel` / `.emailPlaceholder` and point
+  `BookACallModal` at them.
+  Three keys here were **not** in the owner's brief and are the agent's
+  extension of the owner's own scheme, flagged for approval: `field3.subtitle`
+  (the dropdown's empty-state placeholder, matching `field1.subtitle`),
+  `validation.email` (the invalid-address message; `validation.required`
+  covers the blank case), and the `modalForm` email reuse described above.
   The **header pill** reads `book.call.title`, the same key as the modal
   heading (changed 2026-08-28); the landing-scoped
   `landing.common.web.bookacall.header.btn` is no longer referenced by the code

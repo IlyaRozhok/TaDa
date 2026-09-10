@@ -109,7 +109,10 @@ function callEvent(
     reason: "looking_for_home",
     reasonLabel: "I'm looking for a home",
     name: "Jane Doe",
+    contactMethod: "voice_call",
+    contactMethodLabel: "Voice call",
     phone: { countryCode: "GB", number: "20 7946 0000" },
+    email: null,
     preferredTime: "Weekday evenings",
     notes: null,
     source: "tenant",
@@ -277,8 +280,8 @@ describe("NotificationsService", () => {
       );
 
       expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
-        "call_request:GB2079460000:2026-08-18",
-        "call_request:GB2079460000:2026-08-18",
+        "call_request:voice_call:GB2079460000:2026-08-18",
+        "call_request:voice_call:GB2079460000:2026-08-18",
       ]);
     });
 
@@ -291,8 +294,46 @@ describe("NotificationsService", () => {
       );
 
       expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
-        "call_request:GB2079460000:2026-08-18",
-        "call_request:PL2079460000:2026-08-18",
+        "call_request:voice_call:GB2079460000:2026-08-18",
+        "call_request:voice_call:PL2079460000:2026-08-18",
+      ]);
+    });
+
+    // The email method has no phone to key on, so the address is the identity.
+    it("keys an email submission on the lower-cased address", async () => {
+      const service = build();
+
+      await service.handleCallRequested(
+        callEvent({
+          contactMethod: "email",
+          contactMethodLabel: "Email",
+          phone: null,
+          email: "Jane@Example.com",
+        }),
+      );
+
+      expect(repo.insertedValues[0].dedupe_key).toBe(
+        "call_request:email:jane@example.com:2026-08-18",
+      );
+    });
+
+    // Reaching us two ways in one day is two different asks, not a duplicate.
+    it("keys the same person's phone and email submissions apart", async () => {
+      const service = build();
+
+      await service.handleCallRequested(callEvent());
+      await service.handleCallRequested(
+        callEvent({
+          contactMethod: "email",
+          contactMethodLabel: "Email",
+          phone: null,
+          email: "jane@example.com",
+        }),
+      );
+
+      expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
+        "call_request:voice_call:GB2079460000:2026-08-18",
+        "call_request:email:jane@example.com:2026-08-18",
       ]);
     });
 
@@ -305,8 +346,8 @@ describe("NotificationsService", () => {
       );
 
       expect(repo.insertedValues.map((v) => v.dedupe_key)).toEqual([
-        "call_request:GB2079460000:2026-08-18",
-        "call_request:GB2079460000:2026-08-19",
+        "call_request:voice_call:GB2079460000:2026-08-18",
+        "call_request:voice_call:GB2079460000:2026-08-19",
       ]);
     });
 
@@ -339,7 +380,7 @@ describe("NotificationsService", () => {
         build().handleCallRequested(replayed),
       ).resolves.toBeUndefined();
       expect(repo.insertedValues[0].dedupe_key).toBe(
-        "call_request:GB2079460000:2026-08-18",
+        "call_request:voice_call:GB2079460000:2026-08-18",
       );
     });
   });
