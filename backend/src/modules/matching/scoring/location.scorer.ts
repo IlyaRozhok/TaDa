@@ -1,6 +1,7 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { getBoroughsForArea } from "@/modules/matching/scoring/london-areas";
 
 /**
  * Location matching (areas, districts, metro stations).
@@ -11,10 +12,12 @@ import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.inte
  * affected (no preference → excluded from their denominator, scores
  * unchanged).
  *
- * The district check reads `property.borough` first — the canonical borough
- * geocoded from the postcode via postcodes.io — and falls back to substring
- * matches on the address and metro labels for rows that have not been
- * geocoded yet.
+ * The district AND area checks both read `property.borough` first — the
+ * canonical borough geocoded from the postcode via postcodes.io — and fall
+ * back to substring matches on the address and metro labels for rows that
+ * have not been geocoded yet. An area is satisfied by any borough inside it
+ * (`london-areas.ts`), so "East London" matches a Tower Hamlets property
+ * whose address never says "East".
  */
 export function matchLocation(
   property: Property,
@@ -53,15 +56,27 @@ export function matchLocation(
   let totalCriteria = 0;
   const matchDetails: string[] = [];
 
-  // Check area matches (e.g., "West London", "Central")
+  // Check area matches (e.g., "West London", "Central") — the geocoded borough
+  // is authoritative here too: an East London preference is satisfied by a
+  // property in Tower Hamlets, whose address says "Bethnal Green" and never
+  // the word "East". Address and metro substrings remain the fallback for rows
+  // that have not been geocoded.
   if (prefAreas.length > 0) {
     totalCriteria++;
-    const normalizedPrefAreas = prefAreas.map((a) => a.toLowerCase());
-    const areaMatch = normalizedPrefAreas.some(
-      (area) =>
-        propertyAddress.includes(area) ||
-        propertyMetro.some((m) => m.label?.toLowerCase().includes(area)),
-    );
+    const areaMatch = prefAreas.some((area) => {
+      const boroughsInArea = getBoroughsForArea(area);
+      if (propertyBorough && boroughsInArea?.has(propertyBorough)) {
+        return true;
+      }
+
+      const normalizedArea = area.toLowerCase();
+      return (
+        propertyAddress.includes(normalizedArea) ||
+        propertyMetro.some((m) =>
+          m.label?.toLowerCase().includes(normalizedArea),
+        )
+      );
+    });
     if (areaMatch) {
       matchedCriteria++;
       matchDetails.push("Area matches");
