@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslation } from "../hooks/useTranslation";
 import Footer from "../components/Footer";
 import Link from "next/link";
+import FeedbackFishButton from "../components/FeedbackFishButton";
 
 const TermsOfUsePage = () => {
   const { t } = useTranslation();
@@ -22,6 +23,12 @@ const TermsOfUsePage = () => {
                 className="h-8 sm:h-10"
               />
             </Link>
+            {/* Feedback - one control at every width; this bar has no mobile
+                variant */}
+            <FeedbackFishButton
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              iconClassName="w-5 h-5"
+            />
           </div>
         </div>
       </header>

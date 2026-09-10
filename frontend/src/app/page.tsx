@@ -31,7 +31,7 @@ const jsonLd = {
     {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
-      name: "TaDa",
+      name: "TA-DA!",
       url: SITE_URL,
       publisher: { "@id": `${SITE_URL}/#organization` },
       // No potentialAction/SearchAction: the catalogue at /app/units has no

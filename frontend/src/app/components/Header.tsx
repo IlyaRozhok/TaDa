@@ -2,13 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 import { Menu } from "lucide-react";
-import {
-  FEEDBACK_FISH_SCRIPT_ID,
-  getFeedbackFishProjectId,
-  getFeedbackFishScriptSrc,
-} from "@/lib/feedbackFish";
+import { getFeedbackFishProjectId } from "@/lib/feedbackFish";
 import BookACallModal from "./BookACallModal";
 import LanguageDropdown from "./LanguageDropdown";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
@@ -42,8 +37,8 @@ const Header = ({
     "Book a call",
   );
 
-  // Feedback Fish: no project id configured means neither the loader nor the
-  // trigger is rendered, so no dead button ships where the widget is off.
+  // Feedback Fish: the loader lives in the root layout, and with no project id
+  // configured neither it nor this trigger renders — no dead button ships.
   const feedbackFishProjectId = getFeedbackFishProjectId();
   const feedbackLabel = translateWithFallback(
     t,
@@ -164,17 +159,6 @@ const Header = ({
 
   return (
     <>
-      {/* Feedback Fish loader. Deduped by id, so a second Header on the page
-          cannot inject it twice; it binds itself to the `data-feedback-fish`
-          triggers in the menus below. */}
-      {feedbackFishProjectId && (
-        <Script
-          id={FEEDBACK_FISH_SCRIPT_ID}
-          src={getFeedbackFishScriptSrc(feedbackFishProjectId)}
-          strategy="afterInteractive"
-        />
-      )}
-
       <header
         className={`fixed top-0 left-0 right-0 z-50 py-0.75 sm:py-1 ${
           disabled ? "pointer-events-none" : ""

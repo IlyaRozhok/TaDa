@@ -37,12 +37,12 @@ export const generalKeys = {
     tenantCtaButton: "landing.tenant.web.hero.btn",
   },
   /**
-   * The Feedback Fish trigger in the landing header. Not in Localazy yet —
-   * read through `translateWithFallback` with an English fallback, like the
-   * "Book a call" copy below. See docs/STATUS.md.
+   * The Feedback Fish trigger, shared by every header in the app. Not in
+   * Localazy yet — read through `translateWithFallback` with an English
+   * fallback, like the "Book a call" copy below. See docs/STATUS.md.
    */
   feedback: {
-    button: "header.feedback",
+    button: "share.feedback.btn",
   },
   /**
    * "Book a call" modal copy. The whole modal reads the same on both landings,

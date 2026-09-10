@@ -175,9 +175,10 @@ decisions) is recorded HERE, briefly, with a date.
 5. **Feedback Fish:** create the project at feedback.fish and set
    `NEXT_PUBLIC_FEEDBACK_FISH_PROJECT_ID` in the Vercel **Production** scope
    and in **Preview** (that is what stage.ta-da.co deploys from). Until it is
-   set the landing header shows no "Feedback" button and the widget script is
-   never loaded — by design, so no dead control ships. Nothing about the
-   visitor is passed to the widget.
+   set, no header shows a "Feedback" button and the widget script is never
+   loaded — by design, so no dead control ships. The loader lives in the root
+   layout, so it covers every route. Nothing about the visitor is passed to
+   the widget.
 6. **Geocoding backfill** (after the B2/B3 migrations are deployed): run it
    once on each host (stage, then prod), from `/opt/tada`:
 
@@ -256,12 +257,13 @@ decisions) is recorded HERE, briefly, with a date.
   property detail page renders the English fallback via `translateWithFallback`
   for `listing.disclaimer.operator.content`. Add the key and its six
   translations in Localazy and re-sync; no code change needed once they land.
-- **`header.feedback` is not in Localazy yet** (added 2026-09-04, with the
-  Feedback Fish widget). One key, the label of the "Feedback" button in the
-  landing header's desktop menu and mobile menu
-  (`generalKeys.feedback.button`). It renders the English fallback
-  "Feedback" via `translateWithFallback` until the owner adds it; no code
-  change needed once it lands.
+- **`share.feedback.btn` is not in Localazy yet** (added 2026-09-04 as
+  `header.feedback`, renamed 2026-09-10). One key, the label of the
+  "Feedback" button (`generalKeys.feedback.button`), which now sits in every
+  header in the app — the landing header's desktop menu and mobile menu, the
+  tenant and admin app headers, and the privacy/terms bars. It renders the
+  English fallback "Feedback" via `translateWithFallback` until the owner adds
+  it; no code change needed once it lands.
 - **"Book a call" copy is not in Localazy yet** (added 2026-08-27, keys
   renamed to the owner's scheme 2026-08-28, reason list flattened and the
   preferred-time field turned into free text 2026-08-28, preferred-contact-method
