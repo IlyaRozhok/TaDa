@@ -211,6 +211,20 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **The London region→borough map is duplicated across the two apps**
+  (added 2026-09-10, with the area-matching fix). `DISTRICTS_BY_AREA` lives in
+  both `frontend/src/constants/admin-form-options.ts` (what the preferences
+  wizard offers) and `backend/src/modules/matching/scoring/london-areas.ts`
+  (what the location scorer resolves an area to). They must stay 1:1 — a
+  borough added to one and not the other silently stops matching by area, with
+  no error anywhere. This is not a monorepo and there is no shared package to
+  hold it once; the honest options are a generated file, publishing the
+  constant through the API, or leaving the copies and remembering. Left as
+  copies with a comment on each. Also note `preferred_areas` holds two
+  spellings — the wizard stores `"East London"`, older rows and the entity's
+  own ApiProperty example carry `"East"` — so the backend normalizes a
+  trailing "London" away before comparing. Cleaning the stored values would
+  let that normalization go.
 - **The 5,000-row ranking ceiling now warns, and that warning needs a home**
   (added 2026-08-28, with the full-inventory feed PR).
   `MatchingService` logs `WARN` when the ranking pass comes back with exactly

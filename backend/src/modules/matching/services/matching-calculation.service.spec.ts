@@ -1069,6 +1069,73 @@ describe("MatchingCalculationService", () => {
       expect(c).toMatchObject({ match: true, score: 15 });
     });
 
+    it("matches a preferred area by the boroughs inside it", () => {
+      // Tower Hamlets is an East London borough, and the address says
+      // "Bethnal Green" — never "East". Before the area check read the
+      // geocoded borough this scored 0 on the area criterion.
+      const c = one(
+        "location",
+        {
+          borough: "Tower Hamlets",
+          address: "54 Three Colts Lane, Bethnal Green, London E2 6JJ",
+        },
+        { preferred_areas: ["East London"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15, maxScore: 15 });
+    });
+
+    it("scores area + district together as a perfect match", () => {
+      // The demo case: the wizard makes a tenant pick an area before it
+      // offers districts, so both criteria are always set together. Both
+      // resolve through the same geocoded borough → ratio 1.
+      const c = one(
+        "location",
+        {
+          borough: "Tower Hamlets",
+          address: "54 Three Colts Lane, Bethnal Green, London E2 6JJ",
+        },
+        {
+          preferred_areas: ["East London"],
+          preferred_districts: ["Tower Hamlets"],
+        },
+      );
+      expect(c).toMatchObject({
+        match: true,
+        score: 15,
+        maxScore: 15,
+        reason: "Perfect location match",
+      });
+    });
+
+    it("accepts the bare region name older rows stored", () => {
+      // `preferred_areas` predates the "<region> London" option labels — the
+      // entity's own ApiProperty example is still ["West", "East"].
+      const c = one(
+        "location",
+        { borough: "Hackney" },
+        { preferred_areas: ["East"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15 });
+    });
+
+    it("still matches an area by address when the row is not geocoded", () => {
+      const c = one(
+        "location",
+        { address: "3 Mare Street, East London" },
+        { preferred_areas: ["East London"] },
+      );
+      expect(c).toMatchObject({ match: true, score: 15 });
+    });
+
+    it("does not match an area whose boroughs exclude the property", () => {
+      const c = one(
+        "location",
+        { borough: "Croydon", address: "1 High Street, Croydon" },
+        { preferred_areas: ["East London"] },
+      );
+      expect(c).toMatchObject({ match: false, score: 0, maxScore: 15 });
+    });
+
     it("matches a preferred metro station exactly", () => {
       const c = one(
         "location",
