@@ -90,6 +90,18 @@ export class CallRequest {
   @Column({ type: "varchar", length: 16 })
   source: CallRequestSource;
 
+  /**
+   * When an admin marked the request as called back, or null while it still
+   * waits. A timestamp rather than a flag on purpose: with no visitor account
+   * behind the form, the callback IS the funnel, and "who was already called,
+   * and when" is the fact two admins working the same list need to see.
+   */
+  @ApiPropertyOptional({
+    description: "When an admin marked the request handled, or null while open",
+  })
+  @Column({ type: "timestamp", nullable: true })
+  handled_at: Date | null;
+
   @ApiProperty({ description: "Created at timestamp" })
   @Index("idx_call_requests_created_at")
   @CreateDateColumn()

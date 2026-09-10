@@ -2,6 +2,7 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 
 import { TenantCvService } from "./tenant-cv.service";
 import { TenantCv } from "@/entities/tenant-cv.entity";
+import { User, UserRole } from "@/entities/user.entity";
 import { NotificationEvents } from "@/modules/notifications/events/notification.events";
 
 /**
@@ -37,6 +38,7 @@ describe("TenantCvService.markCompleted", () => {
 
     service = new TenantCvService(
       tenantCvRepository,
+      { count: jest.fn() } as any,
       userQueryService,
       { refreshAvatarUrl: jest.fn() } as any,
       eventEmitter,
@@ -121,6 +123,7 @@ describe("TenantCvService — verification badges", () => {
 
     service = new TenantCvService(
       tenantCvRepository,
+      { count: jest.fn() } as any,
       userQueryService,
       { refreshAvatarUrl: jest.fn() } as any,
       { emit: jest.fn() } as unknown as EventEmitter2,
@@ -147,5 +150,97 @@ describe("TenantCvService — verification badges", () => {
     const saved = tenantCvRepository.save.mock.calls[0][0];
     expect(saved.kyc_status).toBe("passed");
     expect(saved.referencing_status).toBe("not_started");
+  });
+});
+
+/**
+ * H — the share link unmasks contacts by relationship, not by login. A bare
+ * signed-in account is not a relationship: a leaked link plus a 30-second
+ * signup must not turn into a phone number.
+ */
+describe("TenantCvService.getByShareUuid — contact masking", () => {
+  let tenantCvRepository: any;
+  let bookingRequestRepository: any;
+  let service: TenantCvService;
+
+  const viewer = (overrides: Partial<User> = {}): User =>
+    ({ id: "viewer-1", role: UserRole.Tenant, ...overrides }) as User;
+
+  beforeEach(() => {
+    tenantCvRepository = {
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: "cv-1", user_id: "tenant-1" }),
+    };
+    bookingRequestRepository = { count: jest.fn().mockResolvedValue(0) };
+
+    service = new TenantCvService(
+      tenantCvRepository,
+      bookingRequestRepository,
+      {
+        findOneWithProfiles: jest.fn().mockResolvedValue({
+          id: "tenant-1",
+          email: "tenant@example.com",
+          phone: "+441234567890",
+          address: "1 High Street",
+          full_name: "Tenant One",
+        }),
+      } as any,
+      { refreshAvatarUrl: jest.fn() } as any,
+      { emit: jest.fn() } as unknown as EventEmitter2,
+    );
+  });
+
+  it("masks for anonymous viewers", async () => {
+    const result = await service.getByShareUuid("share-1");
+
+    expect(result.profile.contacts_masked).toBe(true);
+    expect(bookingRequestRepository.count).not.toHaveBeenCalled();
+  });
+
+  it("masks for a signed-in account with no booking relationship", async () => {
+    const result = await service.getByShareUuid("share-1", viewer());
+
+    expect(result.profile.contacts_masked).toBe(true);
+    expect(result.profile.phone).not.toBe("+441234567890");
+    // The relationship WAS consulted — and only bookings past `new` count.
+    expect(bookingRequestRepository.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        tenant_id: "tenant-1",
+        property: { operator_id: "viewer-1" },
+      }),
+    });
+  });
+
+  it("unmasks for an operator holding a booking at contacting+", async () => {
+    bookingRequestRepository.count.mockResolvedValue(1);
+
+    const result = await service.getByShareUuid(
+      "share-1",
+      viewer({ role: UserRole.Operator }),
+    );
+
+    expect(result.profile.contacts_masked).toBe(false);
+    expect(result.profile.phone).toBe("+441234567890");
+  });
+
+  it("unmasks for admins without a booking lookup", async () => {
+    const result = await service.getByShareUuid(
+      "share-1",
+      viewer({ role: UserRole.Admin }),
+    );
+
+    expect(result.profile.contacts_masked).toBe(false);
+    expect(bookingRequestRepository.count).not.toHaveBeenCalled();
+  });
+
+  it("unmasks for the tenant reading their own link", async () => {
+    const result = await service.getByShareUuid(
+      "share-1",
+      viewer({ id: "tenant-1" }),
+    );
+
+    expect(result.profile.contacts_masked).toBe(false);
+    expect(bookingRequestRepository.count).not.toHaveBeenCalled();
   });
 });

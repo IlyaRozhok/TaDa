@@ -92,6 +92,8 @@ export interface GetPropertiesArgs {
   building_id?: string;
   operator_id?: string;
   is_landing_listing?: boolean;
+  /** One lifecycle status ("listed", "under_offer", ...). */
+  status?: string;
   property_type?: string;
   bedrooms?: number;
   bedrooms_min?: number;
@@ -112,6 +114,7 @@ const adminListParams = (args?: GetPropertiesArgs): Record<string, string> => {
   if (args?.is_landing_listing !== undefined) {
     params.is_landing_listing = String(args.is_landing_listing);
   }
+  if (args?.status) params.status = args.status;
   if (args?.property_type) params.property_type = args.property_type;
   if (args?.bedrooms !== undefined) params.bedrooms = String(args.bedrooms);
   if (args?.bedrooms_min !== undefined) {
