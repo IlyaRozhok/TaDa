@@ -179,6 +179,20 @@ decisions) is recorded HERE, briefly, with a date.
    loaded — by design, so no dead control ships. The loader lives in the root
    layout, so it covers every route. Nothing about the visitor is passed to
    the widget.
+
+   The loader URL must spell the parameter **`pid`** (`ff.js?pid=…`). It
+   shipped as `projectId=` and the widget opened against a null project:
+   `ff.js` recovers its project by running `/(?:\?|&)pid=(\w*)/` over its own
+   `document.currentScript.src`, and `projectId` matches nothing. Fixed
+   2026-09-10; do not rename it back.
+
+   **The official `@feedback-fish/react` package was evaluated and rejected**
+   (2026-09-10). It fixes nothing here — it injects the same script the same
+   dynamic way and differs only in sending `pid` — while its peer range is
+   React `^16.8 || ^17 || ^18` against this repo's React 19, so `npm install`
+   needs `--legacy-peer-deps` and `npm ci` fails outright, which would break
+   all four CI install steps. Revisit only if the package adds React 19 to
+   its peers.
 6. **Geocoding backfill** (after the B2/B3 migrations are deployed): run it
    once on each host (stage, then prod), from `/opt/tada`:
 
@@ -197,6 +211,20 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **The London region→borough map is duplicated across the two apps**
+  (added 2026-09-10, with the area-matching fix). `DISTRICTS_BY_AREA` lives in
+  both `frontend/src/constants/admin-form-options.ts` (what the preferences
+  wizard offers) and `backend/src/modules/matching/scoring/london-areas.ts`
+  (what the location scorer resolves an area to). They must stay 1:1 — a
+  borough added to one and not the other silently stops matching by area, with
+  no error anywhere. This is not a monorepo and there is no shared package to
+  hold it once; the honest options are a generated file, publishing the
+  constant through the API, or leaving the copies and remembering. Left as
+  copies with a comment on each. Also note `preferred_areas` holds two
+  spellings — the wizard stores `"East London"`, older rows and the entity's
+  own ApiProperty example carry `"East"` — so the backend normalizes a
+  trailing "London" away before comparing. Cleaning the stored values would
+  let that normalization go.
 - **The 5,000-row ranking ceiling now warns, and that warning needs a home**
   (added 2026-08-28, with the full-inventory feed PR).
   `MatchingService` logs `WARN` when the ranking pass comes back with exactly
