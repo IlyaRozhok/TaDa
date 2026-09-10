@@ -6,6 +6,7 @@ import {
 } from "@/store/api/shortlist.api";
 import { selectUser } from "@/store/slices/authSlice";
 import { track } from "@/lib/analytics/ga";
+import { notify } from "@/shared/lib/notify";
 import { Property } from "@/app/types";
 
 /**
@@ -13,7 +14,7 @@ import { Property } from "@/app/types";
  * visitors on a public property page — must not fire it at all: a 401 there
  * would sign the reader out through the base query's 401 handling.
  */
-const canUseShortlist = (role: string | undefined): boolean =>
+export const canUseShortlist = (role: string | undefined): boolean =>
   role === "tenant" || role === "admin";
 
 /**
@@ -66,9 +67,11 @@ export const useShortlist = (property: Property, showShortlist: boolean) => {
         params: { property_id: property.id },
       });
     } catch (error: unknown) {
-      // The optimistic patch has already been rolled back, so the heart is back
-      // where it was; nothing renders this message today.
+      // The optimistic patch has already been rolled back, so the heart is
+      // back where it was — but a silent rollback reads as "saved" to anyone
+      // not staring at the icon, so say it out loud.
       console.error("Shortlist toggle failed:", error);
+      notify.error("Couldn't update your shortlist. Please try again.");
     }
   };
 

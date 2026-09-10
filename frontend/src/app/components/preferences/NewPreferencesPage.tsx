@@ -9,6 +9,7 @@ import { onboardingKeys } from "@/app/lib/translationsKeys/onboardingTranslation
 import { waitForSessionManager } from "@/app/components/providers/SessionManager";
 import { getRedirectPath } from "@/app/utils/simpleRedirect";
 import { track } from "@/lib/analytics/ga";
+import { notify } from "@/shared/lib/notify";
 import {
   LifestylePreferencesStep,
   LocationStep,
@@ -221,8 +222,13 @@ export default function NewPreferencesPage({
         router.replace(path);
       }
     } catch (error) {
+      // The save failed — say so and STAY on the wizard. Proceeding to the
+      // redirect here used to tell the tenant everything was saved while
+      // matching ran on stale or absent preferences.
       console.error("❌ Failed to save preferences:", error);
-      // Silent error - no toast
+      notify.error(
+        "We couldn't save your preferences. Please check your answers and try again.",
+      );
     }
   };
 

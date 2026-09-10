@@ -69,7 +69,11 @@ export const preferencesApi = baseApi.injectEndpoints({
       Partial<PreferencesFormData>
     >({
       query: (body) => ({ url: "/preferences", method: "POST", body }),
-      invalidatesTags: [{ type: "Preferences", id: "ME" }],
+      // "Property" as a whole, not just Preferences: every match score, the
+      // ranked feed and the per-property breakdowns are computed FROM the
+      // preferences. Leaving them cached served a tenant who just changed
+      // their budget the old percentages and ordering for up to five minutes.
+      invalidatesTags: [{ type: "Preferences", id: "ME" }, "Property"],
     }),
 
     updatePreferences: builder.mutation<
@@ -77,7 +81,7 @@ export const preferencesApi = baseApi.injectEndpoints({
       Partial<PreferencesFormData>
     >({
       query: (body) => ({ url: "/preferences", method: "PUT", body }),
-      invalidatesTags: [{ type: "Preferences", id: "ME" }],
+      invalidatesTags: [{ type: "Preferences", id: "ME" }, "Property"],
     }),
   }),
 });

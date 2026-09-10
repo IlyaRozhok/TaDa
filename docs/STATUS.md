@@ -111,17 +111,25 @@ decisions) is recorded HERE, briefly, with a date.
   tenant scored 0 on occupation/family/children); viewing email asks for a
   reply instead of pointing at a screen that does not exist; booking list
   query params validated.
-- **G2 (next) — frontend hotfixes** (audit 06 items): mobile Sign Out that
-  actually logs out; English OAuth error screen without debug UI; root +
-  `/app` error boundaries; feed error state instead of "No results found";
-  preferences Finish surfaces failures + per-field autosave queue; RTK
-  error-shape reads (booking submit, admin status handler,
-  `apiErrorMessage` array join); re-apply after a cancelled booking;
-  preferences mutations invalidate match caches; i18n first paint = en
-  (hydration mismatch); non-401 `/auth/me` failure retries instead of
-  booting to landing; shortlist heart hidden for operators + error toast;
-  availability date display ("Available now" / "Contact for availability").
-- **H — the admin panel can see (and the tenant can act)**: property status
+- ~~**G2 — frontend hotfixes**~~ — **done (current PR)**, audit 06 items:
+  one shared logout path (`lib/performLogout.ts`) — the mobile Sign Out now
+  revokes the server session and hard-navigates; English OAuth error screen
+  without debug UI; root error boundary + `global-error` + styled 404; feed
+  load failure shows an error-with-retry instead of "No results found";
+  preferences Finish surfaces failures and stays on the wizard (onSubmit
+  rethrows), autosave queues per-field and reads existing prefs through a
+  synchronous ref (no more lost fields / duplicate creates); RTK
+  error-shape reads fixed in the booking submit and the admin status
+  handler, `apiErrorMessage` joins ValidationPipe's `string[]`; a cancelled
+  booking no longer locks "Request" (re-apply works as the email promises);
+  preferences mutations invalidate all Property caches (match scores and
+  feed order refresh); i18n first paint is `en` to match prerendered HTML
+  (locale applied post-hydration — kills the hydration failure for every
+  non-English visitor); `/auth/me` retries once on non-401 failures instead
+  of booting signed-in users to the landing; the shortlist heart renders
+  only for tenant/admin and failures toast; availability display: past
+  date → "Available now", missing date → "Contact for availability".
+- **H (next) — the admin panel can see (and the tenant can act)**: property status
   badge + filter + form control (incl. `epc_rating`, deposit-cap warning,
   verification controls — C2 API is ready); hand-set status validated
   against active bookings; tenant "my requests" view with status
