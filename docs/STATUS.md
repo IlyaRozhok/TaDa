@@ -179,6 +179,20 @@ decisions) is recorded HERE, briefly, with a date.
    loaded — by design, so no dead control ships. The loader lives in the root
    layout, so it covers every route. Nothing about the visitor is passed to
    the widget.
+
+   The loader URL must spell the parameter **`pid`** (`ff.js?pid=…`). It
+   shipped as `projectId=` and the widget opened against a null project:
+   `ff.js` recovers its project by running `/(?:\?|&)pid=(\w*)/` over its own
+   `document.currentScript.src`, and `projectId` matches nothing. Fixed
+   2026-09-10; do not rename it back.
+
+   **The official `@feedback-fish/react` package was evaluated and rejected**
+   (2026-09-10). It fixes nothing here — it injects the same script the same
+   dynamic way and differs only in sending `pid` — while its peer range is
+   React `^16.8 || ^17 || ^18` against this repo's React 19, so `npm install`
+   needs `--legacy-peer-deps` and `npm ci` fails outright, which would break
+   all four CI install steps. Revisit only if the package adds React 19 to
+   its peers.
 6. **Geocoding backfill** (after the B2/B3 migrations are deployed): run it
    once on each host (stage, then prod), from `/opt/tada`:
 

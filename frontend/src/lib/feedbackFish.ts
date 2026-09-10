@@ -26,7 +26,20 @@ export function getFeedbackFishProjectId(): string | null {
   return projectId ? projectId : null;
 }
 
-/** Loader URL for a given project id. */
+/**
+ * Loader URL for a given project id.
+ *
+ * The parameter is `pid`, and nothing else will do: `ff.js` recovers the
+ * project it belongs to by running `/(?:\?|&)pid=(\w*)/` over its own
+ * `document.currentScript.src`. Spelling it `projectId` (as this did until
+ * 2026-09-10) matches nothing, so the widget opened against a null project —
+ * which is also what the official `@feedback-fish/react` package sends, and
+ * the only thing that package does differently from the loader here.
+ *
+ * `encodeURIComponent` stays for safety, but note that `\w*` means a project
+ * id is plain word characters — anything that needed escaping would not have
+ * matched in the first place.
+ */
 export function getFeedbackFishScriptSrc(projectId: string): string {
-  return `https://feedback.fish/ff.js?projectId=${encodeURIComponent(projectId)}`;
+  return `https://feedback.fish/ff.js?pid=${encodeURIComponent(projectId)}`;
 }

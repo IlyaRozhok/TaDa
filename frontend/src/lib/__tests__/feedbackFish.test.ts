@@ -30,15 +30,18 @@ describe("getFeedbackFishProjectId", () => {
 });
 
 describe("getFeedbackFishScriptSrc", () => {
-  it("builds the loader URL for the project", () => {
+  // ff.js reads its own src back with /(?:\?|&)pid=(\w*)/. The parameter name
+  // is the whole integration: `projectId` matched nothing and the widget
+  // opened against a null project.
+  it("names the query parameter pid, which is what ff.js parses", () => {
     expect(getFeedbackFishScriptSrc("abc123")).toBe(
-      "https://feedback.fish/ff.js?projectId=abc123",
+      "https://feedback.fish/ff.js?pid=abc123",
     );
   });
 
   it("encodes the id so it cannot break out of the query string", () => {
     expect(getFeedbackFishScriptSrc("a b&c")).toBe(
-      "https://feedback.fish/ff.js?projectId=a%20b%26c",
+      "https://feedback.fish/ff.js?pid=a%20b%26c",
     );
   });
 });
