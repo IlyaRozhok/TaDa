@@ -24,6 +24,11 @@ const geistMono = Geist_Mono({
 import { isIndexableSite as isIndexable } from "@/app/lib/siteEnv";
 import { SITE_URL } from "@/app/lib/siteUrl";
 import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  SHARED_OPEN_GRAPH,
+} from "@/app/lib/siteMetadata";
+import {
   FEEDBACK_FISH_SCRIPT_ID,
   getFeedbackFishProjectId,
   getFeedbackFishScriptSrc,
@@ -33,8 +38,12 @@ export const metadata: Metadata = {
   // Every relative `alternates.canonical` and OpenGraph image below resolves
   // against this, so it must be the www host the site actually serves from.
   metadataBase: new URL(SITE_URL),
-  title: "TA-DA! - Rental Platform",
-  description: "Connect tenants and property operators in London",
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  // Site-wide invariants only — the brand copy for the share card is set on
+  // the homepage itself. See SHARED_OPEN_GRAPH for why it cannot live here.
+  openGraph: SHARED_OPEN_GRAPH,
+  twitter: { card: "summary_large_image" },
   robots: isIndexable
     ? { index: true, follow: true }
     : {

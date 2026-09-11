@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { SITE_URL } from "@/app/lib/siteUrl";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  SHARED_OPEN_GRAPH,
+} from "@/app/lib/siteMetadata";
 import HomePageClient from "./HomePageClient";
 
 /**
@@ -11,6 +16,19 @@ import HomePageClient from "./HomePageClient";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
+  // The share card for the site itself. Set here, not in the root layout, so
+  // it is the homepage's card only — see SHARED_OPEN_GRAPH.
+  openGraph: {
+    ...SHARED_OPEN_GRAPH,
+    url: "/",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
 };
 
 // The site-level identity graph. It belongs on the homepage only — the
