@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { fetchPublicProperty } from "@/app/lib/serverApi";
 import { SITE_URL } from "@/app/lib/siteUrl";
+import { SHARED_OPEN_GRAPH } from "@/app/lib/siteMetadata";
 import PropertyDetailClient from "./PropertyDetailClient";
 
 /**
@@ -41,9 +42,11 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/app/properties/${property.id}` },
     openGraph: {
+      // Replaces the root openGraph wholesale, so the site name and locale
+      // have to be carried in explicitly.
+      ...SHARED_OPEN_GRAPH,
       title: property.title,
       description,
-      type: "website",
       // The stable proxy, NOT the photo URL itself: photos are 24-hour
       // presigned S3 URLs, and an unfurler rendering the preview later than
       // that would get a 403. Relative — resolved against metadataBase.
