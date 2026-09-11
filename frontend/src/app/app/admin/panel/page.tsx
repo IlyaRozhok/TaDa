@@ -52,9 +52,13 @@ import {
 } from "@/store/api/properties.api";
 import {
   useGetBookingRequestsQuery,
+  useProposeViewingMutation,
   useUpdateBookingRequestStatusMutation,
 } from "@/store/api/bookingRequests.api";
-import { useGetCallRequestsQuery } from "@/store/api/callRequests.api";
+import {
+  useGetCallRequestsQuery,
+  useSetCallRequestHandledMutation,
+} from "@/store/api/callRequests.api";
 import {
   useCreateUserMutation,
   useDeleteUserMutation,
@@ -134,6 +138,329 @@ function apiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+interface AdminViewModalProps {
+  open: boolean;
+  activeSection: AdminSection;
+  selectedItem: User | Building | Property | null;
+  onClose: () => void;
+  /** Fired after a successful clipboard copy, with the copied id. */
+  onCopied: (id: string) => void;
+}
+
+/**
+ * The generic view modal for the users and buildings sections (the
+ * properties section has its own `ViewPropertyModal`). Hoisted to module
+ * level: defined inside the panel it was remounted on every parent render,
+ * and its `useState` sat behind an early return — a rules-of-hooks bug
+ * waiting for the hook order to shift.
+ */
+const AdminViewModal: React.FC<AdminViewModalProps> = ({
+  open,
+  activeSection,
+  selectedItem,
+  onClose,
+  onCopied,
+}) => {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  if (!open || !selectedItem) return null;
+
+  const building =
+    activeSection === "buildings" ? (selectedItem as Building) : null;
+  const user = activeSection === "users" ? (selectedItem as User) : null;
+
+  const handleCopyId = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopiedId(id);
+      onCopied(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const truncateId = (id: string, maxLength: number = 8) => {
+    return id.length > maxLength ? `${id.substring(0, maxLength)}...` : id;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
+          <h3 className="text-2xl font-bold text-white">
+            {building
+              ? building.name
+              : user
+                ? user.full_name || user.email
+                : `View ${activeSection.slice(0, -1)}`}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1">
+          {building ? (
+            <div className="space-y-6">
+              {/* Key Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                  <div className="text-sm text-white/70 mb-1">Building ID</div>
+                  <button
+                    onClick={() => building.id && handleCopyId(building.id)}
+                    className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group w-full text-left"
+                    title={`Click to copy: ${building.id}`}
+                  >
+                    <span className="text-lg font-semibold">
+                      {truncateId(building.id || "", 8)}
+                    </span>
+                    {copiedId === building.id ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-white/50 group-hover:text-white/70" />
+                    )}
+                  </button>
+                </div>
+                <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                  <div className="text-sm text-white/70 mb-1">Address</div>
+                  <div className="text-lg font-semibold text-white">
+                    {building.address || "N/A"}
+                  </div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                  <div className="text-sm text-white/70 mb-1">Units</div>
+                  <div className="text-lg font-semibold text-white">
+                    {building.number_of_units || "-"}
+                  </div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                  <div className="text-sm text-white/70 mb-1">Unit Type</div>
+                  <div className="text-lg font-semibold text-white">
+                    {Array.isArray(building.type_of_unit)
+                      ? building.type_of_unit.join(", ")
+                      : building.type_of_unit || "-"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Building Details */}
+              <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  Building Information
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between py-2 border-b border-white/10">
+                    <span className="text-white/70">Building ID</span>
+                    <button
+                      onClick={() => building.id && handleCopyId(building.id)}
+                      className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group"
+                      title={`Click to copy: ${building.id}`}
+                    >
+                      <span className="font-medium">
+                        {truncateId(building.id || "", 8)}
+                      </span>
+                      {copiedId === building.id ? (
+                        <Check className="w-3.5 h-3.5 text-green-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-white/50 group-hover:text-white/70" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-white/10">
+                    <span className="text-white/70">Name</span>
+                    <span className="font-medium text-white">
+                      {building.name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-white/10">
+                    <span className="text-white/70">Address</span>
+                    <span className="font-medium text-white">
+                      {building.address || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-white/10">
+                    <span className="text-white/70">Number of Units</span>
+                    <span className="font-medium text-white">
+                      {building.number_of_units || "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2">
+                    <span className="text-white/70">Unit Type</span>
+                    <span className="font-medium text-white">
+                      {Array.isArray(building.type_of_unit)
+                        ? building.type_of_unit.join(", ")
+                        : building.type_of_unit || "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Media */}
+              {(building.photos && building.photos.length > 0) ||
+              building.logo ||
+              building.video ||
+              building.documents ? (
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3">
+                    Media
+                  </h3>
+                  <div className="space-y-3">
+                    {building.logo && (
+                      <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                        <div className="text-sm text-white/70 mb-2">Logo</div>
+                        <img
+                          src={building.logo}
+                          alt="Building logo"
+                          className="max-w-xs max-h-32 object-contain rounded-lg border border-white/20"
+                        />
+                      </div>
+                    )}
+                    {building.photos && building.photos.length > 0 && (
+                      <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                        <div className="text-sm text-white/70 mb-2">
+                          Photos ({building.photos.length})
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {building.photos.slice(0, 6).map((photo, index) => (
+                            <img
+                              key={index}
+                              src={photo}
+                              alt={`Building photo ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border border-white/20"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {building.video && (
+                      <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                        <div className="text-sm text-white/70 mb-2">Video</div>
+                        <video
+                          src={building.video}
+                          className="max-w-md max-h-64 border border-white/20 rounded-lg"
+                          controls
+                        />
+                      </div>
+                    )}
+                    {building.documents && (
+                      <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
+                        <div className="text-sm text-white/70 mb-2">
+                          Documents
+                        </div>
+                        <a
+                          href={building.documents}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
+                        >
+                          View Documents (PDF)
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
+              {JSON.stringify(selectedItem, null, 2)}
+            </pre>
+          )}
+        </div>
+        <div className="flex items-center justify-end p-6 border-t border-white/10 flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface AdminDeleteModalProps {
+  open: boolean;
+  activeSection: AdminSection;
+  selectedItem: User | Building | Property | null;
+  isActionLoading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+/** The delete confirmation, hoisted for the same reason as the view modal. */
+const AdminDeleteModal: React.FC<AdminDeleteModalProps> = ({
+  open,
+  activeSection,
+  selectedItem,
+  isActionLoading,
+  onCancel,
+  onConfirm,
+}) => {
+  if (!open || !selectedItem) return null;
+
+  const itemName =
+    activeSection === "buildings"
+      ? (selectedItem as Building).name
+      : activeSection === "properties"
+        ? (selectedItem as Property).apartment_number
+        : (selectedItem as User).full_name ||
+          (selectedItem as User).email ||
+          "this item";
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-black/10 backdrop-blur-[5px] border border-white/10 rounded-3xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">
+            Delete {activeSection.slice(0, -1)}
+          </h3>
+          <button
+            onClick={onCancel}
+            disabled={isActionLoading}
+            className="text-white/80 cursor-pointer hover:text-white disabled:opacity-50 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="mb-4 text-white/90">
+          Are you sure you want to delete{" "}
+          <strong className="text-white">"{itemName}"</strong>? This action
+          cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            disabled={isActionLoading}
+            className="flex-1 px-4 py-2 cursor-pointer text-white/90 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg disabled:opacity-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isActionLoading}
+            data-testid="confirm-delete"
+            className="flex-1 px-4 py-2 cursor-pointer bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+          >
+            {isActionLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Deleting...</span>
+              </>
+            ) : (
+              "Delete"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function AdminPanelContent() {
   // const user = useSelector(selectUser);
   // const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -172,6 +499,8 @@ function AdminPanelContent() {
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(
     null,
   );
+  // "" is every status; otherwise a BookingRequestStatus sent as ?status=.
+  const [requestStatusFilter, setRequestStatusFilter] = useState("");
 
   // Users list via RTK Query. The mutations below invalidate it, so the table
   // refreshes itself instead of every handler refetching by hand.
@@ -221,12 +550,13 @@ function AdminPanelContent() {
     data: bookingQueryData,
     isLoading: isRequestsQueryLoading,
     isFetching: isRequestsQueryFetching,
-  } = useGetBookingRequestsQuery(undefined, {
-    // Загружаем только когда открыт раздел Requests
+  } = useGetBookingRequestsQuery(requestStatusFilter || undefined, {
+    // Fetched only while the Requests section is open.
     skip: activeSection !== "requests",
   });
 
   const [updateBookingStatus] = useUpdateBookingRequestStatusMutation();
+  const [proposeViewing] = useProposeViewingMutation();
 
   // The query is the list; transformResponse already unwrapped it.
   const requests = bookingQueryData ?? [];
@@ -240,6 +570,10 @@ function AdminPanelContent() {
   });
 
   const callRequests = callRequestsData ?? [];
+  const [setCallRequestHandled] = useSetCallRequestHandledMutation();
+  const [updatingCallRequestId, setUpdatingCallRequestId] = useState<
+    string | null
+  >(null);
 
   // Notification management
   const addNotification = (
@@ -561,6 +895,47 @@ function AdminPanelContent() {
     }
   };
 
+  /** Admin proposes (or re-proposes) a viewing slot on a booking. */
+  const handleProposeViewing = async (id: string, proposedAtIso: string) => {
+    try {
+      setUpdatingRequestId(id);
+      await proposeViewing({
+        id,
+        proposed_viewing_at: proposedAtIso,
+      }).unwrap();
+      addNotification(
+        "success",
+        "Viewing proposed — the tenant has been asked to confirm",
+      );
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        apiErrorMessage(error, "Failed to propose the viewing"),
+      );
+    } finally {
+      setUpdatingRequestId(null);
+    }
+  };
+
+  /** Mark a call request called back, or clear the mark. */
+  const handleToggleCallHandled = async (id: string, handled: boolean) => {
+    try {
+      setUpdatingCallRequestId(id);
+      await setCallRequestHandled({ id, handled }).unwrap();
+      addNotification(
+        "success",
+        handled ? "Call request marked as handled" : "Call request re-opened",
+      );
+    } catch (error: unknown) {
+      addNotification(
+        "error",
+        apiErrorMessage(error, "Failed to update the call request"),
+      );
+    } finally {
+      setUpdatingCallRequestId(null);
+    }
+  };
+
   // Sidebar
   const renderSidebar = () => (
     <div className="w-64 min-h-screen bg-white border-r border-gray-200">
@@ -710,9 +1085,15 @@ function AdminPanelContent() {
         return (
           <AdminRequestsSection
             requests={requests}
-            isLoading={isRequestsQueryLoading && !requests.length}
+            isLoading={
+              (isRequestsQueryLoading || isRequestsQueryFetching) &&
+              !requests.length
+            }
             updatingId={updatingRequestId}
             onUpdateStatus={handleUpdateBookingStatus}
+            statusFilter={requestStatusFilter}
+            onStatusFilterChange={setRequestStatusFilter}
+            onProposeViewing={handleProposeViewing}
           />
         );
       case "call-requests":
@@ -720,318 +1101,13 @@ function AdminPanelContent() {
           <AdminCallRequestsSection
             requests={callRequests}
             isLoading={isCallRequestsQueryLoading && !callRequests.length}
+            updatingId={updatingCallRequestId}
+            onToggleHandled={handleToggleCallHandled}
           />
         );
       default:
         return null;
     }
-  };
-
-  // Simple modals for now
-  const ViewModal = () => {
-    if (!selectedItem || showModal !== "view") return null;
-
-    const [copiedId, setCopiedId] = useState<string | null>(null);
-
-    const building =
-      activeSection === "buildings" ? (selectedItem as Building) : null;
-    const user = activeSection === "users" ? (selectedItem as User) : null;
-
-    const handleCopyId = async (id: string, _type: "building") => {
-      try {
-        await navigator.clipboard.writeText(id);
-        setCopiedId(id);
-        addNotification("success", `Building ID "${id}" copied to clipboard`);
-        setTimeout(() => setCopiedId(null), 2000);
-      } catch (err) {
-        console.error("Failed to copy:", err);
-      }
-    };
-
-    const truncateId = (id: string, maxLength: number = 8) => {
-      return id.length > maxLength ? `${id.substring(0, maxLength)}...` : id;
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-[8px] flex items-center justify-center z-50 p-4 overflow-y-auto">
-        <div className="bg-black/50 backdrop-blur-[19px] border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl my-8 max-h-[90vh] flex flex-col">
-          <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
-            <h3 className="text-2xl font-bold text-white">
-              {building
-                ? building.name
-                : user
-                  ? user.full_name || user.email
-                  : `View ${activeSection.slice(0, -1)}`}
-            </h3>
-            <button
-              onClick={() => setShowModal(null)}
-              className="p-2 cursor-pointer hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="p-6 overflow-y-auto flex-1">
-            {user ? (
-              <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
-                {JSON.stringify(selectedItem, null, 2)}
-              </pre>
-            ) : building ? (
-              <div className="space-y-6">
-                {/* Key Info Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
-                    <div className="text-sm text-white/70 mb-1">
-                      Building ID
-                    </div>
-                    <button
-                      onClick={() =>
-                        building.id && handleCopyId(building.id, "building")
-                      }
-                      className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group w-full text-left"
-                      title={`Click to copy: ${building.id}`}
-                    >
-                      <span className="text-lg font-semibold">
-                        {truncateId(building.id || "", 8)}
-                      </span>
-                      {copiedId === building.id ? (
-                        <Check className="w-4 h-4 text-green-400" />
-                      ) : (
-                        <Copy className="w-4 h-4 text-white/50 group-hover:text-white/70" />
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
-                    <div className="text-sm text-white/70 mb-1">Address</div>
-                    <div className="text-lg font-semibold text-white">
-                      {building.address || "N/A"}
-                    </div>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
-                    <div className="text-sm text-white/70 mb-1">Units</div>
-                    <div className="text-lg font-semibold text-white">
-                      {building.number_of_units || "-"}
-                    </div>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
-                    <div className="text-sm text-white/70 mb-1">Unit Type</div>
-                    <div className="text-lg font-semibold text-white">
-                      {Array.isArray(building.type_of_unit)
-                        ? building.type_of_unit.join(", ")
-                        : building.type_of_unit || "-"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Building Details */}
-                <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-4 rounded-xl">
-                  <h3 className="text-lg font-semibold text-white mb-3">
-                    Building Information
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between py-2 border-b border-white/10">
-                      <span className="text-white/70">Building ID</span>
-                      <button
-                        onClick={() =>
-                          building.id && handleCopyId(building.id, "building")
-                        }
-                        className="flex items-center gap-1.5 font-mono text-sm text-white hover:text-white/80 transition-colors group"
-                        title={`Click to copy: ${building.id}`}
-                      >
-                        <span className="font-medium">
-                          {truncateId(building.id || "", 8)}
-                        </span>
-                        {copiedId === building.id ? (
-                          <Check className="w-3.5 h-3.5 text-green-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5 text-white/50 group-hover:text-white/70" />
-                        )}
-                      </button>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-white/10">
-                      <span className="text-white/70">Name</span>
-                      <span className="font-medium text-white">
-                        {building.name}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-white/10">
-                      <span className="text-white/70">Address</span>
-                      <span className="font-medium text-white">
-                        {building.address || "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-white/10">
-                      <span className="text-white/70">Number of Units</span>
-                      <span className="font-medium text-white">
-                        {building.number_of_units || "-"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-white/70">Unit Type</span>
-                      <span className="font-medium text-white">
-                        {Array.isArray(building.type_of_unit)
-                          ? building.type_of_unit.join(", ")
-                          : building.type_of_unit || "-"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Media */}
-                {(building.photos && building.photos.length > 0) ||
-                building.logo ||
-                building.video ||
-                building.documents ? (
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-3">
-                      Media
-                    </h3>
-                    <div className="space-y-3">
-                      {building.logo && (
-                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
-                          <div className="text-sm text-white/70 mb-2">Logo</div>
-                          <img
-                            src={building.logo}
-                            alt="Building logo"
-                            className="max-w-xs max-h-32 object-contain rounded-lg border border-white/20"
-                          />
-                        </div>
-                      )}
-                      {building.photos && building.photos.length > 0 && (
-                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
-                          <div className="text-sm text-white/70 mb-2">
-                            Photos ({building.photos.length})
-                          </div>
-                          <div className="grid grid-cols-3 gap-3">
-                            {building.photos.slice(0, 6).map((photo, index) => (
-                              <img
-                                key={index}
-                                src={photo}
-                                alt={`Building photo ${index + 1}`}
-                                className="w-full h-24 object-cover rounded-lg border border-white/20"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {building.video && (
-                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
-                          <div className="text-sm text-white/70 mb-2">
-                            Video
-                          </div>
-                          <video
-                            src={building.video}
-                            className="max-w-md max-h-64 border border-white/20 rounded-lg"
-                            controls
-                          />
-                        </div>
-                      )}
-                      {building.documents && (
-                        <div className="bg-white/5 backdrop-blur-[5px] border border-white/10 p-3 rounded-lg">
-                          <div className="text-sm text-white/70 mb-2">
-                            Documents
-                          </div>
-                          <a
-                            href={building.documents}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
-                          >
-                            View Documents (PDF)
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            ) : user ? (
-              <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
-                {JSON.stringify(selectedItem, null, 2)}
-              </pre>
-            ) : (
-              <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
-                {JSON.stringify(selectedItem, null, 2)}
-              </pre>
-            )}
-          </div>
-          <div className="flex items-center justify-end p-6 border-t border-white/10 flex-shrink-0">
-            <button
-              onClick={() => setShowModal(null)}
-              className="px-6 py-2.5 bg-white cursor-pointer text-black hover:bg-white/90 rounded-lg transition-all duration-200 font-medium"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const DeleteModal = () => {
-    if (!selectedItem || showModal !== "delete") return null;
-
-    const itemName =
-      activeSection === "buildings"
-        ? (selectedItem as Building).name
-        : activeSection === "properties"
-          ? (selectedItem as Property).apartment_number
-          : (selectedItem as User).full_name ||
-            (selectedItem as User).email ||
-            "this item";
-
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-black/10 backdrop-blur-[5px] border border-white/10 rounded-3xl p-6 w-full max-w-md">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">
-              Delete {activeSection.slice(0, -1)}
-            </h3>
-            <button
-              onClick={() => {
-                setShowModal(null);
-                setSelectedItem(null);
-              }}
-              disabled={isActionLoading}
-              className="text-white/80 cursor-pointer hover:text-white disabled:opacity-50 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <p className="mb-4 text-white/90">
-            Are you sure you want to delete{" "}
-            <strong className="text-white">"{itemName}"</strong>? This action
-            cannot be undone.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setShowModal(null);
-                setSelectedItem(null);
-              }}
-              disabled={isActionLoading}
-              className="flex-1 px-4 py-2 cursor-pointer text-white/90 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg disabled:opacity-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirmDelete}
-              disabled={isActionLoading}
-              data-testid="confirm-delete"
-              className="flex-1 px-4 py-2 cursor-pointer bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
-            >
-              {isActionLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Deleting...</span>
-                </>
-              ) : (
-                "Delete"
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -1068,7 +1144,17 @@ function AdminPanelContent() {
         </div>
       </div>
 
-      {activeSection !== "properties" && <ViewModal />}
+      {activeSection !== "properties" && (
+        <AdminViewModal
+          open={showModal === "view"}
+          activeSection={activeSection}
+          selectedItem={selectedItem}
+          onClose={() => setShowModal(null)}
+          onCopied={(id) =>
+            addNotification("success", `Building ID "${id}" copied to clipboard`)
+          }
+        />
+      )}
 
       {activeSection === "properties" && (
         <ViewPropertyModal
@@ -1129,7 +1215,17 @@ function AdminPanelContent() {
         isLoading={isActionLoading}
       />
 
-      <DeleteModal />
+      <AdminDeleteModal
+        open={showModal === "delete"}
+        activeSection={activeSection}
+        selectedItem={selectedItem}
+        isActionLoading={isActionLoading}
+        onCancel={() => {
+          setShowModal(null);
+          setSelectedItem(null);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
 
       <GlassmorphismToast
         notifications={notifications}

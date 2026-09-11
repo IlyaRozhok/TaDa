@@ -11,9 +11,12 @@ import {
 import {
   Bills,
   BuildingType,
+  EPC_RATING_VALUES,
   Furnishing,
   Property,
   PropertyType,
+  PROPERTY_STATUS_LABELS,
+  PROPERTY_STATUS_VALUES,
 } from "@/app/types/property";
 import type { User } from "@/store/slices/authSlice";
 import { useLocalizedFormOptions } from "@/shared/hooks/useLocalizedFormOptions";
@@ -90,6 +93,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     title: "",
     apartment_number: "",
     descriptions: "",
+    status: "listed",
+    epc_rating: "",
     price: null as number | null,
     deposit: null as number | null,
     available_from: null as string | null,
@@ -216,21 +221,25 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         title: property.title || "",
         apartment_number: property.apartment_number || "",
         descriptions: property.descriptions || "",
-        price: property.price || null,
-        deposit: property.deposit || null,
+        status: property.status || "listed",
+        epc_rating: property.epc_rating || "",
+        price: property.price ?? null,
+        deposit: property.deposit ?? null,
         available_from: property.available_from
           ? new Date(property.available_from).toISOString().split("T")[0]
           : null,
         bills: property.bills || "",
         property_type: property.property_type || "",
-        bedrooms: property.bedrooms || null,
-        bathrooms: property.bathrooms || null,
+        // ?? rather than ||: zero is a real value here (studio bedrooms).
+        bedrooms: property.bedrooms ?? null,
+        bathrooms: property.bathrooms ?? null,
         building_type: property.building_type || "",
         furnishing: property.furnishing || "",
         let_duration: transformDurationAPIToUIArray(
           property.let_duration || "",
         ),
-        floor: property.floor || null,
+        // ?? rather than ||: floor 0 (ground floor) must survive the round-trip.
+        floor: property.floor ?? null,
         balcony: property.balcony || false,
         terrace: property.terrace || false,
         square_meters: property.square_meters || null,
@@ -701,7 +710,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           if (videoFile.size > maxSize) {
             const sizeMB = (videoFile.size / (1024 * 1024)).toFixed(2);
             throw new Error(
-              `Файл слишком большой (${sizeMB} MB). Максимальный размер: 500 MB`,
+              `The file is too large (${sizeMB} MB). The maximum size is 500 MB.`,
             );
           }
 
@@ -714,18 +723,18 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           const videoResult = await propertiesAPI.uploadVideo(videoFile);
 
           if (!videoResult || !videoResult.url) {
-            throw new Error("Сервер не вернул URL загруженного видео");
+            throw new Error("The server did not return a URL for the uploaded video");
           }
 
           uploadedVideo = videoResult.url;
           console.log("✅ Видео успешно загружено:", uploadedVideo);
         } catch (error: any) {
-          console.error("❌ Ошибка загрузки видео:", error);
+          console.error("❌ Video upload failed:", error);
           const errorMessage =
             error.response?.data?.message ||
             error.message ||
-            "Не удалось загрузить видео. Проверьте формат файла и размер.";
-          throw new Error(`Ошибка загрузки видео: ${errorMessage}`);
+            "Could not upload the video. Check the file format and size.";
+          throw new Error(`Video upload failed: ${errorMessage}`);
         }
       }
 
@@ -763,6 +772,18 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         return isNaN(num) || num <= 0 ? null : num;
       };
 
+      // For counts where zero is a real value: floor 0 is the ground floor
+      // and bedrooms 0 is a studio. Only price-like fields treat 0 as unset.
+      const normalizeCount = (
+        value: number | null | undefined | string,
+      ): number | null => {
+        if (value === null || value === undefined || value === "") {
+          return null;
+        }
+        const num = Number(value);
+        return isNaN(num) || num < 0 ? null : num;
+      };
+
       // Build the property data object, ensuring all numeric fields are properly converted
       // Prepare property data - exclude operator_id for regular buildings (backend gets it from building)
       const { operator_id, building_id, ...formDataWithoutOperator } = formData;
@@ -773,10 +794,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         // Convert numeric fields to proper numbers or null
         price: normalizeNumber(formData.price),
         deposit: normalizeNumber(formData.deposit),
-        bedrooms: normalizeNumber(formData.bedrooms),
-        bathrooms: normalizeNumber(formData.bathrooms),
-        floor: normalizeNumber(formData.floor),
+        bedrooms: normalizeCount(formData.bedrooms),
+        bathrooms: normalizeCount(formData.bathrooms),
+        floor: normalizeCount(formData.floor),
         square_meters: normalizeNumber(formData.square_meters),
+        // Lifecycle + compliance fields (admin/operator-editable)
+        status: formData.status || "listed",
+        epc_rating: formData.epc_rating || null,
         // Optional enum fields
         property_type: formData.property_type || null,
         building_type: formData.building_type || null,
@@ -933,6 +957,56 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               furnishingOptions={furnishingOptions}
               durationOptions={durationOptions}
             />
+
+            {/* Lifecycle + compliance */}
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                Listing status
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
+                data-testid="edit-property-status"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white [&>option]:text-black"
+              >
+                {PROPERTY_STATUS_VALUES.map((value) => (
+                  <option key={value} value={value}>
+                    {PROPERTY_STATUS_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-xs text-white/50">
+                The booking pipeline moves listed → under offer → let on its
+                own; set this by hand to draft, archive or re-list.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                EPC rating
+              </label>
+              <select
+                value={formData.epc_rating}
+                onChange={(e) =>
+                  setFormData({ ...formData, epc_rating: e.target.value })
+                }
+                data-testid="edit-property-epc"
+                className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white [&>option]:text-black"
+              >
+                <option value="">Not recorded</option>
+                {EPC_RATING_VALUES.map((band) => (
+                  <option key={band} value={band}>
+                    {band}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-xs text-white/50">
+                Legally required on listing advertisements in England and
+                Wales.
+              </p>
+            </div>
           </div>
 
           {/* Description */}

@@ -965,6 +965,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/call-requests/{id}/handled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark a call request handled or re-open it (admin) */
+        patch: operations["CallRequestController_setHandled"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3065,7 +3082,18 @@ export interface components {
             reason: "units_to_fill" | "see_demo" | "pricing_and_terms" | "landlord_to_let" | "agent_partner" | "connect_feed" | "looking_for_home" | "finish_rental_cv" | "question_about_property" | "something_else";
             /** @example Jane Doe */
             name: string;
-            phone: components["schemas"]["CallRequestPhoneDto"];
+            /**
+             * @example voice_call
+             * @enum {string}
+             */
+            contactMethod: "voice_call" | "video_call" | "email";
+            /** @description Required unless contactMethod is 'email'. */
+            phone?: components["schemas"]["CallRequestPhoneDto"];
+            /**
+             * @description Required when contactMethod is 'email'.
+             * @example jane@example.com
+             */
+            email?: string;
             /**
              * @description Free text: when the visitor would like to be called, in their own words.
              * @example Weekday evenings after 6pm
@@ -3078,6 +3106,10 @@ export interface components {
              * @enum {string}
              */
             source: "tenant" | "operator";
+        };
+        SetCallRequestHandledDto: {
+            /** @description true marks the request handled now, false re-opens it */
+            handled: boolean;
         };
     };
     responses: never;
@@ -3985,6 +4017,7 @@ export interface operations {
                 bedrooms_min?: string;
                 bedrooms?: string;
                 property_type?: string;
+                status?: "draft" | "listed" | "under_offer" | "let" | "archived";
                 is_landing_listing?: "true" | "false";
                 operator_id?: string;
                 building_id?: string;
@@ -4905,6 +4938,37 @@ export interface operations {
             };
             /** @description Validation failed */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CallRequestController_setHandled: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCallRequestHandledDto"];
+            };
+        };
+        responses: {
+            /** @description Handled state updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Call request not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -833,15 +833,14 @@ export default function PropertyPublicPage() {
     };
   }, [isBookingModalOpen]);
 
+  // Mirrors the backend contract: a name plus email OR phone; dates are
+  // optional. Anything softer (a typo'd email, a malformed date) is left to
+  // the submit handler so its per-field messages are actually reachable.
   const isBookingSubmitDisabled =
     bookingLoading ||
     hasBookingRequest ||
     !bookingName.trim() ||
-    !bookingEmail.trim() ||
-    bookingPhone.replace(/\D/g, "").length === 0 ||
-    (!bookingMoveInDate && !bookingMoveOutDate) ||
-    bookingMoveInDate === "INVALID_FORMAT" ||
-    bookingMoveOutDate === "INVALID_FORMAT";
+    (!bookingEmail.trim() && bookingPhone.replace(/\D/g, "").length === 0);
 
   // Skeleton: показываем только при первом загрузочном запросе (isLoading)
   // При возврате назад из кэша будет isFetching, но isLoading=false — скелетон не показываем.

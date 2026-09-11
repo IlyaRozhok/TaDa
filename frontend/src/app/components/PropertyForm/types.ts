@@ -110,6 +110,10 @@ export interface EditPropertyFormData {
   title: string;
   apartment_number: string;
   descriptions: string;
+  /** Lifecycle status value; the modal defaults a missing one to "listed". */
+  status: string;
+  /** EPC band (A-G), or "" when not recorded. */
+  epc_rating: string;
   price: number | null;
   deposit: number | null;
   available_from: string | null;

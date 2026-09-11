@@ -223,12 +223,10 @@ export function buildMessage(
         line("Address", p.property.address),
         line("Proposed time", p.proposedAt),
         "",
-        // Reply-based on purpose: the web app has no viewing-confirmation
-        // screen yet, and an email must never point at a feature that does
-        // not exist. Update this copy when the tenant UI ships the confirm
-        // action (STATUS.md follow-up).
-        "Reply to this email to confirm the time, or suggest another slot",
-        "if it does not work for you.",
+        // The "my requests" view now carries the confirm action, so the
+        // email can finally point at it instead of asking for a reply.
+        "Confirm the time in your account under \"My requests\", or reply",
+        "to this email to suggest another slot if it does not work for you.",
         "",
         "— The TA-DA! team",
       ]);

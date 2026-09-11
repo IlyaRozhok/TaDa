@@ -95,6 +95,40 @@ export const bookingRequestsApi = baseApi.injectEndpoints({
       // The list refetches itself instead of the panel patching its own copy.
       invalidatesTags: [{ type: "BookingRequests", id: "LIST" }],
     }),
+
+    /**
+     * Admin proposes a viewing slot (ISO timestamp). The backend accepts it
+     * only at the viewing stages and clears any earlier tenant confirmation
+     * when a new time replaces the old one.
+     */
+    proposeViewing: builder.mutation<
+      BookingRequest,
+      { id: string; proposed_viewing_at: string }
+    >({
+      query: ({ id, proposed_viewing_at }) => ({
+        url: `/booking-requests/${id}/viewing`,
+        method: "PATCH",
+        body: { proposed_viewing_at },
+      }),
+      transformResponse: unwrap<BookingRequest>,
+      invalidatesTags: [
+        { type: "BookingRequests", id: "LIST" },
+        { type: "BookingRequests", id: "MINE" },
+      ],
+    }),
+
+    /** Tenant confirms the proposed slot on their own booking. */
+    confirmViewing: builder.mutation<BookingRequest, string>({
+      query: (id) => ({
+        url: `/booking-requests/${id}/viewing/confirm`,
+        method: "POST",
+      }),
+      transformResponse: unwrap<BookingRequest>,
+      invalidatesTags: [
+        { type: "BookingRequests", id: "LIST" },
+        { type: "BookingRequests", id: "MINE" },
+      ],
+    }),
   }),
 });
 
@@ -103,4 +137,6 @@ export const {
   useGetMyBookingRequestsQuery,
   useCreateBookingRequestMutation,
   useUpdateBookingRequestStatusMutation,
+  useProposeViewingMutation,
+  useConfirmViewingMutation,
 } = bookingRequestsApi;
