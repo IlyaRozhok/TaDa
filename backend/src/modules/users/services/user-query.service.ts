@@ -97,7 +97,12 @@ export class UserQueryService {
       .createQueryBuilder("user")
       .leftJoinAndSelect("user.tenantProfile", "tenantProfile")
       .leftJoinAndSelect("user.operatorProfile", "operatorProfile")
-      .leftJoinAndSelect("user.preferences", "preferences");
+      .leftJoinAndSelect("user.preferences", "preferences")
+      // Only the share link, for the admin table's "Public CV" column — not
+      // the whole CV. The id rides along because TypeORM needs a joined
+      // entity's primary key to hydrate it.
+      .leftJoin("user.tenantCv", "tenantCv")
+      .addSelect(["tenantCv.id", "tenantCv.share_uuid"]);
 
     if (search) {
       queryBuilder.andWhere(

@@ -28,7 +28,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { User } from "@/entities";
 import { UserRole } from "@/entities/user.entity";
 import { Roles } from "@/common/decorators/roles.decorator";
-import { toUserResponse } from "./user.mapper";
+import { toAdminUserListItem, toUserResponse } from "./user.mapper";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -124,7 +124,7 @@ export class UsersController {
 
     return {
       ...result,
-      users: result.users.map(toUserResponse),
+      users: result.users.map(toAdminUserListItem),
     };
   }
 

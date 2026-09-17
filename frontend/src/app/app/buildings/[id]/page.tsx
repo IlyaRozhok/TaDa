@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { fetchPublicBuilding } from "@/app/lib/serverApi";
 import { SITE_URL } from "@/app/lib/siteUrl";
+import { SHARED_OPEN_GRAPH } from "@/app/lib/siteMetadata";
 import BuildingDetailClient from "./BuildingDetailClient";
 
 /**
@@ -32,9 +33,11 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/app/buildings/${building.id}` },
     openGraph: {
+      // Replaces the root openGraph wholesale, so the site name and locale
+      // have to be carried in explicitly.
+      ...SHARED_OPEN_GRAPH,
       title: building.name,
       description,
-      type: "website",
     },
   };
 }

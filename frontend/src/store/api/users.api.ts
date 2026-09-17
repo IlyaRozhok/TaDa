@@ -20,6 +20,12 @@ export interface AdminUser {
   created_at: string;
   updated_at: string;
   is_private_landlord?: boolean | null;
+  /**
+   * The token behind the public `/cv/{uuid}` page. Sent by the list endpoint
+   * only (`toAdminUserListItem`); null when the tenant has no CV or has never
+   * shared it — the token is minted on first share.
+   */
+  tenant_cv_share_uuid?: string | null;
 }
 
 /** `GET /users` is paginated and answers with this envelope. */
