@@ -248,7 +248,7 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                           rel="noopener noreferrer"
                           // The row itself opens the user modal.
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline"
                           title="Open public CV in a new tab"
                         >
                           Open
