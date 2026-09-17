@@ -32,3 +32,23 @@ export const toUserResponse = (user: User): UserResponse => ({
   is_private_landlord:
     (user as any).operatorProfile?.is_private_landlord ?? null,
 });
+
+export type AdminUserListItem = UserResponse & {
+  /**
+   * `tenant_cvs.share_uuid` — the token behind the public `/cv/{uuid}` page.
+   * Null when the user has no CV or has never created a share link: the
+   * token is minted on first share, not with the CV.
+   */
+  tenant_cv_share_uuid: string | null;
+};
+
+/**
+ * A row of the admin users list. Kept apart from `toUserResponse` because only
+ * the list query joins the CV: stamping the field onto every user response
+ * would answer `null` from endpoints that never loaded it, which reads as "no
+ * share link" when it means "not looked up".
+ */
+export const toAdminUserListItem = (user: User): AdminUserListItem => ({
+  ...toUserResponse(user),
+  tenant_cv_share_uuid: user.tenantCv?.share_uuid ?? null,
+});

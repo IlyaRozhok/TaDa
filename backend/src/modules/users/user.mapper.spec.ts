@@ -1,4 +1,4 @@
-import { toUserResponse } from "./user.mapper";
+import { toAdminUserListItem, toUserResponse } from "./user.mapper";
 import { User, UserRole, UserStatus } from "../../entities/user.entity";
 
 /**
@@ -109,6 +109,48 @@ describe("toUserResponse (characterization)", () => {
 
     it("is null when there is no operator profile", () => {
       expect(toUserResponse(baseUser()).is_private_landlord).toBeNull();
+    });
+  });
+});
+
+describe("toAdminUserListItem", () => {
+  const user = (overrides: Record<string, unknown> = {}): User =>
+    ({
+      id: "u-1",
+      email: "tenant@example.com",
+      role: UserRole.Tenant,
+      status: UserStatus.Active,
+      created_at: new Date("2024-01-01T00:00:00Z"),
+      updated_at: new Date("2024-01-02T00:00:00Z"),
+      ...overrides,
+    }) as unknown as User;
+
+  it("carries the CV share token for the public CV link", () => {
+    const result = toAdminUserListItem(
+      user({ tenantCv: { id: "cv-1", share_uuid: "share-1" } }),
+    );
+
+    expect(result.tenant_cv_share_uuid).toBe("share-1");
+  });
+
+  it("is null for a CV that was never shared — the token is minted on first share", () => {
+    const result = toAdminUserListItem(
+      user({ tenantCv: { id: "cv-1", share_uuid: null } }),
+    );
+
+    expect(result.tenant_cv_share_uuid).toBeNull();
+  });
+
+  it("is null for a user with no CV at all", () => {
+    expect(toAdminUserListItem(user()).tenant_cv_share_uuid).toBeNull();
+  });
+
+  it("keeps every field toUserResponse produces", () => {
+    const u = user({ tenantCv: { id: "cv-1", share_uuid: "share-1" } });
+
+    expect(toAdminUserListItem(u)).toEqual({
+      ...toUserResponse(u),
+      tenant_cv_share_uuid: "share-1",
     });
   });
 });

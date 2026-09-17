@@ -7,6 +7,7 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 
 interface User {
@@ -17,6 +18,7 @@ interface User {
   status: string;
   created_at: string;
   is_private_landlord?: boolean | null;
+  tenant_cv_share_uuid?: string | null;
 }
 
 interface AdminUsersSectionProps {
@@ -154,6 +156,9 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                   Private LL
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Public CV
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
@@ -167,7 +172,7 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
             <tbody className="bg-white divide-y divide-gray-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Users className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -230,6 +235,36 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                         </span>
                       ) : (
                         <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {/* Only tenants have CVs, and only a shared CV has a
+                          public page: the share token is minted on first
+                          share, so a tenant without one gets no link. */}
+                      {user.role === "tenant" && user.tenant_cv_share_uuid ? (
+                        <a
+                          href={`/cv/${user.tenant_cv_share_uuid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          // The row itself opens the user modal.
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                          title="Open public CV in a new tab"
+                        >
+                          Open
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      ) : (
+                        <span
+                          className="text-xs text-gray-400"
+                          title={
+                            user.role === "tenant"
+                              ? "No public CV link yet"
+                              : undefined
+                          }
+                        >
+                          —
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
