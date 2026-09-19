@@ -285,6 +285,24 @@ decisions) is recorded HERE, briefly, with a date.
   property detail page renders the English fallback via `translateWithFallback`
   for `listing.disclaimer.operator.content`. Add the key and its six
   translations in Localazy and re-sync; no code change needed once they land.
+- **The admin "view as tenant" banner keys are not in Localazy yet** (added
+  2026-09-19, with the view-as lens). `generalKeys.viewAs`:
+  `admin.view.as.title` ("Viewing as") · `admin.view.as.read.only`
+  ("read-only") · `admin.view.as.exit` ("Exit") · `admin.view.as.unnamed`
+  ("this tenant"). Only admins see the banner, but it sits on the translated
+  `/app/units` and property pages, so it reads through `translateWithFallback`
+  with those English fallbacks until the owner adds them.
+- **`backend/openapi.json` does not describe `asUserId` yet** (added
+  2026-09-19). The three matching routes gained the admin-only `asUserId`
+  query parameter and the feed a `viewingAs` field; the snapshot is refreshed
+  by hand (`npm run openapi:dump`), and CI only checks the generated types
+  against the committed snapshot, so nothing fails — the spec just lags until
+  the next dump. The frontend types for it are hand-written in
+  `store/api/matching.api.ts`.
+- **`TenantUniversalHeader`'s `showPreferencesButton` prop is dead** (noticed
+  2026-09-19). It is accepted and ignored — `preferences/page.tsx` passes
+  `false` and still gets the button. Wiring it up would change that page's
+  header, so it was left alone; the view-as lens uses its own `viewAsMode`.
 - **`share.feedback.btn` is not in Localazy yet** (added 2026-09-04 as
   `header.feedback`, renamed 2026-09-10). One key, the label of the
   "Feedback" button (`generalKeys.feedback.button`), which now sits in every

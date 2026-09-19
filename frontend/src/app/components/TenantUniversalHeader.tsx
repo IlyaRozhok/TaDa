@@ -37,6 +37,12 @@ interface TenantUniversalHeaderProps {
   showFavouritesButton?: boolean;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
+  /**
+   * An admin is viewing the page as a tenant. The "Change preferences N"
+   * button goes: its count is the ADMIN's preferences, not the tenant's the
+   * page is scored against, and following it would edit the admin's own.
+   */
+  viewAsMode?: boolean;
 }
 
 export default function TenantUniversalHeader({
@@ -48,6 +54,7 @@ export default function TenantUniversalHeader({
   showFavouritesButton = true,
   searchTerm = "",
   onSearchChange,
+  viewAsMode = false,
 }: TenantUniversalHeaderProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -73,7 +80,7 @@ export default function TenantUniversalHeader({
   // the sign-in flow takes its place.
   const isSignedOut = !user;
   const shouldShowPreferencesButton =
-    user?.role === "tenant" || user?.role === "admin";
+    !viewAsMode && (user?.role === "tenant" || user?.role === "admin");
   const shouldShowFavouritesButton =
     showFavouritesButton &&
     (user?.role === "tenant" || user?.role === "admin");

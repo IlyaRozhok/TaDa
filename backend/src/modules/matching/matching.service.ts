@@ -4,6 +4,7 @@ import { In, Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "@/entities";
 import { Preferences } from "@/entities";
 import { PropertyStatus } from "@/entities/property.entity";
+import { User, UserRole } from "@/entities/user.entity";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { S3Service } from "@/common/services/s3.service";
 import { stripOperatorPii } from "@/common/mappers/public-operator.mapper";
@@ -178,9 +179,38 @@ export class MatchingService {
     private readonly propertyRepository: Repository<Property>,
     @InjectRepository(Preferences)
     private readonly preferencesRepository: Repository<Preferences>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly calculationService: MatchingCalculationService,
     private readonly s3Service: S3Service
   ) {}
+
+  /**
+   * The tenant an admin is viewing the catalogue as ("view as tenant").
+   *
+   * Only ever called once the controller has confirmed the caller is an admin
+   * — the role check comes first so a non-admin learns nothing about whether
+   * an id exists. Anything that is not an existing tenant is a 404: the lens
+   * shows what a renter sees, and must not become a way to read the
+   * preferences of operators or other admins.
+   *
+   * Returns the name for the admin's "Viewing as …" banner — the only piece
+   * of the tenant's identity the lens ever sends, and only to an admin.
+   */
+  async resolveViewAsTarget(
+    userId: string
+  ): Promise<{ id: string; full_name: string | null }> {
+    const target = await this.userRepository.findOne({
+      where: { id: userId },
+      select: { id: true, role: true, full_name: true },
+    });
+
+    if (!target || target.role !== UserRole.Tenant) {
+      throw new NotFoundException("Tenant not found");
+    }
+
+    return { id: target.id, full_name: target.full_name || null };
+  }
 
   private getCachedRanking(key: string): RankingCacheEntry | undefined {
     const entry = this.rankingCache.get(key);

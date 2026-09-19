@@ -8,6 +8,7 @@ import {
   ChevronUp,
   ChevronDown,
   ExternalLink,
+  Eye,
 } from "lucide-react";
 
 interface User {
@@ -19,6 +20,7 @@ interface User {
   created_at: string;
   is_private_landlord?: boolean | null;
   tenant_cv_share_uuid?: string | null;
+  has_preferences?: boolean;
 }
 
 interface AdminUsersSectionProps {
@@ -287,6 +289,33 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                     </td>
                     <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center space-x-2">
+                        {/* "View as" — the catalogue scored with this tenant's
+                            preferences, read-only, in a new tab. Only the id
+                            goes in the URL; the server re-checks that the
+                            caller is an admin and the target a tenant. */}
+                        {user.role === "tenant" &&
+                          (user.has_preferences ? (
+                            <a
+                              href={`/app/units?viewAs=${user.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                              title="View as this tenant (new tab)"
+                              aria-label="View as this tenant"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </a>
+                          ) : (
+                            <span
+                              className="p-1.5 text-gray-300 cursor-not-allowed rounded-md"
+                              title="No preferences yet — nothing to score the catalogue against"
+                              aria-label="View as unavailable: no preferences"
+                              aria-disabled="true"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </span>
+                          ))}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

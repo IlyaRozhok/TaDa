@@ -40,15 +40,24 @@ export type AdminUserListItem = UserResponse & {
    * token is minted on first share, not with the CV.
    */
   tenant_cv_share_uuid: string | null;
+  /**
+   * Whether the user has a preferences row. The admin "View as" action needs
+   * it: the lens scores against a tenant's preferences, and without any it
+   * would open an unranked feed with every badge at 0%.
+   */
+  has_preferences: boolean;
 };
 
 /**
  * A row of the admin users list. Kept apart from `toUserResponse` because only
- * the list query joins the CV: stamping the field onto every user response
- * would answer `null` from endpoints that never loaded it, which reads as "no
- * share link" when it means "not looked up".
+ * the list query joins the CV and preferences: stamping these fields onto
+ * every user response would answer `null`/`false` from endpoints that never
+ * loaded them, which reads as "no share link" or "no preferences" when it
+ * means "not looked up".
  */
 export const toAdminUserListItem = (user: User): AdminUserListItem => ({
   ...toUserResponse(user),
   tenant_cv_share_uuid: user.tenantCv?.share_uuid ?? null,
+  // The list query already left-joins preferences; no extra lookup.
+  has_preferences: Boolean(user.preferences),
 });

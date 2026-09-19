@@ -1,6 +1,7 @@
 "use client";
 
 import React, {
+  Suspense,
   useState,
   useEffect,
   useLayoutEffect,
@@ -32,6 +33,8 @@ import ImageGallery from "../../../components/ImageGallery";
 import { Button } from "@/shared/ui/Button/Button";
 import { Share } from "lucide-react";
 import TenantUniversalHeader from "../../../components/TenantUniversalHeader";
+import { ViewAsBanner, ViewAsParamReader } from "@/app/components/ViewAs";
+import { resolveViewAsTenantId } from "@/app/lib/viewAs";
 import BuildingPropertiesSection from "../../../components/BuildingPropertiesSection";
 import PreferencePropertiesSection from "../../../components/PreferencePropertiesSection";
 import PropertyDetailSkeleton from "../../../components/ui/PropertyDetailSkeleton";
@@ -125,6 +128,16 @@ export default function PropertyPublicPage() {
   const { t } = useTranslation();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  // The admin "view as tenant" lens, carried here from a view-as feed as
+  // `?viewAs=`: the match % is then the tenant's, as it was on the card.
+  // `undefined` until the reader has reported.
+  const [viewAsParam, setViewAsParam] = useState<string | null | undefined>(
+    undefined,
+  );
+  const viewAsTenantId = resolveViewAsTenantId(viewAsParam, user?.role);
+  // Only an admin can be in view-as, so only an admin waits for the reader:
+  // a tenant's own match query is not held back by it.
+  const awaitingViewAs = user?.role === "admin" && viewAsParam === undefined;
   // Where "back" lands for someone who arrived here on a shared link and has no
   // in-app history to return to: the listing for a signed-in tenant, operator or
   // admin, the landing page for a guest.
@@ -390,13 +403,17 @@ export default function PropertyPublicPage() {
   const {
     data: propertyMatchData,
     isFetching: isPropertyMatchFetching,
-  } = useGetPropertyMatchQuery(id as string, {
-    skip:
-      !id ||
-      !isAuthenticated ||
-      !user ||
-      (user.role !== "tenant" && user.role !== "admin"),
-  });
+  } = useGetPropertyMatchQuery(
+    { propertyId: id as string, asUserId: viewAsTenantId ?? undefined },
+    {
+      skip:
+        !id ||
+        !isAuthenticated ||
+        !user ||
+        (user.role !== "tenant" && user.role !== "admin") ||
+        awaitingViewAs,
+    },
+  );
 
   // Leave the property when rate-limited (429), after showing the toast. This
   // one always replaces rather than going back: the visitor did not ask to
@@ -985,13 +1002,20 @@ export default function PropertyPublicPage() {
 
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: "auto" }}>
+      {/* Its own boundary, like PageViewTracker: it reads useSearchParams(). */}
+      <Suspense fallback={null}>
+        <ViewAsParamReader onChange={setViewAsParam} />
+      </Suspense>
       <TenantUniversalHeader
         showPreferencesButton={true}
         preferencesCount={preferencesFilledCount}
+        viewAsMode={Boolean(viewAsTenantId)}
       />
 
       {/* Header with title and actions */}
       <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32">
+        {/* The detail endpoints carry no name, so the banner names no one. */}
+        {viewAsTenantId && <ViewAsBanner tenantName={null} />}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
@@ -1010,6 +1034,8 @@ export default function PropertyPublicPage() {
                   className="w-[14px] h-[18px] pointer-events-none shrink-0"
                 />
               </button>
+              {/* Hidden in view-as: it would write to the ADMIN's shortlist. */}
+              {!viewAsTenantId && (
               <button
                 onClick={handleShortlistToggle}
                 disabled={shortlistLoading}
@@ -1037,6 +1063,7 @@ export default function PropertyPublicPage() {
                   />
                 </svg>
               </button>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-gray-600">
               <span className="text-sm sm:text-base">
@@ -1664,6 +1691,7 @@ export default function PropertyPublicPage() {
           buildingName={property.building.name}
           currentPropertyId={property.id}
           operatorName={property.operator?.full_name}
+          viewAsTenantId={viewAsTenantId}
         />
       )}
 
@@ -1671,6 +1699,7 @@ export default function PropertyPublicPage() {
       <PreferencePropertiesSection
         currentPropertyId={property.id}
         currentOperatorId={property.operator?.id}
+        viewAsTenantId={viewAsTenantId}
       />
 
       {isBookingModalOpen && (

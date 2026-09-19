@@ -26,6 +26,11 @@ export interface AdminUser {
    * shared it — the token is minted on first share.
    */
   tenant_cv_share_uuid?: string | null;
+  /**
+   * Whether the user has a preferences row. List endpoint only; drives the
+   * admin "View as" action, which has nothing to score without preferences.
+   */
+  has_preferences?: boolean;
 }
 
 /** `GET /users` is paginated and answers with this envelope. */

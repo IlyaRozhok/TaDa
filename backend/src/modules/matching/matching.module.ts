@@ -3,13 +3,15 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule } from "@nestjs/config";
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
+import { User } from "@/entities/user.entity";
 import { MatchingService } from "./matching.service";
 import { MatchingController } from "./matching.controller";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Property, Preferences]),
+    // User: the admin "view as tenant" lens resolves its target tenant.
+    TypeOrmModule.forFeature([Property, Preferences, User]),
     ConfigModule,
   ],
   controllers: [MatchingController],

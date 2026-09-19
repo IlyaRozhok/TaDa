@@ -32,6 +32,18 @@ export interface MatchedPropertiesPage {
    * from a payload served by a backend older than this field.
    */
   avgMatchScore?: number | null;
+  /**
+   * Present only when an admin requested the feed with `asUserId` (the "view
+   * as tenant" lens): the tenant the page is scored for, named for the
+   * admin's banner. A tenant's own feed never carries it.
+   */
+  viewingAs?: ViewingAs;
+}
+
+/** The tenant an admin's "view as" feed is scored for. */
+export interface ViewingAs {
+  id: string;
+  full_name: string | null;
 }
 
 /**
@@ -61,7 +73,30 @@ export interface GetMatchedPropertiesArgs {
    * string when absent, which the backend reads as `best_match`.
    */
   sort?: MatchedPropertiesSort;
+  /**
+   * Admin only: score against this tenant's preferences instead of the
+   * caller's. The backend answers 403 for any other role, so the client only
+   * sends it for an admin. Part of the cache key, so the admin's own feed and
+   * each tenant's are separate entries.
+   */
+  asUserId?: string;
 }
+
+/** Args of `GET /matching/property/:id`; a bare id is the caller's own match. */
+export type GetPropertyMatchArgs =
+  | string
+  | { propertyId: string; asUserId?: string };
+
+/** Args of `POST /matching/scores`; a bare id list is the caller's own scores. */
+export type GetMatchScoresArgs =
+  | string[]
+  | { propertyIds: string[]; asUserId?: string };
+
+const propertyMatchArgs = (args: GetPropertyMatchArgs) =>
+  typeof args === "string" ? { propertyId: args } : args;
+
+const matchScoresArgs = (args: GetMatchScoresArgs) =>
+  Array.isArray(args) ? { propertyIds: args } : args;
 
 /** `GET /matching/property/:id` — the backend's PropertyMatchResult. */
 export interface PropertyMatchResult {
@@ -114,6 +149,7 @@ export const matchingApi = baseApi.injectEndpoints({
           limit: args?.limit ?? 12,
           ...(args?.search ? { search: args.search } : {}),
           ...(args?.sort ? { sort: args.sort } : {}),
+          ...(args?.asUserId ? { asUserId: args.asUserId } : {}),
         },
       }),
       // The matching route serves raw entities, so the same decimal-string
@@ -137,11 +173,21 @@ export const matchingApi = baseApi.injectEndpoints({
           : [{ type: "Property" as const, id: "MATCHED_LIST" }],
     }),
 
-    /** Match breakdown for one property; 404s when preferences are missing. */
-    getPropertyMatch: builder.query<PropertyMatchResult, string>({
-      query: (propertyId) => `/matching/property/${propertyId}`,
-      providesTags: (_result, _error, propertyId) => [
-        { type: "Property", id: propertyId },
+    /**
+     * Match breakdown for one property; 404s when preferences are missing.
+     * The whole arg is the cache key, so an admin's view-as breakdown never
+     * shares an entry with their own.
+     */
+    getPropertyMatch: builder.query<PropertyMatchResult, GetPropertyMatchArgs>({
+      query: (args) => {
+        const { propertyId, asUserId } = propertyMatchArgs(args);
+        return {
+          url: `/matching/property/${propertyId}`,
+          params: asUserId ? { asUserId } : undefined,
+        };
+      },
+      providesTags: (_result, _error, args) => [
+        { type: "Property", id: propertyMatchArgs(args).propertyId },
       ],
     }),
 
@@ -152,15 +198,26 @@ export const matchingApi = baseApi.injectEndpoints({
      *
      * The ids are sorted into the cache key, so two grids showing the same
      * properties in a different order share one cache entry and one request.
+     * An admin's `asUserId` is part of the key too — without it the admin's
+     * own scores and a tenant's would collide in one entry.
      */
-    getMatchScores: builder.query<MatchScoresResponse, string[]>({
-      query: (propertyIds) => ({
-        url: "/matching/scores",
-        method: "POST",
-        body: { propertyIds },
-      }),
-      serializeQueryArgs: ({ endpointName, queryArgs }) =>
-        `${endpointName}(${[...queryArgs].sort().join(",")})`,
+    getMatchScores: builder.query<MatchScoresResponse, GetMatchScoresArgs>({
+      query: (args) => {
+        const { propertyIds, asUserId } = matchScoresArgs(args);
+        return {
+          url: "/matching/scores",
+          method: "POST",
+          body: { propertyIds },
+          params: asUserId ? { asUserId } : undefined,
+        };
+      },
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        const { propertyIds, asUserId } = matchScoresArgs(queryArgs);
+        const ids = [...propertyIds].sort().join(",");
+        return asUserId
+          ? `${endpointName}(${ids})@${asUserId}`
+          : `${endpointName}(${ids})`;
+      },
       providesTags: (result) =>
         result
           ? [

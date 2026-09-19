@@ -11,6 +11,7 @@ import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
 import { formatListingResultsCountLabel } from "../lib/formatListingResultsCount";
 import type { SortOption } from "../lib/listingSort";
+import { withViewAs } from "@/app/lib/viewAs";
 
 interface ListedPropertiesSectionProps {
   properties: Array<{
@@ -59,6 +60,12 @@ interface ListedPropertiesSectionProps {
   sortBy?: SortOption;
   /** Called when user picks a new sort. */
   onSortChange?: (sort: SortOption) => void;
+  /**
+   * Set when an admin is viewing the feed as a tenant. Cards then hide the
+   * shortlist heart — it would write to the ADMIN's shortlist — and carry the
+   * lens into the detail page so its match % is the tenant's too.
+   */
+  viewAsTenantId?: string | null;
 }
 
 export type { SortOption };
@@ -173,6 +180,7 @@ export default function ListedPropertiesSection({
   showShortlistForAllRoles = false,
   sortBy: controlledSortBy,
   onSortChange,
+  viewAsTenantId = null,
 }: ListedPropertiesSectionProps) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -258,7 +266,7 @@ export default function ListedPropertiesSection({
   }, [properties, activeSortBy, isControlled]);
 
   const handlePropertyClick = (propertyId: string) => {
-    router.push(`/app/properties/${propertyId}`);
+    router.push(withViewAs(`/app/properties/${propertyId}`, viewAsTenantId));
   };
 
   return (
@@ -308,7 +316,7 @@ export default function ListedPropertiesSection({
                   matchCategories={categories}
                   imageLoaded={true}
                   onClick={() => handlePropertyClick(property.id)}
-                  showShortlist={true}
+                  showShortlist={!viewAsTenantId}
                   showShortlistForAllRoles={showShortlistForAllRoles}
                 />
               ))}

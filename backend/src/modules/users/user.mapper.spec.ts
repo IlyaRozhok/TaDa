@@ -151,6 +151,17 @@ describe("toAdminUserListItem", () => {
     expect(toAdminUserListItem(u)).toEqual({
       ...toUserResponse(u),
       tenant_cv_share_uuid: "share-1",
+      has_preferences: false,
     });
+  });
+
+  it("reports has_preferences from the joined preferences row", () => {
+    expect(
+      toAdminUserListItem(user({ preferences: { id: "p-1" } })).has_preferences,
+    ).toBe(true);
+  });
+
+  it("reports no preferences when the join found none", () => {
+    expect(toAdminUserListItem(user()).has_preferences).toBe(false);
   });
 });
