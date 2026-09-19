@@ -505,20 +505,57 @@ describe("MatchingService view-as lens", () => {
   };
 
   describe("resolveViewAsTarget", () => {
-    it("returns the tenant's id and name for the admin's banner", async () => {
+    it("returns the tenant's id, name and CV share token for the admin's banner", async () => {
       const { service, userRepository } = buildLensService({
-        target: { id: "tenant-7", role: UserRole.Tenant, full_name: "Ada Lovelace" },
+        target: {
+          id: "tenant-7",
+          role: UserRole.Tenant,
+          full_name: "Ada Lovelace",
+          tenantCv: { id: "cv-7", share_uuid: "share-7" },
+        } as Partial<User>,
       });
 
       await expect(service.resolveViewAsTarget("tenant-7")).resolves.toEqual({
         id: "tenant-7",
         full_name: "Ada Lovelace",
+        tenant_cv_share_uuid: "share-7",
       });
-      // Only what the banner needs — never the whole user row.
+      // Only what the banner needs — never the whole user row or the CV.
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: "tenant-7" },
-        select: { id: true, role: true, full_name: true },
+        relations: { tenantCv: true },
+        select: {
+          id: true,
+          role: true,
+          full_name: true,
+          tenantCv: { id: true, share_uuid: true },
+        },
       });
+    });
+
+    it("has no CV link for a tenant who never shared their CV", async () => {
+      const { service } = buildLensService({
+        target: {
+          id: "tenant-7",
+          role: UserRole.Tenant,
+          full_name: "Ada Lovelace",
+          tenantCv: { id: "cv-7", share_uuid: null },
+        } as Partial<User>,
+      });
+
+      await expect(
+        service.resolveViewAsTarget("tenant-7"),
+      ).resolves.toMatchObject({ tenant_cv_share_uuid: null });
+    });
+
+    it("has no CV link for a tenant with no CV at all", async () => {
+      const { service } = buildLensService({
+        target: { id: "tenant-7", role: UserRole.Tenant, full_name: "Ada" },
+      });
+
+      await expect(
+        service.resolveViewAsTarget("tenant-7"),
+      ).resolves.toMatchObject({ tenant_cv_share_uuid: null });
     });
 
     it("answers a missing name with null, not an empty string", async () => {
@@ -529,6 +566,7 @@ describe("MatchingService view-as lens", () => {
       await expect(service.resolveViewAsTarget("tenant-7")).resolves.toEqual({
         id: "tenant-7",
         full_name: null,
+        tenant_cv_share_uuid: null,
       });
     });
 

@@ -1014,8 +1014,9 @@ export default function PropertyPublicPage() {
 
       {/* Header with title and actions */}
       <div className="lg:max-w-[92%] mx-auto px-4 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32">
-        {/* The detail endpoints carry no name, so the banner names no one. */}
-        {viewAsTenantId && <ViewAsBanner tenantName={null} />}
+        {/* The detail endpoints carry no name or CV link, so the banner shows
+            the id from the URL alone. */}
+        {viewAsTenantId && <ViewAsBanner tenant={{ id: viewAsTenantId }} />}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">

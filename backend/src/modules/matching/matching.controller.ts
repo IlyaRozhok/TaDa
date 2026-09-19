@@ -18,7 +18,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from "@nestjs/swagger";
-import { MatchingService } from "./matching.service";
+import { MatchingService, ViewAsTarget } from "./matching.service";
 import { GetMatchScoresDto } from "./dto/get-match-scores.dto";
 import {
   DEFAULT_MATCHED_PROPERTIES_SORT,
@@ -59,7 +59,7 @@ export class MatchingController {
     asUserId: string | undefined
   ): Promise<{
     userId: string;
-    viewingAs: { id: string; full_name: string | null } | null;
+    viewingAs: ViewAsTarget | null;
   }> {
     if (!asUserId) {
       return { userId: req.user.id, viewingAs: null };
@@ -160,7 +160,7 @@ export class MatchingController {
   @ApiResponse({
     status: 200,
     description:
-      "Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page). With an admin's `asUserId` the envelope also carries `viewingAs: { id, full_name }` for the admin's banner",
+      "Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page). With an admin's `asUserId` the envelope also carries `viewingAs: { id, full_name, tenant_cv_share_uuid }` for the admin's banner",
   })
   async getMatchedPropertiesWithPagination(
     @Request() req: any,

@@ -370,7 +370,10 @@ function TenantDashboardContent({
       {/* Main Content */}
       <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16">
         {viewAsTenantId && (
-          <ViewAsBanner tenantName={feedData?.viewingAs?.full_name ?? null} />
+          // Just the id until the feed answers with the name and CV link.
+          <ViewAsBanner
+            tenant={feedData?.viewingAs ?? { id: viewAsTenantId }}
+          />
         )}
 
         {/* Listed Properties Section */}

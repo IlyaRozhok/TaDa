@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye } from "lucide-react";
+import { ExternalLink, Eye } from "lucide-react";
 import {
   useTranslation,
   translateWithFallback,
@@ -36,15 +36,31 @@ export function ViewAsParamReader({
 }
 
 /**
- * The admin's reminder that the page is not theirs: whose preferences it is
- * scored against, that it is read-only, and the way out. Sticky, so it stays
- * in view on a long feed.
+ * What the banner knows about the tenant. Only `id` is guaranteed: the feed
+ * sends the rest in `viewingAs`, but the detail page has nothing but the id
+ * from its URL, and the feed shows the id alone until its first response.
  */
-export function ViewAsBanner({ tenantName }: { tenantName: string | null }) {
+export interface ViewAsBannerTenant {
+  id: string;
+  full_name?: string | null;
+  tenant_cv_share_uuid?: string | null;
+}
+
+/**
+ * The admin's reminder that the page is not theirs: whose preferences it is
+ * scored against — the name linking to their public CV when they have shared
+ * one, and the full id so there is no doubt which account — that it is
+ * read-only, and the way out. Sticky, so it stays in view on a long feed.
+ */
+export function ViewAsBanner({ tenant }: { tenant: ViewAsBannerTenant }) {
   const router = useRouter();
   const { t } = useTranslation();
 
-  const title = translateWithFallback(t, generalKeys.viewAs.title, "Viewing as");
+  const title = translateWithFallback(
+    t,
+    generalKeys.viewAs.title,
+    "Viewing as",
+  );
   const readOnly = translateWithFallback(
     t,
     generalKeys.viewAs.readOnly,
@@ -52,8 +68,9 @@ export function ViewAsBanner({ tenantName }: { tenantName: string | null }) {
   );
   const exit = translateWithFallback(t, generalKeys.viewAs.exit, "Exit");
   const name =
-    tenantName ||
+    tenant.full_name ||
     translateWithFallback(t, generalKeys.viewAs.unnamed, "this tenant");
+  const cvShareUuid = tenant.tenant_cv_share_uuid;
 
   return (
     <div
@@ -63,8 +80,30 @@ export function ViewAsBanner({ tenantName }: { tenantName: string | null }) {
     >
       <div className="flex min-w-0 items-center gap-2">
         <Eye className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-        <span className="truncate">
-          {title} <span className="font-semibold">{name}</span>
+        {/* Wraps rather than truncates: the full id has to stay readable. */}
+        <span className="min-w-0">
+          {title}{" "}
+          {cvShareUuid ? (
+            // Only a shared CV has a public page; without one the name stays
+            // plain text rather than linking to a 404.
+            <a
+              href={`/cv/${encodeURIComponent(cvShareUuid)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-semibold underline decoration-amber-400 underline-offset-2 hover:text-amber-950 hover:decoration-amber-700"
+            >
+              {name}
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          ) : (
+            <span className="font-semibold">{name}</span>
+          )}{" "}
+          <span
+            className="font-mono text-xs text-amber-700 [overflow-wrap:anywhere]"
+            data-testid="view-as-tenant-id"
+          >
+            ({tenant.id})
+          </span>
           <span className="text-amber-700"> · {readOnly}</span>
         </span>
       </div>

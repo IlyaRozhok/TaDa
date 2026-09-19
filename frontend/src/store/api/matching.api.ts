@@ -44,6 +44,12 @@ export interface MatchedPropertiesPage {
 export interface ViewingAs {
   id: string;
   full_name: string | null;
+  /**
+   * Token behind the tenant's public `/cv/{token}` page; null when they have
+   * never shared their CV. Optional so a payload from an older backend still
+   * types.
+   */
+  tenant_cv_share_uuid?: string | null;
 }
 
 /**
@@ -84,13 +90,11 @@ export interface GetMatchedPropertiesArgs {
 
 /** Args of `GET /matching/property/:id`; a bare id is the caller's own match. */
 export type GetPropertyMatchArgs =
-  | string
-  | { propertyId: string; asUserId?: string };
+  string | { propertyId: string; asUserId?: string };
 
 /** Args of `POST /matching/scores`; a bare id list is the caller's own scores. */
 export type GetMatchScoresArgs =
-  | string[]
-  | { propertyIds: string[]; asUserId?: string };
+  string[] | { propertyIds: string[]; asUserId?: string };
 
 const propertyMatchArgs = (args: GetPropertyMatchArgs) =>
   typeof args === "string" ? { propertyId: args } : args;

@@ -100,6 +100,7 @@ describe("MatchingController view-as lens", () => {
       built.service.resolveViewAsTarget.mockResolvedValue({
         id: TENANT,
         full_name: "Ada Lovelace",
+        tenant_cv_share_uuid: "share-7",
       });
       return built;
     };
@@ -118,7 +119,11 @@ describe("MatchingController view-as lens", () => {
         TENANT,
       );
       expect(result).toMatchObject({
-        viewingAs: { id: TENANT, full_name: "Ada Lovelace" },
+        viewingAs: {
+          id: TENANT,
+          full_name: "Ada Lovelace",
+          tenant_cv_share_uuid: "share-7",
+        },
       });
     });
 

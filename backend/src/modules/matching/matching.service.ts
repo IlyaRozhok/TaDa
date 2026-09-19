@@ -58,6 +58,17 @@ const SCORING_COLUMNS = [
 ] as const;
 
 /**
+ * The tenant an admin's "view as" request is scored for, as the admin's
+ * banner shows them. `tenant_cv_share_uuid` is the token behind the public
+ * `/cv/{token}` page; null when the tenant has never shared their CV.
+ */
+export interface ViewAsTarget {
+  id: string;
+  full_name: string | null;
+  tenant_cv_share_uuid: string | null;
+}
+
+/**
  * The mean match score of a whole scored set, to one decimal.
  *
  * `null` when there is nothing to average — a user with no preferences, or a
@@ -194,22 +205,33 @@ export class MatchingService {
    * shows what a renter sees, and must not become a way to read the
    * preferences of operators or other admins.
    *
-   * Returns the name for the admin's "Viewing as …" banner — the only piece
-   * of the tenant's identity the lens ever sends, and only to an admin.
+   * Returns what the admin's "Viewing as …" banner shows — the tenant's id,
+   * name, and the share token of their public CV — the only pieces of the
+   * tenant's identity the lens ever sends, and only to an admin.
    */
-  async resolveViewAsTarget(
-    userId: string
-  ): Promise<{ id: string; full_name: string | null }> {
+  async resolveViewAsTarget(userId: string): Promise<ViewAsTarget> {
     const target = await this.userRepository.findOne({
       where: { id: userId },
-      select: { id: true, role: true, full_name: true },
+      // The CV join brings only the share token (and the id TypeORM needs to
+      // hydrate the relation) — the banner links the name to `/cv/{token}`.
+      relations: { tenantCv: true },
+      select: {
+        id: true,
+        role: true,
+        full_name: true,
+        tenantCv: { id: true, share_uuid: true },
+      },
     });
 
     if (!target || target.role !== UserRole.Tenant) {
       throw new NotFoundException("Tenant not found");
     }
 
-    return { id: target.id, full_name: target.full_name || null };
+    return {
+      id: target.id,
+      full_name: target.full_name || null,
+      tenant_cv_share_uuid: target.tenantCv?.share_uuid ?? null,
+    };
   }
 
   private getCachedRanking(key: string): RankingCacheEntry | undefined {
