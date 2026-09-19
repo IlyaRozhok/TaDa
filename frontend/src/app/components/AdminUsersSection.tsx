@@ -309,8 +309,11 @@ const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                           ) : (
                             <span
                               className="p-1.5 text-gray-300 cursor-not-allowed rounded-md"
-                              title="No preferences yet — nothing to score the catalogue against"
-                              aria-label="View as unavailable: no preferences"
+                              // A span, not a disabled <button>: disabled
+                              // elements swallow pointer events, so their
+                              // `title` never shows on hover.
+                              title="No preferences yet"
+                              aria-label="View as unavailable: no preferences yet"
                               aria-disabled="true"
                             >
                               <Eye className="w-4 h-4" />
