@@ -8,15 +8,21 @@ import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
+import { withViewAs } from "@/app/lib/viewAs";
 
 interface PreferencePropertiesSectionProps {
   currentPropertyId: string;
   currentOperatorId?: string;
+  /**
+   * Set when an admin is viewing the page as a tenant: badges are scored for
+   * the tenant, hearts are hidden, and every link keeps the lens.
+   */
+  viewAsTenantId?: string | null;
 }
 
 const PreferencePropertiesSection: React.FC<
   PreferencePropertiesSectionProps
-> = ({ currentPropertyId, currentOperatorId }) => {
+> = ({ currentPropertyId, currentOperatorId, viewAsTenantId = null }) => {
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -39,7 +45,9 @@ const PreferencePropertiesSection: React.FC<
   }, [propertiesPage, currentPropertyId, currentOperatorId]);
 
   const propertyIds = useMemo(() => properties.map((p) => p.id), [properties]);
-  const { matchByPropertyId } = usePropertyMatches(propertyIds);
+  const { matchByPropertyId } = usePropertyMatches(propertyIds, {
+    asUserId: viewAsTenantId ?? undefined,
+  });
 
   if (loading) {
     return (
@@ -62,7 +70,7 @@ const PreferencePropertiesSection: React.FC<
         </h2>
         <button
           className="text-black cursor-pointer text-sm underline hover:text-gray-600 font-medium"
-          onClick={() => router.push("/app/units")}
+          onClick={() => router.push(withViewAs("/app/units", viewAsTenantId))}
         >
           {t(listingPropertyKeys.recommendations.seeMore)}
         </button>
@@ -78,8 +86,12 @@ const PreferencePropertiesSection: React.FC<
               property={property}
               matchScore={match?.matchScore}
               matchCategories={match?.matchCategories}
-              onClick={() => router.push(`/app/properties/${property.id}`)}
-              showShortlist={true}
+              onClick={() =>
+                router.push(
+                  withViewAs(`/app/properties/${property.id}`, viewAsTenantId),
+                )
+              }
+              showShortlist={!viewAsTenantId}
               showShortlistForAllRoles={true}
             />
           );

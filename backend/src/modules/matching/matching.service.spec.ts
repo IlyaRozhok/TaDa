@@ -1,8 +1,9 @@
-import { Logger } from "@nestjs/common";
+import { Logger, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Property, PropertyStatus } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
+import { User, UserRole } from "@/entities/user.entity";
 import { S3Service } from "@/common/services/s3.service";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { MatchingService, averageMatchPercentage } from "./matching.service";
@@ -149,6 +150,7 @@ const buildService = async (options: {
   scoreById?: Record<string, number>;
 }) => {
   const queue = [...options.builders];
+  const preferencesFindOne = jest.fn().mockResolvedValue(options.preferences);
   const calculateMatch = jest.fn((property: Property) => ({
     property,
     totalScore: 0,
@@ -185,7 +187,13 @@ const buildService = async (options: {
       },
       {
         provide: getRepositoryToken(Preferences),
-        useValue: { findOne: jest.fn().mockResolvedValue(options.preferences) },
+        useValue: { findOne: preferencesFindOne },
+      },
+      {
+        // The feed never reads users; only `resolveViewAsTarget` does, and it
+        // has its own suite below.
+        provide: getRepositoryToken(User),
+        useValue: { findOne: jest.fn() },
       },
       {
         provide: MatchingCalculationService,
@@ -200,7 +208,11 @@ const buildService = async (options: {
     ],
   }).compile();
 
-  return { service: moduleRef.get(MatchingService), calculateMatch };
+  return {
+    service: moduleRef.get(MatchingService),
+    calculateMatch,
+    preferencesFindOne,
+  };
 };
 
 const preferences: Partial<Preferences> = {
@@ -449,6 +461,209 @@ describe("MatchingService feed — the full listed inventory", () => {
           nulls: undefined,
         },
       ]);
+    });
+  });
+});
+
+/**
+ * The admin "view as tenant" lens. The controller owns the admin check and
+ * hands the service a target id; these pin the two service halves of it —
+ * which users may be viewed as, and that every scoring path then reads the
+ * TARGET's preferences rather than the caller's.
+ */
+describe("MatchingService view-as lens", () => {
+  const buildLensService = (options: {
+    target?: Partial<User> | null;
+    preferences?: Partial<Preferences> | null;
+    properties?: Partial<Property>[];
+  }) => {
+    const userRepository = {
+      findOne: jest.fn().mockResolvedValue(options.target ?? null),
+    };
+    const preferencesRepository = {
+      findOne: jest.fn().mockResolvedValue(options.preferences ?? null),
+    };
+    const propertyRepository = {
+      findOne: jest.fn().mockResolvedValue(options.properties?.[0] ?? null),
+      find: jest.fn().mockResolvedValue(options.properties ?? []),
+    };
+    const calculateMatch = jest.fn((property: Property) => ({
+      property,
+      matchPercentage: 90,
+      categories: [],
+    }));
+
+    const service = new MatchingService(
+      propertyRepository as never,
+      preferencesRepository as never,
+      userRepository as never,
+      { calculateMatch } as never,
+      {} as never,
+    );
+
+    return { service, userRepository, preferencesRepository, calculateMatch };
+  };
+
+  describe("resolveViewAsTarget", () => {
+    it("returns the tenant's id, name and CV share token for the admin's banner", async () => {
+      const { service, userRepository } = buildLensService({
+        target: {
+          id: "tenant-7",
+          role: UserRole.Tenant,
+          full_name: "Ada Lovelace",
+          tenantCv: { id: "cv-7", share_uuid: "share-7" },
+        } as Partial<User>,
+      });
+
+      await expect(service.resolveViewAsTarget("tenant-7")).resolves.toEqual({
+        id: "tenant-7",
+        full_name: "Ada Lovelace",
+        tenant_cv_share_uuid: "share-7",
+      });
+      // Only what the banner needs — never the whole user row or the CV.
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { id: "tenant-7" },
+        relations: { tenantCv: true },
+        select: {
+          id: true,
+          role: true,
+          full_name: true,
+          tenantCv: { id: true, share_uuid: true },
+        },
+      });
+    });
+
+    it("has no CV link for a tenant who never shared their CV", async () => {
+      const { service } = buildLensService({
+        target: {
+          id: "tenant-7",
+          role: UserRole.Tenant,
+          full_name: "Ada Lovelace",
+          tenantCv: { id: "cv-7", share_uuid: null },
+        } as Partial<User>,
+      });
+
+      await expect(
+        service.resolveViewAsTarget("tenant-7"),
+      ).resolves.toMatchObject({ tenant_cv_share_uuid: null });
+    });
+
+    it("has no CV link for a tenant with no CV at all", async () => {
+      const { service } = buildLensService({
+        target: { id: "tenant-7", role: UserRole.Tenant, full_name: "Ada" },
+      });
+
+      await expect(
+        service.resolveViewAsTarget("tenant-7"),
+      ).resolves.toMatchObject({ tenant_cv_share_uuid: null });
+    });
+
+    it("answers a missing name with null, not an empty string", async () => {
+      const { service } = buildLensService({
+        target: { id: "tenant-7", role: UserRole.Tenant, full_name: "" },
+      });
+
+      await expect(service.resolveViewAsTarget("tenant-7")).resolves.toEqual({
+        id: "tenant-7",
+        full_name: null,
+        tenant_cv_share_uuid: null,
+      });
+    });
+
+    it("is a 404 for an id that is not a user", async () => {
+      const { service } = buildLensService({ target: null });
+
+      await expect(service.resolveViewAsTarget("nobody")).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it.each([UserRole.Operator, UserRole.Admin])(
+      "is a 404 for a %s — the lens only ever shows what a renter sees",
+      async (role) => {
+        const { service } = buildLensService({
+          target: { id: "someone", role, full_name: "Not A Tenant" },
+        });
+
+        await expect(
+          service.resolveViewAsTarget("someone"),
+        ).rejects.toBeInstanceOf(NotFoundException);
+      },
+    );
+  });
+
+  describe("scoring reads the preferences of the id it is given", () => {
+    const targetPreferences: Partial<Preferences> = {
+      user_id: "tenant-7",
+      max_price: 1800,
+      updated_at: new Date("2026-09-01T00:00:00Z"),
+    };
+
+    it("getPropertyMatch scores against the target's preferences", async () => {
+      const { service, preferencesRepository, calculateMatch } =
+        buildLensService({
+          preferences: targetPreferences,
+          properties: [listedProperty("p-1")],
+        });
+
+      await service.getPropertyMatch("p-1", "tenant-7");
+
+      expect(preferencesRepository.findOne).toHaveBeenCalledWith({
+        where: { user_id: "tenant-7" },
+      });
+      expect(calculateMatch).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "p-1" }),
+        targetPreferences,
+        expect.anything(),
+      );
+    });
+
+    it("getMatchScores scores against the target's preferences", async () => {
+      const { service, preferencesRepository, calculateMatch } =
+        buildLensService({
+          preferences: targetPreferences,
+          properties: [listedProperty("p-1"), listedProperty("p-2")],
+        });
+
+      const result = await service.getMatchScores(["p-1", "p-2"], "tenant-7");
+
+      expect(preferencesRepository.findOne).toHaveBeenCalledWith({
+        where: { user_id: "tenant-7" },
+      });
+      expect(calculateMatch).toHaveBeenCalledTimes(2);
+      expect(calculateMatch).toHaveBeenCalledWith(
+        expect.anything(),
+        targetPreferences,
+        expect.anything(),
+      );
+      expect(Object.keys(result.scores)).toEqual(["p-1", "p-2"]);
+    });
+
+    it("the feed scores against the target's preferences", async () => {
+      const rankingQuery = createQueryBuilderStub([listedProperty("a")], 1);
+      const hydrationQuery = createQueryBuilderStub([listedProperty("a")], 1);
+
+      const { service, calculateMatch, preferencesFindOne } =
+        await buildService({
+          builders: [rankingQuery, hydrationQuery],
+          preferences: targetPreferences,
+          scoreById: { a: 90 },
+        });
+
+      const result = await service.getMatchedPropertiesWithPagination(
+        "tenant-7",
+        {},
+      );
+
+      expect(preferencesFindOne).toHaveBeenCalledWith({
+        where: { user_id: "tenant-7" },
+      });
+      expect(calculateMatch).toHaveBeenCalledWith(
+        expect.anything(),
+        targetPreferences,
+        expect.anything(),
+      );
+      expect(result.data[0].matchScore).toBe(90);
     });
   });
 });

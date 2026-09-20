@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
@@ -25,9 +32,25 @@ import {
 } from "@/lib/analytics/events";
 import { track } from "@/lib/analytics/ga";
 import Footer from "../../components/Footer";
+import { ViewAsBanner, ViewAsParamReader } from "@/app/components/ViewAs";
+import { resolveViewAsTenantId } from "@/app/lib/viewAs";
 
-function TenantDashboardContent() {
+function TenantDashboardContent({
+  viewAsParam,
+}: {
+  /**
+   * The raw `?viewAs=` value; `undefined` until the reader has reported. An
+   * admin's feed waits for it, so they never see their own feed first.
+   */
+  viewAsParam: string | null | undefined;
+}) {
   const user = useSelector(selectUser);
+  // The admin "view as tenant" lens: only an admin's request is ever scored
+  // for someone else, and the backend enforces that independently (403).
+  const viewAsTenantId = resolveViewAsTenantId(viewAsParam, user?.role);
+  // Only an admin can be in view-as, so only an admin's feed waits for the
+  // reader — a tenant's is not held back by it.
+  const awaitingViewAs = user?.role === "admin" && viewAsParam === undefined;
   const { state, clearError, setSearchTerm } = useTenantDashboard({
     // The matching endpoint IS the full catalogue now: it ranks every listed
     // property, pre-filtering is opt-in, and `total` is the full listed count.
@@ -72,8 +95,9 @@ function TenantDashboardContent() {
       limit: 12,
       search: debouncedSearch || undefined,
       sort: MATCHED_SORT_BY_SORT_OPTION[sortBy],
+      asUserId: viewAsTenantId ?? undefined,
     },
-    { skip: state.sessionLoading },
+    { skip: state.sessionLoading || awaitingViewAs },
   );
 
   // A new search starts from the first page, as the old loader did. Re-sorting
@@ -228,6 +252,7 @@ function TenantDashboardContent() {
           searchTerm={state.searchTerm}
           onSearchChange={handleSearchChange}
           preferencesCount={state.preferencesFilledCount}
+          viewAsMode={Boolean(viewAsTenantId)}
         />
 
         {/* Main Content */}
@@ -339,10 +364,18 @@ function TenantDashboardContent() {
         searchTerm={state.searchTerm}
         onSearchChange={handleSearchChange}
         preferencesCount={state.preferencesFilledCount}
+        viewAsMode={Boolean(viewAsTenantId)}
       />
 
       {/* Main Content */}
       <main className="max-w-[88rem] mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-28 lg:pt-32 pb-16">
+        {viewAsTenantId && (
+          // Just the id until the feed answers with the name and CV link.
+          <ViewAsBanner
+            tenant={feedData?.viewingAs ?? { id: viewAsTenantId }}
+          />
+        )}
+
         {/* Listed Properties Section */}
         <ListedPropertiesSection
           properties={feedProperties}
@@ -356,6 +389,7 @@ function TenantDashboardContent() {
           showShortlistForAllRoles={true}
           sortBy={sortBy}
           onSortChange={handleSortChange}
+          viewAsTenantId={viewAsTenantId}
         />
       </main>
       <Footer />
@@ -369,6 +403,10 @@ export default function TenantUnitsPage() {
   const onboardingCompleted = useSelector(selectOnboardingCompleted);
   const router = useRouter();
   const [sessionReady, setSessionReady] = useState(false);
+  // `undefined` = not read yet; see TenantDashboardContent's `viewAsParam`.
+  const [viewAsParam, setViewAsParam] = useState<string | null | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -496,5 +534,13 @@ export default function TenantUnitsPage() {
     );
   }
 
-  return <TenantDashboardContent />;
+  return (
+    <>
+      {/* Its own boundary, like PageViewTracker: it reads useSearchParams(). */}
+      <Suspense fallback={null}>
+        <ViewAsParamReader onChange={setViewAsParam} />
+      </Suspense>
+      <TenantDashboardContent viewAsParam={viewAsParam} />
+    </>
+  );
 }

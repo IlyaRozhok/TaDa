@@ -18,6 +18,11 @@ export type MatchByPropertyId = Record<string, PropertyMatchData>;
 interface UsePropertyMatchesOptions {
   /** When false, no requests are made. Default: true when ids length > 0 and user is tenant or admin. */
   enabled?: boolean;
+  /**
+   * The admin "view as tenant" lens: score for this tenant instead of the
+   * caller. Sent only for an admin — the backend 403s it for anyone else.
+   */
+  asUserId?: string;
 }
 
 /**
@@ -39,9 +44,12 @@ export function usePropertyMatches(
   const enabled =
     options.enabled !== false && canShowMatch && propertyIds.length > 0;
 
-  const { data, isFetching } = useGetMatchScoresQuery(propertyIds, {
-    skip: !enabled,
-  });
+  const asUserId = user?.role === "admin" ? options.asUserId : undefined;
+
+  const { data, isFetching } = useGetMatchScoresQuery(
+    asUserId ? { propertyIds, asUserId } : propertyIds,
+    { skip: !enabled },
+  );
 
   const matchByPropertyId = useMemo<MatchByPropertyId>(() => {
     if (!enabled || !data) return {};

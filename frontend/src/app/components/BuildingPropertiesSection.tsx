@@ -8,12 +8,18 @@ import PropertyCardSkeleton from "@/entities/property/ui/PropertyCardSkeleton";
 import { usePropertyMatches } from "../hooks/usePropertyMatches";
 import { useTranslation } from "../hooks/useTranslation";
 import { listingPropertyKeys } from "../lib/translationsKeys/listingPropertyTranslationKeys";
+import { withViewAs } from "@/app/lib/viewAs";
 
 interface BuildingPropertiesSectionProps {
   buildingId: string;
   buildingName: string;
   currentPropertyId: string;
   operatorName?: string;
+  /**
+   * Set when an admin is viewing the page as a tenant: badges are scored for
+   * the tenant, hearts are hidden, and card clicks keep the lens.
+   */
+  viewAsTenantId?: string | null;
 }
 
 const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
@@ -21,6 +27,7 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   buildingName,
   currentPropertyId,
   operatorName,
+  viewAsTenantId = null,
 }) => {
   const router = useRouter();
   const { t } = useTranslation();
@@ -46,7 +53,9 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
   );
 
   const propertyIds = useMemo(() => properties.map((p) => p.id), [properties]);
-  const { matchByPropertyId } = usePropertyMatches(propertyIds);
+  const { matchByPropertyId } = usePropertyMatches(propertyIds, {
+    asUserId: viewAsTenantId ?? undefined,
+  });
 
   const getBuildingInitials = () => {
     if (!buildingName) return "";
@@ -234,8 +243,12 @@ const BuildingPropertiesSection: React.FC<BuildingPropertiesSectionProps> = ({
               property={property}
               matchScore={match?.matchScore}
               matchCategories={match?.matchCategories}
-              onClick={() => router.push(`/app/properties/${property.id}`)}
-              showShortlist={true}
+              onClick={() =>
+                router.push(
+                  withViewAs(`/app/properties/${property.id}`, viewAsTenantId),
+                )
+              }
+              showShortlist={!viewAsTenantId}
               showShortlistForAllRoles={false}
             />
           );

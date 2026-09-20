@@ -37,6 +37,18 @@ export const generalKeys = {
     tenantCtaButton: "landing.tenant.web.hero.btn",
   },
   /**
+   * The admin "view as tenant" banner on /app/units. Only admins ever see it,
+   * but it sits on a translated tenant page, so it follows the page. Not in
+   * Localazy yet — read through `translateWithFallback` with an English
+   * fallback. See docs/STATUS.md.
+   */
+  viewAs: {
+    title: "admin.view.as.title",
+    readOnly: "admin.view.as.read.only",
+    exit: "admin.view.as.exit",
+    unnamed: "admin.view.as.unnamed",
+  },
+  /**
    * The Feedback Fish trigger, shared by every header in the app. Not in
    * Localazy yet — read through `translateWithFallback` with an English
    * fallback, like the "Book a call" copy below. See docs/STATUS.md.
