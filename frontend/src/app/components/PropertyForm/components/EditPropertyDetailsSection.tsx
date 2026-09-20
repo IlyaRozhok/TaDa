@@ -135,25 +135,20 @@ export const EditPropertyDetailsSection: React.FC<
           name="bedrooms"
           openDropdown={openDropdown}
           onToggleDropdown={toggleDropdown}
-          displayClassName={
-            formData.bedrooms != null ? "text-white" : "text-white/50"
-          }
+          displayClassName={formData.bedrooms ? "text-white" : "text-white/50"}
           display={
-            // Zero is the studio value, not an unset field.
-            formData.bedrooms != null
+            formData.bedrooms
               ? formData.bedrooms >= 5
                 ? "5+"
-                : formData.bedrooms === 0
-                  ? "Studio"
-                  : formData.bedrooms
+                : formData.bedrooms
               : "Select Bedrooms"
           }
-          options={[0, 1, 2, 3, 4, 5].map((value) => ({
+          options={[1, 2, 3, 4, 5].map((value) => ({
             value: String(value),
-            content: value === 5 ? "5+" : value === 0 ? "Studio" : value,
+            content: value === 5 ? "5+" : value,
             selected:
               (value === 5 &&
-                formData.bedrooms != null &&
+                !!formData.bedrooms &&
                 formData.bedrooms >= 5) ||
               (value < 5 && formData.bedrooms === value),
           }))}
@@ -208,7 +203,7 @@ export const EditPropertyDetailsSection: React.FC<
         </label>
         <input
           type="number"
-          value={formData.floor ?? ""}
+          value={formData.floor || ""}
           onChange={(e) =>
             setFormData({
               ...formData,

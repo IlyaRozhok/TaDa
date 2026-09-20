@@ -1,4 +1,4 @@
-import { Property, PropertyStatus } from "@/entities/property.entity";
+import { Property } from "../../entities/property.entity";
 import { CreatePropertyDto } from "./dto/create-property.dto";
 import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { FindPropertiesDto } from "./dto/find-properties.dto";
@@ -34,12 +34,10 @@ export const assignPropertyOptionals = (
     target.bills = dto.bills;
   }
 
-  // null, not undefined: TypeORM's update() skips undefined entirely, so an
-  // explicit clear from the form used to leave the stored date in place.
   if (dto.available_from !== undefined) {
     target.available_from = dto.available_from
       ? new Date(dto.available_from)
-      : null;
+      : undefined;
   }
 
   if (dto.building_type !== undefined) {
@@ -172,7 +170,6 @@ export interface AdminFindParams {
   building_id?: string;
   operator_id?: string;
   is_landing_listing?: boolean;
-  status?: PropertyStatus;
   property_type?: string;
   bedrooms?: number;
   bedrooms_min?: number;
@@ -208,8 +205,6 @@ export const normalizeAdminFindParams = (
       dto?.is_landing_listing === undefined
         ? undefined
         : dto.is_landing_listing === "true",
-    // The DTO's @IsIn already pinned the string to the enum's values.
-    status: (dto?.status as PropertyStatus) || undefined,
     property_type: propertyType || undefined,
     bedrooms: toRoomCount(dto?.bedrooms),
     bedrooms_min: toRoomCount(dto?.bedrooms_min),

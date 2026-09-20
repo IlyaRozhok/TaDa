@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -99,23 +99,5 @@ export class CallRequestService {
       where: source ? { source } : {},
       order: { created_at: "DESC" },
     });
-  }
-
-  /**
-   * Mark a request as called back (or clear the mark). The server stamps the
-   * moment itself so two admins working the same list see whose callback
-   * happened first; re-marking an already-handled row refreshes the stamp,
-   * which is the honest record of the latest call.
-   */
-  async setHandled(id: string, handled: boolean): Promise<CallRequest> {
-    const request = await this.callRequestRepository.findOne({
-      where: { id },
-    });
-    if (!request) {
-      throw new NotFoundException("Call request not found");
-    }
-
-    request.handled_at = handled ? new Date() : null;
-    return this.callRequestRepository.save(request);
   }
 }

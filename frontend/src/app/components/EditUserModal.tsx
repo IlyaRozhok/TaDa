@@ -2,20 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
-import { useSetTenantCvVerificationMutation } from "@/store/api/tenantCv.api";
-
-/**
- * The backend's verification vocabulary, plus "" for "leave unchanged":
- * the users table does not carry the CV's current badges, so the control
- * only ever sends the fields the admin explicitly picked.
- */
-const VERIFICATION_CHOICES = [
-  { value: "", label: "Leave unchanged" },
-  { value: "not_started", label: "Not started" },
-  { value: "in_progress", label: "In progress" },
-  { value: "passed", label: "Passed" },
-  { value: "failed", label: "Failed" },
-];
 
 interface User {
   id: string;
@@ -55,17 +41,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     role: "tenant",
     is_private_landlord: false,
   });
-  // C2 verification badges. Self-contained: applied through its own PATCH,
-  // not the user update, so the two writes can never be conflated.
-  const [verification, setVerification] = useState({
-    kyc_status: "",
-    referencing_status: "",
-  });
-  const [verificationNote, setVerificationNote] = useState<string | null>(
-    null,
-  );
-  const [setTenantCvVerification, { isLoading: isVerificationSaving }] =
-    useSetTenantCvVerificationMutation();
 
   useEffect(() => {
     if (user && isOpen) {
@@ -75,32 +50,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         role: user.role,
         is_private_landlord: user.is_private_landlord ?? false,
       });
-      setVerification({ kyc_status: "", referencing_status: "" });
-      setVerificationNote(null);
     }
   }, [user, isOpen]);
-
-  const handleApplyVerification = async () => {
-    if (!user) return;
-    const payload: {
-      userId: string;
-      kyc_status?: string;
-      referencing_status?: string;
-    } = { userId: user.id };
-    if (verification.kyc_status) payload.kyc_status = verification.kyc_status;
-    if (verification.referencing_status) {
-      payload.referencing_status = verification.referencing_status;
-    }
-    if (!payload.kyc_status && !payload.referencing_status) return;
-
-    try {
-      await setTenantCvVerification(payload).unwrap();
-      setVerification({ kyc_status: "", referencing_status: "" });
-      setVerificationNote("Badges updated");
-    } catch {
-      setVerificationNote("Failed to update badges");
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,86 +125,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               <option value="admin">Admin</option>
             </select>
           </div>
-
-          {formData.role === "tenant" && (
-            <div className="space-y-3 pt-4 border-t border-white/10">
-              <div>
-                <p className="text-sm font-medium text-white/90">
-                  Trust badges (admin-set)
-                </p>
-                <p className="text-xs text-white/50 mt-0.5">
-                  Shown on the tenant&apos;s CV. Applied immediately — only
-                  the fields you pick change.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">
-                    KYC
-                  </label>
-                  <select
-                    value={verification.kyc_status}
-                    onChange={(e) =>
-                      setVerification({
-                        ...verification,
-                        kyc_status: e.target.value,
-                      })
-                    }
-                    data-testid="edit-user-kyc"
-                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-sm text-white [&>option]:text-black"
-                  >
-                    {VERIFICATION_CHOICES.map((choice) => (
-                      <option key={choice.value} value={choice.value}>
-                        {choice.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">
-                    Referencing
-                  </label>
-                  <select
-                    value={verification.referencing_status}
-                    onChange={(e) =>
-                      setVerification({
-                        ...verification,
-                        referencing_status: e.target.value,
-                      })
-                    }
-                    data-testid="edit-user-referencing"
-                    className="w-full px-3 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg text-sm text-white [&>option]:text-black"
-                  >
-                    {VERIFICATION_CHOICES.map((choice) => (
-                      <option key={choice.value} value={choice.value}>
-                        {choice.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleApplyVerification}
-                  disabled={
-                    isVerificationSaving ||
-                    (!verification.kyc_status &&
-                      !verification.referencing_status)
-                  }
-                  data-testid="edit-user-apply-verification"
-                  className="px-4 py-1.5 rounded-lg border border-white/20 text-sm text-white cursor-pointer hover:bg-white/10 disabled:opacity-40 disabled:cursor-default transition-colors"
-                >
-                  {isVerificationSaving ? "Applying..." : "Apply badges"}
-                </button>
-                {verificationNote && (
-                  <span className="text-xs text-white/60">
-                    {verificationNote}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
 
           {formData.role === "operator" && (
             <div className="flex items-center space-x-2">

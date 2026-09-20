@@ -15,8 +15,6 @@ export interface CallRequest {
   preferred_time?: string | null;
   notes?: string | null;
   source: CallRequestSource;
-  /** When an admin marked the request called back, or null while it waits. */
-  handled_at?: string | null;
   created_at: string;
   updated_at: string;
 }

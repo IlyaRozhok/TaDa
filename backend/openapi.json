@@ -1280,21 +1280,6 @@
             }
           },
           {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "draft",
-                "listed",
-                "under_offer",
-                "let",
-                "archived"
-              ]
-            }
-          },
-          {
             "name": "is_landing_listing",
             "required": false,
             "in": "query",
@@ -2410,52 +2395,10 @@
           }
         ]
       }
-    },
-    "/api/call-requests/{id}/handled": {
-      "patch": {
-        "operationId": "CallRequestController_setHandled",
-        "summary": "Mark a call request handled or re-open it (admin)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetCallRequestHandledDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Handled state updated"
-          },
-          "404": {
-            "description": "Call request not found"
-          }
-        },
-        "tags": [
-          "call-requests"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
     }
   },
   "info": {
-    "title": "TaDa Rental Platform API",
+    "title": "TA-DA! Rental Platform API",
     "description": "API for connecting tenants and property operators",
     "version": "1.0",
     "contact": {}
@@ -5503,27 +5446,8 @@
             "type": "string",
             "example": "Jane Doe"
           },
-          "contactMethod": {
-            "type": "string",
-            "enum": [
-              "voice_call",
-              "video_call",
-              "email"
-            ],
-            "example": "voice_call"
-          },
           "phone": {
-            "description": "Required unless contactMethod is 'email'.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CallRequestPhoneDto"
-              }
-            ]
-          },
-          "email": {
-            "type": "string",
-            "example": "jane@example.com",
-            "description": "Required when contactMethod is 'email'."
+            "$ref": "#/components/schemas/CallRequestPhoneDto"
           },
           "preferredTime": {
             "type": "string",
@@ -5546,20 +5470,8 @@
         "required": [
           "reason",
           "name",
-          "contactMethod",
+          "phone",
           "source"
-        ]
-      },
-      "SetCallRequestHandledDto": {
-        "type": "object",
-        "properties": {
-          "handled": {
-            "type": "boolean",
-            "description": "true marks the request handled now, false re-opens it"
-          }
-        },
-        "required": [
-          "handled"
         ]
       }
     }

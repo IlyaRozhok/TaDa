@@ -220,27 +220,15 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         return isNaN(num) || num < 0 ? null : num;
       };
 
-      // For counts where zero is a real value: floor 0 is the ground floor
-      // and bedrooms 0 is a studio. Only price-like fields treat 0 as unset.
-      const normalizeCount = (
-        value: number | null | undefined | string,
-      ): number | null => {
-        if (value === null || value === undefined || value === "") {
-          return null;
-        }
-        const num = Number(value);
-        return isNaN(num) || num < 0 ? null : num;
-      };
-
       const propertyData: any = {
         title: formData.title?.trim() || "",
         apartment_number: formData.apartment_number?.trim() || null,
         descriptions: formData.descriptions?.trim() || null,
         price: normalizeNumber(formData.price),
         deposit: normalizeNumber(formData.deposit),
-        bedrooms: normalizeCount(formData.bedrooms),
-        bathrooms: normalizeCount(formData.bathrooms),
-        floor: normalizeCount(formData.floor),
+        bedrooms: normalizeNumber(formData.bedrooms),
+        bathrooms: normalizeNumber(formData.bathrooms),
+        floor: normalizeNumber(formData.floor),
         square_meters: normalizeNumber(formData.square_meters),
         property_type: formData.property_type || null,
         building_type: formData.building_type || null,

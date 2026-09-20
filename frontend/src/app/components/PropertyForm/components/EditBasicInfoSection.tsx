@@ -4,7 +4,6 @@ import type { EditPropertyFormData, OperatorOption } from "../types";
 import { SingleSelectDropdown } from "@/app/components/form/SingleSelectDropdown";
 import type { Building as ApiBuilding } from "@/store/api/buildings.api";
 import { BuildingType, PropertyType } from "@/app/types/property";
-import { depositCapAmount, depositExceedsCap } from "@/app/lib/depositCap";
 
 interface EditBasicInfoSectionProps {
   formData: EditPropertyFormData;
@@ -292,17 +291,6 @@ export const EditBasicInfoSection: React.FC<EditBasicInfoSectionProps> = ({
                 className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 min="0"
               />
-              {depositExceedsCap(formData.price, formData.deposit) && (
-                <p
-                  data-testid="deposit-cap-warning"
-                  className="mt-1.5 text-xs text-amber-300"
-                >
-                  Above the Tenant Fees Act cap of £
-                  {depositCapAmount(formData.price)?.toLocaleString()} (
-                  {(formData.price ?? 0) * 12 >= 50000 ? "6" : "5"} weeks&apos;
-                  rent). Charging it is unlawful in England.
-                </p>
-              )}
             </div>
 
             <div>

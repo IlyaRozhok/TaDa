@@ -140,7 +140,7 @@ export class Property {
     required: false,
   })
   @Column({ type: "date", nullable: true })
-  available_from?: Date | null;
+  available_from?: Date;
 
   @ApiProperty({
     description: "Building type",

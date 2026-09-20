@@ -1,14 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { In, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { v4 as uuidv4 } from "uuid";
-import { TenantCv } from "@/entities/tenant-cv.entity";
-import {
-  BookingRequest,
-  BookingRequestStatus,
-} from "@/entities/booking-request.entity";
-import { User, UserRole } from "@/entities/user.entity";
+import { TenantCv } from "../../entities/tenant-cv.entity";
 import { UpdateTenantCvDto } from "./dto/update-tenant-cv.dto";
 import { TenantCvResponseDto } from "./dto/tenant-cv-response.dto";
 import { UserQueryService } from "../users/services/user-query.service";
@@ -19,30 +14,11 @@ import {
   TenantCvCompletedEvent,
 } from "@/modules/notifications/events/notification.events";
 
-/**
- * Booking stages that prove the operator is genuinely in contact with the
- * tenant: everything past `new` except a cancelled enquiry. `rented` counts —
- * a signed tenancy is the strongest relationship there is.
- */
-const CONTACT_ESTABLISHED_STAGES: BookingRequestStatus[] = [
-  BookingRequestStatus.Contacting,
-  BookingRequestStatus.KycReferencing,
-  BookingRequestStatus.ApprovedViewing,
-  BookingRequestStatus.Viewing,
-  BookingRequestStatus.Contract,
-  BookingRequestStatus.Deposit,
-  BookingRequestStatus.FullPayment,
-  BookingRequestStatus.MoveIn,
-  BookingRequestStatus.Rented,
-];
-
 @Injectable()
 export class TenantCvService {
   constructor(
     @InjectRepository(TenantCv)
     private readonly tenantCvRepository: Repository<TenantCv>,
-    @InjectRepository(BookingRequest)
-    private readonly bookingRequestRepository: Repository<BookingRequest>,
     private readonly userQueryService: UserQueryService,
     private readonly s3Service: S3Service,
     private readonly eventEmitter: EventEmitter2
@@ -54,17 +30,9 @@ export class TenantCvService {
     return this.withRefreshedAvatarUrl(buildTenantCvResponse(user, cv));
   }
 
-  /**
-   * The share-link read. Direct contact details (email, phone, address) are
-   * masked unless the viewer has a working relationship with this tenant:
-   * an admin, the tenant reading their own link, or an operator holding a
-   * booking from them at `contacting` or later on one of their properties.
-   * A bare signed-in account is NOT enough — a leaked link plus a 30-second
-   * signup must not turn into a phone number.
-   */
   async getByShareUuid(
     shareUuid: string,
-    viewer?: User | null,
+    options: { maskContacts?: boolean } = {},
   ): Promise<TenantCvResponseDto> {
     const cv = await this.tenantCvRepository.findOne({
       where: { share_uuid: shareUuid },
@@ -75,30 +43,9 @@ export class TenantCvService {
     }
 
     const user = await this.userQueryService.findOneWithProfiles(cv.user_id);
-    const maskContacts = !(await this.mayViewContacts(cv.user_id, viewer));
     return this.withRefreshedAvatarUrl(
-      buildTenantCvResponse(user, cv, { maskContacts }),
+      buildTenantCvResponse(user, cv, { maskContacts: options.maskContacts }),
     );
-  }
-
-  private async mayViewContacts(
-    cvOwnerId: string,
-    viewer?: User | null,
-  ): Promise<boolean> {
-    if (!viewer) return false;
-    if (viewer.role === UserRole.Admin) return true;
-    if (viewer.id === cvOwnerId) return true;
-
-    // The nested property condition joins on the FK, so this counts bookings
-    // from this tenant on properties the viewer operates.
-    const establishedContact = await this.bookingRequestRepository.count({
-      where: {
-        tenant_id: cvOwnerId,
-        status: In(CONTACT_ESTABLISHED_STAGES),
-        property: { operator_id: viewer.id },
-      },
-    });
-    return establishedContact > 0;
   }
 
   async updateForUser(

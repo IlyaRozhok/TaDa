@@ -9,12 +9,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
-import {
-  Property,
-  PropertyStatus,
-  PROPERTY_STATUS_LABELS,
-  PROPERTY_STATUS_VALUES,
-} from "../types/property";
+import { Property } from "../types/property";
 import { GetPropertiesArgs } from "@/store/api/properties.api";
 import { PROPERTY_TYPE_OPTIONS } from "@/constants/admin-form-options";
 import CopyableId from "./CopyableId";
@@ -26,8 +21,6 @@ import CopyableId from "./CopyableId";
 export interface PropertyFilters {
   /** Narrow to the properties flagged for the landings' listings section. */
   landingOnly: boolean;
-  /** "" is any status; otherwise a `PropertyStatus` value. */
-  status: string;
   /** "" is any type; otherwise a `property_type` value. */
   propertyType: string;
   /** "" is any; "0"–"3" are exact counts, "4+" is open-ended. */
@@ -38,30 +31,9 @@ export interface PropertyFilters {
 
 export const EMPTY_PROPERTY_FILTERS: PropertyFilters = {
   landingOnly: false,
-  status: "",
   propertyType: "",
   beds: "",
   baths: "",
-};
-
-const STATUS_OPTIONS = [
-  { value: "", label: "All" },
-  ...PROPERTY_STATUS_VALUES.map((value) => ({
-    value,
-    label: PROPERTY_STATUS_LABELS[value],
-  })),
-];
-
-/**
- * Badge palette per lifecycle status. `listed` is the healthy default and
- * stays quiet; the states that explain "where did my listing go" stand out.
- */
-const STATUS_BADGE_STYLES: Record<PropertyStatus, string> = {
-  draft: "bg-gray-100 text-gray-700 border border-gray-200",
-  listed: "bg-green-50 text-green-700 border border-green-100",
-  under_offer: "bg-amber-50 text-amber-700 border border-amber-100",
-  let: "bg-gray-900 text-white border border-gray-900",
-  archived: "bg-rose-50 text-rose-700 border border-rose-100",
 };
 
 const BED_OPTIONS = [
@@ -96,7 +68,6 @@ export const propertyFiltersToQuery = (
 
   return {
     ...(filters.landingOnly ? { is_landing_listing: true } : {}),
-    ...(filters.status ? { status: filters.status } : {}),
     ...(filters.propertyType ? { property_type: filters.propertyType } : {}),
     ...(beds.exact !== undefined ? { bedrooms: beds.exact } : {}),
     ...(beds.min !== undefined ? { bedrooms_min: beds.min } : {}),
@@ -107,7 +78,6 @@ export const propertyFiltersToQuery = (
 
 const countActiveFilters = (filters: PropertyFilters): number =>
   (filters.landingOnly ? 1 : 0) +
-  (filters.status ? 1 : 0) +
   (filters.propertyType ? 1 : 0) +
   (filters.beds ? 1 : 0) +
   (filters.baths ? 1 : 0);
@@ -299,14 +269,6 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                 }
               />
               <FilterChoice
-                label="Status"
-                value={filters.status}
-                options={STATUS_OPTIONS}
-                onChange={(value) =>
-                  onFiltersChange({ ...filters, status: value })
-                }
-              />
-              <FilterChoice
                 label="Property type"
                 value={filters.propertyType}
                 options={[
@@ -362,7 +324,6 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Property ID</th>
                 <th className="px-4 py-3">Building ID</th>
-                <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Price (PCM)</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Beds/Baths</th>
@@ -375,7 +336,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
             <tbody className="bg-white divide-y divide-gray-100">
               {properties.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center">
+                  <td colSpan={10} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Home className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -431,25 +392,6 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                         }}
                         className="text-sm text-black"
                       />
-                    </td>
-                    <td className="px-4 py-3">
-                      {(() => {
-                        // Rows cached before the column shipped carry no
-                        // status; the backend defaults those to listed.
-                        const status: PropertyStatus =
-                          property.status ?? "listed";
-                        return (
-                          <span
-                            data-testid="admin-property-status"
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                              STATUS_BADGE_STYLES[status] ??
-                              STATUS_BADGE_STYLES.listed
-                            }`}
-                          >
-                            {PROPERTY_STATUS_LABELS[status] ?? status}
-                          </span>
-                        );
-                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm font-medium text-black whitespace-nowrap">

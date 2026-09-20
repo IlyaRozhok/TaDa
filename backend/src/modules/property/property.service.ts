@@ -180,35 +180,6 @@ export class PropertyService {
   ): Promise<Property> {
     const property = await this.findOne(id);
     this.ensureOwnerOrAdmin(property.operator_id, userId, userRole);
-
-    // Hand-set status is allowed (re-listing after a tenancy ends is a real
-    // flow, and `rented` bookings are terminal rows that never go away), but
-    // re-OPENING the market while a deal is in flight is not: bookings at
-    // contract..move_in mean money or signatures are in play, and `listed`
-    // would invite new applicants onto a flat that is being signed away.
-    // Closing directions (draft/under_offer/let/archived) stay free.
-    if (
-      updatePropertyDto.status === PropertyStatus.Listed &&
-      updatePropertyDto.status !== property.status
-    ) {
-      const inFlightDeals = await this.propertyRepository.manager.count(
-        BookingRequest,
-        {
-          where: {
-            property_id: id,
-            status: In(BOOKING_UNDER_OFFER_STAGES),
-          },
-        },
-      );
-      if (inFlightDeals > 0) {
-        throw new ConflictException(
-          "This property has bookings at the contract stage or later. " +
-            "Complete or cancel them before re-listing — until then the " +
-            "market treats it as under offer.",
-        );
-      }
-    }
-
     const updateData: Partial<Property> = {};
 
     // Handle building type changes
@@ -477,12 +448,6 @@ export class PropertyService {
     if (params.is_landing_listing !== undefined) {
       queryBuilder.andWhere("property.is_landing_listing = :flagged", {
         flagged: params.is_landing_listing,
-      });
-    }
-
-    if (params.status) {
-      queryBuilder.andWhere("property.status = :status", {
-        status: params.status,
       });
     }
 

@@ -1,34 +1,3 @@
-/**
- * Listing lifecycle, mirroring the backend's `PropertyStatus` enum. The
- * booking pipeline drives `listed → under_offer → let` automatically;
- * admins/operators set the rest by hand.
- */
-export type PropertyStatus =
-  | "draft"
-  | "listed"
-  | "under_offer"
-  | "let"
-  | "archived";
-
-export const PROPERTY_STATUS_VALUES: PropertyStatus[] = [
-  "draft",
-  "listed",
-  "under_offer",
-  "let",
-  "archived",
-];
-
-export const PROPERTY_STATUS_LABELS: Record<PropertyStatus, string> = {
-  draft: "Draft",
-  listed: "Listed",
-  under_offer: "Under offer",
-  let: "Let",
-  archived: "Archived",
-};
-
-/** EPC bands, mirroring the backend's `EPC_RATING_VALUES` vocabulary. */
-export const EPC_RATING_VALUES = ["A", "B", "C", "D", "E", "F", "G"] as const;
-
 export enum PropertyType {
   Flat = "flat",
   Apartment = "apartment",
@@ -122,16 +91,6 @@ export interface PropertyMedia {
  */
 export interface Property {
   id: string;
-  /** Lifecycle status. Optional: cached rows may predate the column. */
-  status?: PropertyStatus;
-  /** EPC band (A-G), legally required on listing advertisements. */
-  epc_rating?: string | null;
-  /**
-   * Tenant Fees Act 2019 flag from the public projection: the deposit
-   * exceeds 5 weeks' rent (6 at £50k+ annual). Absent on admin routes,
-   * which return the raw entity — the admin form recomputes it itself.
-   */
-  deposit_exceeds_cap?: boolean | null;
   title: string | null;
   descriptions: string | null;
   address: string | null;

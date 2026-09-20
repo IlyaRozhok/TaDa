@@ -52,24 +52,6 @@ export const tenantCvApi = baseApi.injectEndpoints({
       transformResponse: unwrap<{ share_uuid: string }>,
       invalidatesTags: [{ type: "TenantCv", id: "ME" }],
     }),
-
-    /**
-     * Admin-only: set the KYC/referencing trust badges on a tenant's CV.
-     * Values come from the backend's verification vocabulary
-     * (not_started / in_progress / passed / failed).
-     */
-    setTenantCvVerification: builder.mutation<
-      TenantCvResponse,
-      { userId: string; kyc_status?: string; referencing_status?: string }
-    >({
-      query: ({ userId, ...body }) => ({
-        url: `/tenant-cv/${userId}/verification`,
-        method: "PATCH",
-        body,
-      }),
-      transformResponse: unwrap<TenantCvResponse>,
-      invalidatesTags: [{ type: "TenantCv", id: "ME" }],
-    }),
   }),
 });
 
@@ -78,5 +60,4 @@ export const {
   useGetPublicTenantCvQuery,
   useCompleteTenantCvMutation,
   useCreateTenantCvShareMutation,
-  useSetTenantCvVerificationMutation,
 } = tenantCvApi;

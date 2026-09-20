@@ -1,7 +1,6 @@
-import { ConflictException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { Property, PropertyStatus } from "@/entities/property.entity";
+import { Property } from "@/entities/property.entity";
 import { Building } from "@/entities/building.entity";
 import { S3Service } from "@/common/services/s3.service";
 import { GeocodingService } from "@/common/services/geocoding.service";
@@ -172,17 +171,6 @@ describe("PropertyService admin list", () => {
     expect(builder.clauses[0].params).toEqual({ bedrooms: 0 });
   });
 
-  it("filters on the lifecycle status", async () => {
-    const { service, builder } = await buildService([], 0);
-
-    await service.findAllWithFreshUrls({
-      status: "under_offer",
-    } as FindAdminPropertiesDto);
-
-    expect(sqlOf(builder)).toEqual(["property.status = :status"]);
-    expect(builder.clauses[0].params).toEqual({ status: "under_offer" });
-  });
-
   it("narrows to unflagged listings when the flag is sent as false", async () => {
     const { service, builder } = await buildService([], 0);
 
@@ -205,107 +193,5 @@ describe("PropertyService admin list", () => {
       "property.building_id = :building_id",
       "property.operator_id = :operator_id",
     ]);
-  });
-});
-
-/**
- * H — hand-setting `status` must not re-open the market over an in-flight
- * deal. Bookings at contract..move_in mean money or signatures are in play;
- * `listed` while they exist would invite new applicants onto a flat that is
- * being signed away. Closing directions and terminal `rented` rows (the
- * legitimate re-list after a tenancy ends) stay free.
- */
-describe("PropertyService.update — hand-set status guard", () => {
-  const OPERATOR_ID = "33333333-3333-3333-3333-333333333333";
-
-  const buildService = (inFlightDeals: number, stored: Partial<Property>) => {
-    const property = {
-      id: "prop-1",
-      operator_id: OPERATOR_ID,
-      ...stored,
-    } as Property;
-
-    const propertyRepository = {
-      findOne: jest.fn().mockResolvedValue(property),
-      update: jest.fn().mockResolvedValue(undefined),
-      manager: { count: jest.fn().mockResolvedValue(inFlightDeals) },
-    };
-
-    const service = new PropertyService(
-      propertyRepository as any,
-      {} as any,
-      {
-        refreshMediaUrls: jest.fn().mockResolvedValue(undefined),
-        refreshUrl: jest.fn(async (url: string) => url),
-      } as any,
-      {
-        geocode: jest.fn().mockResolvedValue(null),
-        extractPostcode: jest.fn().mockReturnValue(null),
-      } as any,
-    );
-
-    return { service, propertyRepository };
-  };
-
-  it("refuses re-listing while bookings at contract+ exist", async () => {
-    const { service, propertyRepository } = buildService(1, {
-      status: PropertyStatus.UnderOffer,
-    });
-
-    await expect(
-      service.update("prop-1", { status: "listed" } as any, OPERATOR_ID, "operator"),
-    ).rejects.toThrow(ConflictException);
-    expect(propertyRepository.update).not.toHaveBeenCalled();
-  });
-
-  it("allows re-listing when no deal is in flight (rented rows are terminal)", async () => {
-    const { service, propertyRepository } = buildService(0, {
-      status: PropertyStatus.Let,
-    });
-
-    await service.update(
-      "prop-1",
-      { status: "listed" } as any,
-      OPERATOR_ID,
-      "operator",
-    );
-
-    expect(propertyRepository.update).toHaveBeenCalledWith("prop-1", {
-      status: "listed",
-    });
-  });
-
-  it("leaves closing directions free — archiving skips the booking lookup", async () => {
-    const { service, propertyRepository } = buildService(1, {
-      status: PropertyStatus.UnderOffer,
-    });
-
-    await service.update(
-      "prop-1",
-      { status: "archived" } as any,
-      OPERATOR_ID,
-      "operator",
-    );
-
-    expect(propertyRepository.manager.count).not.toHaveBeenCalled();
-    expect(propertyRepository.update).toHaveBeenCalledWith("prop-1", {
-      status: "archived",
-    });
-  });
-
-  it("skips the lookup when the status is not changing", async () => {
-    const { service, propertyRepository } = buildService(1, {
-      status: PropertyStatus.Listed,
-    });
-
-    await service.update(
-      "prop-1",
-      { status: "listed" } as any,
-      OPERATOR_ID,
-      "operator",
-    );
-
-    expect(propertyRepository.manager.count).not.toHaveBeenCalled();
-    expect(propertyRepository.update).toHaveBeenCalled();
   });
 });

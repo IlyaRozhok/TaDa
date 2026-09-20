@@ -17,7 +17,6 @@ import {
   FileText,
   Search,
   Heart,
-  ClipboardList,
   LogOut,
 } from "lucide-react";
 import UserDropdown from "./UserDropdown";
@@ -230,15 +229,6 @@ export default function TenantUniversalHeader({
                 {t(tenantCvKeys.tenantCvButton)}
               </button>
             )}
-            {shouldShowPreferencesButton && (
-              <button
-                onClick={() => router.push("/app/requests")}
-                data-testid="header-my-requests"
-                className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer whitespace-nowrap"
-              >
-                My requests
-              </button>
-            )}
             {shouldShowFavouritesButton && (
               <button
                 onClick={() => router.push("/app/shortlist")}
@@ -361,16 +351,6 @@ export default function TenantUniversalHeader({
                       >
                         <Heart className="w-4 h-4 mr-3 flex-shrink-0" />
                         {t(favoritesKeys.title)}
-                      </button>
-                    )}
-
-                    {shouldShowPreferencesButton && (
-                      <button
-                        onClick={() => handleMobileMenuClick("/app/requests")}
-                        className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
-                      >
-                        <ClipboardList className="w-4 h-4 mr-3 flex-shrink-0" />
-                        My requests
                       </button>
                     )}
 

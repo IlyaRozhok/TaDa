@@ -93,10 +93,8 @@ export class TenantCvController {
 
   /**
    * The share link: anyone holding the uuid can read the CV — but direct
-   * contact details (email, phone, address) are masked unless the viewer's
-   * relationship warrants them: an admin, the tenant themself, or an operator
-   * with a booking from that tenant at `contacting`+ (the service decides).
-   * A leaked link stops being a leaked phone number.
+   * contact details (email, phone, address) are masked unless the viewer is
+   * signed in. A leaked link stops being a leaked phone number.
    */
   @Get(":share_uuid")
   @Public()
@@ -105,6 +103,8 @@ export class TenantCvController {
     @Param("share_uuid", ParseUUIDPipe) shareUuid: string,
     @CurrentUser() viewer?: User,
   ) {
-    return this.tenantCvService.getByShareUuid(shareUuid, viewer);
+    return this.tenantCvService.getByShareUuid(shareUuid, {
+      maskContacts: !viewer,
+    });
   }
 }

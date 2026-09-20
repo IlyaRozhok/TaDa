@@ -15,8 +15,8 @@ const unwrap = <T,>(response: MaybeWrapped<T>): T =>
 export const callRequestsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     /**
-     * Every "Book a call" submission, for the admin panel. The public form
-     * is the only writer of rows; admins only mark them handled below.
+     * Every "Book a call" submission, for the admin panel. Read-only: the
+     * public form is the only writer, and it posts without a session.
      */
     getCallRequests: builder.query<CallRequest[], CallRequestSource | void>({
       query: (source) => ({
@@ -26,26 +26,7 @@ export const callRequestsApi = baseApi.injectEndpoints({
       transformResponse: unwrap<CallRequest[]>,
       providesTags: [{ type: "CallRequests", id: "LIST" }],
     }),
-
-    /**
-     * Mark a request called back, or clear the mark. The server stamps
-     * `handled_at` itself; invalidation refreshes the listing so two admins
-     * working the same list see each other's calls.
-     */
-    setCallRequestHandled: builder.mutation<
-      CallRequest,
-      { id: string; handled: boolean }
-    >({
-      query: ({ id, handled }) => ({
-        url: `/call-requests/${id}/handled`,
-        method: "PATCH",
-        body: { handled },
-      }),
-      transformResponse: unwrap<CallRequest>,
-      invalidatesTags: [{ type: "CallRequests", id: "LIST" }],
-    }),
   }),
 });
 
-export const { useGetCallRequestsQuery, useSetCallRequestHandledMutation } =
-  callRequestsApi;
+export const { useGetCallRequestsQuery } = callRequestsApi;

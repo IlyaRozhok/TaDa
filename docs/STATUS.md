@@ -129,31 +129,18 @@ decisions) is recorded HERE, briefly, with a date.
   of booting signed-in users to the landing; the shortlist heart renders
   only for tenant/admin and failures toast; availability display: past
   date → "Available now", missing date → "Contact for availability".
-- ~~**H — the admin panel can see (and the tenant can act)**~~ — **done
-  (current PR)**: property status badge + list filter (`?status=` through
-  DTO/mapper/service) + form control in the edit modal, with `epc_rating`
-  select and a live Tenant Fees Act deposit-cap warning
-  (`app/lib/depositCap.ts` mirrors the backend computation); hand-set
-  status validated against active bookings (re-listing 409s while
-  contract..move_in bookings exist; terminal `rented` rows do not block the
-  legitimate re-list after a tenancy ends); verification controls in the
-  admin user modal (self-contained PATCH, only picked fields change);
-  tenant "my requests" view at `/app/requests` with per-stage explanations
-  (mirroring the email copy) + viewing slot confirm, linked from the tenant
-  header, and the viewing email now points at it ("confirm in your
-  account"); booking modal gating matches the backend contract (name +
-  email OR phone, dates optional); 0%-match badge renders "Set preferences"
-  when nothing was scoreable; viewing column (slot + confirmed state +
-  admin propose/re-propose control) and a status filter in the admin
-  requests table; call-request `handled_at` (migration `1788600000000`,
-  rehearsed both directions) + admin PATCH + handled chip/toggle + `tel:`
-  link; CV contact unmasking by relationship — admin, the tenant themself,
-  or an operator with a booking from that tenant at `contacting`+ — instead
-  of any signed-in account; zero-values survive the admin forms (floor 0,
-  Studio = 0 bedrooms) and `available_from` clears (mapper null instead of
-  undefined); admin modals hoisted out of render and
-  `react-hooks/rules-of-hooks` promoted to **error**.
-- **D (next) — operator dashboard**: own listings, booking requests on own
+- **H (next) — the admin panel can see (and the tenant can act)**: property status
+  badge + filter + form control (incl. `epc_rating`, deposit-cap warning,
+  verification controls — C2 API is ready); hand-set status validated
+  against active bookings; tenant "my requests" view with status
+  explanations + viewing slot confirm (then restore the "confirm in your
+  account" email copy); booking modal gating matches the backend contract
+  (email OR phone); 0%-match badge → "Set preferences"; viewing columns +
+  status filter in the admin requests table; call-request handled state +
+  `tel:` link; CV unmasking by relationship (booking at `contacting`+), not
+  by login; zero-values (floor 0/studio) and `available_from` clearing;
+  admin modals hoisted out of render (rules-of-hooks fix).
+- **D — operator dashboard**: own listings, booking requests on own
   properties (scope the existing admin view by `operator_id`), rights over
   early statuses, email on a new request (add the CV share link + property
   URL to it), operator access to their own buildings.
@@ -224,22 +211,6 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
-- **Audit 06 still has smaller H-tagged findings outside the package-H
-  scope** (added 2026-09-10, with the package-H PR): shortlist reads
-  swallowing DB outages (`shortlist.service.ts:139`), the avatar-delete
-  fallback's garbage S3 key (`users.service.ts:146`), the operator
-  marketing landing having no URL of its own, thin homepage SEO / the
-  1,000-row sitemap cap, the smoking question only lowering scores, and the
-  collected-but-unused preference fields. They stay recorded in
-  `docs/audit/06-prod-readiness-review-2026-08-30.md` («Smaller findings»)
-  and should ride along in D/E-era PRs that touch those files.
-- **Admin verification controls cannot show the current badge values**
-  (added 2026-09-10, with the package-H PR). The users table does not carry
-  the CV's `kyc_status`/`referencing_status`, and there is no admin read
-  endpoint for another user's CV, so the Edit-User controls default to
-  "Leave unchanged" and send only the fields the admin picked. Good enough
-  for the concierge phase; an admin GET (or embedding the badges in the
-  users listing) would let the controls show where things stand.
 - **The London region→borough map is duplicated across the two apps**
   (added 2026-09-10, with the area-matching fix). `DISTRICTS_BY_AREA` lives in
   both `frontend/src/constants/admin-form-options.ts` (what the preferences
@@ -426,10 +397,10 @@ decisions) is recorded HERE, briefly, with a date.
   controller specs; frontend component tests absent (vitest is node-env).
   Priority spec targets: `user-role.service`, `property.service`,
   `shortlist.service`.
-- **Lint backlog**: backend ~42 warnings, frontend ~430 (incl. `no-console`
-  and `set-state-in-effect`). `react-hooks/rules-of-hooks` is `error` since
-  package H (the one violation — admin panel modals defined inside render —
-  is fixed).
+- **Lint backlog**: backend 40 warnings, frontend ~460 (incl. `no-console`
+  and 25 `set-state-in-effect`); `react-hooks/rules-of-hooks` is still
+  `warn` because of one violation in `admin/panel/page.tsx:624` — fix it and
+  promote the rule to error.
 - **Single-session auth model**: one `refresh_token_hash` per user — second
   device silently logs out the first. Wants a sessions table. (Rotation is
   atomic since package A, so the same-device two-tab race no longer corrupts

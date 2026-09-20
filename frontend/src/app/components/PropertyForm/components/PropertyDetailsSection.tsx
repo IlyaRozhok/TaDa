@@ -14,8 +14,7 @@ interface PropertyDetailsSectionProps {
   onToggleDropdown: (dropdown: string) => void;
 }
 
-// Zero is the studio value, not an unset field.
-const BEDROOM_OPTIONS = [0, 1, 2, 3, 4, 5] as const;
+const BEDROOM_OPTIONS = [1, 2, 3, 4, 5] as const;
 const BATHROOM_OPTIONS = [1, 2, 3, 4] as const;
 
 export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
@@ -63,14 +62,12 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
               formData.bedrooms != null
                 ? formData.bedrooms >= 5
                   ? "5+"
-                  : formData.bedrooms === 0
-                    ? "Studio"
-                    : formData.bedrooms
+                  : formData.bedrooms
                 : "Select Bedrooms"
             }
             options={BEDROOM_OPTIONS.map((value) => ({
               value: String(value),
-              content: value === 5 ? "5+" : value === 0 ? "Studio" : value,
+              content: value === 5 ? "5+" : value,
               selected:
                 (value === 5 &&
                   formData.bedrooms != null &&

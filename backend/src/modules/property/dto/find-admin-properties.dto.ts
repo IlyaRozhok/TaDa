@@ -1,7 +1,5 @@
 import { IsIn, IsNumberString, IsOptional, IsString, IsUUID } from "class-validator";
 
-import { PropertyStatus } from "@/entities/property.entity";
-
 /**
  * Query of the admin properties list, `GET /properties`.
  *
@@ -41,11 +39,6 @@ export class FindAdminPropertiesDto {
   @IsOptional()
   @IsIn(["true", "false"])
   is_landing_listing?: string;
-
-  /** Narrows to one lifecycle status ("listed", "under_offer", ...). */
-  @IsOptional()
-  @IsIn(Object.values(PropertyStatus))
-  status?: string;
 
   /**
    * Free-form on purpose: the column is a plain varchar and the values in the

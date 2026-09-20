@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Clock, Mail, Phone, PhoneCall, User } from "lucide-react";
+import { Clock, Mail, Phone, PhoneCall, User } from "lucide-react";
 import {
   CALL_REASON_LABELS,
   CONTACT_METHOD_LABELS,
@@ -31,20 +31,16 @@ const sourceLabels: Record<CallRequest["source"], string> = {
 interface AdminCallRequestsSectionProps {
   requests: CallRequest[];
   isLoading?: boolean;
-  /** Row whose handled toggle is in flight, or null. */
-  updatingId?: string | null;
-  onToggleHandled: (id: string, handled: boolean) => void;
 }
 
 /**
- * Listing of the "Book a call" submissions. The row is a lead the support
- * inbox already received by email, and this table is the durable copy — plus
- * the one write an admin makes here: marking a lead called back, so two
- * admins working the same list can see who was already contacted.
+ * Read-only listing of the "Book a call" submissions. Unlike booking requests
+ * there is no status to move: the row is a lead the support inbox already
+ * received by email, and this table is the durable copy of it.
  */
 export const AdminCallRequestsSection: React.FC<
   AdminCallRequestsSectionProps
-> = ({ requests, isLoading, updatingId, onToggleHandled }) => {
+> = ({ requests, isLoading }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -83,15 +79,12 @@ export const AdminCallRequestsSection: React.FC<
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider min-w-[220px]">
                   Notes
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                  Handled
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center">
+                  <td colSpan={7} className="px-6 py-10 text-center">
                     <div className="flex items-center justify-center space-x-2 text-black">
                       <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
                       <span>Loading call requests...</span>
@@ -100,7 +93,7 @@ export const AdminCallRequestsSection: React.FC<
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center">
+                  <td colSpan={7} className="px-6 py-10 text-center">
                     <div className="flex flex-col items-center justify-center text-black">
                       <PhoneCall className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium mb-2">
@@ -154,16 +147,7 @@ export const AdminCallRequestsSection: React.FC<
                           ) : contactPhone ? (
                             <div className="text-xs text-gray-600 flex items-center gap-2">
                               <Phone className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                              {/* The country column holds an ISO code (GB),
-                                  not a dial prefix, so the link carries the
-                                  number exactly as typed. */}
-                              <a
-                                href={`tel:${(request.phone_number ?? "").replace(/\s+/g, "")}`}
-                                className="underline hover:text-black"
-                                data-testid="call-request-tel"
-                              >
-                                {contactPhone}
-                              </a>
+                              <span>{contactPhone}</span>
                             </div>
                           ) : (
                             <span className="text-xs text-gray-400">
@@ -200,33 +184,6 @@ export const AdminCallRequestsSection: React.FC<
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
                         )}
-                      </td>
-                      <td className="px-6 py-4 align-top whitespace-nowrap">
-                        <div className="flex flex-col gap-1.5">
-                          {request.handled_at ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
-                              <Check className="w-3 h-3" />
-                              {formatSubmitted(request.handled_at)}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
-                              Awaiting call
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onToggleHandled(request.id, !request.handled_at)
-                            }
-                            disabled={updatingId === request.id}
-                            data-testid="call-request-handled-toggle"
-                            className="self-start px-2 py-1 rounded-md border border-gray-300 text-xs font-medium text-black cursor-pointer hover:bg-gray-50 disabled:opacity-40 disabled:cursor-default transition-colors"
-                          >
-                            {request.handled_at
-                              ? "Re-open"
-                              : "Mark handled"}
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   );
