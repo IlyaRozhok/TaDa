@@ -10,6 +10,7 @@ import Link from "next/link";
 import UniversalHeader from "../../../components/UniversalHeader";
 import SimpleDashboardRouter from "../../../components/SimpleDashboardRouter";
 import { useDebounce } from "../../../hooks/useDebounce";
+import { apiErrorMessage } from "@/app/lib/apiErrorMessage";
 import GlassmorphismToast from "../../../components/GlassmorphismToast";
 import AdminUsersSection from "../../../components/AdminUsersSection";
 import AdminBuildingsSection from "../../../components/AdminBuildingsSection";
@@ -103,40 +104,8 @@ interface User {
  */
 type Building = ApiBuilding;
 
-/**
- * A rejected RTK Query mutation carries `{ status, data }`, axios carries
- * `{ response: { data } }`, and a plain Error carries `message`. The panel now
- * mixes all three, so the message is pulled out in one place.
- */
-function apiErrorMessage(error: unknown, fallback: string): string {
-  // Nest's ValidationPipe rejects with `message: string[]` — one entry per
-  // failed rule. Dropping arrays reduced every validation reject (bad
-  // vocabulary value, malformed duration list…) to "Unknown error".
-  const asText = (message: unknown): string | undefined => {
-    if (typeof message === "string") return message;
-    if (Array.isArray(message) && message.every((m) => typeof m === "string")) {
-      return message.join("; ");
-    }
-    return undefined;
-  };
-
-  if (typeof error === "object" && error !== null) {
-    const candidate = error as {
-      data?: { message?: unknown };
-      response?: { data?: { message?: unknown } };
-      message?: unknown;
-    };
-
-    return (
-      asText(candidate.data?.message) ??
-      asText(candidate.response?.data?.message) ??
-      asText(candidate.message) ??
-      fallback
-    );
-  }
-
-  return fallback;
-}
+// apiErrorMessage moved to `@/app/lib/apiErrorMessage` when the operator
+// panel (package D) started needing the same RTK/axios/Error unwrapping.
 
 interface AdminViewModalProps {
   open: boolean;

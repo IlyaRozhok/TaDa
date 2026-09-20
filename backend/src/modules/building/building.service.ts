@@ -331,13 +331,21 @@ export class BuildingService {
   /**
    * Find building by ID with updated media URLs
    */
-  async findOneWithFreshUrls(id: string): Promise<BuildingResponse> {
+  /**
+   * `forOperatorId` scopes the read: an operator asking for a building they
+   * do not own gets the same 404 as for one that does not exist, so the
+   * endpoint leaks nothing about other operators' portfolios.
+   */
+  async findOneWithFreshUrls(
+    id: string,
+    forOperatorId?: string,
+  ): Promise<BuildingResponse> {
     const building = await this.buildingRepository.findOne({
       where: { id },
       relations: ["operator"],
     });
 
-    if (!building) {
+    if (!building || (forOperatorId && building.operator_id !== forOperatorId)) {
       throw new NotFoundException("Building not found");
     }
 

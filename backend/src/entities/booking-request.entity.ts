@@ -41,6 +41,20 @@ export const BOOKING_UNDER_OFFER_STAGES: BookingRequestStatus[] = [
   BookingRequestStatus.MoveIn,
 ];
 
+/**
+ * Stages an operator drives on their own bookings: first contact through the
+ * viewing. From `contract` onward money and signatures are in play and the
+ * concierge team (admin) takes over, so operator status rights stop here
+ * (cancelling an early enquiry is still theirs).
+ */
+export const BOOKING_OPERATOR_STAGES: BookingRequestStatus[] = [
+  BookingRequestStatus.New,
+  BookingRequestStatus.Contacting,
+  BookingRequestStatus.KycReferencing,
+  BookingRequestStatus.ApprovedViewing,
+  BookingRequestStatus.Viewing,
+];
+
 @Entity("booking_requests")
 @Unique(["tenant_id", "property_id"])
 export class BookingRequest {

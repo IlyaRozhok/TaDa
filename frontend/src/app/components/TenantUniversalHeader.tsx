@@ -220,6 +220,19 @@ export default function TenantUniversalHeader({
             </button>
           )}
 
+          {/* Operator panel — the operator's scoped slice of the admin view */}
+          {user?.role === "operator" && (
+            <button
+              onClick={() => router.push("/app/operator/panel")}
+              className={`flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer ${
+                isSameHeaderPage ? "hidden sm:flex" : ""
+              }`}
+            >
+              <Shield className="w-4 h-4 flex-shrink-0" />
+              <span>Operator Panel</span>
+            </button>
+          )}
+
           {/* Tenant: Tenant CV + Favourites; admin: Favourites */}
           <div className="hidden md:flex items-center gap-2 lg:gap-3">
             {showTenantCvLink && onboardingCompleted && (
@@ -351,6 +364,18 @@ export default function TenantUniversalHeader({
                       >
                         <Shield className="w-4 h-4 mr-3 flex-shrink-0" />
                         Admin Panel
+                      </button>
+                    )}
+
+                    {user?.role === "operator" && isSameHeaderPage && (
+                      <button
+                        onClick={() =>
+                          handleMobileMenuClick("/app/operator/panel")
+                        }
+                        className="flex w-full cursor-pointer items-center px-4 py-3 text-sm text-left transition-all duration-200 text-white hover:bg-white/12"
+                      >
+                        <Shield className="w-4 h-4 mr-3 flex-shrink-0" />
+                        Operator Panel
                       </button>
                     )}
 

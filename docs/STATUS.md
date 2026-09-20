@@ -153,11 +153,26 @@ decisions) is recorded HERE, briefly, with a date.
   Studio = 0 bedrooms) and `available_from` clears (mapper null instead of
   undefined); admin modals hoisted out of render and
   `react-hooks/rules-of-hooks` promoted to **error**.
-- **D (next) — operator dashboard**: own listings, booking requests on own
-  properties (scope the existing admin view by `operator_id`), rights over
-  early statuses, email on a new request (add the CV share link + property
-  URL to it), operator access to their own buildings.
-- **E — frontend unwinding**: server-fetched data passed into detail clients
+- ~~**D — operator dashboard**~~ — **done (current PR)**: operators get
+  `/app/operator/panel` (noindex, role-gated) reusing the admin sections in
+  restricted modes — own listings read-only (the property list was already
+  operator-scoped server-side), booking requests on own properties
+  (`GET /booking-requests` now allows operators, scoped by
+  `property.operator_id`), and own buildings read-only (`GET /buildings*`
+  opened to operators; the list is forced to their id, the detail 404s on
+  someone else's). Status rights stop where the money starts:
+  `BOOKING_OPERATOR_STAGES` (new..viewing, plus cancelling an early enquiry)
+  are the operator's — both the current and the target stage must be early,
+  contract+ transitions stay admin-only (403), and the operator panel's
+  status select mirrors that. Viewing propose/re-propose allowed for the
+  owning operator. The operator's new-booking email now carries a
+  "Property page" URL and the tenant's CV share link, built in
+  NotificationsService from `FRONTEND_URL` + database-resolved ids (never
+  from the event payload) and baked into the stored payload so retries
+  render the same body. "Operator Panel" link in the tenant header (desktop
+  + mobile) for operators. `apiErrorMessage` extracted from the admin panel
+  page to `app/lib/apiErrorMessage.ts` (both panels use it).
+- **E (next) — frontend unwinding**: server-fetched data passed into detail clients
   and public pages ungated from session init; server-side
   `onboarding_completed` in `/auth/me` (kills the three competing sources of
   truth and the redirect races incl. `navigationGuard.ts`); one session
@@ -321,13 +336,20 @@ decisions) is recorded HERE, briefly, with a date.
   ("this tenant"). Only admins see the banner, but it sits on the translated
   `/app/units` and property pages, so it reads through `translateWithFallback`
   with those English fallbacks until the owner adds them.
-- **`backend/openapi.json` does not describe `asUserId` yet** (added
-  2026-09-19). The three matching routes gained the admin-only `asUserId`
-  query parameter and the feed a `viewingAs` field; the snapshot is refreshed
-  by hand (`npm run openapi:dump`), and CI only checks the generated types
-  against the committed snapshot, so nothing fails — the spec just lags until
-  the next dump. The frontend types for it are hand-written in
-  `store/api/matching.api.ts`.
+- ~~**`backend/openapi.json` does not describe `asUserId` yet**~~ (added
+  2026-09-19, **resolved 2026-09-20**: the package-D PR refreshed the
+  snapshot, which picked up `asUserId`/`viewingAs` along with the operator
+  routes). The frontend types for it remain hand-written in
+  `store/api/matching.api.ts` — folding them onto the generated types is
+  part of the OpenAPI-adoption follow-up below.
+- **Operators cannot edit their properties from the operator panel** (added
+  2026-09-20, with the package-D PR). The panel lists their properties and
+  buildings read-only: the Add/Edit property modals are admin-shaped — they
+  load the operator list through admin-only `GET /users` and offer
+  building/operator pickers — so wiring them up for operators is its own
+  task. The API side already permits operator property writes
+  (ownership-scoped); only the UI is missing. Same for a building view modal
+  (the operator panel opens the public building page instead).
 - **`TenantUniversalHeader`'s `showPreferencesButton` prop is dead** (noticed
   2026-09-19). It is accepted and ignored — `preferences/page.tsx` passes
   `false` and still gets the button. Wiring it up would change that page's

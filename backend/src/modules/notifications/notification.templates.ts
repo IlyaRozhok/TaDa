@@ -188,6 +188,20 @@ export function buildMessage(
         "Message:",
         p.message?.trim() || "—",
         "",
+        // Links are resolved by NotificationsService from FRONTEND_URL and
+        // the database — absent on payloads recorded before they existed,
+        // and the section disappears with them rather than printing dashes.
+        ...(p.links
+          ? [
+              line("Property page", p.links.property),
+              line(
+                "Tenant CV",
+                p.links.tenantCv ??
+                  "not shared yet — it appears here once the tenant completes their CV",
+              ),
+              "",
+            ]
+          : []),
         "Please respond promptly — in London, speed of response decides lets.",
         "",
         "— The TA-DA! team",

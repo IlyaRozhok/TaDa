@@ -3,6 +3,7 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import { BookingRequestService } from "./booking-request.service";
 import { BookingRequestStatus } from "@/entities/booking-request.entity";
 import { Property, PropertyStatus } from "@/entities/property.entity";
+import { UserRole } from "@/entities/user.entity";
 import { NotificationEvents } from "@/modules/notifications/events/notification.events";
 
 /**
@@ -417,6 +418,157 @@ describe("BookingRequestService.create — resubmit lifecycle", () => {
     });
     const result = await service.create(dto as any, "tenant-1");
     expect(result.status).toBe(BookingRequestStatus.Contract);
+  });
+});
+
+/**
+ * D — operators drive the early pipeline on their own bookings only. Both
+ * checks (ownership and stage rights) run before the CAS write, and an admin
+ * actor is unrestricted.
+ */
+describe("BookingRequestService — operator rights", () => {
+  let bookingRepository: any;
+  let service: BookingRequestService;
+
+  const operator = { id: "op-1", role: UserRole.Operator };
+  const admin = { id: "admin-1", role: UserRole.Admin };
+
+  const booking = (overrides: Record<string, unknown> = {}) => ({
+    id: "booking-1",
+    property_id: "prop-1",
+    tenant_id: "tenant-1",
+    status: BookingRequestStatus.New,
+    property: { id: "prop-1", operator_id: "op-1" },
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    const txBookingRepository = {
+      update: jest.fn(async () => ({ affected: 1 })),
+      count: jest.fn(async () => 0),
+    };
+    const txPropertyRepository = {
+      update: jest.fn(async () => ({ affected: 1 })),
+    };
+    const entityManager = {
+      getRepository: jest.fn((entity: any) =>
+        entity === Property ? txPropertyRepository : txBookingRepository,
+      ),
+    };
+    bookingRepository = {
+      find: jest.fn(async () => []),
+      findOne: jest.fn(),
+      save: jest.fn(async (row: any) => row),
+      manager: { transaction: jest.fn(async (cb: any) => cb(entityManager)) },
+    };
+    service = new BookingRequestService(
+      bookingRepository,
+      { findOne: jest.fn() } as any,
+      { emit: jest.fn() } as unknown as EventEmitter2,
+    );
+  });
+
+  it("scopes findAll to the operator's properties when an operator id is given", async () => {
+    await service.findAll(undefined, "op-1");
+    expect(bookingRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { property: { operator_id: "op-1" } },
+      }),
+    );
+  });
+
+  it("lets an operator move their own booking within the early stages", async () => {
+    bookingRepository.findOne.mockResolvedValue(booking());
+    await expect(
+      service.updateStatus(
+        "booking-1",
+        BookingRequestStatus.Contacting,
+        operator,
+      ),
+    ).resolves.toMatchObject({ status: BookingRequestStatus.Contacting });
+  });
+
+  it("lets an operator cancel their own early enquiry", async () => {
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ status: BookingRequestStatus.Viewing }),
+    );
+    await expect(
+      service.updateStatus(
+        "booking-1",
+        BookingRequestStatus.CancelBooking,
+        operator,
+      ),
+    ).resolves.toMatchObject({ status: BookingRequestStatus.CancelBooking });
+  });
+
+  it("refuses an operator on someone else's booking", async () => {
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ property: { id: "prop-1", operator_id: "someone-else" } }),
+    );
+    await expect(
+      service.updateStatus(
+        "booking-1",
+        BookingRequestStatus.Contacting,
+        operator,
+      ),
+    ).rejects.toThrow(/own properties/);
+    expect(bookingRepository.manager.transaction).not.toHaveBeenCalled();
+  });
+
+  it("refuses an operator moving a booking into the contract stages", async () => {
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ status: BookingRequestStatus.Viewing }),
+    );
+    await expect(
+      service.updateStatus(
+        "booking-1",
+        BookingRequestStatus.Contract,
+        operator,
+      ),
+    ).rejects.toThrow(/contract stage/);
+    expect(bookingRepository.manager.transaction).not.toHaveBeenCalled();
+  });
+
+  it("refuses an operator touching a booking already past the early stages", async () => {
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ status: BookingRequestStatus.Deposit }),
+    );
+    await expect(
+      service.updateStatus(
+        "booking-1",
+        BookingRequestStatus.CancelBooking,
+        operator,
+      ),
+    ).rejects.toThrow(/TA-DA! team/);
+  });
+
+  it("leaves an admin actor unrestricted", async () => {
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ status: BookingRequestStatus.Contract }),
+    );
+    await expect(
+      service.updateStatus("booking-1", BookingRequestStatus.Deposit, admin),
+    ).resolves.toMatchObject({ status: BookingRequestStatus.Deposit });
+  });
+
+  it("lets an operator propose a viewing on their own booking, not on others'", async () => {
+    const future = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    bookingRepository.findOne.mockResolvedValue(
+      booking({ status: BookingRequestStatus.ApprovedViewing }),
+    );
+    await expect(
+      service.proposeViewing("booking-1", future, operator),
+    ).resolves.toMatchObject({ proposed_viewing_at: future });
+
+    bookingRepository.findOne.mockResolvedValue(
+      booking({
+        status: BookingRequestStatus.ApprovedViewing,
+        property: { id: "prop-1", operator_id: "someone-else" },
+      }),
+    );
+    await expect(
+      service.proposeViewing("booking-1", future, operator),
+    ).rejects.toThrow(/own properties/);
   });
 });
 
