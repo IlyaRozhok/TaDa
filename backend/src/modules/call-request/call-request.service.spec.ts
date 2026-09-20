@@ -1,3 +1,4 @@
+import { NotFoundException } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 
 import { CallRequest } from "@/entities/call-request.entity";
@@ -25,6 +26,7 @@ function createRepositoryDouble() {
       return row;
     }),
     find: jest.fn().mockResolvedValue([]),
+    findOne: jest.fn().mockResolvedValue(null),
   };
 
   return { repository, saved };
@@ -223,6 +225,40 @@ describe("CallRequestService", () => {
         where: { source: "operator" },
         order: { created_at: "DESC" },
       });
+    });
+  });
+
+  describe("handled state", () => {
+    it("stamps handled_at when marked handled", async () => {
+      repo.repository.findOne.mockResolvedValue({
+        id: "call-1",
+        handled_at: null,
+      });
+
+      const result = await build().setHandled("call-1", true);
+
+      expect(result.handled_at).toBeInstanceOf(Date);
+      expect(repo.repository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it("clears the stamp when re-opened", async () => {
+      repo.repository.findOne.mockResolvedValue({
+        id: "call-1",
+        handled_at: new Date("2026-09-01T12:00:00.000Z"),
+      });
+
+      const result = await build().setHandled("call-1", false);
+
+      expect(result.handled_at).toBeNull();
+    });
+
+    it("404s on an unknown id without writing", async () => {
+      repo.repository.findOne.mockResolvedValue(null);
+
+      await expect(build().setHandled("missing", true)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(repo.repository.save).not.toHaveBeenCalled();
     });
   });
 });

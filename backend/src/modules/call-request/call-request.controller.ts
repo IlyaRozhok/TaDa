@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, Post, Query } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -14,6 +24,7 @@ import { CallRequest, CallRequestSource } from "@/entities/call-request.entity";
 import { UserRole } from "@/entities/user.entity";
 import { CallRequestService } from "./call-request.service";
 import { CreateCallRequestDto } from "./dto/create-call-request.dto";
+import { SetCallRequestHandledDto } from "./dto/set-call-request-handled.dto";
 import { CALL_REQUEST_SOURCES } from "./call-request.vocabulary";
 
 /**
@@ -53,5 +64,18 @@ export class CallRequestController {
     @Query("source") source?: CallRequestSource,
   ): Promise<CallRequest[]> {
     return this.callRequestService.findAll(source);
+  }
+
+  @Patch(":id/handled")
+  @Roles(UserRole.Admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Mark a call request handled or re-open it (admin)" })
+  @ApiResponse({ status: 200, description: "Handled state updated" })
+  @ApiResponse({ status: 404, description: "Call request not found" })
+  async setHandled(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: SetCallRequestHandledDto,
+  ): Promise<CallRequest> {
+    return this.callRequestService.setHandled(id, dto.handled);
   }
 }

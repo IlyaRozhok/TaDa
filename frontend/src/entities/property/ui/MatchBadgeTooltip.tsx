@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useTranslation } from "@/app/hooks/useTranslation";
 import { listingPropertyKeys } from "@/app/lib/translationsKeys/listingPropertyTranslationKeys";
 import {
@@ -264,11 +265,37 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
     matchCategories &&
     matchCategories.filter((c) => c.maxScore > 0).length > 0;
 
+  // A tenant who skipped the whole wizard has nothing scoreable: every
+  // category carries maxScore 0 and the score collapses to 0. "0% Match" on
+  // every card reads as "nothing suits you" when the truth is "you haven't
+  // told us anything" — so the badge becomes the call to action instead.
+  const noScoredPreferences =
+    !loading &&
+    matchScore !== null &&
+    matchScore !== undefined &&
+    matchCategories !== undefined &&
+    matchCategories.every((c) => !(c.maxScore > 0));
+
   const badgeLabel = loading
     ? "Calculating..."
     : matchScore === null || matchScore === undefined
       ? "—"
       : `${Math.round(matchScore)}% ${t(listingPropertyKeys.card.match)}`;
+
+  if (noScoredPreferences) {
+    return (
+      <div className="absolute top-3 left-4 z-10">
+        <Link
+          href="/app/preferences"
+          onClick={(e) => e.stopPropagation()}
+          data-testid="match-badge-set-preferences"
+          className="inline-block min-w-[100px] bg-black/60 backdrop-blur-[3px] text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-black/75 hover:shadow-xl transition-all duration-200 text-center"
+        >
+          Set preferences
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div

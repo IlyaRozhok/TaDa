@@ -31,6 +31,7 @@ import { UpdatePropertyDto } from "./dto/update-property.dto";
 import { FindPropertiesDto } from "./dto/find-properties.dto";
 import { FindAdminPropertiesDto } from "./dto/find-admin-properties.dto";
 import { Roles } from "@/common/decorators/roles.decorator";
+import { PropertyStatus } from "@/entities/property.entity";
 import { UserRole } from "@/entities/user.entity";
 import { Public } from "@/common/decorators/public.decorator";
 import { S3Service } from "../../common/services/s3.service";
@@ -335,6 +336,11 @@ export class PropertyController {
     name: "is_landing_listing",
     required: false,
     schema: { type: "string", enum: ["true", "false"] },
+  })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    schema: { type: "string", enum: Object.values(PropertyStatus) },
   })
   @ApiQuery({
     name: "property_type",
