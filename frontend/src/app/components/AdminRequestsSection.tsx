@@ -55,6 +55,19 @@ const VIEWING_STAGES: BookingRequestStatus[] = [
   "viewing",
 ];
 
+/**
+ * The stages an operator drives themselves (mirrors the backend's
+ * BOOKING_OPERATOR_STAGES). From `contract` onward the TA-DA! team runs the
+ * deal, so the operator panel shows the status but offers no control.
+ */
+const OPERATOR_STAGES: BookingRequestStatus[] = [
+  "new",
+  "contacting",
+  "kyc_referencing",
+  "approved_viewing",
+  "viewing",
+];
+
 function formatViewingSlot(value: string | null | undefined): string | null {
   if (!value) return null;
   const d = new Date(value);
@@ -78,6 +91,14 @@ interface AdminRequestsSectionProps {
   /** Propose (or re-propose) a viewing slot; the value is an ISO timestamp. */
   onProposeViewing: (id: string, proposedAtIso: string) => void;
   onRefresh?: () => void;
+  /**
+   * Operator panel mode: the status select offers only the early stages
+   * (plus cancel), and bookings past them are read-only — matching what the
+   * backend lets an operator do.
+   */
+  operatorView?: boolean;
+  /** Section heading; worded differently on the operator panel. */
+  subtitle?: string;
 }
 
 /**
@@ -153,6 +174,8 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
   statusFilter,
   onStatusFilterChange,
   onProposeViewing,
+  operatorView = false,
+  subtitle = "Track booking requests, form contact details, preferred dates, and statuses",
 }) => {
   return (
     <div className="space-y-6">
@@ -161,10 +184,7 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
           <h3 className="text-2xl font-semibold text-black">
             Booking requests
           </h3>
-          <p className="text-black">
-            Track booking requests, form contact details, preferred dates, and
-            statuses
-          </p>
+          <p className="text-black">{subtitle}</p>
         </div>
         <label className="flex items-center gap-2 text-sm text-black">
           Status
@@ -335,36 +355,63 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              statusStyles[request.status]
-                            }`}
-                          >
-                            {
-                              statusOptions.find(
-                                (opt) => opt.value === request.status
-                              )?.label
-                            }
-                          </span>
-                          <select
-                            value={request.status}
-                            onChange={(e) =>
-                              onUpdateStatus(
-                                request.id,
-                                e.target.value as BookingRequestStatus
+                        {(() => {
+                          // Operators drive the early stages only; a booking
+                          // past them is shown but not editable, matching the
+                          // backend's operator stage rights.
+                          const canEditStatus =
+                            !operatorView ||
+                            OPERATOR_STAGES.includes(request.status);
+                          const rowStatusOptions = operatorView
+                            ? statusOptions.filter(
+                                (option) =>
+                                  OPERATOR_STAGES.includes(option.value) ||
+                                  option.value === "cancel_booking"
                               )
-                            }
-                            disabled={updatingId === request.id}
-                            className="text-sm text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60"
-                          >
-                            {statusOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                            : statusOptions;
+
+                          return (
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  statusStyles[request.status]
+                                }`}
+                              >
+                                {
+                                  statusOptions.find(
+                                    (opt) => opt.value === request.status
+                                  )?.label
+                                }
+                              </span>
+                              {canEditStatus ? (
+                                <select
+                                  value={request.status}
+                                  onChange={(e) =>
+                                    onUpdateStatus(
+                                      request.id,
+                                      e.target.value as BookingRequestStatus
+                                    )
+                                  }
+                                  disabled={updatingId === request.id}
+                                  className="text-sm text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60"
+                                >
+                                  {rowStatusOptions.map((option) => (
+                                    <option
+                                      key={option.value}
+                                      value={option.value}
+                                    >
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-xs text-gray-500 whitespace-nowrap">
+                                  Handled by TA-DA!
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 align-top">
                         <ViewingCell

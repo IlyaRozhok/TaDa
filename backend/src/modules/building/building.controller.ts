@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Delete,
   Query,
+  Request,
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
@@ -65,14 +66,24 @@ export class BuildingController {
 
   @ApiBearerAuth()
   @Get()
-  @Roles(UserRole.Admin)
-  @ApiOperation({ summary: "Get all buildings" })
+  @Roles(UserRole.Admin, UserRole.Operator)
+  @ApiOperation({
+    summary:
+      "Get all buildings (admin: all, filterable by operator_id; operator: own only)",
+  })
   @ApiResponse({ status: 200, description: "List of buildings" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async findAll(@Query("operator_id") operatorId?: string) {
-    if (operatorId) {
+  async findAll(
+    @Request() req,
+    @Query("operator_id") operatorId?: string,
+  ) {
+    // An operator always reads their own portfolio — the query param cannot
+    // widen the scope, only the admin filter uses it.
+    const scopedOperatorId =
+      req.user.role === UserRole.Admin ? operatorId : req.user.id;
+    if (scopedOperatorId) {
       return await this.buildingService.findAllWithFreshUrls({
-        operator_id: operatorId,
+        operator_id: scopedOperatorId,
       });
     }
     return await this.buildingService.findAllWithFreshUrls();
@@ -90,13 +101,15 @@ export class BuildingController {
 
   @ApiBearerAuth()
   @Get(":id")
-  @Roles(UserRole.Admin)
-  @ApiOperation({ summary: "Get a building by ID" })
+  @Roles(UserRole.Admin, UserRole.Operator)
+  @ApiOperation({ summary: "Get a building by ID (operator: own only)" })
   @ApiResponse({ status: 200, description: "Building found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Building not found" })
-  async findOne(@Param("id", ParseUUIDPipe) id: string) {
-    return await this.buildingService.findOneWithFreshUrls(id);
+  async findOne(@Param("id", ParseUUIDPipe) id: string, @Request() req) {
+    const forOperatorId =
+      req.user.role === UserRole.Admin ? undefined : req.user.id;
+    return await this.buildingService.findOneWithFreshUrls(id, forOperatorId);
   }
 
   @ApiBearerAuth()

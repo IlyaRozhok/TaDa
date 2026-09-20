@@ -50,11 +50,19 @@ export class BookingRequestController {
   }
 
   @Get()
-  @Roles(UserRole.Admin)
-  @ApiOperation({ summary: "List booking requests (admin)" })
+  @Roles(UserRole.Admin, UserRole.Operator)
+  @ApiOperation({
+    summary:
+      "List booking requests (admin: all; operator: on own properties only)",
+  })
   @ApiResponse({ status: 200, description: "Booking requests retrieved" })
-  async findAll(@Query() query: FindBookingRequestsDto): Promise<BookingRequest[]> {
-    return this.bookingRequestService.findAll(query.status);
+  async findAll(
+    @Query() query: FindBookingRequestsDto,
+    @Request() req
+  ): Promise<BookingRequest[]> {
+    const operatorId =
+      req.user.role === UserRole.Admin ? undefined : req.user.id;
+    return this.bookingRequestService.findAll(query.status, operatorId);
   }
 
   @Get("me")
@@ -69,34 +77,49 @@ export class BookingRequestController {
   }
 
   @Patch(":id/status")
-  @Roles(UserRole.Admin)
-  @ApiOperation({ summary: "Update booking request status (admin)" })
+  @Roles(UserRole.Admin, UserRole.Operator)
+  @ApiOperation({
+    summary:
+      "Update booking request status (admin: any transition; operator: own bookings within the early stages)",
+  })
   @ApiResponse({ status: 200, description: "Booking status updated" })
+  @ApiResponse({
+    status: 403,
+    description:
+      "Not the owning operator, or the transition is past the operator stages",
+  })
   async updateStatus(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() dto: UpdateBookingStatusDto
+    @Body() dto: UpdateBookingStatusDto,
+    @Request() req
   ): Promise<BookingRequest> {
-    return this.bookingRequestService.updateStatus(id, dto.status);
+    return this.bookingRequestService.updateStatus(id, dto.status, {
+      id: req.user.id,
+      role: req.user.role,
+    });
   }
 
   @Patch(":id/viewing")
-  @Roles(UserRole.Admin)
+  @Roles(UserRole.Admin, UserRole.Operator)
   @ApiOperation({
     summary:
-      "Propose a viewing slot (admin). Re-proposing clears the tenant's earlier confirmation.",
+      "Propose a viewing slot (admin or the owning operator). Re-proposing clears the tenant's earlier confirmation.",
   })
   @ApiResponse({ status: 200, description: "Viewing proposed" })
   @ApiResponse({
     status: 400,
     description: "Booking not at a viewing stage, or the time is in the past",
   })
+  @ApiResponse({ status: 403, description: "Not the owning operator" })
   async proposeViewing(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() dto: ProposeViewingDto
+    @Body() dto: ProposeViewingDto,
+    @Request() req
   ): Promise<BookingRequest> {
     return this.bookingRequestService.proposeViewing(
       id,
-      new Date(dto.proposed_viewing_at)
+      new Date(dto.proposed_viewing_at),
+      { id: req.user.id, role: req.user.role }
     );
   }
 

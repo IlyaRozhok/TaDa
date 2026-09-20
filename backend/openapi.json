@@ -851,6 +851,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "asUserId",
+            "required": false,
+            "in": "query",
+            "description": "Admin only — score against this tenant's preferences instead of the caller's (the \"view as tenant\" lens). 403 for any other role; 404 unless the id is an existing tenant. Read-only: no session is created for the tenant.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -872,7 +881,17 @@
       "post": {
         "operationId": "MatchingController_getMatchScores",
         "summary": "Get match scores for a batch of properties",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "asUserId",
+            "required": false,
+            "in": "query",
+            "description": "Admin only — score against this tenant's preferences instead of the caller's (the \"view as tenant\" lens). 403 for any other role; 404 unless the id is an existing tenant. Read-only: no session is created for the tenant.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -952,11 +971,20 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "asUserId",
+            "required": false,
+            "in": "query",
+            "description": "Admin only — score against this tenant's preferences instead of the caller's (the \"view as tenant\" lens). 403 for any other role; 404 unless the id is an existing tenant. Read-only: no session is created for the tenant.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page)"
+            "description": "Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page). With an admin's `asUserId` the envelope also carries `viewingAs: { id, full_name, tenant_cv_share_uuid }` for the admin's banner"
           }
         },
         "tags": [
@@ -1889,7 +1917,7 @@
       },
       "get": {
         "operationId": "BuildingController_findAll",
-        "summary": "Get all buildings",
+        "summary": "Get all buildings (admin: all, filterable by operator_id; operator: own only)",
         "parameters": [
           {
             "name": "operator_id",
@@ -1944,7 +1972,7 @@
     "/api/buildings/{id}": {
       "get": {
         "operationId": "BuildingController_findOne",
-        "summary": "Get a building by ID",
+        "summary": "Get a building by ID (operator: own only)",
         "parameters": [
           {
             "name": "id",
@@ -2169,7 +2197,7 @@
       },
       "get": {
         "operationId": "BookingRequestController_findAll",
-        "summary": "List booking requests (admin)",
+        "summary": "List booking requests (admin: all; operator: on own properties only)",
         "parameters": [
           {
             "name": "status",
@@ -2242,7 +2270,7 @@
     "/api/booking-requests/{id}/status": {
       "patch": {
         "operationId": "BookingRequestController_updateStatus",
-        "summary": "Update booking request status (admin)",
+        "summary": "Update booking request status (admin: any transition; operator: own bookings within the early stages)",
         "parameters": [
           {
             "name": "id",
@@ -2266,6 +2294,9 @@
         "responses": {
           "200": {
             "description": "Booking status updated"
+          },
+          "403": {
+            "description": "Not the owning operator, or the transition is past the operator stages"
           }
         },
         "tags": [
@@ -2281,7 +2312,7 @@
     "/api/booking-requests/{id}/viewing": {
       "patch": {
         "operationId": "BookingRequestController_proposeViewing",
-        "summary": "Propose a viewing slot (admin). Re-proposing clears the tenant's earlier confirmation.",
+        "summary": "Propose a viewing slot (admin or the owning operator). Re-proposing clears the tenant's earlier confirmation.",
         "parameters": [
           {
             "name": "id",
@@ -2308,6 +2339,9 @@
           },
           "400": {
             "description": "Booking not at a viewing stage, or the time is in the past"
+          },
+          "403": {
+            "description": "Not the owning operator"
           }
         },
         "tags": [
@@ -4722,8 +4756,7 @@
             ]
           },
           "available_from": {
-            "format": "date-time",
-            "type": "string",
+            "type": "object",
             "description": "Available from date",
             "example": "2024-01-15"
           },

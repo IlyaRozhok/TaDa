@@ -27,9 +27,18 @@ interface AdminBuildingsSectionProps {
   sort: { field: string; direction: "asc" | "desc" };
   setSort: (sort: { field: string; direction: "asc" | "desc" }) => void;
   onView: (building: Building) => void;
-  onEdit: (building: Building) => void;
-  onDelete: (building: Building) => void;
-  onAdd: () => void;
+  onEdit?: (building: Building) => void;
+  onDelete?: (building: Building) => void;
+  onAdd?: () => void;
+  /**
+   * The operator panel renders the same table read-only: no Add button and
+   * no edit/delete actions (building writes are admin-only on the backend).
+   * Rows still open the view modal and the public page.
+   */
+  readOnly?: boolean;
+  /** Section heading; worded differently on the operator panel. */
+  title?: string;
+  subtitle?: string;
   onRefresh?: () => void;
   onCopyId?: (id: string, type: "building") => void;
 }
@@ -46,6 +55,9 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
   onDelete,
   onAdd,
   onCopyId,
+  readOnly = false,
+  title = "Buildings Management",
+  subtitle = "Manage building listings and details",
 }) => {
   const SortButton = ({
     field,
@@ -106,18 +118,18 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-semibold text-black">
-            Buildings Management
-          </h3>
-          <p className="text-black">Manage building listings and details</p>
+          <h3 className="text-2xl font-semibold text-black">{title}</h3>
+          <p className="text-black">{subtitle}</p>
         </div>
-        <button
-          onClick={onAdd}
-          data-testid="admin-add-building"
-          className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium flex items-center justify-center space-x-2"
-        >
-          <span>Add Building</span>
-        </button>
+        {!readOnly && (
+          <button
+            onClick={onAdd}
+            data-testid="admin-add-building"
+            className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium flex items-center justify-center space-x-2"
+          >
+            <span>Add Building</span>
+          </button>
+        )}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -305,33 +317,32 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(building);
-                          }}
-                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
-                          title="Edit building"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log(
-                              "🗑️ Delete button clicked for building:",
-                              building.id,
-                              building.name,
-                            );
-                            onDelete(building);
-                          }}
-                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
-                          title="Delete building"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {!readOnly && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit?.(building);
+                              }}
+                              className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                              title="Edit building"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onDelete?.(building);
+                              }}
+                              className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                              title="Delete building"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

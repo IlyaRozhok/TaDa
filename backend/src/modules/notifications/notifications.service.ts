@@ -8,6 +8,7 @@ import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity
 import { Notification, NotificationStatus } from "@/entities/notification.entity";
 import { User } from "@/entities/user.entity";
 import { Property } from "@/entities/property.entity";
+import { TenantCv } from "@/entities/tenant-cv.entity";
 import {
   NOTIFICATION_CHANNELS,
   NotificationChannel,
@@ -55,6 +56,8 @@ export class NotificationsService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
+    @InjectRepository(TenantCv)
+    private readonly tenantCvRepository: Repository<TenantCv>,
     @Inject(NOTIFICATION_CHANNELS)
     private readonly channels: NotificationChannel[],
     private readonly configService: ConfigService,
@@ -95,6 +98,44 @@ export class NotificationsService {
       );
       return null;
     }
+  }
+
+  /**
+   * Absolute links for the operator's booking email: the property page and
+   * the tenant's CV share link. Both are built from FRONTEND_URL plus ids
+   * resolved from the DATABASE — the event payload cannot plant a URL in an
+   * email body (invariant 2's spirit applied to links). Returns null when
+   * FRONTEND_URL is not configured; the CV link is null while the tenant has
+   * no share uuid yet.
+   */
+  private async resolveBookingLinks(
+    propertyId: string,
+    tenantId: string,
+  ): Promise<{ property: string | null; tenantCv: string | null } | null> {
+    const base = this.configService
+      .get<string>("FRONTEND_URL")
+      ?.trim()
+      .replace(/\/+$/, "");
+    if (!base) return null;
+
+    let shareUuid: string | null = null;
+    try {
+      const cv = await this.tenantCvRepository.findOne({
+        where: { user_id: tenantId },
+        select: { id: true, share_uuid: true },
+      });
+      shareUuid = cv?.share_uuid ?? null;
+    } catch (error) {
+      this.logger.error(
+        `Could not resolve CV share uuid for tenant ${tenantId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+
+    return {
+      property: `${base}/app/properties/${propertyId}`,
+      tenantCv: shareUuid ? `${base}/cv/${shareUuid}` : null,
+    };
   }
 
   @OnEvent(NotificationEvents.UserRegistered, { async: true })
@@ -187,10 +228,17 @@ export class NotificationsService {
 
     const operatorEmail = await this.resolveOperatorEmail(event.property.id);
     if (operatorEmail) {
+      // The operator's copy carries links back into TaDa (property page +
+      // tenant CV). They are baked into the stored payload so a retry
+      // renders the same body.
+      const links = await this.resolveBookingLinks(
+        event.property.id,
+        event.tenant.id,
+      );
       await this.record(
         NotificationType.BookingRequestedOperator,
         `booking_requested_operator:${event.bookingId}${revisionSuffix}`,
-        payload,
+        links ? { ...payload, links } : payload,
         operatorEmail,
       );
     }

@@ -229,6 +229,38 @@ describe("buildMessage", () => {
       const alert = buildMessage(NotificationType.BookingRequestedOperator, payload);
       expect(alert.subject).toContain("New booking request for your property");
       expect(alert.text).toContain("Contact phone: +44 7700 900123");
+      // Payloads recorded before links existed render without the section.
+      expect(alert.text).not.toContain("Property page");
+      expect(alert.text).not.toContain("Tenant CV");
+    });
+
+    it("renders the property and CV links in the operator alert when present (D)", () => {
+      const payload = {
+        bookingId: "booking-1",
+        isFirstRequest: true,
+        revision: "r1",
+        property: { id: "prop-1", title: "Flat 2B", address: "1 Test Road" },
+        tenant: { id: "t", name: "New User", email: "c@example.com", phone: null },
+        dateFrom: null,
+        dateTo: null,
+        message: null,
+        links: {
+          property: "https://ta-da.co/app/properties/prop-1",
+          tenantCv: "https://ta-da.co/cv/uuid-1",
+        },
+      } as unknown as Record<string, unknown>;
+
+      const alert = buildMessage(NotificationType.BookingRequestedOperator, payload);
+      expect(alert.text).toContain(
+        "Property page: https://ta-da.co/app/properties/prop-1",
+      );
+      expect(alert.text).toContain("Tenant CV: https://ta-da.co/cv/uuid-1");
+
+      const withoutCv = buildMessage(NotificationType.BookingRequestedOperator, {
+        ...payload,
+        links: { property: "https://ta-da.co/app/properties/prop-1", tenantCv: null },
+      });
+      expect(withoutCv.text).toContain("Tenant CV: not shared yet");
     });
 
     it("renders the viewing proposal with the slot", () => {

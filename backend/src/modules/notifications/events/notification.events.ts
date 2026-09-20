@@ -68,6 +68,16 @@ export interface BookingRequestedEvent {
   dateFrom: string | null;
   dateTo: string | null;
   message: string | null;
+  /**
+   * Absolute URLs for the operator email, filled in by NotificationsService
+   * (FRONTEND_URL + database-resolved CV share uuid) — never by emitters, so
+   * no request payload can plant a link in an email body. Absent on events
+   * recorded before this field existed and on non-operator notifications.
+   */
+  links?: {
+    property: string | null;
+    tenantCv: string | null;
+  };
 }
 
 /**

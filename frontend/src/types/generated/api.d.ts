@@ -746,7 +746,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get all buildings */
+        /** Get all buildings (admin: all, filterable by operator_id; operator: own only) */
         get: operations["BuildingController_findAll"];
         put?: never;
         /** Create a new building */
@@ -781,7 +781,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a building by ID */
+        /** Get a building by ID (operator: own only) */
         get: operations["BuildingController_findOne"];
         put?: never;
         post?: never;
@@ -868,7 +868,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List booking requests (admin) */
+        /** List booking requests (admin: all; operator: on own properties only) */
         get: operations["BookingRequestController_findAll"];
         put?: never;
         /** Create a booking request (tenant or admin) */
@@ -909,7 +909,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update booking request status (admin) */
+        /** Update booking request status (admin: any transition; operator: own bookings within the early stages) */
         patch: operations["BookingRequestController_updateStatus"];
         trace?: never;
     };
@@ -926,7 +926,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Propose a viewing slot (admin). Re-proposing clears the tenant's earlier confirmation. */
+        /** Propose a viewing slot (admin or the owning operator). Re-proposing clears the tenant's earlier confirmation. */
         patch: operations["BookingRequestController_proposeViewing"];
         trace?: never;
     };
@@ -2576,11 +2576,10 @@ export interface components {
              */
             bills?: "included" | "excluded";
             /**
-             * Format: date-time
              * @description Available from date
              * @example 2024-01-15
              */
-            available_from?: string;
+            available_from?: Record<string, never>;
             /**
              * @description Building type
              * @example residential
@@ -3773,7 +3772,10 @@ export interface operations {
     };
     MatchingController_getPropertyMatch: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Admin only — score against this tenant's preferences instead of the caller's (the "view as tenant" lens). 403 for any other role; 404 unless the id is an existing tenant. Read-only: no session is created for the tenant. */
+                asUserId?: string;
+            };
             header?: never;
             path: {
                 propertyId: string;
@@ -3793,7 +3795,10 @@ export interface operations {
     };
     MatchingController_getMatchScores: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Admin only — score against this tenant's preferences instead of the caller's (the "view as tenant" lens). 403 for any other role; 404 unless the id is an existing tenant. Read-only: no session is created for the tenant. */
+                asUserId?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3823,6 +3828,8 @@ export interface operations {
                 search?: string;
                 /** @description Opt-in debug flag. SQL pre-filtering of properties that fall outside the user's budget, bedroom and property-type preferences before scoring (generous ranges, NULLs kept). Default `false` — the feed ranks the full listed inventory; pass `true` to narrow it. Ignored for a user with no preferences, which is what the filters are derived from */
                 prefilters?: boolean;
+                /** @description Admin only — score against this tenant's preferences instead of the caller's (the "view as tenant" lens). 403 for any other role; 404 unless the id is an existing tenant. Read-only: no session is created for the tenant. */
+                asUserId?: string;
             };
             header?: never;
             path?: never;
@@ -3830,7 +3837,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page) */
+            /** @description Paginated page of the listed inventory in the requested order. `avgMatchScore` is the mean score over the whole matched set — the population `total` counts, not the returned page — and is `null` when that mean is not knowable (no preferences, nothing matched, or a non-`best_match` sort, which scores only the returned page). With an admin's `asUserId` the envelope also carries `viewingAs: { id, full_name, tenant_cv_share_uuid }` for the admin's banner */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4836,6 +4843,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Not the owning operator, or the transition is past the operator stages */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     BookingRequestController_proposeViewing: {
@@ -4862,6 +4876,13 @@ export interface operations {
             };
             /** @description Booking not at a viewing stage, or the time is in the past */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not the owning operator */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

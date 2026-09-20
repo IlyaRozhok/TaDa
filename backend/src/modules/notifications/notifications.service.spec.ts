@@ -129,12 +129,14 @@ describe("NotificationsService", () => {
   // tests keep seeing exactly the internal ops rows they always asserted on.
   let userRepo: { findOne: jest.Mock };
   let propertyRepo: { findOne: jest.Mock };
+  let tenantCvRepo: { findOne: jest.Mock };
 
   const build = (config: ConfigService = createConfigDouble()) =>
     new NotificationsService(
       repo.repository as any,
       userRepo as any,
       propertyRepo as any,
+      tenantCvRepo as any,
       [channel],
       config,
     );
@@ -142,6 +144,7 @@ describe("NotificationsService", () => {
   beforeEach(() => {
     userRepo = { findOne: jest.fn().mockResolvedValue(null) };
     propertyRepo = { findOne: jest.fn().mockResolvedValue(null) };
+    tenantCvRepo = { findOne: jest.fn().mockResolvedValue(null) };
     repo = createRepositoryDouble();
     repo.setInsertResult([
       {
@@ -440,6 +443,51 @@ describe("NotificationsService", () => {
         "account@example.com",
         "operator@example.com",
       ]);
+    });
+
+    it("bakes property and CV links into the operator copy only (D)", async () => {
+      userRepo.findOne.mockResolvedValue({
+        id: "user-1",
+        email: "account@example.com",
+      });
+      propertyRepo.findOne.mockResolvedValue({
+        id: "prop-1",
+        operator: { email: "operator@example.com" },
+      });
+      tenantCvRepo.findOne.mockResolvedValue({
+        id: "cv-1",
+        share_uuid: "11111111-2222-3333-4444-555555555555",
+      });
+
+      await build(
+        // Trailing slash on purpose: the base is normalized before joining.
+        createConfigDouble({ FRONTEND_URL: "https://ta-da.co/" }),
+      ).handleBookingRequested(bookingEvent());
+
+      const byKey = Object.fromEntries(
+        repo.insertedValues.map((v) => [v.dedupe_key, v]),
+      );
+      expect(byKey["booking_requested_operator:booking-1"].payload.links).toEqual({
+        property: "https://ta-da.co/app/properties/prop-1",
+        tenantCv: "https://ta-da.co/cv/11111111-2222-3333-4444-555555555555",
+      });
+      // The tenant receipt and the internal copy stay link-free.
+      expect(byKey["booking_received_tenant:booking-1"].payload.links).toBeUndefined();
+      expect(byKey["booking_requested:booking-1"].payload.links).toBeUndefined();
+    });
+
+    it("omits links entirely when FRONTEND_URL is not configured", async () => {
+      propertyRepo.findOne.mockResolvedValue({
+        id: "prop-1",
+        operator: { email: "operator@example.com" },
+      });
+
+      await build().handleBookingRequested(bookingEvent());
+
+      const operatorRow = repo.insertedValues.find(
+        (v) => v.dedupe_key === "booking_requested_operator:booking-1",
+      );
+      expect(operatorRow?.payload.links).toBeUndefined();
     });
 
     it("skips the user-facing copies entirely when no account can be resolved", async () => {

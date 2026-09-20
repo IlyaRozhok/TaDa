@@ -125,12 +125,21 @@ interface AdminPropertiesSectionProps {
   filters: PropertyFilters;
   onFiltersChange: (filters: PropertyFilters) => void;
   onView: (property: Property) => void;
-  onEdit: (property: Property) => void;
-  onDelete: (property: Property) => void;
-  onAdd: () => void;
+  onEdit?: (property: Property) => void;
+  onDelete?: (property: Property) => void;
+  onAdd?: () => void;
   onCopyId?: (id: string, type: "property" | "building") => void;
   /** Flags/unflags the property for the landings' listings section. */
-  onToggleLanding: (property: Property, next: boolean) => void;
+  onToggleLanding?: (property: Property, next: boolean) => void;
+  /**
+   * The operator panel renders the same table read-only: no Add button, no
+   * edit/delete actions and no landing toggle (a marketing control that is
+   * the admin's call). Rows still open the view modal and the public page.
+   */
+  readOnly?: boolean;
+  /** Section heading; the admin panel and the operator panel word it differently. */
+  title?: string;
+  subtitle?: string;
 }
 
 /** One labelled group of mutually exclusive chips inside the filter popover. */
@@ -181,6 +190,9 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
   onAdd,
   onCopyId,
   onToggleLanding,
+  readOnly = false,
+  title = "Properties Management",
+  subtitle = "Manage apartment listings",
 }) => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -231,18 +243,18 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-semibold text-black">
-            Properties Management
-          </h3>
-          <p className="text-black">Manage apartment listings</p>
+          <h3 className="text-2xl font-semibold text-black">{title}</h3>
+          <p className="text-black">{subtitle}</p>
         </div>
-        <button
-          onClick={onAdd}
-          data-testid="admin-add-property"
-          className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium"
-        >
-          Add Property
-        </button>
+        {!readOnly && (
+          <button
+            onClick={onAdd}
+            data-testid="admin-add-property"
+            className="px-6 py-2 bg-gray-900 cursor-pointer text-white hover:bg-gray-800 rounded-lg transition-all duration-200 font-medium"
+          >
+            Add Property
+          </button>
+        )}
       </div>
 
       <div className="flex items-start gap-3 flex-wrap">
@@ -368,14 +380,17 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                 <th className="px-4 py-3">Beds/Baths</th>
                 <th className="px-4 py-3">Available</th>
                 <th className="px-4 py-3">Image</th>
-                <th className="px-4 py-3">Landing</th>
+                {!readOnly && <th className="px-4 py-3">Landing</th>}
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {properties.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center">
+                  <td
+                    colSpan={readOnly ? 10 : 11}
+                    className="px-4 py-12 text-center"
+                  >
                     <div className="flex flex-col items-center justify-center">
                       <Home className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -519,23 +534,25 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                     </td>
                     {/* The row opens the view modal on click, so the checkbox
                         keeps its own click to itself. */}
-                    <td
-                      className="px-4 py-3"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={!!property.is_landing_listing}
-                        onChange={(e) =>
-                          onToggleLanding(property, e.target.checked)
-                        }
-                        data-testid="admin-landing-toggle"
-                        aria-label={`Feature "${
-                          property.title || property.id
-                        }" on the landing pages`}
-                        className="w-4 h-4 cursor-pointer accent-gray-900"
-                      />
-                    </td>
+                    {!readOnly && (
+                      <td
+                        className="px-4 py-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!property.is_landing_listing}
+                          onChange={(e) =>
+                            onToggleLanding?.(property, e.target.checked)
+                          }
+                          data-testid="admin-landing-toggle"
+                          aria-label={`Feature "${
+                            property.title || property.id
+                          }" on the landing pages`}
+                          className="w-4 h-4 cursor-pointer accent-gray-900"
+                        />
+                      </td>
+                    )}
                     <td
                       className="px-4 py-3"
                       onClick={(e) => e.stopPropagation()}
@@ -554,27 +571,31 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(property);
-                          }}
-                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
-                          title="Edit property"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(property);
-                          }}
-                          className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
-                          title="Delete property"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {!readOnly && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit?.(property);
+                              }}
+                              className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                              title="Edit property"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete?.(property);
+                              }}
+                              className="p-1.5 text-gray-600 cursor-pointer hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                              title="Delete property"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

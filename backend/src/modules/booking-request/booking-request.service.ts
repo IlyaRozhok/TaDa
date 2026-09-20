@@ -9,11 +9,13 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { EntityManager, In, Repository } from "typeorm";
 import {
+  BOOKING_OPERATOR_STAGES,
   BOOKING_UNDER_OFFER_STAGES,
   BookingRequest,
   BookingRequestStatus,
 } from "@/entities/booking-request.entity";
-import { Property, PropertyStatus } from "../../entities/property.entity";
+import { Property, PropertyStatus } from "@/entities/property.entity";
+import { UserRole } from "@/entities/user.entity";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import {
   BookingRequestedEvent,
@@ -22,6 +24,16 @@ import {
   ViewingConfirmedEvent,
   ViewingProposedEvent,
 } from "@/modules/notifications/events/notification.events";
+
+/**
+ * Who is performing a booking mutation. Absent (internal callers) and Admin
+ * both mean unrestricted; an Operator is confined to bookings on their own
+ * properties and to the early pipeline stages.
+ */
+export interface BookingActor {
+  id: string;
+  role: UserRole;
+}
 
 @Injectable()
 export class BookingRequestService {
@@ -193,8 +205,19 @@ export class BookingRequestService {
     } satisfies BookingRequestedEvent);
   }
 
-  async findAll(status?: BookingRequestStatus): Promise<BookingRequest[]> {
-    const where = status ? { status } : {};
+  /**
+   * Admin sees the whole table; an operator (`operatorId` set) only the
+   * bookings on properties they own — the same rows, scoped by the property
+   * relation rather than a separate view.
+   */
+  async findAll(
+    status?: BookingRequestStatus,
+    operatorId?: string
+  ): Promise<BookingRequest[]> {
+    const where = {
+      ...(status ? { status } : {}),
+      ...(operatorId ? { property: { operator_id: operatorId } } : {}),
+    };
     const requests = await this.bookingRequestRepository.find({
       where,
       relations: ["property", "tenant", "tenant.tenantCv"],
@@ -222,7 +245,8 @@ export class BookingRequestService {
 
   async updateStatus(
     id: string,
-    status: BookingRequestStatus
+    status: BookingRequestStatus,
+    actor?: BookingActor
   ): Promise<BookingRequest> {
     const request = await this.bookingRequestRepository.findOne({
       where: { id },
@@ -232,6 +256,9 @@ export class BookingRequestService {
     if (!request) {
       throw new NotFoundException("Booking request not found");
     }
+
+    this.assertActorMayManage(request, actor);
+    this.assertOperatorStageRights(request, status, actor);
 
     if (!Object.values(BookingRequestStatus).includes(status)) {
       throw new BadRequestException("Invalid status");
@@ -298,10 +325,15 @@ export class BookingRequestService {
   ];
 
   /**
-   * Admin proposes a viewing slot. Re-proposing a new time clears any earlier
-   * confirmation — the tenant confirmed a slot that no longer stands.
+   * Admin or the owning operator proposes a viewing slot. Re-proposing a new
+   * time clears any earlier confirmation — the tenant confirmed a slot that
+   * no longer stands.
    */
-  async proposeViewing(id: string, proposedAt: Date): Promise<BookingRequest> {
+  async proposeViewing(
+    id: string,
+    proposedAt: Date,
+    actor?: BookingActor
+  ): Promise<BookingRequest> {
     const request = await this.bookingRequestRepository.findOne({
       where: { id },
       relations: ["property"],
@@ -310,6 +342,8 @@ export class BookingRequestService {
     if (!request) {
       throw new NotFoundException("Booking request not found");
     }
+
+    this.assertActorMayManage(request, actor);
 
     if (!BookingRequestService.VIEWING_STAGES.includes(request.status)) {
       throw new BadRequestException(
@@ -377,6 +411,54 @@ export class BookingRequestService {
     }
 
     return request;
+  }
+
+  /**
+   * A non-admin actor may only touch bookings on properties they own. The
+   * `property` relation is loaded by every caller, but a booking whose
+   * property was deleted (FK is RESTRICT, so this is belt-and-braces) fails
+   * closed rather than open.
+   */
+  private assertActorMayManage(
+    request: BookingRequest,
+    actor?: BookingActor
+  ): void {
+    if (!actor || actor.role === UserRole.Admin) return;
+    if (request.property?.operator_id !== actor.id) {
+      throw new ForbiddenException(
+        "You can only manage bookings on your own properties"
+      );
+    }
+  }
+
+  /**
+   * Operator status rights stop where the money starts: both the stage the
+   * booking is AT and the stage it is moving TO must be early
+   * (BOOKING_OPERATOR_STAGES), except cancelling an early enquiry, which is
+   * still the operator's call. From `contract` onward — and out of the
+   * terminal states — only the concierge team (admin) drives the deal.
+   */
+  private assertOperatorStageRights(
+    request: BookingRequest,
+    to: BookingRequestStatus,
+    actor?: BookingActor
+  ): void {
+    if (!actor || actor.role === UserRole.Admin) return;
+
+    if (!BOOKING_OPERATOR_STAGES.includes(request.status)) {
+      throw new ForbiddenException(
+        `Bookings at "${request.status}" are handled by the TA-DA! team — contact them to change this one`
+      );
+    }
+
+    if (
+      !BOOKING_OPERATOR_STAGES.includes(to) &&
+      to !== BookingRequestStatus.CancelBooking
+    ) {
+      throw new ForbiddenException(
+        `Moving a booking to "${to}" is done by the TA-DA! team once the deal reaches the contract stage`
+      );
+    }
   }
 
   /** See BOOKING_UNDER_OFFER_STAGES — shared with the user-deletion path. */
