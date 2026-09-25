@@ -179,7 +179,7 @@ const Header = ({
                   className="disabled:cursor-default"
                 >
                   <img
-                    src="/landing-logo.svg"
+                    src="/landing-logo.svg?v=2"
                     alt="TADA Logo"
                     className="w-[75px] cursor-pointer p"
                   />

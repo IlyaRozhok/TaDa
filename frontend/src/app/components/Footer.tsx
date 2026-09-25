@@ -17,7 +17,7 @@ const Footer = () => {
             {/* Logo */}
             <div className="flex items-center mb-8">
               <img
-                src="/landing-logo.svg"
+                src="/landing-logo.svg?v=2"
                 alt="TADA Logo"
                 className="lg:w-[150px] cursor-pointer"
               />
