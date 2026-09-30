@@ -20,6 +20,7 @@ import { TenantCvModule } from "./modules/tenant-cv/tenant-cv.module";
 import { BookingRequestModule } from "./modules/booking-request/booking-request.module";
 import { CallRequestModule } from "./modules/call-request/call-request.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
+import { AdminStatsModule } from "@/modules/admin-stats/admin-stats.module";
 import { S3Module } from "./common/services/s3.module";
 import { GeocodingModule } from "./common/services/geocoding.module";
 import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
@@ -79,6 +80,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     BookingRequestModule,
     CallRequestModule,
     NotificationsModule,
+    AdminStatsModule,
   ],
   controllers: [AppController],
   // APP_GUARDs run in declaration order: rate limiting first, then

@@ -20,6 +20,7 @@ import AdminPropertiesSection, {
 } from "../../../components/AdminPropertiesSection";
 import AdminRequestsSection from "../../../components/AdminRequestsSection";
 import AdminCallRequestsSection from "../../../components/AdminCallRequestsSection";
+import AdminStatisticsSection from "@/app/components/AdminStatisticsSection";
 import AddUserModal from "../../../components/AddUserModal";
 import AddBuildingModal from "../../../components/AddBuildingModal";
 import AddPropertyModal from "../../../components/AddPropertyModal";
@@ -39,6 +40,7 @@ import {
   Home,
   Calendar,
   PhoneCall,
+  BarChart3,
   FileText,
   SlidersHorizontal,
   LayoutGrid,
@@ -55,6 +57,8 @@ import {
   useUpdateBookingRequestStatusMutation,
 } from "@/store/api/bookingRequests.api";
 import { useGetCallRequestsQuery } from "@/store/api/callRequests.api";
+import { useGetAdminStatsQuery } from "@/store/api/adminStats.api";
+import type { AdminStatsRange } from "@/app/types/adminStats";
 import {
   useCreateUserMutation,
   useDeleteUserMutation,
@@ -74,7 +78,8 @@ type AdminSection =
   | "buildings"
   | "properties"
   | "requests"
-  | "call-requests";
+  | "call-requests"
+  | "statistics";
 
 interface SortState {
   field: string;
@@ -240,6 +245,19 @@ function AdminPanelContent() {
   });
 
   const callRequests = callRequestsData ?? [];
+
+  const [statsRange, setStatsRange] = useState<AdminStatsRange>({});
+  const {
+    data: stats,
+    isLoading: isStatsLoading,
+    isFetching: isStatsFetching,
+    isError: isStatsError,
+  } = useGetAdminStatsQuery(statsRange, {
+    // An inverted range is caught in the section; don't send it.
+    skip:
+      activeSection !== "statistics" ||
+      Boolean(statsRange.from && statsRange.to && statsRange.from > statsRange.to),
+  });
 
   // Notification management
   const addNotification = (
@@ -625,6 +643,18 @@ function AdminPanelContent() {
           <PhoneCall className="w-5 h-5" />
           <span className="font-medium">Call requests</span>
         </button>
+        <button
+          onClick={() => setActiveSection("statistics")}
+          data-testid="admin-tab-statistics"
+          className={`w-full flex items-center gap-3 px-4 py-3 cursor-pointer rounded-lg transition-all duration-200 ${
+            activeSection === "statistics"
+              ? "bg-gray-100 text-black"
+              : "text-black hover:bg-gray-50"
+          }`}
+        >
+          <BarChart3 className="w-5 h-5" />
+          <span className="font-medium">Statistics</span>
+        </button>
       </nav>
     </div>
   );
@@ -720,6 +750,17 @@ function AdminPanelContent() {
           <AdminCallRequestsSection
             requests={callRequests}
             isLoading={isCallRequestsQueryLoading && !callRequests.length}
+          />
+        );
+      case "statistics":
+        return (
+          <AdminStatisticsSection
+            stats={stats}
+            isLoading={isStatsLoading}
+            isFetching={isStatsFetching}
+            isError={isStatsError}
+            range={statsRange}
+            onRangeChange={setStatsRange}
           />
         );
       default:
