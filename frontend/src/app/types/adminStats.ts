@@ -2,8 +2,8 @@
  * Response of `GET /admin/stats` — hand-kept in step with
  * `backend/src/modules/admin-stats/admin-stats.types.ts`.
  *
- * Everything except `totals.tenants` / `totals.operators` covers users who
- * signed up inside `range`; demographics and preferences cover tenants only.
+ * Tenants only. Everything except `totals.tenants` covers tenants who signed
+ * up inside `range`.
  */
 export interface AdminStatsShareRow {
   value: string;
@@ -15,9 +15,9 @@ export interface AdminStatsShareRow {
 
 export interface AdminStats {
   range: { from: string | null; to: string | null };
-  totals: { tenants: number; operators: number; newThisPeriod: number };
-  signups: Array<{ bucket: string; tenants: number; operators: number }>;
-  roles: Array<{ role: "tenant" | "operator"; count: number }>;
+  /** `tenants` is all-time; `newThisPeriod` is tenant signups in the range. */
+  totals: { tenants: number; newThisPeriod: number };
+  signups: Array<{ bucket: string; tenants: number }>;
   funnel: {
     tenants: number;
     withPreferences: number;
@@ -25,6 +25,7 @@ export interface AdminStats {
     cvShared: number;
   };
   age: { groups: Array<{ group: string; count: number }>; unknown: number };
+  /** Normalized to the dropdown's country names ("British" → "United Kingdom"). */
   nationality: {
     items: Array<{ value: string; count: number }>;
     other: number;

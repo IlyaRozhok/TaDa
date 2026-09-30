@@ -4,7 +4,6 @@ import { BarChart3 } from "lucide-react";
 import type { AdminStats, AdminStatsRange } from "@/app/types/adminStats";
 import { monthLabel, percent } from "@/app/lib/chartGeometry";
 import ColumnChart from "@/app/components/charts/ColumnChart";
-import DonutChart from "@/app/components/charts/DonutChart";
 import HorizontalBarChart from "@/app/components/charts/HorizontalBarChart";
 import LineChart from "@/app/components/charts/LineChart";
 
@@ -17,7 +16,6 @@ interface AdminStatisticsSectionProps {
   onRangeChange: (range: AdminStatsRange) => void;
 }
 
-const ROLE_LABELS: Record<string, string> = { tenant: "Tenants", operator: "Operators" };
 const AGE_LABELS: Record<string, string> = { "under-18": "Under 18" };
 
 /** Local calendar date as `YYYY-MM-DD`, the shape the date inputs and API use. */
@@ -97,10 +95,8 @@ export default function AdminStatisticsSection({
   const header = (
     <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
       <div>
-        <h3 className="text-2xl font-semibold text-black">Statistics</h3>
-        <p className="text-black">
-          Who signs up. Filters by signup date; demographics cover tenants only.
-        </p>
+        <h3 className="text-2xl font-semibold text-black">Tenant Statistics</h3>
+        <p className="text-black">Which tenants sign up. Filters by signup date.</p>
       </div>
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-wrap gap-1">
@@ -188,35 +184,25 @@ export default function AdminStatisticsSection({
     <div className={`space-y-6 transition-opacity ${isFetching ? "opacity-60" : ""}`}>
       {header}
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Tile label="Tenants" value={String(totals.tenants)} hint="all time" />
-        <Tile label="Operators" value={String(totals.operators)} hint="all time" />
+        <Tile label="New tenant signups" value={String(totals.newThisPeriod)} hint={periodHint} />
         <Tile
           label="CV completed"
           value={`${percent(funnel.cvCompleted, funnel.tenants)}%`}
           hint={`${funnel.cvCompleted} of ${funnel.tenants} tenants, ${periodHint}`}
         />
-        <Tile label="New signups" value={String(totals.newThisPeriod)} hint={`tenants + operators, ${periodHint}`} />
       </div>
 
-      <ChartCard title="Signups over time" subtitle="Per month">
-        <LineChart
-          labels={stats.signups.map((s) => monthLabel(s.bucket))}
-          series={[
-            { name: "Tenants", values: stats.signups.map((s) => s.tenants), colorIndex: 0 },
-            { name: "Operators", values: stats.signups.map((s) => s.operators), colorIndex: 1 },
-          ]}
-        />
-      </ChartCard>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Roles" subtitle={periodHint}>
-          <DonutChart
-            data={["tenant", "operator"].map((role) => ({
-              label: ROLE_LABELS[role],
-              value: stats.roles.find((r) => r.role === role)?.count ?? 0,
-            }))}
-            centerLabel="users"
+      {/* Signups (wide) beside the funnel, so the six breakdowns below pair
+          up evenly in the two-column grid. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ChartCard title="Tenant signups over time" subtitle="Per month" className="lg:col-span-2">
+          <LineChart
+            labels={stats.signups.map((s) => monthLabel(s.bucket))}
+            series={[
+              { name: "Tenants", values: stats.signups.map((s) => s.tenants), colorIndex: 0 },
+            ]}
           />
         </ChartCard>
 
@@ -234,7 +220,9 @@ export default function AdminStatisticsSection({
             }))}
           />
         </ChartCard>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Age" subtitle="Tenants, from date of birth" unknown={{ count: stats.age.unknown, label: "No date of birth" }}>
           <ColumnChart
             data={stats.age.groups.map((g) => ({ label: AGE_LABELS[g.group] ?? g.group, value: g.count }))}

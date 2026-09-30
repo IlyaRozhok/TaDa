@@ -10,12 +10,16 @@ import { AdminStatsService } from "./admin-stats.service";
 function createDataSourceDouble() {
   // Results in the order the service issues its queries.
   const results: unknown[][] = [
-    [{ tenants: 10, operators: 3, newThisPeriod: 4 }],
-    [{ bucket: "2026-07", tenants: 1, operators: 0 }, { bucket: "2026-09", tenants: 2, operators: 1 }],
-    [{ role: "operator", count: 1 }, { role: "tenant", count: 3 }],
+    [{ tenants: 10, newThisPeriod: 4 }],
+    [{ bucket: "2026-07", tenants: 1 }, { bucket: "2026-09", tenants: 2 }],
     [{ tenants: 3, withPreferences: 2, cvCompleted: 1, cvShared: 1 }],
     [{ age: 29, count: 2 }, { age: null, count: 1 }],
-    [{ value: "United Kingdom", count: 2 }, { value: null, count: 1 }],
+    [
+      { value: "United Kingdom", count: 2 },
+      { value: "British", count: 1 },
+      { value: "Freedonian", count: 1 },
+      { value: null, count: 1 },
+    ],
     [{ withPreferences: 2, occupationUnknown: 0, familyStatusUnknown: 1, areasUnknown: 1 }],
     [{ value: "student", count: 1 }, { value: "young-professional", count: 2 }],
     [{ value: "couple", count: 1 }],
@@ -55,13 +59,22 @@ describe("AdminStatsService.getStats", () => {
     const stats = await new AdminStatsService(dataSource).getStats("2026-07-01", "2026-09-30");
 
     expect(stats.range).toEqual({ from: "2026-07-01", to: "2026-09-30" });
-    expect(stats.totals).toEqual({ tenants: 10, operators: 3, newThisPeriod: 4 });
-    expect(stats.signups.map((s) => s.bucket)).toEqual(["2026-07", "2026-08", "2026-09"]);
+    expect(stats.totals).toEqual({ tenants: 10, newThisPeriod: 4 });
+    expect(stats.signups).toEqual([
+      { bucket: "2026-07", tenants: 1 },
+      { bucket: "2026-08", tenants: 0 },
+      { bucket: "2026-09", tenants: 2 },
+    ]);
+    expect(stats).not.toHaveProperty("roles");
     expect(stats.funnel.cvCompleted).toBe(1);
     expect(stats.age.unknown).toBe(1);
     expect(stats.age.groups.find((g) => g.group === "25-34")?.count).toBe(2);
+    // "British" merges into the dropdown's "United Kingdom".
     expect(stats.nationality).toEqual({
-      items: [{ value: "United Kingdom", count: 2 }],
+      items: [
+        { value: "United Kingdom", count: 3 },
+        { value: "Freedonian", count: 1 },
+      ],
       other: 0,
       unknown: 1,
     });

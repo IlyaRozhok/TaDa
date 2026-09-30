@@ -1,11 +1,15 @@
 import {
+  DROPDOWN_COUNTRIES,
   FAMILY_STATUS_LABELS,
+  NATIONALITY_ALIASES,
   OCCUPATION_LABELS,
   UNDER_18_GROUP,
   bucketAges,
   bucketBudgets,
   fillMonths,
   labelFor,
+  mergeNationalities,
+  normalizeNationality,
   topNWithOther,
   withShares,
 } from "./admin-stats.helpers";
@@ -90,6 +94,53 @@ describe("topNWithOther", () => {
     ]);
     expect(result.other).toBe(3);
     expect(result.unknown).toBe(5);
+  });
+});
+
+describe("normalizeNationality", () => {
+  it("maps demonyms and short forms onto the dropdown's country names", () => {
+    expect(normalizeNationality("British")).toBe("United Kingdom");
+    expect(normalizeNationality("  scottish ")).toBe("United Kingdom");
+    expect(normalizeNationality("UK")).toBe("United Kingdom");
+    expect(normalizeNationality("American")).toBe("United States");
+    expect(normalizeNationality("Irish")).toBe("Ireland");
+    expect(normalizeNationality("Polish")).toBe("Poland");
+  });
+
+  it("canonicalises the casing of a country name", () => {
+    expect(normalizeNationality("united  kingdom")).toBe("United Kingdom");
+    expect(normalizeNationality("France")).toBe("France");
+  });
+
+  it("passes unmapped values through and blanks as null", () => {
+    expect(normalizeNationality(" Freedonian ")).toBe("Freedonian");
+    expect(normalizeNationality(null)).toBeNull();
+    expect(normalizeNationality("   ")).toBeNull();
+  });
+
+  it("only ever maps onto a country the dropdown offers", () => {
+    for (const country of Object.values(NATIONALITY_ALIASES)) {
+      expect(DROPDOWN_COUNTRIES).toContain(country);
+    }
+  });
+});
+
+describe("mergeNationalities", () => {
+  it("sums counts that normalize to the same country", () => {
+    const merged = mergeNationalities([
+      { value: "United Kingdom", count: 2 },
+      { value: "British", count: 3 },
+      { value: "English", count: 1 },
+      { value: "French", count: 1 },
+      { value: null, count: 4 },
+      { value: "", count: 1 },
+    ]);
+
+    expect(merged).toEqual([
+      { value: "United Kingdom", count: 6 },
+      { value: "France", count: 1 },
+      { value: null, count: 5 },
+    ]);
   });
 });
 

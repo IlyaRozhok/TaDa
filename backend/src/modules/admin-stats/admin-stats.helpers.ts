@@ -117,6 +117,122 @@ export function topNWithOther(
   };
 }
 
+/**
+ * Country names exactly as the profile form's nationality dropdown stores
+ * them — keep in step with `frontend/src/shared/lib/countries.ts`.
+ */
+export const DROPDOWN_COUNTRIES: ReadonlyArray<string> = [
+  "United States", "United Kingdom", "Canada", "Australia", "Germany", "France",
+  "Italy", "Spain", "Netherlands", "Belgium", "Switzerland", "Austria", "Sweden",
+  "Norway", "Denmark", "Finland", "Poland", "Czech Republic", "Greece", "Portugal",
+  "Ireland", "Ukraine", "Russia", "Japan", "China", "India", "Brazil", "Mexico",
+  "Argentina", "South Africa", "New Zealand", "Singapore", "Hong Kong", "South Korea",
+  "Taiwan", "Thailand", "Malaysia", "Indonesia", "Philippines", "Vietnam", "Turkey",
+  "Saudi Arabia", "United Arab Emirates", "Israel", "Egypt", "Nigeria", "Kenya",
+];
+
+/**
+ * Older profiles hold free-text nationalities — demonyms ("British") and
+ * short forms ("UK") — that would split a country across several bars. Keys
+ * are lower-case; values must be names from `DROPDOWN_COUNTRIES`. Extend here
+ * when a new variant shows up on the dashboard.
+ */
+export const NATIONALITY_ALIASES: Readonly<Record<string, string>> = {
+  british: "United Kingdom",
+  english: "United Kingdom",
+  scottish: "United Kingdom",
+  welsh: "United Kingdom",
+  "northern irish": "United Kingdom",
+  uk: "United Kingdom",
+  "great britain": "United Kingdom",
+  england: "United Kingdom",
+  scotland: "United Kingdom",
+  wales: "United Kingdom",
+  american: "United States",
+  us: "United States",
+  usa: "United States",
+  "united states of america": "United States",
+  canadian: "Canada",
+  australian: "Australia",
+  german: "Germany",
+  french: "France",
+  italian: "Italy",
+  spanish: "Spain",
+  dutch: "Netherlands",
+  "the netherlands": "Netherlands",
+  holland: "Netherlands",
+  belgian: "Belgium",
+  swiss: "Switzerland",
+  austrian: "Austria",
+  swedish: "Sweden",
+  norwegian: "Norway",
+  danish: "Denmark",
+  finnish: "Finland",
+  polish: "Poland",
+  czech: "Czech Republic",
+  czechia: "Czech Republic",
+  greek: "Greece",
+  portuguese: "Portugal",
+  irish: "Ireland",
+  ukrainian: "Ukraine",
+  russian: "Russia",
+  japanese: "Japan",
+  chinese: "China",
+  indian: "India",
+  brazilian: "Brazil",
+  mexican: "Mexico",
+  argentinian: "Argentina",
+  argentine: "Argentina",
+  "south african": "South Africa",
+  "new zealander": "New Zealand",
+  kiwi: "New Zealand",
+  singaporean: "Singapore",
+  "hong konger": "Hong Kong",
+  "south korean": "South Korea",
+  korean: "South Korea",
+  taiwanese: "Taiwan",
+  thai: "Thailand",
+  malaysian: "Malaysia",
+  indonesian: "Indonesia",
+  filipino: "Philippines",
+  filipina: "Philippines",
+  vietnamese: "Vietnam",
+  turkish: "Turkey",
+  "türkiye": "Turkey",
+  saudi: "Saudi Arabia",
+  "saudi arabian": "Saudi Arabia",
+  emirati: "United Arab Emirates",
+  uae: "United Arab Emirates",
+  israeli: "Israel",
+  egyptian: "Egypt",
+  nigerian: "Nigeria",
+  kenyan: "Kenya",
+};
+
+const COUNTRY_BY_LOWER = new Map(DROPDOWN_COUNTRIES.map((name) => [name.toLowerCase(), name]));
+
+/**
+ * The dropdown's country name for a stored nationality: aliases and case
+ * variants collapse onto it, anything unrecognised passes through trimmed,
+ * blank becomes null.
+ */
+export function normalizeNationality(value: string | null): string | null {
+  const trimmed = value?.trim().replace(/\s+/g, " ");
+  if (!trimmed) return null;
+  const key = trimmed.toLowerCase();
+  return NATIONALITY_ALIASES[key] ?? COUNTRY_BY_LOWER.get(key) ?? trimmed;
+}
+
+/** Re-groups raw nationality counts by their normalized country. */
+export function mergeNationalities(rows: ReadonlyArray<CountRow>): CountRow[] {
+  const merged = new Map<string | null, number>();
+  for (const { value, count } of rows) {
+    const country = normalizeNationality(value);
+    merged.set(country, (merged.get(country) ?? 0) + count);
+  }
+  return [...merged].map(([value, count]) => ({ value, count }));
+}
+
 /** Readable labels for the preference wizard's lifestyle slugs. */
 export const OCCUPATION_LABELS: Readonly<Record<string, string>> = {
   student: "Student",

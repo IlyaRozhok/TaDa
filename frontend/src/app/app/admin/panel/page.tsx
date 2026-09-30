@@ -653,7 +653,7 @@ function AdminPanelContent() {
           }`}
         >
           <BarChart3 className="w-5 h-5" />
-          <span className="font-medium">Statistics</span>
+          <span className="font-medium">Tenant Statistics</span>
         </button>
       </nav>
     </div>

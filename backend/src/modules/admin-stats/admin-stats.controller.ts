@@ -14,8 +14,9 @@ import { AdminStatsResponse } from "./admin-stats.types";
 import { AdminStatsQueryDto } from "./dto/admin-stats-query.dto";
 
 /**
- * Aggregate user statistics for the admin Statistics page: who signs up,
- * how far they get, and what they look for. Counts only — no user rows.
+ * Aggregate tenant statistics for the admin Tenant Statistics page: who
+ * signs up, how far they get, and what they look for. Counts only — no user
+ * rows.
  */
 @ApiTags("admin-stats")
 @Controller("admin/stats")
@@ -27,7 +28,7 @@ export class AdminStatsController {
   @ApiBearerAuth()
   @ApiQuery({ name: "from", required: false, description: "Signup date lower bound, YYYY-MM-DD" })
   @ApiQuery({ name: "to", required: false, description: "Signup date upper bound (inclusive), YYYY-MM-DD" })
-  @ApiOperation({ summary: "User statistics bundle (admin)" })
+  @ApiOperation({ summary: "Tenant statistics bundle (admin)" })
   @ApiResponse({ status: 200, description: "Statistics computed" })
   @ApiResponse({ status: 400, description: "Invalid date range" })
   async getStats(@Query() query: AdminStatsQueryDto): Promise<AdminStatsResponse> {

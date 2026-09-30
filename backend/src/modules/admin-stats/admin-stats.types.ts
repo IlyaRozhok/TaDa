@@ -6,25 +6,21 @@ export interface ShareRow {
 }
 
 /**
- * Response of `GET /admin/stats`. Everything except `totals.tenants` and
- * `totals.operators` is scoped to users who signed up inside the requested
- * range (all time when no range is given). Demographics and preference
- * breakdowns cover tenants only; every breakdown reports its `unknown` count
- * so gaps in the data stay visible.
+ * Response of `GET /admin/stats`. Tenants only. Everything except
+ * `totals.tenants` is scoped to tenants who signed up inside the requested
+ * range (all time when no range is given); every breakdown reports its
+ * `unknown` count so gaps in the data stay visible.
  */
 export interface AdminStatsResponse {
   range: { from: string | null; to: string | null };
   totals: {
     /** All-time, independent of the range. */
     tenants: number;
-    /** All-time, independent of the range. */
-    operators: number;
-    /** Tenant + operator signups inside the range. */
+    /** Tenant signups inside the range. */
     newThisPeriod: number;
   };
-  /** Monthly buckets (`YYYY-MM`), empty months included. */
-  signups: Array<{ bucket: string; tenants: number; operators: number }>;
-  roles: Array<{ role: "tenant" | "operator"; count: number }>;
+  /** Monthly tenant signups (`YYYY-MM`), empty months included. */
+  signups: Array<{ bucket: string; tenants: number }>;
   funnel: {
     tenants: number;
     withPreferences: number;
@@ -32,6 +28,7 @@ export interface AdminStatsResponse {
     cvShared: number;
   };
   age: { groups: Array<{ group: string; count: number }>; unknown: number };
+  /** Normalized to the dropdown's country names ("British" → "United Kingdom"). */
   nationality: {
     items: Array<{ value: string; count: number }>;
     other: number;

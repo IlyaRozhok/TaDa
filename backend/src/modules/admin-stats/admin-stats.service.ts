@@ -8,6 +8,7 @@ import {
   bucketAges,
   bucketBudgets,
   fillMonths,
+  mergeNationalities,
   topNWithOther,
   withShares,
 } from "./admin-stats.helpers";
@@ -56,7 +57,7 @@ export class AdminStatsService {
   constructor(private readonly dataSource: DataSource) {}
 
   /**
-   * One bundle for the admin Statistics page. Each metric is a single
+   * One bundle for the admin Tenant Statistics page. Each metric is a single
    * aggregate or GROUP BY query and they all run concurrently; only grouped
    * counts ever reach Node.
    */
@@ -67,7 +68,6 @@ export class AdminStatsService {
     const [
       [totals],
       signupRows,
-      roleRows,
       [funnel],
       ageRows,
       nationalityRows,
@@ -79,23 +79,16 @@ export class AdminStatsService {
     ] = await Promise.all([
       run<AdminStatsResponse["totals"]>(`
         SELECT
-          COUNT(*) FILTER (WHERE u.role = 'tenant')::int AS tenants,
-          COUNT(*) FILTER (WHERE u.role = 'operator')::int AS operators,
-          COUNT(*) FILTER (WHERE u.role IN ('tenant', 'operator') AND ${COHORT})::int AS "newThisPeriod"
-        FROM users u`),
-      run<{ bucket: string; tenants: number; operators: number }>(`
+          COUNT(*)::int AS tenants,
+          COUNT(*) FILTER (WHERE ${COHORT})::int AS "newThisPeriod"
+        FROM users u
+        WHERE u.role = 'tenant'`),
+      run<{ bucket: string; tenants: number }>(`
         SELECT
           to_char(date_trunc('month', u.created_at), 'YYYY-MM') AS bucket,
-          COUNT(*) FILTER (WHERE u.role = 'tenant')::int AS tenants,
-          COUNT(*) FILTER (WHERE u.role = 'operator')::int AS operators
+          COUNT(*)::int AS tenants
         FROM users u
-        WHERE u.role IN ('tenant', 'operator') AND ${COHORT}
-        GROUP BY 1
-        ORDER BY 1`),
-      run<{ role: "tenant" | "operator"; count: number }>(`
-        SELECT u.role::text AS role, COUNT(*)::int AS count
-        FROM users u
-        WHERE u.role IN ('tenant', 'operator') AND ${COHORT}
+        WHERE u.role = 'tenant' AND ${COHORT}
         GROUP BY 1
         ORDER BY 1`),
       // preferences.user_id and tenant_cvs.user_id are both unique, so the
@@ -150,18 +143,19 @@ export class AdminStatsService {
     ]);
 
     const base = coverage.withPreferences;
-    const nationality = topNWithOther(nationalityRows, TOP_NATIONALITIES);
+    // Grouped raw in SQL, then merged in Node: "British" and "United Kingdom"
+    // are one country, and the alias map is easier to extend here than in SQL.
+    const nationality = topNWithOther(mergeNationalities(nationalityRows), TOP_NATIONALITIES);
 
     return {
       range: { from: from ?? null, to: to ?? null },
       totals,
       signups: fillMonths(
         signupRows,
-        (bucket) => ({ bucket, tenants: 0, operators: 0 }),
+        (bucket) => ({ bucket, tenants: 0 }),
         from,
         to,
       ),
-      roles: roleRows,
       funnel,
       age: bucketAges(ageRows),
       nationality,

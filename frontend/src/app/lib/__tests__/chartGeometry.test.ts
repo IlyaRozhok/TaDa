@@ -1,42 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  donutSlices,
-  linePoints,
-  monthLabel,
-  niceMax,
-  percent,
-} from "../chartGeometry";
-
-const ring = { cx: 50, cy: 50, r: 50, inner: 30 };
-
-describe("donutSlices", () => {
-  it("returns nothing for an empty or all-zero series", () => {
-    expect(donutSlices([], ring)).toEqual([]);
-    expect(donutSlices([0, 0], ring)).toEqual([]);
-  });
-
-  it("skips zero values but keeps the original index", () => {
-    const slices = donutSlices([3, 0, 1], ring);
-
-    expect(slices.map((s) => s.index)).toEqual([0, 2]);
-    expect(slices.map((s) => s.fraction)).toEqual([0.75, 0.25]);
-  });
-
-  it("starts at 12 o'clock and uses the large-arc flag past half", () => {
-    const [first] = donutSlices([3, 1], ring);
-
-    expect(first.path.startsWith("M50 0 ")).toBe(true);
-    expect(first.path).toContain("A50 50 0 1 1");
-  });
-
-  it("draws a lone slice as two half-rings", () => {
-    const [only] = donutSlices([5], ring);
-
-    expect(only.fraction).toBe(1);
-    expect(only.path.match(/Z/g)).toHaveLength(2);
-  });
-});
+import { linePoints, monthLabel, niceMax, percent } from "../chartGeometry";
 
 describe("niceMax", () => {
   it("rounds up to 1/2/5 × 10ⁿ", () => {
