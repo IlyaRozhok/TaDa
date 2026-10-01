@@ -210,10 +210,21 @@ export default function AdminStatisticsSection({
           <HorizontalBarChart
             max={funnel.tenants}
             data={[
-              { label: "Signed up", value: funnel.tenants },
-              { label: "Filled preferences", value: funnel.withPreferences },
-              { label: "Completed CV", value: funnel.cvCompleted },
-              { label: "Shared CV link", value: funnel.cvShared },
+              {
+                label: "Signed up",
+                value: funnel.tenants,
+                hint: "Tenants who created an account in the selected period.",
+              },
+              {
+                label: "Filled preferences",
+                value: funnel.withPreferences,
+                hint: "Tenants who saved the search-preferences wizard at least once (budget, areas, lifestyle).",
+              },
+              {
+                label: "Completed CV",
+                value: funnel.cvCompleted,
+                hint: "Tenants who finished the CV flow and pressed Finish.",
+              },
             ].map((row) => ({
               ...row,
               display: `${row.value} · ${percent(row.value, funnel.tenants)}%`,

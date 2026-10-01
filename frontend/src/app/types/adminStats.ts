@@ -22,7 +22,6 @@ export interface AdminStats {
     tenants: number;
     withPreferences: number;
     cvCompleted: number;
-    cvShared: number;
   };
   age: { groups: Array<{ group: string; count: number }>; unknown: number };
   /** Normalized to the dropdown's country names ("British" → "United Kingdom"). */

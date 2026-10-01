@@ -1,4 +1,5 @@
 import React from "react";
+import { Info } from "lucide-react";
 
 import { paletteAt } from "./palette";
 
@@ -9,6 +10,8 @@ export interface BarDatum {
   display?: string;
   /** Palette slot; defaults to the first colour. */
   colorIndex?: number;
+  /** Explanation shown on hovering the label, marked with an info icon. */
+  hint?: string;
 }
 
 interface HorizontalBarChartProps {
@@ -38,7 +41,18 @@ export default function HorizontalBarChart({
         return (
           <li key={d.label}>
             <div className="flex justify-between gap-3 text-sm mb-1">
-              <span className="text-gray-700 truncate">{d.label}</span>
+              {d.hint ? (
+                <span
+                  title={d.hint}
+                  className="text-gray-700 inline-flex items-center gap-1 min-w-0 cursor-help"
+                >
+                  <span className="truncate">{d.label}</span>
+                  <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" aria-hidden="true" />
+                  <span className="sr-only">{d.hint}</span>
+                </span>
+              ) : (
+                <span className="text-gray-700 truncate">{d.label}</span>
+              )}
               <span className="font-medium text-black tabular-nums flex-shrink-0">{display}</span>
             </div>
             {/* Stretched to the row, so the rounding lives on the wrapper:
