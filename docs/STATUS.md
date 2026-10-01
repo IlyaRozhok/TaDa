@@ -211,6 +211,16 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **Nationality aliases on the Tenant Statistics dashboard** (added
+  2026-09-30). `users.nationality` mixes the dropdown's country names
+  ("United Kingdom") with older free-text demonyms ("British"), so
+  `GET /admin/stats` merges them through `NATIONALITY_ALIASES` in
+  `backend/src/modules/admin-stats/admin-stats.helpers.ts` before the
+  top-10. A variant that is not in the map shows up as its own bar — extend
+  the map when one does. The helper also carries `DROPDOWN_COUNTRIES`, a copy
+  of the names in `frontend/src/shared/lib/countries.ts`; the two must stay
+  in step (a test pins every alias to a listed country). Cleaning the stored
+  values would let the map go.
 - **The London region→borough map is duplicated across the two apps**
   (added 2026-09-10, with the area-matching fix). `DISTRICTS_BY_AREA` lives in
   both `frontend/src/constants/admin-form-options.ts` (what the preferences
