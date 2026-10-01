@@ -92,13 +92,14 @@ export class AdminStatsService {
         GROUP BY 1
         ORDER BY 1`),
       // preferences.user_id and tenant_cvs.user_id are both unique, so the
-      // joins cannot fan a tenant out into several rows.
+      // joins cannot fan a tenant out into several rows. No "shared CV" step:
+      // share_uuid is minted for every tenant at signup, so it measures
+      // nothing about sharing.
       run<AdminStatsResponse["funnel"]>(`
         SELECT
           COUNT(*)::int AS tenants,
           COUNT(p.id)::int AS "withPreferences",
-          COUNT(cv.completed_at)::int AS "cvCompleted",
-          COUNT(cv.share_uuid)::int AS "cvShared"
+          COUNT(cv.completed_at)::int AS "cvCompleted"
         FROM users u
         LEFT JOIN preferences p ON p.user_id = u.id
         LEFT JOIN tenant_cvs cv ON cv.user_id = u.id

@@ -12,7 +12,7 @@ function createDataSourceDouble() {
   const results: unknown[][] = [
     [{ tenants: 10, newThisPeriod: 4 }],
     [{ bucket: "2026-07", tenants: 1 }, { bucket: "2026-09", tenants: 2 }],
-    [{ tenants: 3, withPreferences: 2, cvCompleted: 1, cvShared: 1 }],
+    [{ tenants: 3, withPreferences: 2, cvCompleted: 1 }],
     [{ age: 29, count: 2 }, { age: null, count: 1 }],
     [
       { value: "United Kingdom", count: 2 },
@@ -66,7 +66,7 @@ describe("AdminStatsService.getStats", () => {
       { bucket: "2026-09", tenants: 2 },
     ]);
     expect(stats).not.toHaveProperty("roles");
-    expect(stats.funnel.cvCompleted).toBe(1);
+    expect(stats.funnel).toEqual({ tenants: 3, withPreferences: 2, cvCompleted: 1 });
     expect(stats.age.unknown).toBe(1);
     expect(stats.age.groups.find((g) => g.group === "25-34")?.count).toBe(2);
     // "British" merges into the dropdown's "United Kingdom".
