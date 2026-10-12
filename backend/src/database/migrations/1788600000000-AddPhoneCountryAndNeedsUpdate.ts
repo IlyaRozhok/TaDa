@@ -24,15 +24,15 @@ export class AddPhoneCountryAndNeedsUpdate1788600000000 implements MigrationInte
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "users" ADD "phone_country" character varying(2)`,
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone_country" character varying(2)`,
     );
     await queryRunner.query(
-      `ALTER TABLE "users" ADD "phone_needs_update" boolean NOT NULL DEFAULT false`,
+      `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone_needs_update" boolean NOT NULL DEFAULT false`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "phone_needs_update"`);
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "phone_country"`);
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN IF EXISTS "phone_needs_update"`);
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN IF EXISTS "phone_country"`);
   }
 }

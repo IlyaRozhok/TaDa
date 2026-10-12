@@ -16,7 +16,7 @@ describe("AddPhoneVerification1788700000000", () => {
     const { statements, queryRunner } = recorder();
     await new AddPhoneVerification1788700000000().up(queryRunner);
 
-    expect(statements[0]).toBe(`ALTER TABLE "users" ADD "phone_verified_at" TIMESTAMP WITH TIME ZONE`);
+    expect(statements[0]).toBe(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone_verified_at" TIMESTAMP WITH TIME ZONE`);
     expect(statements.join(" ")).not.toMatch(/NOT NULL DEFAULT now\(\), "phone_verified_at"|UPDATE "users"/);
   });
 
@@ -25,7 +25,7 @@ describe("AddPhoneVerification1788700000000", () => {
     await new AddPhoneVerification1788700000000().up(queryRunner);
 
     expect(statements).toContain(
-      `CREATE UNIQUE INDEX "uq_users_verified_phone" ON "users" ("phone") WHERE "phone_verified_at" IS NOT NULL`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "uq_users_verified_phone" ON "users" ("phone") WHERE "phone_verified_at" IS NOT NULL`,
     );
   });
 
@@ -33,7 +33,7 @@ describe("AddPhoneVerification1788700000000", () => {
     const { statements, queryRunner } = recorder();
     await new AddPhoneVerification1788700000000().up(queryRunner);
 
-    const table = statements.find((s) => s.startsWith(`CREATE TABLE "phone_verification_events"`)) ?? "";
+    const table = statements.find((s) => s.startsWith(`CREATE TABLE IF NOT EXISTS "phone_verification_events"`)) ?? "";
     expect(table).toContain(`ON DELETE CASCADE`);
     expect(table).not.toMatch(/"code"|"otp"/);
     expect(statements.filter((s) => s.startsWith("CREATE INDEX"))).toHaveLength(3);
@@ -44,7 +44,7 @@ describe("AddPhoneVerification1788700000000", () => {
     await new AddPhoneVerification1788700000000().up(queryRunner);
 
     for (const statement of statements) {
-      expect(statement).toMatch(/^(ALTER TABLE "users" ADD |CREATE (UNIQUE )?INDEX |CREATE TABLE )/);
+      expect(statement).toMatch(/^(ALTER TABLE "users" ADD COLUMN IF NOT EXISTS |CREATE (UNIQUE )?INDEX IF NOT EXISTS |CREATE TABLE IF NOT EXISTS )/);
     }
   });
 
@@ -53,9 +53,9 @@ describe("AddPhoneVerification1788700000000", () => {
     await new AddPhoneVerification1788700000000().down(queryRunner);
 
     expect(statements).toEqual([
-      `DROP TABLE "phone_verification_events"`,
-      `DROP INDEX "uq_users_verified_phone"`,
-      `ALTER TABLE "users" DROP COLUMN "phone_verified_at"`,
+      `DROP TABLE IF EXISTS "phone_verification_events"`,
+      `DROP INDEX IF EXISTS "uq_users_verified_phone"`,
+      `ALTER TABLE "users" DROP COLUMN IF EXISTS "phone_verified_at"`,
     ]);
   });
 });

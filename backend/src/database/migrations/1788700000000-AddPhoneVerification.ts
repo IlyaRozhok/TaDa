@@ -21,13 +21,13 @@ export class AddPhoneVerification1788700000000 implements MigrationInterface {
   name = "AddPhoneVerification1788700000000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "users" ADD "phone_verified_at" TIMESTAMP WITH TIME ZONE`);
+    await queryRunner.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone_verified_at" TIMESTAMP WITH TIME ZONE`);
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "uq_users_verified_phone" ON "users" ("phone") WHERE "phone_verified_at" IS NOT NULL`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "uq_users_verified_phone" ON "users" ("phone") WHERE "phone_verified_at" IS NOT NULL`,
     );
 
     await queryRunner.query(`
-      CREATE TABLE "phone_verification_events" (
+      CREATE TABLE IF NOT EXISTS "phone_verification_events" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "type" character varying(8) NOT NULL,
         "phone" character varying(20) NOT NULL,
@@ -41,19 +41,19 @@ export class AddPhoneVerification1788700000000 implements MigrationInterface {
       )
     `);
     await queryRunner.query(
-      `CREATE INDEX "idx_phone_verification_events_phone" ON "phone_verification_events" ("phone", "created_at")`,
+      `CREATE INDEX IF NOT EXISTS "idx_phone_verification_events_phone" ON "phone_verification_events" ("phone", "created_at")`,
     );
     await queryRunner.query(
-      `CREATE INDEX "idx_phone_verification_events_user" ON "phone_verification_events" ("user_id", "created_at")`,
+      `CREATE INDEX IF NOT EXISTS "idx_phone_verification_events_user" ON "phone_verification_events" ("user_id", "created_at")`,
     );
     await queryRunner.query(
-      `CREATE INDEX "idx_phone_verification_events_ip" ON "phone_verification_events" ("ip", "created_at")`,
+      `CREATE INDEX IF NOT EXISTS "idx_phone_verification_events_ip" ON "phone_verification_events" ("ip", "created_at")`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE "phone_verification_events"`);
-    await queryRunner.query(`DROP INDEX "uq_users_verified_phone"`);
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "phone_verified_at"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "phone_verification_events"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "uq_users_verified_phone"`);
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN IF EXISTS "phone_verified_at"`);
   }
 }
