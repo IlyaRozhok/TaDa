@@ -30,6 +30,11 @@ export enum UserStatus {
 }
 
 @Entity("users")
+// One verified number, one account (migration 1788700000000).
+@Index("uq_users_verified_phone", ["phone"], {
+  unique: true,
+  where: `"phone_verified_at" IS NOT NULL`,
+})
 export class User {
   @ApiProperty({ description: "Unique user identifier" })
   @PrimaryGeneratedColumn("uuid")
@@ -150,6 +155,16 @@ export class User {
    */
   @Column({ type: "boolean", default: false })
   phone_needs_update: boolean;
+
+  /**
+   * When `phone` was confirmed by SMS code. Null until then — every account
+   * that predates verification starts null — and reset whenever the number
+   * changes. A verified number belongs to one account only (partial unique
+   * index `uq_users_verified_phone`).
+   */
+  @ApiProperty({ description: "When the phone was verified by SMS", nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
+  phone_verified_at: Date | null;
 
   @ApiProperty({ description: "Date of birth", example: "1990-01-15" })
   @Column({ type: "date", nullable: true })

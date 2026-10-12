@@ -12,6 +12,7 @@ import { BookingRequest } from "../entities/booking-request.entity";
 import { TenantCv } from "../entities/tenant-cv.entity";
 import { Notification } from "../entities/notification.entity";
 import { CallRequest } from "../entities/call-request.entity";
+import { PhoneVerificationEvent } from "@/entities/phone-verification-event.entity";
 import * as path from "path";
 
 // Load environment variables
@@ -37,6 +38,7 @@ export const dataSourceOptions: DataSourceOptions = {
     TenantCv,
     Notification,
     CallRequest,
+    PhoneVerificationEvent,
   ],
   migrations: [path.join(__dirname, "migrations/*{.ts,.js}")],
   // "each" instead of the default "all": a migration may only opt out of its
