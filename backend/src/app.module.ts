@@ -26,6 +26,7 @@ import { S3Module } from "./common/services/s3.module";
 import { GeocodingModule } from "./common/services/geocoding.module";
 import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { RolesGuard } from "@/common/guards/roles.guard";
+import { PhoneVerifiedGuard } from "@/common/guards/phone-verified.guard";
 import { typeOrmConfig } from "./database/typeorm.config";
 import {SentryModule} from "@sentry/nestjs/setup";
 import { LoggerModule } from "nestjs-pino";
@@ -102,6 +103,12 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    // Last: the phone verification gate, inert unless
+    // PHONE_VERIFICATION_REQUIRED=true, needs the user the JWT guard loaded.
+    {
+      provide: APP_GUARD,
+      useClass: PhoneVerifiedGuard,
     },
   ],
 })

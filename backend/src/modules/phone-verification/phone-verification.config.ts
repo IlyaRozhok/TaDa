@@ -37,6 +37,16 @@ export function allowedPhoneCountries(env: Env = process.env): string[] {
 export const phoneVerificationRequired = (env: Env = process.env): boolean =>
   env.PHONE_VERIFICATION_REQUIRED?.trim().toLowerCase() === "true";
 
+/**
+ * Whether this user must verify before using the platform: the gate is on
+ * and their phone is not verified. What `/auth/me` reports to the frontend,
+ * so the browser needs no flag of its own.
+ */
+export const isPhoneVerificationPending = (
+  user: { phone_verified_at?: Date | null } | null | undefined,
+  env: Env = process.env,
+): boolean => phoneVerificationRequired(env) && !user?.phone_verified_at;
+
 /** Production as the app understands it everywhere else (cookies, logging, CORS). */
 export const isProduction = (env: Env = process.env): boolean => env.NODE_ENV === "production";
 

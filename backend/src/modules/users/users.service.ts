@@ -10,7 +10,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { S3Service } from "../../common/services/s3.service";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
-import { phoneColumns } from "@/common/phone/phone";
+import { phoneUpdate } from "@/common/phone/phone";
 
 @Injectable()
 export class UsersService {
@@ -75,8 +75,12 @@ export class UsersService {
     if (firstName !== undefined)                updates.first_name = firstName;
     if (lastName  !== undefined)                updates.last_name  = lastName;
     if (updateUserDto.address !== undefined)    updates.address    = updateUserDto.address;
-    // E.164 plus its country; "" clears both (stored as NULL, not "").
-    if (updateUserDto.phone !== undefined)      Object.assign(updates, phoneColumns(updateUserDto.phone));
+    // E.164 plus its country; "" clears both (stored as NULL, not ""). A new
+    // number loses the old one's SMS verification.
+    if (updateUserDto.phone !== undefined) {
+      const current = await this.userRepository.findOne({ where: { id }, select: ["id", "phone"] });
+      Object.assign(updates, phoneUpdate(updateUserDto.phone, current?.phone));
+    }
     if (updateUserDto.nationality !== undefined) updates.nationality = updateUserDto.nationality;
     if (updateUserDto.date_of_birth !== undefined) {
       updates.date_of_birth = updateUserDto.date_of_birth

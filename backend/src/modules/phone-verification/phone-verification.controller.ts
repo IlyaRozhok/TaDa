@@ -3,6 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
 
+import { AllowUnverifiedPhone } from "@/common/decorators/allow-unverified-phone.decorator";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
 import { User } from "@/entities/user.entity";
 import { SendPhoneCodeDto, VerifyPhoneCodeDto } from "./dto/phone-code.dto";
@@ -15,6 +16,8 @@ import { PhoneVerificationService } from "./phone-verification.service";
  */
 @ApiTags("phone-verification")
 @Controller("auth/phone")
+// The way out of the gate has to be reachable from behind it.
+@AllowUnverifiedPhone()
 export class PhoneVerificationController {
   constructor(private readonly service: PhoneVerificationService) {}
 

@@ -52,5 +52,20 @@ describe("UsersService.updateProfile — phone", () => {
 
     expect(written()).not.toHaveProperty("phone");
     expect(written()).not.toHaveProperty("phone_country");
+    expect(written()).not.toHaveProperty("phone_verified_at");
+  });
+
+  it("keeps the SMS verification when the profile re-saves the same number", async () => {
+    userRepository.findOne.mockResolvedValueOnce({ id: "user-1", phone: "+447123456789" });
+    await service.updateProfile("user-1", { phone: "+44 7123 456789" } as UpdateUserDto);
+
+    expect(written()).not.toHaveProperty("phone_verified_at");
+  });
+
+  it("clears the SMS verification when the number changes", async () => {
+    userRepository.findOne.mockResolvedValueOnce({ id: "user-1", phone: "+447123456789" });
+    await service.updateProfile("user-1", { phone: "+447400883369" } as UpdateUserDto);
+
+    expect(written()).toMatchObject({ phone: "+447400883369", phone_verified_at: null });
   });
 });

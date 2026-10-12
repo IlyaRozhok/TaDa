@@ -21,7 +21,7 @@ import {
 import { CreateUserDto } from "../dto/create-user.dto";
 import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
 import { USER_CONSTANTS } from "@/common/constants/user.constants";
-import { phoneColumns } from "@/common/phone/phone";
+import { phoneUpdate } from "@/common/phone/phone";
 import {
   NotificationEvents,
   UserRegisteredEvent,
@@ -123,8 +123,9 @@ export class UserAdminService {
     if (dto.role) user.role = dto.role;
     // The DTO always accepted `phone`; it was silently dropped here. E.164
     // plus its country; "" clears both — the admin's way to correct a
-    // mistyped number.
-    if (dto.phone !== undefined) Object.assign(user, phoneColumns(dto.phone));
+    // mistyped number. A changed number loses its SMS verification: the user
+    // confirms the corrected one themselves.
+    if (dto.phone !== undefined) Object.assign(user, phoneUpdate(dto.phone, user.phone));
 
     if (dto.password) {
       user.password = await bcrypt.hash(

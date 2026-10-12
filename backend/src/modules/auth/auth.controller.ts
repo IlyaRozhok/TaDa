@@ -7,6 +7,8 @@ import { Public } from "@/common/decorators/public.decorator";
 import { User } from "@/entities/user.entity";
 import { AuthGuard } from "@nestjs/passport";
 import { accessTokenTtl, refreshTokenTtl } from "@/common/config/auth-tokens.config";
+import { AllowUnverifiedPhone } from "@/common/decorators/allow-unverified-phone.decorator";
+import { isPhoneVerificationPending } from "@/modules/phone-verification/phone-verification.config";
 
 const isProd = () => process.env.NODE_ENV === "production";
 
@@ -27,6 +29,9 @@ const refreshCookieOptions = () => ({
 });
 
 @Controller("auth")
+// The session itself must work for an unverified user: /me tells the
+// frontend to show the verification screen, refresh and logout keep it alive.
+@AllowUnverifiedPhone()
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
@@ -35,7 +40,14 @@ export class AuthController {
   @Get("me")
   async getProfile(@CurrentUser() user: User) {
     const fullUser = await this.authService.findUserWithProfile(user.id);
-    return { user: fullUser };
+    // `phone_verification_pending` is the gate's verdict for this user — on
+    // only while PHONE_VERIFICATION_REQUIRED is set and the phone is
+    // unverified — so the frontend routes on it without a flag of its own.
+    return {
+      user: fullUser
+        ? { ...fullUser, phone_verification_pending: isPhoneVerificationPending(fullUser) }
+        : fullUser,
+    };
   }
 
   // Public by necessity: the caller's access token is expired — that is the

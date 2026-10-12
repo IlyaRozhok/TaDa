@@ -157,4 +157,19 @@ describe("UserAdminService — updateUser phone", () => {
     expect(saved.phone).toBe("+447041 23079");
     expect(saved.full_name).toBe("Jane Doe");
   });
+
+  it("clears the SMS verification when the admin changes the number", async () => {
+    stored = { ...stored, phone: "+447123456789", phone_verified_at: new Date() } as User;
+    const saved = await service.updateUser("user-1", { phone: "+447400883369" });
+
+    expect(saved).toMatchObject({ phone: "+447400883369", phone_verified_at: null });
+  });
+
+  it("keeps the SMS verification when the admin re-saves the same number", async () => {
+    const verifiedAt = new Date("2026-10-12T10:00:00Z");
+    stored = { ...stored, phone: "+447123456789", phone_verified_at: verifiedAt } as User;
+    const saved = await service.updateUser("user-1", { phone: "+44 7123 456789" });
+
+    expect(saved.phone_verified_at).toBe(verifiedAt);
+  });
 });

@@ -3,6 +3,7 @@ import {
   isValidPhone,
   normalizePhone,
   phoneColumns,
+  phoneUpdate,
   processPhone,
 } from "./phone";
 
@@ -110,6 +111,32 @@ describe("PHONE_ISSUE_MESSAGES", () => {
       NOT_MOBILE: "Please enter a mobile number",
       INVALID: "Please enter a valid phone number",
     });
+  });
+});
+
+describe("phoneUpdate — a changed number loses its verification", () => {
+  it("keeps the verification when the number is the same (any formatting)", () => {
+    expect(phoneUpdate("+44 7123 456789", "+447123456789")).toEqual({
+      phone: "+447123456789",
+      phone_country: "GB",
+    });
+  });
+
+  it("clears the verification for a different number", () => {
+    expect(phoneUpdate("+447400883369", "+447123456789")).toEqual({
+      phone: "+447400883369",
+      phone_country: "GB",
+      phone_verified_at: null,
+    });
+  });
+
+  it("clears it when the number is removed, and when one is first added", () => {
+    expect(phoneUpdate("", "+447123456789")).toMatchObject({ phone: null, phone_verified_at: null });
+    expect(phoneUpdate("+447123456789", null)).toMatchObject({ phone_verified_at: null });
+  });
+
+  it("keeps it when there was no number and still is none", () => {
+    expect(phoneUpdate("", null)).toEqual({ phone: null, phone_country: null });
   });
 });
 

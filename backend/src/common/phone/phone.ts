@@ -165,6 +165,20 @@ export function normalizePhone(
 }
 
 /**
+ * The columns for writing a phone over `currentPhone`. A number that changes
+ * loses its verification — a verified number stays verified only while it is
+ * the same number — and one that does not change keeps it.
+ */
+export function phoneUpdate(
+  value: string | null | undefined,
+  currentPhone: string | null | undefined,
+  country?: string | null,
+): { phone: string | null; phone_country: string | null; phone_verified_at?: null } {
+  const columns = phoneColumns(value, country);
+  return columns.phone === (currentPhone ?? null) ? columns : { ...columns, phone_verified_at: null };
+}
+
+/**
  * The phone and its country, ready for the users row: both null when the
  * phone is cleared.
  */
