@@ -13,6 +13,7 @@ import {
   ValidateNested,
 } from "class-validator";
 
+import { IsValidPhone } from "@/common/decorators/phone.decorators";
 import {
   CALL_REASON_SLUGS,
   CALL_REQUEST_SOURCES,
@@ -27,10 +28,12 @@ export class CallRequestPhoneDto {
   })
   countryCode: string;
 
-  @ApiProperty({ example: "20 7946 0000" })
+  /** National ("07911 123456") or international; stored as E.164. */
+  @ApiProperty({ example: "+447911123456" })
   @IsString()
   @IsNotEmpty()
   @MaxLength(32)
+  @IsValidPhone("countryCode", { message: "number must be a valid phone number for countryCode" })
   number: string;
 }
 

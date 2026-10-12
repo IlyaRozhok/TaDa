@@ -65,6 +65,8 @@ export interface UpdateUserArgs {
   email: string;
   role: string;
   is_private_landlord?: boolean;
+  /** E.164, or "" to clear. Left out when the admin did not edit it. */
+  phone?: string;
 }
 
 /**

@@ -5,7 +5,8 @@ import {
   IsOptional,
   IsString,
 } from "class-validator";
-import { UserRole, UserStatus } from "../../../entities/user.entity";
+import { IsOptionalPhone } from "@/common/decorators/phone.decorators";
+import { UserRole, UserStatus } from "@/entities/user.entity";
 
 export class AdminUpdateUserDto {
   @IsOptional()
@@ -21,8 +22,8 @@ export class AdminUpdateUserDto {
   @IsEnum(UserRole)
   role?: UserRole;
 
-  @IsOptional()
-  @IsString()
+  /** International format, stored as E.164; "" clears it. */
+  @IsOptionalPhone()
   phone?: string;
 
   @IsOptional()

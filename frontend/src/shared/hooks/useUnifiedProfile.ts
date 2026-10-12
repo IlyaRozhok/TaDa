@@ -5,11 +5,8 @@ import type { User } from "@/store/slices/authSlice";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { authAPI } from "@/app/lib/api";
 import { updateUser } from "@/store/slices/authSlice";
-import {
-  getCountryByCode,
-  getDefaultCountry,
-  parseStoredPhone,
-} from "@/shared/lib/countries";
+import { getDefaultCountry, parseStoredPhone } from "@/shared/lib/countries";
+import { hasPhoneDigits, isValidPhone, toE164 } from "@/shared/lib/phone";
 
 interface UseUnifiedProfileOptions {
   onSuccess?: () => void;
@@ -116,12 +113,15 @@ export const useUnifiedProfile = (
     if (field === "date_of_birth") setDateOfBirthError(null);
   }, []);
 
+  /**
+   * The one writer of `formData.phone`: E.164 (`+447041230790`) once the
+   * number is valid, empty otherwise. An invalid number never reaches the
+   * payload — `validateForm` blocks the save while the field shows one.
+   */
   const handlePhoneChange = useCallback((phoneNumber: string, countryCode: string) => {
     setPhoneNumberOnly(phoneNumber);
     setPhoneCountryCode(countryCode);
-    const country = getCountryByCode(countryCode);
-    const fullPhone = country ? `${country.dialCode}${phoneNumber}` : phoneNumber;
-    setFormData(prev => ({ ...prev, phone: fullPhone }));
+    setFormData(prev => ({ ...prev, phone: toE164(phoneNumber, countryCode) ?? "" }));
     setHasChanges(true);
   }, []);
 
@@ -152,6 +152,10 @@ export const useUnifiedProfile = (
     const { first_name, last_name, date_of_birth } = formData;
     if (!first_name?.trim() || !last_name?.trim()) return false;
     if (!date_of_birth) return false;
+    // Phone stays optional, but a number that is there must be complete.
+    if (hasPhoneDigits(phoneNumberOnly) && !isValidPhone(phoneNumberOnly, phoneCountryCode)) {
+      return false;
+    }
 
     const date = new Date(date_of_birth);
     const today = new Date();
@@ -159,7 +163,7 @@ export const useUnifiedProfile = (
     const monthDiff = today.getMonth() - date.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) age--;
     return age >= 18 && age <= 100;
-  }, [formData]);
+  }, [formData, phoneNumberOnly, phoneCountryCode]);
 
   const saveProfile = useCallback(
     async (overrideData?: Partial<UpdateUserData>): Promise<boolean> => {

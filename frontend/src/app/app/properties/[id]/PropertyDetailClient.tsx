@@ -45,11 +45,8 @@ import { track } from "@/lib/analytics/ga";
 import { notify } from "@/shared/lib/notify";
 import { formatAreaDisplay } from "@/shared/lib/area";
 import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
-import {
-  getCountryByCode,
-  getDefaultCountry,
-  parseStoredPhone,
-} from "@/shared/lib/countries";
+import { parseStoredPhone } from "@/shared/lib/countries";
+import { hasPhoneDigits, toE164 } from "@/shared/lib/phone";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
 import {
@@ -171,7 +168,6 @@ export default function PropertyPublicPage() {
   );
   const [bookingPhoneCountryCode, setBookingPhoneCountryCode] = useState("GB");
   const [bookingPhoneNumberOnly, setBookingPhoneNumberOnly] = useState("");
-  const [bookingPhone, setBookingPhone] = useState("");
   const [bookingName, setBookingName] = useState("");
   const [bookingEmail, setBookingEmail] = useState("");
   const [bookingNameError, setBookingNameError] = useState<string | undefined>(
@@ -682,20 +678,15 @@ export default function PropertyPublicPage() {
       user?.operatorProfile?.phone ||
       "";
 
+    // A stored number with no recognisable dial code is shown as it is, so
+    // the tenant can see and fix it.
     const parsed = parseStoredPhone(profilePhone.trim());
     const nextCountryCode = parsed?.country.code || "GB";
-    const numberOnly = parsed?.nationalNumber || "";
-    const countryDialCode =
-      getCountryByCode(nextCountryCode)?.dialCode ||
-      getDefaultCountry().dialCode;
-    const fullPhone = numberOnly
-      ? `${countryDialCode}${numberOnly}`
-      : profilePhone.trim();
+    const numberOnly = parsed ? parsed.nationalNumber : profilePhone.trim();
 
     setBookingName(profileName.trim());
     setBookingPhoneCountryCode(nextCountryCode);
     setBookingPhoneNumberOnly(numberOnly);
-    setBookingPhone(fullPhone);
     setBookingEmail(user?.email?.trim() || "");
     setBookingNameError(undefined);
     setBookingPhoneError(undefined);
@@ -724,8 +715,9 @@ export default function PropertyPublicPage() {
 
     const name = bookingName.trim();
     const email = bookingEmail.trim();
-    const phoneDigits = bookingPhone.replace(/\D/g, "");
-    const hasPhone = phoneDigits.length > 0;
+    const hasPhone = hasPhoneDigits(bookingPhoneNumberOnly);
+    // E.164 (`+447041230790`) or null while the number is incomplete.
+    const phoneE164 = toE164(bookingPhoneNumberOnly, bookingPhoneCountryCode);
 
     setBookingNameError(undefined);
     setBookingPhoneError(undefined);
@@ -741,6 +733,11 @@ export default function PropertyPublicPage() {
       const message = "Please enter your email or phone number";
       setBookingPhoneError(message);
       setBookingEmailError(message);
+      return;
+    }
+
+    if (hasPhone && !phoneE164) {
+      setBookingPhoneError("Please enter a valid phone number");
       return;
     }
 
@@ -782,7 +779,7 @@ export default function PropertyPublicPage() {
       await createBookingRequest({
         propertyId: property.id,
         email: email || undefined,
-        phone_number: hasPhone ? bookingPhone.trim() : undefined,
+        phone_number: phoneE164 ?? undefined,
         date_from: dateFrom,
         date_to: dateTo,
         description: bookingDescription.trim() || undefined,
@@ -855,7 +852,7 @@ export default function PropertyPublicPage() {
     hasBookingRequest ||
     !bookingName.trim() ||
     !bookingEmail.trim() ||
-    bookingPhone.replace(/\D/g, "").length === 0 ||
+    !hasPhoneDigits(bookingPhoneNumberOnly) ||
     (!bookingMoveInDate && !bookingMoveOutDate) ||
     bookingMoveInDate === "INVALID_FORMAT" ||
     bookingMoveOutDate === "INVALID_FORMAT";
@@ -1771,25 +1768,11 @@ export default function PropertyPublicPage() {
                     countryCode={bookingPhoneCountryCode}
                     onCountryChange={(code) => {
                       setBookingPhoneCountryCode(code);
-                      const country =
-                        getCountryByCode(code) || getDefaultCountry();
-                      const fullPhone = bookingPhoneNumberOnly
-                        ? `${country.dialCode} ${bookingPhoneNumberOnly}`.trim()
-                        : "";
-                      setBookingPhone(fullPhone);
                       if (bookingPhoneError) setBookingPhoneError(undefined);
                     }}
                     value={bookingPhoneNumberOnly}
                     onChange={(value) => {
-                      const next = value ?? "";
-                      setBookingPhoneNumberOnly(next);
-                      const country =
-                        getCountryByCode(bookingPhoneCountryCode) ||
-                        getDefaultCountry();
-                      const fullPhone = next
-                        ? `${country.dialCode} ${next}`.trim()
-                        : "";
-                      setBookingPhone(fullPhone);
+                      setBookingPhoneNumberOnly(value ?? "");
                       if (bookingPhoneError) setBookingPhoneError(undefined);
                     }}
                     label={t(wizardKeys.profile.phone)}

@@ -92,7 +92,8 @@ describe("CallRequestService", () => {
         name: "Jane Doe",
         contact_method: "voice_call",
         phone_country_code: "GB",
-        phone_number: "20 7946 0000",
+        // The national number typed for GB, stored as E.164.
+        phone_number: "+442079460000",
         preferred_time: "Weekday evenings",
         notes: "Evenings work best",
         source: "tenant",
@@ -160,7 +161,7 @@ describe("CallRequestService", () => {
           name: "Jane Doe",
           contactMethod: "voice_call",
           contactMethodLabel: "Voice call",
-          phone: { countryCode: "GB", number: "20 7946 0000" },
+          phone: { countryCode: "GB", number: "+442079460000" },
           email: null,
           preferredTime: "Weekday evenings",
           notes: "Evenings work best",

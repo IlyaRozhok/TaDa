@@ -1,7 +1,7 @@
 import { ConflictException } from "@nestjs/common";
 
 import { UserAdminService } from "./user-admin.service";
-import { User } from "@/entities/user.entity";
+import { User, UserRole } from "@/entities/user.entity";
 import { Property, PropertyStatus } from "@/entities/property.entity";
 import { Building } from "@/entities/building.entity";
 import { BookingRequest, BookingRequestStatus } from "@/entities/booking-request.entity";
@@ -103,5 +103,56 @@ describe("UserAdminService — safe deletion", () => {
     await service.removeUserSafely(user);
 
     expect(em.update).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * `AdminUpdateUserDto` has always carried `phone`, but `updateUser` dropped
+ * it, so an admin could not correct a mistyped number. It is applied now,
+ * normalised to E.164.
+ */
+describe("UserAdminService — updateUser phone", () => {
+  let stored: User;
+  let em: any;
+  let service: UserAdminService;
+
+  beforeEach(() => {
+    stored = {
+      id: "user-1",
+      role: UserRole.Tenant,
+      phone: "+447041 23079",
+      tenantProfile: {},
+    } as unknown as User;
+    em = { save: jest.fn(async (entity: unknown) => entity) };
+    const userRepository: any = {
+      findOne: jest.fn(async () => stored),
+      manager: { transaction: jest.fn(async (cb: any) => cb(em)) },
+    };
+    service = new UserAdminService(
+      userRepository,
+      {} as any,
+      {} as any,
+      { emit: jest.fn() } as any,
+    );
+  });
+
+  it("applies and normalises an edited phone to E.164", async () => {
+    const saved = await service.updateUser("user-1", { phone: "+44 7041 230790" });
+
+    expect(saved.phone).toBe("+447041230790");
+    expect(em.save).toHaveBeenCalledWith(expect.objectContaining({ phone: "+447041230790" }));
+  });
+
+  it("clears the phone on an empty string", async () => {
+    const saved = await service.updateUser("user-1", { phone: "" });
+
+    expect(saved.phone).toBe("");
+  });
+
+  it("leaves the phone alone when the payload omits it", async () => {
+    const saved = await service.updateUser("user-1", { full_name: "Jane Doe" });
+
+    expect(saved.phone).toBe("+447041 23079");
+    expect(saved.full_name).toBe("Jane Doe");
   });
 });

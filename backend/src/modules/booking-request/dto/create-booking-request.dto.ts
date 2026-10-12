@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsOptional, IsString, IsUUID, Matches, MaxLength } from "class-validator";
 
+import { IsOptionalPhone } from "@/common/decorators/phone.decorators";
+
 export class CreateBookingRequestDto {
   @ApiProperty({ description: "Property ID being requested" })
   @IsUUID()
@@ -12,10 +14,10 @@ export class CreateBookingRequestDto {
   @MaxLength(320)
   email?: string;
 
-  @ApiPropertyOptional({ description: "Contact phone from the form" })
-  @IsOptional()
-  @IsString()
-  @MaxLength(64)
+  @ApiPropertyOptional({
+    description: "Contact phone from the form, international format; stored as E.164",
+  })
+  @IsOptionalPhone()
   phone_number?: string;
 
   @ApiPropertyOptional({ description: "Preferred date from (YYYY-MM-DD)" })

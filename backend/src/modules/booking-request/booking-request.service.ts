@@ -14,6 +14,7 @@ import {
   BookingRequestStatus,
 } from "@/entities/booking-request.entity";
 import { Property, PropertyStatus } from "../../entities/property.entity";
+import { normalizePhone } from "@/common/phone/phone";
 import { CreateBookingRequestDto } from "./dto/create-booking-request.dto";
 import {
   BookingRequestedEvent,
@@ -38,7 +39,8 @@ export class BookingRequestService {
     tenantId: string
   ): Promise<BookingRequest> {
     const email = dto.email?.trim() || null;
-    const phone = dto.phone_number?.trim() || null;
+    // E.164; the DTO has already rejected anything that is not a valid number.
+    const phone = normalizePhone(dto.phone_number);
     const description = dto.description?.trim() || null;
     if (!email && !phone) {
       throw new BadRequestException("email or phone_number is required");

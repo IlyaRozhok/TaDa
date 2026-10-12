@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { useTranslation } from "../../app/hooks/useTranslation";
+import { translateWithFallback, useTranslation } from "@/app/hooks/useTranslation";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput } from "@/shared/ui";
 import CountryDropdown from "@/shared/ui/CountryDropdown/CountryDropdown";
 import { UpdateUserData } from "@/app/types/user";
-import { getCountryByCode, getDefaultCountry } from "@/shared/lib/countries";
 
 interface ProfileFormFieldsProps {
   formData: UpdateUserData;
@@ -32,25 +31,16 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
 }) => {
   const { t } = useTranslation();
 
+  // The hook is the single writer of `formData.phone` (E.164); this only
+  // reports what the field shows.
   const handlePhoneChange = useCallback((value: string | undefined) => {
-    // Combine country code with phone number for storage
-    const country = getCountryByCode(phoneCountryCode) || getDefaultCountry();
-    if (value) {
-      // Only extract digits when we need to store the final value
-      const digitsOnly = value.replace(/\D/g, "");
-      const fullPhoneNumber = `${country.dialCode}${digitsOnly}`;
-      onInputChange("phone", fullPhoneNumber);
-    } else {
-      onInputChange("phone", "");
-    }
     onPhoneChange(value || "", phoneCountryCode);
-  }, [phoneCountryCode, onInputChange, onPhoneChange]);
+  }, [phoneCountryCode, onPhoneChange]);
 
+  // Clear the phone input when country changes
   const handleCountryChange = useCallback((countryCode: string) => {
-    // Clear the phone input when country changes
     onPhoneChange("", countryCode);
-    onInputChange("phone", "");
-  }, [onPhoneChange, onInputChange]);
+  }, [onPhoneChange]);
 
   const handleDateChange = useCallback((date: string | null) => {
     onInputChange("date_of_birth", date || "");
@@ -100,6 +90,11 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
           value={phoneNumberOnly}
           onChange={handlePhoneChange}
           onCountryChange={handleCountryChange}
+          invalidMessage={translateWithFallback(
+            t,
+            wizardKeys.profile.phoneInvalid,
+            "Enter a valid phone number",
+          )}
           required
         />
       </div>

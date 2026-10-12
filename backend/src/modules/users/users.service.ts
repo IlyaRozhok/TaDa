@@ -10,6 +10,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { S3Service } from "../../common/services/s3.service";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
+import { normalizePhone } from "@/common/phone/phone";
 
 @Injectable()
 export class UsersService {
@@ -74,7 +75,8 @@ export class UsersService {
     if (firstName !== undefined)                updates.first_name = firstName;
     if (lastName  !== undefined)                updates.last_name  = lastName;
     if (updateUserDto.address !== undefined)    updates.address    = updateUserDto.address;
-    if (updateUserDto.phone !== undefined)      updates.phone      = updateUserDto.phone;
+    // E.164; "" still clears it, as before.
+    if (updateUserDto.phone !== undefined)      updates.phone      = normalizePhone(updateUserDto.phone) ?? "";
     if (updateUserDto.nationality !== undefined) updates.nationality = updateUserDto.nationality;
     if (updateUserDto.date_of_birth !== undefined) {
       updates.date_of_birth = updateUserDto.date_of_birth

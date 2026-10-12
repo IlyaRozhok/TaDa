@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { IMaskInput } from "react-imask";
 import { ChevronDown, Search } from "lucide-react";
-import { getPhoneMask } from "../../lib/phoneMasks";
+import { formatPhoneInput, hasPhoneDigits, isValidPhone } from "@/shared/lib/phone";
 import {
   COUNTRIES,
   getCountryByCode,
   getDefaultCountry,
   type Country,
-} from "../../lib/countries";
+} from "@/shared/lib/countries";
 
 export interface PhoneMaskInputProps {
   countryCode?: string;
+  /** The national number as shown in the field (not E.164). */
   value?: string;
   onChange: (value: string | undefined) => void;
   label?: string;
@@ -21,6 +21,12 @@ export interface PhoneMaskInputProps {
   disabled?: boolean;
   required?: boolean;
   error?: string;
+  /**
+   * Shown when the field holds a number that is not valid for the selected
+   * country, once the user leaves the field. Callers that render their own
+   * phone errors leave it unset.
+   */
+  invalidMessage?: string;
   onCountryChange?: (countryCode: string) => void;
 }
 
@@ -38,6 +44,7 @@ export default function PhoneMaskInput({
   disabled = false,
   required = false,
   error,
+  invalidMessage,
   onCountryChange,
 }: PhoneMaskInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
@@ -53,8 +60,31 @@ export default function PhoneMaskInput({
     if (country) setSelectedCountry(country);
   }, [initialCountryCode]);
 
-  const mask = getPhoneMask(selectedCountry.code);
   const displayPlaceholder = placeholder || "";
+
+  /**
+   * Typing forward is re-formatted in the country's style; deleting is left
+   * alone, or backspacing over a formatting space would put it straight back.
+   * No length cap: a number that is too long stays visible and fails
+   * validation rather than silently losing digits.
+   */
+  const handleInput = (raw: string) => {
+    const previous = value ?? "";
+    const next =
+      raw.length < previous.length
+        ? raw.replace(/[^\d+\s()-]/g, "")
+        : formatPhoneInput(raw, selectedCountry.code);
+    onChange(next || undefined);
+  };
+
+  const shownError =
+    error ||
+    (invalidMessage &&
+    !isFocused &&
+    hasPhoneDigits(value) &&
+    !isValidPhone(value, selectedCountry.code)
+      ? invalidMessage
+      : undefined);
 
   const handleCountryChange = (country: Country) => {
     setSelectedCountry(country);
@@ -165,16 +195,19 @@ export default function PhoneMaskInput({
         {/* Phone Input */}
         <div className="flex-1 relative">
           <div className="relative">
-            <IMaskInput
-              mask={mask}
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
               value={value ?? ""}
-              onAccept={(val: string) => onChange(val || undefined)}
+              onChange={(e) => handleInput(e.target.value)}
               placeholder={displayPlaceholder}
               disabled={disabled}
               required={required}
+              aria-invalid={shownError ? true : undefined}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 ${error ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
+              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 ${shownError ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
             />
             <label
               className={`absolute left-6 pointer-events-none transition-all duration-200 ${isFocused || hasValue ? "top-3 text-xs text-gray-600" : "top-1/2 -translate-y-1/2 text-base text-gray-500"}`}
@@ -185,7 +218,7 @@ export default function PhoneMaskInput({
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600 mt-1 px-6">{error}</p>}
+      {shownError && <p className="text-sm text-red-600 mt-1 px-6">{shownError}</p>}
     </div>
   );
 }

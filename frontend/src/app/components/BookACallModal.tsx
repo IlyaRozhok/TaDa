@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { ChevronDown, X } from "lucide-react";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
+import { hasPhoneDigits, phoneIssue, toE164 } from "@/shared/lib/phone";
 import { notify } from "@/shared/lib/notify";
 import { sendCallRequest } from "../lib/callRequest";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
@@ -216,10 +217,15 @@ export default function BookACallModal({
       if (!value.trim()) message = requiredMessage();
     }
     if (field === "phone") {
-      const digits = value.replace(/\D/g, "");
-      if (!digits) message = requiredMessage();
-      else if (digits.length < 7)
+      const issue = phoneIssue(value, phoneCountry);
+      if (!hasPhoneDigits(value)) message = requiredMessage();
+      else if (issue === "TOO_SHORT")
         message = tr(generalKeys.bookACall.validation.phoneTooShort, "Too short");
+      else if (issue)
+        message = tr(
+          generalKeys.bookACall.validation.phoneInvalid,
+          "Enter a valid phone number",
+        );
     }
     if (field === "email") {
       if (!value.trim()) message = requiredMessage();
@@ -301,7 +307,8 @@ export default function BookACallModal({
         // DTO validates, so the hidden field can never leak into the payload.
         ...(wantsEmail
           ? { email: email.trim() }
-          : { phone: { countryCode: phoneCountry, number: phone.trim() } }),
+          : // Validated above, so E.164 is there; the raw text is only a guard.
+            { phone: { countryCode: phoneCountry, number: toE164(phone, phoneCountry) ?? phone.trim() } }),
         ...(preferredTime.trim() ? { preferredTime: preferredTime.trim() } : {}),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
         source: audience,

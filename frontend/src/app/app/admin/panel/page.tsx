@@ -94,6 +94,7 @@ interface User {
   status: string;
   created_at: string;
   is_private_landlord?: boolean | null;
+  phone?: string | null;
 }
 
 /**
@@ -418,6 +419,7 @@ function AdminPanelContent() {
       email: string;
       role: string;
       is_private_landlord?: boolean;
+      phone?: string;
     },
   ) => {
     setIsActionLoading(true);
@@ -428,6 +430,7 @@ function AdminPanelContent() {
         email: data.email,
         role: data.role,
         is_private_landlord: data.is_private_landlord,
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
       }).unwrap();
 
       addNotification(

@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { X } from "lucide-react";
+
+import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
+import { parseStoredPhone } from "@/shared/lib/countries";
+import { hasPhoneDigits, toE164 } from "@/shared/lib/phone";
 
 interface User {
   id: string;
@@ -10,6 +14,7 @@ interface User {
   role: string;
   status: string;
   is_private_landlord?: boolean | null;
+  phone?: string | null;
 }
 
 interface EditUserModalProps {
@@ -23,6 +28,8 @@ interface EditUserModalProps {
       email: string;
       role: string;
       is_private_landlord?: boolean;
+      /** E.164, or "" to clear; absent when the phone was not edited. */
+      phone?: string;
     }
   ) => Promise<void>;
   isLoading?: boolean;
@@ -41,6 +48,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     role: "tenant",
     is_private_landlord: false,
   });
+  const [phoneCountry, setPhoneCountry] = useState("GB");
+  const [phoneNational, setPhoneNational] = useState("");
+  // Only an edited phone is sent, so a stored legacy value the admin did not
+  // touch never blocks saving the other fields.
+  const [phoneEdited, setPhoneEdited] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | undefined>();
 
   useEffect(() => {
     if (user && isOpen) {
@@ -50,14 +63,34 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         role: user.role,
         is_private_landlord: user.is_private_landlord ?? false,
       });
+      const stored = user.phone?.trim() || "";
+      const parsed = parseStoredPhone(stored);
+      setPhoneCountry(parsed?.country.code || "GB");
+      setPhoneNational(parsed ? parsed.nationalNumber : stored);
+      setPhoneEdited(false);
+      setPhoneError(undefined);
     }
   }, [user, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
-      await onSubmit(user.id, formData);
+    if (!user) return;
+
+    let phone: string | undefined;
+    if (phoneEdited) {
+      phone = hasPhoneDigits(phoneNational)
+        ? toE164(phoneNational, phoneCountry) ?? undefined
+        : "";
+      if (phone === undefined) {
+        setPhoneError("Enter a valid phone number");
+        return;
+      }
     }
+
+    await onSubmit(user.id, {
+      ...formData,
+      ...(phone !== undefined ? { phone } : {}),
+    });
   };
 
   if (!isOpen || !user) return null;
@@ -106,6 +139,28 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               }
               className="w-full px-4 py-2 bg-white/10 backdrop-blur-[5px] border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-white/40 text-white placeholder-white/50"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white/90 mb-2">
+              Phone
+            </label>
+            <PhoneMaskInput
+              countryCode={phoneCountry}
+              value={phoneNational}
+              onCountryChange={(code) => {
+                setPhoneCountry(code);
+                setPhoneEdited(true);
+                setPhoneError(undefined);
+              }}
+              onChange={(value) => {
+                setPhoneNational(value ?? "");
+                setPhoneEdited(true);
+                setPhoneError(undefined);
+              }}
+              error={phoneError}
+              invalidMessage="Enter a valid phone number"
             />
           </div>
 

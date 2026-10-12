@@ -3,6 +3,7 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
+import { normalizePhone } from "@/common/phone/phone";
 import { CallRequest, CallRequestSource } from "@/entities/call-request.entity";
 import {
   CallRequestedEvent,
@@ -46,7 +47,10 @@ export class CallRequestService {
         name: dto.name.trim(),
         contact_method: dto.contactMethod,
         phone_country_code: wantsEmail ? null : (dto.phone?.countryCode ?? null),
-        phone_number: wantsEmail ? null : (dto.phone?.number.trim() ?? null),
+        // E.164, read in the selected country when typed nationally.
+        phone_number: wantsEmail
+          ? null
+          : normalizePhone(dto.phone?.number, dto.phone?.countryCode),
         email: wantsEmail ? (dto.email?.trim() ?? null) : null,
         preferred_time: preferredTime,
         notes,
