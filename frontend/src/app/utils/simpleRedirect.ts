@@ -3,6 +3,10 @@
 
 import { isNavigationBlocked } from "./navigationGuard";
 import { fetchPreferencesOnce } from "@/store/api/preferences.api";
+import {
+  PHONE_VERIFICATION_PATH,
+  isPhoneVerificationPending,
+} from "@/shared/lib/phoneVerification";
 
 // Простая функция для определения роли пользователя
 export function getUserRole(user: any): string {
@@ -71,6 +75,13 @@ export async function redirectAfterLogin(user: any, router: any) {
   // Check if navigation is blocked
   if (isNavigationBlocked()) {
     console.log(`⛔ Redirect blocked (role: ${user?.role})`);
+    return;
+  }
+
+  // Phone verification comes before everything else — onboarding included —
+  // while the backend reports the gate on for this user.
+  if (isPhoneVerificationPending(user)) {
+    router.replace(PHONE_VERIFICATION_PATH);
     return;
   }
 

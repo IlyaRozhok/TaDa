@@ -8,6 +8,7 @@ import {
 
 import { logout } from "@/store/slices/authSlice";
 import { refreshSession } from "@/app/lib/sessionRefresh";
+import { redirectToPhoneVerificationIfRequired } from "@/shared/lib/phoneVerification";
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api",
@@ -47,6 +48,12 @@ const baseQueryWithReauth: BaseQueryFn<
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
   const result = await rawBaseQuery(args, api, extraOptions);
+
+  // The phone verification gate's 403 (a session that predates the gate
+  // being turned on): send the user to the verification screen.
+  if (result.error?.status === 403) {
+    redirectToPhoneVerificationIfRequired(result.error.status, result.error.data);
+  }
 
   if (result.error?.status !== 401 || PUBLIC_ENDPOINTS.has(api.endpoint)) {
     return result;

@@ -9,6 +9,10 @@ import {
   selectOnboardingCompleted,
 } from "@/store/slices/authSlice";
 import { waitForSessionManager } from "./providers/SessionManager";
+import {
+  PHONE_VERIFICATION_PATH,
+  isPhoneVerificationPending,
+} from "@/shared/lib/phoneVerification";
 
 interface SimpleDashboardRouterProps {
   children: React.ReactNode;
@@ -69,6 +73,13 @@ export default function SimpleDashboardRouter({
     if (!user) {
       console.log("⏳ User still loading, waiting...");
       return; // Still loading - don't redirect yet
+    }
+
+    // Phone verification first (only while the backend reports the gate on
+    // for this user): onboarding would only bounce off the gate's 403s.
+    if (isPhoneVerificationPending(user)) {
+      router.replace(PHONE_VERIFICATION_PATH);
+      return;
     }
 
     // Check onboarding status - redirect to onboarding if not onboarded

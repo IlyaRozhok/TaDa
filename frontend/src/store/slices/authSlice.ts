@@ -20,6 +20,13 @@ export interface User {
   phone?: string;
   /** ISO country of `phone`, derived by the API. */
   phone_country?: string | null;
+  /** When the phone was confirmed by SMS code; null until then. */
+  phone_verified_at?: string | null;
+  /**
+   * The backend's verdict from `/auth/me`: the verification gate is on and
+   * this user's phone is not verified. Routes them to the verification screen.
+   */
+  phone_verification_pending?: boolean;
   date_of_birth?: string;
   nationality?: string;
   avatar_url?: string;
