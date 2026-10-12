@@ -310,8 +310,6 @@ export const wizardKeys = {
     lastName: "wizard.profile.last.name",
     address: "wizard.profile.address",
     phone: "wizard.profile.phone",
-    /** Not in Localazy yet; callers pass an English fallback. */
-    phoneInvalid: "wizard.profile.phone.invalid",
     birth: {
       title: "wizard.profile.birth.title",
       text: "wizard.profile.birth.text",

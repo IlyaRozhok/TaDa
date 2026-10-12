@@ -136,17 +136,19 @@ describe("UserAdminService — updateUser phone", () => {
     );
   });
 
-  it("applies and normalises an edited phone to E.164", async () => {
-    const saved = await service.updateUser("user-1", { phone: "+44 7041 230790" });
+  it("applies and normalises an edited phone to E.164 with its country", async () => {
+    const saved = await service.updateUser("user-1", { phone: "+44 7400 883369" });
 
-    expect(saved.phone).toBe("+447041230790");
-    expect(em.save).toHaveBeenCalledWith(expect.objectContaining({ phone: "+447041230790" }));
+    expect(saved).toMatchObject({ phone: "+447400883369", phone_country: "GB" });
+    expect(em.save).toHaveBeenCalledWith(
+      expect.objectContaining({ phone: "+447400883369", phone_country: "GB" }),
+    );
   });
 
-  it("clears the phone on an empty string", async () => {
+  it("clears phone and country to NULL on an empty string", async () => {
     const saved = await service.updateUser("user-1", { phone: "" });
 
-    expect(saved.phone).toBe("");
+    expect(saved).toMatchObject({ phone: null, phone_country: null });
   });
 
   it("leaves the phone alone when the payload omits it", async () => {

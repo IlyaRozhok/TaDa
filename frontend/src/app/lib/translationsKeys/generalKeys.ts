@@ -122,8 +122,6 @@ export const generalKeys = {
     validation: {
       required: "book.call.validation.required",
       phoneTooShort: "book.call.validation.phone",
-      /** Not in Localazy yet; the modal passes an English fallback. */
-      phoneInvalid: "book.call.validation.phone.invalid",
       emailInvalid: "book.call.validation.email",
     },
   },

@@ -46,7 +46,7 @@ import { notify } from "@/shared/lib/notify";
 import { formatAreaDisplay } from "@/shared/lib/area";
 import PhoneMaskInput from "@/shared/ui/PhoneMaskInput/PhoneMaskInput";
 import { parseStoredPhone } from "@/shared/lib/countries";
-import { hasPhoneDigits, toE164 } from "@/shared/lib/phone";
+import { hasPhoneDigits, phoneErrorMessage, toE164 } from "@/shared/lib/phone";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import Footer from "../../../components/Footer";
 import {
@@ -737,7 +737,9 @@ export default function PropertyPublicPage() {
     }
 
     if (hasPhone && !phoneE164) {
-      setBookingPhoneError("Please enter a valid phone number");
+      setBookingPhoneError(
+        phoneErrorMessage(bookingPhoneNumberOnly, bookingPhoneCountryCode),
+      );
       return;
     }
 
@@ -1771,8 +1773,9 @@ export default function PropertyPublicPage() {
                       if (bookingPhoneError) setBookingPhoneError(undefined);
                     }}
                     value={bookingPhoneNumberOnly}
-                    onChange={(value) => {
+                    onChange={(value, detectedCountry) => {
                       setBookingPhoneNumberOnly(value ?? "");
+                      if (detectedCountry) setBookingPhoneCountryCode(detectedCountry);
                       if (bookingPhoneError) setBookingPhoneError(undefined);
                     }}
                     label={t(wizardKeys.profile.phone)}

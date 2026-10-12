@@ -4,10 +4,10 @@ import {
   CalendarRange,
   Mail,
   MapPin,
-  Phone,
   User,
 } from "lucide-react";
-import { BookingRequest, BookingRequestStatus } from "../types/bookingRequest";
+import PhoneLinks from "@/shared/ui/PhoneLinks/PhoneLinks";
+import { BookingRequest, BookingRequestStatus } from "@/app/types/bookingRequest";
 
 function formatRequestDate(value: string | null | undefined): string {
   if (value == null || value === "") return "—";
@@ -186,10 +186,7 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
                             </div>
                           ) : null}
                           {request.phone_number ? (
-                            <div className="flex items-center gap-2 text-black">
-                              <Phone className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                              <span>{request.phone_number}</span>
-                            </div>
+                            <PhoneLinks phone={request.phone_number} className="text-black" />
                           ) : null}
                           {!request.email && !request.phone_number ? (
                             <span className="text-xs text-gray-400">

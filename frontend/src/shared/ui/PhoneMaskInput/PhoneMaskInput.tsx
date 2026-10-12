@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown, Search } from "lucide-react";
-import { formatPhoneInput, hasPhoneDigits, isValidPhone } from "@/shared/lib/phone";
+import {
+  detectPhoneCountry,
+  formatPhoneInput,
+  hasPhoneDigits,
+  phoneErrorMessage,
+} from "@/shared/lib/phone";
 import {
   COUNTRIES,
   getCountryByCode,
@@ -12,9 +17,14 @@ import {
 
 export interface PhoneMaskInputProps {
   countryCode?: string;
-  /** The national number as shown in the field (not E.164). */
+  /** The number as shown in the field (not E.164). */
   value?: string;
-  onChange: (value: string | undefined) => void;
+  /**
+   * `detectedCountry` is set when an internationally typed number ("+33 6…",
+   * "0044 7…") belongs to another country than the selected one: the flag
+   * has already switched, and the caller should store that country too.
+   */
+  onChange: (value: string | undefined, detectedCountry?: string) => void;
   label?: string;
   placeholder?: string;
   className?: string;
@@ -22,11 +32,11 @@ export interface PhoneMaskInputProps {
   required?: boolean;
   error?: string;
   /**
-   * Shown when the field holds a number that is not valid for the selected
-   * country, once the user leaves the field. Callers that render their own
-   * phone errors leave it unset.
+   * Show the spec's inline message for the number's problem (too short, too
+   * long, not a mobile, invalid — and empty when `required`) once the user
+   * leaves the field. Callers that render their own phone errors leave it off.
    */
-  invalidMessage?: string;
+  validate?: boolean;
   onCountryChange?: (countryCode: string) => void;
 }
 
@@ -44,7 +54,7 @@ export default function PhoneMaskInput({
   disabled = false,
   required = false,
   error,
-  invalidMessage,
+  validate = false,
   onCountryChange,
 }: PhoneMaskInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
@@ -52,6 +62,9 @@ export default function PhoneMaskInput({
   );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  // Left the field at least once: from then on an empty required field is
+  // reported too, not only a wrong number.
+  const [isTouched, setIsTouched] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,18 +85,23 @@ export default function PhoneMaskInput({
     const previous = value ?? "";
     const next =
       raw.length < previous.length
-        ? raw.replace(/[^\d+\s()-]/g, "")
+        ? raw.replace(/[^\d+\s().-]/g, "")
         : formatPhoneInput(raw, selectedCountry.code);
-    onChange(next || undefined);
+
+    // "+33 6…" typed with GB selected: the flag follows the number, as long
+    // as it is a country the selector offers.
+    const detected = detectPhoneCountry(next);
+    const detectedCountry =
+      detected && detected !== selectedCountry.code ? getCountryByCode(detected) : undefined;
+    if (detectedCountry) setSelectedCountry(detectedCountry);
+
+    onChange(next || undefined, detectedCountry?.code);
   };
 
   const shownError =
     error ||
-    (invalidMessage &&
-    !isFocused &&
-    hasPhoneDigits(value) &&
-    !isValidPhone(value, selectedCountry.code)
-      ? invalidMessage
+    (validate && !isFocused && (isTouched || hasPhoneDigits(value))
+      ? phoneErrorMessage(value, selectedCountry.code, { required })
       : undefined);
 
   const handleCountryChange = (country: Country) => {
@@ -206,7 +224,10 @@ export default function PhoneMaskInput({
               required={required}
               aria-invalid={shownError ? true : undefined}
               onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => {
+                setIsFocused(false);
+                setIsTouched(true);
+              }}
               className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 ${shownError ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
             />
             <label

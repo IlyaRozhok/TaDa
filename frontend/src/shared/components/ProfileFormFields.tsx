@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { translateWithFallback, useTranslation } from "@/app/hooks/useTranslation";
+import { useTranslation } from "@/app/hooks/useTranslation";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput } from "@/shared/ui";
@@ -33,8 +33,8 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
 
   // The hook is the single writer of `formData.phone` (E.164); this only
   // reports what the field shows.
-  const handlePhoneChange = useCallback((value: string | undefined) => {
-    onPhoneChange(value || "", phoneCountryCode);
+  const handlePhoneChange = useCallback((value: string | undefined, detectedCountry?: string) => {
+    onPhoneChange(value || "", detectedCountry ?? phoneCountryCode);
   }, [phoneCountryCode, onPhoneChange]);
 
   // Clear the phone input when country changes
@@ -90,12 +90,11 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
           value={phoneNumberOnly}
           onChange={handlePhoneChange}
           onCountryChange={handleCountryChange}
-          invalidMessage={translateWithFallback(
-            t,
-            wizardKeys.profile.phoneInvalid,
-            "Enter a valid phone number",
-          )}
-          required
+          // Optional, as `validateForm` has it: an empty phone is fine, a
+          // wrong one is explained once the field loses focus. (The old
+          // `required` attribute was inert — these forms never submit
+          // natively — and would now show a "required" message.)
+          validate
         />
       </div>
 

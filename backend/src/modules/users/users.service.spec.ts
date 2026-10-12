@@ -3,7 +3,8 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 
 /**
  * Covers the phone write of `updateProfile`: whatever formatting the profile
- * form sends, the users row gets E.164, and "" still clears the number.
+ * form sends, the users row gets E.164 and its country; "" clears both to
+ * NULL (never "", which the planned E.164 CHECK constraint would reject).
  */
 describe("UsersService.updateProfile — phone", () => {
   let userRepository: { update: jest.Mock; findOne: jest.Mock };
@@ -26,29 +27,30 @@ describe("UsersService.updateProfile — phone", () => {
     );
   });
 
-  const writtenPhone = () => userRepository.update.mock.calls[0][1].phone;
+  const written = () => userRepository.update.mock.calls[0][1];
 
-  it("stores a formatted international number as E.164", async () => {
-    await service.updateProfile("user-1", { phone: "+44 7041 230790" } as UpdateUserDto);
+  it("stores a formatted international number as E.164 with its country", async () => {
+    await service.updateProfile("user-1", { phone: "+44 7123 456789" } as UpdateUserDto);
 
-    expect(writtenPhone()).toBe("+447041230790");
+    expect(written()).toMatchObject({ phone: "+447123456789", phone_country: "GB" });
   });
 
-  it("stores E.164 unchanged", async () => {
+  it("stores E.164 unchanged, country derived from the number", async () => {
     await service.updateProfile("user-1", { phone: "+4915123456789" } as UpdateUserDto);
 
-    expect(writtenPhone()).toBe("+4915123456789");
+    expect(written()).toMatchObject({ phone: "+4915123456789", phone_country: "DE" });
   });
 
-  it("clears the phone on an empty string", async () => {
+  it("clears phone and country to NULL on an empty string", async () => {
     await service.updateProfile("user-1", { phone: "" } as UpdateUserDto);
 
-    expect(writtenPhone()).toBe("");
+    expect(written()).toMatchObject({ phone: null, phone_country: null });
   });
 
   it("does not touch the phone when the payload omits it", async () => {
     await service.updateProfile("user-1", { address: "1 High St" } as UpdateUserDto);
 
-    expect(userRepository.update.mock.calls[0][1]).not.toHaveProperty("phone");
+    expect(written()).not.toHaveProperty("phone");
+    expect(written()).not.toHaveProperty("phone_country");
   });
 });

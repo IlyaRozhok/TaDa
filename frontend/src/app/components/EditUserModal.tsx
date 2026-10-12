@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
 import { parseStoredPhone } from "@/shared/lib/countries";
-import { hasPhoneDigits, toE164 } from "@/shared/lib/phone";
+import { hasPhoneDigits, phoneErrorMessage, toE164 } from "@/shared/lib/phone";
 
 interface User {
   id: string;
@@ -82,7 +82,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         ? toE164(phoneNational, phoneCountry) ?? undefined
         : "";
       if (phone === undefined) {
-        setPhoneError("Enter a valid phone number");
+        setPhoneError(phoneErrorMessage(phoneNational, phoneCountry));
         return;
       }
     }
@@ -154,13 +154,14 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 setPhoneEdited(true);
                 setPhoneError(undefined);
               }}
-              onChange={(value) => {
+              onChange={(value, detectedCountry) => {
                 setPhoneNational(value ?? "");
+                if (detectedCountry) setPhoneCountry(detectedCountry);
                 setPhoneEdited(true);
                 setPhoneError(undefined);
               }}
               error={phoneError}
-              invalidMessage="Enter a valid phone number"
+              validate
             />
           </div>
 

@@ -1,10 +1,11 @@
 import React from "react";
-import { Clock, Mail, Phone, PhoneCall, User } from "lucide-react";
+import { Clock, Mail, PhoneCall, User } from "lucide-react";
+import PhoneLinks from "@/shared/ui/PhoneLinks/PhoneLinks";
 import {
   CALL_REASON_LABELS,
   CONTACT_METHOD_LABELS,
   CallRequest,
-} from "../types/callRequest";
+} from "@/app/types/callRequest";
 
 function formatSubmitted(value: string): string {
   const d = new Date(value);
@@ -109,12 +110,6 @@ export const AdminCallRequestsSection: React.FC<
                 requests.map((request) => {
                   const preferredTime = request.preferred_time?.trim();
                   const contactEmail = request.email?.trim();
-                  const contactPhone = [
-                    request.phone_country_code,
-                    request.phone_number,
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
 
                   return (
                     <tr key={request.id} className="hover:bg-gray-50 transition">
@@ -144,11 +139,12 @@ export const AdminCallRequestsSection: React.FC<
                               <Mail className="w-3.5 h-3.5 text-gray-500 shrink-0" />
                               <span className="break-all">{contactEmail}</span>
                             </div>
-                          ) : contactPhone ? (
-                            <div className="text-xs text-gray-600 flex items-center gap-2">
-                              <Phone className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                              <span>{contactPhone}</span>
-                            </div>
+                          ) : request.phone_number ? (
+                            <PhoneLinks
+                              phone={request.phone_number}
+                              country={request.phone_country_code}
+                              className="text-xs text-gray-600"
+                            />
                           ) : (
                             <span className="text-xs text-gray-400">
                               No contact details

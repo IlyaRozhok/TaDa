@@ -211,6 +211,26 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **Phone handling, after phase 1** (added 2026-10-12). Phase 1 stores every
+  new phone as an E.164 mobile with `users.phone_country`, and adds
+  `users.phone_needs_update` for the backfill. Left for later, in order:
+  1. **Backfill** (phase 2): normalise existing `users.phone` values to E.164,
+     NULL out `""`, set `phone_country`, and set `phone_needs_update` on what
+     cannot be normalised (truncated, landline, junk — e.g. the tenant with
+     `+447041 23079`, whose missing digit is unrecoverable).
+  2. **Only then the CHECK** `phone IS NULL OR phone ~ '^\+[1-9][0-9]{7,14}$'`.
+     It cannot go in before the backfill: legacy rows violate it (4 of 10 on
+     the local DB), and `NOT VALID` is no escape — Postgres checks a CHECK on
+     every UPDATE of a row, so the refresh-token rotation on sign-in would
+     start failing for every user with a legacy phone.
+  - Strict mobile-only rejects UK `070` personal numbers (not MOBILE in
+    libphonenumber) and landlines, on every phone form including Book a call.
+  - The client (`frontend/src/shared/lib/phone.ts`) and the server
+    (`backend/src/common/phone/phone.ts`) mirror the same processing order
+    and carry the same test tables — change them together.
+  - `frontend/src/app/components/ui/SmartPhoneInput.tsx` still uses react-imask
+    masks; it is only reachable through `InputField type="tel"`, which nothing
+    renders. Delete it or move it onto `phone.ts`.
 - **Nationality aliases on the Tenant Statistics dashboard** (added
   2026-09-30). `users.nationality` mixes the dropdown's country names
   ("United Kingdom") with older free-text demonyms ("British"), so

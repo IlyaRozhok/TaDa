@@ -4,7 +4,12 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { ChevronDown, X } from "lucide-react";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
-import { hasPhoneDigits, phoneIssue, toE164 } from "@/shared/lib/phone";
+import {
+  PHONE_ISSUE_MESSAGES,
+  hasPhoneDigits,
+  phoneIssue,
+  toE164,
+} from "@/shared/lib/phone";
 import { notify } from "@/shared/lib/notify";
 import { sendCallRequest } from "../lib/callRequest";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
@@ -219,13 +224,9 @@ export default function BookACallModal({
     if (field === "phone") {
       const issue = phoneIssue(value, phoneCountry);
       if (!hasPhoneDigits(value)) message = requiredMessage();
-      else if (issue === "TOO_SHORT")
-        message = tr(generalKeys.bookACall.validation.phoneTooShort, "Too short");
-      else if (issue)
-        message = tr(
-          generalKeys.bookACall.validation.phoneInvalid,
-          "Enter a valid phone number",
-        );
+      // The spec fixes these in English (too short / too long / not a
+      // mobile / invalid), the same texts the API returns.
+      else if (issue) message = PHONE_ISSUE_MESSAGES[issue];
     }
     if (field === "email") {
       if (!value.trim()) message = requiredMessage();
@@ -619,9 +620,12 @@ export default function BookACallModal({
                       // the old value's validity says nothing about the new field.
                       setErrors((prev) => ({ ...prev, phone: "" }));
                     }}
-                    onChange={(value) => {
+                    onChange={(value, detectedCountry) => {
                       const next = value ?? "";
                       setPhone(next);
+                      // "+33 6…" typed with GB selected: the flag already
+                      // followed the number, the stored country follows too.
+                      if (detectedCountry) setPhoneCountry(detectedCountry);
                       if (touched.phone) validateField("phone", next);
                     }}
                   />

@@ -37,6 +37,8 @@ describe("toUserResponse (characterization)", () => {
       full_name: "John Doe",
       avatar_url: "https://cdn/avatar.jpg",
       phone: "+44 100",
+      // Not set on the fixture: a row saved before the column existed.
+      phone_country: null,
       provider: "google",
       google_id: "g-1",
       email_verified: true,

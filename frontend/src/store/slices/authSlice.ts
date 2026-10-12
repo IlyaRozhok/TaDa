@@ -18,6 +18,8 @@ export interface User {
   full_name?: string;
   address?: string;
   phone?: string;
+  /** ISO country of `phone`, derived by the API. */
+  phone_country?: string | null;
   date_of_birth?: string;
   nationality?: string;
   avatar_url?: string;

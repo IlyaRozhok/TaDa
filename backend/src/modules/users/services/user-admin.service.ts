@@ -21,7 +21,7 @@ import {
 import { CreateUserDto } from "../dto/create-user.dto";
 import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
 import { USER_CONSTANTS } from "@/common/constants/user.constants";
-import { normalizePhone } from "@/common/phone/phone";
+import { phoneColumns } from "@/common/phone/phone";
 import {
   NotificationEvents,
   UserRegisteredEvent,
@@ -121,9 +121,10 @@ export class UserAdminService {
     if (dto.email) user.email = dto.email.toLowerCase();
     if (dto.status) user.status = dto.status;
     if (dto.role) user.role = dto.role;
-    // The DTO always accepted `phone`; it was silently dropped here. E.164,
-    // "" clears it — the admin's way to correct a mistyped number.
-    if (dto.phone !== undefined) user.phone = normalizePhone(dto.phone) ?? "";
+    // The DTO always accepted `phone`; it was silently dropped here. E.164
+    // plus its country; "" clears both — the admin's way to correct a
+    // mistyped number.
+    if (dto.phone !== undefined) Object.assign(user, phoneColumns(dto.phone));
 
     if (dto.password) {
       user.password = await bcrypt.hash(
