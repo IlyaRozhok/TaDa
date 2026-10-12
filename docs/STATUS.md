@@ -208,8 +208,40 @@ decisions) is recorded HERE, briefly, with a date.
    Locally the dev variant `npm run geo:backfill` (ts-node, real `.env` in
    `backend/`) still works unchanged. Idempotent and resumable; rows whose
    address has no full UK postcode are reported and skipped.
+7. **SMS phone verification (phase 3)** — shipped dark; nothing changes for
+   users until step d. In order:
+   a. **Twilio:** create a Verify service; enable SMS geo permissions for
+      exactly the countries in `DEFAULT_ALLOWED_PHONE_COUNTRIES`
+      (`backend/src/modules/phone-verification/phone-verification.config.ts`)
+      or in `ALLOWED_PHONE_COUNTRIES` if set — the two lists must match.
+   b. **Host `.env` (`/opt/tada/.env`, stage then prod):** `OTP_PROVIDER=twilio`,
+      `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`,
+      `TURNSTILE_SECRET_KEY`; optionally `ALLOWED_PHONE_COUNTRIES`. Until then
+      verification answers 503 on both hosts: they run NODE_ENV=production,
+      where the 000000 stub is never used — it only runs locally and in CI.
+   c. **Cloudflare + Vercel:** create an invisible Turnstile widget for
+      ta-da.co and stage.ta-da.co; set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in
+      Vercel Production and Preview, its secret as `TURNSTILE_SECRET_KEY`.
+   d. **Only then** `PHONE_VERIFICATION_REQUIRED=true` (stage first, check the
+      flow on /app/verify-phone, then prod). Every existing user is
+      unverified and will be routed to the screen at their next request. In
+      production the backend refuses to start with the flag on but no Twilio
+      — a guard against locking everyone out.
 
 ## Open follow-ups (recorded, not scheduled)
+
+- **Phone verification, after phase 3** (added 2026-10-12).
+  - The gate covers every role, admins included: an admin without a
+    verified phone is locked out like anyone else once the flag is on.
+    Decide before step 7d whether staff should be exempt.
+  - The verification screen is English-only (the spec fixes the messages);
+    its labels are not in Localazy.
+  - The profile form still edits the phone freely; a new number clears
+    `phone_verified_at`, so with the gate on the user verifies it again.
+  - `phone_verification_events` grows by a few rows per verification and is
+    never pruned; add a retention job if it ever matters.
+  - `backend/src/modules/phone-verification/testing/in-memory-ledger.ts` is a
+    test helper that compiles into `dist/` (harmless, unused at runtime).
 
 - **Phone handling, after phase 1** (added 2026-10-12). Phase 1 stores every
   new phone as an E.164 mobile with `users.phone_country`, and adds
