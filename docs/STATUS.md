@@ -237,6 +237,20 @@ decisions) is recorded HERE, briefly, with a date.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **Stage boot crash of 2026-10-12, and the prod deploy step** (added
+  2026-10-12). Stage crash-looped on boot after its `/opt/tada/.env` stopped
+  saying `NODE_ENV=production`: the logger then chose the `pino-pretty`
+  transport, a devDependency absent from the image. The deploy reported it as
+  "Migration failed" because `docker compose exec` had no container to run in.
+  Fixed in code (5d9880f: pretty only when installed) and the staging step now
+  checks the container is up and prints its log (9079fbe). Two things remain:
+  - Keep `NODE_ENV=production` on both hosts — it drives secure cookies, CORS
+    and the log level. `SITE_ENV` is only the phone-stub guard and changes
+    nothing else.
+  - The **production** deploy step still has the old blind spot (a boot crash
+    reads as a migration failure). Give it the same container check; it was
+    left alone to avoid editing the prod deploy during an incident.
+
 - **Phone verification, after phase 3** (added 2026-10-12).
   - The gate covers every role, admins included: an admin without a
     verified phone is locked out like anyone else once the flag is on.
