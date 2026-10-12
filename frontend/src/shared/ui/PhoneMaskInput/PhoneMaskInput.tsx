@@ -28,6 +28,11 @@ export interface PhoneMaskInputProps {
   label?: string;
   placeholder?: string;
   className?: string;
+  /**
+   * Classes for the bordered field row (country selector + number) only.
+   * Framing the whole component would also frame the error line below it.
+   */
+  frameClassName?: string;
   disabled?: boolean;
   required?: boolean;
   error?: string;
@@ -51,6 +56,7 @@ export default function PhoneMaskInput({
   label,
   placeholder,
   className = "",
+  frameClassName = "",
   disabled = false,
   required = false,
   error,
@@ -133,7 +139,7 @@ export default function PhoneMaskInput({
 
   return (
     <div className={`relative ${className}`}>
-      <div className="relative flex">
+      <div className={`relative flex ${frameClassName}`}>
         {/* Country Code Selector */}
         <div className="relative min-w-[11rem] max-w-[13rem] flex-shrink-0">
           <button
@@ -239,7 +245,12 @@ export default function PhoneMaskInput({
         </div>
       </div>
 
-      {shownError && <p className="text-sm text-red-600 mt-1 px-6">{shownError}</p>}
+      {/* Below the field, never inside it, with room to breathe. */}
+      {shownError && (
+        <p role="alert" className="text-sm text-red-600 mt-3 px-6">
+          {shownError}
+        </p>
+      )}
     </div>
   );
 }

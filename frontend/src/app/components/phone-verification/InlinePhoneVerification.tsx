@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
@@ -90,6 +90,20 @@ export default function InlinePhoneVerification({
   const { containerRef, getToken } = useTurnstile();
 
   const resendIn = resendAt ? Math.max(0, Math.ceil((resendAt - now) / 1000)) : 0;
+
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the code box when it appears without letting the browser scroll
+  // the page for the keyboard (autoFocus did, which jumped the screen on
+  // mobile); only bring it into view if it is actually off-screen — as at
+  // the bottom of the onboarding form.
+  useEffect(() => {
+    if (step !== "code") return;
+    const input = codeInputRef.current;
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    input.scrollIntoView({ block: "nearest" });
+  }, [step]);
 
   // Ticks only while a countdown is running.
   useEffect(() => {
@@ -195,10 +209,14 @@ export default function InlinePhoneVerification({
         <>
           <div onKeyDown={onEnter(() => void sendCode())}>
             <PhoneMaskInput
-              className="rounded-4xl border border-gray-200"
+              // Only the field row is framed; the error renders below it.
+              frameClassName="rounded-4xl border border-gray-200"
               countryCode={country}
               value={national}
               label={phoneLabel}
+              // One error slot under the field: the API's message, or the
+              // field's own check — never both, never inside the frame.
+              error={error ?? undefined}
               validate
               onCountryChange={(next) => {
                 setCountry(next);
@@ -241,25 +259,38 @@ export default function InlinePhoneVerification({
           <p className="text-sm text-gray-600">
             Enter the 6-digit code we sent to {formatPhoneForDisplay(sentTo?.phone)}.
           </p>
-          <input
-            aria-label="Verification code"
-            autoComplete="one-time-code"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={OTP_LENGTH}
-            autoFocus
-            value={code}
-            onChange={(e) => {
-              setCode(sanitizeOtpInput(e.target.value));
-              setError(null);
-            }}
-            onKeyDown={onEnter(() => void verify())}
-            placeholder="••••••"
-            // Explicit text colour, as on every other input: inherited, the
-            // value took body's --foreground, which turns light grey under
-            // prefers-color-scheme: dark — unreadable on this white field.
-            className="w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded-4xl py-5 focus:outline-none focus:ring-2 focus:ring-black"
-          />
+          {/* The code and its error, together: the error sits below the
+              box with clear space, never inside or over it. */}
+          <div>
+            <input
+              aria-label="Verification code"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "otp-error" : undefined}
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={OTP_LENGTH}
+              ref={codeInputRef}
+              value={code}
+              onChange={(e) => {
+                setCode(sanitizeOtpInput(e.target.value));
+                setError(null);
+              }}
+              onKeyDown={onEnter(() => void verify())}
+              placeholder="••••••"
+              // Explicit text colour, as on every other input: inherited, the
+              // value took body's --foreground, which turns light grey under
+              // prefers-color-scheme: dark — unreadable on this white field.
+              className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-white border rounded-4xl py-5 focus:outline-none focus:ring-2 ${
+                error ? "border-red-400 focus:ring-red-500" : "border-gray-200 focus:ring-black"
+              }`}
+            />
+            {error && (
+              <p id="otp-error" role="alert" className="mt-3 px-6 text-sm text-red-600">
+                {error}
+              </p>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => void verify()}
@@ -292,14 +323,8 @@ export default function InlinePhoneVerification({
         </>
       )}
 
-      {error && (
-        <p role="alert" className="text-sm text-red-600">
-          {error}
-        </p>
-      )}
-
-      {/* Invisible Turnstile widget; renders nothing while it is not configured. */}
-      <div ref={containerRef} />
+      {/* Invisible Turnstile widget; takes no space while it renders nothing. */}
+      <div ref={containerRef} className="empty:hidden" />
     </div>
   );
 }

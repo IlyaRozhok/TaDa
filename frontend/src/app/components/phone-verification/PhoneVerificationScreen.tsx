@@ -21,16 +21,21 @@ export default function PhoneVerificationScreen() {
   const user = useSelector(selectUser);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="bg-white">
       {/* The onboarding header (logo, language, user menu with sign-out):
           verification is the first step of the same flow. */}
       <OnboardingHeader />
 
-      <main className="min-h-screen bg-white flex items-center justify-center px-4 pt-24 pb-12">
-        <div className="w-full max-w-md space-y-6">
+      {/* Mobile: exactly the visible viewport (dvh, not vh — 100vh is taller
+          than the screen under the browser bars, which made the page scroll),
+          content anchored under the header rather than centred, so opening
+          the numeric keyboard shrinks the viewport without the heading, code
+          box and actions jumping. Centred on larger screens. */}
+      <main className="min-h-[100dvh] bg-white flex justify-center items-start sm:items-center px-4 pt-20 sm:pt-24 pb-6 overscroll-none">
+        <div className="w-full max-w-md space-y-5 sm:space-y-6">
           {/* TODO(localazy): hardcoded English for now, like the flow below. */}
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-semibold text-black">Verify your phone</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-black">Verify your phone</h1>
             <p className="text-gray-600">We&apos;ll text you a 6-digit code to confirm your mobile number.</p>
           </div>
 
