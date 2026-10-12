@@ -1,8 +1,11 @@
 import {
   DEFAULT_ALLOWED_PHONE_COUNTRIES,
   allowedPhoneCountries,
+  isDeployedBuild,
+  isProductionSite,
   otpProviderName,
   phoneVerificationRequired,
+  requestedOtpProvider,
   twilioCredentials,
 } from "./phone-verification.config";
 
@@ -32,6 +35,30 @@ describe("phoneVerificationRequired", () => {
     expect(phoneVerificationRequired({ PHONE_VERIFICATION_REQUIRED: "false" })).toBe(false);
     expect(phoneVerificationRequired({ PHONE_VERIFICATION_REQUIRED: "1" })).toBe(false);
     expect(phoneVerificationRequired({ PHONE_VERIFICATION_REQUIRED: " TRUE " })).toBe(true);
+  });
+});
+
+describe("isProductionSite / isDeployedBuild", () => {
+  it("is production only with SITE_ENV=production, whatever NODE_ENV says", () => {
+    expect(isProductionSite({ SITE_ENV: "production" })).toBe(true);
+    expect(isProductionSite({ SITE_ENV: " PRODUCTION " })).toBe(true);
+    expect(isProductionSite({ NODE_ENV: "production" })).toBe(false);
+    expect(isProductionSite({ SITE_ENV: "staging", NODE_ENV: "production" })).toBe(false);
+    expect(isProductionSite({})).toBe(false);
+  });
+
+  it("treats NODE_ENV=production as a deployed build (stage or prod)", () => {
+    expect(isDeployedBuild({ NODE_ENV: "production" })).toBe(true);
+    expect(isDeployedBuild({ NODE_ENV: "development" })).toBe(false);
+  });
+});
+
+describe("requestedOtpProvider", () => {
+  it("names twilio or stub, else null", () => {
+    expect(requestedOtpProvider({ OTP_PROVIDER: " Twilio " })).toBe("twilio");
+    expect(requestedOtpProvider({ OTP_PROVIDER: "stub" })).toBe("stub");
+    expect(requestedOtpProvider({ OTP_PROVIDER: "aws" })).toBeNull();
+    expect(requestedOtpProvider({})).toBeNull();
   });
 });
 

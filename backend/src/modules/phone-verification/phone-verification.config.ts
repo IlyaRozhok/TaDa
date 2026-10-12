@@ -3,7 +3,9 @@
  * restart is the only thing a change needs (and tests can set them freely).
  *
  * Env (server-only):
- * - OTP_PROVIDER                 "twilio" | "stub" — anything else is "stub"
+ * - SITE_ENV                     "production" on the production host only —
+ *                                the stub is refused there (see isProductionSite)
+ * - OTP_PROVIDER                 "twilio" | "stub" (see otp-provider.factory.ts)
  * - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID
  * - PHONE_VERIFICATION_REQUIRED  "true" turns the login gate on; default off
  * - TURNSTILE_SECRET_KEY         unset → the captcha check is skipped
@@ -47,12 +49,29 @@ export const isPhoneVerificationPending = (
   env: Env = process.env,
 ): boolean => phoneVerificationRequired(env) && !user?.phone_verified_at;
 
-/** Production as the app understands it everywhere else (cookies, logging, CORS). */
-export const isProduction = (env: Env = process.env): boolean => env.NODE_ENV === "production";
+/**
+ * The explicit "this is real production" signal: `SITE_ENV=production`, set
+ * on the production host only. It mirrors the frontend's
+ * `NEXT_PUBLIC_SITE_ENV` (production on Vercel Production, nothing
+ * elsewhere — see frontend/src/app/lib/siteEnv.ts). `NODE_ENV` cannot serve:
+ * stage runs NODE_ENV=production too (secure cookies, JSON logs), and stage
+ * must be able to run the stub.
+ */
+export const isProductionSite = (env: Env = process.env): boolean =>
+  env.SITE_ENV?.trim().toLowerCase() === "production";
+
+/** A deployed build — stage or production, which both run NODE_ENV=production. */
+export const isDeployedBuild = (env: Env = process.env): boolean => env.NODE_ENV === "production";
+
+/** OTP_PROVIDER as set: "twilio" or "stub" by name, null when unset or unrecognised. */
+export function requestedOtpProvider(env: Env = process.env): "twilio" | "stub" | null {
+  const value = env.OTP_PROVIDER?.trim().toLowerCase();
+  return value === "twilio" || value === "stub" ? value : null;
+}
 
 /** The configured provider: "twilio" only when asked for by name. */
 export const otpProviderName = (env: Env = process.env): "twilio" | "stub" =>
-  env.OTP_PROVIDER?.trim().toLowerCase() === "twilio" ? "twilio" : "stub";
+  requestedOtpProvider(env) === "twilio" ? "twilio" : "stub";
 
 /** Twilio credentials, or the names of the ones missing. */
 export function twilioCredentials(

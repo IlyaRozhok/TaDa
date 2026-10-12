@@ -33,16 +33,24 @@ beforeAll(() => {
   jest.spyOn(Logger.prototype, "error").mockImplementation(() => undefined);
 });
 
+// Hosts as deployed: both run NODE_ENV=production; only prod sets SITE_ENV.
+const LOCAL = { NODE_ENV: "development" };
+const STAGE = { NODE_ENV: "production" };
+const PROD = { NODE_ENV: "production", SITE_ENV: "production" };
+
 describe("createOtpProvider — selection", () => {
-  it("defaults to the stub when OTP_PROVIDER is unset or not twilio", () => {
-    expect(createOtpProvider({ NODE_ENV: "development" })).toBeInstanceOf(StubOtpProvider);
+  it("runs the stub locally when OTP_PROVIDER is unset, stub or unrecognised", () => {
+    expect(createOtpProvider(LOCAL)).toBeInstanceOf(StubOtpProvider);
     expect(createOtpProvider({ NODE_ENV: "test", OTP_PROVIDER: "stub" })).toBeInstanceOf(StubOtpProvider);
-    expect(createOtpProvider({ NODE_ENV: "development", OTP_PROVIDER: "sms" })).toBeInstanceOf(StubOtpProvider);
+    expect(createOtpProvider({ ...LOCAL, OTP_PROVIDER: "sms" })).toBeInstanceOf(StubOtpProvider);
   });
 
-  it("builds Twilio Verify when asked for by name with full credentials", () => {
-    const provider = createOtpProvider({ ...TWILIO_ENV, NODE_ENV: "production" }, twilioDouble().client);
-    expect(provider).toBeInstanceOf(TwilioVerifyOtpProvider);
+  it.each([
+    ["local", LOCAL],
+    ["stage", STAGE],
+    ["prod", PROD],
+  ])("builds Twilio Verify on %s when asked for by name", (_host, env) => {
+    expect(createOtpProvider({ ...env, ...TWILIO_ENV }, twilioDouble().client)).toBeInstanceOf(TwilioVerifyOtpProvider);
   });
 
   it("refuses to start with OTP_PROVIDER=twilio and missing credentials", () => {
@@ -52,34 +60,65 @@ describe("createOtpProvider — selection", () => {
   });
 });
 
-describe("createOtpProvider — the stub never runs in production", () => {
-  it.each([{}, { OTP_PROVIDER: "stub" }, { OTP_PROVIDER: "" }])(
-    "production with %j gets the disabled provider, not the stub",
-    (env) => {
-      const provider = createOtpProvider({ NODE_ENV: "production", ...env });
-      expect(provider).toBeInstanceOf(DisabledOtpProvider);
-      expect(provider).not.toBeInstanceOf(StubOtpProvider);
-    },
-  );
+describe("createOtpProvider — stage can run the stub (NODE_ENV=production is not the prod signal)", () => {
+  it("boots stage in stub mode with OTP_PROVIDER=stub", () => {
+    expect(createOtpProvider({ ...STAGE, OTP_PROVIDER: "stub" })).toBeInstanceOf(StubOtpProvider);
+  });
+
+  it("lets stage test the gate on the stub", () => {
+    expect(
+      createOtpProvider({ ...STAGE, OTP_PROVIDER: "stub", PHONE_VERIFICATION_REQUIRED: "true" }),
+    ).toBeInstanceOf(StubOtpProvider);
+  });
+
+  it("does not choose the stub for a deployed host by default: unset means disabled", () => {
+    // Fail-safe: a production host that lost SITE_ENV must not accept 000000.
+    expect(createOtpProvider(STAGE)).toBeInstanceOf(DisabledOtpProvider);
+    expect(createOtpProvider({ ...STAGE, OTP_PROVIDER: "sms" })).toBeInstanceOf(DisabledOtpProvider);
+  });
+});
+
+describe("createOtpProvider — the stub never runs with SITE_ENV=production", () => {
+  it("refuses to start when the stub is asked for in production", () => {
+    expect(() => createOtpProvider({ ...PROD, OTP_PROVIDER: "stub" })).toThrow(
+      /never allowed in production; refusing to start/,
+    );
+    expect(() => createOtpProvider({ ...PROD, SITE_ENV: " Production ", OTP_PROVIDER: "Stub" })).toThrow(
+      /refusing to start/,
+    );
+  });
+
+  it("disables verification in production while no provider is configured", () => {
+    const provider = createOtpProvider(PROD);
+    expect(provider).toBeInstanceOf(DisabledOtpProvider);
+    expect(provider).not.toBeInstanceOf(StubOtpProvider);
+  });
+
+  it("keys off SITE_ENV, not NODE_ENV: SITE_ENV=production refuses the stub even without NODE_ENV", () => {
+    expect(() => createOtpProvider({ SITE_ENV: "production", OTP_PROVIDER: "stub" })).toThrow(/refusing to start/);
+  });
 
   it("the disabled provider accepts nothing, 000000 included", async () => {
-    const provider = createOtpProvider({ NODE_ENV: "production" });
+    const provider = createOtpProvider(PROD);
     await expect(provider.sendCode("+447123456789")).resolves.toEqual({ status: "failed", reason: "unavailable" });
     await expect(provider.checkCode("+447123456789", STUB_OTP_CODE)).resolves.toEqual({
       status: "failed",
       reason: "unavailable",
     });
   });
+});
 
-  it("refuses to start in production with the gate on and no real provider", () => {
-    expect(() =>
-      createOtpProvider({ NODE_ENV: "production", PHONE_VERIFICATION_REQUIRED: "true" }),
-    ).toThrow(/refusing to start/);
+describe("createOtpProvider — the gate never starts without a way to verify", () => {
+  it.each([
+    ["prod", PROD],
+    ["stage with no provider", STAGE],
+  ])("refuses to start on %s with the gate on", (_host, env) => {
+    expect(() => createOtpProvider({ ...env, PHONE_VERIFICATION_REQUIRED: "true" })).toThrow(/lock every user out/);
   });
 
   it("starts in production with the gate on once Twilio is configured", () => {
     const provider = createOtpProvider(
-      { ...TWILIO_ENV, NODE_ENV: "production", PHONE_VERIFICATION_REQUIRED: "true" },
+      { ...PROD, ...TWILIO_ENV, PHONE_VERIFICATION_REQUIRED: "true" },
       twilioDouble().client,
     );
     expect(provider).toBeInstanceOf(TwilioVerifyOtpProvider);

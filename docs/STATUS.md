@@ -214,11 +214,18 @@ decisions) is recorded HERE, briefly, with a date.
       exactly the countries in `DEFAULT_ALLOWED_PHONE_COUNTRIES`
       (`backend/src/modules/phone-verification/phone-verification.config.ts`)
       or in `ALLOWED_PHONE_COUNTRIES` if set — the two lists must match.
-   b. **Host `.env` (`/opt/tada/.env`, stage then prod):** `OTP_PROVIDER=twilio`,
-      `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`,
-      `TURNSTILE_SECRET_KEY`; optionally `ALLOWED_PHONE_COUNTRIES`. Until then
-      verification answers 503 on both hosts: they run NODE_ENV=production,
-      where the 000000 stub is never used — it only runs locally and in CI.
+   b. **Host `.env` (`/opt/tada/.env`):**
+      - **prod:** `SITE_ENV=production` — set it before the release that
+        carries phase 3. It is the only production signal the stub guard
+        reads (NODE_ENV is production on stage too). Then `OTP_PROVIDER=twilio`
+        + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`,
+        `TURNSTILE_SECRET_KEY`; optionally `ALLOWED_PHONE_COUNTRIES`. Without
+        Twilio, prod verification answers 503; `OTP_PROVIDER=stub` there
+        refuses to start.
+      - **stage:** `OTP_PROVIDER=stub` to test the whole flow with code 000000
+        and no SMS (no `SITE_ENV`). Left unset, stage answers 503 — a deployed
+        host gets the stub only when it asks for it by name. Switch to the
+        Twilio values once they exist.
    c. **Cloudflare + Vercel:** create an invisible Turnstile widget for
       ta-da.co and stage.ta-da.co; set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in
       Vercel Production and Preview, its secret as `TURNSTILE_SECRET_KEY`.
