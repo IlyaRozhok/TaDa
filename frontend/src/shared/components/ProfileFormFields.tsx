@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useCallback } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "@/app/hooks/useTranslation";
-import { formatPhoneForDisplay } from "@/shared/lib/phone";
 import { phoneVerificationHref } from "@/shared/lib/phoneVerification";
+import InlinePhoneVerification from "@/app/components/phone-verification/InlinePhoneVerification";
+import VerifiedPhoneField from "@/app/components/phone-verification/VerifiedPhoneField";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput } from "@/shared/ui";
@@ -18,6 +18,13 @@ interface ProfileFormFieldsProps {
   phoneNumberOnly: string;
   /** The SMS-verified number (E.164): shown read-only instead of the input. */
   verifiedPhone?: string | null;
+  /**
+   * "link" (profile page): the phone field sits with the other fields, and a
+   * verified number links to /app/verify-phone to change it. "inline"
+   * (onboarding): a "Verify your phone" section at the bottom runs the whole
+   * verification in place.
+   */
+  phoneVerification?: "link" | "inline";
   dateOfBirthError: string | null;
   onInputChange: (field: keyof UpdateUserData, value: string) => void;
   onPhoneChange: (phoneNumber: string, countryCode: string) => void;
@@ -30,6 +37,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
   phoneCountryCode,
   phoneNumberOnly,
   verifiedPhone,
+  phoneVerification = "link",
   dateOfBirthError,
   onInputChange,
   onPhoneChange,
@@ -91,46 +99,33 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
         />
       </div>
 
-      {/* Phone: a verified number is shown, not asked for again. It changes
-          only by re-verifying, never inline. */}
-      <div className="mb-6">
-        {verifiedPhone ? (
-          <div className="relative w-full px-6 pt-8 pb-4 rounded-4xl bg-white">
-            <span className="absolute left-6 top-3 text-xs text-gray-600">
-              {t(wizardKeys.profile.phone)}
-            </span>
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 min-w-0">
-                <span className="text-gray-900 truncate" aria-readonly="true">
-                  {formatPhoneForDisplay(verifiedPhone)}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 flex-shrink-0">
-                  Verified ✓
-                </span>
-              </span>
-              <Link
-                href={phoneVerificationHref(pathname)}
-                className="text-sm text-gray-700 underline-offset-2 hover:underline flex-shrink-0"
-              >
-                Change number
-              </Link>
-            </div>
-          </div>
-        ) : (
-        <PhoneMaskInput
-          countryCode={phoneCountryCode}
-          label={t(wizardKeys.profile.phone)}
-          value={phoneNumberOnly}
-          onChange={handlePhoneChange}
-          onCountryChange={handleCountryChange}
-          // Optional, as `validateForm` has it: an empty phone is fine, a
-          // wrong one is explained once the field loses focus. (The old
-          // `required` attribute was inert — these forms never submit
-          // natively — and would now show a "required" message.)
-          validate
-        />
-        )}
-      </div>
+      {/* Phone (profile page): a verified number is shown, not asked for
+          again; it changes only by re-verifying on the verification screen.
+          The onboarding form verifies inline at the bottom instead. */}
+      {phoneVerification === "link" && (
+        <div className="mb-6">
+          {verifiedPhone ? (
+            <VerifiedPhoneField
+              phone={verifiedPhone}
+              label={t(wizardKeys.profile.phone)}
+              changeHref={phoneVerificationHref(pathname)}
+            />
+          ) : (
+            <PhoneMaskInput
+              countryCode={phoneCountryCode}
+              label={t(wizardKeys.profile.phone)}
+              value={phoneNumberOnly}
+              onChange={handlePhoneChange}
+              onCountryChange={handleCountryChange}
+              // Optional, as `validateForm` has it: an empty phone is fine, a
+              // wrong one is explained once the field loses focus. (The old
+              // `required` attribute was inert — these forms never submit
+              // natively — and would now show a "required" message.)
+              validate
+            />
+          )}
+        </div>
+      )}
 
       {/* Date of Birth */}
       <div className="mb-6">
@@ -168,6 +163,24 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
         />
       </div>
 
+      {/* Onboarding: send → code → verified, in place at the bottom of the
+          form — no route change. Once verified the number is read-only and
+          every save carries it unchanged (useUnifiedProfile), so the phone is
+          collected once. Without verification (gate off) the typed number
+          still reaches the hook and is saved as before. */}
+      {phoneVerification === "inline" && (
+        <section className="mb-6">
+          {/* TODO(localazy): hardcoded English for now. */}
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Verify your phone</h3>
+          <InlinePhoneVerification
+            verifiedPhone={verifiedPhone ?? null}
+            initialPhone={formData.phone}
+            phoneLabel="Phone Number"
+            sendLabel="Verify"
+            onNumberChange={(national, country) => onPhoneChange(national, country)}
+          />
+        </section>
+      )}
     </div>
   );
 };

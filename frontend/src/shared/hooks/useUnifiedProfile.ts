@@ -7,7 +7,7 @@ import { authAPI } from "@/app/lib/api";
 import { updateUser } from "@/store/slices/authSlice";
 import { getDefaultCountry, parseStoredPhone } from "@/shared/lib/countries";
 import { hasPhoneDigits, isValidPhone, toE164 } from "@/shared/lib/phone";
-import { verifiedPhoneOf } from "@/shared/lib/phoneVerification";
+import { isPhoneVerificationPending, verifiedPhoneOf } from "@/shared/lib/phoneVerification";
 
 interface UseUnifiedProfileOptions {
   onSuccess?: () => void;
@@ -78,6 +78,8 @@ export const useUnifiedProfile = (
   // Track which user snapshot we've already initialized from, to avoid
   // resetting the form mid-edit when the parent re-renders with the same user.
   const initializedForRef = useRef<string | null>(null);
+  // The phone the form last took from the user, synced on its own (below).
+  const phoneSyncedRef = useRef<string | null>(null);
 
   // Re-initialize form when user data actually changes (e.g. after save).
   useEffect(() => {
@@ -85,28 +87,43 @@ export const useUnifiedProfile = (
 
     // Build a key from the profile fields that live in the users table.
     // The effect only fires when these values actually change (e.g. after a save).
+    // The phone is not part of it: verifying inline changes the stored phone
+    // mid-form, and a full re-init would wipe what the user has typed into
+    // the other fields but not saved yet.
     const key = [
       user.id,
       user.updated_at,
       user.first_name,
       user.last_name,
       user.address,
-      user.phone,
       user.date_of_birth,
       user.nationality,
     ].join("|");
+    const phone = getProfilePhone(user);
 
-    if (initializedForRef.current === key) return;
-    initializedForRef.current = key;
+    if (initializedForRef.current !== key) {
+      initializedForRef.current = key;
+      phoneSyncedRef.current = phone;
 
-    const newFormData = buildFormDataFromUser(user as any);
-    setFormData(newFormData);
-    setHasChanges(false);
-    setDateOfBirthError(null);
+      const newFormData = buildFormDataFromUser(user as any);
+      setFormData(newFormData);
+      setHasChanges(false);
+      setDateOfBirthError(null);
 
-    const { countryCode, numberOnly } = parsePhone(getProfilePhone(user));
-    setPhoneCountryCode(countryCode);
-    setPhoneNumberOnly(numberOnly);
+      const { countryCode, numberOnly } = parsePhone(phone);
+      setPhoneCountryCode(countryCode);
+      setPhoneNumberOnly(numberOnly);
+      return;
+    }
+
+    // Only the phone changed (verified inline): take it, keep everything else.
+    if (phoneSyncedRef.current !== phone) {
+      phoneSyncedRef.current = phone;
+      setFormData((prev) => ({ ...prev, phone }));
+      const { countryCode, numberOnly } = parsePhone(phone);
+      setPhoneCountryCode(countryCode);
+      setPhoneNumberOnly(numberOnly);
+    }
   }, [user]);
 
   const parsePhoneNumber = useCallback((phoneNumber: string) => {
@@ -160,6 +177,9 @@ export const useUnifiedProfile = (
     const { first_name, last_name, date_of_birth } = formData;
     if (!first_name?.trim() || !last_name?.trim()) return false;
     if (!date_of_birth) return false;
+    // While the verification gate is on for this user, the form cannot be
+    // saved until the phone is verified (inline, in the same form).
+    if (isPhoneVerificationPending(user)) return false;
     // Phone stays optional, but a number that is there must be complete.
     // A verified number is not edited here, so there is nothing to check.
     if (
@@ -176,7 +196,7 @@ export const useUnifiedProfile = (
     const monthDiff = today.getMonth() - date.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) age--;
     return age >= 18 && age <= 100;
-  }, [formData, phoneNumberOnly, phoneCountryCode, verifiedPhone]);
+  }, [formData, phoneNumberOnly, phoneCountryCode, verifiedPhone, user]);
 
   const saveProfile = useCallback(
     async (overrideData?: Partial<UpdateUserData>): Promise<boolean> => {

@@ -49,13 +49,18 @@ export function safeReturnPath(raw: string | null | undefined): string | null {
   return path === PHONE_VERIFICATION_PATH ? null : raw;
 }
 
-/** Pages the gate never redirects away from: the screen itself and sign-in. */
+/** Onboarding, where a new user verifies inline in the registration form. */
+export const ONBOARDING_PATH = "/app/onboarding";
+
+const isUnder = (pathname: string, base: string) => pathname === base || pathname.startsWith(`${base}/`);
+
+/**
+ * Pages the gate never redirects away from: the verification screen, sign-in,
+ * and onboarding — new users verify there, inline, before saving anything.
+ */
 export const isPhoneVerificationExempt = (pathname: string | null | undefined): boolean =>
   !!pathname &&
-  (pathname === PHONE_VERIFICATION_PATH ||
-    pathname.startsWith(`${PHONE_VERIFICATION_PATH}/`) ||
-    pathname === "/app/auth" ||
-    pathname.startsWith("/app/auth/"));
+  (isUnder(pathname, PHONE_VERIFICATION_PATH) || isUnder(pathname, "/app/auth") || isUnder(pathname, ONBOARDING_PATH));
 
 /**
  * True when an API answer is the gate's 403 and the user is not already on

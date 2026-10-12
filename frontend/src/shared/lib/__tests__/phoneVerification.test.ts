@@ -27,12 +27,21 @@ describe("the gate's verdict", () => {
     expect(isPhoneVerificationPending(null)).toBe(false);
   });
 
-  it("never redirects away from the screen itself or sign-in", () => {
+  it("never redirects away from the screen itself, sign-in or onboarding", () => {
     expect(isPhoneVerificationExempt(PHONE_VERIFICATION_PATH)).toBe(true);
     expect(isPhoneVerificationExempt("/app/auth")).toBe(true);
     expect(isPhoneVerificationExempt("/app/auth/callback")).toBe(true);
+    // New users verify inline in the onboarding form.
+    expect(isPhoneVerificationExempt("/app/onboarding")).toBe(true);
     expect(isPhoneVerificationExempt("/app/units")).toBe(false);
     expect(isPhoneVerificationExempt("/app/authors")).toBe(false);
+    expect(isPhoneVerificationExempt("/app/onboardingx")).toBe(false);
+  });
+
+  it("does not bounce a gate 403 off onboarding to the standalone screen", () => {
+    expect(
+      shouldRedirectToPhoneVerification(403, { code: "PHONE_VERIFICATION_REQUIRED" }, "/app/onboarding"),
+    ).toBe(false);
   });
 
   it("redirects on the gate's 403 only", () => {
