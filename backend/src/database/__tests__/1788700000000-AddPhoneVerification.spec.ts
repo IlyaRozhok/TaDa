@@ -1,4 +1,4 @@
-import { AddPhoneVerification1788700000000 } from "./1788700000000-AddPhoneVerification";
+import { AddPhoneVerification1788700000000 } from "@/database/migrations/1788700000000-AddPhoneVerification";
 
 /**
  * Pins the shape of the phase-3 migration without a database (it was also
