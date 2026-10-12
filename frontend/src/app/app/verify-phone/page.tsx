@@ -32,7 +32,7 @@ export default function VerifyPhonePage() {
 
   if (!sessionReady || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-300 border-t-black" />
       </div>
     );

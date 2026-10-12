@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getCountryCallingCode, type CountryCode } from "libphonenumber-js/max";
 
 import {
   PHONE_ISSUE_MESSAGES,
@@ -70,6 +71,59 @@ describe("processPhone — real cases", () => {
 
   it("rejects abc123", () => {
     expect(processPhone("abc123", "GB")).toMatchObject({ e164: null, issue: "INVALID" });
+  });
+});
+
+/**
+ * The dropdown country and the number field are separate: the number must be
+ * parsed as a NATIONAL number of the selected country (libphonenumber drops
+ * the trunk "0"), never glued onto the dial code — "+380" + "0934839253"
+ * would be the invalid "+3800934839253".
+ */
+describe("trunk prefix with a separate country dropdown", () => {
+  it.each([
+    // [country, as typed, E.164]
+    ["UA", "0934839253", "+380934839253"],
+    ["UA", "093 483 9253", "+380934839253"],
+    ["UA", "(093) 483-92-53", "+380934839253"],
+    ["UA", "934839253", "+380934839253"],
+    ["GB", "07400 883369", "+447400883369"],
+    ["FR", "06 12 34 56 78", "+33612345678"],
+    ["DE", "01512 3456789", "+4915123456789"],
+    ["IE", "085 123 4567", "+353851234567"],
+    ["NL", "06 12345678", "+31612345678"],
+    ["AT", "0664 1234567", "+436641234567"],
+    ["RO", "0712 345 678", "+40712345678"],
+    ["PL", "512 345 678", "+48512345678"],
+  ])("%s %s → %s", (country, typed, e164) => {
+    expect(processPhone(typed, country)).toEqual({ e164, country });
+    expect(toE164(typed, country)).toBe(e164);
+    // The trunk 0 never survives behind the calling code ("+3800…", "+440…").
+    expect(e164.startsWith(`+${getCountryCallingCode(country as CountryCode)}0`)).toBe(false);
+  });
+
+  it.each([
+    "0934839253",
+    "093 483 9253",
+    "+380934839253",
+    "+380 93 483 9253",
+    "380934839253",
+    "00380934839253",
+    "+380 (0)93 483 9253",
+  ])("UA selected, %s → +380934839253 (no double code, no kept trunk 0)", (typed) => {
+    expect(toE164(typed, "UA")).toBe("+380934839253");
+  });
+
+  it("formats what the field shows without breaking the conversion", () => {
+    const shown = formatPhoneInput("0934839253", "UA");
+    expect(shown.replace(/\D/g, "")).toBe("0934839253");
+    expect(toE164(shown, "UA")).toBe("+380934839253");
+  });
+
+  it("round-trips a stored UA number through the field", () => {
+    const parsed = parseStoredPhone("+380934839253");
+    expect(parsed?.country.code).toBe("UA");
+    expect(toE164(parsed!.nationalNumber, "UA")).toBe("+380934839253");
   });
 });
 

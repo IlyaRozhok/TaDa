@@ -23,9 +23,9 @@ import {
   useSendPhoneCodeMutation,
   useVerifyPhoneCodeMutation,
 } from "@/store/api/phoneVerification.api";
-import { logout, selectUser, updateUser } from "@/store/slices/authSlice";
-import { authAPI } from "@/app/lib/api";
+import { selectUser, updateUser } from "@/store/slices/authSlice";
 import { redirectAfterLogin } from "@/app/utils/simpleRedirect";
+import OnboardingHeader from "@/app/components/onboarding/OnboardingHeader";
 
 type Step = "phone" | "code";
 
@@ -140,131 +140,124 @@ export default function PhoneVerificationScreen() {
     }
   };
 
-  const signOut = async () => {
-    try {
-      await authAPI.logout();
-    } finally {
-      dispatch(logout());
-      router.replace("/");
-    }
-  };
-
   return (
-    <main className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-semibold text-black">Verify your phone</h1>
-          <p className="text-gray-600">
-            {step === "phone"
-              ? "We'll text you a 6-digit code to confirm your mobile number."
-              : `Enter the 6-digit code we sent to ${formatPhoneForDisplay(sentTo?.phone)}.`}
-          </p>
-        </div>
+    <div className="min-h-screen bg-white">
+      {/* The onboarding header (logo, language, user menu with sign-out):
+          verification is the first step of the same flow. */}
+      <OnboardingHeader />
 
-        {step === "phone" ? (
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void sendCode();
-            }}
-          >
-            <PhoneMaskInput
-              countryCode={country}
-              value={national}
-              label="Mobile number"
-              required
-              validate
-              onCountryChange={(code) => {
-                setCountry(code);
-                setError(null);
+      <main className="min-h-screen bg-white flex items-center justify-center px-4 pt-24 pb-12">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-semibold text-black">Verify your phone</h1>
+            <p className="text-gray-600">
+              {step === "phone"
+                ? "We'll text you a 6-digit code to confirm your mobile number."
+                : `Enter the 6-digit code we sent to ${formatPhoneForDisplay(sentTo?.phone)}.`}
+            </p>
+          </div>
+
+          {step === "phone" ? (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void sendCode();
               }}
-              onChange={(value, detectedCountry) => {
-                setNational(value ?? "");
-                if (detectedCountry) setCountry(detectedCountry);
-                setError(null);
-              }}
-            />
-            <button
-              type="submit"
-              disabled={isSending || resendIn > 0}
-              className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSending ? "Sending…" : resendIn > 0 ? `Send code in ${formatCountdown(resendIn)}` : "Send code"}
-            </button>
-          </form>
-        ) : (
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void verify();
-            }}
-          >
-            <input
-              aria-label="Verification code"
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={OTP_LENGTH}
-              autoFocus
-              value={code}
-              onChange={(e) => {
-                setCode(sanitizeOtpInput(e.target.value));
-                setError(null);
-              }}
-              placeholder="••••••"
-              // Explicit text colour, as on every other input: inherited, the
-              // value took body's --foreground, which turns light grey under
-              // prefers-color-scheme: dark — unreadable on this white field.
-              className="w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-white rounded-4xl py-5 focus:outline-none focus:ring-2 focus:ring-black"
-            />
-            <button
-              type="submit"
-              disabled={!isCompleteOtp(code) || isVerifying}
-              className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isVerifying ? "Verifying…" : "Verify"}
-            </button>
-            <div className="flex items-center justify-between text-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  setStep("phone");
-                  setCode("");
+              <PhoneMaskInput
+                // Framed: its white field would vanish on the white page.
+                className="rounded-4xl border border-gray-200"
+                countryCode={country}
+                value={national}
+                label="Mobile number"
+                required
+                validate
+                onCountryChange={(code) => {
+                  setCountry(code);
                   setError(null);
                 }}
-                className="text-gray-700 underline-offset-2 hover:underline cursor-pointer"
-              >
-                Change number
-              </button>
+                onChange={(value, detectedCountry) => {
+                  setNational(value ?? "");
+                  if (detectedCountry) setCountry(detectedCountry);
+                  setError(null);
+                }}
+              />
               <button
-                type="button"
-                onClick={() => void sendCode()}
-                disabled={resendIn > 0 || isSending}
-                className="text-black font-medium underline-offset-2 hover:underline cursor-pointer disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                type="submit"
+                disabled={isSending || resendIn > 0}
+                className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {resendIn > 0 ? `Resend code in ${formatCountdown(resendIn)}` : "Resend code"}
+                {isSending ? "Sending…" : resendIn > 0 ? `Send code in ${formatCountdown(resendIn)}` : "Send code"}
               </button>
-            </div>
-          </form>
-        )}
+            </form>
+          ) : (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void verify();
+              }}
+            >
+              <input
+                aria-label="Verification code"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={OTP_LENGTH}
+                autoFocus
+                value={code}
+                onChange={(e) => {
+                  setCode(sanitizeOtpInput(e.target.value));
+                  setError(null);
+                }}
+                placeholder="••••••"
+                // Explicit text colour, as on every other input: inherited, the
+                // value took body's --foreground, which turns light grey under
+                // prefers-color-scheme: dark — unreadable on this white field.
+                className="w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded-4xl py-5 focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <button
+                type="submit"
+                disabled={!isCompleteOtp(code) || isVerifying}
+                className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isVerifying ? "Verifying…" : "Verify"}
+              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("phone");
+                    setCode("");
+                    setError(null);
+                  }}
+                  className="text-gray-700 underline-offset-2 hover:underline cursor-pointer"
+                >
+                  Change number
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void sendCode()}
+                  disabled={resendIn > 0 || isSending}
+                  className="text-black font-medium underline-offset-2 hover:underline cursor-pointer disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                >
+                  {resendIn > 0 ? `Resend code in ${formatCountdown(resendIn)}` : "Resend code"}
+                </button>
+              </div>
+            </form>
+          )}
 
-        {error && (
-          <p role="alert" className="text-sm text-red-600 text-center">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p role="alert" className="text-sm text-red-600 text-center">
+              {error}
+            </p>
+          )}
 
-        {/* Invisible Turnstile widget; renders nothing while it is not configured. */}
-        <div ref={containerRef} />
-
-        <p className="text-center text-sm text-gray-500">
-          <button type="button" onClick={() => void signOut()} className="underline-offset-2 hover:underline cursor-pointer">
-            Sign out
-          </button>
-        </p>
-      </div>
-    </main>
+          {/* Invisible Turnstile widget; renders nothing while it is not configured. */}
+          <div ref={containerRef} />
+        </div>
+      </main>
+    </div>
   );
 }

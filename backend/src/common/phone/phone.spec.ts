@@ -63,6 +63,41 @@ describe("processPhone — real cases", () => {
   });
 });
 
+/**
+ * Mirrors the frontend's trunk-prefix table: a national number of the
+ * selected country loses its trunk "0" — "+380" + "0934839253" is
+ * +380934839253, never the invalid "+3800934839253".
+ */
+describe("processPhone — trunk prefix with a separate country", () => {
+  it.each([
+    ["UA", "0934839253", "+380934839253"],
+    ["UA", "093 483 9253", "+380934839253"],
+    ["UA", "(093) 483-92-53", "+380934839253"],
+    ["UA", "934839253", "+380934839253"],
+    ["GB", "07400 883369", "+447400883369"],
+    ["FR", "06 12 34 56 78", "+33612345678"],
+    ["DE", "01512 3456789", "+4915123456789"],
+    ["IE", "085 123 4567", "+353851234567"],
+    ["NL", "06 12345678", "+31612345678"],
+    ["AT", "0664 1234567", "+436641234567"],
+    ["RO", "0712 345 678", "+40712345678"],
+    ["PL", "512 345 678", "+48512345678"],
+  ])("%s %s → %s", (country, typed, e164) => {
+    expect(processPhone(typed, country)).toEqual({ e164, country });
+  });
+
+  it.each(["0934839253", "+380934839253", "+380 93 483 9253", "380934839253", "00380934839253", "+380 (0)93 483 9253"])(
+    "UA selected, %s → +380934839253",
+    (typed) => {
+      expect(processPhone(typed, "UA").e164).toBe("+380934839253");
+    },
+  );
+
+  it("stores a call request typed nationally with its country, trunk 0 dropped", () => {
+    expect(phoneColumns("093 483 9253", "UA")).toEqual({ phone: "+380934839253", phone_country: "UA" });
+  });
+});
+
 describe("processPhone — each step of the processing order", () => {
   it("1. strips spaces, brackets, hyphens and dots", () => {
     expect(processPhone(" (07123) 456-789 ", "GB").e164).toBe("+447123456789");
