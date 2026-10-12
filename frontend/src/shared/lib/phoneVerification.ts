@@ -22,6 +22,33 @@ export const isPhoneVerificationPending = (
   user: { phone_verification_pending?: boolean } | null | undefined,
 ): boolean => Boolean(user?.phone_verification_pending);
 
+/**
+ * The user's SMS-verified number (E.164), or null when the phone is not
+ * verified. A verified number is shown read-only in the profile forms and
+ * changed only through re-verification.
+ */
+export const verifiedPhoneOf = (
+  user: { phone?: string | null; phone_verified_at?: string | null } | null | undefined,
+): string | null => (user?.phone_verified_at && user.phone ? user.phone : null);
+
+/** The verification screen, set to come back to `returnTo` once done. */
+export const phoneVerificationHref = (returnTo?: string | null): string =>
+  returnTo && safeReturnPath(returnTo)
+    ? `${PHONE_VERIFICATION_PATH}?return=${encodeURIComponent(returnTo)}`
+    : PHONE_VERIFICATION_PATH;
+
+/**
+ * A `return` target the screen may navigate to after verifying: an in-app
+ * path only (`/app/...`), never another origin (`//evil.com`, `https://…`)
+ * or the screen itself. Null for anything else.
+ */
+export function safeReturnPath(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/app/") || raw.startsWith("//") || raw.includes("\\")) return null;
+  const path = raw.split(/[?#]/)[0];
+  return path === PHONE_VERIFICATION_PATH ? null : raw;
+}
+
 /** Pages the gate never redirects away from: the screen itself and sign-in. */
 export const isPhoneVerificationExempt = (pathname: string | null | undefined): boolean =>
   !!pathname &&

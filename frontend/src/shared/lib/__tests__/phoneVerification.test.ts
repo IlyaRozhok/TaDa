@@ -9,8 +9,11 @@ import {
   isPhoneVerificationExempt,
   isPhoneVerificationPending,
   phoneVerificationError,
+  phoneVerificationHref,
+  safeReturnPath,
   sanitizeOtpInput,
   shouldRedirectToPhoneVerification,
+  verifiedPhoneOf,
 } from "../phoneVerification";
 
 const ALLOWED = ["GB", "IE", "UA", "FR", "US"];
@@ -39,6 +42,34 @@ describe("the gate's verdict", () => {
     expect(shouldRedirectToPhoneVerification(403, { code: "FORBIDDEN" }, "/app/units")).toBe(false);
     expect(shouldRedirectToPhoneVerification(401, gate, "/app/units")).toBe(false);
     expect(shouldRedirectToPhoneVerification(403, null, "/app/units")).toBe(false);
+  });
+});
+
+describe("a verified number in the profile forms", () => {
+  it("is the stored number only once it is verified", () => {
+    expect(verifiedPhoneOf({ phone: "+447400883369", phone_verified_at: "2026-10-12T10:00:00Z" })).toBe(
+      "+447400883369",
+    );
+    expect(verifiedPhoneOf({ phone: "+447400883369", phone_verified_at: null })).toBeNull();
+    expect(verifiedPhoneOf({ phone: null, phone_verified_at: "2026-10-12T10:00:00Z" })).toBeNull();
+    expect(verifiedPhoneOf(null)).toBeNull();
+  });
+
+  it("links to re-verification, returning to the form", () => {
+    expect(phoneVerificationHref("/app/profile")).toBe(`${PHONE_VERIFICATION_PATH}?return=%2Fapp%2Fprofile`);
+    expect(phoneVerificationHref()).toBe(PHONE_VERIFICATION_PATH);
+    expect(phoneVerificationHref("https://evil.example")).toBe(PHONE_VERIFICATION_PATH);
+  });
+
+  it("only ever returns to an in-app path", () => {
+    expect(safeReturnPath("/app/profile")).toBe("/app/profile");
+    expect(safeReturnPath("/app/onboarding?step=2")).toBe("/app/onboarding?step=2");
+    expect(safeReturnPath("//evil.example/app/")).toBeNull();
+    expect(safeReturnPath("https://evil.example")).toBeNull();
+    expect(safeReturnPath("/\\evil.example")).toBeNull();
+    expect(safeReturnPath("/")).toBeNull();
+    expect(safeReturnPath(`${PHONE_VERIFICATION_PATH}?return=x`)).toBeNull();
+    expect(safeReturnPath(null)).toBeNull();
   });
 });
 

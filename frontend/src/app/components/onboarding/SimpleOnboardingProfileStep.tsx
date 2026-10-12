@@ -38,6 +38,7 @@ export default function SimpleOnboardingProfileStep({
     formData,
     phoneCountryCode,
     phoneNumberOnly,
+    verifiedPhone,
     hasChanges,
     isSaving,
     isLoading,
@@ -98,6 +99,7 @@ export default function SimpleOnboardingProfileStep({
             formData={formData}
             phoneCountryCode={phoneCountryCode}
             phoneNumberOnly={phoneNumberOnly}
+            verifiedPhone={verifiedPhone}
             dateOfBirthError={dateOfBirthError}
             onInputChange={handleInputChange}
             onPhoneChange={handlePhoneChange}

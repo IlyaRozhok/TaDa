@@ -7,6 +7,7 @@ import { authAPI } from "@/app/lib/api";
 import { updateUser } from "@/store/slices/authSlice";
 import { getDefaultCountry, parseStoredPhone } from "@/shared/lib/countries";
 import { hasPhoneDigits, isValidPhone, toE164 } from "@/shared/lib/phone";
+import { verifiedPhoneOf } from "@/shared/lib/phoneVerification";
 
 interface UseUnifiedProfileOptions {
   onSuccess?: () => void;
@@ -17,6 +18,12 @@ interface UseUnifiedProfileReturn {
   formData: UpdateUserData;
   phoneCountryCode: string;
   phoneNumberOnly: string;
+  /**
+   * The SMS-verified number (E.164), or null. When set, the form shows it
+   * read-only and every save carries it unchanged — it changes only by
+   * re-verifying.
+   */
+  verifiedPhone: string | null;
   hasChanges: boolean;
   isSaving: boolean;
   isLoading: boolean;
@@ -62,6 +69,7 @@ export const useUnifiedProfile = (
     const phone = user ? getProfilePhone(user) : "";
     return parsePhone(phone).numberOnly;
   });
+  const verifiedPhone = verifiedPhoneOf(user);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -153,7 +161,12 @@ export const useUnifiedProfile = (
     if (!first_name?.trim() || !last_name?.trim()) return false;
     if (!date_of_birth) return false;
     // Phone stays optional, but a number that is there must be complete.
-    if (hasPhoneDigits(phoneNumberOnly) && !isValidPhone(phoneNumberOnly, phoneCountryCode)) {
+    // A verified number is not edited here, so there is nothing to check.
+    if (
+      !verifiedPhone &&
+      hasPhoneDigits(phoneNumberOnly) &&
+      !isValidPhone(phoneNumberOnly, phoneCountryCode)
+    ) {
       return false;
     }
 
@@ -163,11 +176,14 @@ export const useUnifiedProfile = (
     const monthDiff = today.getMonth() - date.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) age--;
     return age >= 18 && age <= 100;
-  }, [formData, phoneNumberOnly, phoneCountryCode]);
+  }, [formData, phoneNumberOnly, phoneCountryCode, verifiedPhone]);
 
   const saveProfile = useCallback(
     async (overrideData?: Partial<UpdateUserData>): Promise<boolean> => {
-      const payload = overrideData ? { ...formData, ...overrideData } : formData;
+      const merged = overrideData ? { ...formData, ...overrideData } : formData;
+      // A verified number travels through unchanged: the form never edits it,
+      // and an equal number keeps its verification on the server.
+      const payload = verifiedPhone ? { ...merged, phone: verifiedPhone } : merged;
       if (!validateForm()) return false;
 
       setIsSaving(true);
@@ -197,7 +213,7 @@ export const useUnifiedProfile = (
         setIsLoading(false);
       }
     },
-    [formData, validateForm, dispatch, onSuccess, onError]
+    [formData, verifiedPhone, validateForm, dispatch, onSuccess, onError]
   );
 
   const resetForm = useCallback(() => {
@@ -216,6 +232,7 @@ export const useUnifiedProfile = (
     formData,
     phoneCountryCode,
     phoneNumberOnly,
+    verifiedPhone,
     hasChanges,
     isSaving,
     isLoading,

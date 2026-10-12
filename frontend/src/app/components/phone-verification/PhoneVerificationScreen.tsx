@@ -15,6 +15,7 @@ import {
   isCompleteOtp,
   isPhoneCountryAllowed,
   phoneVerificationError,
+  safeReturnPath,
   sanitizeOtpInput,
 } from "@/shared/lib/phoneVerification";
 import {
@@ -126,7 +127,12 @@ export default function PhoneVerificationScreen() {
         phone_verification_pending: false,
       };
       dispatch(updateUser(verifiedUser));
-      await redirectAfterLogin(verifiedUser, router);
+      // Came from "Change number" in a profile form: go back there. Read
+      // from location rather than useSearchParams, which would need its own
+      // Suspense boundary for one value read once.
+      const returnTo = safeReturnPath(new URLSearchParams(window.location.search).get("return"));
+      if (returnTo) router.replace(returnTo);
+      else await redirectAfterLogin(verifiedUser, router);
     } catch (err) {
       const problem = phoneVerificationError(err);
       setError(problem.message);
@@ -208,7 +214,10 @@ export default function PhoneVerificationScreen() {
                 setError(null);
               }}
               placeholder="••••••"
-              className="w-full text-center text-3xl tracking-[0.5em] font-semibold bg-white rounded-4xl py-5 focus:outline-none focus:ring-2 focus:ring-black"
+              // Explicit text colour, as on every other input: inherited, the
+              // value took body's --foreground, which turns light grey under
+              // prefers-color-scheme: dark — unreadable on this white field.
+              className="w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-white rounded-4xl py-5 focus:outline-none focus:ring-2 focus:ring-black"
             />
             <button
               type="submit"
