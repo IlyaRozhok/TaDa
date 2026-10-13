@@ -1873,7 +1873,7 @@ export default function PropertyPublicPage() {
                       placeholder={t(
                         listingPropertyKeys.viewingRequest.notesPlaceholder,
                       )}
-                      className="w-full pt-5 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white resize-none border-0 disabled:opacity-60"
+                      className="w-full pt-5 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-field resize-none border-0 disabled:opacity-60"
                     />
                   </div>
                 </div>

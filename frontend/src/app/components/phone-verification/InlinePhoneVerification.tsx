@@ -8,7 +8,7 @@ import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
 import { useTurnstile } from "@/shared/ui/Turnstile/useTurnstile";
 import { parseStoredPhone } from "@/shared/lib/countries";
 import { notify } from "@/shared/lib/notify";
-import { phoneValidationIssue, processPhone } from "@/shared/lib/phone";
+import { formatPhoneForDisplay, phoneValidationIssue, processPhone } from "@/shared/lib/phone";
 import {
   OTP_LENGTH,
   formatCountdown,
@@ -249,6 +249,16 @@ export default function InlinePhoneVerification({
       {/* One subtitle, replaced (not stacked) once the code is sent. */}
       <p id={subtitleId} className={subtitleClassName}>
         {tx(step === "phone" ? K.verify.subtitle : K.code.subtitle)}
+        {/* The number the code went to, after the text rather than inside it:
+            the translated copy carries no substitutions. */}
+        {step === "code" && sentTo && (
+          <>
+            {" "}
+            <span dir="ltr" className="font-medium text-gray-900 whitespace-nowrap">
+              {formatPhoneForDisplay(sentTo.phone, sentTo.country)}
+            </span>
+          </>
+        )}
       </p>
 
       {step === "phone" ? (
@@ -305,7 +315,7 @@ export default function InlinePhoneVerification({
               // value took body's --foreground, which turns light grey under
               // prefers-color-scheme: dark — unreadable on this white field.
               // The form fields' shared look, like the phone field it replaces.
-              className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-gray-50 sm:bg-white border-0 rounded-4xl py-5 focus:outline-none ${
+              className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-field border-0 rounded-4xl py-5 focus:outline-none ${
                 error ? "ring-2 ring-red-400 focus:ring-red-500" : "focus:ring-2 focus:ring-black"
               }`}
             />

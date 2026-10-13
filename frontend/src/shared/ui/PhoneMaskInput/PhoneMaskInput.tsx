@@ -133,7 +133,8 @@ export default function PhoneMaskInput({
   );
 
   useEffect(() => {
-    if (isDropdownOpen && searchInputRef.current) {
+    // Not on mobile: the keyboard would cover the bottom sheet's list.
+    if (isDropdownOpen && searchInputRef.current && window.matchMedia("(min-width: 640px)").matches) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isDropdownOpen]);
@@ -147,7 +148,7 @@ export default function PhoneMaskInput({
   return (
     <div className={`relative ${className}`}>
       {/* The form fields' shared look (InputField, DateInput, CountryDropdown):
-          bg-gray-50 on mobile, white from sm, no border, rounded-4xl. */}
+          the bg-field fill, no border, rounded-4xl. */}
       <div className="relative flex">
         {/* Country Code Selector */}
         <div className="relative min-w-[11rem] max-w-[13rem] flex-shrink-0">
@@ -155,7 +156,7 @@ export default function PhoneMaskInput({
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center cursor-pointer justify-between gap-2 px-5 py-4 bg-gray-50 sm:bg-white border-0 rounded-l-4xl hover:bg-gray-100 sm:hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed text-left"
+            className="flex items-center cursor-pointer justify-between gap-2 px-5 py-4 bg-field border-0 rounded-l-4xl hover:bg-gray-200 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed text-left"
           >
             <div className="min-w-0 flex-1">
               <span className="block text-xs font-medium text-gray-700 truncate leading-tight">
@@ -172,17 +173,21 @@ export default function PhoneMaskInput({
 
           {isDropdownOpen && !disabled && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-              <div className="absolute top-full left-0 z-50 mt-1 w-80 rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
+              {/* Mobile: a bottom sheet over a dimmed page, above the fixed
+                  wizard footer (z-50), so it never overlaps or pushes the
+                  form, its Send code button or the nav. From sm: the
+                  dropdown under the selector, as before. */}
+              <div className="fixed inset-0 z-[60] bg-black/40 sm:z-40 sm:bg-transparent" onClick={() => setIsDropdownOpen(false)} />
+              <div className="fixed inset-x-0 bottom-0 z-[70] max-h-[70dvh] rounded-t-3xl pb-[env(safe-area-inset-bottom)] sm:absolute sm:inset-x-auto sm:bottom-auto sm:top-full sm:left-0 sm:z-50 sm:mt-1 sm:w-80 sm:max-h-60 sm:rounded-3xl sm:pb-0 overflow-hidden flex flex-col backdrop-blur-[3px]">
                 <div
-                  className="relative rounded-3xl"
+                  className="relative flex flex-col min-h-0 rounded-t-3xl sm:rounded-3xl"
                   style={{
                     background: "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%), rgba(0,0,0,0.5)",
                     boxShadow: "0 1.5625rem 3.125rem rgba(0,0,0,0.4), 0 0.625rem 1.875rem rgba(0,0,0,0.2), inset 0 0.0625rem 0 rgba(255,255,255,0.1), inset 0 -0.0625rem 0 rgba(0,0,0,0.2)",
                   }}
                 >
-                  <div className="relative z-10">
-                    <div className="p-3">
+                  <div className="relative z-10 flex flex-col min-h-0">
+                    <div className="p-3 flex-shrink-0">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
                         <input
@@ -196,7 +201,7 @@ export default function PhoneMaskInput({
                         />
                       </div>
                     </div>
-                    <div className="overflow-y-auto max-h-48">
+                    <div className="overflow-y-auto overscroll-contain min-h-0 max-h-[calc(70dvh-4.5rem)] sm:max-h-48">
                       {filteredCountries.length > 0 ? (
                         filteredCountries.map((country) => (
                           <button
@@ -243,7 +248,7 @@ export default function PhoneMaskInput({
                 setIsFocused(false);
                 setIsTouched(true);
               }}
-              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0 ${shownError ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
+              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-field placeholder-gray-400 border-0 ${shownError ? "ring-2 ring-red-400 focus:ring-red-500" : ""}`}
             />
             <label
               className={`absolute left-6 pointer-events-none transition-all duration-200 ${isFocused || hasValue ? "top-3 text-xs text-gray-600" : "top-1/2 -translate-y-1/2 text-base text-gray-500"}`}

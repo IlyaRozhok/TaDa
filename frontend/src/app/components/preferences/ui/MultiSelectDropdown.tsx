@@ -109,7 +109,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         {/* White Input */}
         <div
           onClick={handleToggle}
-          className={`relative w-full px-6 pt-8 pb-4 pr-12 rounded-4xl cursor-pointer flex items-center bg-gray-50 sm:bg-white border-0 h-[4.5rem] overflow-hidden ${
+          className={`relative w-full px-6 pt-8 pb-4 pr-12 rounded-4xl cursor-pointer flex items-center bg-field border-0 h-[4.5rem] overflow-hidden ${
             isInitialized ? "transition-all duration-200" : ""
           }`}
         >

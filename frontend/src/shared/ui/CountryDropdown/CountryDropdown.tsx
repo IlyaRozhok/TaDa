@@ -78,7 +78,8 @@ export default function CountryDropdown({
 
   // Focus search input when dropdown opens
   useEffect(() => {
-    if (isDropdownOpen && searchInputRef.current) {
+    // Not on mobile: the keyboard would cover the bottom sheet's list.
+    if (isDropdownOpen && searchInputRef.current && window.matchMedia("(min-width: 640px)").matches) {
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 100);
@@ -124,7 +125,7 @@ export default function CountryDropdown({
           disabled={disabled}
           className={`w-full px-6 pt-6 pb-6 rounded-3xl focus:outline-none transition-all duration-200 text-left flex items-center justify-between ${
             hasValue ? "text-gray-900" : "text-gray-400"
-          } bg-gray-50 sm:bg-white border-0 ${
+          } bg-field border-0 ${
             error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
           } disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed`}
         >
@@ -156,13 +157,14 @@ export default function CountryDropdown({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[60] bg-black/40 sm:z-40 sm:bg-transparent"
             onClick={() => setIsDropdownOpen(false)}
           />
-          {/* Dropdown Menu - always opens upward */}
-          <div className="absolute bottom-full left-0 z-50 mb-1 w-full rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
+          {/* Mobile: a bottom sheet above the fixed wizard footer (z-50).
+              From sm: the menu opening upward over the field, as before. */}
+          <div className="fixed inset-x-0 bottom-0 z-[70] max-h-[70dvh] rounded-t-3xl pb-[env(safe-area-inset-bottom)] sm:absolute sm:inset-x-auto sm:bottom-full sm:left-0 sm:z-50 sm:mb-1 sm:w-full sm:max-h-60 sm:rounded-3xl sm:pb-0 overflow-hidden flex flex-col backdrop-blur-[3px]">
             <div
-              className="relative rounded-3xl"
+              className="relative flex flex-col min-h-0 rounded-t-3xl sm:rounded-3xl"
               style={{
                 background:
                   "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
@@ -170,9 +172,9 @@ export default function CountryDropdown({
                   "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
               }}
             >
-              <div className="relative z-10">
+              <div className="relative z-10 flex flex-col min-h-0">
                 {/* Search Input */}
-                <div className="p-3 border-b border-gray-200/20">
+                <div className="p-3 border-b border-gray-200/20 flex-shrink-0">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
                     <input
@@ -188,10 +190,7 @@ export default function CountryDropdown({
                 </div>
 
                 {/* Countries List */}
-                <div
-                  className="overflow-y-auto max-h-48"
-                  style={{ maxHeight: "12rem" }}
-                >
+                <div className="overflow-y-auto overscroll-contain min-h-0 max-h-[calc(70dvh-4.5rem)] sm:max-h-48">
                   {filteredCountries.length > 0 ? (
                     filteredCountries.map((country) => (
                       <button

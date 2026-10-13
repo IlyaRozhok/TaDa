@@ -63,6 +63,9 @@ html {
     "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont,
     "Helvetica Neue", sans-serif;
   --font-mono: var(--font-geist-mono);
+  /* Form field fill (bg-field): a visible grey on the white pages and on
+     the gray-50 cards alike — Tailwind's gray-100. */
+  --color-field: oklch(96.7% 0.003 264.542);
 }
 
 /* Line clamp utilities for text truncation */

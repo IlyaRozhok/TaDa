@@ -26,7 +26,7 @@ export default function VerifiedPhoneField({ phone, changeHref, onChangeNumber }
   const changeClass = "text-sm text-gray-700 underline-offset-2 hover:underline flex-shrink-0 cursor-pointer";
 
   return (
-    <div className="relative w-full px-6 pt-8 pb-4 rounded-4xl bg-gray-50 sm:bg-white border-0">
+    <div className="relative w-full px-6 pt-8 pb-4 rounded-4xl bg-field border-0">
       <span className="absolute left-6 top-3 text-xs text-gray-600">{tx(K.verify.numberLabel)}</span>
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2 min-w-0">
