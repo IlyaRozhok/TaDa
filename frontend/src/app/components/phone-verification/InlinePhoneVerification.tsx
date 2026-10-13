@@ -273,6 +273,7 @@ export default function InlinePhoneVerification({
               error={error ?? undefined}
               validate
               issueMessage={(issue) => tx(phoneIssueKey(issue))}
+              reserveErrorSpace
               onCountryChange={(next) => {
                 setCountry(next);
                 setErrorKey(null);
@@ -319,11 +320,11 @@ export default function InlinePhoneVerification({
                 error ? "ring-1 ring-red-400 focus:ring-red-500" : "focus:ring-2 focus:ring-black"
               }`}
             />
-            {error && (
-              <p id="otp-error" role="alert" className="mt-3 px-6 text-sm text-red-600">
-                {error}
-              </p>
-            )}
+            {/* Always there, empty until needed: the error appearing does
+                not shift the buttons below. */}
+            <p id="otp-error" role="alert" className="mt-3 px-6 text-sm leading-5 min-h-5 text-red-600">
+              {error}
+            </p>
           </div>
           {placeAction(confirmButton)}
           <div className="flex items-center justify-between text-sm">

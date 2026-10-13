@@ -44,6 +44,11 @@ export interface PhoneMaskInputProps {
    * own (translated) copy. Without it the shared English messages are used.
    */
   issueMessage?: (issue: PhoneIssue) => string;
+  /**
+   * Keep a line under the field for the error even while there is none, so
+   * the message appearing (on blur, on send) does not push the content below.
+   */
+  reserveErrorSpace?: boolean;
   onCountryChange?: (countryCode: string) => void;
 }
 
@@ -63,6 +68,7 @@ export default function PhoneMaskInput({
   error,
   validate = false,
   issueMessage,
+  reserveErrorSpace = false,
   onCountryChange,
 }: PhoneMaskInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
@@ -260,9 +266,11 @@ export default function PhoneMaskInput({
         </div>
       </div>
 
-      {/* Below the field, never inside it, with room to breathe. */}
-      {shownError && (
-        <p role="alert" className="text-sm text-red-600 mt-3 px-6">
+      {/* Below the field, never inside it, with room to breathe. With
+          reserveErrorSpace the (empty) line is always there: nothing below
+          jumps when a message appears. */}
+      {(shownError || reserveErrorSpace) && (
+        <p role="alert" className="text-sm leading-5 min-h-5 text-red-600 mt-3 px-6">
           {shownError}
         </p>
       )}
