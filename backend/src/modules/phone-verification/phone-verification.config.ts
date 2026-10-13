@@ -20,9 +20,14 @@ type Env = Record<string, string | undefined>;
  * permissions): a country listed here but not enabled there passes our guard
  * and then fails at Twilio; one enabled there but not here is never reached.
  * Product can override the list per environment with ALLOWED_PHONE_COUNTRIES.
+ *
+ * GG, JE and IM (Guernsey, Jersey, Isle of Man) share +44 with GB: their
+ * residents pick "United Kingdom" in the selector, but libphonenumber files
+ * their mobiles (07781…, 07797…, 07624…) under their own ISO codes, and
+ * Twilio lists them as separate countries too.
  */
 export const DEFAULT_ALLOWED_PHONE_COUNTRIES: readonly string[] = [
-  "GB", "IE", "UA", "AT", "FR", "DE", "ES", "IT", "PL", "RO",
+  "GB", "GG", "JE", "IM", "IE", "UA", "AT", "FR", "DE", "ES", "IT", "PL", "RO",
   "PT", "NL", "HK", "IN", "CN", "NG", "ZA", "CA", "US",
 ];
 

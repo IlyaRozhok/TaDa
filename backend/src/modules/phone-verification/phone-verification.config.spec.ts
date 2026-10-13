@@ -12,7 +12,7 @@ import {
 describe("allowedPhoneCountries", () => {
   it("defaults to the seeded list", () => {
     expect(allowedPhoneCountries({})).toEqual([
-      "GB", "IE", "UA", "AT", "FR", "DE", "ES", "IT", "PL", "RO",
+      "GB", "GG", "JE", "IM", "IE", "UA", "AT", "FR", "DE", "ES", "IT", "PL", "RO",
       "PT", "NL", "HK", "IN", "CN", "NG", "ZA", "CA", "US",
     ]);
     expect(allowedPhoneCountries({})).not.toBe(DEFAULT_ALLOWED_PHONE_COUNTRIES);

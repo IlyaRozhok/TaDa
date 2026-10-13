@@ -130,7 +130,7 @@ describe("POST /auth/phone/* (stub provider, over HTTP)", () => {
   it("serves the config the screen validates with", async () => {
     const res = await request(app.getHttpServer()).get("/auth/phone/config").expect(200);
     expect(res.body).toEqual({
-      allowedCountries: ["GB", "IE", "UA", "AT", "FR", "DE", "ES", "IT", "PL", "RO", "PT", "NL", "HK", "IN", "CN", "NG", "ZA", "CA", "US"],
+      allowedCountries: ["GB", "GG", "JE", "IM", "IE", "UA", "AT", "FR", "DE", "ES", "IT", "PL", "RO", "PT", "NL", "HK", "IN", "CN", "NG", "ZA", "CA", "US"],
       verificationRequired: false,
     });
   });

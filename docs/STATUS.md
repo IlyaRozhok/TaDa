@@ -214,6 +214,8 @@ decisions) is recorded HERE, briefly, with a date.
       exactly the countries in `DEFAULT_ALLOWED_PHONE_COUNTRIES`
       (`backend/src/modules/phone-verification/phone-verification.config.ts`)
       or in `ALLOWED_PHONE_COUNTRIES` if set — the two lists must match.
+      Since 2026-10-13 that includes Guernsey, Jersey and Isle of Man
+      (GG/JE/IM: +44 numbers under their own ISO codes, separate in Twilio).
    b. **Host `.env` (`/opt/tada/.env`):**
       - **prod:** `SITE_ENV=production` — set it before the release that
         carries phase 3. It is the only production signal the stub guard
