@@ -366,8 +366,6 @@ export default function OnboardingPage() {
             <div className="w-full">
               <SimpleOnboardingProfileStep
                 onComplete={handleProfileComplete}
-                isLoading={state.isLoading}
-                onNext={handleProfileNext}
                 currentStep={state.currentStep}
                 totalSteps={TOTAL_ONBOARDING_STEPS}
                 onValidationChange={setIsProfileValid}
