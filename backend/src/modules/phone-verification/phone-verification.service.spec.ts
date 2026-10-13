@@ -151,7 +151,7 @@ describe("number checks before anything is sent", () => {
       statusCode: 400,
       code: "PHONE_COUNTRY_NOT_ALLOWED",
       country: "JP",
-      message: "We currently can't verify numbers from Japan. Please use a mobile from a supported country.",
+      message: "We can't verify numbers from this country yet. Please use a supported country.",
     });
     expect(send).not.toHaveBeenCalled();
   });

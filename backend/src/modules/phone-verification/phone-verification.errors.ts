@@ -30,15 +30,6 @@ export class PhoneVerificationError extends HttpException {
   }
 }
 
-/** "GB" → "United Kingdom", for the not-allowed message. */
-export function countryName(code: string): string {
-  try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
-
 /**
  * Why a number was refused — machine-readable, alongside the English
  * message, so the client shows its own translated text for each case.
@@ -53,7 +44,9 @@ export const PhoneVerificationErrors = {
     new PhoneVerificationError(
       HttpStatus.BAD_REQUEST,
       "PHONE_COUNTRY_NOT_ALLOWED",
-      `We currently can't verify numbers from ${countryName(country)}. Please use a mobile from a supported country.`,
+      // Generic, like the client's phone.error.country.unsupported: the copy
+      // carries no substitutions. The country travels in the details.
+      "We can't verify numbers from this country yet. Please use a supported country.",
       { country },
     ),
 

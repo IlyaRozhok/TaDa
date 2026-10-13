@@ -71,8 +71,7 @@ export const PHONE_VERIFICATION_FALLBACKS: Readonly<Record<string, string>> = {
   "phone.error.rate.limited": "Too many attempts. Please wait a few minutes and try again.",
   "phone.error.already.linked": "This number is already linked to another account.",
   "phone.error.send.failed": "We couldn't send the code. Please try again.",
-  "phone.error.country.unsupported":
-    "We can't verify numbers from this country yet. Please use a mobile from a supported country.",
+  "phone.error.country.unsupported": "We can't verify numbers from this country yet. Please use a supported country.",
   "phone.status.verified": "Verified",
   "common.error.network": "Something went wrong. Please check your connection and try again.",
 };

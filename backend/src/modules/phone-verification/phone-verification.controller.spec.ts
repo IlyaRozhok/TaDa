@@ -99,7 +99,7 @@ describe("POST /auth/phone/* (stub provider, over HTTP)", () => {
       .expect(400);
     expect(res.body).toMatchObject({
       code: "PHONE_COUNTRY_NOT_ALLOWED",
-      message: "We currently can't verify numbers from Japan. Please use a mobile from a supported country.",
+      message: "We can't verify numbers from this country yet. Please use a supported country.",
     });
   });
 
