@@ -104,6 +104,5 @@ export const operatorKeys = {
     stripe: "landing.operators.web.partner1",
     experian: "landing.operators.web.partner2",
     dps: "landing.operators.web.partner3",
-    energy: "landing.operators.web.partner4",
   },
 };
