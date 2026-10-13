@@ -126,7 +126,7 @@ export default function CountryDropdown({
           className={`w-full px-6 pt-6 pb-6 rounded-3xl focus:outline-none transition-all duration-200 text-left flex items-center justify-between ${
             hasValue ? "text-gray-900" : "text-gray-400"
           } bg-field border-0 ${
-            error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+            error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
           } disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed`}
         >
           <div className="flex items-center min-w-0 flex-1">

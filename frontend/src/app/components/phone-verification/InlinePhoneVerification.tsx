@@ -316,7 +316,7 @@ export default function InlinePhoneVerification({
               // prefers-color-scheme: dark — unreadable on this white field.
               // The form fields' shared look, like the phone field it replaces.
               className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-field border-0 rounded-4xl py-5 focus:outline-none ${
-                error ? "ring-2 ring-red-400 focus:ring-red-500" : "focus:ring-2 focus:ring-black"
+                error ? "ring-1 ring-red-400 focus:ring-red-500" : "focus:ring-2 focus:ring-black"
               }`}
             />
             {error && (

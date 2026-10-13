@@ -149,7 +149,7 @@ export const StyledDateInput: React.FC<StyledDateInputProps> = ({
             }
           }}
           className={`w-full px-6 pt-8 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-field placeholder-gray-400 border-0 appearance-none [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden ${
-            error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+            error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
           }`}
         />
 
