@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch } from "react-redux";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
@@ -41,6 +42,13 @@ interface InlinePhoneVerificationProps {
   onVerified?: (result: VerifyPhoneCodeResponse) => void;
   /** Reports the number as typed, for forms that also save it unverified. */
   onNumberChange?: (national: string, country: string) => void;
+  /**
+   * Where the step's primary button (Send code, then Confirm) renders. The
+   * onboarding form passes a slot at its very bottom, by its own Next
+   * button; the phone row and the code box still swap in place up here.
+   * Without it the button sits right under the field (standalone screen).
+   */
+  actionContainer?: Element | null;
 }
 
 /**
@@ -63,6 +71,7 @@ export default function InlinePhoneVerification({
   subtitleClassName = "text-sm text-gray-600",
   onVerified,
   onNumberChange,
+  actionContainer,
 }: InlinePhoneVerificationProps) {
   const dispatch = useDispatch();
   const tx = usePhoneVerificationText();
@@ -219,6 +228,22 @@ export default function InlinePhoneVerification({
       tx(K.verify.sendCode)
     );
 
+  const actionClass =
+    "w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+  const sendButton = (
+    <button type="button" onClick={() => void sendCode()} disabled={isSending || resendIn > 0} className={actionClass}>
+      {isSending ? tx(K.verify.sending) : resendLabel}
+    </button>
+  );
+  const confirmButton = (
+    <button type="button" onClick={() => void verify()} disabled={!isCompleteOtp(code) || isVerifying} className={actionClass}>
+      {isVerifying ? tx(K.code.verifying) : tx(K.code.confirm)}
+    </button>
+  );
+  /** The primary action, in the caller's slot at the bottom of the form, or here. */
+  const placeAction = (button: React.ReactElement) =>
+    actionContainer ? createPortal(button, actionContainer) : button;
+
   return (
     <div className="space-y-4">
       {/* One subtitle, replaced (not stacked) once the code is sent. */}
@@ -253,14 +278,7 @@ export default function InlinePhoneVerification({
               }}
             />
           </div>
-          <button
-            type="button"
-            onClick={() => void sendCode()}
-            disabled={isSending || resendIn > 0}
-            className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSending ? tx(K.verify.sending) : resendLabel}
-          </button>
+          {placeAction(sendButton)}
         </>
       ) : (
         <>
@@ -297,14 +315,7 @@ export default function InlinePhoneVerification({
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => void verify()}
-            disabled={!isCompleteOtp(code) || isVerifying}
-            className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isVerifying ? tx(K.code.verifying) : tx(K.code.confirm)}
-          </button>
+          {placeAction(confirmButton)}
           <div className="flex items-center justify-between text-sm">
             <button
               type="button"

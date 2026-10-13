@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import { useTranslation } from "../../hooks/useTranslation";
@@ -88,6 +88,10 @@ export default function SimpleOnboardingProfileStep({
     handleInputChange("date_of_birth", date || "");
   }, [handleInputChange]);
 
+  // The phone verification's Send code / Confirm button renders here, at the
+  // bottom of the form, while its phone row and code box swap in place above.
+  const [phoneActionSlot, setPhoneActionSlot] = useState<HTMLDivElement | null>(null);
+
   return (
     <StepWrapper
       title={t(wizardKeys.profile.title)}
@@ -105,7 +109,10 @@ export default function SimpleOnboardingProfileStep({
             onInputChange={handleInputChange}
             onPhoneChange={handlePhoneChange}
             onDateChange={handleDateChangeCallback}
+            phoneActionContainer={phoneActionSlot}
           />
+
+          <div ref={setPhoneActionSlot} className="empty:hidden" />
 
           <div className="flex justify-end pt-6">
             <Button

@@ -27,6 +27,8 @@ interface ProfileFormFieldsProps {
    * verification in place.
    */
   phoneVerification?: "link" | "inline";
+  /** Inline mode: where the verification's primary button renders (the form's bottom). */
+  phoneActionContainer?: Element | null;
   dateOfBirthError: string | null;
   onInputChange: (field: keyof UpdateUserData, value: string) => void;
   onPhoneChange: (phoneNumber: string, countryCode: string) => void;
@@ -40,6 +42,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
   phoneNumberOnly,
   verifiedPhone,
   phoneVerification = "link",
+  phoneActionContainer,
   dateOfBirthError,
   onInputChange,
   onPhoneChange,
@@ -174,6 +177,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
             verifiedPhone={verifiedPhone ?? null}
             initialPhone={formData.phone}
             onNumberChange={(national, country) => onPhoneChange(national, country)}
+            actionContainer={phoneActionContainer}
           />
         </section>
       )}
