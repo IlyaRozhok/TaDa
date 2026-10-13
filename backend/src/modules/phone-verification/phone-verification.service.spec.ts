@@ -163,6 +163,18 @@ describe("number checks before anything is sent", () => {
       .toMatchObject({ code: "PHONE_COUNTRY_NOT_ALLOWED", country: "JP" });
   });
 
+  it.each([
+    ["07781 123456", "+447781123456", "GG"],
+    ["07797 123456", "+447797123456", "JE"],
+    ["07624 123456", "+447624123456", "IM"],
+  ])("sends to a Crown Dependency mobile (%s) typed under GB", async (phone, e164, country) => {
+    const t = setup();
+    await expect(t.service.sendCode(t.user(), { phone, country: "GB" }, null)).resolves.toMatchObject({
+      phone: e164,
+      country,
+    });
+  });
+
   it("follows ALLOWED_PHONE_COUNTRIES when it is set", async () => {
     process.env.ALLOWED_PHONE_COUNTRIES = "JP";
     const t = setup();

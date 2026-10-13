@@ -138,6 +138,16 @@ describe("processPhone — each step of the processing order", () => {
   });
 });
 
+describe("processPhone — Crown Dependencies under +44 (GG, JE, IM)", () => {
+  it.each([
+    ["07781 123456", "+447781123456", "GG"],
+    ["07797 123456", "+447797123456", "JE"],
+    ["07624 123456", "+447624123456", "IM"],
+  ])("accepts %s, typed under GB, as a valid mobile of its own country", (typed, e164, country) => {
+    expect(processPhone(typed, "GB")).toMatchObject({ e164, country });
+  });
+});
+
 describe("PHONE_ISSUE_MESSAGES", () => {
   it("carries the spec's English texts", () => {
     expect(PHONE_ISSUE_MESSAGES).toEqual({

@@ -188,6 +188,26 @@ describe("error messages", () => {
   });
 });
 
+describe("Crown Dependencies under +44 (GG, JE, IM)", () => {
+  // [typed with United Kingdom selected, E.164, ISO code libphonenumber files it under]
+  const cases: Array<[string, string, string]> = [
+    ["07781 123456", "+447781123456", "GG"],
+    ["07797 123456", "+447797123456", "JE"],
+    ["07624 123456", "+447624123456", "IM"],
+  ];
+
+  it.each(cases)("accepts %s as a valid mobile, not a UK collision", (typed, e164, country) => {
+    expect(processPhone(typed, "GB")).toEqual({ e164, country });
+    expect(processPhone(e164, "FR")).toEqual({ e164, country });
+  });
+
+  it.each(cases)("round-trips %s through the field under the UK selector", (_typed, e164) => {
+    const stored = parseStoredPhone(e164);
+    expect(stored?.country.code).toBe("GB");
+    expect(processPhone(stored!.nationalNumber, "GB").e164).toBe(e164);
+  });
+});
+
 describe("countries whose old masks were too short", () => {
   // [country, typed national number, expected E.164]
   const cases: Array<[string, string, string]> = [
