@@ -230,8 +230,6 @@ export default function InlinePhoneVerification({
         <>
           <div onKeyDown={onEnter(() => void sendCode())}>
             <PhoneMaskInput
-              // Only the field row is framed; the error renders below it.
-              frameClassName="rounded-4xl border border-gray-200"
               countryCode={country}
               value={national}
               label={tx(K.verify.numberLabel)}
@@ -288,8 +286,9 @@ export default function InlinePhoneVerification({
               // Explicit text colour, as on every other input: inherited, the
               // value took body's --foreground, which turns light grey under
               // prefers-color-scheme: dark — unreadable on this white field.
-              className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-white border rounded-4xl py-5 focus:outline-none focus:ring-2 ${
-                error ? "border-red-400 focus:ring-red-500" : "border-gray-200 focus:ring-black"
+              // The form fields' shared look, like the phone field it replaces.
+              className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-gray-50 sm:bg-white border-0 rounded-4xl py-5 focus:outline-none ${
+                error ? "ring-2 ring-red-400 focus:ring-red-500" : "focus:ring-2 focus:ring-black"
               }`}
             />
             {error && (
