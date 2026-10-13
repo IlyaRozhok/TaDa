@@ -1,21 +1,23 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 
 import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
 import { useTurnstile } from "@/shared/ui/Turnstile/useTurnstile";
 import { parseStoredPhone } from "@/shared/lib/countries";
-import { formatPhoneForDisplay, phoneErrorMessage, processPhone } from "@/shared/lib/phone";
+import { notify } from "@/shared/lib/notify";
+import { phoneValidationIssue, processPhone } from "@/shared/lib/phone";
 import {
   OTP_LENGTH,
-  countryNotAllowedMessage,
   formatCountdown,
   isCompleteOtp,
   isPhoneCountryAllowed,
-  phoneVerificationError,
+  phoneIssueKey,
+  phoneVerificationProblem,
   sanitizeOtpInput,
 } from "@/shared/lib/phoneVerification";
+import { phoneVerificationKeys as K } from "@/app/lib/translationsKeys/phoneVerificationKeys";
 import {
   useGetPhoneVerificationConfigQuery,
   useSendPhoneCodeMutation,
@@ -24,11 +26,7 @@ import {
 } from "@/store/api/phoneVerification.api";
 import { updateUser } from "@/store/slices/authSlice";
 import VerifiedPhoneField from "./VerifiedPhoneField";
-
-// TODO(localazy): the strings in this component (labels, buttons, hints,
-// client-side errors) are hardcoded English on purpose for now — externalize
-// them to Localazy keys when the verification flow is localized. Errors from
-// the API arrive as English `message`s and need the same treatment.
+import { usePhoneVerificationText } from "./usePhoneVerificationText";
 
 type Step = "phone" | "code";
 
@@ -37,9 +35,8 @@ interface InlinePhoneVerificationProps {
   verifiedPhone: string | null;
   /** An unverified number already on the account, to pre-fill the field. */
   initialPhone?: string | null;
-  phoneLabel?: string;
-  /** Label of the send-code button. */
-  sendLabel?: string;
+  /** Classes of the subtitle line (centred on the standalone screen). */
+  subtitleClassName?: string;
   /** Called once the code is approved and the user in the store is updated. */
   onVerified?: (result: VerifyPhoneCodeResponse) => void;
   /** Reports the number as typed, for forms that also save it unverified. */
@@ -48,10 +45,14 @@ interface InlinePhoneVerificationProps {
 
 /**
  * Phone → SMS code → verified, all in one place: sending replaces the number
- * row with the code row in place, approving replaces it with the read-only
- * "Verified ✓" number. No route change, no overlay. Used inline by the
- * onboarding form and by the standalone /app/verify-phone screen, so the two
- * cannot diverge.
+ * row with the code row in place (and the subtitle with the code subtitle),
+ * approving replaces it with the read-only "Verified" number. No route
+ * change, no overlay. Used inline by the onboarding form and by the
+ * standalone /app/verify-phone screen, so the two cannot diverge.
+ *
+ * Every visible text is a translation key (phoneVerificationKeys); errors —
+ * the client's checks and the API's stable codes alike — are mapped to keys,
+ * so no server wording reaches the screen.
  *
  * Plain elements, not a <form>: it sits inside the onboarding form, and forms
  * do not nest. Enter submits the current step by hand.
@@ -59,12 +60,13 @@ interface InlinePhoneVerificationProps {
 export default function InlinePhoneVerification({
   verifiedPhone,
   initialPhone,
-  phoneLabel = "Phone Number",
-  sendLabel = "Verify",
+  subtitleClassName = "text-sm text-gray-600",
   onVerified,
   onNumberChange,
 }: InlinePhoneVerificationProps) {
   const dispatch = useDispatch();
+  const tx = usePhoneVerificationText();
+  const subtitleId = useId();
 
   const initial = useMemo(() => {
     const parsed = initialPhone ? parseStoredPhone(initialPhone) : null;
@@ -80,7 +82,8 @@ export default function InlinePhoneVerification({
   const [national, setNational] = useState(initial.national);
   const [sentTo, setSentTo] = useState<{ phone: string; country: string } | null>(null);
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  /** The translation key of the error on screen, never its text. */
+  const [errorKey, setErrorKey] = useState<string | null>(null);
   const [resendAt, setResendAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -90,6 +93,7 @@ export default function InlinePhoneVerification({
   const { containerRef, getToken } = useTurnstile();
 
   const resendIn = resendAt ? Math.max(0, Math.ceil((resendAt - now) / 1000)) : 0;
+  const error = errorKey ? tx(errorKey) : null;
 
   const codeInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,14 +123,15 @@ export default function InlinePhoneVerification({
 
   /** Send (or resend) a code: validate here first, so nothing doomed reaches the API. */
   const sendCode = async () => {
-    setError(null);
+    setErrorKey(null);
+    const isResend = step === "code";
     const processed = processPhone(national, country);
     if (!processed.e164) {
-      setError(phoneErrorMessage(national, country, { required: true }) ?? "Please enter a valid phone number");
+      setErrorKey(phoneIssueKey(phoneValidationIssue(national, country, { required: true }) ?? "INVALID"));
       return;
     }
     if (!isPhoneCountryAllowed(processed.country, config?.allowedCountries)) {
-      setError(countryNotAllowedMessage(processed.country));
+      setErrorKey(K.error.countryUnsupported);
       return;
     }
 
@@ -134,7 +139,7 @@ export default function InlinePhoneVerification({
     try {
       turnstileToken = await getToken();
     } catch {
-      setError("Please complete the security check and try again.");
+      setErrorKey(K.commonErrorNetwork);
       return;
     }
 
@@ -144,9 +149,10 @@ export default function InlinePhoneVerification({
       setCode("");
       setStep("code");
       startCountdown(result.resendAfterSeconds);
+      if (isResend) notify.success(tx(K.code.sent));
     } catch (err) {
-      const problem = phoneVerificationError(err);
-      setError(problem.message);
+      const problem = phoneVerificationProblem(err, "send");
+      setErrorKey(problem.key);
       if (problem.code === "RESEND_TOO_SOON" && problem.retryAfterSeconds) {
         startCountdown(problem.retryAfterSeconds);
         // A code went out a moment ago (another tab, a double tap): let them use it.
@@ -158,7 +164,7 @@ export default function InlinePhoneVerification({
 
   const verify = async () => {
     if (!sentTo || !isCompleteOtp(code) || isVerifying) return;
-    setError(null);
+    setErrorKey(null);
     try {
       const result = await verifyPhoneCode({ phone: sentTo.phone, code }).unwrap();
       dispatch(
@@ -173,10 +179,11 @@ export default function InlinePhoneVerification({
       setStep("phone");
       setCode("");
       setResendAt(null);
+      notify.success(tx(K.code.success));
       onVerified?.(result);
     } catch (err) {
-      const problem = phoneVerificationError(err);
-      setError(problem.message);
+      const problem = phoneVerificationProblem(err, "verify");
+      setErrorKey(problem.key);
       if (problem.code === "TOO_MANY_ATTEMPTS" || problem.code === "CODE_EXPIRED") setCode("");
     }
   };
@@ -193,18 +200,32 @@ export default function InlinePhoneVerification({
     return (
       <VerifiedPhoneField
         phone={verifiedPhone}
-        label={phoneLabel}
         onChangeNumber={() => {
           setChanging(true);
           setStep("phone");
-          setError(null);
+          setErrorKey(null);
         }}
       />
     );
   }
 
+  /** "Resend code in" + the countdown as its own element, or the active send label. */
+  const resendLabel =
+    resendIn > 0 ? (
+      <>
+        {tx(K.code.resendIn)} <span className="tabular-nums">{formatCountdown(resendIn)}</span>
+      </>
+    ) : (
+      tx(K.verify.sendCode)
+    );
+
   return (
     <div className="space-y-4">
+      {/* One subtitle, replaced (not stacked) once the code is sent. */}
+      <p id={subtitleId} className={subtitleClassName}>
+        {tx(step === "phone" ? K.verify.subtitle : K.code.subtitle)}
+      </p>
+
       {step === "phone" ? (
         <>
           <div onKeyDown={onEnter(() => void sendCode())}>
@@ -213,14 +234,15 @@ export default function InlinePhoneVerification({
               frameClassName="rounded-4xl border border-gray-200"
               countryCode={country}
               value={national}
-              label={phoneLabel}
-              // One error slot under the field: the API's message, or the
-              // field's own check — never both, never inside the frame.
+              label={tx(K.verify.numberLabel)}
+              // One error slot under the field: the API's or the field's own
+              // check, translated — never both, never inside the frame.
               error={error ?? undefined}
               validate
+              issueMessage={(issue) => tx(phoneIssueKey(issue))}
               onCountryChange={(next) => {
                 setCountry(next);
-                setError(null);
+                setErrorKey(null);
                 onNumberChange?.("", next);
               }}
               onChange={(value, detectedCountry) => {
@@ -228,7 +250,7 @@ export default function InlinePhoneVerification({
                 const nextCountry = detectedCountry ?? country;
                 setNational(nextNational);
                 if (detectedCountry) setCountry(detectedCountry);
-                setError(null);
+                setErrorKey(null);
                 onNumberChange?.(nextNational, nextCountry);
               }}
             />
@@ -239,31 +261,16 @@ export default function InlinePhoneVerification({
             disabled={isSending || resendIn > 0}
             className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSending ? "Sending…" : resendIn > 0 ? `${sendLabel} in ${formatCountdown(resendIn)}` : sendLabel}
+            {isSending ? tx(K.verify.sending) : resendLabel}
           </button>
-          {changing && (
-            <button
-              type="button"
-              onClick={() => {
-                setChanging(false);
-                setError(null);
-              }}
-              className="text-sm text-gray-700 underline-offset-2 hover:underline cursor-pointer"
-            >
-              Keep {formatPhoneForDisplay(verifiedPhone)}
-            </button>
-          )}
         </>
       ) : (
         <>
-          <p className="text-sm text-gray-600">
-            Enter the 6-digit code we sent to {formatPhoneForDisplay(sentTo?.phone)}.
-          </p>
           {/* The code and its error, together: the error sits below the
               box with clear space, never inside or over it. */}
           <div>
             <input
-              aria-label="Verification code"
+              aria-labelledby={subtitleId}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? "otp-error" : undefined}
               autoComplete="one-time-code"
@@ -274,7 +281,7 @@ export default function InlinePhoneVerification({
               value={code}
               onChange={(e) => {
                 setCode(sanitizeOtpInput(e.target.value));
-                setError(null);
+                setErrorKey(null);
               }}
               onKeyDown={onEnter(() => void verify())}
               placeholder="••••••"
@@ -297,7 +304,7 @@ export default function InlinePhoneVerification({
             disabled={!isCompleteOtp(code) || isVerifying}
             className="w-full bg-black text-white rounded-full py-4 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isVerifying ? "Verifying…" : "Confirm"}
+            {isVerifying ? tx(K.code.verifying) : tx(K.code.confirm)}
           </button>
           <div className="flex items-center justify-between text-sm">
             <button
@@ -305,11 +312,11 @@ export default function InlinePhoneVerification({
               onClick={() => {
                 setStep("phone");
                 setCode("");
-                setError(null);
+                setErrorKey(null);
               }}
               className="text-gray-700 underline-offset-2 hover:underline cursor-pointer"
             >
-              Change number
+              {tx(K.code.changeNumber)}
             </button>
             <button
               type="button"
@@ -317,7 +324,7 @@ export default function InlinePhoneVerification({
               disabled={resendIn > 0 || isSending}
               className="text-black font-medium underline-offset-2 hover:underline cursor-pointer disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
             >
-              {resendIn > 0 ? `Resend code in ${formatCountdown(resendIn)}` : "Resend code"}
+              {isSending ? tx(K.verify.sending) : resendLabel}
             </button>
           </div>
         </>

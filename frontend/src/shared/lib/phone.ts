@@ -178,10 +178,24 @@ export function phoneErrorMessage(
   country: string,
   { required = false }: { required?: boolean } = {},
 ): string | undefined {
-  const { issue } = processPhone(input, country);
+  const issue = phoneValidationIssue(input, country, { required });
   if (!issue) return undefined;
-  if (issue === "EMPTY") return required ? PHONE_REQUIRED_MESSAGE : undefined;
-  return PHONE_ISSUE_MESSAGES[issue];
+  return issue === "EMPTY" ? PHONE_REQUIRED_MESSAGE : PHONE_ISSUE_MESSAGES[issue];
+}
+
+/**
+ * The field's problem, if any: like `processPhone`, but an empty field is a
+ * problem only when the phone is required. For callers that turn the issue
+ * into their own (translated) text.
+ */
+export function phoneValidationIssue(
+  input: string | null | undefined,
+  country: string,
+  { required = false }: { required?: boolean } = {},
+): PhoneIssue | undefined {
+  const { issue } = processPhone(input, country);
+  if (issue === "EMPTY" && !required) return undefined;
+  return issue;
 }
 
 /**

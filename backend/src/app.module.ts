@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScheduleModule } from "@nestjs/schedule";
 import { APP_GUARD } from "@nestjs/core";
@@ -26,6 +26,7 @@ import { S3Module } from "./common/services/s3.module";
 import { GeocodingModule } from "./common/services/geocoding.module";
 import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { RolesGuard } from "@/common/guards/roles.guard";
+import { AppThrottlerGuard } from "@/common/guards/app-throttler.guard";
 import { PhoneVerifiedGuard } from "@/common/guards/phone-verified.guard";
 import { typeOrmConfig } from "./database/typeorm.config";
 import {SentryModule} from "@sentry/nestjs/setup";
@@ -94,7 +95,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
     {
       provide: APP_GUARD,

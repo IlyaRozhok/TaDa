@@ -39,8 +39,15 @@ export function countryName(code: string): string {
   }
 }
 
+/**
+ * Why a number was refused — machine-readable, alongside the English
+ * message, so the client shows its own translated text for each case.
+ */
+export type PhoneInvalidReason = "EMPTY" | "TOO_SHORT" | "TOO_LONG" | "NOT_MOBILE" | "INVALID";
+
 export const PhoneVerificationErrors = {
-  invalid: (message: string) => new PhoneVerificationError(HttpStatus.BAD_REQUEST, "PHONE_INVALID", message),
+  invalid: (reason: PhoneInvalidReason, message: string) =>
+    new PhoneVerificationError(HttpStatus.BAD_REQUEST, "PHONE_INVALID", message, { reason }),
 
   countryNotAllowed: (country: string) =>
     new PhoneVerificationError(

@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   PHONE_VERIFICATION_PATH,
-  countryNotAllowedMessage,
   formatCountdown,
   isCompleteOtp,
   isPhoneCountryAllowed,
   isPhoneVerificationExempt,
   isPhoneVerificationPending,
-  phoneVerificationError,
+  phoneIssueKey,
+  phoneVerificationProblem,
   phoneVerificationHref,
   safeReturnPath,
   sanitizeOtpInput,
@@ -93,13 +93,6 @@ describe("allowed countries (option B)", () => {
     expect(isPhoneCountryAllowed("JP", undefined)).toBe(true);
     expect(isPhoneCountryAllowed("JP", [])).toBe(true);
   });
-
-  it("uses the spec's message, naming the country", () => {
-    expect(countryNotAllowedMessage("JP")).toBe(
-      "We currently can't verify numbers from Japan. Please use a mobile from a supported country.",
-    );
-    expect(countryNotAllowedMessage(null)).toContain("from this country");
-  });
 });
 
 describe("the code field", () => {
@@ -124,37 +117,59 @@ describe("the code field", () => {
   });
 });
 
-describe("phoneVerificationError", () => {
-  it("reads the API's code, message and details", () => {
-    expect(
-      phoneVerificationError({
-        status: 400,
-        data: { statusCode: 400, code: "CODE_INVALID", message: "That code is incorrect. 4 attempts left.", attemptsRemaining: 4 },
-      }),
-    ).toEqual({
-      code: "CODE_INVALID",
-      message: "That code is incorrect. 4 attempts left.",
-      attemptsRemaining: 4,
-      retryAfterSeconds: undefined,
-    });
-    expect(
-      phoneVerificationError({ status: 429, data: { code: "RESEND_TOO_SOON", message: "Wait", retryAfterSeconds: 40 } }),
-    ).toMatchObject({ code: "RESEND_TOO_SOON", retryAfterSeconds: 40 });
+describe("phoneVerificationProblem — server errors map to keys, never to server text", () => {
+  const api = (status: number, data: Record<string, unknown>) => ({ status, data });
+
+  it.each([
+    [api(429, { code: "RATE_LIMITED", message: "Too many requests. Please try again later." }), "phone.error.rate.limited"],
+    // The stock throttler body, without our code: still the rate-limit key.
+    [api(429, { statusCode: 429, message: "ThrottlerException: Too Many Requests" }), "phone.error.rate.limited"],
+    [api(429, { code: "RESEND_TOO_SOON", retryAfterSeconds: 40 }), "phone.error.rate.limited"],
+    [api(429, { code: "TOO_MANY_SENDS", retryAfterSeconds: 3600 }), "phone.error.rate.limited"],
+    [api(409, { code: "PHONE_TAKEN" }), "phone.error.already.linked"],
+    [api(400, { code: "SEND_FAILED" }), "phone.error.send.failed"],
+    [api(503, { code: "VERIFICATION_UNAVAILABLE" }), "phone.error.send.failed"],
+    [api(400, { code: "CODE_INVALID", attemptsRemaining: 4 }), "phone.code.error.incorrect"],
+    [api(429, { code: "TOO_MANY_ATTEMPTS" }), "phone.code.error.attempts.exceeded"],
+    [api(400, { code: "CODE_EXPIRED" }), "phone.code.error.expired"],
+    [api(400, { code: "PHONE_INVALID", reason: "EMPTY" }), "phone.error.empty"],
+    [api(400, { code: "PHONE_INVALID", reason: "TOO_SHORT" }), "phone.error.too.short"],
+    [api(400, { code: "PHONE_INVALID", reason: "TOO_LONG" }), "phone.error.too.long"],
+    [api(400, { code: "PHONE_INVALID", reason: "NOT_MOBILE" }), "phone.error.not.mobile"],
+    [api(400, { code: "PHONE_INVALID" }), "phone.error.not.mobile"],
+    [api(400, { code: "PHONE_COUNTRY_NOT_ALLOWED", country: "JP" }), "phone.error.country.unsupported"],
+    [api(400, { code: "CAPTCHA_FAILED" }), "common.error.network"],
+    [api(400, { message: ["Enter the 6-digit code from the SMS"] }), "common.error.network"],
+    [api(500, { statusCode: 500, message: "Internal server error" }), "common.error.network"],
+    [{ status: "FETCH_ERROR", error: "TypeError: Failed to fetch" }, "common.error.network"],
+    [undefined, "common.error.network"],
+  ])("%j → %s", (error, key) => {
+    expect(phoneVerificationProblem(error).key).toBe(key);
   });
 
-  it("joins a validation error's message list", () => {
-    expect(phoneVerificationError({ status: 400, data: { message: ["Enter the 6-digit code from the SMS"] } })).toEqual({
-      code: undefined,
-      message: "Enter the 6-digit code from the SMS",
-      retryAfterSeconds: undefined,
-      attemptsRemaining: undefined,
-    });
-  });
-
-  it("falls back to a generic line for anything else", () => {
-    expect(phoneVerificationError({ status: "FETCH_ERROR", error: "TypeError" }).message).toBe(
-      "Something went wrong. Please try again.",
+  it("treats an unavailable provider as a generic failure when checking a code", () => {
+    expect(phoneVerificationProblem(api(503, { code: "VERIFICATION_UNAVAILABLE" }), "verify").key).toBe(
+      "common.error.network",
     );
-    expect(phoneVerificationError(undefined).message).toBe("Something went wrong. Please try again.");
+  });
+
+  it("keeps the code and the retry delay for the screen's logic", () => {
+    expect(phoneVerificationProblem(api(429, { code: "RESEND_TOO_SOON", retryAfterSeconds: 40 }))).toEqual({
+      key: "phone.error.rate.limited",
+      code: "RESEND_TOO_SOON",
+      retryAfterSeconds: 40,
+    });
+  });
+});
+
+describe("phoneIssueKey — client-side checks map to the same keys", () => {
+  it.each([
+    ["EMPTY", "phone.error.empty"],
+    ["TOO_SHORT", "phone.error.too.short"],
+    ["TOO_LONG", "phone.error.too.long"],
+    ["NOT_MOBILE", "phone.error.not.mobile"],
+    ["INVALID", "phone.error.not.mobile"],
+  ] as const)("%s → %s", (issue, key) => {
+    expect(phoneIssueKey(issue)).toBe(key);
   });
 });

@@ -6,6 +6,8 @@ import { useTranslation } from "@/app/hooks/useTranslation";
 import { phoneVerificationHref } from "@/shared/lib/phoneVerification";
 import InlinePhoneVerification from "@/app/components/phone-verification/InlinePhoneVerification";
 import VerifiedPhoneField from "@/app/components/phone-verification/VerifiedPhoneField";
+import { usePhoneVerificationText } from "@/app/components/phone-verification/usePhoneVerificationText";
+import { phoneVerificationKeys } from "@/app/lib/translationsKeys/phoneVerificationKeys";
 import { wizardKeys } from "@/app/lib/translationsKeys/wizardTranslationKeys";
 import { InputField } from "@/app/components/preferences/ui/InputField";
 import { PhoneMaskInput, DateInput } from "@/shared/ui";
@@ -45,6 +47,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
   className = "",
 }) => {
   const { t } = useTranslation();
+  const tx = usePhoneVerificationText();
   // "Change number" comes back here once the new number is verified.
   const pathname = usePathname();
 
@@ -105,11 +108,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
       {phoneVerification === "link" && (
         <div className="mb-6">
           {verifiedPhone ? (
-            <VerifiedPhoneField
-              phone={verifiedPhone}
-              label={t(wizardKeys.profile.phone)}
-              changeHref={phoneVerificationHref(pathname)}
-            />
+            <VerifiedPhoneField phone={verifiedPhone} changeHref={phoneVerificationHref(pathname)} />
           ) : (
             <PhoneMaskInput
               countryCode={phoneCountryCode}
@@ -170,13 +169,10 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
           still reaches the hook and is saved as before. */}
       {phoneVerification === "inline" && (
         <section className="mb-6">
-          {/* TODO(localazy): hardcoded English for now. */}
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Verify your phone</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{tx(phoneVerificationKeys.verify.title)}</h3>
           <InlinePhoneVerification
             verifiedPhone={verifiedPhone ?? null}
             initialPhone={formData.phone}
-            phoneLabel="Phone Number"
-            sendLabel="Verify"
             onNumberChange={(national, country) => onPhoneChange(national, country)}
           />
         </section>

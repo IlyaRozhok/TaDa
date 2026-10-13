@@ -146,10 +146,10 @@ export class PhoneVerificationService {
   private resolvePhone(phone: string, selectedCountry?: string): { e164: string; country: string } {
     const processed = processPhone(phone, selectedCountry);
     if (!processed.e164) {
+      const reason = processed.issue ?? "INVALID";
       throw Errors.invalid(
-        processed.issue === "EMPTY" || !processed.issue
-          ? "Please enter a phone number"
-          : PHONE_ISSUE_MESSAGES[processed.issue],
+        reason,
+        reason === "EMPTY" ? "Please enter a phone number" : PHONE_ISSUE_MESSAGES[reason],
       );
     }
     const country = processed.country ?? selectedCountry ?? "";

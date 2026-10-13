@@ -7,6 +7,8 @@ import {
   formatPhoneInput,
   hasPhoneDigits,
   phoneErrorMessage,
+  phoneValidationIssue,
+  type PhoneIssue,
 } from "@/shared/lib/phone";
 import {
   COUNTRIES,
@@ -42,6 +44,11 @@ export interface PhoneMaskInputProps {
    * leaves the field. Callers that render their own phone errors leave it off.
    */
   validate?: boolean;
+  /**
+   * Turns a validation issue into the text to show — for callers with their
+   * own (translated) copy. Without it the shared English messages are used.
+   */
+  issueMessage?: (issue: PhoneIssue) => string;
   onCountryChange?: (countryCode: string) => void;
 }
 
@@ -61,6 +68,7 @@ export default function PhoneMaskInput({
   required = false,
   error,
   validate = false,
+  issueMessage,
   onCountryChange,
 }: PhoneMaskInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
@@ -104,11 +112,16 @@ export default function PhoneMaskInput({
     onChange(next || undefined, detectedCountry?.code);
   };
 
+  /** The field's own check, in the caller's copy or the shared English. */
+  const validationMessage = (): string | undefined => {
+    const issue = phoneValidationIssue(value, selectedCountry.code, { required });
+    if (!issue) return undefined;
+    return issueMessage ? issueMessage(issue) : phoneErrorMessage(value, selectedCountry.code, { required });
+  };
+
   const shownError =
     error ||
-    (validate && !isFocused && (isTouched || hasPhoneDigits(value))
-      ? phoneErrorMessage(value, selectedCountry.code, { required })
-      : undefined);
+    (validate && !isFocused && (isTouched || hasPhoneDigits(value)) ? validationMessage() : undefined);
 
   const handleCountryChange = (country: Country) => {
     setSelectedCountry(country);

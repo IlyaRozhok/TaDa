@@ -1,3 +1,6 @@
+import { phoneVerificationKeys as K } from "@/app/lib/translationsKeys/phoneVerificationKeys";
+import type { PhoneIssue } from "@/shared/lib/phone";
+
 /**
  * Pure helpers for SMS phone verification: routing, the allowed-country
  * check, OTP input, and turning API errors into the message to show. The
@@ -95,20 +98,6 @@ export const isPhoneCountryAllowed = (
   allowed: readonly string[] | undefined,
 ): boolean => !allowed || allowed.length === 0 || (!!country && allowed.includes(country));
 
-/** "JP" → "Japan" (falls back to the code). */
-export function countryDisplayName(code: string): string {
-  try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
-
-/** The spec's message for a country outside the list — the same text the API returns. */
-export const countryNotAllowedMessage = (code: string | null | undefined): string =>
-  `We currently can't verify numbers from ${code ? countryDisplayName(code) : "this country"}. ` +
-  "Please use a mobile from a supported country.";
-
 /** Digits only, at most six — what the code field keeps of whatever is typed or pasted. */
 export const sanitizeOtpInput = (value: string): string => value.replace(/\D/g, "").slice(0, OTP_LENGTH);
 
@@ -120,44 +109,80 @@ export const formatCountdown = (seconds: number): string => {
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 };
 
-export interface PhoneVerificationError {
+export interface PhoneVerificationProblem {
+  /** Translation key of the text to show — never the API's own wording. */
+  key: string;
+  /** The API's stable error code, when it sent one. */
   code?: string;
-  message: string;
+  /** Seconds until a code may be sent again (rate-limit answers). */
   retryAfterSeconds?: number;
-  attemptsRemaining?: number;
 }
 
-const FALLBACK_MESSAGE = "Something went wrong. Please try again.";
+/** Key for a number the client-side check refuses (shared rules, phone.ts). */
+export function phoneIssueKey(issue: PhoneIssue): string {
+  switch (issue) {
+    case "EMPTY":
+      return K.error.empty;
+    case "TOO_SHORT":
+      return K.error.tooShort;
+    case "TOO_LONG":
+      return K.error.tooLong;
+    // Junk that is not a number at all reads as "enter a mobile number" too:
+    // the copy has no separate line for it.
+    case "NOT_MOBILE":
+    case "INVALID":
+      return K.error.notMobile;
+  }
+}
+
+const isIssue = (value: unknown): value is PhoneIssue =>
+  value === "EMPTY" || value === "TOO_SHORT" || value === "TOO_LONG" || value === "NOT_MOBILE" || value === "INVALID";
 
 /**
- * An RTK Query error from the phone endpoints as something to show. The API
- * sends `{ code, message }` with an English message meant for the screen; a
- * validation error sends `message` as a list; anything else gets a generic
- * line rather than a status code.
+ * Any failure of the phone endpoints — or of the network — as a translation
+ * key. The API answers `{ code, reason?, retryAfterSeconds? }` with stable
+ * codes; this maps them, so no server wording ("ThrottlerException: Too Many
+ * Requests") can reach the screen. Anything unrecognised is the generic
+ * network message.
+ *
+ * `step` disambiguates the one code shared by both calls:
+ * VERIFICATION_UNAVAILABLE is a failed send on "send", a generic failure on
+ * "verify".
  */
-export function phoneVerificationError(error: unknown): PhoneVerificationError {
-  const data =
-    typeof error === "object" && error !== null && "data" in error
-      ? (error as { data?: unknown }).data
-      : undefined;
-  if (typeof data !== "object" || data === null) return { message: FALLBACK_MESSAGE };
+export function phoneVerificationProblem(error: unknown, step: "send" | "verify" = "send"): PhoneVerificationProblem {
+  const err = typeof error === "object" && error !== null ? (error as { status?: unknown; data?: unknown }) : {};
+  const body =
+    typeof err.data === "object" && err.data !== null
+      ? (err.data as { code?: unknown; reason?: unknown; retryAfterSeconds?: unknown })
+      : {};
+  const code = typeof body.code === "string" ? body.code : undefined;
+  const retryAfterSeconds = typeof body.retryAfterSeconds === "number" ? body.retryAfterSeconds : undefined;
+  const problem = (key: string): PhoneVerificationProblem => ({ key, code, retryAfterSeconds });
 
-  const body = data as {
-    code?: unknown;
-    message?: unknown;
-    retryAfterSeconds?: unknown;
-    attemptsRemaining?: unknown;
-  };
-  const message = Array.isArray(body.message)
-    ? body.message.filter((m) => typeof m === "string").join(" ")
-    : typeof body.message === "string"
-      ? body.message
-      : "";
+  switch (code) {
+    case "RATE_LIMITED":
+    case "RESEND_TOO_SOON":
+    case "TOO_MANY_SENDS":
+      return problem(K.error.rateLimited);
+    case "PHONE_TAKEN":
+      return problem(K.error.alreadyLinked);
+    case "SEND_FAILED":
+      return problem(K.error.sendFailed);
+    case "VERIFICATION_UNAVAILABLE":
+      return problem(step === "send" ? K.error.sendFailed : K.commonErrorNetwork);
+    case "CODE_INVALID":
+      return problem(K.code.errorIncorrect);
+    case "TOO_MANY_ATTEMPTS":
+      return problem(K.code.errorAttemptsExceeded);
+    case "CODE_EXPIRED":
+      return problem(K.code.errorExpired);
+    case "PHONE_INVALID":
+      return problem(phoneIssueKey(isIssue(body.reason) ? body.reason : "INVALID"));
+    case "PHONE_COUNTRY_NOT_ALLOWED":
+      return problem(K.error.countryUnsupported);
+  }
 
-  return {
-    code: typeof body.code === "string" ? body.code : undefined,
-    message: message || FALLBACK_MESSAGE,
-    retryAfterSeconds: typeof body.retryAfterSeconds === "number" ? body.retryAfterSeconds : undefined,
-    attemptsRemaining: typeof body.attemptsRemaining === "number" ? body.attemptsRemaining : undefined,
-  };
+  // A throttled request from any layer, even one without our code.
+  if (err.status === 429) return problem(K.error.rateLimited);
+  return problem(K.commonErrorNetwork);
 }

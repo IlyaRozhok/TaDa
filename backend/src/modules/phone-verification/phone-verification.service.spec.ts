@@ -124,15 +124,18 @@ describe("happy path on the stub", () => {
 
 describe("number checks before anything is sent", () => {
   it.each([
-    ["0712345678", "Number is too short — please check it"],
-    ["020 7946 0000", "Please enter a mobile number"],
-    ["abc", "Please enter a valid phone number"],
-    ["   ", "Please enter a phone number"],
-  ])("rejects %s with %s", async (phone, message) => {
+    ["0712345678", "TOO_SHORT", "Number is too short — please check it"],
+    ["071234567890", "TOO_LONG", "Number is too long — please check it"],
+    ["020 7946 0000", "NOT_MOBILE", "Please enter a mobile number"],
+    ["abc", "INVALID", "Please enter a valid phone number"],
+    ["   ", "EMPTY", "Please enter a phone number"],
+  ])("rejects %s with reason %s", async (phone, reason, message) => {
     const t = setup();
+    // `reason` is the stable code the client translates; `message` is for logs.
     expect(await errorOf(t.service.sendCode(t.user(), { phone, country: "GB" }, null))).toMatchObject({
       status: 400,
       code: "PHONE_INVALID",
+      reason,
       message,
     });
     expect(t.ledger.events).toHaveLength(0);
