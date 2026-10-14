@@ -277,6 +277,16 @@ export function formatPhoneForDisplay(
 }
 
 /**
+ * A number in international format with its country code ("+44 7123
+ * 456785"), for showing where a code was sent. A value that does not parse
+ * is shown as stored.
+ */
+export function formatPhoneInternational(stored: string | null | undefined, country?: string | null): string {
+  const parsed = parseStored(stored, country);
+  return parsed ? parsed.formatInternational() : (stored ?? "").trim();
+}
+
+/**
  * `tel:` and WhatsApp links for a stored number, or null when it is not a
  * valid number — a link to a truncated legacy value would dial a stranger.
  */

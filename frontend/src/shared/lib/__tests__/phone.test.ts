@@ -6,6 +6,7 @@ import {
   PHONE_REQUIRED_MESSAGE,
   detectPhoneCountry,
   formatPhoneForDisplay,
+  formatPhoneInternational,
   formatPhoneInput,
   hasPhoneDigits,
   isValidPhone,
@@ -324,5 +325,17 @@ describe("splitValidPhone / parseStoredPhone round trips", () => {
   it("returns null for an empty or unrecognisable value", () => {
     expect(parseStoredPhone("")).toBeNull();
     expect(parseStoredPhone("12345")).toBeNull();
+  });
+});
+
+describe("formatPhoneInternational", () => {
+  it("shows the country code, GB included", () => {
+    expect(formatPhoneInternational("+447123456785")).toBe("+44 7123 456785");
+    expect(formatPhoneInternational("+380934839253")).toBe("+380 93 483 9253");
+  });
+
+  it("shows a value that does not parse as stored", () => {
+    expect(formatPhoneInternational(" +447041 23079 ")).toBe("+447041 23079");
+    expect(formatPhoneInternational(null)).toBe("");
   });
 });

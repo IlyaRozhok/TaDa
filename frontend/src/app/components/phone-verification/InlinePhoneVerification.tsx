@@ -8,7 +8,7 @@ import { PhoneMaskInput } from "@/shared/ui/PhoneMaskInput";
 import { useTurnstile } from "@/shared/ui/Turnstile/useTurnstile";
 import { parseStoredPhone } from "@/shared/lib/countries";
 import { notify } from "@/shared/lib/notify";
-import { formatPhoneForDisplay, phoneValidationIssue, processPhone } from "@/shared/lib/phone";
+import { formatPhoneInternational, phoneValidationIssue, processPhone } from "@/shared/lib/phone";
 import {
   OTP_LENGTH,
   formatCountdown,
@@ -17,6 +17,7 @@ import {
   phoneIssueKey,
   phoneVerificationProblem,
   sanitizeOtpInput,
+  withoutClosingStop,
 } from "@/shared/lib/phoneVerification";
 import { phoneVerificationKeys as K } from "@/app/lib/translationsKeys/phoneVerificationKeys";
 import {
@@ -255,16 +256,21 @@ export default function InlinePhoneVerification({
     <div className="space-y-4">
       {/* One subtitle, replaced (not stacked) once the code is sent. */}
       <p id={subtitleId} className={subtitleClassName}>
-        {tx(step === "phone" ? K.verify.subtitle : K.code.subtitle)}
-        {/* The number the code went to, after the text rather than inside it:
-            the translated copy carries no substitutions. */}
-        {step === "code" && sentTo && (
+        {/* On the code step the number the code went to follows the text,
+            "…sent to your mobile: +44 7123 456785" — appended, not inside the
+            translated copy, which carries no substitutions; so the key's own
+            closing full stop gives way to the colon. */}
+        {step === "phone" ? (
+          tx(K.verify.subtitle)
+        ) : sentTo ? (
           <>
-            {" "}
+            {withoutClosingStop(tx(K.code.subtitle))}:{" "}
             <span dir="ltr" className="font-medium text-gray-900 whitespace-nowrap">
-              {formatPhoneForDisplay(sentTo.phone, sentTo.country)}
+              {formatPhoneInternational(sentTo.phone, sentTo.country)}
             </span>
           </>
+        ) : (
+          tx(K.code.subtitle)
         )}
       </p>
 
