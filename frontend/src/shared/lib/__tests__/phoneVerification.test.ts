@@ -7,9 +7,9 @@ import {
   isPhoneCountryAllowed,
   isPhoneVerificationExempt,
   isPhoneVerificationPending,
+  isPhoneVerificationRequired,
   phoneIssueKey,
   phoneVerificationProblem,
-  phoneVerificationHref,
   safeReturnPath,
   sanitizeOtpInput,
   withoutClosingStop,
@@ -63,12 +63,6 @@ describe("a verified number in the profile forms", () => {
     expect(verifiedPhoneOf({ phone: "+447400883369", phone_verified_at: null })).toBeNull();
     expect(verifiedPhoneOf({ phone: null, phone_verified_at: "2026-10-12T10:00:00Z" })).toBeNull();
     expect(verifiedPhoneOf(null)).toBeNull();
-  });
-
-  it("links to re-verification, returning to the form", () => {
-    expect(phoneVerificationHref("/app/profile")).toBe(`${PHONE_VERIFICATION_PATH}?return=%2Fapp%2Fprofile`);
-    expect(phoneVerificationHref()).toBe(PHONE_VERIFICATION_PATH);
-    expect(phoneVerificationHref("https://evil.example")).toBe(PHONE_VERIFICATION_PATH);
   });
 
   it("only ever returns to an in-app path", () => {
@@ -187,5 +181,18 @@ describe("withoutClosingStop", () => {
   it("leaves text without one alone", () => {
     expect(withoutClosingStop("Enter the code")).toBe("Enter the code");
     expect(withoutClosingStop("v1.2 code")).toBe("v1.2 code");
+  });
+});
+
+describe("isPhoneVerificationRequired", () => {
+  it("offers verification only with the gate on", () => {
+    expect(isPhoneVerificationRequired({ verificationRequired: true }, null)).toBe(true);
+    expect(isPhoneVerificationRequired({ verificationRequired: false }, { phone_verification_pending: true })).toBe(true);
+  });
+
+  it("is off with the gate off, while the config loads, or if it fails", () => {
+    expect(isPhoneVerificationRequired({ verificationRequired: false }, { phone_verification_pending: false })).toBe(false);
+    expect(isPhoneVerificationRequired(undefined, null)).toBe(false);
+    expect(isPhoneVerificationRequired(null, {})).toBe(false);
   });
 });

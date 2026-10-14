@@ -89,7 +89,6 @@ export default function SimpleOnboardingProfileStep({
             phoneCountryCode={phoneCountryCode}
             phoneNumberOnly={phoneNumberOnly}
             verifiedPhone={verifiedPhone}
-            phoneVerification="inline"
             dateOfBirthError={dateOfBirthError}
             onInputChange={handleInputChange}
             onPhoneChange={handlePhoneChange}

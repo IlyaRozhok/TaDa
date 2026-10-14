@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
 import { useTranslation } from "@/app/hooks/useTranslation";
-import { phoneVerificationHref } from "@/shared/lib/phoneVerification";
+import { selectUser } from "@/store/slices/authSlice";
+import { useGetPhoneVerificationConfigQuery } from "@/store/api/phoneVerification.api";
+import { isPhoneVerificationRequired } from "@/shared/lib/phoneVerification";
 import InlinePhoneVerification from "@/app/components/phone-verification/InlinePhoneVerification";
 import VerifiedPhoneField from "@/app/components/phone-verification/VerifiedPhoneField";
 import { usePhoneVerificationText } from "@/app/components/phone-verification/usePhoneVerificationText";
@@ -16,18 +18,16 @@ import { UpdateUserData } from "@/app/types/user";
 
 interface ProfileFormFieldsProps {
   formData: UpdateUserData;
+  /** The plain phone field's country and number (gate off). */
   phoneCountryCode: string;
   phoneNumberOnly: string;
   /** The SMS-verified number (E.164): shown read-only instead of the input. */
   verifiedPhone?: string | null;
   /**
-   * "link" (profile page): the phone field sits with the other fields, and a
-   * verified number links to /app/verify-phone to change it. "inline"
-   * (onboarding): a "Verify your phone" section at the bottom runs the whole
-   * verification in place.
+   * Where the verification's primary button (Send code / Confirm) renders —
+   * the onboarding form puts it at its very bottom. Without it the button
+   * sits right under the field (profile settings).
    */
-  phoneVerification?: "link" | "inline";
-  /** Inline mode: where the verification's primary button renders (the form's bottom). */
   phoneActionContainer?: Element | null;
   dateOfBirthError: string | null;
   onInputChange: (field: keyof UpdateUserData, value: string) => void;
@@ -41,7 +41,6 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
   phoneCountryCode,
   phoneNumberOnly,
   verifiedPhone,
-  phoneVerification = "link",
   phoneActionContainer,
   dateOfBirthError,
   onInputChange,
@@ -51,8 +50,11 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
 }) => {
   const { t } = useTranslation();
   const tx = usePhoneVerificationText();
-  // "Change number" comes back here once the new number is verified.
-  const pathname = usePathname();
+  const user = useSelector(selectUser);
+  const { data: phoneConfig } = useGetPhoneVerificationConfigQuery();
+  // Gate off: a plain optional phone field and no verification UI at all,
+  // so nothing in these forms can send a code. Gate on: the inline flow.
+  const verificationRequired = isPhoneVerificationRequired(phoneConfig, user);
 
   // The hook is the single writer of `formData.phone` (E.164); this only
   // reports what the field shows.
@@ -105,13 +107,14 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
         />
       </div>
 
-      {/* Phone (profile page): a verified number is shown, not asked for
-          again; it changes only by re-verifying on the verification screen.
-          The onboarding form verifies inline at the bottom instead. */}
-      {phoneVerification === "link" && (
+      {/* Phone, gate off: the plain optional field, as before verification
+          existed. A number already verified stays read-only (the save
+          carries it unchanged), with no "Change number": that would send a
+          code. */}
+      {!verificationRequired && (
         <div className="mb-6">
           {verifiedPhone ? (
-            <VerifiedPhoneField phone={verifiedPhone} changeHref={phoneVerificationHref(pathname)} />
+            <VerifiedPhoneField phone={verifiedPhone} />
           ) : (
             <PhoneMaskInput
               countryCode={phoneCountryCode}
@@ -120,9 +123,7 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
               onChange={handlePhoneChange}
               onCountryChange={handleCountryChange}
               // Optional, as `validateForm` has it: an empty phone is fine, a
-              // wrong one is explained once the field loses focus. (The old
-              // `required` attribute was inert — these forms never submit
-              // natively — and would now show a "required" message.)
+              // wrong one is explained once the field loses focus.
               validate
             />
           )}
@@ -165,12 +166,13 @@ export const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
         />
       </div>
 
-      {/* Onboarding: send → code → verified, in place at the bottom of the
-          form — no route change. Once verified the number is read-only and
-          every save carries it unchanged (useUnifiedProfile), so the phone is
-          collected once. Without verification (gate off) the typed number
-          still reaches the hook and is saved as before. */}
-      {phoneVerification === "inline" && (
+      {/* Phone, gate on, in onboarding and profile settings alike: send →
+          code → verified, in place at the bottom of the form — no route
+          change (the standalone /app/verify-phone screen is only for the
+          login gate). Once verified the number is read-only and every save
+          carries it unchanged (useUnifiedProfile); "Change number"
+          re-verifies in place. */}
+      {verificationRequired && (
         <section className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">{tx(phoneVerificationKeys.verify.title)}</h3>
           <InlinePhoneVerification

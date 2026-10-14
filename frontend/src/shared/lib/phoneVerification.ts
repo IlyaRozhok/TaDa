@@ -26,6 +26,18 @@ export const isPhoneVerificationPending = (
 ): boolean => Boolean(user?.phone_verification_pending);
 
 /**
+ * Whether the forms offer SMS verification at all: only with the gate on
+ * (the server's PHONE_VERIFICATION_REQUIRED, from /auth/phone/config, or a
+ * user /auth/me reports as pending). Off — or not yet known, or the config
+ * failed to load — the forms show a plain optional phone field and can never
+ * send a code.
+ */
+export const isPhoneVerificationRequired = (
+  config: { verificationRequired?: boolean } | null | undefined,
+  user: { phone_verification_pending?: boolean } | null | undefined,
+): boolean => config?.verificationRequired === true || isPhoneVerificationPending(user);
+
+/**
  * The user's SMS-verified number (E.164), or null when the phone is not
  * verified. A verified number is shown read-only in the profile forms and
  * changed only through re-verification.
@@ -33,12 +45,6 @@ export const isPhoneVerificationPending = (
 export const verifiedPhoneOf = (
   user: { phone?: string | null; phone_verified_at?: string | null } | null | undefined,
 ): string | null => (user?.phone_verified_at && user.phone ? user.phone : null);
-
-/** The verification screen, set to come back to `returnTo` once done. */
-export const phoneVerificationHref = (returnTo?: string | null): string =>
-  returnTo && safeReturnPath(returnTo)
-    ? `${PHONE_VERIFICATION_PATH}?return=${encodeURIComponent(returnTo)}`
-    : PHONE_VERIFICATION_PATH;
 
 /**
  * A `return` target the screen may navigate to after verifying: an in-app

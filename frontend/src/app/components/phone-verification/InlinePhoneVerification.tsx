@@ -62,14 +62,15 @@ interface InlinePhoneVerificationProps {
  * Phone → SMS code → verified, all in one place: sending replaces the number
  * row with the code row in place (and the subtitle with the code subtitle),
  * approving replaces it with the read-only "Verified" number. No route
- * change, no overlay. Used inline by the onboarding form and by the
- * standalone /app/verify-phone screen, so the two cannot diverge.
+ * change, no overlay. Used inline by the onboarding form and profile settings
+ * (through ProfileFormFields) and by the standalone /app/verify-phone screen
+ * of the login gate, so they cannot diverge.
  *
  * Every visible text is a translation key (phoneVerificationKeys); errors —
  * the client's checks and the API's stable codes alike — are mapped to keys,
  * so no server wording reaches the screen.
  *
- * Plain elements, not a <form>: it sits inside the onboarding form, and forms
+ * Plain elements, not a <form>: it sits inside the profile forms, and forms
  * do not nest. Enter submits the current step by hand.
  */
 export default function InlinePhoneVerification({
