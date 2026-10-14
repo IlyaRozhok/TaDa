@@ -43,6 +43,8 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
 
   const {
     formData,
+    phoneCountryCode,
+    phoneNumberOnly,
     verifiedPhone,
     hasChanges,
     isSaving,
@@ -286,6 +288,8 @@ export const UnifiedProfileForm: React.FC<UnifiedProfileFormProps> = ({
         {/* Profile Form Fields */}
         <ProfileFormFields
           formData={formData}
+          phoneCountryCode={phoneCountryCode}
+          phoneNumberOnly={phoneNumberOnly}
           verifiedPhone={verifiedPhone}
           dateOfBirthError={dateOfBirthError}
           onInputChange={handleInputChange}

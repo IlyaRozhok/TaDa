@@ -7,6 +7,7 @@ import {
   isPhoneCountryAllowed,
   isPhoneVerificationExempt,
   isPhoneVerificationPending,
+  isPhoneVerificationRequired,
   phoneIssueKey,
   phoneVerificationProblem,
   safeReturnPath,
@@ -180,5 +181,18 @@ describe("withoutClosingStop", () => {
   it("leaves text without one alone", () => {
     expect(withoutClosingStop("Enter the code")).toBe("Enter the code");
     expect(withoutClosingStop("v1.2 code")).toBe("v1.2 code");
+  });
+});
+
+describe("isPhoneVerificationRequired", () => {
+  it("offers verification only with the gate on", () => {
+    expect(isPhoneVerificationRequired({ verificationRequired: true }, null)).toBe(true);
+    expect(isPhoneVerificationRequired({ verificationRequired: false }, { phone_verification_pending: true })).toBe(true);
+  });
+
+  it("is off with the gate off, while the config loads, or if it fails", () => {
+    expect(isPhoneVerificationRequired({ verificationRequired: false }, { phone_verification_pending: false })).toBe(false);
+    expect(isPhoneVerificationRequired(undefined, null)).toBe(false);
+    expect(isPhoneVerificationRequired(null, {})).toBe(false);
   });
 });

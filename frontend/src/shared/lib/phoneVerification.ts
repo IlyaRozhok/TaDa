@@ -26,6 +26,18 @@ export const isPhoneVerificationPending = (
 ): boolean => Boolean(user?.phone_verification_pending);
 
 /**
+ * Whether the forms offer SMS verification at all: only with the gate on
+ * (the server's PHONE_VERIFICATION_REQUIRED, from /auth/phone/config, or a
+ * user /auth/me reports as pending). Off — or not yet known, or the config
+ * failed to load — the forms show a plain optional phone field and can never
+ * send a code.
+ */
+export const isPhoneVerificationRequired = (
+  config: { verificationRequired?: boolean } | null | undefined,
+  user: { phone_verification_pending?: boolean } | null | undefined,
+): boolean => config?.verificationRequired === true || isPhoneVerificationPending(user);
+
+/**
  * The user's SMS-verified number (E.164), or null when the phone is not
  * verified. A verified number is shown read-only in the profile forms and
  * changed only through re-verification.
