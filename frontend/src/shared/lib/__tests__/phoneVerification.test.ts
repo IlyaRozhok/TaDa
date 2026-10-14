@@ -12,6 +12,7 @@ import {
   phoneVerificationHref,
   safeReturnPath,
   sanitizeOtpInput,
+  withoutClosingStop,
   shouldRedirectToPhoneVerification,
   verifiedPhoneOf,
 } from "../phoneVerification";
@@ -171,5 +172,20 @@ describe("phoneIssueKey — client-side checks map to the same keys", () => {
     ["INVALID", "phone.error.not.mobile"],
   ] as const)("%s → %s", (issue, key) => {
     expect(phoneIssueKey(issue)).toBe(key);
+  });
+});
+
+describe("withoutClosingStop", () => {
+  it("drops the closing full stop so a colon can follow", () => {
+    expect(withoutClosingStop("Enter the 6-digit code we’ve sent to your mobile.")).toBe(
+      "Enter the 6-digit code we’ve sent to your mobile",
+    );
+    expect(withoutClosingStop("请输入我们发送到您手机上的6位验证码。")).toBe("请输入我们发送到您手机上的6位验证码");
+    expect(withoutClosingStop("उसे दर्ज करें।")).toBe("उसे दर्ज करें");
+  });
+
+  it("leaves text without one alone", () => {
+    expect(withoutClosingStop("Enter the code")).toBe("Enter the code");
+    expect(withoutClosingStop("v1.2 code")).toBe("v1.2 code");
   });
 });

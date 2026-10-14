@@ -98,6 +98,12 @@ export const isPhoneCountryAllowed = (
   allowed: readonly string[] | undefined,
 ): boolean => !allowed || allowed.length === 0 || (!!country && allowed.includes(country));
 
+/**
+ * A translated sentence without its closing full stop (Latin ".", CJK "。",
+ * Devanagari "।"), so a ": <number>" can follow it on the code step.
+ */
+export const withoutClosingStop = (text: string): string => text.replace(/\s*[.。।]\s*$/u, "");
+
 /** Digits only, at most six — what the code field keeps of whatever is typed or pasted. */
 export const sanitizeOtpInput = (value: string): string => value.replace(/\D/g, "").slice(0, OTP_LENGTH);
 
