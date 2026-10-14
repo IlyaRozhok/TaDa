@@ -45,6 +45,9 @@ export default function PhoneVerificationScreen() {
             initialPhone={user?.phone}
             // The flow renders the subtitle, swapping it when the code is sent.
             subtitleClassName="text-center text-gray-600"
+            // A white page with no grey card: outline the fields so the
+            // shared fill (white from sm) does not vanish into it.
+            outlined
             onVerified={async (result) => {
               // Came from "Change number" in a profile form: go back there.
               // Read from location rather than useSearchParams, which would

@@ -293,19 +293,10 @@ export default function OnboardingPage() {
         </div>
 
         {/* Unified Bottom Navigation for intro phase */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
-          {/* Progress Bar — also the footer's divider: a gray-200 rule
-              (the old border-t doubled it), progress in a soft gray-400
-              rather than black, which at 4 of 4 read as a heavy black line. */}
-          <div className="w-full bg-gray-200 h-px">
-            <div
-              className="bg-gray-400 h-px transition-all duration-300"
-              style={{
-                width: `${(state.currentStep / INTRO_PHASE_TOTAL_STEPS) * 100}%`,
-              }}
-            />
-          </div>
-
+        {/* Divider: the same rule as the header's border-b (gray-200), on every
+            step — progress is the "Step N of M" text. A progress fill drew a
+            darker line that, at the last step, spanned the whole width. */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
           <div className="py-2 px-8">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               {/* Previous Button */}
@@ -387,23 +378,10 @@ export default function OnboardingPage() {
       </div>
 
       {/* Unified Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
-        {/* Progress Bar — also the footer's divider: a gray-200 rule
-            (the old border-t doubled it), progress in a soft gray-400
-            rather than black, which at 4 of 4 read as a heavy black line. */}
-        <div className="w-full bg-gray-200 h-px">
-          <div
-            className="bg-gray-400 h-px transition-all duration-300"
-            style={{
-              width: `${
-                (state.currentPhase === "profile"
-                  ? state.currentStep / INTRO_PHASE_TOTAL_STEPS
-                  : preferencesHook.step / PREFERENCES_PHASE_TOTAL_STEPS) * 100
-              }%`,
-            }}
-          />
-        </div>
-
+      {/* Divider: the same rule as the header's border-b (gray-200), on every
+          step — progress is the "Step N of M" text. A progress fill drew a
+          darker line that, at the last step, spanned the whole width. */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
         <div className="py-2 px-8">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             {/* Previous Button */}

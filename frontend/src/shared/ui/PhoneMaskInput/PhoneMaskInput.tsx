@@ -49,6 +49,12 @@ export interface PhoneMaskInputProps {
    * the message appearing (on blur, on send) does not push the content below.
    */
   reserveErrorSpace?: boolean;
+  /**
+   * A light outline for a field on a plain white page, where the shared
+   * fill (gray-50, white from sm) would not show. Forms on the grey card
+   * leave it off and look like their other fields.
+   */
+  outlined?: boolean;
   onCountryChange?: (countryCode: string) => void;
 }
 
@@ -69,6 +75,7 @@ export default function PhoneMaskInput({
   validate = false,
   issueMessage,
   reserveErrorSpace = false,
+  outlined = false,
   onCountryChange,
 }: PhoneMaskInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
@@ -153,17 +160,21 @@ export default function PhoneMaskInput({
 
   return (
     <div className={`relative ${className}`}>
-      {/* White, as on main, with a light border round the whole row
-          (selector and number) so it stays visible on white pages; the
-          border turns red on an error. */}
-      <div className={`relative flex rounded-4xl border ${shownError ? "border-red-400 focus-within:border-red-500" : "border-gray-300"}`}>
+      {/* The form fields' shared look (InputField, DateInput, CountryDropdown):
+          bg-gray-50 on mobile, white from sm, no border, rounded-4xl. Error
+          (and `outlined`) rings go round the whole row, selector and number. */}
+      <div
+        className={`relative flex rounded-4xl ${
+          shownError ? "ring-1 ring-red-400 focus-within:ring-red-500" : outlined ? "ring-1 ring-gray-300" : ""
+        }`}
+      >
         {/* Country Code Selector */}
         <div className="relative min-w-[11rem] max-w-[13rem] flex-shrink-0">
           <button
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center cursor-pointer justify-between gap-2 px-5 py-4 bg-white border-0 rounded-l-4xl hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed text-left"
+            className="flex items-center cursor-pointer justify-between gap-2 px-5 py-4 bg-gray-50 sm:bg-white border-0 rounded-l-4xl hover:bg-gray-100 sm:hover:bg-gray-50 transition-colors h-full w-full disabled:opacity-50 disabled:cursor-not-allowed text-left"
           >
             <div className="min-w-0 flex-1">
               <span className="block text-xs font-medium text-gray-700 truncate leading-tight">
@@ -255,7 +266,7 @@ export default function PhoneMaskInput({
                 setIsFocused(false);
                 setIsTouched(true);
               }}
-              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-gray-400 border-0`}
+              className={`w-full px-6 pt-8 pb-4 rounded-r-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-gray-400 border-0`}
             />
             <label
               className={`absolute left-6 pointer-events-none transition-all duration-200 ${isFocused || hasValue ? "top-3 text-xs text-gray-600" : "top-1/2 -translate-y-1/2 text-base text-gray-500"}`}
