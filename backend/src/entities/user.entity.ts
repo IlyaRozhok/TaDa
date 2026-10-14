@@ -30,6 +30,11 @@ export enum UserStatus {
 }
 
 @Entity("users")
+// One verified number, one account (migration 1788700000000).
+@Index("uq_users_verified_phone", ["phone"], {
+  unique: true,
+  where: `"phone_verified_at" IS NOT NULL`,
+})
 export class User {
   @ApiProperty({ description: "Unique user identifier" })
   @PrimaryGeneratedColumn("uuid")
@@ -134,9 +139,32 @@ export class User {
   @Column({ nullable: true })
   address: string;
 
-  @ApiProperty({ description: "Phone number", example: "+447700900123" })
-  @Column({ nullable: true })
-  phone: string;
+  @ApiProperty({ description: "Mobile number, E.164", example: "+447123456789", nullable: true })
+  @Column({ type: "varchar", nullable: true })
+  phone: string | null;
+
+  /** ISO 3166-1 alpha-2 country of `phone`, derived from it on every save. */
+  @ApiProperty({ description: "Country of the phone number (ISO 3166-1 alpha-2)", example: "GB", nullable: true })
+  @Column({ type: "varchar", length: 2, nullable: true })
+  phone_country: string | null;
+
+  /**
+   * Set by the planned phone backfill for a stored number it could not
+   * normalise (truncated, landline, junk), so the user can be asked to
+   * re-enter it. Not read by any UI yet.
+   */
+  @Column({ type: "boolean", default: false })
+  phone_needs_update: boolean;
+
+  /**
+   * When `phone` was confirmed by SMS code. Null until then — every account
+   * that predates verification starts null — and reset whenever the number
+   * changes. A verified number belongs to one account only (partial unique
+   * index `uq_users_verified_phone`).
+   */
+  @ApiProperty({ description: "When the phone was verified by SMS", nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
+  phone_verified_at: Date | null;
 
   @ApiProperty({ description: "Date of birth", example: "1990-01-15" })
   @Column({ type: "date", nullable: true })

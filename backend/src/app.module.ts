@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScheduleModule } from "@nestjs/schedule";
 import { APP_GUARD } from "@nestjs/core";
@@ -21,10 +21,13 @@ import { BookingRequestModule } from "./modules/booking-request/booking-request.
 import { CallRequestModule } from "./modules/call-request/call-request.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AdminStatsModule } from "@/modules/admin-stats/admin-stats.module";
+import { PhoneVerificationModule } from "@/modules/phone-verification/phone-verification.module";
 import { S3Module } from "./common/services/s3.module";
 import { GeocodingModule } from "./common/services/geocoding.module";
 import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { RolesGuard } from "@/common/guards/roles.guard";
+import { AppThrottlerGuard } from "@/common/guards/app-throttler.guard";
+import { PhoneVerifiedGuard } from "@/common/guards/phone-verified.guard";
 import { typeOrmConfig } from "./database/typeorm.config";
 import {SentryModule} from "@sentry/nestjs/setup";
 import { LoggerModule } from "nestjs-pino";
@@ -81,6 +84,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     CallRequestModule,
     NotificationsModule,
     AdminStatsModule,
+    PhoneVerificationModule,
   ],
   controllers: [AppController],
   // APP_GUARDs run in declaration order: rate limiting first, then
@@ -91,7 +95,7 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
     {
       provide: APP_GUARD,
@@ -100,6 +104,12 @@ import { buildLoggerParams } from "@/common/logger/logger.config";
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    // Last: the phone verification gate, inert unless
+    // PHONE_VERIFICATION_REQUIRED=true, needs the user the JWT guard loaded.
+    {
+      provide: APP_GUARD,
+      useClass: PhoneVerifiedGuard,
     },
   ],
 })

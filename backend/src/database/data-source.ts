@@ -12,6 +12,7 @@ import { BookingRequest } from "../entities/booking-request.entity";
 import { TenantCv } from "../entities/tenant-cv.entity";
 import { Notification } from "../entities/notification.entity";
 import { CallRequest } from "../entities/call-request.entity";
+import { PhoneVerificationEvent } from "@/entities/phone-verification-event.entity";
 import * as path from "path";
 
 // Load environment variables
@@ -37,6 +38,7 @@ export const dataSourceOptions: DataSourceOptions = {
     TenantCv,
     Notification,
     CallRequest,
+    PhoneVerificationEvent,
   ],
   migrations: [path.join(__dirname, "migrations/*{.ts,.js}")],
   // "each" instead of the default "all": a migration may only opt out of its
@@ -46,7 +48,11 @@ export const dataSourceOptions: DataSourceOptions = {
   // its own transaction — the difference from "all" is that a run of several
   // pending migrations no longer rolls back the ones that already succeeded.
   migrationsTransactionMode: "each",
-  synchronize: process.env.NODE_ENV === "development",
+  // Opt-in only, as in typeorm.config.ts: NODE_ENV alone must never sync.
+  // This data source is what `migration:run` uses on the hosts, and stage once
+  // ran with NODE_ENV=development — every deploy then auto-synced its real
+  // schema from the entities before migrating.
+  synchronize: process.env.NODE_ENV === "development" && process.env.TYPEORM_SYNCHRONIZE === "true",
   logging: process.env.NODE_ENV === "development",
   ssl: false,
 };

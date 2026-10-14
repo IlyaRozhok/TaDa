@@ -8,6 +8,8 @@ export type UserResponse = {
   full_name: string | null;
   avatar_url: string | null;
   phone: string | null;
+  /** ISO country of `phone`; null for numbers saved before it existed. */
+  phone_country: string | null;
   provider: string | null;
   google_id: string | null;
   email_verified: boolean;
@@ -24,6 +26,7 @@ export const toUserResponse = (user: User): UserResponse => ({
   full_name: user.full_name,
   avatar_url: user.avatar_url,
   phone: user.phone || null,
+  phone_country: user.phone_country ?? null,
   provider: user.provider,
   google_id: user.google_id,
   email_verified: user.email_verified,

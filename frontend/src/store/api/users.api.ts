@@ -13,7 +13,10 @@ export interface AdminUser {
   status: string;
   full_name?: string;
   avatar_url?: string;
+  /** E.164 for numbers saved since the libphonenumber switch. */
   phone?: string | null;
+  /** ISO country of `phone`; null for numbers saved before it existed. */
+  phone_country?: string | null;
   provider?: string;
   google_id?: string;
   email_verified?: boolean;
@@ -65,6 +68,8 @@ export interface UpdateUserArgs {
   email: string;
   role: string;
   is_private_landlord?: boolean;
+  /** E.164, or "" to clear. Left out when the admin did not edit it. */
+  phone?: string;
 }
 
 /**

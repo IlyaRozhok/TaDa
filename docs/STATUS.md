@@ -208,9 +208,84 @@ decisions) is recorded HERE, briefly, with a date.
    Locally the dev variant `npm run geo:backfill` (ts-node, real `.env` in
    `backend/`) still works unchanged. Idempotent and resumable; rows whose
    address has no full UK postcode are reported and skipped.
+7. **SMS phone verification (phase 3)** — shipped dark; nothing changes for
+   users until step d. In order:
+   a. **Twilio:** create a Verify service; enable SMS geo permissions for
+      exactly the countries in `DEFAULT_ALLOWED_PHONE_COUNTRIES`
+      (`backend/src/modules/phone-verification/phone-verification.config.ts`)
+      or in `ALLOWED_PHONE_COUNTRIES` if set — the two lists must match.
+      Since 2026-10-13 that includes Guernsey, Jersey and Isle of Man
+      (GG/JE/IM: +44 numbers under their own ISO codes, separate in Twilio).
+   b. **Host `.env` (`/opt/tada/.env`):**
+      - **prod:** `SITE_ENV=production` — set it before the release that
+        carries phase 3. It is the only production signal the stub guard
+        reads (NODE_ENV is production on stage too). Then `OTP_PROVIDER=twilio`
+        + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`,
+        `TURNSTILE_SECRET_KEY`; optionally `ALLOWED_PHONE_COUNTRIES`. Without
+        Twilio, prod verification answers 503; `OTP_PROVIDER=stub` there
+        refuses to start.
+      - **stage:** `OTP_PROVIDER=stub` to test the whole flow with code 000000
+        and no SMS (no `SITE_ENV`). Left unset, stage answers 503 — a deployed
+        host gets the stub only when it asks for it by name. Switch to the
+        Twilio values once they exist.
+   c. **Cloudflare + Vercel:** create an invisible Turnstile widget for
+      ta-da.co and stage.ta-da.co; set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in
+      Vercel Production and Preview, its secret as `TURNSTILE_SECRET_KEY`.
+   d. **Only then** `PHONE_VERIFICATION_REQUIRED=true` (stage first, check the
+      flow on /app/verify-phone, then prod). Every existing user is
+      unverified and will be routed to the screen at their next request. In
+      production the backend refuses to start with the flag on but no Twilio
+      — a guard against locking everyone out.
 
 ## Open follow-ups (recorded, not scheduled)
 
+- **Stage boot crash of 2026-10-12, and the prod deploy step** (added
+  2026-10-12). Stage crash-looped on boot after its `/opt/tada/.env` stopped
+  saying `NODE_ENV=production`: the logger then chose the `pino-pretty`
+  transport, a devDependency absent from the image. The deploy reported it as
+  "Migration failed" because `docker compose exec` had no container to run in.
+  Fixed in code (5d9880f: pretty only when installed) and the staging step now
+  checks the container is up and prints its log (9079fbe). Two things remain:
+  - Keep `NODE_ENV=production` on both hosts — it drives secure cookies, CORS
+    and the log level. `SITE_ENV` is only the phone-stub guard and changes
+    nothing else.
+  - The **production** deploy step still has the old blind spot (a boot crash
+    reads as a migration failure). Give it the same container check; it was
+    left alone to avoid editing the prod deploy during an incident.
+
+- **Phone verification, after phase 3** (added 2026-10-12).
+  - The gate covers every role, admins included: an admin without a
+    verified phone is locked out like anyone else once the flag is on.
+    Decide before step 7d whether staff should be exempt.
+  - The verification screen is English-only (the spec fixes the messages);
+    its labels are not in Localazy.
+  - The profile form still edits the phone freely; a new number clears
+    `phone_verified_at`, so with the gate on the user verifies it again.
+  - `phone_verification_events` grows by a few rows per verification and is
+    never pruned; add a retention job if it ever matters.
+  - `backend/src/modules/phone-verification/testing/in-memory-ledger.ts` is a
+    test helper that compiles into `dist/` (harmless, unused at runtime).
+
+- **Phone handling, after phase 1** (added 2026-10-12). Phase 1 stores every
+  new phone as an E.164 mobile with `users.phone_country`, and adds
+  `users.phone_needs_update` for the backfill. Left for later, in order:
+  1. **Backfill** (phase 2): normalise existing `users.phone` values to E.164,
+     NULL out `""`, set `phone_country`, and set `phone_needs_update` on what
+     cannot be normalised (truncated, landline, junk — e.g. the tenant with
+     `+447041 23079`, whose missing digit is unrecoverable).
+  2. **Only then the CHECK** `phone IS NULL OR phone ~ '^\+[1-9][0-9]{7,14}$'`.
+     It cannot go in before the backfill: legacy rows violate it (4 of 10 on
+     the local DB), and `NOT VALID` is no escape — Postgres checks a CHECK on
+     every UPDATE of a row, so the refresh-token rotation on sign-in would
+     start failing for every user with a legacy phone.
+  - Strict mobile-only rejects UK `070` personal numbers (not MOBILE in
+    libphonenumber) and landlines, on every phone form including Book a call.
+  - The client (`frontend/src/shared/lib/phone.ts`) and the server
+    (`backend/src/common/phone/phone.ts`) mirror the same processing order
+    and carry the same test tables — change them together.
+  - `frontend/src/app/components/ui/SmartPhoneInput.tsx` still uses react-imask
+    masks; it is only reachable through `InputField type="tel"`, which nothing
+    renders. Delete it or move it onto `phone.ts`.
 - **Nationality aliases on the Tenant Statistics dashboard** (added
   2026-09-30). `users.nationality` mixes the dropdown's country names
   ("United Kingdom") with older free-text demonyms ("British"), so

@@ -195,7 +195,7 @@ export const DateInput: React.FC<DateInputProps> = ({
             "[&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden",
             "appearance-none",
             "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-            error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+            error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
           )}
         />
 

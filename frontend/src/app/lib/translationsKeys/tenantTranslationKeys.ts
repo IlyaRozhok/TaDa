@@ -123,6 +123,5 @@ export const tenantKeys = {
     stripe: "landing.tenant.web.partner1",
     experian: "landing.tenant.web.partner2",
     dps: "landing.tenant.web.partner3",
-    energy: "landing.tenant.web.partner4",
   },
 };

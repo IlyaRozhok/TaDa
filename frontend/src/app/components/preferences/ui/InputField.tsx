@@ -102,7 +102,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
                 handleChange(event);
               }}
               className={`w-full px-6 pt-8 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent peer border-0 ${
-                error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+                error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
               } ${className}`}
               placeholder=""
             />
@@ -111,7 +111,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
               ref={ref}
               {...props}
               className={`w-full px-6 pt-8 pb-4 rounded-4xl focus:outline-none transition-all duration-200 text-gray-900 bg-gray-50 sm:bg-white placeholder-transparent peer border-0 ${
-                error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+                error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
               } ${
                 props.type === "number"
                   ? "[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"

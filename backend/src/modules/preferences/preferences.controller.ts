@@ -24,6 +24,7 @@ import { UpdatePreferencesDto } from "./dto/update-preferences.dto";
 import { Preferences } from "@/entities/preferences.entity";
 import { Roles } from "@/common/decorators/roles.decorator";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { AllowUnverifiedPhone } from "@/common/decorators/allow-unverified-phone.decorator";
 import { User, UserRole } from "@/entities/user.entity";
 
 @ApiTags("Preferences")
@@ -90,6 +91,10 @@ export class PreferencesController {
 
   @Get()
   @Roles(UserRole.Tenant, UserRole.Admin)
+  // Readable before the phone is verified: whether a user has preferences is
+  // how the app tells a new user (verifies inline in the onboarding form)
+  // from an existing one (verifies on /app/verify-phone). Read-only, own row.
+  @AllowUnverifiedPhone()
   @ApiOperation({ summary: "Get current user preferences" })
   @ApiResponse({
     status: 200,

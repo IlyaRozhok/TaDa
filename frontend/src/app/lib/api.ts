@@ -1,6 +1,7 @@
 import axios from "axios";
 import { logout } from "@/store/slices/authSlice";
 import { refreshSession } from "./sessionRefresh";
+import { redirectToPhoneVerificationIfRequired } from "@/shared/lib/phoneVerification";
 
 // Create axios instance
 const api = axios.create({
@@ -39,6 +40,9 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // The phone verification gate's 403: on to the verification screen.
+    redirectToPhoneVerificationIfRequired(error.response?.status, error.response?.data);
 
     if (
       error.response?.status !== 401 ||

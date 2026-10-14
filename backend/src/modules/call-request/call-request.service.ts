@@ -3,6 +3,7 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
+import { phoneColumns } from "@/common/phone/phone";
 import { CallRequest, CallRequestSource } from "@/entities/call-request.entity";
 import {
   CallRequestedEvent,
@@ -39,14 +40,21 @@ export class CallRequestService {
     // by what the payload happens to carry: a client that left a stale phone
     // behind when the visitor switched to email must not have it persisted.
     const wantsEmail = dto.contactMethod === EMAIL_CONTACT_METHOD;
+    // E.164, read in the selected country when typed nationally. The stored
+    // country is the number's own: "+33 6…" sent with GB selected is French.
+    const phone = wantsEmail
+      ? { phone: null, phone_country: null }
+      : phoneColumns(dto.phone?.number, dto.phone?.countryCode);
 
     const saved = await this.callRequestRepository.save(
       this.callRequestRepository.create({
         reason: dto.reason,
         name: dto.name.trim(),
         contact_method: dto.contactMethod,
-        phone_country_code: wantsEmail ? null : (dto.phone?.countryCode ?? null),
-        phone_number: wantsEmail ? null : (dto.phone?.number.trim() ?? null),
+        phone_country_code: wantsEmail
+          ? null
+          : (phone.phone_country ?? dto.phone?.countryCode ?? null),
+        phone_number: phone.phone,
         email: wantsEmail ? (dto.email?.trim() ?? null) : null,
         preferred_time: preferredTime,
         notes,

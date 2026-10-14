@@ -65,7 +65,7 @@ const SmartPhoneInput = React.forwardRef<
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={`w-full px-6 pt-8 pb-4 rounded-3xl focus:outline-none transition-all duration-200 text-gray-900 bg-white placeholder-transparent peer border-0 ${
-              error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+              error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
             } ${className}`}
             placeholder=""
             {...props}

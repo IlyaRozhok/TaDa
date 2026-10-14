@@ -1,7 +1,7 @@
 import { ConflictException } from "@nestjs/common";
 
 import { UserAdminService } from "./user-admin.service";
-import { User } from "@/entities/user.entity";
+import { User, UserRole } from "@/entities/user.entity";
 import { Property, PropertyStatus } from "@/entities/property.entity";
 import { Building } from "@/entities/building.entity";
 import { BookingRequest, BookingRequestStatus } from "@/entities/booking-request.entity";
@@ -103,5 +103,73 @@ describe("UserAdminService — safe deletion", () => {
     await service.removeUserSafely(user);
 
     expect(em.update).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * `AdminUpdateUserDto` has always carried `phone`, but `updateUser` dropped
+ * it, so an admin could not correct a mistyped number. It is applied now,
+ * normalised to E.164.
+ */
+describe("UserAdminService — updateUser phone", () => {
+  let stored: User;
+  let em: any;
+  let service: UserAdminService;
+
+  beforeEach(() => {
+    stored = {
+      id: "user-1",
+      role: UserRole.Tenant,
+      phone: "+447041 23079",
+      tenantProfile: {},
+    } as unknown as User;
+    em = { save: jest.fn(async (entity: unknown) => entity) };
+    const userRepository: any = {
+      findOne: jest.fn(async () => stored),
+      manager: { transaction: jest.fn(async (cb: any) => cb(em)) },
+    };
+    service = new UserAdminService(
+      userRepository,
+      {} as any,
+      {} as any,
+      { emit: jest.fn() } as any,
+    );
+  });
+
+  it("applies and normalises an edited phone to E.164 with its country", async () => {
+    const saved = await service.updateUser("user-1", { phone: "+44 7400 883369" });
+
+    expect(saved).toMatchObject({ phone: "+447400883369", phone_country: "GB" });
+    expect(em.save).toHaveBeenCalledWith(
+      expect.objectContaining({ phone: "+447400883369", phone_country: "GB" }),
+    );
+  });
+
+  it("clears phone and country to NULL on an empty string", async () => {
+    const saved = await service.updateUser("user-1", { phone: "" });
+
+    expect(saved).toMatchObject({ phone: null, phone_country: null });
+  });
+
+  it("leaves the phone alone when the payload omits it", async () => {
+    const saved = await service.updateUser("user-1", { full_name: "Jane Doe" });
+
+    expect(saved.phone).toBe("+447041 23079");
+    expect(saved.full_name).toBe("Jane Doe");
+  });
+
+  it("clears the SMS verification when the admin changes the number", async () => {
+    stored = { ...stored, phone: "+447123456789", phone_verified_at: new Date() } as User;
+    const saved = await service.updateUser("user-1", { phone: "+447400883369" });
+
+    expect(saved).toMatchObject({ phone: "+447400883369", phone_verified_at: null });
+  });
+
+  it("keeps the SMS verification when the admin re-saves the same number", async () => {
+    const verifiedAt = new Date("2026-10-12T10:00:00Z");
+    stored = { ...stored, phone: "+447123456789", phone_verified_at: verifiedAt } as User;
+    const saved = await service.updateUser("user-1", { phone: "+44 7123 456789" });
+
+    expect(saved.phone_verified_at).toBe(verifiedAt);
   });
 });

@@ -1,21 +1,17 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import { useTranslation } from "../../hooks/useTranslation";
 import { wizardKeys } from "../../lib/translationsKeys/wizardTranslationKeys";
-import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
 import { StepWrapper } from "../preferences/step-components/StepWrapper";
 import { StepContainer } from "../preferences/step-components/StepContainer";
-import { Button } from "../../../shared/ui";
 import { useUnifiedProfile } from "../../../shared/hooks/useUnifiedProfile";
 import { ProfileFormFields } from "../../../shared/components/ProfileFormFields";
 
 interface SimpleOnboardingProfileStepProps {
   onComplete: () => void;
-  isLoading?: boolean;
-  onNext?: () => void;
   currentStep?: number;
   totalSteps?: number;
   onValidationChange?: (isValid: boolean) => void;
@@ -24,8 +20,6 @@ interface SimpleOnboardingProfileStepProps {
 
 export default function SimpleOnboardingProfileStep({
   onComplete,
-  isLoading: externalLoading,
-  onNext,
   currentStep = 1,
   totalSteps = 1,
   onValidationChange,
@@ -38,9 +32,8 @@ export default function SimpleOnboardingProfileStep({
     formData,
     phoneCountryCode,
     phoneNumberOnly,
+    verifiedPhone,
     hasChanges,
-    isSaving,
-    isLoading,
     dateOfBirthError,
     handleInputChange,
     handlePhoneChange,
@@ -73,19 +66,16 @@ export default function SimpleOnboardingProfileStep({
     };
   }, [handleSave]);
 
-  const handleNext = async () => {
-    const success = await handleSave();
-    if (success && onNext) {
-      onNext();
-    }
-  };
-
-  const loading = externalLoading || isLoading || isSaving;
-
   // Simple date change handler
   const handleDateChangeCallback = useCallback((date: string | null) => {
     handleInputChange("date_of_birth", date || "");
   }, [handleInputChange]);
+
+  // The phone verification's Send code / Confirm button renders here, at the
+  // bottom of the form, while its phone row and code box swap in place above.
+  // The step has no Next of its own: the wizard footer's Next saves through
+  // window.onboardingProfileSave.
+  const [phoneActionSlot, setPhoneActionSlot] = useState<HTMLDivElement | null>(null);
 
   return (
     <StepWrapper
@@ -98,21 +88,16 @@ export default function SimpleOnboardingProfileStep({
             formData={formData}
             phoneCountryCode={phoneCountryCode}
             phoneNumberOnly={phoneNumberOnly}
+            verifiedPhone={verifiedPhone}
+            phoneVerification="inline"
             dateOfBirthError={dateOfBirthError}
             onInputChange={handleInputChange}
             onPhoneChange={handlePhoneChange}
             onDateChange={handleDateChangeCallback}
+            phoneActionContainer={phoneActionSlot}
           />
 
-          <div className="flex justify-end pt-6">
-            <Button
-              onClick={handleNext}
-              disabled={!validateForm() || loading}
-              size="lg"
-            >
-              {onNext ? t(onboardingKeys.bottom.nextButton) : t(onboardingKeys.bottom.doneButton)}
-            </Button>
-          </div>
+          <div ref={setPhoneActionSlot} className="empty:hidden" />
         </div>
       </StepContainer>
     </StepWrapper>

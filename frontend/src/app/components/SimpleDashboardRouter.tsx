@@ -9,6 +9,10 @@ import {
   selectOnboardingCompleted,
 } from "@/store/slices/authSlice";
 import { waitForSessionManager } from "./providers/SessionManager";
+import {
+  PHONE_VERIFICATION_PATH,
+  isPhoneVerificationPending,
+} from "@/shared/lib/phoneVerification";
 
 interface SimpleDashboardRouterProps {
   children: React.ReactNode;
@@ -72,12 +76,20 @@ export default function SimpleDashboardRouter({
     }
 
     // Check onboarding status - redirect to onboarding if not onboarded
-    // Skip this check if already on onboarding page to avoid redirect loop
+    // Skip this check if already on onboarding page to avoid redirect loop.
+    // A new user verifies their phone there too, inline in the form.
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "";
     if (!onboardingCompleted && !currentPath.includes("/onboarding")) {
       console.log("❌ User not onboarded, redirecting to /app/onboarding");
       router.replace("/app/onboarding");
+      return;
+    }
+
+    // An onboarded user the gate still needs verifies on the standalone
+    // screen (only while the backend reports the gate on for this user).
+    if (isPhoneVerificationPending(user)) {
+      router.replace(PHONE_VERIFICATION_PATH);
       return;
     }
 

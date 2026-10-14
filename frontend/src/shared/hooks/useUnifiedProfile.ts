@@ -5,11 +5,9 @@ import type { User } from "@/store/slices/authSlice";
 import { buildFormDataFromUser } from "@/entities/user/lib/utils";
 import { authAPI } from "@/app/lib/api";
 import { updateUser } from "@/store/slices/authSlice";
-import {
-  getCountryByCode,
-  getDefaultCountry,
-  parseStoredPhone,
-} from "@/shared/lib/countries";
+import { getDefaultCountry, parseStoredPhone } from "@/shared/lib/countries";
+import { hasPhoneDigits, isValidPhone, toE164 } from "@/shared/lib/phone";
+import { isPhoneVerificationPending, verifiedPhoneOf } from "@/shared/lib/phoneVerification";
 
 interface UseUnifiedProfileOptions {
   onSuccess?: () => void;
@@ -20,6 +18,12 @@ interface UseUnifiedProfileReturn {
   formData: UpdateUserData;
   phoneCountryCode: string;
   phoneNumberOnly: string;
+  /**
+   * The SMS-verified number (E.164), or null. When set, the form shows it
+   * read-only and every save carries it unchanged — it changes only by
+   * re-verifying.
+   */
+  verifiedPhone: string | null;
   hasChanges: boolean;
   isSaving: boolean;
   isLoading: boolean;
@@ -65,6 +69,7 @@ export const useUnifiedProfile = (
     const phone = user ? getProfilePhone(user) : "";
     return parsePhone(phone).numberOnly;
   });
+  const verifiedPhone = verifiedPhoneOf(user);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -73,6 +78,8 @@ export const useUnifiedProfile = (
   // Track which user snapshot we've already initialized from, to avoid
   // resetting the form mid-edit when the parent re-renders with the same user.
   const initializedForRef = useRef<string | null>(null);
+  // The phone the form last took from the user, synced on its own (below).
+  const phoneSyncedRef = useRef<string | null>(null);
 
   // Re-initialize form when user data actually changes (e.g. after save).
   useEffect(() => {
@@ -80,28 +87,43 @@ export const useUnifiedProfile = (
 
     // Build a key from the profile fields that live in the users table.
     // The effect only fires when these values actually change (e.g. after a save).
+    // The phone is not part of it: verifying inline changes the stored phone
+    // mid-form, and a full re-init would wipe what the user has typed into
+    // the other fields but not saved yet.
     const key = [
       user.id,
       user.updated_at,
       user.first_name,
       user.last_name,
       user.address,
-      user.phone,
       user.date_of_birth,
       user.nationality,
     ].join("|");
+    const phone = getProfilePhone(user);
 
-    if (initializedForRef.current === key) return;
-    initializedForRef.current = key;
+    if (initializedForRef.current !== key) {
+      initializedForRef.current = key;
+      phoneSyncedRef.current = phone;
 
-    const newFormData = buildFormDataFromUser(user as any);
-    setFormData(newFormData);
-    setHasChanges(false);
-    setDateOfBirthError(null);
+      const newFormData = buildFormDataFromUser(user as any);
+      setFormData(newFormData);
+      setHasChanges(false);
+      setDateOfBirthError(null);
 
-    const { countryCode, numberOnly } = parsePhone(getProfilePhone(user));
-    setPhoneCountryCode(countryCode);
-    setPhoneNumberOnly(numberOnly);
+      const { countryCode, numberOnly } = parsePhone(phone);
+      setPhoneCountryCode(countryCode);
+      setPhoneNumberOnly(numberOnly);
+      return;
+    }
+
+    // Only the phone changed (verified inline): take it, keep everything else.
+    if (phoneSyncedRef.current !== phone) {
+      phoneSyncedRef.current = phone;
+      setFormData((prev) => ({ ...prev, phone }));
+      const { countryCode, numberOnly } = parsePhone(phone);
+      setPhoneCountryCode(countryCode);
+      setPhoneNumberOnly(numberOnly);
+    }
   }, [user]);
 
   const parsePhoneNumber = useCallback((phoneNumber: string) => {
@@ -116,12 +138,15 @@ export const useUnifiedProfile = (
     if (field === "date_of_birth") setDateOfBirthError(null);
   }, []);
 
+  /**
+   * The one writer of `formData.phone`: E.164 (`+447041230790`) once the
+   * number is valid, empty otherwise. An invalid number never reaches the
+   * payload — `validateForm` blocks the save while the field shows one.
+   */
   const handlePhoneChange = useCallback((phoneNumber: string, countryCode: string) => {
     setPhoneNumberOnly(phoneNumber);
     setPhoneCountryCode(countryCode);
-    const country = getCountryByCode(countryCode);
-    const fullPhone = country ? `${country.dialCode}${phoneNumber}` : phoneNumber;
-    setFormData(prev => ({ ...prev, phone: fullPhone }));
+    setFormData(prev => ({ ...prev, phone: toE164(phoneNumber, countryCode) ?? "" }));
     setHasChanges(true);
   }, []);
 
@@ -152,6 +177,18 @@ export const useUnifiedProfile = (
     const { first_name, last_name, date_of_birth } = formData;
     if (!first_name?.trim() || !last_name?.trim()) return false;
     if (!date_of_birth) return false;
+    // While the verification gate is on for this user, the form cannot be
+    // saved until the phone is verified (inline, in the same form).
+    if (isPhoneVerificationPending(user)) return false;
+    // Phone stays optional, but a number that is there must be complete.
+    // A verified number is not edited here, so there is nothing to check.
+    if (
+      !verifiedPhone &&
+      hasPhoneDigits(phoneNumberOnly) &&
+      !isValidPhone(phoneNumberOnly, phoneCountryCode)
+    ) {
+      return false;
+    }
 
     const date = new Date(date_of_birth);
     const today = new Date();
@@ -159,11 +196,14 @@ export const useUnifiedProfile = (
     const monthDiff = today.getMonth() - date.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) age--;
     return age >= 18 && age <= 100;
-  }, [formData]);
+  }, [formData, phoneNumberOnly, phoneCountryCode, verifiedPhone, user]);
 
   const saveProfile = useCallback(
     async (overrideData?: Partial<UpdateUserData>): Promise<boolean> => {
-      const payload = overrideData ? { ...formData, ...overrideData } : formData;
+      const merged = overrideData ? { ...formData, ...overrideData } : formData;
+      // A verified number travels through unchanged: the form never edits it,
+      // and an equal number keeps its verification on the server.
+      const payload = verifiedPhone ? { ...merged, phone: verifiedPhone } : merged;
       if (!validateForm()) return false;
 
       setIsSaving(true);
@@ -193,7 +233,7 @@ export const useUnifiedProfile = (
         setIsLoading(false);
       }
     },
-    [formData, validateForm, dispatch, onSuccess, onError]
+    [formData, verifiedPhone, validateForm, dispatch, onSuccess, onError]
   );
 
   const resetForm = useCallback(() => {
@@ -212,6 +252,7 @@ export const useUnifiedProfile = (
     formData,
     phoneCountryCode,
     phoneNumberOnly,
+    verifiedPhone,
     hasChanges,
     isSaving,
     isLoading,

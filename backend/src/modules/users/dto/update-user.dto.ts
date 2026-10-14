@@ -8,6 +8,8 @@ import {
   IsDateString,
 } from "class-validator";
 
+import { IsOptionalPhone } from "@/common/decorators/phone.decorators";
+
 export class UpdateUserDto {
   @ApiPropertyOptional({
     description: "Full name of the user",
@@ -49,11 +51,10 @@ export class UpdateUserDto {
   // Admin corrections go through AdminUpdateUserDto.
 
   @ApiPropertyOptional({
-    description: "User phone number",
-    example: "+44 7700 900123",
+    description: "Phone number, international format; stored as E.164. \"\" clears it.",
+    example: "+447911123456",
   })
-  @IsOptional()
-  @IsString()
+  @IsOptionalPhone()
   phone?: string;
 
   @ApiPropertyOptional({

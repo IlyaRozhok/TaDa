@@ -16,7 +16,20 @@ const REDACTED_PATHS = [
   'res.headers["set-cookie"]',
 ];
 
-export function buildLoggerParams(env: NodeJS.ProcessEnv): Params {
+/** Whether pino-pretty is installed — it is a devDependency, absent from the image. */
+function prettyInstalled(): boolean {
+  try {
+    require.resolve("pino-pretty");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function buildLoggerParams(
+  env: NodeJS.ProcessEnv,
+  hasPretty: () => boolean = prettyInstalled,
+): Params {
   const isProduction = env.NODE_ENV === "production";
 
   return {
@@ -24,8 +37,11 @@ export function buildLoggerParams(env: NodeJS.ProcessEnv): Params {
       level: isProduction ? "info" : "debug",
 
       // Production writes JSON straight to stdout; development goes through
-      // pino-pretty, which is a devDependency and must not be reached in prod.
-      transport: isProduction
+      // pino-pretty, which is a devDependency. A built image has no
+      // devDependencies, so it gets JSON whatever NODE_ENV says: a host whose
+      // .env lost NODE_ENV=production once crash-looped on boot with "unable
+      // to determine transport target for pino-pretty".
+      transport: isProduction || !hasPretty()
         ? undefined
         : {
             target: "pino-pretty",

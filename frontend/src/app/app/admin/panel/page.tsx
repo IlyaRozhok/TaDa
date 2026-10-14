@@ -21,6 +21,7 @@ import AdminPropertiesSection, {
 import AdminRequestsSection from "../../../components/AdminRequestsSection";
 import AdminCallRequestsSection from "../../../components/AdminCallRequestsSection";
 import AdminStatisticsSection from "@/app/components/AdminStatisticsSection";
+import PhoneLinks from "@/shared/ui/PhoneLinks/PhoneLinks";
 import AddUserModal from "../../../components/AddUserModal";
 import AddBuildingModal from "../../../components/AddBuildingModal";
 import AddPropertyModal from "../../../components/AddPropertyModal";
@@ -94,6 +95,7 @@ interface User {
   status: string;
   created_at: string;
   is_private_landlord?: boolean | null;
+  phone?: string | null;
 }
 
 /**
@@ -418,6 +420,7 @@ function AdminPanelContent() {
       email: string;
       role: string;
       is_private_landlord?: boolean;
+      phone?: string;
     },
   ) => {
     setIsActionLoading(true);
@@ -428,6 +431,7 @@ function AdminPanelContent() {
         email: data.email,
         role: data.role,
         is_private_landlord: data.is_private_landlord,
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
       }).unwrap();
 
       addNotification(
@@ -813,9 +817,19 @@ function AdminPanelContent() {
           </div>
           <div className="p-6 overflow-y-auto flex-1">
             {user ? (
-              <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
-                {JSON.stringify(selectedItem, null, 2)}
-              </pre>
+              <div className="space-y-4">
+                <div className="bg-white/10 backdrop-blur-[5px] border border-white/20 p-4 rounded-xl">
+                  <div className="text-sm text-white/70 mb-1">Phone</div>
+                  {user.phone ? (
+                    <PhoneLinks phone={user.phone} tone="dark" className="text-lg font-semibold" />
+                  ) : (
+                    <div className="text-lg font-semibold text-white/60">Not provided</div>
+                  )}
+                </div>
+                <pre className="text-sm text-white/90 bg-black/30 p-4 rounded-lg overflow-auto whitespace-pre-wrap break-words">
+                  {JSON.stringify(selectedItem, null, 2)}
+                </pre>
+              </div>
             ) : building ? (
               <div className="space-y-6">
                 {/* Key Info Cards */}

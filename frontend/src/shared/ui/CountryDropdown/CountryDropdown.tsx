@@ -6,7 +6,8 @@ import {
   COUNTRIES,
   getCountryByName,
   type Country,
-} from "../../lib/countries";
+} from "@/shared/lib/countries";
+import CountrySheet, { useIsMobileViewport } from "@/shared/ui/CountrySheet/CountrySheet";
 
 export interface CountryDropdownProps {
   /** Current selected country name */
@@ -76,14 +77,17 @@ export default function CountryDropdown({
       country.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Mobile picks the country in a bottom sheet; from sm, the dropdown above.
+  const isMobile = useIsMobileViewport();
+
   // Focus search input when dropdown opens
   useEffect(() => {
-    if (isDropdownOpen && searchInputRef.current) {
+    if (isDropdownOpen && !isMobile && searchInputRef.current) {
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 100);
     }
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isMobile]);
 
   // Reset search when dropdown closes
   useEffect(() => {
@@ -103,13 +107,15 @@ export default function CountryDropdown({
       }
     };
 
-    if (isDropdownOpen) {
+    // Not for the mobile sheet: it is portalled out of this element, so every
+    // tap inside it would count as outside. The sheet closes itself.
+    if (isDropdownOpen && !isMobile) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isMobile]);
 
   const hasValue = !!selectedCountry;
 
@@ -125,7 +131,7 @@ export default function CountryDropdown({
           className={`w-full px-6 pt-6 pb-6 rounded-3xl focus:outline-none transition-all duration-200 text-left flex items-center justify-between ${
             hasValue ? "text-gray-900" : "text-gray-400"
           } bg-gray-50 sm:bg-white border-0 ${
-            error ? "ring-2 ring-red-400 focus:ring-red-500" : ""
+            error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
           } disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed`}
         >
           <div className="flex items-center min-w-0 flex-1">
@@ -151,8 +157,18 @@ export default function CountryDropdown({
         )}
       </div>
 
+      {isDropdownOpen && !disabled && isMobile && (
+        <CountrySheet
+          countries={COUNTRIES}
+          selectedCode={selectedCountry?.code}
+          onSelect={handleCountryChange}
+          onClose={() => setIsDropdownOpen(false)}
+          title={label}
+        />
+      )}
+
       {/* Dropdown */}
-      {isDropdownOpen && !disabled && (
+      {isDropdownOpen && !disabled && !isMobile && (
         <>
           {/* Backdrop */}
           <div

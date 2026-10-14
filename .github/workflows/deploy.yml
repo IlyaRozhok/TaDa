@@ -267,7 +267,17 @@ jobs:
 
             echo "Waiting for backend to be healthy..."
             sleep 10
+            # A backend that crashes on boot (e.g. a startup config check
+            # refusing an invalid .env) leaves nothing to exec into, and used
+            # to surface below as a misleading "Migration failed". Report it
+            # as what it is, with the container's own log.
+            if [ "$(docker inspect -f '{{.State.Running}} {{.State.Restarting}}' tada-backend 2>/dev/null)" != "true false" ]; then
+              docker compose logs --no-color --tail=60 backend || true
+              echo "::error::Backend failed to start on staging (crash on boot, not a migration error) — see the container log above; check /opt/tada/.env."
+              exit 1
+            fi
             if ! docker compose exec -T backend npm run mig:run:prod; then
+              docker compose logs --no-color --tail=60 backend || true
               echo "::error::Migration failed on staging. The backend container is now serving NEW code against the OLD schema — fix forward or revert the deploy; do not leave it in this state."
               exit 1
             fi

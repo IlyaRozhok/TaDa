@@ -3,6 +3,10 @@
 
 import { isNavigationBlocked } from "./navigationGuard";
 import { fetchPreferencesOnce } from "@/store/api/preferences.api";
+import {
+  PHONE_VERIFICATION_PATH,
+  isPhoneVerificationPending,
+} from "@/shared/lib/phoneVerification";
 
 // Простая функция для определения роли пользователя
 export function getUserRole(user: any): string {
@@ -75,7 +79,9 @@ export async function redirectAfterLogin(user: any, router: any) {
   }
 
   // For tenant users, check if they have preferences
-  // If not, redirect to onboarding
+  // If not, redirect to onboarding — where a new user also verifies their
+  // phone, inline in the registration form (the preferences read is allowed
+  // before verification for exactly this decision).
   if (user?.role === "tenant") {
     try {
       const preferences = await fetchPreferencesOnce();
@@ -97,6 +103,13 @@ export async function redirectAfterLogin(user: any, router: any) {
       }
       console.warn("⚠️ Error checking preferences:", error);
     }
+  }
+
+  // An existing user whose phone the gate still needs verifies on the
+  // standalone screen before going anywhere else.
+  if (isPhoneVerificationPending(user)) {
+    router.replace(PHONE_VERIFICATION_PATH);
+    return;
   }
 
   const path = getRedirectPath(user);

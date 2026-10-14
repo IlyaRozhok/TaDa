@@ -40,13 +40,6 @@ const PartnersSection = ({
       description: t(keys.partners.dps),
       highlighted: false,
     },
-    {
-      id: 4,
-      name: "Octopus Energy",
-      logo: "/octopus.png",
-      description: t(keys.partners.energy),
-      highlighted: false,
-    },
   ];
 
   return (
@@ -64,12 +57,12 @@ const PartnersSection = ({
 
         {/* Partners Grid */}
         <div className="max-w-6xl mx-auto">
-          {/* 2x2 Grid */}
+          {/* Two columns; an odd last card is centred under the others. */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {partners.map((partner) => (
               <div
                 key={partner.id}
-                className="p-8 border border-gray-200 rounded-2xl text-center bg-white"
+                className="p-8 border border-gray-200 rounded-2xl text-center bg-white md:last:odd:col-span-2 md:last:odd:justify-self-center md:last:odd:w-[calc(50%-0.75rem)]"
               >
                 {/* Partner Logo */}
                 <div className="h-16 flex items-center justify-center mb-4">

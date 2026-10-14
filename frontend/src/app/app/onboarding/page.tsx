@@ -14,7 +14,7 @@ import SimpleOnboardingProfileStep from "../../components/onboarding/SimpleOnboa
 import OnboardingIntroScreens from "../../components/onboarding/OnboardingIntroScreens";
 import OnboardingIntroCenteredWrapper from "../../components/onboarding/OnboardingIntroCenteredWrapper";
 import NewPreferencesPage from "../../components/preferences/NewPreferencesPage";
-import UserDropdown from "../../components/UserDropdown";
+import OnboardingHeader from "@/app/components/onboarding/OnboardingHeader";
 import { waitForSessionManager } from "../../components/providers/SessionManager";
 import {
   useOnboarding,
@@ -29,37 +29,6 @@ import { track } from "@/lib/analytics/ga";
 import { useCompleteTenantCvMutation } from "@/store/api/tenantCv.api";
 import { useTranslation } from "../../hooks/useTranslation";
 import { onboardingKeys } from "../../lib/translationsKeys/onboardingTranslationKeys";
-import LanguageDropdown from "../../components/LanguageDropdown";
-
-// Onboarding Header Component - uses same language as landing (saved in localStorage via I18nContext)
-function OnboardingHeader() {
-
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 py-0.75 sm:py-1">
-      <div className="max-w-4xl lg:max-w-none mx-auto flex items-center justify-between px-8 sm:px-6 lg:px-8">
-        {/* Left: Logo */}
-        <div className="flex items-center">
-          <button className="transition-opacity hover:opacity-80 cursor-pointer">
-            <img
-              src="/black-logo.svg"
-              alt="TADA Logo"
-              className="h-6 sm:h-7 lg:h-8"
-            />
-          </button>
-        </div>
-
-        {/* Right: Language + Profile */}
-        <div className="flex items-center space-x-0.75 sm:space-x-1">
-          {/* Language Dropdown - same list as landing, persists via I18nContext/localStorage */}
-          <LanguageDropdown variant="default" />
-
-          {/* User Dropdown - Simplified */}
-          <UserDropdown simplified={true} />
-        </div>
-      </div>
-    </nav>
-  );
-}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -324,8 +293,9 @@ export default function OnboardingPage() {
         </div>
 
         {/* Unified Bottom Navigation for intro phase */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
-          {/* Progress Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
+          {/* Progress bar, also the footer's divider: the track is the header
+              rule's gray-200, progress fills it in black. */}
           <div className="w-full bg-gray-200 h-px">
             <div
               className="bg-black h-px transition-all duration-300"
@@ -395,8 +365,6 @@ export default function OnboardingPage() {
             <div className="w-full">
               <SimpleOnboardingProfileStep
                 onComplete={handleProfileComplete}
-                isLoading={state.isLoading}
-                onNext={handleProfileNext}
                 currentStep={state.currentStep}
                 totalSteps={TOTAL_ONBOARDING_STEPS}
                 onValidationChange={setIsProfileValid}
@@ -418,8 +386,9 @@ export default function OnboardingPage() {
       </div>
 
       {/* Unified Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
-        {/* Progress Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
+        {/* Progress bar, also the footer's divider: the track is the header
+            rule's gray-200, progress fills it in black. */}
         <div className="w-full bg-gray-200 h-px">
           <div
             className="bg-black h-px transition-all duration-300"

@@ -1,6 +1,8 @@
 // Country data with flags, dial codes, and names
 // Used for phone input country selectors
 
+import { splitValidPhone } from "./phone";
+
 export interface Country {
   code: string;
   name: string;
@@ -90,16 +92,26 @@ export function getCountryByName(name: string): Country | undefined {
 }
 
 /**
- * Parse a stored full phone number (e.g. "+380(93)399-91-81") into
- * { country, nationalNumber } where nationalNumber is the part after the
- * dial code, preserving any mask characters already in the string.
+ * Parse a stored full phone number into { country, nationalNumber } for the
+ * phone input.
  *
- * Uses longest-dial-code-first matching so "+380" is preferred over "+38".
+ * A valid number (E.164, as saved since the libphonenumber switch, or a valid
+ * legacy value) is split by its numbering plan: "+447041230790" → GB,
+ * "07041 230790". Anything else — legacy masked values such as
+ * "+380(93)399-91-81" or a truncated "+447041 23079" — falls back to
+ * longest-dial-code-first matching ("+380" before "+38"), keeping whatever
+ * was stored after the dial code so the user can see and correct it.
  */
 export function parseStoredPhone(
   fullPhone: string
 ): { country: Country; nationalNumber: string } | null {
   if (!fullPhone) return null;
+
+  const valid = splitValidPhone(fullPhone);
+  const validCountry = valid ? getCountryByCode(valid.country) : undefined;
+  if (valid && validCountry) {
+    return { country: validCountry, nationalNumber: valid.national };
+  }
 
   const sorted = [...COUNTRIES].sort(
     (a, b) => b.dialCode.length - a.dialCode.length

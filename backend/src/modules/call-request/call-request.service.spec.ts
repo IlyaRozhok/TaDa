@@ -35,7 +35,7 @@ function dto(overrides: Partial<CreateCallRequestDto> = {}): CreateCallRequestDt
     reason: "looking_for_home",
     name: "  Jane Doe  ",
     contactMethod: "voice_call",
-    phone: { countryCode: "GB", number: " 20 7946 0000 " },
+    phone: { countryCode: "GB", number: " 07123 456789 " },
     preferredTime: "  Weekday evenings  ",
     notes: "  Evenings work best  ",
     source: "tenant",
@@ -92,7 +92,8 @@ describe("CallRequestService", () => {
         name: "Jane Doe",
         contact_method: "voice_call",
         phone_country_code: "GB",
-        phone_number: "20 7946 0000",
+        // The national number typed for GB, stored as E.164.
+        phone_number: "+447123456789",
         preferred_time: "Weekday evenings",
         notes: "Evenings work best",
         source: "tenant",
@@ -134,7 +135,7 @@ describe("CallRequestService", () => {
     // email must not have it persisted: the method decides, not the payload.
     it("ignores a phone that arrives alongside the email method", async () => {
       await build().create(
-        emailDto({ phone: { countryCode: "GB", number: "20 7946 0000" } }),
+        emailDto({ phone: { countryCode: "GB", number: "07123 456789" } }),
       );
 
       expect(repo.saved[0].phone_country_code).toBeNull();
@@ -160,7 +161,7 @@ describe("CallRequestService", () => {
           name: "Jane Doe",
           contactMethod: "voice_call",
           contactMethodLabel: "Voice call",
-          phone: { countryCode: "GB", number: "20 7946 0000" },
+          phone: { countryCode: "GB", number: "+447123456789" },
           email: null,
           preferredTime: "Weekday evenings",
           notes: "Evenings work best",
