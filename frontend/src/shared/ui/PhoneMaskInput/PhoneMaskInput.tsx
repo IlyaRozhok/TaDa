@@ -16,6 +16,7 @@ import {
   getDefaultCountry,
   type Country,
 } from "@/shared/lib/countries";
+import CountrySheet, { useIsMobileViewport } from "@/shared/ui/CountrySheet/CountrySheet";
 
 export interface PhoneMaskInputProps {
   countryCode?: string;
@@ -145,12 +146,14 @@ export default function PhoneMaskInput({
       country.code.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  // Mobile picks the country in a bottom sheet; from sm, the dropdown below.
+  const isMobile = useIsMobileViewport();
+
   useEffect(() => {
-    // Not on mobile: the keyboard would cover the bottom sheet's list.
-    if (isDropdownOpen && searchInputRef.current && window.matchMedia("(min-width: 640px)").matches) {
+    if (isDropdownOpen && !isMobile && searchInputRef.current) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isMobile]);
 
   useEffect(() => {
     if (!isDropdownOpen) setSearchQuery("");
@@ -189,23 +192,30 @@ export default function PhoneMaskInput({
             />
           </button>
 
-          {isDropdownOpen && !disabled && (
+          {isDropdownOpen && !disabled && isMobile && (
+            <CountrySheet
+              countries={COUNTRIES}
+              selectedCode={selectedCountry.code}
+              onSelect={handleCountryChange}
+              onClose={() => setIsDropdownOpen(false)}
+              title={label}
+              showDialCode
+            />
+          )}
+
+          {isDropdownOpen && !disabled && !isMobile && (
             <>
-              {/* Mobile: a bottom sheet over a dimmed page, above the fixed
-                  wizard footer (z-50), so it never overlaps or pushes the
-                  form, its Send code button or the nav. From sm: the
-                  dropdown under the selector, as before. */}
-              <div className="fixed inset-0 z-[60] bg-black/40 sm:z-40 sm:bg-transparent" onClick={() => setIsDropdownOpen(false)} />
-              <div className="fixed inset-x-0 bottom-0 z-[70] max-h-[70dvh] rounded-t-3xl pb-[env(safe-area-inset-bottom)] sm:absolute sm:inset-x-auto sm:bottom-auto sm:top-full sm:left-0 sm:z-50 sm:mt-1 sm:w-80 sm:max-h-60 sm:rounded-3xl sm:pb-0 overflow-hidden flex flex-col backdrop-blur-[3px]">
+              <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+              <div className="absolute top-full left-0 z-50 mt-1 w-80 rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
                 <div
-                  className="relative flex flex-col min-h-0 rounded-t-3xl sm:rounded-3xl"
+                  className="relative rounded-3xl"
                   style={{
                     background: "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%), rgba(0,0,0,0.5)",
                     boxShadow: "0 1.5625rem 3.125rem rgba(0,0,0,0.4), 0 0.625rem 1.875rem rgba(0,0,0,0.2), inset 0 0.0625rem 0 rgba(255,255,255,0.1), inset 0 -0.0625rem 0 rgba(0,0,0,0.2)",
                   }}
                 >
-                  <div className="relative z-10 flex flex-col min-h-0">
-                    <div className="p-3 flex-shrink-0">
+                  <div className="relative z-10">
+                    <div className="p-3">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
                         <input
@@ -219,7 +229,7 @@ export default function PhoneMaskInput({
                         />
                       </div>
                     </div>
-                    <div className="overflow-y-auto overscroll-contain min-h-0 max-h-[calc(70dvh-4.5rem)] sm:max-h-48">
+                    <div className="overflow-y-auto max-h-48">
                       {filteredCountries.length > 0 ? (
                         filteredCountries.map((country) => (
                           <button

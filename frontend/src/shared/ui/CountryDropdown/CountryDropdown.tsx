@@ -6,7 +6,8 @@ import {
   COUNTRIES,
   getCountryByName,
   type Country,
-} from "../../lib/countries";
+} from "@/shared/lib/countries";
+import CountrySheet, { useIsMobileViewport } from "@/shared/ui/CountrySheet/CountrySheet";
 
 export interface CountryDropdownProps {
   /** Current selected country name */
@@ -76,15 +77,17 @@ export default function CountryDropdown({
       country.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Mobile picks the country in a bottom sheet; from sm, the dropdown above.
+  const isMobile = useIsMobileViewport();
+
   // Focus search input when dropdown opens
   useEffect(() => {
-    // Not on mobile: the keyboard would cover the bottom sheet's list.
-    if (isDropdownOpen && searchInputRef.current && window.matchMedia("(min-width: 640px)").matches) {
+    if (isDropdownOpen && !isMobile && searchInputRef.current) {
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 100);
     }
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isMobile]);
 
   // Reset search when dropdown closes
   useEffect(() => {
@@ -104,13 +107,15 @@ export default function CountryDropdown({
       }
     };
 
-    if (isDropdownOpen) {
+    // Not for the mobile sheet: it is portalled out of this element, so every
+    // tap inside it would count as outside. The sheet closes itself.
+    if (isDropdownOpen && !isMobile) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isMobile]);
 
   const hasValue = !!selectedCountry;
 
@@ -152,19 +157,28 @@ export default function CountryDropdown({
         )}
       </div>
 
+      {isDropdownOpen && !disabled && isMobile && (
+        <CountrySheet
+          countries={COUNTRIES}
+          selectedCode={selectedCountry?.code}
+          onSelect={handleCountryChange}
+          onClose={() => setIsDropdownOpen(false)}
+          title={label}
+        />
+      )}
+
       {/* Dropdown */}
-      {isDropdownOpen && !disabled && (
+      {isDropdownOpen && !disabled && !isMobile && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[60] bg-black/40 sm:z-40 sm:bg-transparent"
+            className="fixed inset-0 z-40"
             onClick={() => setIsDropdownOpen(false)}
           />
-          {/* Mobile: a bottom sheet above the fixed wizard footer (z-50).
-              From sm: the menu opening upward over the field, as before. */}
-          <div className="fixed inset-x-0 bottom-0 z-[70] max-h-[70dvh] rounded-t-3xl pb-[env(safe-area-inset-bottom)] sm:absolute sm:inset-x-auto sm:bottom-full sm:left-0 sm:z-50 sm:mb-1 sm:w-full sm:max-h-60 sm:rounded-3xl sm:pb-0 overflow-hidden flex flex-col backdrop-blur-[3px]">
+          {/* Dropdown Menu - always opens upward */}
+          <div className="absolute bottom-full left-0 z-50 mb-1 w-full rounded-3xl max-h-60 overflow-hidden flex flex-col backdrop-blur-[3px]">
             <div
-              className="relative flex flex-col min-h-0 rounded-t-3xl sm:rounded-3xl"
+              className="relative rounded-3xl"
               style={{
                 background:
                   "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(0, 0, 0, 0.5)",
@@ -172,9 +186,9 @@ export default function CountryDropdown({
                   "0 1.5625rem 3.125rem rgba(0, 0, 0, 0.4), 0 0.625rem 1.875rem rgba(0, 0, 0, 0.2), inset 0 0.0625rem 0 rgba(255, 255, 255, 0.1), inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.2)",
               }}
             >
-              <div className="relative z-10 flex flex-col min-h-0">
+              <div className="relative z-10">
                 {/* Search Input */}
-                <div className="p-3 border-b border-gray-200/20 flex-shrink-0">
+                <div className="p-3 border-b border-gray-200/20">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white" />
                     <input
@@ -190,7 +204,10 @@ export default function CountryDropdown({
                 </div>
 
                 {/* Countries List */}
-                <div className="overflow-y-auto overscroll-contain min-h-0 max-h-[calc(70dvh-4.5rem)] sm:max-h-48">
+                <div
+                  className="overflow-y-auto max-h-48"
+                  style={{ maxHeight: "12rem" }}
+                >
                   {filteredCountries.length > 0 ? (
                     filteredCountries.map((country) => (
                       <button
