@@ -51,11 +51,12 @@ interface InlinePhoneVerificationProps {
    */
   actionContainer?: Element | null;
   /**
-   * Outline the phone field and the code box: for a plain white page (the
-   * standalone screen), where the fields' shared fill would not show. In the
-   * onboarding form's grey card they stay like the other fields.
+   * The grey fill at every width for the phone field and the code box: for
+   * a plain white page (the standalone screen), where the shared fill (white
+   * from sm) would not show. On the forms' grey card they stay like the
+   * other fields.
    */
-  outlined?: boolean;
+  filled?: boolean;
 }
 
 /**
@@ -80,7 +81,7 @@ export default function InlinePhoneVerification({
   onVerified,
   onNumberChange,
   actionContainer,
-  outlined = false,
+  filled = false,
 }: InlinePhoneVerificationProps) {
   const dispatch = useDispatch();
   const tx = usePhoneVerificationText();
@@ -288,7 +289,7 @@ export default function InlinePhoneVerification({
               validate
               issueMessage={(issue) => tx(phoneIssueKey(issue))}
               reserveErrorSpace
-              outlined={outlined}
+              filled={filled}
               onCountryChange={(next) => {
                 setCountry(next);
                 setErrorKey(null);
@@ -331,8 +332,8 @@ export default function InlinePhoneVerification({
               // value took body's --foreground, which turns light grey under
               // prefers-color-scheme: dark — unreadable on this white field.
               // The form fields' shared look, like the phone field it replaces.
-              className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 bg-gray-50 sm:bg-white border-0 rounded-4xl py-5 focus:outline-none ${
-                error ? "ring-1 ring-red-400 focus:ring-red-500" : outlined ? "ring-1 ring-gray-300" : ""
+              className={`w-full text-center text-3xl tracking-[0.5em] font-semibold text-gray-900 placeholder-gray-400 ${filled ? "bg-gray-50" : "bg-gray-50 sm:bg-white"} border-0 rounded-4xl py-5 focus:outline-none ${
+                error ? "ring-1 ring-red-400 focus:ring-red-500" : ""
               }`}
             />
             {/* Always there, empty until needed: the error appearing does
