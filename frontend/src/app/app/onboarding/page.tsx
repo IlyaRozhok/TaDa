@@ -294,11 +294,11 @@ export default function OnboardingPage() {
 
         {/* Unified Bottom Navigation for intro phase */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
-          {/* Progress bar, also the footer's divider: the filled part in the
-              header rule's gray-200, the rest a lighter gray-100. */}
-          <div className="w-full bg-gray-100 h-px">
+          {/* Progress bar, also the footer's divider: the track is the header
+              rule's gray-200, progress fills it in black. */}
+          <div className="w-full bg-gray-200 h-px">
             <div
-              className="bg-gray-200 h-px transition-all duration-300"
+              className="bg-black h-px transition-all duration-300"
               style={{
                 width: `${(state.currentStep / INTRO_PHASE_TOTAL_STEPS) * 100}%`,
               }}
@@ -387,11 +387,11 @@ export default function OnboardingPage() {
 
       {/* Unified Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white">
-        {/* Progress bar, also the footer's divider: the filled part in the
-            header rule's gray-200, the rest a lighter gray-100. */}
-        <div className="w-full bg-gray-100 h-px">
+        {/* Progress bar, also the footer's divider: the track is the header
+            rule's gray-200, progress fills it in black. */}
+        <div className="w-full bg-gray-200 h-px">
           <div
-            className="bg-gray-200 h-px transition-all duration-300"
+            className="bg-black h-px transition-all duration-300"
             style={{
               width: `${
                 (state.currentPhase === "profile"
