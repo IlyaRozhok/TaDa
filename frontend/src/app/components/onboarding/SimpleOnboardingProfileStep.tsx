@@ -30,8 +30,6 @@ export default function SimpleOnboardingProfileStep({
 
   const {
     formData,
-    phoneCountryCode,
-    phoneNumberOnly,
     verifiedPhone,
     hasChanges,
     dateOfBirthError,
@@ -86,10 +84,7 @@ export default function SimpleOnboardingProfileStep({
         <div className="space-y-6">
           <ProfileFormFields
             formData={formData}
-            phoneCountryCode={phoneCountryCode}
-            phoneNumberOnly={phoneNumberOnly}
             verifiedPhone={verifiedPhone}
-            phoneVerification="inline"
             dateOfBirthError={dateOfBirthError}
             onInputChange={handleInputChange}
             onPhoneChange={handlePhoneChange}

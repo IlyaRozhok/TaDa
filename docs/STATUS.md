@@ -259,8 +259,11 @@ decisions) is recorded HERE, briefly, with a date.
     Decide before step 7d whether staff should be exempt.
   - The verification screen is English-only (the spec fixes the messages);
     its labels are not in Localazy.
-  - The profile form still edits the phone freely; a new number clears
-    `phone_verified_at`, so with the gate on the user verifies it again.
+  - Profile settings verify the phone inline, like onboarding (2026-10-14);
+    /app/verify-phone is only the login gate's screen. With the gate off an
+    unverified number typed there is still saved with the form; a new
+    number clears `phone_verified_at`, so with the gate on it is verified
+    again.
   - `phone_verification_events` grows by a few rows per verification and is
     never pruned; add a retention job if it ever matters.
   - `backend/src/modules/phone-verification/testing/in-memory-ledger.ts` is a

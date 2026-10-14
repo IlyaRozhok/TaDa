@@ -34,12 +34,6 @@ export const verifiedPhoneOf = (
   user: { phone?: string | null; phone_verified_at?: string | null } | null | undefined,
 ): string | null => (user?.phone_verified_at && user.phone ? user.phone : null);
 
-/** The verification screen, set to come back to `returnTo` once done. */
-export const phoneVerificationHref = (returnTo?: string | null): string =>
-  returnTo && safeReturnPath(returnTo)
-    ? `${PHONE_VERIFICATION_PATH}?return=${encodeURIComponent(returnTo)}`
-    : PHONE_VERIFICATION_PATH;
-
 /**
  * A `return` target the screen may navigate to after verifying: an in-app
  * path only (`/app/...`), never another origin (`//evil.com`, `https://…`)

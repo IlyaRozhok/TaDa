@@ -9,7 +9,6 @@ import {
   isPhoneVerificationPending,
   phoneIssueKey,
   phoneVerificationProblem,
-  phoneVerificationHref,
   safeReturnPath,
   sanitizeOtpInput,
   withoutClosingStop,
@@ -63,12 +62,6 @@ describe("a verified number in the profile forms", () => {
     expect(verifiedPhoneOf({ phone: "+447400883369", phone_verified_at: null })).toBeNull();
     expect(verifiedPhoneOf({ phone: null, phone_verified_at: "2026-10-12T10:00:00Z" })).toBeNull();
     expect(verifiedPhoneOf(null)).toBeNull();
-  });
-
-  it("links to re-verification, returning to the form", () => {
-    expect(phoneVerificationHref("/app/profile")).toBe(`${PHONE_VERIFICATION_PATH}?return=%2Fapp%2Fprofile`);
-    expect(phoneVerificationHref()).toBe(PHONE_VERIFICATION_PATH);
-    expect(phoneVerificationHref("https://evil.example")).toBe(PHONE_VERIFICATION_PATH);
   });
 
   it("only ever returns to an in-app path", () => {

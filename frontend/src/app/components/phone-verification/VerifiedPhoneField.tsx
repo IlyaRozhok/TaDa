@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 
 import { formatPhoneForDisplay } from "@/shared/lib/phone";
 import { phoneVerificationKeys as K } from "@/app/lib/translationsKeys/phoneVerificationKeys";
@@ -10,18 +9,16 @@ import { usePhoneVerificationText } from "./usePhoneVerificationText";
 interface VerifiedPhoneFieldProps {
   /** The verified number, E.164. */
   phone: string;
-  /** "Change number" navigates here (the standalone verification screen)… */
-  changeHref?: string;
-  /** …or, inline, hands control back to the verification flow in place. */
+  /** "Change number": hands control back to the verification flow in place. */
   onChangeNumber?: () => void;
 }
 
 /**
  * A verified phone, read-only: shown in display format with the "Verified"
- * badge. It changes only by verifying the new number — via the link or in
- * place. All text from translation keys.
+ * badge. It changes only by verifying the new number, in place ("Change
+ * number"). All text from translation keys.
  */
-export default function VerifiedPhoneField({ phone, changeHref, onChangeNumber }: VerifiedPhoneFieldProps) {
+export default function VerifiedPhoneField({ phone, onChangeNumber }: VerifiedPhoneFieldProps) {
   const tx = usePhoneVerificationText();
   const changeClass = "text-sm text-gray-700 underline-offset-2 hover:underline flex-shrink-0 cursor-pointer";
 
@@ -38,15 +35,11 @@ export default function VerifiedPhoneField({ phone, changeHref, onChangeNumber }
             <span aria-hidden="true">✓</span>
           </span>
         </span>
-        {onChangeNumber ? (
+        {onChangeNumber && (
           <button type="button" onClick={onChangeNumber} className={changeClass}>
             {tx(K.code.changeNumber)}
           </button>
-        ) : changeHref ? (
-          <Link href={changeHref} className={changeClass}>
-            {tx(K.code.changeNumber)}
-          </Link>
-        ) : null}
+        )}
       </div>
     </div>
   );
