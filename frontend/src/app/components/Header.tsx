@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { getFeedbackFishProjectId } from "@/lib/feedbackFish";
 import BookACallModal from "./BookACallModal";
 import LanguageDropdown from "./LanguageDropdown";
+import { SHOW_LANGUAGE_SWITCHER } from "../contexts/I18nContext";
 import { useTranslation, translateWithFallback } from "../hooks/useTranslation";
 import { generalKeys } from "../lib/translationsKeys/generalKeys";
 import { tenantKeys } from "../lib/translationsKeys/tenantTranslationKeys";
@@ -207,13 +208,15 @@ const Header = ({
                 <div className="hidden sm:block lg:hidden">{children}</div>
 
                 {/* Language Dropdown - on lg+ it moves into the desktop menu */}
-                <div className="lg:hidden">
-                  <LanguageDropdown
-                    variant="dark"
-                    menuVariant="units"
-                    disabled={disabled}
-                  />
-                </div>
+                {SHOW_LANGUAGE_SWITCHER && (
+                  <div className="lg:hidden">
+                    <LanguageDropdown
+                      variant="dark"
+                      menuVariant="units"
+                      disabled={disabled}
+                    />
+                  </div>
+                )}
 
                 {/* Desktop menu - declutters the lg+ header by holding the
                     language switch, the landing toggle and the audience link.
@@ -232,14 +235,17 @@ const Header = ({
 
                   {isDesktopMenuOpen && !disabled && (
                     <div className="absolute right-0 top-full mt-3 w-72 rounded-2xl bg-black/80 backdrop-blur-xl border border-white/10 shadow-2xl p-3 z-50">
-                      {/* 1. Language switch */}
-                      <div className="px-1 py-1">
-                        <LanguageDropdown variant="dark" menuVariant="units" />
-                      </div>
+                      {/* 1. Language switch. Sections below are divided from
+                          the one before; the first visible one gets no rule. */}
+                      {SHOW_LANGUAGE_SWITCHER && (
+                        <div className="px-1 py-1">
+                          <LanguageDropdown variant="dark" menuVariant="units" />
+                        </div>
+                      )}
 
                       {/* 2. Feedback (Feedback Fish opens on the attribute) */}
                       {feedbackFishProjectId && (
-                        <div className="mt-3 pt-3 border-t border-white/10">
+                        <div className="not-first:mt-3 not-first:pt-3 not-first:border-t border-white/10">
                           <button
                             type="button"
                             data-feedback-fish
@@ -252,13 +258,13 @@ const Header = ({
                       )}
 
                       {/* 3. Landing toggle (Operators / Tenants) */}
-                      <div className="mt-3 pt-3 border-t border-white/10">
+                      <div className="not-first:mt-3 not-first:pt-3 not-first:border-t border-white/10">
                         {children}
                       </div>
 
                       {/* 4. Audience link: Partners (tenants) / About Us (operators) */}
                       {audienceItem && (
-                        <div className="mt-3 pt-3 border-t border-white/10">
+                        <div className="not-first:mt-3 not-first:pt-3 not-first:border-t border-white/10">
                           <button
                             onClick={() => scrollToSection(audienceItem.id)}
                             className="block w-full text-left text-white hover:bg-white/10 transition-colors py-3 px-3 rounded-xl text-sm font-medium cursor-pointer"

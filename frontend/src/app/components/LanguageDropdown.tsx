@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import {
   useI18n,
+  SHOW_LANGUAGE_SWITCHER,
   SUPPORTED_LANGUAGES,
   getLanguageDisplayCode,
 } from "../contexts/I18nContext";
@@ -31,7 +32,16 @@ interface LanguageDropdownProps {
   menuVariant?: "default" | "units";
 }
 
-export default function LanguageDropdown({
+/**
+ * The language switcher, rendered only while SHOW_LANGUAGE_SWITCHER (in
+ * I18nContext) is on — the one place that hides it in every header.
+ */
+export default function LanguageDropdown(props: LanguageDropdownProps) {
+  if (!SHOW_LANGUAGE_SWITCHER) return null;
+  return <LanguageDropdownMenu {...props} />;
+}
+
+function LanguageDropdownMenu({
   variant = "default",
   buttonClassName = "",
   disabled = false,
