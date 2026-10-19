@@ -126,6 +126,8 @@ export interface ViewingConfirmedEvent {
  * should not have to own the form's vocabulary to render one line of text.
  */
 export interface CallRequestedEvent {
+  /** The saved `call_requests` row: the CRM sync records its deal id there. */
+  callRequestId: string;
   /** Stable slug, e.g. `looking_for_home`. */
   reason: string;
   /** English label for that slug, resolved by the producer. */

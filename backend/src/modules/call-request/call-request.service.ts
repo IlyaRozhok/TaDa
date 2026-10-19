@@ -78,6 +78,7 @@ export class CallRequestService {
    */
   private emitCallRequested(request: CallRequest): void {
     this.eventEmitter.emit(NotificationEvents.CallRequested, {
+      callRequestId: request.id,
       reason: request.reason,
       reasonLabel: labelForReason(request.reason),
       name: request.name,

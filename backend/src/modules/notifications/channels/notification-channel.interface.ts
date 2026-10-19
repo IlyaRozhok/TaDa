@@ -7,6 +7,11 @@ export interface NotificationMessage {
   subject: string;
   text: string;
   html?: string;
+  /**
+   * The event payload the message was rendered from. Data channels (the CRM
+   * sync) read the structured fields; text channels ignore it.
+   */
+  payload?: Record<string, unknown>;
 }
 
 /**
@@ -22,6 +27,13 @@ export interface NotificationChannel {
 
   /** False when the channel is switched off or unconfigured; it is then skipped. */
   isEnabled(): boolean;
+
+  /**
+   * Which notification types the channel takes. Omitted means all — the
+   * email channel. A data channel (HubSpot) takes only the events it syncs,
+   * so no row is recorded for the rest.
+   */
+  handles?(type: string): boolean;
 
   resolveRecipient(): string;
 

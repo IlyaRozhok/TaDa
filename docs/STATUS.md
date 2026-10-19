@@ -236,6 +236,27 @@ decisions) is recorded HERE, briefly, with a date.
       unverified and will be routed to the screen at their next request. In
       production the backend refuses to start with the flag on but no Twilio
       — a guard against locking everyone out.
+8. **HubSpot CRM sync** (added 2026-10-19) — shipped off; nothing is sent
+   until the host sets it. In order, stage first:
+   a. **Migration `1788800000000-AddHubspotDealIds`** (nullable
+      `hubspot_deal_id` on `call_requests` and `booking_requests`). On prod,
+      apply its SQL by hand before the merge, as for the phone migrations —
+      the new entity column is in every INSERT, so new code against the old
+      schema fails those inserts until `mig:run:prod` runs.
+   b. **HubSpot:** a Service Key with crm.objects.contacts.read/write and
+      crm.objects.deals.read/write; add crm.schemas.contacts.read/write and
+      the sync creates its contact properties itself. Without the schema
+      scope create them by hand in Settings → Properties → Contact
+      (group "Contact information"): `tada_nationality`, `tada_source`,
+      `tada_cv_url` (single-line text) and `tada_signup_date` (date picker).
+      Until then those four are skipped and the log says so once.
+   c. **Host `.env`:** `HUBSPOT_ENABLED=true`, `HUBSPOT_ACCESS_TOKEN=pat-eu1-…`,
+      `HUBSPOT_PORTAL_ID=26725201`; restart the backend. Flag on without a
+      token logs a warning and stays off.
+   d. Check a test sign-up, book-a-call and booking on stage: contact
+      lifecycle lead → SQL, one deal per request in the default pipeline's
+      first stage. Failed syncs are `notifications` rows with
+      `channel = 'hubspot'` and `last_error`, retried up to 5 times.
 
 ## Open follow-ups (recorded, not scheduled)
 
@@ -252,6 +273,19 @@ decisions) is recorded HERE, briefly, with a date.
   - The **production** deploy step still has the old blind spot (a boot crash
     reads as a migration failure). Give it the same container check; it was
     left alone to avoid editing the prod deploy during an incident.
+
+- **HubSpot CRM sync, after the MVP** (added 2026-10-19).
+  - Deals land in the default pipeline's first stage. A dedicated "TaDa
+    tenants" pipeline (Book a call → Viewing → Offer → Let) would make the
+    board meaningful; create it in HubSpot and point the sync at its id.
+  - One-way and event-driven: profile edits after sign-up, booking status
+    changes and existing users are not synced. A backfill of existing
+    tenants would be a one-off script.
+  - A deal created at HubSpot whose id then fails to save on our row is
+    logged, not retried (a retry would duplicate it) — rare, and visible in
+    the log.
+  - `NOTIFICATIONS_ENABLED=false` stops the HubSpot sync too: it rides the
+    same pipeline.
 
 - **Phone verification, after phase 3** (added 2026-10-12).
   - The gate covers every role, admins included: an admin without a

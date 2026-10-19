@@ -1,5 +1,7 @@
 import { Provider } from "@nestjs/common";
 import { EmailChannel } from "./email.channel";
+import { HubspotChannel } from "./hubspot/hubspot.channel";
+import { HubspotClient } from "./hubspot/hubspot.client";
 import { NOTIFICATION_CHANNELS } from "./notification-channel.interface";
 
 /**
@@ -12,12 +14,16 @@ import { NOTIFICATION_CHANNELS } from "./notification-channel.interface";
  */
 export const notificationChannelProviders: Provider[] = [
   EmailChannel,
+  // The HubSpot CRM sync: off (records nothing) unless HUBSPOT_ENABLED=true
+  // and HUBSPOT_ACCESS_TOKEN is set.
+  HubspotClient,
+  HubspotChannel,
   {
     provide: NOTIFICATION_CHANNELS,
-    useFactory: (email: EmailChannel) => [email],
-    inject: [EmailChannel],
+    useFactory: (email: EmailChannel, hubspot: HubspotChannel) => [email, hubspot],
+    inject: [EmailChannel, HubspotChannel],
   },
 ];
 
-export { EmailChannel };
+export { EmailChannel, HubspotChannel };
 export * from "./notification-channel.interface";

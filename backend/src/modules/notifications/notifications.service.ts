@@ -278,6 +278,7 @@ export class NotificationsService {
       for (const channel of this.channels) {
         if (!channel.isEnabled()) continue;
         if (recipient && channel.name !== "email") continue;
+        if (channel.handles && !channel.handles(type)) continue;
 
         const notification = await this.insertIfNew(
           type,
@@ -378,7 +379,10 @@ export class NotificationsService {
         notification.type as NotificationType,
         notification.payload,
       );
-      await channel.send(notification.recipient, message);
+      await channel.send(notification.recipient, {
+        ...message,
+        payload: notification.payload,
+      });
 
       await this.notificationRepository.update(
         { id: notification.id },
