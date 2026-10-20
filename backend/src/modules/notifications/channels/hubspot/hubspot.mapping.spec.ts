@@ -3,7 +3,10 @@ import {
   callDealDescription,
   contactProperties,
   cvUrl,
+  dealLinkProperties,
   dealName,
+  propertyUrl,
+  siteBase,
   splitName,
 } from "./hubspot.mapping";
 
@@ -108,5 +111,25 @@ describe("callDealDescription", () => {
       "Reason: Renting advice",
     );
     expect(callDealDescription({})).toBeNull();
+  });
+});
+
+describe("deal links", () => {
+  it("builds the public CV and property URLs on the given site", () => {
+    expect(siteBase("https://stage.ta-da.co/")).toBe("https://stage.ta-da.co");
+    expect(siteBase(undefined)).toBe("https://ta-da.co");
+    expect(cvUrl("abc", "https://stage.ta-da.co")).toBe("https://stage.ta-da.co/cv/abc");
+    expect(propertyUrl("p-1")).toBe("https://ta-da.co/app/properties/p-1");
+    expect(propertyUrl(null)).toBeNull();
+  });
+
+  it("sends only links that have a value and exist in the portal", () => {
+    const links = { cvUrl: "https://ta-da.co/cv/abc", propertyUrl: "https://ta-da.co/app/properties/p-1" };
+    expect(dealLinkProperties(links, new Set(["tada_cv_url", "tada_property_url"]))).toEqual({
+      tada_cv_url: links.cvUrl,
+      tada_property_url: links.propertyUrl,
+    });
+    expect(dealLinkProperties(links, new Set(["tada_property_url"]))).toEqual({ tada_property_url: links.propertyUrl });
+    expect(dealLinkProperties({ cvUrl: null }, new Set(["tada_cv_url"]))).toEqual({});
   });
 });

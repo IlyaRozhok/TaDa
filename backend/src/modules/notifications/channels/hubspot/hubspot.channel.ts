@@ -20,7 +20,12 @@ import type {
   UserContactChangedEvent,
   UserRegisteredEvent,
 } from "@/modules/notifications/events/notification.events";
-import { HubspotApiError, HubspotClient } from "./hubspot.client";
+import {
+  HubspotApiError,
+  HubspotClient,
+  HubspotObjectType,
+  HubspotPropertyDefinition,
+} from "./hubspot.client";
 import { readHubspotConfig } from "./hubspot.config";
 import {
   advanceLifecycle,
@@ -28,10 +33,13 @@ import {
   ContactFacts,
   contactProperties,
   CUSTOM_CONTACT_PROPERTIES,
-  CUSTOM_PROPERTY_NAMES,
+  CUSTOM_DEAL_PROPERTIES,
   cvUrl,
+  dealLinkProperties,
   dealName,
   LifecycleStage,
+  propertyUrl,
+  siteBase,
   splitName,
 } from "./hubspot.mapping";
 
@@ -69,8 +77,8 @@ export class HubspotChannel implements NotificationChannel {
   private readonly logger = new Logger(HubspotChannel.name);
 
   private warnedMissingToken = false;
-  private warnedMissingSchemaScope = false;
-  private customProperties: { names: Set<string>; checkedAt: number } | null = null;
+  private readonly warnedMissingSchemaScope = new Set<HubspotObjectType>();
+  private readonly customProperties = new Map<HubspotObjectType, { names: Set<string>; checkedAt: number }>();
   private dealStage: { pipeline: string; stage: string } | null = null;
 
   constructor(
@@ -156,10 +164,15 @@ export class HubspotChannel implements NotificationChannel {
     const title = property?.title ?? event.property.title;
     const name = [facts.firstName, facts.lastName].filter(Boolean).join(" ") || facts.email || "";
     const price = Number(property?.price);
+    const links = dealLinkProperties(
+      { cvUrl: facts.cvUrl, propertyUrl: propertyUrl(event.property.id, this.siteBase()) },
+      await this.availableCustomProperties("deals"),
+    );
 
     await this.createDealOnce(this.bookings, event.bookingId, contactId, {
       dealname: dealName(name, { type: "booking", propertyTitle: title }),
       ...(price > 0 ? { amount: String(price) } : {}),
+      ...links,
     });
   }
 
@@ -190,10 +203,32 @@ export class HubspotChannel implements NotificationChannel {
       preferredTime: row?.preferred_time ?? event.preferredTime,
       notes: row?.notes ?? event.notes,
     });
+    // A call is about no particular property; the CV link goes on when the
+    // email belongs to a TaDa user who has a shared CV.
+    const links = dealLinkProperties(
+      { cvUrl: await this.cvUrlForEmail(facts.email) },
+      await this.availableCustomProperties("deals"),
+    );
     await this.createDealOnce(this.calls, event.callRequestId, contactId, {
       dealname: dealName(fullName, { type: "call", reason }),
       ...(description ? { description } : {}),
+      ...links,
     });
+  }
+
+  /** The public CV link of the TaDa user with this email, if they have one. */
+  private async cvUrlForEmail(email: string | null | undefined): Promise<string | null> {
+    const normalized = email?.trim().toLowerCase();
+    if (!normalized) return null;
+    const user = await this.users.findOne({ where: { email: normalized }, select: { id: true } });
+    if (!user) return null;
+    const cv = await this.cvs.findOne({ where: { user_id: user.id }, select: { id: true, share_uuid: true } });
+    return cvUrl(cv?.share_uuid, this.siteBase());
+  }
+
+  /** Links point at this host's frontend (FRONTEND_URL): stage → stage, prod → prod. */
+  private siteBase(): string {
+    return siteBase(this.configService.get<string>("FRONTEND_URL"));
   }
 
   // ── Contacts ──────────────────────────────────────────────────────────────
@@ -218,7 +253,7 @@ export class HubspotChannel implements NotificationChannel {
       source:
         user.role === UserRole.Tenant ? "tenant" : user.role === UserRole.Operator ? "operator" : null,
       signupDate: user.created_at,
-      cvUrl: cvUrl(cv?.share_uuid),
+      cvUrl: cvUrl(cv?.share_uuid, this.siteBase()),
     };
   }
 
@@ -236,7 +271,7 @@ export class HubspotChannel implements NotificationChannel {
       return null;
     }
 
-    const properties = contactProperties(facts, await this.availableCustomProperties());
+    const properties = contactProperties(facts, await this.availableCustomProperties("contacts"));
     const find = () => (email ? this.client.findContact("email", email) : this.client.findContact("phone", phone!));
 
     let existing = await find();
@@ -261,27 +296,29 @@ export class HubspotChannel implements NotificationChannel {
   }
 
   /**
-   * The TaDa custom properties that exist in the portal, creating missing
-   * ones when the key has the schema scope. Without that scope the sync
-   * carries on with the standard properties and says once which to create.
+   * The TaDa custom properties that exist on the object in the portal,
+   * creating missing ones when the key has that object's schema scope
+   * (crm.schemas.contacts.write / crm.schemas.deals.write). Without it the
+   * sync carries on without them and says once which to create by hand.
    */
-  private async availableCustomProperties(): Promise<Set<string>> {
-    if (this.customProperties && Date.now() - this.customProperties.checkedAt < CUSTOM_PROPERTIES_TTL_MS) {
-      return this.customProperties.names;
-    }
+  private async availableCustomProperties(objectType: HubspotObjectType): Promise<Set<string>> {
+    const cached = this.customProperties.get(objectType);
+    if (cached && Date.now() - cached.checkedAt < CUSTOM_PROPERTIES_TTL_MS) return cached.names;
 
+    const definitions: HubspotPropertyDefinition[] =
+      objectType === "contacts" ? CUSTOM_CONTACT_PROPERTIES : CUSTOM_DEAL_PROPERTIES;
     const names = new Set<string>();
     const missing: string[] = [];
     try {
-      for (const definition of CUSTOM_CONTACT_PROPERTIES) {
-        if (await this.client.contactPropertyExists(definition.name)) {
+      for (const definition of definitions) {
+        if (await this.client.propertyExists(objectType, definition.name)) {
           names.add(definition.name);
           continue;
         }
         try {
-          await this.client.createContactProperty(definition);
+          await this.client.createProperty(objectType, definition);
           names.add(definition.name);
-          this.logger.log(`HubSpot: created contact property ${definition.name}.`);
+          this.logger.log(`HubSpot: created ${objectType} property ${definition.name}.`);
         } catch (error) {
           if (!(error instanceof HubspotApiError && error.status === 403)) throw error;
           missing.push(definition.name);
@@ -289,22 +326,24 @@ export class HubspotChannel implements NotificationChannel {
       }
     } catch (error) {
       if (!(error instanceof HubspotApiError && error.status === 403)) {
-        // Transient: sync the standard properties now, check again next time.
-        this.logger.warn(`HubSpot: could not check custom properties: ${String(error)}`);
+        // Transient: sync without them now, check again next time.
+        this.logger.warn(`HubSpot: could not check ${objectType} properties: ${String(error)}`);
         return names;
       }
-      missing.push(...CUSTOM_PROPERTY_NAMES.filter((name) => !names.has(name)));
+      missing.push(...definitions.map((d) => d.name).filter((name) => !names.has(name) && !missing.includes(name)));
     }
 
-    if (missing.length > 0 && !this.warnedMissingSchemaScope) {
-      this.warnedMissingSchemaScope = true;
+    if (missing.length > 0 && !this.warnedMissingSchemaScope.has(objectType)) {
+      this.warnedMissingSchemaScope.add(objectType);
+      const manual = definitions
+        .filter((d) => missing.includes(d.name))
+        .map((d) => `${d.name} (${d.fieldType === "date" ? "date picker" : "single-line text"})`);
       this.logger.warn(
-        `HubSpot: the key lacks crm.schemas.contacts.read/write, so these contact properties ` +
-          `are not synced until created by hand: ${missing.join(", ")}. ` +
-          `tada_signup_date is a Date picker; the others are single-line text.`,
+        `HubSpot: the key lacks crm.schemas.${objectType}.read/write, so these ${objectType} properties ` +
+          `are not synced until created by hand: ${manual.join(", ")}.`,
       );
     }
-    this.customProperties = { names, checkedAt: Date.now() };
+    this.customProperties.set(objectType, { names, checkedAt: Date.now() });
     return names;
   }
 

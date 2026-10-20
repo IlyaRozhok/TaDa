@@ -28,8 +28,8 @@ function clientDouble(overrides: Partial<Record<keyof HubspotClient, jest.Mock>>
     findContact: jest.fn().mockResolvedValue(null),
     createContact: jest.fn().mockResolvedValue({ id: "contact-1", properties: {} }),
     updateContact: jest.fn().mockResolvedValue(undefined),
-    contactPropertyExists: jest.fn().mockResolvedValue(true),
-    createContactProperty: jest.fn().mockResolvedValue(undefined),
+    propertyExists: jest.fn().mockResolvedValue(true),
+    createProperty: jest.fn().mockResolvedValue(undefined),
     getDealPipelines: jest.fn().mockResolvedValue([
       { id: "default", displayOrder: 0, stages: [
         { id: "qualifiedtobuy", displayOrder: 1 },
@@ -181,8 +181,8 @@ describe("HubspotChannel contacts", () => {
 
   it("syncs the standard properties only when the key cannot create custom ones", async () => {
     const client = clientDouble({
-      contactPropertyExists: jest.fn().mockResolvedValue(false),
-      createContactProperty: jest.fn().mockRejectedValue(new HubspotApiError(403, "scope", "POST", "/x")),
+      propertyExists: jest.fn().mockResolvedValue(false),
+      createProperty: jest.fn().mockRejectedValue(new HubspotApiError(403, "scope", "POST", "/x")),
     });
     const { channel } = build({ client });
     await channel.send("hubspot", message(NotificationType.UserRegistered, { userId: "user-1", role: "tenant" }));
@@ -198,12 +198,13 @@ describe("HubspotChannel contacts", () => {
   });
 
   it("creates the custom properties when they are missing and the key may", async () => {
-    const client = clientDouble({ contactPropertyExists: jest.fn().mockResolvedValue(false) });
+    const client = clientDouble({ propertyExists: jest.fn().mockResolvedValue(false) });
     const { channel } = build({ client });
     await channel.send("hubspot", message(NotificationType.UserRegistered, { userId: "user-1", role: "tenant" }));
 
-    expect(client.createContactProperty).toHaveBeenCalledTimes(4);
-    expect(client.createContactProperty).toHaveBeenCalledWith(
+    expect(client.createProperty).toHaveBeenCalledTimes(4);
+    expect(client.createProperty).toHaveBeenCalledWith(
+      "contacts",
       expect.objectContaining({ name: "tada_signup_date", type: "date", fieldType: "date" }),
     );
   });
@@ -230,7 +231,14 @@ describe("HubspotChannel deals", () => {
 
     expect(client.createContact).toHaveBeenCalledWith(expect.objectContaining({ lifecyclestage: "salesqualifiedlead" }));
     expect(client.createDeal).toHaveBeenCalledWith(
-      { dealname: "Jane Doe — Booking: Flat 2B", amount: "2400", pipeline: "default", dealstage: "appointmentscheduled" },
+      {
+        dealname: "Jane Doe — Booking: Flat 2B",
+        amount: "2400",
+        tada_cv_url: "https://ta-da.co/cv/share-1",
+        tada_property_url: "https://ta-da.co/app/properties/prop-1",
+        pipeline: "default",
+        dealstage: "appointmentscheduled",
+      },
       "contact-1",
     );
     expect(booking.update).toHaveBeenCalledWith(
@@ -312,6 +320,7 @@ describe("HubspotChannel book-a-call answers", () => {
       {
         dealname: "Sam Lee — Book a call: Finding a home",
         description: "Reason: Finding a home\nPreferred time: Weekday evenings\nNotes: Needs parking",
+        tada_cv_url: "https://ta-da.co/cv/share-1",
         pipeline: "default",
         dealstage: "appointmentscheduled",
       },
@@ -349,5 +358,77 @@ describe("HubspotChannel contact changes", () => {
     await channel.send("hubspot", message(NotificationType.UserContactChanged, changed));
 
     expect(client.findContact).not.toHaveBeenCalled();
+  });
+});
+
+describe("HubspotChannel deal links", () => {
+  const bookingPayload = {
+    bookingId: "booking-1",
+    property: { id: "prop-1", title: "Flat 2B" },
+    tenant: { id: "user-1" },
+  };
+
+  it("points the links at this host's frontend", async () => {
+    const { channel, client } = build({ env: { ...ENABLED, FRONTEND_URL: "https://stage.ta-da.co/" } });
+    await channel.send("hubspot", message(NotificationType.BookingRequested, bookingPayload));
+
+    expect(client.createDeal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tada_cv_url: "https://stage.ta-da.co/cv/share-1",
+        tada_property_url: "https://stage.ta-da.co/app/properties/prop-1",
+      }),
+      "contact-1",
+    );
+  });
+
+  it("creates the two deal properties on first run", async () => {
+    const client = clientDouble({
+      propertyExists: jest.fn(async (objectType: string) => objectType === "contacts"),
+    });
+    const { channel } = build({ client });
+    await channel.send("hubspot", message(NotificationType.BookingRequested, bookingPayload));
+
+    expect(client.createProperty).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({ name: "tada_cv_url", label: "Tenant CV", fieldType: "text", groupName: "dealinformation" }),
+    );
+    expect(client.createProperty).toHaveBeenCalledWith(
+      "deals",
+      expect.objectContaining({ name: "tada_property_url", label: "Property", fieldType: "text" }),
+    );
+    expect(client.createDeal).toHaveBeenCalledWith(
+      expect.objectContaining({ tada_property_url: "https://ta-da.co/app/properties/prop-1" }),
+      "contact-1",
+    );
+  });
+
+  it("still creates the deal, without links, when the deal schema scope is missing", async () => {
+    const client = clientDouble({
+      propertyExists: jest.fn(async (objectType: string) => {
+        if (objectType === "deals") throw new HubspotApiError(403, "scope", "GET", "/x");
+        return true;
+      }),
+    });
+    const { channel } = build({ client });
+    await channel.send("hubspot", message(NotificationType.BookingRequested, bookingPayload));
+
+    const [properties] = client.createDeal.mock.calls[0];
+    expect(properties).not.toHaveProperty("tada_cv_url");
+    expect(properties).not.toHaveProperty("tada_property_url");
+    expect(properties.dealname).toBe("Jane Doe — Booking: Flat 2B");
+    expect(Logger.prototype.warn).toHaveBeenCalledWith(expect.stringContaining("crm.schemas.deals"));
+  });
+
+  it("leaves the CV link off a call deal when the email is no TaDa user's", async () => {
+    const call = requestRepo(
+      { id: "call-1", hubspot_deal_id: null },
+      { name: "Sam Lee", email: "sam@example.com", phone_number: null, source: "tenant" },
+    );
+    const { channel, client } = build({ call, user: null });
+    await channel.send("hubspot", message(NotificationType.CallRequested, { callRequestId: "call-1", name: "Sam Lee" }));
+
+    const [properties] = client.createDeal.mock.calls[0];
+    expect(properties).not.toHaveProperty("tada_cv_url");
+    expect(properties).not.toHaveProperty("tada_property_url");
   });
 });

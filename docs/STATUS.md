@@ -285,6 +285,12 @@ decisions) is recorded HERE, briefly, with a date.
     a one-off script.
   - Book-a-call deals carry the reason in their name and reason, preferred
     time and notes in the standard deal `description` (no extra scope).
+  - Deals carry two links (2026-10-20), custom deal properties created on
+    first run with crm.schemas.deals.write: `tada_cv_url` ("Tenant CV") and
+    `tada_property_url` ("Property", booking deals only), both single-line
+    text. Links are built on the host's `FRONTEND_URL` (stage links to
+    stage) — `/cv/{share_uuid}` and `/app/properties/{id}`; the contact's
+    `tada_cv_url` uses the same base now.
   - A deal created at HubSpot whose id then fails to save on our row is
     logged, not retried (a retry would duplicate it) — rare, and visible in
     the log.

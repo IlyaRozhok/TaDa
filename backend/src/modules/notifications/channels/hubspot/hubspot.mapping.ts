@@ -65,7 +65,39 @@ export const CUSTOM_CONTACT_PROPERTIES: HubspotPropertyDefinition[] = [
   },
 ];
 
-export const CUSTOM_PROPERTY_NAMES = CUSTOM_CONTACT_PROPERTIES.map((p) => p.name);
+/**
+ * The deal's links, clickable in the record (HubSpot linkifies URLs in
+ * single-line text). Created on first run with crm.schemas.deals.write.
+ */
+export const CUSTOM_DEAL_PROPERTIES: HubspotPropertyDefinition[] = [
+  {
+    name: "tada_cv_url",
+    label: "Tenant CV",
+    type: "string",
+    fieldType: "text",
+    groupName: "dealinformation",
+    description: "Public link to the tenant's TaDa CV.",
+  },
+  {
+    name: "tada_property_url",
+    label: "Property",
+    type: "string",
+    fieldType: "text",
+    groupName: "dealinformation",
+    description: "Public page of the property the deal is about.",
+  },
+];
+
+/** Where links point when FRONTEND_URL is not set. */
+export const DEFAULT_SITE_URL = "https://ta-da.co";
+
+/**
+ * The site the links point at: the host's FRONTEND_URL (stage links to
+ * stage, prod to prod), without a trailing slash.
+ */
+export function siteBase(frontendUrl: string | null | undefined): string {
+  return (frontendUrl?.trim() || DEFAULT_SITE_URL).replace(/\/+$/, "");
+}
 
 /** "Jane Mary Doe" → { first: "Jane", last: "Mary Doe" }. */
 export function splitName(full: string | null | undefined): { first: string; last: string } {
@@ -118,9 +150,28 @@ export function contactProperties(
   return properties;
 }
 
-/** The public CV link. Never an admin-panel link. */
-export function cvUrl(shareUuid: string | null | undefined): string | null {
-  return shareUuid ? `https://ta-da.co/cv/${shareUuid}` : null;
+/** The public CV link (frontend route /cv/[uuid]). Never an admin-panel link. */
+export function cvUrl(shareUuid: string | null | undefined, base = DEFAULT_SITE_URL): string | null {
+  return shareUuid ? `${base}/cv/${shareUuid}` : null;
+}
+
+/**
+ * The public property page (frontend route /app/properties/[id] — open to
+ * guests, the page's own canonical URL).
+ */
+export function propertyUrl(propertyId: string | null | undefined, base = DEFAULT_SITE_URL): string | null {
+  return propertyId ? `${base}/app/properties/${propertyId}` : null;
+}
+
+/** The deal's link properties that have a value and exist in the portal. */
+export function dealLinkProperties(
+  links: { cvUrl?: string | null; propertyUrl?: string | null },
+  availableCustom: ReadonlySet<string>,
+): Record<string, string> {
+  const properties: Record<string, string> = {};
+  if (links.cvUrl && availableCustom.has("tada_cv_url")) properties.tada_cv_url = links.cvUrl;
+  if (links.propertyUrl && availableCustom.has("tada_property_url")) properties.tada_property_url = links.propertyUrl;
+  return properties;
 }
 
 /** "Jane Doe — Book a call: Finding a home" / "Jane Doe — Booking: Flat 2B". */

@@ -19,6 +19,9 @@ export interface HubspotContact {
   properties: Record<string, string | null>;
 }
 
+/** The CRM objects the sync gives custom properties to. */
+export type HubspotObjectType = "contacts" | "deals";
+
 export interface HubspotPropertyDefinition {
   name: string;
   label: string;
@@ -95,10 +98,10 @@ export class HubspotClient {
     });
   }
 
-  /** True if the contact property exists; throws on 403 (no schema scope). */
-  async contactPropertyExists(name: string): Promise<boolean> {
+  /** True if the property exists on the object; throws on 403 (no schema scope). */
+  async propertyExists(objectType: HubspotObjectType, name: string): Promise<boolean> {
     try {
-      await this.request("GET", `/crm/v3/properties/contacts/${encodeURIComponent(name)}`);
+      await this.request("GET", `/crm/v3/properties/${objectType}/${encodeURIComponent(name)}`);
       return true;
     } catch (error) {
       if (error instanceof HubspotApiError && error.status === 404) return false;
@@ -106,8 +109,8 @@ export class HubspotClient {
     }
   }
 
-  async createContactProperty(definition: HubspotPropertyDefinition): Promise<void> {
-    await this.request("POST", "/crm/v3/properties/contacts", definition);
+  async createProperty(objectType: HubspotObjectType, definition: HubspotPropertyDefinition): Promise<void> {
+    await this.request("POST", `/crm/v3/properties/${objectType}`, definition);
   }
 
   async getDealPipelines(): Promise<HubspotPipeline[]> {
