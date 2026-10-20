@@ -90,6 +90,14 @@ export class CallRequest {
   @Column({ type: "varchar", length: 16 })
   source: CallRequestSource;
 
+  /**
+   * The HubSpot deal created for this request by the CRM sync, so a replay or
+   * retry never creates a second one. Null until synced. Not selected by
+   * default: only the sync reads it, nothing else depends on it.
+   */
+  @Column({ type: "varchar", length: 32, nullable: true, select: false })
+  hubspot_deal_id?: string | null;
+
   @ApiProperty({ description: "Created at timestamp" })
   @Index("idx_call_requests_created_at")
   @CreateDateColumn()

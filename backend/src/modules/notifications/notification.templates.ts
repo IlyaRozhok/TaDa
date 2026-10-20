@@ -3,6 +3,7 @@ import {
   BookingStatusChangedEvent,
   CallRequestedEvent,
   TenantCvCompletedEvent,
+  UserContactChangedEvent,
   UserRegisteredEvent,
   ViewingConfirmedEvent,
   ViewingProposedEvent,
@@ -15,6 +16,8 @@ export enum NotificationType {
   TenantCvCompleted = "cv_completed",
   BookingRequested = "booking_requested",
   CallRequested = "call_requested",
+  // Data-only: synced to the CRM, never emailed (EmailChannel skips it).
+  UserContactChanged = "user_contact_changed",
   // User-facing transactional emails (package C1). The recipient for these is
   // resolved from the database by NotificationsService, never from payload.
   BookingReceivedTenant = "booking_received_tenant",
@@ -79,6 +82,15 @@ export function buildMessage(
         line("Source", p.source === "admin_created" ? "admin panel" : "Google sign-in"),
         line("Created at", p.createdAt),
         line("User id", p.userId),
+      ]);
+    }
+
+    case NotificationType.UserContactChanged: {
+      const p = payload as unknown as UserContactChangedEvent;
+      return render(type, `Contact details changed — ${p.userId}`, [
+        line("User id", p.userId),
+        line("Changed", p.changed.join(", ")),
+        line("At", p.changedAt),
       ]);
     }
 

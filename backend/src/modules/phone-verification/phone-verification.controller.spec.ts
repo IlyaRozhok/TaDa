@@ -1,3 +1,4 @@
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { INestApplication, Logger, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
@@ -48,6 +49,8 @@ describe("POST /auth/phone/* (stub provider, over HTTP)", () => {
         { provide: PhoneVerificationLedger, useValue: new InMemoryPhoneVerificationLedger(() => new Date()) },
         // What the module builds outside production with OTP_PROVIDER unset.
         { provide: OTP_PROVIDER, useValue: createOtpProvider({ NODE_ENV: "test" }) },
+        // Global in the app (EventEmitterModule.forRoot); the CRM sync listens.
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 

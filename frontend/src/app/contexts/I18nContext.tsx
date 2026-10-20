@@ -100,6 +100,17 @@ const PRELOADED_TRANSLATIONS: Record<LanguageCode, Translations> = {
   "zh-Hans-CN": zhTranslations as Translations,
 };
 
+/**
+ * The user-facing language switcher (LanguageDropdown, in every header).
+ * Off: the switcher is not rendered anywhere and every visitor sees the
+ * default locale ("en") — a saved choice or the browser's language is not
+ * applied, since nobody could switch back. The i18n machinery (translations,
+ * Localazy files, keys, setLanguage) is untouched.
+ *
+ * TO RE-ENABLE: set this to `true`. Nothing else needs to change.
+ */
+export const SHOW_LANGUAGE_SWITCHER = false;
+
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   // The FIRST render is always "en", matching the statically prerendered
   // HTML; the saved/browser locale is applied in the effect below. Reading
@@ -116,6 +127,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   // After hydration, switch to the saved/browser locale (one visible swap on
   // the first paint for non-English users — the price of hydrating cleanly).
   useEffect(() => {
+    // Switcher hidden: stay on the default locale (see SHOW_LANGUAGE_SWITCHER).
+    if (!SHOW_LANGUAGE_SWITCHER) return;
     const initial = getInitialLanguage();
     if (initial !== "en") {
       setLanguageState(initial);

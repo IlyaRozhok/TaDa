@@ -22,6 +22,7 @@ import {
   CallRequestedEvent,
   NotificationEvents,
   TenantCvCompletedEvent,
+  UserContactChangedEvent,
   UserRegisteredEvent,
   ViewingConfirmedEvent,
   ViewingProposedEvent,
@@ -111,6 +112,16 @@ export class NotificationsService {
     await this.record(
       NotificationType.TenantCvCompleted,
       `cv_completed:${event.userId}`,
+      event as unknown as Record<string, unknown>,
+    );
+  }
+
+  /** Data-only: recorded for the CRM channel; the email channel skips it. */
+  @OnEvent(NotificationEvents.UserContactChanged, { async: true })
+  async handleUserContactChanged(event: UserContactChangedEvent): Promise<void> {
+    await this.record(
+      NotificationType.UserContactChanged,
+      `contact_changed:${event.userId}:${event.changedAt}`,
       event as unknown as Record<string, unknown>,
     );
   }
@@ -278,6 +289,7 @@ export class NotificationsService {
       for (const channel of this.channels) {
         if (!channel.isEnabled()) continue;
         if (recipient && channel.name !== "email") continue;
+        if (channel.handles && !channel.handles(type)) continue;
 
         const notification = await this.insertIfNew(
           type,
@@ -378,7 +390,10 @@ export class NotificationsService {
         notification.type as NotificationType,
         notification.payload,
       );
-      await channel.send(notification.recipient, message);
+      await channel.send(notification.recipient, {
+        ...message,
+        payload: notification.payload,
+      });
 
       await this.notificationRepository.update(
         { id: notification.id },

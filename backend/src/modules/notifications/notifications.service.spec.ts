@@ -4,6 +4,7 @@ import { Logger } from "@nestjs/common";
 import { Notification, NotificationStatus } from "@/entities/notification.entity";
 import { NotificationsService } from "./notifications.service";
 import { NotificationChannel } from "./channels/notification-channel.interface";
+import { EmailChannel } from "./channels/email.channel";
 import {
   BookingRequestedEvent,
   CallRequestedEvent,
@@ -106,6 +107,7 @@ function callEvent(
   overrides: Partial<CallRequestedEvent> = {},
 ): CallRequestedEvent {
   return {
+    callRequestId: "call-1",
     reason: "looking_for_home",
     reasonLabel: "I'm looking for a home",
     name: "Jane Doe",
@@ -164,6 +166,97 @@ describe("NotificationsService", () => {
   });
 
   afterEach(() => jest.restoreAllMocks());
+
+  describe("data channels (HubSpot)", () => {
+    const buildWith = (channels: NotificationChannel[]) =>
+      new NotificationsService(
+        repo.repository as any,
+        userRepo as any,
+        propertyRepo as any,
+        channels,
+        createConfigDouble(),
+      );
+
+    it("records nothing for a disabled data channel; email is unaffected", async () => {
+      const hubspot = createChannelDouble({
+        name: "hubspot",
+        isEnabled: jest.fn().mockReturnValue(false),
+        handles: jest.fn().mockReturnValue(true),
+      });
+      await buildWith([channel, hubspot]).handleUserRegistered(registrationEvent);
+
+      expect(repo.insertedValues.map((v) => v.channel)).toEqual(["email"]);
+      expect(hubspot.send).not.toHaveBeenCalled();
+      expect(channel.send).toHaveBeenCalledTimes(1);
+    });
+
+    it("skips a channel for the types it does not handle", async () => {
+      const hubspot = createChannelDouble({
+        name: "hubspot",
+        handles: jest.fn().mockReturnValue(false),
+      });
+      await buildWith([channel, hubspot]).handleUserRegistered(registrationEvent);
+
+      expect(hubspot.handles).toHaveBeenCalledWith("user_registered");
+      expect(repo.insertedValues.map((v) => v.channel)).toEqual(["email"]);
+    });
+
+    it("records a prefixed row for an enabled data channel and hands it the payload", async () => {
+      const hubspot = createChannelDouble({
+        name: "hubspot",
+        resolveRecipient: jest.fn().mockReturnValue("hubspot:26725201"),
+        handles: jest.fn().mockReturnValue(true),
+      });
+      repo.setInsertResult([
+        {
+          id: "notification-2",
+          type: "user_registered",
+          channel: "hubspot",
+          recipient: "hubspot:26725201",
+          payload: registrationEvent,
+          attempts: 0,
+          status: NotificationStatus.Pending,
+        } as unknown as Notification,
+      ]);
+      await buildWith([hubspot]).handleUserRegistered(registrationEvent);
+
+      expect(repo.insertedValues[0]).toEqual(
+        expect.objectContaining({ channel: "hubspot", dedupe_key: "hubspot:user_registered:user-1" }),
+      );
+      expect(hubspot.send).toHaveBeenCalledWith(
+        "hubspot:26725201",
+        expect.objectContaining({ type: "user_registered", payload: registrationEvent }),
+      );
+    });
+
+    it("records a contact change for data channels only, never as an email", async () => {
+      const email = new EmailChannel({} as any, createConfigDouble());
+      const hubspot = createChannelDouble({ name: "hubspot", handles: jest.fn().mockReturnValue(true) });
+      await buildWith([email, hubspot]).handleUserContactChanged({
+        userId: "user-1",
+        changed: ["phone"],
+        changedAt: "2026-10-20T09:00:00.000Z",
+      });
+
+      expect(repo.insertedValues).toHaveLength(1);
+      expect(repo.insertedValues[0]).toEqual(
+        expect.objectContaining({
+          channel: "hubspot",
+          type: "user_contact_changed",
+          dedupe_key: "hubspot:contact_changed:user-1:2026-10-20T09:00:00.000Z",
+        }),
+      );
+    });
+
+    it("keeps user-facing receipts on email only", async () => {
+      userRepo.findOne.mockResolvedValue({ id: "user-1", email: "tenant@example.com" });
+      const hubspot = createChannelDouble({ name: "hubspot", handles: jest.fn().mockReturnValue(true) });
+      await buildWith([channel, hubspot]).handleBookingRequested(bookingEvent());
+
+      const hubspotRows = repo.insertedValues.filter((v) => v.channel === "hubspot");
+      expect(hubspotRows.map((v) => v.type)).toEqual(["booking_requested"]);
+    });
+  });
 
   describe("never throws into the request path", () => {
     it("swallows a channel send failure and records it", async () => {

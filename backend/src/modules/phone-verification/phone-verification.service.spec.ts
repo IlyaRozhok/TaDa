@@ -33,11 +33,13 @@ function setup(options: { provider?: OtpProvider; users?: Array<Partial<User>>; 
   const ledger = new InMemoryPhoneVerificationLedger(clock);
   const users = usersDouble([{ id: "u1" }, { id: "u2" }, ...(options.users ?? [])]);
   const turnstile = { verify: jest.fn().mockResolvedValue(options.captcha ?? true) } as unknown as TurnstileService;
+  const emitter = { emit: jest.fn() };
   const service = new PhoneVerificationService(
     users as any,
     ledger,
     options.provider ?? new StubOtpProvider(),
     turnstile,
+    emitter as any,
   );
   service.now = clock;
   return {
@@ -45,6 +47,7 @@ function setup(options: { provider?: OtpProvider; users?: Array<Partial<User>>; 
     ledger,
     users,
     turnstile,
+    emitter,
     advance: (ms: number) => {
       now = new Date(now.getTime() + ms);
     },
@@ -368,5 +371,28 @@ describe("config", () => {
       allowedCountries: expect.arrayContaining(["GB", "US", "UA"]),
       verificationRequired: false,
     });
+  });
+});
+
+describe("PhoneVerificationService — contact-changed event", () => {
+  it("announces a newly verified number", async () => {
+    const t = setup();
+    await t.service.sendCode(t.user(), { phone: UK, country: "GB" }, null);
+    await t.service.verifyCode(t.user(), { phone: UK, country: "GB", code: "000000" }, null);
+
+    expect(t.emitter.emit).toHaveBeenCalledWith("user.contact-changed", {
+      userId: "u1",
+      changed: ["phone"],
+      changedAt: "2026-10-12T10:00:00.000Z",
+    });
+  });
+
+  it("stays quiet when the same number is verified again", async () => {
+    const t = setup();
+    const user = { id: "u1", phone: UK_E164 } as User;
+    await t.service.sendCode(user, { phone: UK, country: "GB" }, null);
+    await t.service.verifyCode(user, { phone: UK, country: "GB", code: "000000" }, null);
+
+    expect(t.emitter.emit).not.toHaveBeenCalled();
   });
 });

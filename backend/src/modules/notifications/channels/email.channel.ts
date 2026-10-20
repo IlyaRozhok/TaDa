@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { EmailService } from "@/common/services/email.service";
 import { readNotificationsConfig } from "../notifications.config";
+import { NotificationType } from "../notification.templates";
 import {
   NotificationChannel,
   NotificationMessage,
@@ -23,6 +24,11 @@ export class EmailChannel implements NotificationChannel {
    */
   isEnabled(): boolean {
     return readNotificationsConfig(this.configService).emailEnabled;
+  }
+
+  /** Every type except the data-only ones meant for the CRM sync. */
+  handles(type: string): boolean {
+    return type !== NotificationType.UserContactChanged;
   }
 
   resolveRecipient(): string {
