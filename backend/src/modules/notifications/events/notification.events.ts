@@ -14,7 +14,20 @@ export const NotificationEvents = {
   ViewingProposed: "booking-request.viewing-proposed",
   ViewingConfirmed: "booking-request.viewing-confirmed",
   CallRequested: "call.requested",
+  UserContactChanged: "user.contact-changed",
 } as const;
+
+/**
+ * A user's contact fields changed (profile save, or a newly verified phone).
+ * Emitted only when a value actually differs from what was stored. Feeds the
+ * CRM sync alone — no email goes out for it.
+ */
+export interface UserContactChangedEvent {
+  userId: string;
+  changed: Array<"phone" | "first_name" | "last_name">;
+  /** ISO time of the change: makes each change its own notification row. */
+  changedAt: string;
+}
 
 /** How the account came into existence. Both paths notify support. */
 export type RegistrationSource = "google_oauth" | "admin_created";

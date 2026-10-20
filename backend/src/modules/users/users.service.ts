@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { User, UserRole } from "../../entities/user.entity";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -11,6 +12,10 @@ import { Repository } from "typeorm";
 import { S3Service } from "../../common/services/s3.service";
 import { AdminUpdateUserDto } from "./dto/admin-update-user.dto";
 import { phoneUpdate } from "@/common/phone/phone";
+import {
+  NotificationEvents,
+  UserContactChangedEvent,
+} from "@/modules/notifications/events/notification.events";
 
 @Injectable()
 export class UsersService {
@@ -23,7 +28,8 @@ export class UsersService {
     private userRoleService: UserRoleService,
     private userQueryService: UserQueryService,
     private userAdminService: UserAdminService,
-    private readonly s3Service: S3Service
+    private readonly s3Service: S3Service,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -70,6 +76,17 @@ export class UsersService {
     // All profile fields now live directly in the users table
     const updates: Partial<User> = {};
 
+    // The stored contact fields, read once: the phone write, full_name and the
+    // contact-changed event below all compare against them.
+    const contactTouched =
+      updateUserDto.phone !== undefined || firstName !== undefined || lastName !== undefined;
+    const current = contactTouched
+      ? await this.userRepository.findOne({
+          where: { id },
+          select: ["id", "phone", "first_name", "last_name"],
+        })
+      : null;
+
     // `email` is not writable here — see the note in UpdateUserDto.
     if (updateUserDto.avatar_url !== undefined)  updates.avatar_url = updateUserDto.avatar_url;
     if (firstName !== undefined)                updates.first_name = firstName;
@@ -78,7 +95,6 @@ export class UsersService {
     // E.164 plus its country; "" clears both (stored as NULL, not ""). A new
     // number loses the old one's SMS verification.
     if (updateUserDto.phone !== undefined) {
-      const current = await this.userRepository.findOne({ where: { id }, select: ["id", "phone"] });
       Object.assign(updates, phoneUpdate(updateUserDto.phone, current?.phone));
     }
     if (updateUserDto.nationality !== undefined) updates.nationality = updateUserDto.nationality;
@@ -90,9 +106,8 @@ export class UsersService {
 
     // Keep full_name in sync
     if (firstName !== undefined || lastName !== undefined) {
-      const currentUser = await this.userRepository.findOne({ where: { id }, select: ["first_name", "last_name"] });
-      const resolvedFirst = firstName ?? currentUser?.first_name ?? "";
-      const resolvedLast  = lastName  ?? currentUser?.last_name  ?? "";
+      const resolvedFirst = firstName ?? current?.first_name ?? "";
+      const resolvedLast  = lastName  ?? current?.last_name  ?? "";
       updates.full_name = `${resolvedFirst} ${resolvedLast}`.trim() || undefined;
     } else if (updateUserDto.full_name !== undefined) {
       updates.full_name = updateUserDto.full_name;
@@ -100,6 +115,7 @@ export class UsersService {
 
     if (Object.keys(updates).length > 0) {
       await this.userRepository.update(id, updates);
+      this.emitContactChanged(id, current, updates);
     }
 
     // Personal/contact fields are canonical on the users table (updated above).
@@ -119,6 +135,33 @@ export class UsersService {
     }
 
     return this.userQueryService.findOneWithProfiles(id);
+  }
+
+  /**
+   * Announce a change to the contact fields the CRM mirrors — only when a
+   * value actually differs from what was stored, so a save that changes
+   * nothing sends nothing. Fire-and-forget: `emit` returns before any
+   * listener runs, so the sync can never fail the profile save.
+   */
+  private emitContactChanged(
+    id: string,
+    before: Pick<User, "phone" | "first_name" | "last_name"> | null,
+    updates: Partial<User>,
+  ): void {
+    const differs = (next: string | null | undefined, previous: string | null | undefined) =>
+      next !== undefined && (next ?? "").trim() !== (previous ?? "").trim();
+
+    const changed: UserContactChangedEvent["changed"] = [];
+    if (differs(updates.phone, before?.phone)) changed.push("phone");
+    if (differs(updates.first_name, before?.first_name)) changed.push("first_name");
+    if (differs(updates.last_name, before?.last_name)) changed.push("last_name");
+    if (changed.length === 0) return;
+
+    this.eventEmitter.emit(NotificationEvents.UserContactChanged, {
+      userId: id,
+      changed,
+      changedAt: new Date().toISOString(),
+    } satisfies UserContactChangedEvent);
   }
 
   /**

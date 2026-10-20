@@ -278,9 +278,13 @@ decisions) is recorded HERE, briefly, with a date.
   - Deals land in the default pipeline's first stage. A dedicated "TaDa
     tenants" pipeline (Book a call → Viewing → Offer → Let) would make the
     board meaningful; create it in HubSpot and point the sync at its id.
-  - One-way and event-driven: profile edits after sign-up, booking status
-    changes and existing users are not synced. A backfill of existing
-    tenants would be a one-off script.
+  - One-way and event-driven. Since 2026-10-20 a tenant's changed phone or
+    name (profile save or a newly verified number) refreshes the contact,
+    stage untouched; other profile fields, booking status changes and
+    existing users are not synced. A backfill of existing tenants would be
+    a one-off script.
+  - Book-a-call deals carry the reason in their name and reason, preferred
+    time and notes in the standard deal `description` (no extra scope).
   - A deal created at HubSpot whose id then fails to save on our row is
     logged, not retried (a retry would duplicate it) — rare, and visible in
     the log.

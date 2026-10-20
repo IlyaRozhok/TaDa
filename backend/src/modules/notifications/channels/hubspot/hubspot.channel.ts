@@ -17,12 +17,14 @@ import type {
   BookingRequestedEvent,
   CallRequestedEvent,
   TenantCvCompletedEvent,
+  UserContactChangedEvent,
   UserRegisteredEvent,
 } from "@/modules/notifications/events/notification.events";
 import { HubspotApiError, HubspotClient } from "./hubspot.client";
 import { readHubspotConfig } from "./hubspot.config";
 import {
   advanceLifecycle,
+  callDealDescription,
   ContactFacts,
   contactProperties,
   CUSTOM_CONTACT_PROPERTIES,
@@ -39,6 +41,7 @@ const SYNCED_TYPES: ReadonlySet<string> = new Set([
   NotificationType.TenantCvCompleted,
   NotificationType.CallRequested,
   NotificationType.BookingRequested,
+  NotificationType.UserContactChanged,
 ]);
 
 /** How long a custom-property check is trusted before HubSpot is asked again. */
@@ -109,6 +112,8 @@ export class HubspotChannel implements NotificationChannel {
         return this.syncBooking(payload as unknown as BookingRequestedEvent);
       case NotificationType.CallRequested:
         return this.syncCallRequest(payload as unknown as CallRequestedEvent);
+      case NotificationType.UserContactChanged:
+        return this.syncContactChange(payload as unknown as UserContactChangedEvent);
     }
   }
 
@@ -125,6 +130,16 @@ export class HubspotChannel implements NotificationChannel {
   private async syncCvCompleted(event: TenantCvCompletedEvent): Promise<void> {
     const facts = await this.userFacts(event.userId);
     if (facts) await this.upsertContact(facts, "marketingqualifiedlead");
+  }
+
+  /**
+   * Phone or name changed → refresh the contact's fields from the current
+   * profile. A field refresh, not a stage change: the lifecycle stage is left
+   * as it is. Tenants only, like the registration sync.
+   */
+  private async syncContactChange(event: UserContactChangedEvent): Promise<void> {
+    const facts = await this.userFacts(event.userId);
+    if (facts?.source === "tenant") await this.upsertContact(facts, null);
   }
 
   /** Booking request → hot: "salesqualifiedlead", plus one deal per request. */
@@ -166,8 +181,18 @@ export class HubspotChannel implements NotificationChannel {
     const contactId = await this.upsertContact(facts, "salesqualifiedlead");
     if (!contactId || !event.callRequestId) return;
 
+    // The visitor's answers: the reason on the board (deal name), all three
+    // in the deal's standard description — no custom deal property or
+    // engagement, so no scope beyond crm.objects.deals.write.
+    const reason = event.reasonLabel || row?.reason || null;
+    const description = callDealDescription({
+      reason,
+      preferredTime: row?.preferred_time ?? event.preferredTime,
+      notes: row?.notes ?? event.notes,
+    });
     await this.createDealOnce(this.calls, event.callRequestId, contactId, {
-      dealname: dealName(fullName, { type: "call" }),
+      dealname: dealName(fullName, { type: "call", reason }),
+      ...(description ? { description } : {}),
     });
   }
 
@@ -199,10 +224,11 @@ export class HubspotChannel implements NotificationChannel {
 
   /**
    * Find the contact by email (or phone, when there is no email), update it
-   * or create it. The lifecycle stage is written only when it moves forward.
-   * Returns the contact id, or null when there is nothing to identify it by.
+   * or create it. The lifecycle stage is written only when it moves forward;
+   * a null stage never touches it. Returns the contact id, or null when there
+   * is nothing to identify it by.
    */
-  private async upsertContact(facts: ContactFacts, stage: LifecycleStage): Promise<string | null> {
+  private async upsertContact(facts: ContactFacts, stage: LifecycleStage | null): Promise<string | null> {
     const email = facts.email?.trim().toLowerCase() || null;
     const phone = facts.phone?.trim() || null;
     if (!email && !phone) {
@@ -216,7 +242,9 @@ export class HubspotChannel implements NotificationChannel {
     let existing = await find();
     if (!existing) {
       try {
-        const created = await this.client.createContact({ ...properties, lifecyclestage: stage });
+        const created = await this.client.createContact(
+          stage ? { ...properties, lifecyclestage: stage } : properties,
+        );
         return created.id;
       } catch (error) {
         // Created in between by someone else (409): fall through to update it.
@@ -226,7 +254,7 @@ export class HubspotChannel implements NotificationChannel {
       }
     }
 
-    const next = advanceLifecycle(existing.properties.lifecyclestage, stage);
+    const next = stage ? advanceLifecycle(existing.properties.lifecyclestage, stage) : null;
     const update = next ? { ...properties, lifecyclestage: next } : properties;
     if (Object.keys(update).length > 0) await this.client.updateContact(existing.id, update);
     return existing.id;

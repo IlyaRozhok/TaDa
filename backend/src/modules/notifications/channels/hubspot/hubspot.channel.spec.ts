@@ -102,12 +102,13 @@ describe("HubspotChannel switch", () => {
     expect(build().channel.isEnabled()).toBe(true);
   });
 
-  it("takes only the four synced events", () => {
+  it("takes only the synced events", () => {
     const { channel } = build();
     expect(channel.handles(NotificationType.UserRegistered)).toBe(true);
     expect(channel.handles(NotificationType.TenantCvCompleted)).toBe(true);
     expect(channel.handles(NotificationType.CallRequested)).toBe(true);
     expect(channel.handles(NotificationType.BookingRequested)).toBe(true);
+    expect(channel.handles(NotificationType.UserContactChanged)).toBe(true);
     expect(channel.handles(NotificationType.BookingStatusChangedTenant)).toBe(false);
     expect(channel.handles(NotificationType.ViewingConfirmedInternal)).toBe(false);
   });
@@ -279,5 +280,74 @@ describe("HubspotChannel deals", () => {
     await expect(
       channel.send("hubspot", message(NotificationType.BookingRequested, bookingPayload)),
     ).resolves.toBeUndefined();
+  });
+});
+
+describe("HubspotChannel book-a-call answers", () => {
+  it("puts the reason in the deal name and all answers in its description", async () => {
+    const call = requestRepo(
+      { id: "call-1", hubspot_deal_id: null },
+      {
+        name: "Sam Lee",
+        email: "sam@example.com",
+        phone_number: null,
+        source: "tenant",
+        reason: "looking_for_home",
+        preferred_time: "Weekday evenings",
+        notes: "Needs parking",
+      },
+    );
+    const { channel, client } = build({ call });
+    await channel.send(
+      "hubspot",
+      message(NotificationType.CallRequested, {
+        callRequestId: "call-1",
+        name: "Sam Lee",
+        reasonLabel: "Finding a home",
+        source: "tenant",
+      }),
+    );
+
+    expect(client.createDeal).toHaveBeenCalledWith(
+      {
+        dealname: "Sam Lee — Book a call: Finding a home",
+        description: "Reason: Finding a home\nPreferred time: Weekday evenings\nNotes: Needs parking",
+        pipeline: "default",
+        dealstage: "appointmentscheduled",
+      },
+      "contact-1",
+    );
+  });
+});
+
+describe("HubspotChannel contact changes", () => {
+  const changed = { userId: "user-1", changed: ["phone"], changedAt: "2026-10-20T09:00:00.000Z" };
+
+  it("refreshes the contact's fields and leaves its stage alone", async () => {
+    const client = clientDouble({
+      findContact: jest.fn().mockResolvedValue({ id: "contact-9", properties: { lifecyclestage: "lead" } }),
+    });
+    const { channel } = build({ client });
+    await channel.send("hubspot", message(NotificationType.UserContactChanged, changed));
+
+    const [id, properties] = client.updateContact.mock.calls[0];
+    expect(id).toBe("contact-9");
+    expect(properties).toEqual(expect.objectContaining({ phone: "+447123456789", firstname: "Jane" }));
+    expect(properties).not.toHaveProperty("lifecyclestage");
+    expect(client.createDeal).not.toHaveBeenCalled();
+  });
+
+  it("creates a missing contact without setting a stage", async () => {
+    const { channel, client } = build();
+    await channel.send("hubspot", message(NotificationType.UserContactChanged, changed));
+
+    expect(client.createContact).toHaveBeenCalledWith(expect.not.objectContaining({ lifecyclestage: expect.anything() }));
+  });
+
+  it("does not sync operators", async () => {
+    const { channel, client } = build({ user: { ...tenant, role: "operator" } });
+    await channel.send("hubspot", message(NotificationType.UserContactChanged, changed));
+
+    expect(client.findContact).not.toHaveBeenCalled();
   });
 });

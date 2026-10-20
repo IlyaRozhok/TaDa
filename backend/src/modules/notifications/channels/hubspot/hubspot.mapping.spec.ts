@@ -1,5 +1,6 @@
 import {
   advanceLifecycle,
+  callDealDescription,
   contactProperties,
   cvUrl,
   dealName,
@@ -87,7 +88,25 @@ describe("helpers", () => {
 
   it("names deals by contact and kind", () => {
     expect(dealName("Jane Doe", { type: "call" })).toBe("Jane Doe — Book a call");
+    expect(dealName("Jane Doe", { type: "call", reason: "Finding a home" })).toBe(
+      "Jane Doe — Book a call: Finding a home",
+    );
     expect(dealName("Jane Doe", { type: "booking", propertyTitle: "Flat 2B" })).toBe("Jane Doe — Booking: Flat 2B");
     expect(dealName(" ", { type: "booking", propertyTitle: null })).toBe("Unknown contact — Booking: property");
+  });
+});
+
+describe("callDealDescription", () => {
+  it("puts each answer on its own line", () => {
+    expect(
+      callDealDescription({ reason: "Finding a home", preferredTime: "Weekday evenings", notes: "2 kids, a cat" }),
+    ).toBe("Reason: Finding a home\nPreferred time: Weekday evenings\nNotes: 2 kids, a cat");
+  });
+
+  it("leaves out empty answers, and is null with none", () => {
+    expect(callDealDescription({ reason: "Renting advice", preferredTime: " ", notes: null })).toBe(
+      "Reason: Renting advice",
+    );
+    expect(callDealDescription({})).toBeNull();
   });
 });

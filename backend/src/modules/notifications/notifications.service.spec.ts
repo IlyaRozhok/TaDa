@@ -4,6 +4,7 @@ import { Logger } from "@nestjs/common";
 import { Notification, NotificationStatus } from "@/entities/notification.entity";
 import { NotificationsService } from "./notifications.service";
 import { NotificationChannel } from "./channels/notification-channel.interface";
+import { EmailChannel } from "./channels/email.channel";
 import {
   BookingRequestedEvent,
   CallRequestedEvent,
@@ -225,6 +226,25 @@ describe("NotificationsService", () => {
       expect(hubspot.send).toHaveBeenCalledWith(
         "hubspot:26725201",
         expect.objectContaining({ type: "user_registered", payload: registrationEvent }),
+      );
+    });
+
+    it("records a contact change for data channels only, never as an email", async () => {
+      const email = new EmailChannel({} as any, createConfigDouble());
+      const hubspot = createChannelDouble({ name: "hubspot", handles: jest.fn().mockReturnValue(true) });
+      await buildWith([email, hubspot]).handleUserContactChanged({
+        userId: "user-1",
+        changed: ["phone"],
+        changedAt: "2026-10-20T09:00:00.000Z",
+      });
+
+      expect(repo.insertedValues).toHaveLength(1);
+      expect(repo.insertedValues[0]).toEqual(
+        expect.objectContaining({
+          channel: "hubspot",
+          type: "user_contact_changed",
+          dedupe_key: "hubspot:contact_changed:user-1:2026-10-20T09:00:00.000Z",
+        }),
       );
     });
 

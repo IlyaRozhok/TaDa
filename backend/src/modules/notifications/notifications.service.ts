@@ -22,6 +22,7 @@ import {
   CallRequestedEvent,
   NotificationEvents,
   TenantCvCompletedEvent,
+  UserContactChangedEvent,
   UserRegisteredEvent,
   ViewingConfirmedEvent,
   ViewingProposedEvent,
@@ -111,6 +112,16 @@ export class NotificationsService {
     await this.record(
       NotificationType.TenantCvCompleted,
       `cv_completed:${event.userId}`,
+      event as unknown as Record<string, unknown>,
+    );
+  }
+
+  /** Data-only: recorded for the CRM channel; the email channel skips it. */
+  @OnEvent(NotificationEvents.UserContactChanged, { async: true })
+  async handleUserContactChanged(event: UserContactChangedEvent): Promise<void> {
+    await this.record(
+      NotificationType.UserContactChanged,
+      `contact_changed:${event.userId}:${event.changedAt}`,
       event as unknown as Record<string, unknown>,
     );
   }

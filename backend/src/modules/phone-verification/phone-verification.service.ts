@@ -1,9 +1,14 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import { IsNull, Not, Repository } from "typeorm";
 
 import { PHONE_ISSUE_MESSAGES, processPhone } from "@/common/phone/phone";
 import { User } from "@/entities/user.entity";
+import {
+  NotificationEvents,
+  UserContactChangedEvent,
+} from "@/modules/notifications/events/notification.events";
 import { OTP_PROVIDER, type OtpProvider } from "./otp/otp-provider";
 import { allowedPhoneCountries, phoneVerificationRequired } from "./phone-verification.config";
 import { PhoneVerificationErrors as Errors } from "./phone-verification.errors";
@@ -57,6 +62,7 @@ export class PhoneVerificationService {
     private readonly ledger: PhoneVerificationLedger,
     @Inject(OTP_PROVIDER) private readonly provider: OtpProvider,
     private readonly turnstile: TurnstileService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /** What the verification screen needs to validate before it sends. */
@@ -120,6 +126,15 @@ export class PhoneVerificationService {
     if (check.status === "approved") {
       await record("approved");
       const verifiedAt = await this.markVerified(user.id, e164, country);
+      // A newly verified number is a contact change for the CRM sync;
+      // re-verifying the same number is not. Fire-and-forget.
+      if (user.phone !== e164) {
+        this.eventEmitter.emit(NotificationEvents.UserContactChanged, {
+          userId: user.id,
+          changed: ["phone"],
+          changedAt: verifiedAt.toISOString(),
+        } satisfies UserContactChangedEvent);
+      }
       return { verified: true, phone: e164, phone_country: country, phone_verified_at: verifiedAt };
     }
 
