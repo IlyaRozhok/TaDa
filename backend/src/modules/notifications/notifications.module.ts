@@ -7,7 +7,6 @@ import { User } from "@/entities/user.entity";
 import { Property } from "@/entities/property.entity";
 import { TenantCv } from "@/entities/tenant-cv.entity";
 import { BookingRequest } from "@/entities/booking-request.entity";
-import { CallRequest } from "@/entities/call-request.entity";
 import { EmailModule } from "@/common/services/email.module";
 import { notificationChannelProviders } from "./channels";
 import { NotificationsRetryWorker } from "./notifications.retry.worker";
@@ -26,9 +25,9 @@ import { NotificationsService } from "./notifications.service";
     EmailModule,
     // User and Property are read-only here: the service resolves recipient
     // addresses from the database by id (invariant 2 — payloads never carry
-    // a delivery address). TenantCv, BookingRequest and CallRequest are for
-    // the HubSpot channel: it reads the CV link and records deal ids.
-    TypeOrmModule.forFeature([Notification, User, Property, TenantCv, BookingRequest, CallRequest]),
+    // a delivery address). TenantCv and BookingRequest are for the HubSpot
+    // channel: it reads the CV link and records booking deal ids.
+    TypeOrmModule.forFeature([Notification, User, Property, TenantCv, BookingRequest]),
   ],
   providers: [
     ...notificationChannelProviders,

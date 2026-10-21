@@ -7,7 +7,6 @@ import { User, UserRole } from "@/entities/user.entity";
 import { TenantCv } from "@/entities/tenant-cv.entity";
 import { Property } from "@/entities/property.entity";
 import { BookingRequest } from "@/entities/booking-request.entity";
-import { CallRequest } from "@/entities/call-request.entity";
 import {
   NotificationChannel,
   NotificationMessage,
@@ -15,7 +14,6 @@ import {
 import { NotificationType } from "@/modules/notifications/notification.templates";
 import type {
   BookingRequestedEvent,
-  CallRequestedEvent,
   TenantCvCompletedEvent,
   UserContactChangedEvent,
   UserRegisteredEvent,
@@ -29,7 +27,6 @@ import {
 import { readHubspotConfig } from "./hubspot.config";
 import {
   advanceLifecycle,
-  callDealDescription,
   ContactFacts,
   contactProperties,
   CUSTOM_CONTACT_PROPERTIES,
@@ -47,7 +44,6 @@ import {
 const SYNCED_TYPES: ReadonlySet<string> = new Set([
   NotificationType.UserRegistered,
   NotificationType.TenantCvCompleted,
-  NotificationType.CallRequested,
   NotificationType.BookingRequested,
   NotificationType.UserContactChanged,
 ]);
@@ -64,12 +60,13 @@ const FALLBACK_DEAL_STAGE = { pipeline: "default", stage: "appointmentscheduled"
  * Riding the notification infrastructure is what makes it safe: producers
  * only emit an event, a row is recorded per event (deduplicated), and a
  * failing or slow HubSpot leaves that row `failed` for the retry worker —
- * nothing here can reach registration, booking, book-a-call or the CV. With
+ * nothing here can reach registration, booking, the profile or the CV. With
  * HUBSPOT_ENABLED off or no token the channel is disabled and records nothing.
  *
- * Contacts are upserted by email (by phone for a call request that only
- * left a phone) and their lifecycle stage only ever moves forward. Deals are
- * created once per call or booking request, the deal id stored on the row.
+ * Only registered users are synced: contacts are upserted by their account
+ * email and their lifecycle stage only ever moves forward; a deal is created
+ * once per booking request, its id stored on the row. Book a call (open to
+ * anonymous visitors) is deliberately not synced.
  */
 @Injectable()
 export class HubspotChannel implements NotificationChannel {
@@ -88,7 +85,6 @@ export class HubspotChannel implements NotificationChannel {
     @InjectRepository(TenantCv) private readonly cvs: Repository<TenantCv>,
     @InjectRepository(Property) private readonly properties: Repository<Property>,
     @InjectRepository(BookingRequest) private readonly bookings: Repository<BookingRequest>,
-    @InjectRepository(CallRequest) private readonly calls: Repository<CallRequest>,
   ) {}
 
   isEnabled(): boolean {
@@ -118,8 +114,6 @@ export class HubspotChannel implements NotificationChannel {
         return this.syncCvCompleted(payload as unknown as TenantCvCompletedEvent);
       case NotificationType.BookingRequested:
         return this.syncBooking(payload as unknown as BookingRequestedEvent);
-      case NotificationType.CallRequested:
-        return this.syncCallRequest(payload as unknown as CallRequestedEvent);
       case NotificationType.UserContactChanged:
         return this.syncContactChange(payload as unknown as UserContactChangedEvent);
     }
@@ -170,60 +164,10 @@ export class HubspotChannel implements NotificationChannel {
     );
 
     await this.createDealOnce(this.bookings, event.bookingId, contactId, {
-      dealname: dealName(name, { type: "booking", propertyTitle: title }),
+      dealname: dealName(name, title),
       ...(price > 0 ? { amount: String(price) } : {}),
       ...links,
     });
-  }
-
-  /** Book a call → hot: "salesqualifiedlead", plus one deal per request. */
-  private async syncCallRequest(event: CallRequestedEvent): Promise<void> {
-    const row = event.callRequestId
-      ? await this.calls.findOne({ where: { id: event.callRequestId } })
-      : null;
-    const fullName = row?.name ?? event.name;
-    const { first, last } = splitName(fullName);
-    const facts: ContactFacts = {
-      email: row?.email ?? event.email,
-      phone: row?.phone_number ?? null,
-      firstName: first,
-      lastName: last,
-      source: row?.source ?? event.source,
-    };
-
-    const contactId = await this.upsertContact(facts, "salesqualifiedlead");
-    if (!contactId || !event.callRequestId) return;
-
-    // The visitor's answers: the reason on the board (deal name), all three
-    // in the deal's standard description — no custom deal property or
-    // engagement, so no scope beyond crm.objects.deals.write.
-    const reason = event.reasonLabel || row?.reason || null;
-    const description = callDealDescription({
-      reason,
-      preferredTime: row?.preferred_time ?? event.preferredTime,
-      notes: row?.notes ?? event.notes,
-    });
-    // A call is about no particular property; the CV link goes on when the
-    // email belongs to a TaDa user who has a shared CV.
-    const links = dealLinkProperties(
-      { cvUrl: await this.cvUrlForEmail(facts.email) },
-      await this.availableCustomProperties("deals"),
-    );
-    await this.createDealOnce(this.calls, event.callRequestId, contactId, {
-      dealname: dealName(fullName, { type: "call", reason }),
-      ...(description ? { description } : {}),
-      ...links,
-    });
-  }
-
-  /** The public CV link of the TaDa user with this email, if they have one. */
-  private async cvUrlForEmail(email: string | null | undefined): Promise<string | null> {
-    const normalized = email?.trim().toLowerCase();
-    if (!normalized) return null;
-    const user = await this.users.findOne({ where: { email: normalized }, select: { id: true } });
-    if (!user) return null;
-    const cv = await this.cvs.findOne({ where: { user_id: user.id }, select: { id: true, share_uuid: true } });
-    return cvUrl(cv?.share_uuid, this.siteBase());
   }
 
   /** Links point at this host's frontend (FRONTEND_URL): stage → stage, prod → prod. */
@@ -258,21 +202,16 @@ export class HubspotChannel implements NotificationChannel {
   }
 
   /**
-   * Find the contact by email (or phone, when there is no email), update it
-   * or create it. The lifecycle stage is written only when it moves forward;
-   * a null stage never touches it. Returns the contact id, or null when there
-   * is nothing to identify it by.
+   * Find the contact by email, update it or create it. The lifecycle stage is
+   * written only when it moves forward; a null stage never touches it.
+   * Returns the contact id, or null without an email to identify it by.
    */
   private async upsertContact(facts: ContactFacts, stage: LifecycleStage | null): Promise<string | null> {
     const email = facts.email?.trim().toLowerCase() || null;
-    const phone = facts.phone?.trim() || null;
-    if (!email && !phone) {
-      this.logger.warn("HubSpot: contact has neither email nor phone — skipped.");
-      return null;
-    }
+    if (!email) return null;
 
     const properties = contactProperties(facts, await this.availableCustomProperties("contacts"));
-    const find = () => (email ? this.client.findContact("email", email) : this.client.findContact("phone", phone!));
+    const find = () => this.client.findContact(email);
 
     let existing = await find();
     if (!existing) {
@@ -374,7 +313,7 @@ export class HubspotChannel implements NotificationChannel {
    * record its id is logged, not thrown — a retry would create a duplicate.
    */
   private async createDealOnce(
-    repository: Repository<BookingRequest> | Repository<CallRequest>,
+    repository: Repository<BookingRequest>,
     rowId: string,
     contactId: string,
     properties: Record<string, string>,

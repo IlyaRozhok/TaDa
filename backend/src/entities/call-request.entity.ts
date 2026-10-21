@@ -91,9 +91,9 @@ export class CallRequest {
   source: CallRequestSource;
 
   /**
-   * The HubSpot deal created for this request by the CRM sync, so a replay or
-   * retry never creates a second one. Null until synced. Not selected by
-   * default: only the sync reads it, nothing else depends on it.
+   * Unused: book-a-call requests are no longer synced to HubSpot (anonymous
+   * visitors are not CRM contacts). Kept because migration 1788800000000
+   * added it; drop it in a follow-up migration. Not selected by default.
    */
   @Column({ type: "varchar", length: 32, nullable: true, select: false })
   hubspot_deal_id?: string | null;

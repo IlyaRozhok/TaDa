@@ -61,11 +61,9 @@ function build(options: {
   client?: ReturnType<typeof clientDouble>;
   user?: Record<string, unknown> | null;
   booking?: ReturnType<typeof requestRepo>;
-  call?: ReturnType<typeof requestRepo>;
 } = {}) {
   const client = options.client ?? clientDouble();
   const booking = options.booking ?? requestRepo({ id: "booking-1", hubspot_deal_id: null });
-  const call = options.call ?? requestRepo({ id: "call-1", hubspot_deal_id: null });
   const channel = new HubspotChannel(
     client as unknown as HubspotClient,
     config(options.env ?? ENABLED),
@@ -73,9 +71,8 @@ function build(options: {
     { findOne: jest.fn().mockResolvedValue({ id: "cv-1", share_uuid: "share-1" }) } as any,
     { findOne: jest.fn().mockResolvedValue({ id: "prop-1", title: "Flat 2B", price: 2400 }) } as any,
     booking as any,
-    call as any,
   );
-  return { channel, client, booking, call };
+  return { channel, client, booking };
 }
 
 const message = (type: NotificationType, payload: Record<string, unknown>) => ({
@@ -106,7 +103,7 @@ describe("HubspotChannel switch", () => {
     const { channel } = build();
     expect(channel.handles(NotificationType.UserRegistered)).toBe(true);
     expect(channel.handles(NotificationType.TenantCvCompleted)).toBe(true);
-    expect(channel.handles(NotificationType.CallRequested)).toBe(true);
+    expect(channel.handles(NotificationType.CallRequested)).toBe(false);
     expect(channel.handles(NotificationType.BookingRequested)).toBe(true);
     expect(channel.handles(NotificationType.UserContactChanged)).toBe(true);
     expect(channel.handles(NotificationType.BookingStatusChangedTenant)).toBe(false);
@@ -119,7 +116,7 @@ describe("HubspotChannel contacts", () => {
     const { channel, client } = build();
     await channel.send("hubspot", message(NotificationType.UserRegistered, { userId: "user-1", role: "tenant" }));
 
-    expect(client.findContact).toHaveBeenCalledWith("email", "jane@example.com");
+    expect(client.findContact).toHaveBeenCalledWith("jane@example.com");
     expect(client.createContact).toHaveBeenCalledWith({
       email: "jane@example.com",
       firstname: "Jane",
@@ -256,31 +253,6 @@ describe("HubspotChannel deals", () => {
     expect(client.createDeal).not.toHaveBeenCalled();
   });
 
-  it("creates a book-a-call contact by phone when no email was given, and its deal", async () => {
-    const call = requestRepo(
-      { id: "call-1", hubspot_deal_id: null },
-      { name: "Sam Lee", email: null, phone_number: "+447400123456", source: "operator" },
-    );
-    const { channel, client } = build({ call });
-    await channel.send(
-      "hubspot",
-      message(NotificationType.CallRequested, { callRequestId: "call-1", name: "Sam Lee", email: null, source: "operator" }),
-    );
-
-    expect(client.findContact).toHaveBeenCalledWith("phone", "+447400123456");
-    expect(client.createContact).toHaveBeenCalledWith({
-      firstname: "Sam",
-      lastname: "Lee",
-      phone: "+447400123456",
-      tada_source: "operator",
-      lifecyclestage: "salesqualifiedlead",
-    });
-    expect(client.createDeal).toHaveBeenCalledWith(
-      expect.objectContaining({ dealname: "Sam Lee — Book a call" }),
-      "contact-1",
-    );
-  });
-
   it("does not throw when the deal is created but its id cannot be recorded", async () => {
     const booking = requestRepo({ id: "booking-1", hubspot_deal_id: null });
     booking.update.mockRejectedValue(new Error("db down"));
@@ -288,44 +260,6 @@ describe("HubspotChannel deals", () => {
     await expect(
       channel.send("hubspot", message(NotificationType.BookingRequested, bookingPayload)),
     ).resolves.toBeUndefined();
-  });
-});
-
-describe("HubspotChannel book-a-call answers", () => {
-  it("puts the reason in the deal name and all answers in its description", async () => {
-    const call = requestRepo(
-      { id: "call-1", hubspot_deal_id: null },
-      {
-        name: "Sam Lee",
-        email: "sam@example.com",
-        phone_number: null,
-        source: "tenant",
-        reason: "looking_for_home",
-        preferred_time: "Weekday evenings",
-        notes: "Needs parking",
-      },
-    );
-    const { channel, client } = build({ call });
-    await channel.send(
-      "hubspot",
-      message(NotificationType.CallRequested, {
-        callRequestId: "call-1",
-        name: "Sam Lee",
-        reasonLabel: "Finding a home",
-        source: "tenant",
-      }),
-    );
-
-    expect(client.createDeal).toHaveBeenCalledWith(
-      {
-        dealname: "Sam Lee — Book a call: Finding a home",
-        description: "Reason: Finding a home\nPreferred time: Weekday evenings\nNotes: Needs parking",
-        tada_cv_url: "https://ta-da.co/cv/share-1",
-        pipeline: "default",
-        dealstage: "appointmentscheduled",
-      },
-      "contact-1",
-    );
   });
 });
 
@@ -419,16 +353,26 @@ describe("HubspotChannel deal links", () => {
     expect(Logger.prototype.warn).toHaveBeenCalledWith(expect.stringContaining("crm.schemas.deals"));
   });
 
-  it("leaves the CV link off a call deal when the email is no TaDa user's", async () => {
-    const call = requestRepo(
-      { id: "call-1", hubspot_deal_id: null },
-      { name: "Sam Lee", email: "sam@example.com", phone_number: null, source: "tenant" },
-    );
-    const { channel, client } = build({ call, user: null });
-    await channel.send("hubspot", message(NotificationType.CallRequested, { callRequestId: "call-1", name: "Sam Lee" }));
+});
 
-    const [properties] = client.createDeal.mock.calls[0];
-    expect(properties).not.toHaveProperty("tada_cv_url");
-    expect(properties).not.toHaveProperty("tada_property_url");
+describe("HubspotChannel book a call", () => {
+  it("writes nothing to HubSpot for a call request, even if one reaches it", async () => {
+    const { channel, client } = build();
+    await channel.send(
+      "hubspot",
+      message(NotificationType.CallRequested, {
+        callRequestId: "call-1",
+        name: "Sam Lee",
+        email: "sam@example.com",
+        reasonLabel: "Finding a home",
+        source: "tenant",
+      }),
+    );
+
+    expect(client.findContact).not.toHaveBeenCalled();
+    expect(client.createContact).not.toHaveBeenCalled();
+    expect(client.updateContact).not.toHaveBeenCalled();
+    expect(client.createDeal).not.toHaveBeenCalled();
+    expect(client.propertyExists).not.toHaveBeenCalled();
   });
 });

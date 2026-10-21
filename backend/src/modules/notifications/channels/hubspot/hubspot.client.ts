@@ -74,13 +74,13 @@ export class HubspotClient {
     return (text ? JSON.parse(text) : undefined) as T;
   }
 
-  /** The first contact whose `property` equals `value`, or null. */
-  async findContact(property: "email" | "phone", value: string): Promise<HubspotContact | null> {
+  /** The contact with this email, or null. */
+  async findContact(email: string): Promise<HubspotContact | null> {
     const result = await this.request<{ results: HubspotContact[] }>(
       "POST",
       "/crm/v3/objects/contacts/search",
       {
-        filterGroups: [{ filters: [{ propertyName: property, operator: "EQ", value }] }],
+        filterGroups: [{ filters: [{ propertyName: "email", operator: "EQ", value: email }] }],
         properties: ["email", "phone", "lifecyclestage"],
         limit: 1,
       },

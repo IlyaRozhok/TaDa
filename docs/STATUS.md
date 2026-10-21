@@ -253,9 +253,9 @@ decisions) is recorded HERE, briefly, with a date.
    c. **Host `.env`:** `HUBSPOT_ENABLED=true`, `HUBSPOT_ACCESS_TOKEN=pat-eu1-…`,
       `HUBSPOT_PORTAL_ID=26725201`; restart the backend. Flag on without a
       token logs a warning and stays off.
-   d. Check a test sign-up, book-a-call and booking on stage: contact
-      lifecycle lead → SQL, one deal per request in the default pipeline's
-      first stage. Failed syncs are `notifications` rows with
+   d. Check a test sign-up, CV and booking on stage: contact lifecycle
+      lead → MQL → SQL, one deal per booking request in the default
+      pipeline's first stage. Book a call is not synced (2026-10-21). Failed syncs are `notifications` rows with
       `channel = 'hubspot'` and `last_error`, retried up to 5 times.
 
 ## Open follow-ups (recorded, not scheduled)
@@ -276,19 +276,21 @@ decisions) is recorded HERE, briefly, with a date.
 
 - **HubSpot CRM sync, after the MVP** (added 2026-10-19).
   - Deals land in the default pipeline's first stage. A dedicated "TaDa
-    tenants" pipeline (Book a call → Viewing → Offer → Let) would make the
+    tenants" pipeline (Booking → Viewing → Offer → Let) would make the
     board meaningful; create it in HubSpot and point the sync at its id.
+  - Book a call is not synced since 2026-10-21: it is open to anonymous
+    visitors, who are not CRM contacts. `call_requests.hubspot_deal_id`
+    (migration 1788800000000) is therefore unused — drop it in a follow-up
+    migration.
   - One-way and event-driven. Since 2026-10-20 a tenant's changed phone or
     name (profile save or a newly verified number) refreshes the contact,
     stage untouched; other profile fields, booking status changes and
     existing users are not synced. A backfill of existing tenants would be
     a one-off script.
-  - Book-a-call deals carry the reason in their name and reason, preferred
-    time and notes in the standard deal `description` (no extra scope).
-  - Deals carry two links (2026-10-20), custom deal properties created on
-    first run with crm.schemas.deals.write: `tada_cv_url` ("Tenant CV") and
-    `tada_property_url` ("Property", booking deals only), both single-line
-    text. Links are built on the host's `FRONTEND_URL` (stage links to
+  - Booking deals carry two links (2026-10-20), custom deal properties
+    created on first run with crm.schemas.deals.write: `tada_cv_url`
+    ("Tenant CV", when the tenant has shared their CV) and
+    `tada_property_url` ("Property"), both single-line text. Links are built on the host's `FRONTEND_URL` (stage links to
     stage) — `/cv/{share_uuid}` and `/app/properties/{id}`; the contact's
     `tada_cv_url` uses the same base now.
   - A deal created at HubSpot whose id then fails to save on our row is
