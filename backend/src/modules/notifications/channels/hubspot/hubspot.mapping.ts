@@ -174,33 +174,8 @@ export function dealLinkProperties(
   return properties;
 }
 
-/** "Jane Doe — Book a call: Finding a home" / "Jane Doe — Booking: Flat 2B". */
-export function dealName(
-  contactName: string,
-  kind: { type: "call"; reason?: string | null } | { type: "booking"; propertyTitle: string | null },
-): string {
+/** "Jane Doe — Booking: Flat 2B". */
+export function dealName(contactName: string, propertyTitle: string | null | undefined): string {
   const who = contactName.trim() || "Unknown contact";
-  if (kind.type === "booking") return `${who} — Booking: ${kind.propertyTitle?.trim() || "property"}`;
-  const reason = kind.reason?.trim();
-  return reason ? `${who} — Book a call: ${reason}` : `${who} — Book a call`;
-}
-
-/**
- * The deal's standard `description` for a book-a-call request: one line per
- * answer the visitor gave, empty ones left out. Null when there is nothing.
- */
-export function callDealDescription(answers: {
-  reason?: string | null;
-  preferredTime?: string | null;
-  notes?: string | null;
-}): string | null {
-  const lines = [
-    ["Reason", answers.reason],
-    ["Preferred time", answers.preferredTime],
-    ["Notes", answers.notes],
-  ]
-    .map(([label, value]) => [label, value?.trim()] as const)
-    .filter(([, value]) => !!value)
-    .map(([label, value]) => `${label}: ${value}`);
-  return lines.length > 0 ? lines.join("\n") : null;
+  return `${who} — Booking: ${propertyTitle?.trim() || "property"}`;
 }
