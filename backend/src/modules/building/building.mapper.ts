@@ -23,6 +23,7 @@ export type BuildingResponse = Pick<
   | "occupation"
   | "children"
   | "operator_id"
+  | "is_visible"
   | "created_at"
   | "updated_at"
 >;
@@ -49,6 +50,7 @@ export const toBuildingResponse = (building: Building): BuildingResponse => ({
   occupation: building.occupation || [],
   children: building.children || [],
   operator_id: building.operator_id,
+  is_visible: building.is_visible,
   created_at: building.created_at,
   updated_at: building.updated_at,
 });

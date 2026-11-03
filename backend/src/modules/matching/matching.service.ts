@@ -17,6 +17,10 @@ import {
   MatchScoresResponse,
   DEFAULT_WEIGHTS,
 } from "./interfaces/matching.interfaces";
+import {
+  PUBLICLY_VISIBLE_SQL,
+  publiclyVisibleWhere,
+} from "@/modules/property/property.visibility";
 
 /**
  * Every `Property` column the scoring engine reads, taken from
@@ -326,8 +330,9 @@ export class MatchingService {
     propertyId: string,
     userId: string
   ): Promise<PropertyMatchResult> {
+    // This route returns the property itself, so a hidden one is a 404.
     const property = await this.propertyRepository.findOne({
-      where: { id: propertyId },
+      where: publiclyVisibleWhere({ id: propertyId }),
     });
 
     if (!property) {
@@ -372,8 +377,10 @@ export class MatchingService {
       return { scores: {} };
     }
 
+    // Hidden properties are simply absent from the map, like ids the user may
+    // not see.
     const properties = await this.propertyRepository.find({
-      where: { id: In(uniqueIds) },
+      where: publiclyVisibleWhere({ id: In(uniqueIds) }),
     });
 
     const scores: MatchScoresResponse["scores"] = {};
@@ -483,7 +490,8 @@ export class MatchingService {
         // catalogue.
         .where("property.status = :listedStatus", {
           listedStatus: PropertyStatus.Listed,
-        });
+        })
+        .andWhere(PUBLICLY_VISIBLE_SQL);
 
       if (search) {
         qb.andWhere(searchPredicate, searchParameters);
@@ -547,7 +555,8 @@ export class MatchingService {
         ])
         .where("property.status = :listedStatus", {
           listedStatus: PropertyStatus.Listed,
-        });
+        })
+        .andWhere(PUBLICLY_VISIBLE_SQL);
 
       if (search) {
         // A join, not a joinAndSelect: the predicate reads `building.name`
@@ -614,6 +623,7 @@ export class MatchingService {
         .where("property.status = :listedStatus", {
           listedStatus: PropertyStatus.Listed,
         })
+        .andWhere(PUBLICLY_VISIBLE_SQL)
         // The sort below is stable, so this decides the order of equal scores
         // — and, at the ceiling, which rows are considered at all.
         .orderBy("property.created_at", "DESC")
@@ -748,6 +758,9 @@ export class MatchingService {
       .leftJoinAndSelect("property.building", "building")
       .leftJoinAndSelect("property.operator", "operator")
       .whereInIds(ids)
+      // The ranking is cached for a minute: a property hidden inside that
+      // window drops out here, on the very next page.
+      .andWhere(PUBLICLY_VISIBLE_SQL)
       .getMany();
 
     return new Map(properties.map((property) => [property.id, property]));

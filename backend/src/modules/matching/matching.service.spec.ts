@@ -7,6 +7,7 @@ import { User, UserRole } from "@/entities/user.entity";
 import { S3Service } from "@/common/services/s3.service";
 import { MatchingCalculationService } from "./services/matching-calculation.service";
 import { MatchingService, averageMatchPercentage } from "./matching.service";
+import { PUBLICLY_VISIBLE_SQL } from "@/modules/property/property.visibility";
 
 /**
  * The aggregate reported beside `total` on the matched-properties envelope.
@@ -418,6 +419,38 @@ describe("MatchingService feed — the full listed inventory", () => {
 
       expect(sqlOf(pageQuery)).toContain("property.status = :listedStatus");
       expect(sqlOf(pageQuery)).not.toContain(":upperBound");
+    });
+  });
+
+  describe("hidden properties", () => {
+    it("leave the ranking, and drop out of a cached ranking at hydration", async () => {
+      const ranking = createQueryBuilderStub([listedProperty("a")], 0);
+      const hydration = createQueryBuilderStub([listedProperty("a")], 0);
+      const { service } = await buildService({ builders: [ranking, hydration], preferences });
+
+      await service.getMatchedPropertiesWithPagination("tenant-1", { page: 1, limit: 1 });
+
+      expect(sqlOf(ranking)).toContain(PUBLICLY_VISIBLE_SQL);
+      expect(sqlOf(hydration)).toContain(PUBLICLY_VISIBLE_SQL);
+    });
+
+    it("leave a server-side sort", async () => {
+      const ids = createQueryBuilderStub([listedProperty("a")], 1);
+      const hydration = createQueryBuilderStub([listedProperty("a")], 0);
+      const { service } = await buildService({ builders: [ids, hydration], preferences });
+
+      await service.getMatchedPropertiesWithPagination("tenant-1", { sort: "high_price" });
+
+      expect(sqlOf(ids)).toContain(PUBLICLY_VISIBLE_SQL);
+    });
+
+    it("leave the feed of a user with no preferences", async () => {
+      const pageQuery = createQueryBuilderStub([listedProperty("a")], 1);
+      const { service } = await buildService({ builders: [pageQuery], preferences: null });
+
+      await service.getMatchedPropertiesWithPagination("tenant-1", {});
+
+      expect(sqlOf(pageQuery)).toContain(PUBLICLY_VISIBLE_SQL);
     });
   });
 

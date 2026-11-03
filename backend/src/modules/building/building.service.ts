@@ -189,6 +189,10 @@ export class BuildingService {
       updateData.children = updateBuildingDto.children;
     if (updateBuildingDto.description !== undefined)
       updateData.description = updateBuildingDto.description;
+    // Only the building's own flag: its properties keep theirs, effective
+    // visibility is derived at read time (property.visibility.ts).
+    if (updateBuildingDto.is_visible !== undefined)
+      updateData.is_visible = updateBuildingDto.is_visible;
 
     if (operatorId !== undefined) {
       // `null` must stay `null`: mapping it to `undefined` made TypeORM drop
@@ -370,7 +374,7 @@ export class BuildingService {
    */
   async findOnePublic(id: string): Promise<BuildingResponse> {
     const building = await this.buildingRepository.findOne({
-      where: { id },
+      where: { id, is_visible: true },
       relations: ["operator"],
     });
 

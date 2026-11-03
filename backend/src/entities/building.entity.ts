@@ -286,6 +286,14 @@ export class Building {
   @Column({ type: "jsonb", nullable: true, default: [] })
   children: BuildingChildrenCount[];
 
+  @ApiProperty({
+    description:
+      "Visibility flag. Hidden, the building and all its properties disappear from public pages; the properties' own flags are untouched.",
+    example: true,
+  })
+  @Column({ type: "boolean", default: true })
+  is_visible: boolean;
+
   @ApiProperty({ description: "Building creation date" })
   @CreateDateColumn()
   created_at: Date;

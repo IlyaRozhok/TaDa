@@ -32,6 +32,8 @@ interface AdminBuildingsSectionProps {
   onAdd: () => void;
   onRefresh?: () => void;
   onCopyId?: (id: string, type: "building") => void;
+  /** Sets the building's visibility; its properties' own flags are untouched. */
+  onToggleVisible: (building: Building, next: boolean) => void;
 }
 
 const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
@@ -46,6 +48,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
   onDelete,
   onAdd,
   onCopyId,
+  onToggleVisible,
 }) => {
   const SortButton = ({
     field,
@@ -144,6 +147,9 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                   Media
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Visibility
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -151,7 +157,7 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
             <tbody className="bg-white divide-y divide-gray-100">
               {buildings.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Building2 className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -289,6 +295,24 @@ const AdminBuildingsSection: React.FC<AdminBuildingsSectionProps> = ({
                             <span className="text-xs text-black">No media</span>
                           )}
                       </div>
+                    </td>
+                    <td
+                      className="px-6 py-4"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <label className="flex items-center gap-2 whitespace-nowrap cursor-pointer text-sm text-black">
+                        <input
+                          type="checkbox"
+                          checked={building.is_visible !== false}
+                          onChange={(e) =>
+                            onToggleVisible(building, e.target.checked)
+                          }
+                          data-testid="admin-building-visible-toggle"
+                          aria-label={`Show "${building.name}" and its properties publicly`}
+                          className="w-4 h-4 cursor-pointer accent-gray-900"
+                        />
+                        {building.is_visible !== false ? "Visible" : "Hidden"}
+                      </label>
                     </td>
                     <td
                       className="px-6 py-4"

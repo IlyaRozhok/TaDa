@@ -26,6 +26,7 @@ import {
 import { PublicPropertyResponse, toPublicProperty } from "./property.response";
 import { S3Service } from "../../common/services/s3.service";
 import { GeocodingService } from "@/common/services/geocoding.service";
+import { isPubliclyVisible, PUBLICLY_VISIBLE_SQL } from "./property.visibility";
 
 /** How many flagged properties the landing section shows at most. */
 export const LANDING_LISTINGS_LIMIT = 6;
@@ -325,6 +326,7 @@ export class PropertyService {
       .where("property.status = :listedStatus", {
         listedStatus: PropertyStatus.Listed,
       })
+      .andWhere(PUBLICLY_VISIBLE_SQL)
       .orderBy("property.created_at", "DESC");
 
     if (params?.building_id) {
@@ -373,6 +375,7 @@ export class PropertyService {
       .andWhere("property.status = :listedStatus", {
         listedStatus: PropertyStatus.Listed,
       })
+      .andWhere(PUBLICLY_VISIBLE_SQL)
       .orderBy("property.created_at", "DESC")
       .take(LANDING_LISTINGS_LIMIT)
       .getMany();
@@ -405,11 +408,13 @@ export class PropertyService {
 
     // Drafts and archived stock are invisible to the public; `under_offer`
     // and `let` still resolve so shared links keep working — the response
-    // carries `status` for the client to badge.
+    // carries `status` for the client to badge. Hidden (itself or through its
+    // building) is invisible too.
     if (
       !property ||
       property.status === PropertyStatus.Draft ||
-      property.status === PropertyStatus.Archived
+      property.status === PropertyStatus.Archived ||
+      !isPubliclyVisible(property)
     ) {
       throw new NotFoundException("Property not found");
     }
@@ -523,20 +528,21 @@ export class PropertyService {
 
   /**
    * `is_landing_listing` decides what a signed-out visitor sees on the
-   * marketing landings, so only an admin may set it. For every other role the
-   * field is dropped from the payload rather than rejected: an operator whose
-   * client echoes a whole property back on save must not start getting 400s
-   * for a flag they never touched.
+   * marketing landings and `is_visible` whether the property is public at all,
+   * so only an admin may set them. For every other role the fields are dropped
+   * from the payload rather than rejected: an operator whose client echoes a
+   * whole property back on save must not start getting 400s for a flag they
+   * never touched.
    */
   private stripAdminOnlyFields<T extends CreatePropertyDto | UpdatePropertyDto>(
     dto: T,
     userRole: string,
   ): T {
-    if (userRole === UserRole.Admin || dto.is_landing_listing === undefined) {
+    if (userRole === UserRole.Admin) {
       return dto;
     }
 
-    const { is_landing_listing: _adminOnly, ...rest } = dto;
+    const { is_landing_listing: _landing, is_visible: _visible, ...rest } = dto;
     return rest as T;
   }
 
