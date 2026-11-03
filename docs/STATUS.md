@@ -290,10 +290,11 @@ decisions) is recorded HERE, briefly, with a date.
     shortlist entries deliberately keep working.
   - The admin's "open public page" on a hidden item is a 404 too; there is no
     preview of hidden items.
-  - The tenant ranking is cached for 60s: a hidden property leaves at once
-    (dropped at hydration, so that page can run one row short and `total` stays
-    stale until the minute is up); a restored one returns within the minute.
-    The server-rendered metadata of a public page is ISR-cached for 5 minutes.
+  - A visibility change clears the feed's ranking cache
+    (`catalogue.visibility-changed`), so count and list agree at once. That
+    relies on the backend being one process; a second instance would need a
+    shared cache. The server-rendered metadata of a public page is ISR-cached
+    for 5 minutes.
   - The operator's PATCH silently drops `is_visible`, as it does
     `is_landing_listing`.
 

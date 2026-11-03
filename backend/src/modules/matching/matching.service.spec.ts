@@ -434,6 +434,24 @@ describe("MatchingService feed — the full listed inventory", () => {
       expect(sqlOf(hydration)).toContain(PUBLICLY_VISIBLE_SQL);
     });
 
+    it("are not counted by a cached ranking after a visibility change", async () => {
+      const first = createQueryBuilderStub([listedProperty("a")], 0);
+      const firstPage = createQueryBuilderStub([listedProperty("a")], 0);
+      // The property is hidden now: the live queries return nothing.
+      const reRanked = createQueryBuilderStub([], 0);
+      const { service } = await buildService({ builders: [first, firstPage, reRanked], preferences });
+
+      const before = await service.getMatchedPropertiesWithPagination("tenant-1", { page: 1, limit: 12 });
+      expect(before.total).toBe(1);
+
+      service.clearRankingCache();
+      const after = await service.getMatchedPropertiesWithPagination("tenant-1", { page: 1, limit: 12 });
+
+      // Re-ranked, so the count and the page agree instead of "1" over nothing.
+      expect(after.total).toBe(0);
+      expect(after.data).toEqual([]);
+    });
+
     it("leave a server-side sort", async () => {
       const ids = createQueryBuilderStub([listedProperty("a")], 1);
       const hydration = createQueryBuilderStub([listedProperty("a")], 0);

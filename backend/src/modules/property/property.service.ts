@@ -1,3 +1,4 @@
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import {
   ConflictException,
   ForbiddenException,
@@ -26,7 +27,11 @@ import {
 import { PublicPropertyResponse, toPublicProperty } from "./property.response";
 import { S3Service } from "../../common/services/s3.service";
 import { GeocodingService } from "@/common/services/geocoding.service";
-import { isPubliclyVisible, PUBLICLY_VISIBLE_SQL } from "./property.visibility";
+import {
+  CATALOGUE_VISIBILITY_CHANGED,
+  isPubliclyVisible,
+  PUBLICLY_VISIBLE_SQL,
+} from "./property.visibility";
 
 /** How many flagged properties the landing section shows at most. */
 export const LANDING_LISTINGS_LIMIT = 6;
@@ -53,6 +58,7 @@ export class PropertyService {
     private readonly buildingRepository: Repository<Building>,
     private readonly s3Service: S3Service,
     private readonly geocodingService: GeocodingService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -290,6 +296,18 @@ export class PropertyService {
     }
 
     await this.propertyRepository.update(id, updateData);
+
+    // Moving to another building changes effective visibility as much as the
+    // flag does.
+    if (
+      (updateData.is_visible !== undefined &&
+        updateData.is_visible !== property.is_visible) ||
+      (updateData.building_id !== undefined &&
+        updateData.building_id !== property.building_id)
+    ) {
+      this.eventEmitter.emit(CATALOGUE_VISIBILITY_CHANGED);
+    }
+
     return this.findOne(id);
   }
 

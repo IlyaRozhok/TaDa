@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { OnEvent } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "@/entities";
@@ -18,6 +19,7 @@ import {
   DEFAULT_WEIGHTS,
 } from "./interfaces/matching.interfaces";
 import {
+  CATALOGUE_VISIBILITY_CHANGED,
   PUBLICLY_VISIBLE_SQL,
   publiclyVisibleWhere,
 } from "@/modules/property/property.visibility";
@@ -236,6 +238,17 @@ export class MatchingService {
       full_name: target.full_name || null,
       tenant_cv_share_uuid: target.tenantCv?.share_uuid ?? null,
     };
+  }
+
+  /**
+   * A cached ranking holds the ids and `total` of the moment it was computed,
+   * but a page is hydrated through the live visibility filter. Left in place
+   * after a toggle, it answered "1 apartments" with an empty page until it
+   * expired. The backend is one process, so clearing this map is enough.
+   */
+  @OnEvent(CATALOGUE_VISIBILITY_CHANGED)
+  clearRankingCache(): void {
+    this.rankingCache.clear();
   }
 
   private getCachedRanking(key: string): RankingCacheEntry | undefined {
@@ -758,8 +771,8 @@ export class MatchingService {
       .leftJoinAndSelect("property.building", "building")
       .leftJoinAndSelect("property.operator", "operator")
       .whereInIds(ids)
-      // The ranking is cached for a minute: a property hidden inside that
-      // window drops out here, on the very next page.
+      // Rankings are dropped on a visibility change (clearRankingCache); this
+      // holds for a page whose ids were chosen just before one.
       .andWhere(PUBLICLY_VISIBLE_SQL)
       .getMany();
 

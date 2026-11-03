@@ -6,6 +6,7 @@ import { UserRole } from "@/entities/user.entity";
 import { BuildingService } from "@/modules/building/building.service";
 import { PropertyService } from "./property.service";
 import {
+  CATALOGUE_VISIBILITY_CHANGED,
   isPubliclyVisible,
   PUBLICLY_VISIBLE_SQL,
   publiclyVisibleWhere,
@@ -48,12 +49,16 @@ describe("effective visibility", () => {
 });
 
 describe("PropertyService visibility", () => {
+  const emitter = { emit: jest.fn() };
+  beforeEach(() => emitter.emit.mockClear());
+
   const build = (repository: Record<string, unknown>) =>
     new PropertyService(
       repository as any,
       {} as any,
       { refreshMediaUrls: jest.fn().mockResolvedValue(undefined), refreshUrl: jest.fn(async (u: string) => u) } as any,
       {} as any,
+      emitter as any,
     );
 
   const stubBuilder = () => {
@@ -98,6 +103,27 @@ describe("PropertyService visibility", () => {
     await expect(service.findOnePublic("p-1")).resolves.toMatchObject({ id: "p-1" });
   });
 
+  describe("announcing a visibility change", () => {
+    const stored = property({ operator_id: "op-1", building_id: null } as Partial<Property>);
+    const patch = (dto: Record<string, unknown>, role: UserRole) =>
+      build({
+        findOne: jest.fn().mockResolvedValue(stored),
+        update: jest.fn().mockResolvedValue(undefined),
+      }).update("p-1", dto as any, "op-1", role);
+
+    it("announces a flag that changed", async () => {
+      await patch({ is_visible: false }, UserRole.Admin);
+      expect(emitter.emit).toHaveBeenCalledWith(CATALOGUE_VISIBILITY_CHANGED);
+    });
+
+    it("stays quiet for the same value, other fields, or an operator's dropped flag", async () => {
+      await patch({ is_visible: true }, UserRole.Admin);
+      await patch({ title: "New" }, UserRole.Admin);
+      await patch({ is_visible: false }, UserRole.Operator);
+      expect(emitter.emit).not.toHaveBeenCalled();
+    });
+  });
+
   it("lets only an admin set the flag: an operator's is dropped from the payload", () => {
     const strip = (build({}) as any).stripAdminOnlyFields.bind(build({}));
     const dto = { title: "T", is_visible: false, is_landing_listing: true };
@@ -115,6 +141,7 @@ describe("BuildingService visibility", () => {
       {} as any,
       { refreshMediaUrls: jest.fn(async (entity: unknown) => entity) } as any,
       {} as any,
+      { emit: jest.fn() } as any,
     );
 
   it("answers 404 on the public detail of a hidden building", async () => {

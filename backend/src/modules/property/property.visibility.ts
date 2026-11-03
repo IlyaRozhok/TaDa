@@ -13,6 +13,13 @@ import { Property } from "@/entities/property.entity";
  */
 
 /**
+ * Emitted, synchronously, after a write that can change what is publicly
+ * visible. The matching feed drops its cached rankings on it: a cached `total`
+ * would otherwise keep counting rows the page no longer returns.
+ */
+export const CATALOGUE_VISIBILITY_CHANGED = "catalogue.visibility-changed";
+
+/**
  * The rule for a query builder whose main alias is `property`. NOT EXISTS, not
  * a join on `building`: it holds whether or not the query joins the building
  * (the ranking pass only does when searching) and cannot multiply rows.

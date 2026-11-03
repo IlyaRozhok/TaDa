@@ -1,3 +1,5 @@
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { CATALOGUE_VISIBILITY_CHANGED } from "@/modules/property/property.visibility";
 import {
   Injectable,
   NotFoundException,
@@ -25,6 +27,7 @@ export class BuildingService {
     private userRepository: Repository<User>,
     private readonly s3Service: S3Service,
     private readonly geocodingService: GeocodingService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -256,6 +259,13 @@ export class BuildingService {
           .execute();
       }
     });
+
+    if (
+      updateData.is_visible !== undefined &&
+      updateData.is_visible !== building.is_visible
+    ) {
+      this.eventEmitter.emit(CATALOGUE_VISIBILITY_CHANGED);
+    }
 
     const reloadedBuilding = await this.buildingRepository.findOne({
       where: { id: building.id },
