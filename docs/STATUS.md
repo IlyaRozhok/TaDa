@@ -283,6 +283,16 @@ decisions) is recorded HERE, briefly, with a date.
     reads as a migration failure). Give it the same container check; it was
     left alone to avoid editing the prod deploy during an incident.
 
+- **Match weights, after the bedroom reweighting** (added 2026-11-04).
+  `bedrooms` 25, `propertyType` 4 (defaults now sum to 115); bedrooms score by
+  distance to the nearest selected count (100% / 40% / 0), "5+" is five or
+  more, a `studio` counts as 0 bedrooms.
+  - The wizard asks "Rooms" (`wizard.step3.des.text2`) and has no studio option:
+    "2 rooms" can read as a 1-bed in the UK, and a studio-seeker can only say so
+    through the property type. The label is a Localazy change.
+  - `?prefilters=true` (opt-in, debug) still narrows on the raw column with
+    ±1: it drops a 7-bed for a "5+" search and keeps a studio stored as 1.
+
 - **Admin visibility, follow-ups** (added 2026-11-03). Effective visibility
   is derived (`modules/property/property.visibility.ts`), never written.
   - New bookings and shortlist adds are not refused for a hidden property: the

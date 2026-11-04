@@ -1,9 +1,39 @@
 import { Property } from "@/entities/property.entity";
 import { Preferences } from "@/entities/preferences.entity";
 import { CategoryMatchResult } from "@/modules/matching/interfaces/matching.interfaces";
+import { UNKNOWN_DATA_CREDIT } from "./unknown-data";
+
+/** One bedroom from the nearest selected count. */
+const CLOSE_CREDIT = 0.4;
+/** The wizard's "5+" is stored as 5, and means five or more. */
+const OPEN_ENDED_FROM = 5;
 
 /**
- * Bedrooms matching
+ * A studio has no separate bedroom whatever its count says: the property forms
+ * only offer 1-5, so studios are stored as 1 or left empty. Scored as stored, a
+ * studio was as close to a 2-bed search as a real 1-bed.
+ */
+function effectiveBedrooms(property: Property): number | null | undefined {
+  return property.property_type?.trim().toLowerCase() === "studio"
+    ? 0
+    : property.bedrooms;
+}
+
+/** How far a count is from the nearest selected one (0 is a match). */
+function bedroomDistance(bedrooms: number, selected: number[]): number {
+  return Math.min(
+    ...selected.map((count) =>
+      count >= OPEN_ENDED_FROM && bedrooms >= OPEN_ENDED_FROM
+        ? 0
+        : Math.abs(bedrooms - count),
+    ),
+  );
+}
+
+/**
+ * Bedrooms matching, by distance to the nearest selected count: exact 100%, one
+ * away 40%, two or more 0. Weighted, never a filter, so a thin inventory still
+ * shows something.
  */
 export function matchBedrooms(
   property: Property,
@@ -11,7 +41,7 @@ export function matchBedrooms(
   maxScore: number,
 ): CategoryMatchResult {
   const prefBedrooms = preferences.bedrooms || [];
-  const propertyBedrooms = property.bedrooms;
+  const propertyBedrooms = effectiveBedrooms(property);
 
   // No preference set - exclude from calculation
   if (!prefBedrooms.length) {
@@ -31,7 +61,7 @@ export function matchBedrooms(
     return {
       category: "bedrooms",
       match: false,
-      score: Math.round(maxScore * 0.3),
+      score: Math.round(maxScore * UNKNOWN_DATA_CREDIT),
       maxScore,
       reason: "Bedroom count unknown",
       details: "Property bedroom count not specified",
@@ -39,8 +69,9 @@ export function matchBedrooms(
     };
   }
 
-  // Exact match
-  if (prefBedrooms.includes(propertyBedrooms)) {
+  const distance = bedroomDistance(propertyBedrooms, prefBedrooms);
+
+  if (distance === 0) {
     return {
       category: "bedrooms",
       match: true,
@@ -52,15 +83,11 @@ export function matchBedrooms(
     };
   }
 
-  // Check for close match (±1 bedroom)
-  const minPref = Math.min(...prefBedrooms);
-  const maxPref = Math.max(...prefBedrooms);
-
-  if (propertyBedrooms === minPref - 1 || propertyBedrooms === maxPref + 1) {
+  if (distance === 1) {
     return {
       category: "bedrooms",
       match: false,
-      score: Math.round(maxScore * 0.5),
+      score: Math.round(maxScore * CLOSE_CREDIT),
       maxScore,
       reason: "Close to preferred bedroom count",
       details: `${propertyBedrooms} bedrooms is close to your preference (${prefBedrooms.join(

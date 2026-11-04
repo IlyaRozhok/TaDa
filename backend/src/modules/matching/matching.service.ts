@@ -312,7 +312,7 @@ export class MatchingService {
       );
     }
 
-    // Bedrooms filter (weight 12) — include ±1 for close-match scoring
+    // Bedrooms filter (weight 25) — include ±1 for close-match scoring
     if (preferences.bedrooms && preferences.bedrooms.length > 0) {
       const minBed = Math.max(0, Math.min(...preferences.bedrooms) - 1);
       const maxBed = Math.max(...preferences.bedrooms) + 1;
@@ -322,7 +322,7 @@ export class MatchingService {
       );
     }
 
-    // Property type filter (weight 10) — exact match only, but keep NULLs
+    // Property type filter (weight 4) — exact match only, but keep NULLs
     if (preferences.property_types && preferences.property_types.length > 0) {
       const normalizedTypes = preferences.property_types.map((t) =>
         t.toLowerCase().trim(),

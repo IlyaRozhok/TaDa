@@ -1,8 +1,9 @@
 import { Property } from "@/entities/property.entity";
 
 /**
- * Category weights for matching algorithm
- * Total should equal 100
+ * Category weights for matching algorithm. Relative: a percentage is the score
+ * over the weights of the categories the tenant set, so the total need not be
+ * a round number (the defaults sum to 115).
  */
 export interface CategoryWeights {
   budget: number; // Price match
@@ -33,8 +34,8 @@ export interface CategoryWeights {
 export const DEFAULT_WEIGHTS: CategoryWeights = {
   budget: 18, // Most critical - affordability (reduced from 20)
   location: 15, // Very important - proximity to work/preferred areas
-  bedrooms: 12, // Critical for space needs
-  propertyType: 10, // Important property characteristic
+  bedrooms: 25, // The dominant factor: a flat of the wrong size is the wrong flat
+  propertyType: 4, // Low: listings and preferences mostly overlap (apartment/flat)
   availability: 8, // Important for move-in planning
   amenities: 8, // Important for lifestyle (includes outdoor space)
   propertyAmenities: 5, // Apartment-level features (kitchen, bathroom, storage, tech, access)
