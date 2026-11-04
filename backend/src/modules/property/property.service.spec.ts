@@ -1,3 +1,4 @@
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Test } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Property } from "@/entities/property.entity";
@@ -53,6 +54,7 @@ describe("PropertyService admin list", () => {
           useValue: { createQueryBuilder: () => builder },
         },
         { provide: getRepositoryToken(Building), useValue: {} },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
         {
           provide: S3Service,
           useValue: {

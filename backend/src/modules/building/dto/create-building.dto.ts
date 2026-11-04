@@ -347,4 +347,13 @@ export class CreateBuildingDto {
     each: true,
   })
   children?: BuildingChildrenCount[];
+
+  @ApiProperty({
+    description: "Show the building and its properties publicly",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  is_visible?: boolean;
 }

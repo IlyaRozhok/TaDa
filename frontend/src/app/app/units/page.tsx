@@ -107,6 +107,15 @@ function TenantDashboardContent({
     setPage(1);
   }, [debouncedSearch]);
 
+  // The set can shrink while a later page is open (an admin hid properties, a
+  // listing was let). Past the end the server has no rows but still reports
+  // the total: "3 apartments" over an empty grid. Step back to the last page.
+  // Adjusted during render, so the empty page never paints.
+  const lastFeedPage = feedData ? Math.max(feedData.totalPages, 1) : null;
+  if (lastFeedPage !== null && page > lastFeedPage) {
+    setPage(lastFeedPage);
+  }
+
   const feedProperties = useMemo(
     () =>
       (feedData?.data ?? [])

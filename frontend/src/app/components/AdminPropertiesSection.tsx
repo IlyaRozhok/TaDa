@@ -101,6 +101,8 @@ interface AdminPropertiesSectionProps {
   onCopyId?: (id: string, type: "property" | "building") => void;
   /** Flags/unflags the property for the landings' listings section. */
   onToggleLanding: (property: Property, next: boolean) => void;
+  /** Sets the property's own visibility flag. */
+  onToggleVisible: (property: Property, next: boolean) => void;
 }
 
 /** One labelled group of mutually exclusive chips inside the filter popover. */
@@ -151,6 +153,7 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
   onAdd,
   onCopyId,
   onToggleLanding,
+  onToggleVisible,
 }) => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -330,13 +333,14 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                 <th className="px-4 py-3">Available</th>
                 <th className="px-4 py-3">Image</th>
                 <th className="px-4 py-3">Landing</th>
+                <th className="px-4 py-3">Visibility</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {properties.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center">
+                  <td colSpan={11} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Home className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium text-black mb-2">
@@ -477,6 +481,34 @@ const AdminPropertiesSection: React.FC<AdminPropertiesSectionProps> = ({
                         }" on the landing pages`}
                         className="w-4 h-4 cursor-pointer accent-gray-900"
                       />
+                    </td>
+                    {/* The checkbox is the property's own flag; a hidden
+                        building overrides it publicly without changing it,
+                        so restoring the building brings the property back. */}
+                    <td
+                      className="px-4 py-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <label className="flex items-center gap-2 whitespace-nowrap cursor-pointer text-sm text-gray-900">
+                        <input
+                          type="checkbox"
+                          checked={property.is_visible !== false}
+                          onChange={(e) =>
+                            onToggleVisible(property, e.target.checked)
+                          }
+                          data-testid="admin-property-visible-toggle"
+                          aria-label={`Show "${
+                            property.title || property.id
+                          }" publicly`}
+                          className="w-4 h-4 cursor-pointer accent-gray-900"
+                        />
+                        {property.is_visible !== false ? "Visible" : "Hidden"}
+                      </label>
+                      {property.building?.is_visible === false && (
+                        <span className="mt-1 inline-block whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 border border-amber-200">
+                          Hidden (via building)
+                        </span>
+                      )}
                     </td>
                     <td
                       className="px-4 py-3"

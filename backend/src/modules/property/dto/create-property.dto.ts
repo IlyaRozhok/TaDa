@@ -457,6 +457,16 @@ export class CreatePropertyDto {
 
   @ApiProperty({
     description:
+      "Show the property publicly. Admin-only: the service drops this field for any other role.",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  is_visible?: boolean;
+
+  @ApiProperty({
+    description:
       "UK postcode. Geocoded via postcodes.io on save; when omitted, the full postcode is extracted from the address if present.",
     example: "NW1 8XY",
     required: false,

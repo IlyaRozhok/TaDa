@@ -10,6 +10,8 @@ export interface Building {
   id: string;
   name: string;
   address: string | null;
+  /** Hidden, the building and all its properties leave the public pages. */
+  is_visible?: boolean;
   description: string | null;
   number_of_units: number | null;
   type_of_unit: string[];
@@ -89,10 +91,15 @@ export const buildingsApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
-      // Both the row in the list and the detail behind it are stale now.
+      // Both the row in the list and the detail behind it are stale now, and
+      // the building's visibility shows on its properties' rows too.
       invalidatesTags: (_result, _error, { id }) => [
         { type: "Building", id },
         { type: "Building", id: "LIST" },
+        { type: "Property", id: "LIST" },
+        { type: "Property", id: "PUBLIC_LIST" },
+        { type: "Property", id: "MATCHED_LIST" },
+        { type: "Property", id: "LANDING_LIST" },
       ],
     }),
 

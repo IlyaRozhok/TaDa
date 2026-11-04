@@ -122,14 +122,14 @@ describe("MatchingCalculationService", () => {
     });
 
     it("rounds the percentage and counts partial and missed categories", () => {
-      // budget partial 9/18, bedrooms miss 0/12 -> 9/30 = 30%
+      // budget partial 9/18, bedrooms miss 0/25 -> 9/43 = 21%
       const result = match(
         { price: 2100, bedrooms: 5 },
         { max_price: 2000, bedrooms: [2] },
       );
       expect(result.totalScore).toBe(9);
-      expect(result.maxPossibleScore).toBe(30);
-      expect(result.matchPercentage).toBe(30);
+      expect(result.maxPossibleScore).toBe(43);
+      expect(result.matchPercentage).toBe(21);
       expect(result.summary).toEqual({
         matched: 0,
         partial: 1,
@@ -199,7 +199,7 @@ describe("MatchingCalculationService", () => {
     });
   });
 
-  describe("bedrooms (weight 12)", () => {
+  describe("bedrooms (weight 25)", () => {
     it("is skipped without a preference", () => {
       const c = one("bedrooms", { bedrooms: 2 }, {});
       expect(c).toMatchObject({ hasPreference: false, maxScore: 0 });
@@ -207,26 +207,68 @@ describe("MatchingCalculationService", () => {
 
     it("gives 30% when the property has no bedroom count", () => {
       const c = one("bedrooms", {}, { bedrooms: [2] });
-      expect(c).toMatchObject({ match: false, score: 4, maxScore: 12 });
+      expect(c).toMatchObject({ match: false, score: 8, maxScore: 25 });
     });
 
     it("scores full on exact match", () => {
       const c = one("bedrooms", { bedrooms: 2 }, { bedrooms: [1, 2] });
-      expect(c).toMatchObject({ match: true, score: 12 });
+      expect(c).toMatchObject({ match: true, score: 25 });
     });
 
-    it("gives half score at exactly one bedroom outside the range", () => {
+    it("gives 40% one bedroom from the nearest selected count", () => {
       expect(one("bedrooms", { bedrooms: 4 }, { bedrooms: [2, 3] })).toMatchObject(
-        { match: false, score: 6 },
+        { match: false, score: 10 },
       );
       expect(one("bedrooms", { bedrooms: 1 }, { bedrooms: [2, 3] })).toMatchObject(
-        { match: false, score: 6 },
+        { match: false, score: 10 },
       );
+    });
+
+    it("measures to the nearest selected count, so a gap in the selection is close", () => {
+      expect(one("bedrooms", { bedrooms: 2 }, { bedrooms: [1, 3] })).toMatchObject(
+        { match: false, score: 10 },
+      );
+      expect(one("bedrooms", { bedrooms: 3 }, { bedrooms: [1, 5] })).toMatchObject(
+        { match: false, score: 0 },
+      );
+    });
+
+    it("reads a 5+ selection as five or more", () => {
+      for (const bedrooms of [5, 6, 7, 10]) {
+        expect(one("bedrooms", { bedrooms }, { bedrooms: [5] })).toMatchObject({
+          match: true,
+          score: 25,
+        });
+      }
+      expect(one("bedrooms", { bedrooms: 4 }, { bedrooms: [5] })).toMatchObject({
+        match: false,
+        score: 10,
+      });
+      // Only a 5+ selection is open-ended.
+      expect(one("bedrooms", { bedrooms: 6 }, { bedrooms: [4] })).toMatchObject({
+        match: false,
+        score: 0,
+      });
+    });
+
+    it("scores a studio as 0 bedrooms, whatever count it is stored with", () => {
+      for (const bedrooms of [1, null as unknown as undefined, undefined]) {
+        expect(
+          one("bedrooms", { bedrooms, property_type: "Studio" }, { bedrooms: [2] }),
+        ).toMatchObject({ match: false, score: 0, hasPreference: true });
+        expect(
+          one("bedrooms", { bedrooms, property_type: "studio" }, { bedrooms: [1] }),
+        ).toMatchObject({ match: false, score: 10 });
+      }
+      // Only a studio: a 1-bed flat keeps its count.
+      expect(
+        one("bedrooms", { bedrooms: 1, property_type: "flat" }, { bedrooms: [1] }),
+      ).toMatchObject({ match: true, score: 25 });
     });
 
     it("treats 0 bedrooms as a real count, not as missing", () => {
       const c = one("bedrooms", { bedrooms: 0 }, { bedrooms: [1] });
-      expect(c).toMatchObject({ match: false, score: 6 });
+      expect(c).toMatchObject({ match: false, score: 10 });
     });
 
     it("gives zero two or more bedrooms away", () => {
@@ -235,7 +277,7 @@ describe("MatchingCalculationService", () => {
     });
   });
 
-  describe("propertyType (weight 10)", () => {
+  describe("propertyType (weight 4)", () => {
     it("is skipped without a preference", () => {
       const c = one("propertyType", { property_type: "flat" }, {});
       expect(c).toMatchObject({ hasPreference: false, maxScore: 0 });
@@ -247,7 +289,7 @@ describe("MatchingCalculationService", () => {
         { property_type: "Apartment" },
         { property_types: ["apartment"] },
       );
-      expect(c).toMatchObject({ match: true, score: 10 });
+      expect(c).toMatchObject({ match: true, score: 4 });
     });
 
     it("gives zero on mismatch, partial credit on unknown property type", () => {
@@ -258,10 +300,10 @@ describe("MatchingCalculationService", () => {
           { property_types: ["studio"] },
         ),
       ).toMatchObject({ match: false, score: 0 });
-      // Unknown type: Math.round(10 * 0.3) = 3, not a hard mismatch.
+      // Unknown type: Math.round(4 * 0.3) = 1, not a hard mismatch.
       expect(
         one("propertyType", {}, { property_types: ["studio"] }),
-      ).toMatchObject({ match: false, score: 3, hasPreference: true });
+      ).toMatchObject({ match: false, score: 1, hasPreference: true });
     });
   });
 
@@ -1166,5 +1208,29 @@ describe("MatchingCalculationService", () => {
       );
       expect(c).toMatchObject({ match: false, score: 0, maxScore: 15 });
     });
+  });
+});
+
+describe("ranking a 2-bed search", () => {
+  const service = new MatchingCalculationService();
+  const preferences = {
+    max_price: 2000,
+    bedrooms: [2],
+    property_types: ["apartment", "flat"],
+  } as Preferences;
+  const percent = (property: Partial<Property>) =>
+    service.calculateMatch(property as Property, preferences).matchPercentage;
+
+  it("puts the exact count first, even slightly over budget, and a studio last", () => {
+    const twoBed = percent({ price: 1900, bedrooms: 2, property_type: "flat" });
+    const twoBedOverBudget = percent({ price: 2100, bedrooms: 2, property_type: "flat" });
+    const oneBed = percent({ price: 1600, bedrooms: 1, property_type: "flat" });
+    const threeBed = percent({ price: 1950, bedrooms: 3, property_type: "flat" });
+    const studio = percent({ price: 1400, bedrooms: 1, property_type: "studio" });
+
+    expect(twoBed).toBe(100);
+    expect(twoBedOverBudget).toBeGreaterThan(oneBed);
+    expect(oneBed).toBe(threeBed);
+    expect(oneBed).toBeGreaterThan(studio);
   });
 });

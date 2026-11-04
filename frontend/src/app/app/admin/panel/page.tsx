@@ -561,6 +561,54 @@ function AdminPanelContent() {
     }
   };
 
+  /** A one-field PATCH, for the same reason as the landing toggle above. */
+  const handleTogglePropertyVisible = async (
+    property: Property,
+    next: boolean,
+  ) => {
+    try {
+      await updateProperty({
+        id: property.id,
+        data: { is_visible: next },
+      }).unwrap();
+
+      addNotification(
+        "success",
+        `"${property.title || property.id}" is now ${next ? "visible" : "hidden"}`,
+      );
+    } catch (error: unknown) {
+      console.error("❌ Failed to toggle property visibility:", error);
+      addNotification(
+        "error",
+        `Failed to update visibility: ${apiErrorMessage(error, "Unknown error")}`,
+      );
+    }
+  };
+
+  /** Hides or restores the building's properties too, without changing their flags. */
+  const handleToggleBuildingVisible = async (
+    building: Building,
+    next: boolean,
+  ) => {
+    try {
+      await updateBuilding({
+        id: building.id,
+        data: { is_visible: next },
+      }).unwrap();
+
+      addNotification(
+        "success",
+        `"${building.name}" and its properties are now ${next ? "visible" : "hidden"}`,
+      );
+    } catch (error: unknown) {
+      console.error("❌ Failed to toggle building visibility:", error);
+      addNotification(
+        "error",
+        `Failed to update visibility: ${apiErrorMessage(error, "Unknown error")}`,
+      );
+    }
+  };
+
   const handleUpdateBookingStatus = async (
     id: string,
     status: BookingRequestStatus,
@@ -689,6 +737,7 @@ function AdminPanelContent() {
         return (
           <AdminBuildingsSection
             buildings={buildings}
+            onToggleVisible={handleToggleBuildingVisible}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             searchLoading={false}
@@ -732,6 +781,7 @@ function AdminPanelContent() {
             onDelete={handleDelete}
             onAdd={handleAdd}
             onToggleLanding={handleToggleLanding}
+            onToggleVisible={handleTogglePropertyVisible}
             onCopyId={(id, _type) => {
               addNotification(
                 "success",

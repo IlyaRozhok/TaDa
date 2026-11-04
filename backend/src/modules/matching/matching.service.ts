@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { OnEvent } from "@nestjs/event-emitter";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository, SelectQueryBuilder } from "typeorm";
 import { Property } from "@/entities";
@@ -17,6 +18,11 @@ import {
   MatchScoresResponse,
   DEFAULT_WEIGHTS,
 } from "./interfaces/matching.interfaces";
+import {
+  CATALOGUE_VISIBILITY_CHANGED,
+  PUBLICLY_VISIBLE_SQL,
+  publiclyVisibleWhere,
+} from "@/modules/property/property.visibility";
 
 /**
  * Every `Property` column the scoring engine reads, taken from
@@ -234,6 +240,17 @@ export class MatchingService {
     };
   }
 
+  /**
+   * A cached ranking holds the ids and `total` of the moment it was computed,
+   * but a page is hydrated through the live visibility filter. Left in place
+   * after a toggle, it answered "1 apartments" with an empty page until it
+   * expired. The backend is one process, so clearing this map is enough.
+   */
+  @OnEvent(CATALOGUE_VISIBILITY_CHANGED)
+  clearRankingCache(): void {
+    this.rankingCache.clear();
+  }
+
   private getCachedRanking(key: string): RankingCacheEntry | undefined {
     const entry = this.rankingCache.get(key);
     if (!entry) return undefined;
@@ -295,7 +312,7 @@ export class MatchingService {
       );
     }
 
-    // Bedrooms filter (weight 12) — include ±1 for close-match scoring
+    // Bedrooms filter (weight 25) — include ±1 for close-match scoring
     if (preferences.bedrooms && preferences.bedrooms.length > 0) {
       const minBed = Math.max(0, Math.min(...preferences.bedrooms) - 1);
       const maxBed = Math.max(...preferences.bedrooms) + 1;
@@ -305,7 +322,7 @@ export class MatchingService {
       );
     }
 
-    // Property type filter (weight 10) — exact match only, but keep NULLs
+    // Property type filter (weight 4) — exact match only, but keep NULLs
     if (preferences.property_types && preferences.property_types.length > 0) {
       const normalizedTypes = preferences.property_types.map((t) =>
         t.toLowerCase().trim(),
@@ -326,8 +343,9 @@ export class MatchingService {
     propertyId: string,
     userId: string
   ): Promise<PropertyMatchResult> {
+    // This route returns the property itself, so a hidden one is a 404.
     const property = await this.propertyRepository.findOne({
-      where: { id: propertyId },
+      where: publiclyVisibleWhere({ id: propertyId }),
     });
 
     if (!property) {
@@ -372,8 +390,10 @@ export class MatchingService {
       return { scores: {} };
     }
 
+    // Hidden properties are simply absent from the map, like ids the user may
+    // not see.
     const properties = await this.propertyRepository.find({
-      where: { id: In(uniqueIds) },
+      where: publiclyVisibleWhere({ id: In(uniqueIds) }),
     });
 
     const scores: MatchScoresResponse["scores"] = {};
@@ -483,7 +503,8 @@ export class MatchingService {
         // catalogue.
         .where("property.status = :listedStatus", {
           listedStatus: PropertyStatus.Listed,
-        });
+        })
+        .andWhere(PUBLICLY_VISIBLE_SQL);
 
       if (search) {
         qb.andWhere(searchPredicate, searchParameters);
@@ -547,7 +568,8 @@ export class MatchingService {
         ])
         .where("property.status = :listedStatus", {
           listedStatus: PropertyStatus.Listed,
-        });
+        })
+        .andWhere(PUBLICLY_VISIBLE_SQL);
 
       if (search) {
         // A join, not a joinAndSelect: the predicate reads `building.name`
@@ -614,6 +636,7 @@ export class MatchingService {
         .where("property.status = :listedStatus", {
           listedStatus: PropertyStatus.Listed,
         })
+        .andWhere(PUBLICLY_VISIBLE_SQL)
         // The sort below is stable, so this decides the order of equal scores
         // — and, at the ceiling, which rows are considered at all.
         .orderBy("property.created_at", "DESC")
@@ -748,6 +771,9 @@ export class MatchingService {
       .leftJoinAndSelect("property.building", "building")
       .leftJoinAndSelect("property.operator", "operator")
       .whereInIds(ids)
+      // Rankings are dropped on a visibility change (clearRankingCache); this
+      // holds for a page whose ids were chosen just before one.
+      .andWhere(PUBLICLY_VISIBLE_SQL)
       .getMany();
 
     return new Map(properties.map((property) => [property.id, property]));

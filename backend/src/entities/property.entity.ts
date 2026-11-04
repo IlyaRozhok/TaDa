@@ -419,6 +419,14 @@ export class Property {
   @Column({ type: "boolean", default: false })
   is_landing_listing: boolean;
 
+  @ApiProperty({
+    description:
+      "The property's own visibility flag. Publicly visible only if this is on and its building (if any) is visible too. Admin-only flag.",
+    example: true,
+  })
+  @Column({ type: "boolean", default: true })
+  is_visible: boolean;
+
   @ApiProperty({ description: "Property creation date" })
   @Index("idx_properties_created_at")
   @CreateDateColumn()

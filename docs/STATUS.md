@@ -258,6 +258,15 @@ decisions) is recorded HERE, briefly, with a date.
       pipeline's first stage. Book a call is not synced (2026-10-21). Failed syncs are `notifications` rows with
       `channel = 'hubspot'` and `last_error`, retried up to 5 times.
 
+9. **Admin visibility (`is_visible`)** (added 2026-11-03) — on prod, apply the
+   migration's SQL by hand before the merge: the entities now read the new
+   columns, so new code against the old schema fails until `mig:run:prod`:
+   ```sql
+   ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "is_visible" boolean NOT NULL DEFAULT true;
+   ALTER TABLE "buildings" ADD COLUMN IF NOT EXISTS "is_visible" boolean NOT NULL DEFAULT true;
+   ```
+   `mig:run:prod` then records `1788900000000` as a no-op.
+
 ## Open follow-ups (recorded, not scheduled)
 
 - **Stage boot crash of 2026-10-12, and the prod deploy step** (added
@@ -273,6 +282,31 @@ decisions) is recorded HERE, briefly, with a date.
   - The **production** deploy step still has the old blind spot (a boot crash
     reads as a migration failure). Give it the same container check; it was
     left alone to avoid editing the prod deploy during an incident.
+
+- **Match weights, after the bedroom reweighting** (added 2026-11-04).
+  `bedrooms` 25, `propertyType` 4 (defaults now sum to 115); bedrooms score by
+  distance to the nearest selected count (100% / 40% / 0), "5+" is five or
+  more, a `studio` counts as 0 bedrooms.
+  - The wizard asks "Rooms" (`wizard.step3.des.text2`) and has no studio option:
+    "2 rooms" can read as a 1-bed in the UK, and a studio-seeker can only say so
+    through the property type. The label is a Localazy change.
+  - `?prefilters=true` (opt-in, debug) still narrows on the raw column with
+    ±1: it drops a 7-bed for a "5+" search and keeps a studio stored as 1.
+
+- **Admin visibility, follow-ups** (added 2026-11-03). Effective visibility
+  is derived (`modules/property/property.visibility.ts`), never written.
+  - New bookings and shortlist adds are not refused for a hidden property: the
+    pages are 404, but the API still accepts a known id. Existing bookings and
+    shortlist entries deliberately keep working.
+  - The admin's "open public page" on a hidden item is a 404 too; there is no
+    preview of hidden items.
+  - A visibility change clears the feed's ranking cache
+    (`catalogue.visibility-changed`), so count and list agree at once. That
+    relies on the backend being one process; a second instance would need a
+    shared cache. The server-rendered metadata of a public page is ISR-cached
+    for 5 minutes.
+  - The operator's PATCH silently drops `is_visible`, as it does
+    `is_landing_listing`.
 
 - **HubSpot CRM sync, after the MVP** (added 2026-10-19).
   - Deals land in the default pipeline's first stage. A dedicated "TaDa

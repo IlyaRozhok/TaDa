@@ -346,8 +346,8 @@ export const MatchBadgeTooltip: React.FC<MatchBadgeTooltipProps> = ({
                     // Priority order for better UX - most important categories first
                     const priorityOrder = [
                       "budget",
-                      // Second-highest weight in DEFAULT_WEIGHTS (15) — in
-                      // London location is the search.
+                      // In London location is the search, so it stays near the
+                      // top of the list whatever its weight.
                       "location",
                       "bedrooms",
                       "propertyType",

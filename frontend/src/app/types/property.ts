@@ -107,6 +107,11 @@ export interface Property {
   operator_id: string | null;
   /** Featured in the landings' listings section. Only an admin may set it. */
   is_landing_listing?: boolean;
+  /**
+   * The property's own visibility flag. Publicly visible only if this is on and
+   * its building (if any) is visible too. Only an admin may set it.
+   */
+  is_visible?: boolean;
   amenities?: string[];
   property_amenities?: string[];
   deposit?: number | null;
@@ -136,6 +141,7 @@ export interface Property {
     name: string;
     address?: string | null;
     logo?: string | null;
+    is_visible?: boolean;
   } | null;
   operator?: {
     id: string;
