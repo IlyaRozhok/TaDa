@@ -283,6 +283,16 @@ decisions) is recorded HERE, briefly, with a date.
     reads as a migration failure). Give it the same container check; it was
     left alone to avoid editing the prod deploy during an incident.
 
+- **Admin booking requests, after the lean table** (added 2026-11-04).
+  - `PATCH /booking-requests/:id/status` still answers with the full tenant
+    row (`updateStatus` loads the relation); only `GET /booking-requests` was
+    narrowed. `GET /booking-requests/me` does too, but that is the tenant's own
+    row.
+  - No pagination or search yet: the list is the whole table.
+  - The frontend has no UI to propose or confirm a viewing; the API exists.
+  - `shared/lib/bookingStatus.ts` mirrors the backend's transition rules; change
+    them together.
+
 - **Match weights, after the bedroom reweighting** (added 2026-11-04).
   `bedrooms` 25, `propertyType` 4 (defaults now sum to 115); bedrooms score by
   distance to the nearest selected count (100% / 40% / 0), "5+" is five or

@@ -195,15 +195,49 @@ export class BookingRequestService {
     } satisfies BookingRequestedEvent);
   }
 
+  /**
+   * The admin list. An explicit column list, not whole relations: this used to
+   * send the tenant's full users row (date of birth, address, google_id, ...)
+   * to the browser for a table that shows a name and a CV link.
+   */
   async findAll(status?: BookingRequestStatus): Promise<BookingRequest[]> {
     const where = status ? { status } : {};
-    const requests = await this.bookingRequestRepository.find({
+    return this.bookingRequestRepository.find({
       where,
-      relations: ["property", "tenant", "tenant.tenantCv"],
+      relations: { property: { building: true }, tenant: { tenantCv: true } },
+      select: {
+        id: true,
+        property_id: true,
+        tenant_id: true,
+        date_from: true,
+        date_to: true,
+        proposed_viewing_at: true,
+        viewing_confirmed_at: true,
+        email: true,
+        phone_number: true,
+        description: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        property: {
+          id: true,
+          title: true,
+          apartment_number: true,
+          price: true,
+          building_id: true,
+          is_visible: true,
+          building: { id: true, name: true, is_visible: true },
+        },
+        tenant: {
+          id: true,
+          full_name: true,
+          email: true,
+          phone: true,
+          tenantCv: { id: true, share_uuid: true },
+        },
+      },
       order: { created_at: "DESC" },
     });
-
-    return requests;
   }
 
   async findForTenant(

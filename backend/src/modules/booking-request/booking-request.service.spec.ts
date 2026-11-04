@@ -586,3 +586,27 @@ describe("BookingRequestService — status events and viewings", () => {
     });
   });
 });
+
+describe("BookingRequestService.findAll — the admin payload", () => {
+  it("selects only what the page needs from the tenant and the property", async () => {
+    const find = jest.fn().mockResolvedValue([]);
+    const service = new BookingRequestService(
+      { find } as any,
+      {} as any,
+      {} as any,
+    );
+
+    await service.findAll();
+
+    const { select, relations } = find.mock.calls[0][0];
+    expect(select.tenant).toEqual({
+      id: true,
+      full_name: true,
+      email: true,
+      phone: true,
+      tenantCv: { id: true, share_uuid: true },
+    });
+    expect(select.property.building).toEqual({ id: true, name: true, is_visible: true });
+    expect(relations).toEqual({ property: { building: true }, tenant: { tenantCv: true } });
+  });
+});

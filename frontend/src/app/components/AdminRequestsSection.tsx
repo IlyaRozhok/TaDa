@@ -1,23 +1,41 @@
-import React from "react";
-import {
-  CalendarClock,
-  CalendarRange,
-  Mail,
-  MapPin,
-  User,
-} from "lucide-react";
+import React, { useState } from "react";
+import { CalendarClock, ChevronDown, ChevronRight, Mail } from "lucide-react";
 import PhoneLinks from "@/shared/ui/PhoneLinks/PhoneLinks";
+import { allowedBookingStatuses } from "@/shared/lib/bookingStatus";
 import { BookingRequest, BookingRequestStatus } from "@/app/types/bookingRequest";
 
-function formatRequestDate(value: string | null | undefined): string {
+const COLUMN_COUNT = 6;
+
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+};
+
+function formatDate(value: string | null | undefined): string {
   if (value == null || value === "") return "—";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-GB", DATE_FORMAT);
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (value == null || value === "") return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleString("en-GB", { ...DATE_FORMAT, hour: "2-digit", minute: "2-digit" });
+}
+
+/** "£2,000/mo". The price is a decimal column, so it arrives as a string. */
+function formatBudget(price: number | string | null | undefined): string {
+  if (price === null || price === undefined || price === "") return "—";
+  const amount = Number(price);
+  if (!Number.isFinite(amount)) return "—";
+  const fractionDigits = Number.isInteger(amount) ? 0 : 2;
+  return `£${amount.toLocaleString("en-GB", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })}/mo`;
 }
 
 const statusOptions: { value: BookingRequestStatus; label: string }[] = [
@@ -48,6 +66,68 @@ const statusStyles: Record<BookingRequestStatus, string> = {
   cancel_booking: "bg-rose-50 text-rose-700 border border-rose-100",
 };
 
+const statusLabel = (status: BookingRequestStatus) =>
+  statusOptions.find((option) => option.value === status)?.label ?? status;
+
+/** A public page that answers 404 while the item is hidden. */
+const HiddenHint: React.FC = () => (
+  <span
+    title="Not public: this link returns 404 while it is hidden"
+    className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800"
+  >
+    Hidden
+  </span>
+);
+
+const linkClass = "text-black underline underline-offset-2 hover:text-gray-500";
+
+const DetailBlock: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => (
+  <div>
+    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
+      {title}
+    </div>
+    <div className="space-y-1 text-sm text-gray-900">{children}</div>
+  </div>
+);
+
+const RequestDetails: React.FC<{ request: BookingRequest }> = ({ request }) => {
+  const email = request.email || request.tenant?.email;
+  const phone = request.phone_number || request.tenant?.phone;
+
+  return (
+    <div className="grid gap-6 md:grid-cols-[2fr_1fr_1fr_1fr]">
+      <DetailBlock title="Message">
+        {request.description ? (
+          <p className="whitespace-pre-wrap break-words">{request.description}</p>
+        ) : (
+          <span className="text-gray-500">No message</span>
+        )}
+      </DetailBlock>
+      <DetailBlock title="Contact">
+        {email ? (
+          <a href={`mailto:${email}`} className={`flex items-center gap-1.5 break-all ${linkClass}`}>
+            <Mail className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+            {email}
+          </a>
+        ) : null}
+        {phone ? <PhoneLinks phone={phone} className="text-black" /> : null}
+        {!email && !phone ? <span className="text-gray-500">Not provided</span> : null}
+      </DetailBlock>
+      <DetailBlock title="Stay">
+        <div>From {formatDate(request.date_from)}</div>
+        <div>To {formatDate(request.date_to)}</div>
+      </DetailBlock>
+      <DetailBlock title="Viewing">
+        <div>Proposed {formatDateTime(request.proposed_viewing_at)}</div>
+        <div>Confirmed {formatDateTime(request.viewing_confirmed_at)}</div>
+      </DetailBlock>
+    </div>
+  );
+};
+
 interface AdminRequestsSectionProps {
   requests: BookingRequest[];
   isLoading?: boolean;
@@ -62,18 +142,15 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
   updatingId,
   onUpdateStatus,
 }) => {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const headerClass =
+    "px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap";
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-semibold text-black">
-            Booking requests
-          </h3>
-          <p className="text-black">
-            Track booking requests, form contact details, preferred dates, and
-            statuses
-          </p>
-        </div>
+      <div>
+        <h3 className="text-2xl font-semibold text-black">Booking requests</h3>
+        <p className="text-black">Open a row for the message and contact details</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -81,30 +158,18 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                  Property
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                  Account
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider min-w-[180px]">
-                  Contact (form)
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                  Stay (form)
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                  Submitted
-                </th>
+                <th className={headerClass}>Tenant</th>
+                <th className={headerClass}>Property</th>
+                <th className={headerClass}>Budget</th>
+                <th className={headerClass}>CV</th>
+                <th className={headerClass}>Submitted</th>
+                <th className={headerClass}>Status</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center">
+                  <td colSpan={COLUMN_COUNT} className="px-6 py-10 text-center">
                     <div className="flex items-center justify-center space-x-2 text-black">
                       <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
                       <span>Loading requests...</span>
@@ -113,7 +178,7 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center">
+                  <td colSpan={COLUMN_COUNT} className="px-6 py-10 text-center">
                     <div className="flex flex-col items-center justify-center text-black">
                       <CalendarClock className="w-12 h-12 text-black mb-4" />
                       <h3 className="text-lg font-medium mb-2">
@@ -125,148 +190,127 @@ export const AdminRequestsSection: React.FC<AdminRequestsSectionProps> = ({
                 </tr>
               ) : (
                 requests.map((request) => {
-                  const tenantLabel =
-                    request.tenant?.full_name ||
-                    request.tenant?.email ||
-                    "Unknown tenant";
+                  const { property, tenant } = request;
+                  const isExpanded = expandedId === request.id;
+                  const toggle = () => setExpandedId(isExpanded ? null : request.id);
+                  const tenantName = tenant?.full_name || tenant?.email || "Unknown tenant";
                   const propertyLabel =
-                    request.property?.apartment_number ||
-                    request.property?.title ||
-                    "Unknown property";
+                    property?.apartment_number || property?.title || "Unknown property";
+                  const building = property?.building;
+                  const buildingId = property?.building_id ?? building?.id;
+                  const buildingHidden = building?.is_visible === false;
+                  const allowed = allowedBookingStatuses(request.status);
 
                   return (
-                    <tr
-                      key={request.id}
-                      className="hover:bg-gray-50 transition"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-black">
-                          {propertyLabel}
-                        </div>
-                        <div className="text-xs text-gray-600 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {request.property?.address || "—"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          <div className="text-sm font-medium text-black flex items-center gap-2">
-                            <User className="w-4 h-4 text-gray-600" />
-                            {tenantLabel}
-                            {request.tenant?.tenantCv?.share_uuid ? (
+                    <React.Fragment key={request.id}>
+                      <tr
+                        data-testid="admin-request-row"
+                        onClick={toggle}
+                        className="cursor-pointer hover:bg-gray-50 transition"
+                      >
+                        <td className="px-6 py-4">
+                          <button
+                            type="button"
+                            aria-expanded={isExpanded}
+                            aria-label={`${isExpanded ? "Hide" : "Show"} details for ${tenantName}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggle();
+                            }}
+                            className="flex items-center gap-2 cursor-pointer text-left text-sm font-medium text-black"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 shrink-0 text-gray-500" />
+                            )}
+                            {tenantName}
+                          </button>
+                        </td>
+                        {/* Links and the dropdown keep their clicks to themselves:
+                            the row toggles on everything else. */}
+                        <td className="px-6 py-4 text-sm" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-2 font-medium">
+                            {property ? (
                               <a
-                                href={`/cv/${request.tenant.tenantCv.share_uuid}`}
+                                href={`/app/properties/${request.property_id}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-xs text-black underline hover:text-gray-500"
-                                onClick={(e) => e.stopPropagation()}
+                                className={linkClass}
                               >
-                                View CV
+                                {propertyLabel}
                               </a>
                             ) : (
-                              <span className="text-xs text-gray-500">
-                                No CV link
-                              </span>
+                              propertyLabel
                             )}
+                            {property?.is_visible === false || buildingHidden ? <HiddenHint /> : null}
                           </div>
-                          <div className="text-xs text-gray-600 flex items-center gap-1">
-                            <Mail className="w-3 h-3 shrink-0" />
-                            <span className="truncate max-w-[200px]">
-                              {request.tenant?.email || "—"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="flex flex-col gap-1.5 text-sm">
-                          {request.email ? (
-                            <div className="flex items-start gap-2 text-black">
-                              <Mail className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0" />
-                              <span className="break-all">{request.email}</span>
-                            </div>
+                          {buildingId ? (
+                            <a
+                              href={`/app/buildings/${buildingId}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`text-xs ${linkClass}`}
+                            >
+                              {building?.name || "Building"}
+                            </a>
                           ) : null}
-                          {request.phone_number ? (
-                            <PhoneLinks phone={request.phone_number} className="text-black" />
-                          ) : null}
-                          {!request.email && !request.phone_number ? (
-                            <span className="text-xs text-gray-400">
-                              Not provided
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top text-sm text-gray-800">
-                        <div className="flex items-start gap-2">
-                          <CalendarRange className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
-                          <div>
-                            <div>
-                              <span className="text-gray-500 text-xs uppercase tracking-wide">
-                                From
-                              </span>{" "}
-                              {formatRequestDate(request.date_from)}
-                            </div>
-                            <div className="mt-0.5">
-                              <span className="text-gray-500 text-xs uppercase tracking-wide">
-                                To
-                              </span>{" "}
-                              {formatRequestDate(request.date_to)}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              statusStyles[request.status]
-                            }`}
-                          >
-                            {
-                              statusOptions.find(
-                                (opt) => opt.value === request.status
-                              )?.label
-                            }
-                          </span>
-                          <select
-                            value={request.status}
-                            onChange={(e) =>
-                              onUpdateStatus(
-                                request.id,
-                                e.target.value as BookingRequestStatus
-                              )
-                            }
-                            disabled={updatingId === request.id}
-                            className="text-sm text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60"
-                          >
-                            {statusOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
-                        <div>
-                          {new Date(request.created_at).toLocaleString(
-                            "en-GB",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
+                        </td>
+                        <td className="px-6 py-4 text-sm text-black whitespace-nowrap">
+                          {formatBudget(property?.price)}
+                        </td>
+                        <td className="px-6 py-4 text-sm whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          {tenant?.tenantCv?.share_uuid ? (
+                            <a
+                              href={`/cv/${tenant.tenantCv.share_uuid}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={linkClass}
+                            >
+                              View CV
+                            </a>
+                          ) : (
+                            <span className="text-gray-500">No CV</span>
                           )}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          Updated{" "}
-                          {new Date(request.updated_at).toLocaleDateString(
-                            "en-GB",
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
+                          {formatDate(request.created_at)}
+                        </td>
+                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[request.status]}`}
+                            >
+                              {statusLabel(request.status)}
+                            </span>
+                            {/* Only the transitions the API accepts; a closed
+                                booking has none left. */}
+                            <select
+                              value={request.status}
+                              onChange={(e) =>
+                                onUpdateStatus(request.id, e.target.value as BookingRequestStatus)
+                              }
+                              disabled={updatingId === request.id || allowed.length === 1}
+                              aria-label={`Status of the request from ${tenantName}`}
+                              className="text-sm text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60"
+                            >
+                              {allowed.map((status) => (
+                                <option key={status} value={status}>
+                                  {statusLabel(status)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                      </tr>
+                      {isExpanded ? (
+                        <tr data-testid="admin-request-details" className="bg-gray-50">
+                          <td colSpan={COLUMN_COUNT} className="px-6 py-5">
+                            <RequestDetails request={request} />
+                          </td>
+                        </tr>
+                      ) : null}
+                    </React.Fragment>
                   );
                 })
               )}
